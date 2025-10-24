@@ -1,0 +1,91 @@
+:root {
+    --bg-primary: #1a1d29;
+    --bg-secondary: rgba(255, 255, 255, 0.03);
+    --border-color: rgba(255, 107, 53, 0.15);
+    --border-hover: rgba(255, 107, 53, 0.4);
+    --accent-color: #FF6B35;
+    --text-primary: white;
+    --text-secondary: #94a3b8;
+    --shadow: 0 8px 20px rgba(255, 107, 53, 0.2);
+}
+
+.tableros-container {
+    min-height: 100vh;
+    padding: 1.5rem;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.tableros-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.tab-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.tab-card {
+    background: var(--bg-secondary);
+    border: 1px solid rgba(255, 107, 53, 0.2);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tab-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow);
+}
+
+.tab-card.active {
+    background: rgba(255, 107, 53, 0.1);
+    border-color: var(--accent-color);
+}
+
+.tab-card h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.tab-card p {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0.5rem 0 0 0;
+}
+
+.tab-content {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 2rem;
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.chart-placeholder {
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.chart-placeholder h4 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.chart-placeholder p {
+    font-size: 1rem;
+}

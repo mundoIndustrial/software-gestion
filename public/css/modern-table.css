@@ -1,0 +1,362 @@
+/* Estilos para el dropdown de estado en la tabla moderna */
+.table-cell .estado-dropdown {
+background-color: transparent;
+border: 1px solid #ccc;
+border-radius: 15px;
+font-size: inherit;
+color: white !important;
+padding: 5px 10px;
+cursor: pointer;
+transition: all 0.3s ease;
+outline: none;
+-webkit-appearance: none;
+-moz-appearance: none;
+appearance: none;
+}
+
+/* Colores dinámicos para el dropdown */
+.table-cell .estado-dropdown[data-value="Entregado"] {
+background-color: #007bff !important;
+border-color: #007bff !important;
+}
+.table-cell .estado-dropdown[data-value="En Ejecución"] {
+background-color: #28a745 !important;
+border-color: #28a745 !important;
+}
+.table-cell .estado-dropdown[data-value="No iniciado"] {
+background-color: #343a40 !important;
+border-color: #343a40 !important;
+}
+.table-cell .estado-dropdown[data-value="Anulada"] {
+background-color: #8b4513 !important;
+border-color: #8b4513 !important;
+}
+
+/* Opciones del dropdown */
+.estado-dropdown option {
+border-radius: 15px;
+padding: 8px 12px;
+margin: 2px 0;
+font-weight: 500;
+}
+
+.estado-dropdown option[value="Entregado"] {
+background-color: #007bff !important;
+color: white !important;
+}
+.estado-dropdown option[value="En Ejecución"] {
+background-color: #28a745 !important;
+color: white !important;
+}
+.estado-dropdown option[value="No iniciado"] {
+background-color: #343a40 !important;
+color: white !important;
+}
+.estado-dropdown option[value="Anulada"] {
+background-color: #8b4513 !important;
+color: white !important;
+}
+
+.estado-dropdown:focus,
+.estado-dropdown:active,
+.estado-dropdown:hover {
+outline: none !important;
+}
+
+/* === Ajustes clave para tabla moderna con redimensionamiento === */
+#tablaOrdenes {
+table-layout: fixed !important;
+width: 100% !important;
+min-width: 3000px;
+border-collapse: collapse;
+}
+
+#tablaOrdenes thead th,
+#tablaOrdenes tbody td {
+min-width: 120px !important;
+width: var(--col-width, 150px) !important;
+max-width: none !important;
+transition: width 0.2s ease;
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
+}
+
+/* Fila moderna */
+#tablaOrdenes tbody .table-row {
+border-bottom: 2px solid #000000 !important;
+padding: 12px 8px !important;
+transition: background-color 0.3s ease, box-shadow 0.3s ease, border-radius 0.3s ease, transform 0.3s ease !important;
+position: relative;
+border-radius: 0 !important;
+}
+
+#tablaOrdenes tbody .table-row .table-cell {
+border-radius: 0 !important;
+}
+
+#tablaOrdenes tbody .table-row:hover {
+background-color: #f8f9fa !important;
+box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+border-radius: 12px !important;
+margin: 0 4px !important;
+transform: translateY(-1px) !important;
+z-index: 1 !important;
+}
+
+#tablaOrdenes tbody .table-row:hover .table-cell {
+border-radius: 0 !important;
+}
+
+/* === Formato condicional por estado / días === */
+#tablaOrdenes tbody .table-row.row-delivered {
+background-color: #95ceff !important;
+color: #212529 !important;
+}
+#tablaOrdenes tbody .table-row.row-delivered:hover {
+background-color: #a3d4ff !important;
+}
+#tablaOrdenes tbody .table-row.row-warning {
+background-color: #fff3cd !important;
+color: #212529 !important;
+}
+#tablaOrdenes tbody .table-row.row-warning:hover {
+background-color: #ffeaa7 !important;
+}
+#tablaOrdenes tbody .table-row.row-danger-light {
+background-color: #f8d7da !important;
+color: #212529 !important;
+}
+#tablaOrdenes tbody .table-row.row-danger-light:hover {
+background-color: #f1aeb5 !important;
+}
+/* === Filas oscuras: texto claro === */
+#tablaOrdenes tbody .table-row.row-secondary {
+background-color: #343a40 !important;
+color: #f8f9fa !important;
+}
+#tablaOrdenes tbody .table-row.row-secondary:hover {
+background-color: #495057 !important;
+}
+#tablaOrdenes tbody .table-row.row-anulada {
+background-color: #c55601d7 !important;
+color: #f8f9fa !important;
+}
+#tablaOrdenes tbody .table-row.row-anulada:hover {
+background-color: #a0522d !important;
+}
+
+/* Color de texto general */
+.cell-text {
+color: #000;
+
+}
+
+/* Color blanco solo para filas sin colores condicionales */
+#tablaOrdenes tbody .table-row:not(.row-delivered):not(.row-warning):not(.row-danger-light):not(.row-secondary):not(.row-anulada) .cell-text {
+color: #fff;
+}
+
+/* Colores de texto adaptativos en filas oscuras */
+#tablaOrdenes tbody .table-row.row-secondary .cell-text,
+#tablaOrdenes tbody .table-row.row-anulada .cell-text {
+color: #f8f9fa !important;
+}
+
+/* Hover: mantiene contraste */
+#tablaOrdenes tbody .table-row:hover .cell-text,
+#tablaOrdenes tbody .table-row.row-delivered:hover .cell-text,
+#tablaOrdenes tbody .table-row.row-warning:hover .cell-text,
+#tablaOrdenes tbody .table-row.row-danger-light:hover .cell-text {
+color: #212529 !important;
+}
+
+#tablaOrdenes tbody .table-row.row-secondary:hover .cell-text,
+#tablaOrdenes tbody .table-row.row-anulada:hover .cell-text {
+color: #ffffff !important;
+}
+
+/* === Modal oscuro === */
+#cellModal.cell-modal {
+background-color: rgba(0, 0, 0, 0.8);
+color: white;
+}
+
+#cellModal .cell-modal-content {
+background-color: #333;
+color: white;
+border-radius: 8px;
+max-width: 700px;
+width: 90%;
+margin: 0 auto;
+}
+
+#cellModal .cell-modal-header {
+background-color: #444;
+color: white;
+border-bottom: 1px solid #555;
+padding: 15px;
+border-radius: 8px 8px 0 0;
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+
+#cellModal .cell-modal-body {
+padding: 15px;
+background-color: #333;
+}
+
+#cellModal .cell-edit-input {
+background-color: #444;
+color: white;
+border: 1px solid #666;
+border-radius: 4px;
+font-family: inherit;
+font-size: 14px;
+width: 100%;
+text-align: left;
+resize: vertical;
+min-height: 200px;
+white-space: pre-wrap;
+word-wrap: break-word;
+}
+
+#cellModal .cell-edit-input:focus {
+outline: none;
+border-color: #888;
+box-shadow: 0 0 5px rgba(136, 136, 136, 0.5);
+}
+
+#cellModal .cell-modal-footer {
+background-color: #444;
+border-top: 1px solid #555;
+padding: 15px;
+border-radius: 0 0 8px 8px;
+display: flex;
+justify-content: flex-end;
+gap: 10px;
+}
+
+#cellModal .cell-modal-footer .btn {
+border: none;
+padding: 8px 16px;
+border-radius: 4px;
+cursor: pointer;
+font-size: 14px;
+color: white;
+}
+
+#cellModal .cell-modal-footer .btn-primary {
+background-color: #007bff;
+}
+
+#cellModal .cell-modal-footer .btn-secondary {
+background-color: #6c757d;
+}
+
+#modalOverlay {
+background-color: rgba(0, 0, 0, 0.8);
+}
+
+/* === Header layout === */
+.table-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 20px;
+padding: 0 10px;
+flex-wrap: wrap;
+}
+
+.search-container {
+flex: 1;
+max-width: 400px;
+margin: 0 10px;
+min-width: 200px;
+}
+
+.table-actions {
+display: flex;
+gap: 10px;
+align-items: center;
+flex-shrink: 0;
+}
+
+.table-actions button {
+margin: 0;
+font-size: 12px;
+white-space: nowrap;
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+.table-header {
+flex-direction: column;
+gap: 10px;
+align-items: stretch;
+}
+
+
+.search-container {
+    max-width: none;
+    margin: 0;
+    order: 3;
+}
+
+.table-actions {
+    order: 4;
+    justify-content: center;
+}
+
+
+}
+
+/* === Redimensionamiento de columnas === */
+.column-resizer {
+position: absolute;
+right: 0;
+top: 0;
+bottom: 0;
+width: 8px;
+cursor: col-resize !important;
+background-color: transparent;
+z-index: 100;
+opacity: 0;
+transition: opacity 0.2s ease, background-color 0.2s ease;
+border-right: 2px solid transparent;
+}
+
+.table-header-cell:hover .column-resizer {
+opacity: 1;
+background-color: rgba(0, 123, 255, 0.2);
+}
+
+.column-resizer:hover {
+background-color: rgba(0, 123, 255, 0.4) !important;
+opacity: 1 !important;
+border-right-color: rgba(0, 123, 255, 0.6);
+}
+
+.column-resizer.dragging {
+background-color: rgba(0, 123, 255, 0.8) !important;
+opacity: 1 !important;
+border-right-color: rgba(0, 123, 255, 1);
+}
+
+/* === Header de columnas con espacio para el resizer === */
+.table-header-cell {
+position: relative !important;
+padding-right: 10px !important;
+min-width: 50px !important;
+width: auto !important;
+}
+
+.header-content {
+padding-right: 8px;
+position: relative;
+z-index: 1;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+}
