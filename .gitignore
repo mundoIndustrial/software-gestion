@@ -1,0 +1,51 @@
+# --- Archivos de entorno ---
+.env
+.env.*
+!.env.example
+
+
+# --- Archivos del sistema ---
+.DS_Store
+Thumbs.db
+
+
+# --- Logs y cachés ---
+*.log
+storage/logs/*
+storage/framework/*
+storage/debugbar/*
+
+
+# --- Dependencias ---
+/node_modules
+/vendor
+
+
+# --- Builds ---
+/public/build
+/public/hot
+/public/storage
+
+
+# --- IDEs y editores ---
+/.vscode
+/.idea
+/.fleet
+/.zed
+
+
+# --- PHP y testing ---
+.phpactor.json
+.phpunit.result.cache
+/.phpunit.cache
+
+
+# --- Homestead / Vagrant ---
+Homestead.json
+Homestead.yaml
+
+
+# --- Otros ---
+auth.json
+/storage/*.key
+/storage/pail
