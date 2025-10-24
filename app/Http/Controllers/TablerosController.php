@@ -211,4 +211,30 @@ class TablerosController extends Controller
             ], 500);
         }
     }
+
+    public function destroy($id)
+    {
+        $request = request();
+        $section = $request->query('section');
+
+        $model = match($section) {
+            'produccion' => RegistroPisoProduccion::class,
+            'polos' => RegistroPisoPolo::class,
+        };
+
+        try {
+            $registro = $model::findOrFail($id);
+            $registro->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Registro eliminado correctamente.',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar el registro: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

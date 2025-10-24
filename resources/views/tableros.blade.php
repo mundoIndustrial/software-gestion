@@ -53,6 +53,7 @@
                                 @foreach($columns as $column)
                                     <th class="table-header-cell" data-column="{{ $column }}">{{ ucfirst(str_replace('_', ' ', $column)) }}</th>
                                 @endforeach
+                                <th class="table-header-cell">Acciones</th>
                             </tr>
                         </thead>
                         <tbody class="table-body">
@@ -73,6 +74,11 @@
                                     @endphp
                                     <td class="table-cell editable-cell {{ $eficienciaClass }}" data-column="{{ $column }}" data-value="{{ $value }}" title="Doble clic para editar">{{ $displayValue }}</td>
                                 @endforeach
+                                <td class="table-cell">
+                                    <button class="delete-btn" data-id="{{ $registro->id }}" data-section="produccion" title="Eliminar registro">
+                                        ×
+                                    </button>
+                                </td>
                             </tr>
                             @endforeach
                         </tbody>
@@ -106,6 +112,7 @@
                                 @foreach($columnsPolos as $column)
                                     <th class="table-header-cell" data-column="{{ $column }}">{{ ucfirst(str_replace('_', ' ', $column)) }}</th>
                                 @endforeach
+                                <th class="table-header-cell">Acciones</th>
                             </tr>
                         </thead>
                         <tbody class="table-body">
@@ -126,6 +133,11 @@
                                     @endphp
                                     <td class="table-cell editable-cell {{ $eficienciaClass }}" data-column="{{ $column }}" data-value="{{ $value }}" title="Doble clic para editar">{{ $displayValue }}</td>
                                 @endforeach
+                                <td class="table-cell">
+                                    <button class="delete-btn" data-id="{{ $registro->id }}" data-section="polos" title="Eliminar registro">
+                                        ×
+                                    </button>
+                                </td>
                             </tr>
                             @endforeach
                         </tbody>
@@ -194,6 +206,8 @@ document.addEventListener('DOMContentLoaded', function() {
             tr.className = 'table-row';
             tr.setAttribute('data-id', registro.id);
 
+
+
             columns.forEach(column => {
                 const td = document.createElement('td');
                 td.className = 'table-cell editable-cell';
@@ -222,6 +236,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 tr.appendChild(td);
             });
+
+            // Agregar celda del botón de eliminar al final
+            const deleteTd = document.createElement('td');
+            deleteTd.className = 'table-cell';
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.setAttribute('data-id', registro.id);
+            deleteBtn.setAttribute('data-section', section);
+            deleteBtn.title = 'Eliminar registro';
+            deleteBtn.textContent = '×';
+            deleteTd.appendChild(deleteBtn);
+            tr.appendChild(deleteTd);
 
             // Agregar al principio de la tabla
             tbody.insertBefore(tr, tbody.firstChild);
@@ -392,6 +418,45 @@ document.addEventListener('DOMContentLoaded', function() {
         if (eficiencia >= 1.0) return 'eficiencia-blue';
         return '';
     }
+
+    // Función para manejar eliminación de registros
+    function deleteRegistro(id, section) {
+        if (confirm('¿Estás seguro de que quieres eliminar este registro?')) {
+            fetch(`/tableros/${id}?section=${section}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Eliminar la fila de la tabla
+                    const row = document.querySelector(`tr[data-id="${id}"]`);
+                    if (row) {
+                        row.remove();
+                    }
+                    alert('Registro eliminado correctamente.');
+                } else {
+                    alert('Error al eliminar: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al eliminar el registro');
+            });
+        }
+    }
+
+    // Agregar event listeners a los botones de eliminar
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('delete-btn')) {
+            e.preventDefault();
+            const id = e.target.dataset.id;
+            const section = e.target.dataset.section;
+            deleteRegistro(id, section);
+        }
+    });
 });
 </script>
 @endsection
