@@ -38,13 +38,19 @@
     </div>
 
     <div class="tab-content">
-        <div x-show="activeTab === 'produccion'" class="chart-placeholder">
-            <h4>📊 Tablero de Piso Producción</h4>
-            <p>Gráfica de producción general próximamente</p>
+        <div x-show="activeTab === 'produccion'">
+            <!-- Date selector and action buttons above the seguimiento component -->
+            <div class="controls-section">
+                @include('components.date-selector')
+                @include('components.action-buttons')
+            </div>
 
-            @include('components.action-buttons')
+            <!-- Seguimiento módulos (visible by default) -->
+            <div x-show="!showRecords">
+                @include('components.seguimiento-modulos', ['section' => 'produccion'])
+            </div>
 
-            <!-- Tabla de registros -->
+            <!-- Tabla de registros (hidden by default) -->
             <div x-show="showRecords" class="records-table-container">
                 <div class="table-scroll-container">
                     <table class="modern-table" data-section="produccion">
@@ -97,13 +103,19 @@
             </div>
         </div>
 
-        <div x-show="activeTab === 'polos'" class="chart-placeholder">
-            <h4>👕 Tablero Piso Polos</h4>
-            <p>Gráfica de métricas de polos próximamente</p>
+        <div x-show="activeTab === 'polos'">
+            <!-- Date selector and action buttons above the seguimiento component -->
+            <div class="controls-section">
+                @include('components.date-selector')
+                @include('components.action-buttons')
+            </div>
 
-            @include('components.action-buttons')
+            <!-- Seguimiento módulos (visible by default) -->
+            <div x-show="!showRecords">
+                @include('components.seguimiento-modulos', ['section' => 'polos'])
+            </div>
 
-            <!-- Tabla de registros -->
+            <!-- Tabla de registros (hidden by default) -->
             <div x-show="showRecords" class="records-table-container">
                 <div class="table-scroll-container">
                     <table class="modern-table" data-section="polos">
@@ -156,11 +168,76 @@
             </div>
         </div>
 
-        <div x-show="activeTab === 'corte'" class="chart-placeholder">
-            <h4>✂️ Tablero Piso Corte</h4>
-            <p>Gráfica de indicadores de corte próximamente</p>
+        <div x-show="activeTab === 'corte'">
+            <!-- Date selector and action buttons above the seguimiento component -->
+            <div class="controls-section">
+                @include('components.date-selector')
+                @include('components.action-buttons')
+            </div>
 
-            @include('components.action-buttons')
+            <!-- Seguimiento módulos (visible by default) -->
+            <div x-show="!showRecords">
+                @include('components.seguimiento-modulos', ['section' => 'corte'])
+            </div>
+
+            <!-- Tabla de registros (hidden by default) -->
+            <div x-show="showRecords" class="records-table-container">
+                <div class="table-scroll-container">
+                    <table class="modern-table" data-section="corte">
+                        <thead class="table-head">
+                            <tr>
+                                @foreach($columnsCorte ?? [] as $column)
+                                    <th class="table-header-cell" data-column="{{ $column }}">{{ ucfirst(str_replace('_', ' ', $column)) }}</th>
+                                @endforeach
+                                <th class="table-header-cell">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody class="table-body">
+                            @foreach($registrosCorte ?? [] as $registro)
+                            <tr class="table-row" data-id="{{ $registro->id }}">
+                                @foreach($columnsCorte ?? [] as $column)
+                                    @php
+                                        $value = $registro->$column;
+                                        $displayValue = $value;
+                                        if ($column === 'fecha' && $value) {
+                                            $displayValue = $value->format('d/m/Y');
+                                        } elseif ($column === 'hora' && $value) {
+                                            $displayValue = $value->format('H:i');
+                                        } elseif ($column === 'eficiencia' && $value) {
+                                            $displayValue = $value . '%';
+                                        }
+                                        $eficienciaClass = ($column === 'eficiencia' && $value !== null) ? getEficienciaClass($value) : '';
+                                    @endphp
+                                    <td class="table-cell editable-cell {{ $eficienciaClass }}" data-column="{{ $column }}" data-value="{{ $value }}" title="Doble clic para editar">{{ $displayValue }}</td>
+                                @endforeach
+                                <td class="table-cell">
+                                    <button class="delete-btn" data-id="{{ $registro->id }}" data-section="corte" title="Eliminar registro">
+                                        ×
+                                    </button>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginación -->
+                <div class="table-pagination">
+                    <div class="pagination-info">
+                        @php
+                            $corteCollection = $registrosCorte ?? collect();
+                            $total = method_exists($corteCollection, 'total') ? $corteCollection->total() : $corteCollection->count();
+                            $firstItem = method_exists($corteCollection, 'firstItem') ? $corteCollection->firstItem() : 1;
+                            $lastItem = method_exists($corteCollection, 'lastItem') ? $corteCollection->lastItem() : $total;
+                        @endphp
+                        <span>Mostrando {{ $firstItem }}-{{ $lastItem }} de {{ $total }} registros</span>
+                    </div>
+                    <div class="pagination-controls">
+                        @if(method_exists($corteCollection, 'appends'))
+                            {{ $corteCollection->appends(request()->query())->links() }}
+                        @endif
+                    </div>
+            </div>
         </div>
     </div>
 </div>
