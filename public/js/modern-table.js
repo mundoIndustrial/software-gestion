@@ -645,29 +645,71 @@ class ModernTable {
     }
 
     updateTableWithData(orders, totalDiasCalculados) {
-        this.virtual.allData = orders;
-        this.virtual.totalDiasCalculados = totalDiasCalculados || {};
-        this.virtual.totalRows = orders.length;
-        this.virtual.startIndex = this.virtual.endIndex = 0;
+    this.virtual.allData = orders;
+    this.virtual.totalDiasCalculados = totalDiasCalculados || {};
+    this.virtual.totalRows = orders.length;
+    this.virtual.startIndex = this.virtual.endIndex = 0;
 
-        if (this.virtual.enabled) {
-            this.renderVirtualRows();
-        } else {
-            const tbody = document.querySelector('#tablaOrdenes tbody');
-            tbody.innerHTML = '';
-            orders.forEach(orden => {
-                const row = document.createElement('tr');
-                row.className = 'table-row';
-                row.dataset.orderId = orden.id;
-                Object.entries(orden).forEach(([key, val]) => {
-                    row.appendChild(this.createCellElement(key, val, orden));
-                });
-                tbody.appendChild(row);
-            });
-            this.setupCellTextWrapping();
-            this.initializeStatusDropdowns();
-        }
+    const tbody = document.querySelector('#tablaOrdenes tbody');
+    tbody.innerHTML = '';
+    
+    if (orders.length === 0) {
+        tbody.innerHTML = `
+            <tr class="table-row">
+                <td colspan="51" class="no-results" style="text-align: center; padding: 20px; color: #6c757d;">
+                    No hay resultados que coincidan con los filtros aplicados.
+                </td>
+            </tr>
+        `;
+        return;
     }
+
+    orders.forEach(orden => {
+        const row = document.createElement('tr');
+        row.className = 'table-row';
+        row.dataset.orderId = orden.pedido || orden.id;
+
+        // PRIMERO: Crear la columna de acciones
+        const accionesTd = document.createElement('td');
+        accionesTd.className = 'table-cell acciones-column';
+        const accionesDiv = document.createElement('div');
+        accionesDiv.className = 'cell-content';
+        accionesDiv.innerHTML = `
+            <button class="action-btn delete-btn" onclick="deleteOrder(${orden.pedido || orden.id})" 
+                title="Eliminar orden"
+                style="background-color:#f84c4cff ; color: white; border: none; padding: 5px 10px; margin-right: 5px; border-radius: 4px; cursor: pointer;">
+                Borrar
+            </button>
+            <button class="action-btn detail-btn" onclick="viewDetail(${orden.pedido || orden.id})" 
+                title="Ver detalle"
+                style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                Ver
+            </button>
+        `;
+        accionesTd.appendChild(accionesDiv);
+        row.appendChild(accionesTd);
+
+        // DESPUÉS: Crear las demás columnas basándose en el thead
+        const theadRow = document.querySelector('#tablaOrdenes thead tr');
+        const ths = Array.from(theadRow.querySelectorAll('th'));
+        
+        // Saltar el primer th (acciones) e iterar sobre los demás
+        for (let i = 1; i < ths.length; i++) {
+            const th = ths[i];
+            const column = th.dataset.column;
+            
+            if (!column) continue;
+            
+            const val = orden[column];
+            row.appendChild(this.createCellElement(column, val, orden));
+        }
+
+        tbody.appendChild(row);
+    });
+    
+    this.setupCellTextWrapping();
+    this.initializeStatusDropdowns();
+}
 
     updatePaginationInfo(pagination) {
         const info = document.querySelector('.pagination-info span');
@@ -683,19 +725,53 @@ class ModernTable {
         window.history.pushState(null, '', `${window.location.pathname}?${queryString}`);
     }
 
-    appendRowsToTable(orders, totalDiasCalculados) {
-        const tbody = document.querySelector('#tablaOrdenes tbody');
-        orders.forEach(orden => {
-            const row = document.createElement('tr');
-            row.className = 'table-row';
-            Object.entries(orden).forEach(([key, val]) => {
-                row.appendChild(this.createCellElement(key, val, orden));
-            });
-            tbody.appendChild(row);
-        });
-        this.initializeStatusDropdowns();
-    }
+appendRowsToTable(orders, totalDiasCalculados) {
+    const tbody = document.querySelector('#tablaOrdenes tbody');
+    
+    orders.forEach(orden => {
+        const row = document.createElement('tr');
+        row.className = 'table-row';
+        row.dataset.orderId = orden.pedido || orden.id;
 
+        // PRIMERO: Crear la columna de acciones
+        const accionesTd = document.createElement('td');
+        accionesTd.className = 'table-cell acciones-column';
+        const accionesDiv = document.createElement('div');
+        accionesDiv.className = 'cell-content';
+        accionesDiv.innerHTML = `
+            <button class="action-btn delete-btn" onclick="deleteOrder(${orden.pedido || orden.id})" 
+                title="Eliminar orden"
+                style="background-color:#f84c4cff ; color: white; border: none; padding: 5px 10px; margin-right: 5px; border-radius: 4px; cursor: pointer;">
+                Borrar
+            </button>
+            <button class="action-btn detail-btn" onclick="viewDetail(${orden.pedido || orden.id})" 
+                title="Ver detalle"
+                style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                Ver
+            </button>
+        `;
+        accionesTd.appendChild(accionesDiv);
+        row.appendChild(accionesTd);
+
+        // DESPUÉS: Crear las demás columnas
+        const theadRow = document.querySelector('#tablaOrdenes thead tr');
+        const ths = Array.from(theadRow.querySelectorAll('th'));
+        
+        for (let i = 1; i < ths.length; i++) {
+            const th = ths[i];
+            const column = th.dataset.column;
+            
+            if (!column) continue;
+            
+            const val = orden[column];
+            row.appendChild(this.createCellElement(column, val, orden));
+        }
+
+        tbody.appendChild(row);
+    });
+    
+    this.initializeStatusDropdowns();
+}
     initializeStatusDropdowns() {
         document.querySelectorAll('.estado-dropdown').forEach(dropdown => {
             dropdown.addEventListener('change', e => this.updateOrderStatus(e.target));

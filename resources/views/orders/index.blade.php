@@ -80,20 +80,18 @@
                     <thead class="table-head">
                         @if($ordenes->isNotEmpty())
                             <tr>
+                                <th class="table-header-cell acciones-column">
+                                    <div class="header-content">
+                                        <span class="header-text">Acciones</span>
+                                    </div>
+                                </th>
                                 @foreach(array_keys($ordenes->first()->getAttributes()) as $index => $columna)
                                     @if($columna !== 'id' && $columna !== 'tiempo')
-                                        @if($columna === 'estado')
-                                            <th class="table-header-cell acciones-column">
-                                                <div class="header-content">
-                                                    <span class="header-text">Acciones</span>
-                                                </div>
-                                            </th>
-                                        @endif
-                                        <th class="table-header-cell" data-column="{{ $index }}">
+                                        <th class="table-header-cell" data-column="{{ $columna }}">
                                             <div class="header-content">
                                                 <span class="header-text">{{ ucfirst(str_replace('_', ' ', $columna)) }}</span>
                                                 @if($columna !== 'acciones')
-                                                    <button class="filter-btn" data-column="{{ $index }}" data-column-name="{{ $columna }}">
+                                                    <button class="filter-btn" data-column="{{ $columna }}" data-column-name="{{ $columna }}">
                                                         <i class="fas fa-filter"></i>
                                                     </button>
                                                 @endif
@@ -130,24 +128,22 @@
                                     }
                                 @endphp
                                 <tr class="table-row {{ $conditionalClass }}" data-order-id="{{ $orden->pedido }}">
+                                    <td class="table-cell acciones-column">
+                                        <div class="cell-content">
+                                            <button class="action-btn delete-btn" onclick="deleteOrder({{ $orden->pedido }})"
+                                                title="Eliminar orden"
+                                                style="background-color:#f84c4cff ; color: white; border: none; padding: 5px 10px; margin-right: 5px; border-radius: 4px; cursor: pointer;">
+                                                Borrar
+                                            </button>
+                                            <button class="action-btn detail-btn" onclick="viewDetail({{ $orden->pedido }})"
+                                                title="Ver detalle"
+                                                style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                                                Ver
+                                            </button>
+                                        </div>
+                                    </td>
                                     @foreach($orden->getAttributes() as $key => $valor)
                                         @if($key !== 'id' && $key !== 'tiempo')
-                                            @if($key === 'estado')
-                                                <td class="table-cell acciones-column">
-                                                    <div class="cell-content">
-                                                        <button class="action-btn delete-btn" onclick="deleteOrder({{ $orden->pedido }})"
-                                                            title="Eliminar orden"
-                                                            style="background-color:#f84c4cff ; color: white; border: none; padding: 5px 10px; margin-right: 5px; border-radius: 4px; cursor: pointer;">
-                                                            Borrar
-                                                        </button>
-                                                        <button class="action-btn detail-btn" onclick="viewDetail({{ $orden->pedido }})"
-                                                            title="Ver detalle"
-                                                            style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
-                                                            Ver
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            @endif
                                             <td class="table-cell" data-column="{{ $key }}">
                                                 <div class="cell-content" title="{{ $valor }}">
                                                     @if($key === 'estado')
@@ -266,149 +262,160 @@
 
 
 
-        // Función para recargar la tabla de pedidos
-        async function recargarTablaPedidos() {
-            try {
-                const response = await fetch(window.fetchUrl, {
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
-                if (!response.ok) {
-                    console.error('Error al cargar datos de pedidos:', response.statusText);
-                    return;
-                }
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    console.error('Respuesta no es JSON:', await response.text());
-                    return;
-                }
-                const data = await response.json();
-
-                // Reconstruir cuerpo de la tabla
-                const tbody = document.getElementById('tablaOrdenesBody');
-                if (!tbody) {
-                    console.error('No se encontró el elemento tbody para la tabla de pedidos');
-                    return;
-                }
-                tbody.innerHTML = '';
-
-                if (data.orders.length === 0) {
-                    tbody.innerHTML = `
-                    <tr class="table-row">
-                        <td colspan="51" class="no-results" style="text-align: center; padding: 20px; color: #6c757d;">
-                            No hay resultados que coincidan con los filtros aplicados.
-                        </td>
-                    </tr>
-                `;
-                } else {
-                    data.orders.forEach(orden => {
-                        const totalDias = data.totalDiasCalculados[orden.pedido] ?? 0;
-                        let conditionalClass = '';
-                        if (orden.estado === 'Entregado') {
-                            conditionalClass = 'row-delivered';
-                        } else if (totalDias > 14 && totalDias < 20) {
-                            conditionalClass = 'row-warning';
-                        } else if (totalDias === 20) {
-                            conditionalClass = 'row-danger-light';
-                        } else if (totalDias > 20) {
-                            conditionalClass = 'row-secondary';
-                        }
-
-                        const tr = document.createElement('tr');
-                        tr.className = `table-row ${conditionalClass}`;
-                        tr.dataset.orderId = orden.pedido;
-
-                        for (const [key, valor] of Object.entries(orden)) {
-                            if (key === 'id' || key === 'tiempo') continue;
-
-                            const td = document.createElement('td');
-                            td.className = 'table-cell';
-                            td.dataset.column = key;
-
-                            const div = document.createElement('div');
-                            div.className = 'cell-content';
-                            div.title = valor;
-
-                            if (key === 'estado') {
-                                // Add Acciones column before estado
-                                const accionesTd = document.createElement('td');
-                                accionesTd.className = 'table-cell acciones-column';
-                                accionesTd.style.display = document.querySelector('.acciones-column')?.style.display || 'none';
-                                const accionesDiv = document.createElement('div');
-                                accionesDiv.className = 'cell-content';
-                                accionesDiv.innerHTML = `
-                                <button class="action-btn delete-btn" onclick="deleteOrder(${orden.pedido})" title="Eliminar orden">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                                <button class="action-btn detail-btn" onclick="viewDetail(${orden.pedido})" title="Ver detalle">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                            `;
-                                accionesTd.appendChild(accionesDiv);
-                                tr.appendChild(accionesTd);
-
-                                const select = document.createElement('select');
-                                select.className = 'estado-dropdown';
-                                select.dataset.id = orden.pedido;
-                                select.dataset.value = valor;
-
-                                ['Entregado', 'En Ejecución', 'No iniciado', 'Anulada'].forEach(estado => {
-                                    const option = document.createElement('option');
-                                    option.value = estado;
-                                    option.textContent = estado;
-                                    if (estado === valor) option.selected = true;
-                                    select.appendChild(option);
-                                });
-                                div.appendChild(select);
-                            } else if (key === 'area') {
-                                const select = document.createElement('select');
-                                select.className = 'area-dropdown';
-                                select.dataset.id = orden.pedido;
-                                select.dataset.value = valor;
-
-                                data.areaOptions.forEach(areaOption => {
-                                    const option = document.createElement('option');
-                                    option.value = areaOption;
-                                    option.textContent = areaOption;
-                                    if (areaOption === valor) option.selected = true;
-                                    select.appendChild(option);
-                                });
-                                div.appendChild(select);
-                            } else {
-                                const span = document.createElement('span');
-                                span.className = 'cell-text';
-                                if (key === 'total_de_dias_') {
-                                    span.textContent = totalDias;
-                                } else {
-                                    span.textContent = valor;
-                                }
-                                div.appendChild(span);
-                            }
-
-                            td.appendChild(div);
-                            tr.appendChild(td);
-                        }
-
-                        tbody.appendChild(tr);
-                    });
-                }
-
-                // Actualizar paginación
-                const paginationContainer = document.getElementById('paginationContainer');
-                if (paginationContainer) {
-                    paginationContainer.innerHTML = data.pagination_html;
-                }
-
-                // Re-inicializar dropdowns y eventos
-                initializeStatusDropdowns();
-                initializeAreaDropdowns();
-
-            } catch (error) {
-                console.error('Error al recargar tabla de pedidos:', error);
+   // Función para recargar la tabla de pedidos
+async function recargarTablaPedidos() {
+    try {
+        const response = await fetch(window.fetchUrl, {
+            headers: {
+                'Accept': 'application/json'
             }
+        });
+        if (!response.ok) {
+            console.error('Error al cargar datos de pedidos:', response.statusText);
+            return;
+        }
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            console.error('Respuesta no es JSON:', await response.text());
+            return;
+        }
+        const data = await response.json();
+
+        // Reconstruir cuerpo de la tabla
+        const tbody = document.getElementById('tablaOrdenesBody');
+        if (!tbody) {
+            console.error('No se encontró el elemento tbody para la tabla de pedidos');
+            return;
+        }
+        tbody.innerHTML = '';
+
+        if (data.orders.length === 0) {
+            tbody.innerHTML = `
+                <tr class="table-row">
+                    <td colspan="51" class="no-results" style="text-align: center; padding: 20px; color: #6c757d;">
+                        No hay resultados que coincidan con los filtros aplicados.
+                    </td>
+                </tr>
+            `;
+        } else {
+            // Obtener las columnas del thead EXCLUYENDO la primera (acciones)
+            const theadRow = document.querySelector('#tablaOrdenes thead tr');
+            const ths = Array.from(theadRow.querySelectorAll('th'));
+            const dataColumns = ths.slice(1).map(th => th.dataset.column).filter(col => col); // Saltar la primera columna de acciones
+
+            data.orders.forEach(orden => {
+                const totalDias = data.totalDiasCalculados[orden.pedido] ?? 0;
+                let conditionalClass = '';
+                if (orden.estado === 'Entregado') {
+                    conditionalClass = 'row-delivered';
+                } else if (orden.estado === 'Anulada') {
+                    conditionalClass = 'row-anulada';
+                } else if (totalDias > 14 && totalDias < 20) {
+                    conditionalClass = 'row-warning';
+                } else if (totalDias === 20) {
+                    conditionalClass = 'row-danger-light';
+                } else if (totalDias > 20) {
+                    conditionalClass = 'row-secondary';
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = `table-row ${conditionalClass}`;
+                tr.dataset.orderId = orden.pedido;
+
+                // SIEMPRE crear primero la columna de acciones
+                const accionesTd = document.createElement('td');
+                accionesTd.className = 'table-cell acciones-column';
+                const accionesDiv = document.createElement('div');
+                accionesDiv.className = 'cell-content';
+                accionesDiv.innerHTML = `
+                    <button class="action-btn delete-btn" onclick="deleteOrder(${orden.pedido})" 
+                        title="Eliminar orden"
+                        style="background-color:#f84c4cff ; color: white; border: none; padding: 5px 10px; margin-right: 5px; border-radius: 4px; cursor: pointer;">
+                        Borrar
+                    </button>
+                    <button class="action-btn detail-btn" onclick="viewDetail(${orden.pedido})" 
+                        title="Ver detalle"
+                        style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                        Ver
+                    </button>
+                `;
+                accionesTd.appendChild(accionesDiv);
+                tr.appendChild(accionesTd);
+
+                // Ahora crear las demás columnas basándose SOLO en las columnas de datos
+                dataColumns.forEach(column => {
+                    const valor = orden[column] !== undefined && orden[column] !== null ? orden[column] : '';
+                    const td = document.createElement('td');
+                    td.className = 'table-cell';
+                    td.dataset.column = column;
+
+                    const div = document.createElement('div');
+                    div.className = 'cell-content';
+                    div.title = valor;
+
+                    if (column === 'estado') {
+                        const select = document.createElement('select');
+                        select.className = 'estado-dropdown';
+                        select.dataset.id = orden.pedido;
+                        select.dataset.value = valor;
+
+                        ['Entregado', 'En Ejecución', 'No iniciado', 'Anulada'].forEach(estado => {
+                            const option = document.createElement('option');
+                            option.value = estado;
+                            option.textContent = estado;
+                            if (estado === valor) option.selected = true;
+                            select.appendChild(option);
+                        });
+                        div.appendChild(select);
+                    } else if (column === 'area') {
+                        const select = document.createElement('select');
+                        select.className = 'area-dropdown';
+                        select.dataset.id = orden.pedido;
+                        select.dataset.value = valor;
+
+                        // Usar areaOptions del data o del window
+                        const areas = data.areaOptions || window.areaOptions || [];
+                        areas.forEach(areaOption => {
+                            const option = document.createElement('option');
+                            option.value = areaOption;
+                            option.textContent = areaOption;
+                            if (areaOption === valor) option.selected = true;
+                            select.appendChild(option);
+                        });
+                        div.appendChild(select);
+                    } else {
+                        const span = document.createElement('span');
+                        span.className = 'cell-text';
+                        if (column === 'total_de_dias_') {
+                            span.textContent = totalDias;
+                        } else {
+                            span.textContent = valor;
+                        }
+                        div.appendChild(span);
+                    }
+
+                    td.appendChild(div);
+                    tr.appendChild(td);
+                });
+
+                tbody.appendChild(tr);
+            });
         }
 
+        // Actualizar paginación
+        const paginationContainer = document.getElementById('paginationContainer');
+        if (paginationContainer) {
+            paginationContainer.innerHTML = data.pagination_html;
+        }
+
+        // Re-inicializar dropdowns y eventos
+        initializeStatusDropdowns();
+        initializeAreaDropdowns();
+
+    } catch (error) {
+        console.error('Error al recargar tabla de pedidos:', error);
+    }
+}
         function initializeStatusDropdowns() {
             document.querySelectorAll('.estado-dropdown').forEach(dropdown => {
                 // Establecer color inicial basado en el valor seleccionado
