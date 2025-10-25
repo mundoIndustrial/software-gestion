@@ -41,39 +41,57 @@
       </li>
 
       <li class="menu-item">
-        <a href="{{ route('registros.index') }}"
-           class="menu-link {{ request()->routeIs('registros.index') ? 'active' : '' }}"
-           aria-label="Ver registro de órdenes">
+        <button class="menu-link submenu-toggle {{ (request()->routeIs('registros.index') || request()->routeIs('bodega.index')) ? 'active' : '' }}"
+                aria-label="Ver órdenes">
           <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
-          <span class="menu-label">Ordenes-Pedidos</span>
-        </a>
+          <span class="menu-label">Ordenes</span>
+          <span class="material-symbols-rounded submenu-arrow" aria-hidden="true">expand_more</span>
+        </button>
+        <ul class="submenu">
+          <li class="submenu-item">
+            <a href="{{ route('registros.index') }}"
+               class="menu-link {{ request()->routeIs('registros.index') ? 'active' : '' }}"
+               aria-label="Ver registro de órdenes">
+              <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
+              <span class="menu-label">Pedidos</span>
+            </a>
+          </li>
+          <li class="submenu-item">
+            <a href="{{ route('bodega.index') }}"
+               class="menu-link {{ request()->routeIs('bodega.index') ? 'active' : '' }}"
+               aria-label="Ver órdenes de bodega">
+              <span class="material-symbols-rounded" aria-hidden="true">inventory</span>
+              <span class="menu-label">Bodega</span>
+            </a>
+          </li>
+        </ul>
       </li>
 
       <li class="menu-item">
-        <a href="{{ route('bodega.index') }}"
-           class="menu-link {{ request()->routeIs('bodega.index') ? 'active' : '' }}"
-           aria-label="Ver órdenes de bodega">
-          <span class="material-symbols-rounded" aria-hidden="true">inventory</span>
-          <span class="menu-label">Ordenes-Bodega</span>
-        </a>
-      </li>
-
-      <li class="menu-item">
-        <a href="{{ route('entrega.index', ['tipo' => 'pedido']) }}"
-           class="menu-link {{ request()->routeIs('entrega.index') && request()->route('tipo') === 'pedido' ? 'active' : '' }}"
-           aria-label="Ver entrega pedido">
+        <button class="menu-link submenu-toggle {{ (request()->routeIs('entrega.index') && in_array(request()->route('tipo'), ['pedido', 'bodega'])) ? 'active' : '' }}"
+                aria-label="Ver entregas">
           <span class="material-symbols-rounded" aria-hidden="true">local_shipping</span>
-          <span class="menu-label">Entrega-Pedidos</span>
-        </a>
-      </li>
-
-      <li class="menu-item">
-        <a href="{{ route('entrega.index', ['tipo' => 'bodega']) }}"
-           class="menu-link {{ request()->routeIs('entrega.index') && request()->route('tipo') === 'bodega' ? 'active' : '' }}"
-           aria-label="Ver entrega bodega">
-          <span class="material-symbols-rounded" aria-hidden="true">warehouse</span>
-          <span class="menu-label">Entrega Bodega</span>
-        </a>
+          <span class="menu-label">Entregas</span>
+          <span class="material-symbols-rounded submenu-arrow" aria-hidden="true">expand_more</span>
+        </button>
+        <ul class="submenu">
+          <li class="submenu-item">
+            <a href="{{ route('entrega.index', ['tipo' => 'pedido']) }}"
+               class="menu-link {{ request()->routeIs('entrega.index') && request()->route('tipo') === 'pedido' ? 'active' : '' }}"
+               aria-label="Ver entrega pedido">
+              <span class="material-symbols-rounded" aria-hidden="true">local_shipping</span>
+              <span class="menu-label">Entrega-Pedidos</span>
+            </a>
+          </li>
+          <li class="submenu-item">
+            <a href="{{ route('entrega.index', ['tipo' => 'bodega']) }}"
+               class="menu-link {{ request()->routeIs('entrega.index') && request()->route('tipo') === 'bodega' ? 'active' : '' }}"
+               aria-label="Ver entrega bodega">
+              <span class="material-symbols-rounded" aria-hidden="true">warehouse</span>
+              <span class="menu-label">Entrega Bodega</span>
+            </a>
+          </li>
+        </ul>
       </li>
 
       <li class="menu-item">
