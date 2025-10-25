@@ -80,7 +80,7 @@
                class="menu-link {{ request()->routeIs('entrega.index') && request()->route('tipo') === 'pedido' ? 'active' : '' }}"
                aria-label="Ver entrega pedido">
               <span class="material-symbols-rounded" aria-hidden="true">local_shipping</span>
-              <span class="menu-label">Entrega-Pedidos</span>
+              <span class="menu-label">Pedidos</span>
             </a>
           </li>
           <li class="submenu-item">
@@ -88,7 +88,7 @@
                class="menu-link {{ request()->routeIs('entrega.index') && request()->route('tipo') === 'bodega' ? 'active' : '' }}"
                aria-label="Ver entrega bodega">
               <span class="material-symbols-rounded" aria-hidden="true">warehouse</span>
-              <span class="menu-label">Entrega Bodega</span>
+              <span class="menu-label">Bodega</span>
             </a>
           </li>
         </ul>
