@@ -251,6 +251,55 @@ body {
   transform: translateX(3px) scale(0.98);
 }
 
+/* Submenu styles */
+.submenu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+  opacity: 0;
+  background: var(--color-bg-secondary);
+  border-radius: 0 0 8px 8px;
+}
+
+.submenu.open {
+  max-height: 200px; /* Adjust based on content */
+  opacity: 1;
+}
+
+.submenu-item {
+  margin: 0;
+}
+
+.submenu-item .menu-link {
+  padding-left: 40px; /* Indent submenu items */
+  font-size: 0.9rem;
+  min-height: 40px;
+}
+
+.submenu-item .menu-link:hover {
+  background: var(--color-hover-secondary);
+}
+
+.submenu-toggle {
+  justify-content: space-between;
+}
+
+.submenu-arrow {
+  transition: transform 0.3s ease;
+  font-size: 1.2rem;
+}
+
+.submenu-toggle.active .submenu-arrow {
+  transform: rotate(180deg);
+}
+
+.sidebar.collapsed .submenu {
+  display: none; /* Hide submenu when sidebar is collapsed */
+}
+
 /* Footer */
 .sidebar .sidebar-footer {
   padding: 20px 18px;

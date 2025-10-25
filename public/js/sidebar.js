@@ -23,3 +23,17 @@ searchForm.addEventListener("click", () => {
 
 // Expand sidebar by default on large screens
 if (window.innerWidth > 768) sidebar.classList.remove("collapsed");
+
+// Submenu toggle functionality
+const submenuToggles = document.querySelectorAll(".submenu-toggle");
+
+submenuToggles.forEach((toggle) => {
+  toggle.addEventListener("click", (e) => {
+    e.preventDefault();
+    const submenu = toggle.nextElementSibling;
+    if (submenu && submenu.classList.contains("submenu")) {
+      submenu.classList.toggle("open");
+      toggle.classList.toggle("active");
+    }
+  });
+});
