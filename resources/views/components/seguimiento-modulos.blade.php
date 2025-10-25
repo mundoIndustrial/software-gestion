@@ -5,7 +5,7 @@
     $model = match($section) {
         'produccion' => \App\Models\RegistroPisoProduccion::class,
         'polos' => \App\Models\RegistroPisoPolo::class,
-        'corte' => \App\Models\RegistroPisoProduccion::class, // Usar producción como fallback para corte
+        'corte' => \App\Models\RegistroPisoProduccion::class,
         default => \App\Models\RegistroPisoProduccion::class,
     };
 
@@ -18,33 +18,19 @@
 
     // Agrupar por hora
     $dataPorHora = [];
-    $totales = [
-        'prendas' => 0,
-        'modulos' => []
-    ];
+    $totales = ['modulos' => []];
 
-    // Asumir módulos disponibles (ajustar según datos reales)
     $modulosDisponibles = ['MÓDULO 1', 'MÓDULO 2', 'MÓDULO 3'];
 
     foreach ($registros as $registro) {
         $hora = 'HORA ' . str_pad($registro->hora, 2, '0', STR_PAD_LEFT);
         if (!isset($dataPorHora[$hora])) {
-            $dataPorHora[$hora] = [
-                'prendas' => 0,
-                'modulos' => []
-            ];
+            $dataPorHora[$hora] = ['modulos' => []];
         }
-
-        $dataPorHora[$hora]['prendas'] += $registro->cantidad ?? 0;
 
         $modulo = $registro->modulo;
         if (!isset($dataPorHora[$hora]['modulos'][$modulo])) {
-            $dataPorHora[$hora]['modulos'][$modulo] = [
-                'meta' => 0,
-                'eficiencia' => 0,
-                'prendas' => 0,
-                'count' => 0
-            ];
+            $dataPorHora[$hora]['modulos'][$modulo] = ['meta' => 0, 'eficiencia' => 0, 'prendas' => 0, 'count' => 0];
         }
 
         $dataPorHora[$hora]['modulos'][$modulo]['meta'] += $registro->meta ?? 0;
@@ -52,15 +38,8 @@
         $dataPorHora[$hora]['modulos'][$modulo]['prendas'] += $registro->cantidad ?? 0;
         $dataPorHora[$hora]['modulos'][$modulo]['count']++;
 
-        // Acumuladores para totales
-        $totales['prendas'] += $registro->cantidad ?? 0;
         if (!isset($totales['modulos'][$modulo])) {
-            $totales['modulos'][$modulo] = [
-                'meta' => 0,
-                'eficiencia' => 0,
-                'prendas' => 0,
-                'count' => 0
-            ];
+            $totales['modulos'][$modulo] = ['meta' => 0, 'eficiencia' => 0, 'prendas' => 0, 'count' => 0];
         }
         $totales['modulos'][$modulo]['meta'] += $registro->meta ?? 0;
         $totales['modulos'][$modulo]['eficiencia'] += $registro->eficiencia ?? 0;
@@ -82,192 +61,49 @@
             $modData['eficiencia'] = $modData['eficiencia'] / $modData['count'];
         }
     }
-
-
 @endphp
 
 <style>
-    .seguimiento-table-wrapper {
-        background: rgba(255, 255, 255, 0.03);
-        border-radius: 16px;
-        overflow: hidden;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-        margin: 20px 0;
-    }
+/* Estilos sin cambios, solo se mantiene la estructura de la tabla y módulos */
+.seguimiento-table-wrapper {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    margin: 20px 0;
+    width: 100%;        /* se ajusta al ancho del div padre */
+    max-width: 900px;   /* ancho máximo deseado */
+    height: 100%;       /* se ajusta al alto del div padre */
+    max-height: 600px;  /* alto máximo deseado */
+}
 
-    .seguimiento-table-container {
-        overflow-x: auto;
-        max-width: 100%;
-    }
 
-    .seguimiento-table {
-        width: 100%;
-        border-collapse: collapse;
-        min-width: 1200px;
-        table-layout: fixed;
-    }
+.seguimiento-table-container {
+    width: 100%;
+    height: 100%;
+    overflow-x: auto; /* permite scroll horizontal */
+    overflow-y: hidden; /* desactiva scroll vertical */
+}
 
-    .seguimiento-table th,
-    .seguimiento-table td {
-        box-sizing: border-box;
-    }
-
-    .seguimiento-th {
-        background: rgba(255, 255, 255, 0.05);
-        color: #e0e0e0;
-        padding: 16px 8px;
-        text-align: center;
-        font-weight: 600;
-        font-size: 13px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-        border-right: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .seguimiento-th:last-child {
-        border-right: none;
-    }
-
-    .seguimiento-th.module-header {
-        text-align: center;
-        font-size: 14px;
-        background: rgba(255, 255, 255, 0.08);
-    }
-
-    .seguimiento-th.module1 {
-        background: rgba(72, 187, 120, 0.15);
-        color: #68d391;
-    }
-
-    .seguimiento-th.module2 {
-        background: rgba(66, 153, 225, 0.15);
-        color: #63b3ed;
-    }
-
-    .seguimiento-th.module3 {
-        background: rgba(237, 137, 54, 0.15);
-        color: #f6ad55;
-    }
-
-    .seguimiento-td {
-        padding: 14px 8px;
-        color: #e0e0e0;
-        font-size: 14px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        border-right: 1px solid rgba(255, 255, 255, 0.03);
-        text-align: center;
-    }
-
-    .seguimiento-td:last-child {
-        border-right: none;
-    }
-
-    .seguimiento-tr:hover {
-        background: rgba(255, 255, 255, 0.05);
-    }
-
-    .seguimiento-hora-cell {
-        color: #fff;
-        font-weight: 600;
-        text-align: left;
-        padding-left: 16px;
-    }
-
-    .seguimiento-efficiency-cell {
-        font-weight: 600;
-        padding: 8px 6px;
-        border-radius: 6px;
-        text-align: center;
-        margin: 0 auto;
-        max-width: 80px;
-    }
-
-    .seguimiento-green { background: rgba(72, 187, 120, 0.2); color: #68d391; }
-    .seguimiento-blue { background: rgba(66, 153, 225, 0.2); color: #63b3ed; }
-    .seguimiento-red { background: rgba(252, 129, 129, 0.2); color: #fc8181; }
-    .seguimiento-orange { background: rgba(237, 137, 54, 0.2); color: #f6ad55; }
-    .seguimiento-gray { background: rgba(160, 174, 192, 0.2); color: #a0aec0; }
-
-    .seguimiento-total-row {
-        background: rgba(255, 255, 255, 0.08);
-        font-weight: 700;
-    }
-
-    .seguimiento-total-row .seguimiento-td {
-        color: #fff;
-        font-size: 15px;
-        padding: 18px 8px;
-    }
-
-    .seguimiento-legend {
-        display: flex;
-        justify-content: center;
-        gap: 30px;
-        margin-top: 30px;
-        padding: 20px;
-        background: rgba(255, 255, 255, 0.03);
-        border-radius: 12px;
-        flex-wrap: wrap;
-    }
-
-    .seguimiento-legend-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        color: #e0e0e0;
-        font-size: 13px;
-    }
-
-    .seguimiento-legend-color {
-        width: 20px;
-        height: 20px;
-        border-radius: 4px;
-    }
-
-    /* Column widths */
-    .seguimiento-table th:nth-child(1),
-    .seguimiento-table td:nth-child(1) {
-        width: 80px;
-        min-width: 80px;
-    }
-
-    .seguimiento-table th:nth-child(2),
-    .seguimiento-table td:nth-child(2) {
-        width: 100px;
-        min-width: 100px;
-    }
-
-    /* Module columns - equal width */
-    .seguimiento-table th:nth-child(n+3):not(:last-child),
-    .seguimiento-table td:nth-child(n+3):not(:last-child) {
-        width: calc((100% - 180px) / 9); /* 9 columns for 3 modules (meta + efficiency + prendas) */
-        min-width: 70px;
-    }
-
-    @media (max-width: 768px) {
-        .seguimiento-legend {
-            gap: 15px;
-        }
-
-        .seguimiento-table {
-            font-size: 12px;
-            min-width: 1000px;
-        }
-
-        .seguimiento-td, .seguimiento-th {
-            padding: 10px 4px;
-        }
-
-        .seguimiento-hora-cell {
-            padding-left: 8px;
-        }
-
-        .seguimiento-efficiency-cell {
-            padding: 6px 4px;
-            max-width: 60px;
-        }
-    }
+.seguimiento-table { width: 100%; border-collapse: collapse; min-width: 1200px; table-layout: fixed; }
+.seguimiento-table th, .seguimiento-table td { box-sizing: border-box; }
+.seguimiento-th { background: rgba(255, 255, 255, 0.05); color: #e0e0e0; padding: 16px 8px; text-align: center; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid rgba(255,255,255,0.1); border-right:1px solid rgba(255,255,255,0.05); }
+.seguimiento-th:last-child { border-right:none; }
+.seguimiento-td { padding: 14px 8px; color: #e0e0e0; font-size:14px; border-bottom:1px solid rgba(255,255,255,0.05); border-right:1px solid rgba(255,255,255,0.03); text-align:center; }
+.seguimiento-td:last-child { border-right:none; }
+.seguimiento-tr:hover { background: rgba(255,255,255,0.05); }
+.seguimiento-hora-cell { color:#fff; font-weight:600; text-align:left; padding-left:16px; }
+.seguimiento-efficiency-cell { font-weight:600; padding:8px 6px; border-radius:6px; text-align:center; margin:0 auto; max-width:80px; }
+.seguimiento-green { background: rgba(72,187,120,0.2); color:#68d391; }
+.seguimiento-blue { background: rgba(66,153,225,0.2); color:#63b3ed; }
+.seguimiento-red { background: rgba(252,129,129,0.2); color:#fc8181; }
+.seguimiento-orange { background: rgba(237,137,54,0.2); color:#f6ad55; }
+.seguimiento-gray { background: rgba(160,174,192,0.2); color:#a0aec0; }
+.seguimiento-total-row { background: rgba(255,255,255,0.08); font-weight:700; }
+.seguimiento-total-row .seguimiento-td { color:#fff; font-size:15px; padding:18px 8px; }
+.seguimiento-legend { display:flex; justify-content:center; gap:30px; margin-top:30px; padding:20px; background: rgba(255,255,255,0.03); border-radius:12px; flex-wrap:wrap; }
+.seguimiento-legend-item { display:flex; align-items:center; gap:10px; color:#e0e0e0; font-size:13px; }
+.seguimiento-legend-color { width:20px; height:20px; border-radius:4px; }
 </style>
 
 <div class="seguimiento-table-wrapper">
@@ -276,52 +112,59 @@
             <thead>
                 <tr>
                     <th rowspan="2" class="seguimiento-th">HORA</th>
-                    <th rowspan="2" class="seguimiento-th">Prendas</th>
                     @foreach($modulosDisponibles as $index => $modulo)
                         <th colspan="3" class="seguimiento-th seguimiento-module-header seguimiento-module{{ $index + 1 }}">{{ $modulo }}</th>
                     @endforeach
                 </tr>
                 <tr>
                     @foreach($modulosDisponibles as $index => $modulo)
+                        <th class="seguimiento-th seguimiento-module{{ $index + 1 }}">Prendas</th>
                         <th class="seguimiento-th seguimiento-module{{ $index + 1 }}">Meta</th>
                         <th class="seguimiento-th seguimiento-module{{ $index + 1 }}">Eficiencia</th>
-                        <th class="seguimiento-th seguimiento-module{{ $index + 1 }}">Prendas</th>
                     @endforeach
                 </tr>
             </thead>
+
             <tbody>
                 @for($hora = 1; $hora <= 8; $hora++)
                     @php
                         $horaKey = 'HORA ' . str_pad($hora, 2, '0', STR_PAD_LEFT);
-                        $horaData = $dataPorHora[$horaKey] ?? ['prendas' => 0, 'modulos' => []];
+                        $horaData = $dataPorHora[$horaKey] ?? ['modulos' => []];
                     @endphp
                     <tr class="seguimiento-tr">
                         <td class="seguimiento-td seguimiento-hora-cell">{{ $horaKey }}</td>
-                        <td class="seguimiento-td">{{ number_format($horaData['prendas'], 0) }}</td>
                         @foreach($modulosDisponibles as $modulo)
                             @php
-                                $modData = $horaData['modulos'][$modulo] ?? ['meta' => 0, 'eficiencia' => 0, 'prendas' => 0];
+                                $modData = $horaData['modulos'][$modulo] ?? ['meta'=>0,'eficiencia'=>0,'prendas'=>0];
                                 $eficiencia = $modData['eficiencia'];
-                                $eficienciaClass = $modData['prendas'] > 0 ? (($eficiencia >= 1.10) ? 'seguimiento-blue' : (($eficiencia >= 0.98) ? 'seguimiento-green' : (($eficiencia >= 0.70) ? 'seguimiento-orange' : 'seguimiento-red'))) : 'seguimiento-gray';
+                                $eficienciaClass = $modData['prendas'] > 0 
+                                    ? (($eficiencia >= 1.10) ? 'seguimiento-blue' 
+                                    : (($eficiencia >= 0.98) ? 'seguimiento-green' 
+                                    : (($eficiencia >= 0.70) ? 'seguimiento-orange' : 'seguimiento-red'))) 
+                                    : 'seguimiento-gray';
                             @endphp
+                            <td class="seguimiento-td">{{ number_format($modData['prendas'], 0) }}</td>
                             <td class="seguimiento-td">{{ number_format($modData['meta'], 2) }}</td>
                             <td class="seguimiento-td seguimiento-efficiency-cell {{ $eficienciaClass }}">{{ $modData['prendas'] > 0 ? number_format($modData['eficiencia'] * 100, 2) . '%' : '0.00%' }}</td>
-                            <td class="seguimiento-td">{{ number_format($modData['prendas'], 0) }}</td>
                         @endforeach
                     </tr>
                 @endfor
+
                 <tr class="seguimiento-total-row">
                     <td class="seguimiento-td seguimiento-hora-cell">Suma total</td>
-                    <td class="seguimiento-td">{{ number_format($totales['prendas'], 0) }}</td>
                     @foreach($modulosDisponibles as $modulo)
                         @php
-                            $modTotal = $totales['modulos'][$modulo] ?? ['meta' => 0, 'eficiencia' => 0, 'prendas' => 0];
+                            $modTotal = $totales['modulos'][$modulo] ?? ['meta'=>0,'eficiencia'=>0,'prendas'=>0];
                             $eficiencia = $modTotal['eficiencia'];
-                            $eficienciaClass = $modTotal['prendas'] > 0 ? (($eficiencia >= 1.10) ? 'seguimiento-blue' : (($eficiencia >= 0.98) ? 'seguimiento-green' : (($eficiencia >= 0.70) ? 'seguimiento-orange' : 'seguimiento-red'))) : 'seguimiento-gray';
+                            $eficienciaClass = $modTotal['prendas'] > 0 
+                                ? (($eficiencia >= 1.10) ? 'seguimiento-blue' 
+                                : (($eficiencia >= 0.98) ? 'seguimiento-green' 
+                                : (($eficiencia >= 0.70) ? 'seguimiento-orange' : 'seguimiento-red'))) 
+                                : 'seguimiento-gray';
                         @endphp
+                        <td class="seguimiento-td">{{ number_format($modTotal['prendas'], 0) }}</td>
                         <td class="seguimiento-td">{{ number_format($modTotal['meta'], 2) }}</td>
                         <td class="seguimiento-td seguimiento-efficiency-cell {{ $eficienciaClass }}">{{ $modTotal['prendas'] > 0 ? number_format($modTotal['eficiencia'] * 100, 2) . '%' : '0.00%' }}</td>
-                        <td class="seguimiento-td">{{ number_format($modTotal['prendas'], 0) }}</td>
                     @endforeach
                 </tr>
             </tbody>
