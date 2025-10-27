@@ -510,6 +510,11 @@ document.addEventListener('DOMContentLoaded', function() {
         // Mostrar modal de confirmación
         const modal = document.getElementById('deleteConfirmModal');
         if (modal) {
+            // Resetear el modal a su estado original
+            document.getElementById('deleteModalTitle').textContent = 'Confirmar Eliminación';
+            document.getElementById('deleteModalBody').innerHTML = '<p>¿Estás seguro de que quieres eliminar este registro?</p>';
+            document.getElementById('deleteModalFooter').style.display = 'flex';
+
             modal.style.display = 'flex';
             modal.style.opacity = '1';
             modal.style.visibility = 'visible';
@@ -538,8 +543,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (row) {
                     row.remove();
                 }
-                alert('Registro eliminado correctamente.');
-                closeDeleteModal();
+                // Mostrar mensaje de éxito en el modal
+                document.getElementById('deleteModalTitle').textContent = 'Eliminación Exitosa';
+                document.getElementById('deleteModalBody').innerHTML = '<div style="text-align: center; color: orange; display: flex; align-items: center; justify-content: center;"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg><span style="font-size: 14px; margin-left: 10px;">Registro eliminado correctamente.</span></div>';
+                document.getElementById('deleteModalFooter').style.display = 'none';
             } else {
                 alert('Error al eliminar: ' + data.message);
             }
