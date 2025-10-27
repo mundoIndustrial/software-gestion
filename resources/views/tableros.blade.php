@@ -72,7 +72,7 @@
                                         if ($column === 'fecha' && $value) {
                                             $displayValue = $value->format('d/m/Y');
                                         } elseif ($column === 'hora' && $value) {
-                                            $displayValue = $value->format('H:i');
+                                            $displayValue = $value;
                                         } elseif ($column === 'eficiencia' && $value) {
                                             $displayValue = $value . '%';
                                         }
@@ -137,7 +137,7 @@
                                         if ($column === 'fecha' && $value) {
                                             $displayValue = $value->format('d/m/Y');
                                         } elseif ($column === 'hora' && $value) {
-                                            $displayValue = $value->format('H:i');
+                                            $displayValue = $value;
                                         } elseif ($column === 'eficiencia' && $value) {
                                             $displayValue = $value . '%';
                                         }
@@ -202,7 +202,7 @@
                                         if ($column === 'fecha' && $value) {
                                             $displayValue = $value->format('d/m/Y');
                                         } elseif ($column === 'hora' && $value) {
-                                            $displayValue = $value->format('H:i');
+                                            $displayValue = $value;
                                         } elseif ($column === 'eficiencia' && $value) {
                                             $displayValue = $value . '%';
                                         }

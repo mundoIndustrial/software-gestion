@@ -20,45 +20,93 @@
     $dataPorHora = [];
     $totales = ['modulos' => []];
 
-    $modulosDisponibles = ['MÓDULO 1', 'MÓDULO 2', 'MÓDULO 3'];
+    // Obtener módulos únicos de los registros
+    $modulosDisponibles = $registros->pluck('modulo')->unique()->sort()->values()->toArray();
 
     foreach ($registros as $registro) {
-        $hora = 'HORA ' . str_pad($registro->hora, 2, '0', STR_PAD_LEFT);
+        // Normalizar hora a formato "HORA XX"
+        $horaNum = (int) preg_replace('/\D/', '', $registro->hora);
+        $hora = 'HORA ' . str_pad($horaNum, 2, '0', STR_PAD_LEFT);
         if (!isset($dataPorHora[$hora])) {
             $dataPorHora[$hora] = ['modulos' => []];
         }
 
         $modulo = $registro->modulo;
         if (!isset($dataPorHora[$hora]['modulos'][$modulo])) {
-            $dataPorHora[$hora]['modulos'][$modulo] = ['meta' => 0, 'eficiencia' => 0, 'prendas' => 0, 'count' => 0];
+            $dataPorHora[$hora]['modulos'][$modulo] = [
+                'prendas' => 0,
+                'tiempo_ciclo_sum' => 0,
+                'numero_operarios_sum' => 0,
+                'porcion_tiempo_sum' => 0,
+                'tiempo_parada_no_programada_sum' => 0,
+                'tiempo_para_programada_sum' => 0,
+                'count' => 0
+            ];
         }
 
-        $dataPorHora[$hora]['modulos'][$modulo]['meta'] += $registro->meta ?? 0;
-        $dataPorHora[$hora]['modulos'][$modulo]['eficiencia'] += $registro->eficiencia ?? 0;
         $dataPorHora[$hora]['modulos'][$modulo]['prendas'] += $registro->cantidad ?? 0;
+        $dataPorHora[$hora]['modulos'][$modulo]['tiempo_ciclo_sum'] += $registro->tiempo_ciclo ?? 0;
+        $dataPorHora[$hora]['modulos'][$modulo]['numero_operarios_sum'] += $registro->numero_operarios ?? 0;
+        $dataPorHora[$hora]['modulos'][$modulo]['porcion_tiempo_sum'] += $registro->porcion_tiempo ?? 0;
+        $dataPorHora[$hora]['modulos'][$modulo]['tiempo_parada_no_programada_sum'] += $registro->tiempo_parada_no_programada ?? 0;
+        $dataPorHora[$hora]['modulos'][$modulo]['tiempo_para_programada_sum'] += $registro->tiempo_para_programada ?? 0;
         $dataPorHora[$hora]['modulos'][$modulo]['count']++;
 
         if (!isset($totales['modulos'][$modulo])) {
-            $totales['modulos'][$modulo] = ['meta' => 0, 'eficiencia' => 0, 'prendas' => 0, 'count' => 0];
+            $totales['modulos'][$modulo] = [
+                'prendas' => 0,
+                'tiempo_ciclo_sum' => 0,
+                'numero_operarios_sum' => 0,
+                'porcion_tiempo_sum' => 0,
+                'tiempo_parada_no_programada_sum' => 0,
+                'tiempo_para_programada_sum' => 0,
+                'count' => 0
+            ];
         }
-        $totales['modulos'][$modulo]['meta'] += $registro->meta ?? 0;
-        $totales['modulos'][$modulo]['eficiencia'] += $registro->eficiencia ?? 0;
         $totales['modulos'][$modulo]['prendas'] += $registro->cantidad ?? 0;
+        $totales['modulos'][$modulo]['tiempo_ciclo_sum'] += $registro->tiempo_ciclo ?? 0;
+        $totales['modulos'][$modulo]['numero_operarios_sum'] += $registro->numero_operarios ?? 0;
+        $totales['modulos'][$modulo]['porcion_tiempo_sum'] += $registro->porcion_tiempo ?? 0;
+        $totales['modulos'][$modulo]['tiempo_parada_no_programada_sum'] += $registro->tiempo_parada_no_programada ?? 0;
+        $totales['modulos'][$modulo]['tiempo_para_programada_sum'] += $registro->tiempo_para_programada ?? 0;
         $totales['modulos'][$modulo]['count']++;
     }
 
-    // Calcular promedios para eficiencia
+    // Calcular meta y eficiencia por hora
     foreach ($dataPorHora as $hora => &$data) {
         foreach ($data['modulos'] as $modulo => &$modData) {
             if ($modData['count'] > 0) {
-                $modData['eficiencia'] = $modData['eficiencia'] / $modData['count'];
+                $avg_tiempo_ciclo = $modData['tiempo_ciclo_sum'] / $modData['count'];
+                $avg_numero_operarios = $modData['numero_operarios_sum'] / $modData['count'];
+                $avg_porcion_tiempo = $modData['porcion_tiempo_sum'] / $modData['count'];
+                $total_tiempo_parada_no_programada = $modData['tiempo_parada_no_programada_sum'];
+                $total_tiempo_para_programada = $modData['tiempo_para_programada_sum'];
+
+                $tiempo_disponible = (3600 * $avg_porcion_tiempo * $avg_numero_operarios) - $total_tiempo_parada_no_programada - $total_tiempo_para_programada;
+                $meta = $avg_tiempo_ciclo > 0 ? ($tiempo_disponible / $avg_tiempo_ciclo) * 0.9 : 0;
+                $eficiencia = $meta > 0 ? ($modData['prendas'] / $meta) : 0;
+
+                $modData['meta'] = $meta;
+                $modData['eficiencia'] = $eficiencia;
             }
         }
     }
 
+    // Calcular totales
     foreach ($totales['modulos'] as $modulo => &$modData) {
         if ($modData['count'] > 0) {
-            $modData['eficiencia'] = $modData['eficiencia'] / $modData['count'];
+            $avg_tiempo_ciclo = $modData['tiempo_ciclo_sum'] / $modData['count'];
+            $avg_numero_operarios = $modData['numero_operarios_sum'] / $modData['count'];
+            $avg_porcion_tiempo = $modData['porcion_tiempo_sum'] / $modData['count'];
+            $total_tiempo_parada_no_programada = $modData['tiempo_parada_no_programada_sum'];
+            $total_tiempo_para_programada = $modData['tiempo_para_programada_sum'];
+
+            $tiempo_disponible = (3600 * $avg_porcion_tiempo * $avg_numero_operarios) - $total_tiempo_parada_no_programada - $total_tiempo_para_programada;
+            $meta = $avg_tiempo_ciclo > 0 ? ($tiempo_disponible / $avg_tiempo_ciclo) * 0.9 : 0;
+            $eficiencia = $meta > 0 ? ($modData['prendas'] / $meta) : 0;
+
+            $modData['meta'] = $meta;
+            $modData['eficiencia'] = $eficiencia;
         }
     }
 @endphp
@@ -126,9 +174,13 @@
             </thead>
 
             <tbody>
-                @for($hora = 1; $hora <= 8; $hora++)
+                @php
+                    $horasOrdenadas = array_keys($dataPorHora);
+                    sort($horasOrdenadas);
+                    $horasOrdenadas = array_slice($horasOrdenadas, 0, 12); // Limitar a 12 horas máximo
+                @endphp
+                @foreach($horasOrdenadas as $horaKey)
                     @php
-                        $horaKey = 'HORA ' . str_pad($hora, 2, '0', STR_PAD_LEFT);
                         $horaData = $dataPorHora[$horaKey] ?? ['modulos' => []];
                     @endphp
                     <tr class="seguimiento-tr">
@@ -137,10 +189,10 @@
                             @php
                                 $modData = $horaData['modulos'][$modulo] ?? ['meta'=>0,'eficiencia'=>0,'prendas'=>0];
                                 $eficiencia = $modData['eficiencia'];
-                                $eficienciaClass = $modData['prendas'] > 0 
-                                    ? (($eficiencia >= 1.10) ? 'seguimiento-blue' 
-                                    : (($eficiencia >= 0.98) ? 'seguimiento-green' 
-                                    : (($eficiencia >= 0.70) ? 'seguimiento-orange' : 'seguimiento-red'))) 
+                                $eficienciaClass = $modData['prendas'] > 0
+                                    ? (($eficiencia >= 1.10) ? 'seguimiento-blue'
+                                    : (($eficiencia >= 0.98) ? 'seguimiento-green'
+                                    : (($eficiencia >= 0.70) ? 'seguimiento-orange' : 'seguimiento-red')))
                                     : 'seguimiento-gray';
                             @endphp
                             <td class="seguimiento-td">{{ number_format($modData['prendas'], 0) }}</td>
@@ -148,7 +200,7 @@
                             <td class="seguimiento-td seguimiento-efficiency-cell {{ $eficienciaClass }}">{{ $modData['prendas'] > 0 ? number_format($modData['eficiencia'] * 100, 2) . '%' : '0.00%' }}</td>
                         @endforeach
                     </tr>
-                @endfor
+                @endforeach
 
                 <tr class="seguimiento-total-row">
                     <td class="seguimiento-td seguimiento-hora-cell">Suma total</td>

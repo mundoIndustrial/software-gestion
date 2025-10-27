@@ -548,7 +548,7 @@
                     fecha: form.get("fecha"),
                     modulo: form.get("modulo"),
                     orden_produccion: form.get("orden_produccion"),
-                    hora: String(horaNum).padStart(2, '0') + ":00:00",
+                    hora: "HORA " + String(horaNum).padStart(2, '0'),
                     tiempo_ciclo: parseFloat(form.get("tiempo_ciclo")),
                     porcion_tiempo: parseFloat(form.get("porcion_tiempo")),
                     cantidad: form.get("cantidad") ? parseInt(form.get("cantidad")) : null,

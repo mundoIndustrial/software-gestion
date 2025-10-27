@@ -28,7 +28,6 @@ class RegistroPisoProduccion extends Model
 
     protected $casts = [
         'fecha' => 'date',
-        'hora' => 'datetime:H:i',
         'tiempo_ciclo' => 'decimal:2',
         'porcion_tiempo' => 'decimal:2',
         'tiempo_parada_no_programada' => 'decimal:2',
