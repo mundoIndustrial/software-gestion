@@ -45,7 +45,7 @@
 
             <!-- Seguimiento módulos (visible by default) -->
             <div x-show="!showRecords">
-                @include('components.seguimiento-modulos', ['section' => 'produccion', 'registros' => $registros])
+                @include('components.seguimiento-modulos', ['section' => 'produccion', 'seguimiento' => $seguimientoProduccion])
             </div>
 
             <!-- Tabla de registros (hidden by default) -->
@@ -108,7 +108,7 @@
 
             <!-- Seguimiento módulos (visible by default) -->
             <div x-show="!showRecords">
-                @include('components.seguimiento-modulos', ['section' => 'polos', 'registros' => $registrosPolos])
+                @include('components.seguimiento-modulos', ['section' => 'polos', 'seguimiento' => $seguimientoPolos])
             </div>
 
             <!-- Tabla de registros (hidden by default) -->
@@ -171,7 +171,7 @@
 
             <!-- Seguimiento módulos (visible by default) -->
             <div x-show="!showRecords">
-                @include('components.seguimiento-modulos', ['section' => 'corte', 'registros' => $registrosCorte])
+                @include('components.seguimiento-modulos', ['section' => 'corte', 'seguimiento' => $seguimientoCorte])
             </div>
 
             <!-- Tabla de registros (hidden by default) -->

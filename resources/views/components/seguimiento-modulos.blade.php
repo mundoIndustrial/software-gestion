@@ -1,76 +1,38 @@
-@props(['section' => 'produccion', 'registros' => collect()])
+@props(['section' => 'produccion', 'seguimiento' => null])
 
 @php
-    // Obtener módulos únicos de los registros y ordenarlos
-    $modulosDisponibles = $registros->pluck('modulo')->unique()->values()->toArray();
-    
-    // Normalizar los nombres de módulos (trim espacios, uppercase consistente)
-    $modulosDisponibles = array_map(function($mod) {
-        return strtoupper(trim($mod));
-    }, $modulosDisponibles);
-    
-    // Remover duplicados después de normalizar
-    $modulosDisponibles = array_unique($modulosDisponibles);
-    
-    // Ordenar los módulos
-    sort($modulosDisponibles);
-    
-    // Si no hay módulos dinámicos, usar los módulos por defecto
-    if (empty($modulosDisponibles)) {
-        $modulosDisponibles = ['MÓDULO 1', 'MÓDULO 2', 'MÓDULO 3'];
-    }
+    if ($seguimiento) {
+        $modulosDisponibles = $seguimiento['modulosDisponibles'];
+        $dataPorHora = $seguimiento['dataPorHora'];
+        $totales = $seguimiento['totales'];
+    } else {
+        // Fallback si no se pasa seguimiento (para compatibilidad)
+        $registros = collect();
+        // Obtener módulos únicos de los registros y ordenarlos
+        $modulosDisponibles = $registros->pluck('modulo')->unique()->values()->toArray();
 
-    // Log para debugging (opcional - puedes comentar después)
-    // dd(['modulos' => $modulosDisponibles, 'registros_count' => $registros->count()]);
+        // Normalizar los nombres de módulos (trim espacios, uppercase consistente)
+        $modulosDisponibles = array_map(function($mod) {
+            return strtoupper(trim($mod));
+        }, $modulosDisponibles);
 
-    // Inicializar estructuras de datos
-    $dataPorHora = [];
-    $totales = ['modulos' => []];
+        // Remover duplicados después de normalizar
+        $modulosDisponibles = array_unique($modulosDisponibles);
 
-    // INICIALIZAR todos los módulos en totales
-    foreach ($modulosDisponibles as $modulo) {
-        $totales['modulos'][$modulo] = [
-            'prendas' => 0,
-            'tiempo_ciclo_sum' => 0,
-            'numero_operarios_sum' => 0,
-            'porcion_tiempo_sum' => 0,
-            'tiempo_parada_no_programada_sum' => 0,
-            'tiempo_para_programada_sum' => 0,
-            'count' => 0,
-            'meta_sum' => 0
-        ];
-    }
+        // Ordenar los módulos
+        sort($modulosDisponibles);
 
-    // Procesar cada registro
-    foreach ($registros as $registro) {
-        // Normalizar el nombre del módulo del registro
-        $modulo = strtoupper(trim($registro->modulo));
-        
-        // Normalizar hora a formato "HORA XX"
-        $horaNum = (int) preg_replace('/\D/', '', $registro->hora);
-        $hora = 'HORA ' . str_pad($horaNum, 2, '0', STR_PAD_LEFT);
-        
-        // Inicializar hora si no existe
-        if (!isset($dataPorHora[$hora])) {
-            $dataPorHora[$hora] = ['modulos' => []];
-            // Pre-inicializar todos los módulos para esta hora
-            foreach ($modulosDisponibles as $mod) {
-                $dataPorHora[$hora]['modulos'][$mod] = [
-                    'prendas' => 0,
-                    'tiempo_ciclo_sum' => 0,
-                    'numero_operarios_sum' => 0,
-                    'porcion_tiempo_sum' => 0,
-                    'tiempo_parada_no_programada_sum' => 0,
-                    'tiempo_para_programada_sum' => 0,
-                    'count' => 0
-                ];
-            }
+        // Si no hay módulos dinámicos, usar los módulos por defecto
+        if (empty($modulosDisponibles)) {
+            $modulosDisponibles = ['MÓDULO 1', 'MÓDULO 2', 'MÓDULO 3'];
         }
 
-        // Verificar que el módulo exista en modulosDisponibles
-        if (!in_array($modulo, $modulosDisponibles)) {
-            // Si el módulo no existe, agregarlo dinámicamente
-            $modulosDisponibles[] = $modulo;
+        // Inicializar estructuras de datos
+        $dataPorHora = [];
+        $totales = ['modulos' => []];
+
+        // INICIALIZAR todos los módulos en totales
+        foreach ($modulosDisponibles as $modulo) {
             $totales['modulos'][$modulo] = [
                 'prendas' => 0,
                 'tiempo_ciclo_sum' => 0,
@@ -81,89 +43,132 @@
                 'count' => 0,
                 'meta_sum' => 0
             ];
-            
-            // Inicializar en todas las horas existentes
-            foreach ($dataPorHora as $h => &$hData) {
-                $hData['modulos'][$modulo] = [
+        }
+
+        // Procesar cada registro
+        foreach ($registros as $registro) {
+            // Normalizar el nombre del módulo del registro
+            $modulo = strtoupper(trim($registro->modulo));
+
+            // Normalizar hora a formato "HORA XX"
+            $horaNum = (int) preg_replace('/\D/', '', $registro->hora);
+            $hora = 'HORA ' . str_pad($horaNum, 2, '0', STR_PAD_LEFT);
+
+            // Inicializar hora si no existe
+            if (!isset($dataPorHora[$hora])) {
+                $dataPorHora[$hora] = ['modulos' => []];
+                // Pre-inicializar todos los módulos para esta hora
+                foreach ($modulosDisponibles as $mod) {
+                    $dataPorHora[$hora]['modulos'][$mod] = [
+                        'prendas' => 0,
+                        'tiempo_ciclo_sum' => 0,
+                        'numero_operarios_sum' => 0,
+                        'porcion_tiempo_sum' => 0,
+                        'tiempo_parada_no_programada_sum' => 0,
+                        'tiempo_para_programada_sum' => 0,
+                        'count' => 0
+                    ];
+                }
+            }
+
+            // Verificar que el módulo exista en modulosDisponibles
+            if (!in_array($modulo, $modulosDisponibles)) {
+                // Si el módulo no existe, agregarlo dinámicamente
+                $modulosDisponibles[] = $modulo;
+                $totales['modulos'][$modulo] = [
                     'prendas' => 0,
                     'tiempo_ciclo_sum' => 0,
                     'numero_operarios_sum' => 0,
                     'porcion_tiempo_sum' => 0,
                     'tiempo_parada_no_programada_sum' => 0,
                     'tiempo_para_programada_sum' => 0,
-                    'count' => 0
+                    'count' => 0,
+                    'meta_sum' => 0
                 ];
+
+                // Inicializar en todas las horas existentes
+                foreach ($dataPorHora as $h => &$hData) {
+                    $hData['modulos'][$modulo] = [
+                        'prendas' => 0,
+                        'tiempo_ciclo_sum' => 0,
+                        'numero_operarios_sum' => 0,
+                        'porcion_tiempo_sum' => 0,
+                        'tiempo_parada_no_programada_sum' => 0,
+                        'tiempo_para_programada_sum' => 0,
+                        'count' => 0
+                    ];
+                }
+            }
+
+            // Acumular datos por hora y módulo
+            $dataPorHora[$hora]['modulos'][$modulo]['prendas'] += floatval($registro->cantidad ?? 0);
+            $dataPorHora[$hora]['modulos'][$modulo]['tiempo_ciclo_sum'] += floatval($registro->tiempo_ciclo ?? 0);
+            $dataPorHora[$hora]['modulos'][$modulo]['numero_operarios_sum'] += floatval($registro->numero_operarios ?? 0);
+            $dataPorHora[$hora]['modulos'][$modulo]['porcion_tiempo_sum'] += floatval($registro->porcion_tiempo ?? 0);
+            $dataPorHora[$hora]['modulos'][$modulo]['tiempo_parada_no_programada_sum'] += floatval($registro->tiempo_parada_no_programada ?? 0);
+            $dataPorHora[$hora]['modulos'][$modulo]['tiempo_para_programada_sum'] += floatval($registro->tiempo_para_programada ?? 0);
+            $dataPorHora[$hora]['modulos'][$modulo]['count']++;
+
+            // Acumular totales generales
+            $totales['modulos'][$modulo]['prendas'] += floatval($registro->cantidad ?? 0);
+            $totales['modulos'][$modulo]['tiempo_ciclo_sum'] += floatval($registro->tiempo_ciclo ?? 0);
+            $totales['modulos'][$modulo]['numero_operarios_sum'] += floatval($registro->numero_operarios ?? 0);
+            $totales['modulos'][$modulo]['porcion_tiempo_sum'] += floatval($registro->porcion_tiempo ?? 0);
+            $totales['modulos'][$modulo]['tiempo_parada_no_programada_sum'] += floatval($registro->tiempo_parada_no_programada ?? 0);
+            $totales['modulos'][$modulo]['tiempo_para_programada_sum'] += floatval($registro->tiempo_para_programada ?? 0);
+            $totales['modulos'][$modulo]['count']++;
+
+            // Calcular meta por registro y sumar
+            $tiempo_disponible_registro = (3600 * floatval($registro->porcion_tiempo) * floatval($registro->numero_operarios))
+                - floatval($registro->tiempo_parada_no_programada ?? 0)
+                - floatval($registro->tiempo_para_programada ?? 0);
+            $meta_registro = floatval($registro->tiempo_ciclo) > 0 ? ($tiempo_disponible_registro / floatval($registro->tiempo_ciclo)) * 0.9 : 0;
+            $totales['modulos'][$modulo]['meta_sum'] += $meta_registro;
+        }
+
+        // Calcular meta y eficiencia por hora
+        foreach ($dataPorHora as $hora => &$data) {
+            foreach ($data['modulos'] as $modulo => &$modData) {
+                if ($modData['count'] > 0) {
+                    $avg_tiempo_ciclo = $modData['tiempo_ciclo_sum'] / $modData['count'];
+                    $avg_numero_operarios = $modData['numero_operarios_sum'] / $modData['count'];
+                    $avg_porcion_tiempo = $modData['porcion_tiempo_sum'] / $modData['count'];
+                    $total_tiempo_parada_no_programada = $modData['tiempo_parada_no_programada_sum'];
+                    $total_tiempo_para_programada = $modData['tiempo_para_programada_sum'];
+
+                    $tiempo_disponible = (3600 * $avg_porcion_tiempo * $avg_numero_operarios)
+                        - $total_tiempo_parada_no_programada
+                        - $total_tiempo_para_programada;
+                    $meta = $avg_tiempo_ciclo > 0 ? ($tiempo_disponible / $avg_tiempo_ciclo) * 0.9 : 0;
+                    $eficiencia = $meta > 0 ? ($modData['prendas'] / $meta) : 0;
+
+                    $modData['meta'] = $meta;
+                    $modData['eficiencia'] = $eficiencia;
+                } else {
+                    $modData['meta'] = 0;
+                    $modData['eficiencia'] = 0;
+                }
             }
         }
 
-        // Acumular datos por hora y módulo
-        $dataPorHora[$hora]['modulos'][$modulo]['prendas'] += floatval($registro->cantidad ?? 0);
-        $dataPorHora[$hora]['modulos'][$modulo]['tiempo_ciclo_sum'] += floatval($registro->tiempo_ciclo ?? 0);
-        $dataPorHora[$hora]['modulos'][$modulo]['numero_operarios_sum'] += floatval($registro->numero_operarios ?? 0);
-        $dataPorHora[$hora]['modulos'][$modulo]['porcion_tiempo_sum'] += floatval($registro->porcion_tiempo ?? 0);
-        $dataPorHora[$hora]['modulos'][$modulo]['tiempo_parada_no_programada_sum'] += floatval($registro->tiempo_parada_no_programada ?? 0);
-        $dataPorHora[$hora]['modulos'][$modulo]['tiempo_para_programada_sum'] += floatval($registro->tiempo_para_programada ?? 0);
-        $dataPorHora[$hora]['modulos'][$modulo]['count']++;
-
-        // Acumular totales generales
-        $totales['modulos'][$modulo]['prendas'] += floatval($registro->cantidad ?? 0);
-        $totales['modulos'][$modulo]['tiempo_ciclo_sum'] += floatval($registro->tiempo_ciclo ?? 0);
-        $totales['modulos'][$modulo]['numero_operarios_sum'] += floatval($registro->numero_operarios ?? 0);
-        $totales['modulos'][$modulo]['porcion_tiempo_sum'] += floatval($registro->porcion_tiempo ?? 0);
-        $totales['modulos'][$modulo]['tiempo_parada_no_programada_sum'] += floatval($registro->tiempo_parada_no_programada ?? 0);
-        $totales['modulos'][$modulo]['tiempo_para_programada_sum'] += floatval($registro->tiempo_para_programada ?? 0);
-        $totales['modulos'][$modulo]['count']++;
-
-        // Calcular meta por registro y sumar
-        $tiempo_disponible_registro = (3600 * floatval($registro->porcion_tiempo) * floatval($registro->numero_operarios)) 
-            - floatval($registro->tiempo_parada_no_programada ?? 0) 
-            - floatval($registro->tiempo_para_programada ?? 0);
-        $meta_registro = floatval($registro->tiempo_ciclo) > 0 ? ($tiempo_disponible_registro / floatval($registro->tiempo_ciclo)) * 0.9 : 0;
-        $totales['modulos'][$modulo]['meta_sum'] += $meta_registro;
-    }
-
-    // Calcular meta y eficiencia por hora
-    foreach ($dataPorHora as $hora => &$data) {
-        foreach ($data['modulos'] as $modulo => &$modData) {
+        // Calcular totales finales
+        foreach ($totales['modulos'] as $modulo => &$modData) {
             if ($modData['count'] > 0) {
-                $avg_tiempo_ciclo = $modData['tiempo_ciclo_sum'] / $modData['count'];
-                $avg_numero_operarios = $modData['numero_operarios_sum'] / $modData['count'];
-                $avg_porcion_tiempo = $modData['porcion_tiempo_sum'] / $modData['count'];
-                $total_tiempo_parada_no_programada = $modData['tiempo_parada_no_programada_sum'];
-                $total_tiempo_para_programada = $modData['tiempo_para_programada_sum'];
+                $total_prendas = $modData['prendas'];
+                $total_meta = $modData['meta_sum'];
+                $eficiencia = $total_meta > 0 ? ($total_prendas / $total_meta) : 0;
 
-                $tiempo_disponible = (3600 * $avg_porcion_tiempo * $avg_numero_operarios) 
-                    - $total_tiempo_parada_no_programada 
-                    - $total_tiempo_para_programada;
-                $meta = $avg_tiempo_ciclo > 0 ? ($tiempo_disponible / $avg_tiempo_ciclo) * 0.9 : 0;
-                $eficiencia = $meta > 0 ? ($modData['prendas'] / $meta) : 0;
-
-                $modData['meta'] = $meta;
+                $modData['meta'] = $total_meta;
                 $modData['eficiencia'] = $eficiencia;
             } else {
                 $modData['meta'] = 0;
                 $modData['eficiencia'] = 0;
             }
         }
+
+        // Re-ordenar módulos alfabéticamente para consistencia en la visualización
+        ksort($modulosDisponibles);
     }
-
-    // Calcular totales finales
-    foreach ($totales['modulos'] as $modulo => &$modData) {
-        if ($modData['count'] > 0) {
-            $total_prendas = $modData['prendas'];
-            $total_meta = $modData['meta_sum'];
-            $eficiencia = $total_meta > 0 ? ($total_prendas / $total_meta) : 0;
-
-            $modData['meta'] = $total_meta;
-            $modData['eficiencia'] = $eficiencia;
-        } else {
-            $modData['meta'] = 0;
-            $modData['eficiencia'] = 0;
-        }
-    }
-
-    // Re-ordenar módulos alfabéticamente para consistencia en la visualización
-    ksort($modulosDisponibles);
 @endphp
 
 <style>
