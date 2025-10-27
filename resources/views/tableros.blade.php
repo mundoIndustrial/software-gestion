@@ -38,7 +38,7 @@
     </div>
 
     <div class="tab-content">
-        <div x-show="activeTab === 'produccion'">
+        <div x-show="activeTab === 'produccion'" class="chart-placeholder">
             <!-- Date selector and action buttons above the seguimiento component -->
             <div class="controls-section">
                 @include('components.date-selector')
@@ -103,7 +103,7 @@
             </div>
         </div>
 
-        <div x-show="activeTab === 'polos'">
+        <div x-show="activeTab === 'polos'" class="chart-placeholder">
             <!-- Date selector and action buttons above the seguimiento component -->
             <div class="controls-section">
                 @include('components.date-selector')
@@ -168,7 +168,7 @@
             </div>
         </div>
 
-        <div x-show="activeTab === 'corte'">
+        <div x-show="activeTab === 'corte'" class="chart-placeholder">
             <!-- Date selector and action buttons above the seguimiento component -->
             <div class="controls-section">
                 @include('components.date-selector')
@@ -237,6 +237,7 @@
                             {{ $corteCollection->appends(request()->query())->links() }}
                         @endif
                     </div>
+                </div>
             </div>
         </div>
     </div>
@@ -282,8 +283,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const tr = document.createElement('tr');
             tr.className = 'table-row';
             tr.setAttribute('data-id', registro.id);
-
-
 
             columns.forEach(column => {
                 const td = document.createElement('td');
@@ -347,32 +346,39 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Función para hacer celdas editables con doble click
-    const editableCells = document.querySelectorAll('.editable-cell');
-    console.log('Celdas editables encontradas:', editableCells.length);
-    editableCells.forEach(cell => {
-        console.log('Registrando evento dblclick para celda:', cell);
-        cell.addEventListener('dblclick', function() {
-            console.log('Doble clic detectado en celda');
-            currentCell = this;
-            currentRowId = this.closest('tr').dataset.id;
-            currentColumn = this.dataset.column;
-
-            const currentValue = this.dataset.value || this.textContent.trim();
-            console.log('Valor actual:', currentValue);
-            const modal = document.getElementById('editCellModal');
-            console.log('Modal encontrado:', !!modal);
-            if (modal) {
-                modal.style.display = 'flex';
-                modal.style.opacity = '1';
-                modal.style.visibility = 'visible';
-                document.getElementById('editCellInput').value = currentValue;
-                document.getElementById('editCellInput').focus();
-                document.getElementById('editCellInput').select();
-            } else {
-                console.error('Modal no encontrado');
-            }
+    function attachEditableCellListeners() {
+        const editableCells = document.querySelectorAll('.editable-cell');
+        console.log('Celdas editables encontradas:', editableCells.length);
+        editableCells.forEach(cell => {
+            cell.removeEventListener('dblclick', handleCellDoubleClick);
+            cell.addEventListener('dblclick', handleCellDoubleClick);
         });
-    });
+    }
+
+    function handleCellDoubleClick() {
+        console.log('Doble clic detectado en celda');
+        currentCell = this;
+        currentRowId = this.closest('tr').dataset.id;
+        currentColumn = this.dataset.column;
+
+        const currentValue = this.dataset.value || this.textContent.trim();
+        console.log('Valor actual:', currentValue);
+        const modal = document.getElementById('editCellModal');
+        console.log('Modal encontrado:', !!modal);
+        if (modal) {
+            modal.style.display = 'flex';
+            modal.style.opacity = '1';
+            modal.style.visibility = 'visible';
+            document.getElementById('editCellInput').value = currentValue;
+            document.getElementById('editCellInput').focus();
+            document.getElementById('editCellInput').select();
+        } else {
+            console.error('Modal no encontrado');
+        }
+    }
+
+    // Inicializar event listeners
+    attachEditableCellListeners();
 
     // Guardar cambios
     document.getElementById('saveEdit').addEventListener('click', saveCellEdit);

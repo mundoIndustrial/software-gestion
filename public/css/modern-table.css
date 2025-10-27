@@ -132,7 +132,7 @@ background-color: #f1aeb5 !important;
 }
 /* === Filas oscuras: texto claro === */
 #tablaOrdenes tbody .table-row.row-secondary {
-background-color: #343a40 !important;
+background-color: #777777 !important;
 color: #f8f9fa !important;
 }
 #tablaOrdenes tbody .table-row.row-secondary:hover {
