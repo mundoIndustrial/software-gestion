@@ -40,10 +40,8 @@
     <div class="tab-content">
         <div x-show="activeTab === 'produccion'" class="chart-placeholder">
             <!-- Date selector and action buttons above the seguimiento component -->
-            <div class="controls-section">
-                @include('components.date-selector')
-                @include('components.action-buttons')
-            </div>
+            @include('components.date-selector')
+            @include('components.action-buttons')
 
             <!-- Seguimiento módulos (visible by default) -->
             <div x-show="!showRecords">
@@ -105,10 +103,8 @@
 
         <div x-show="activeTab === 'polos'" class="chart-placeholder">
             <!-- Date selector and action buttons above the seguimiento component -->
-            <div class="controls-section">
-                @include('components.date-selector')
-                @include('components.action-buttons')
-            </div>
+            @include('components.date-selector')
+            @include('components.action-buttons')
 
             <!-- Seguimiento módulos (visible by default) -->
             <div x-show="!showRecords">
@@ -170,10 +166,8 @@
 
         <div x-show="activeTab === 'corte'" class="chart-placeholder">
             <!-- Date selector and action buttons above the seguimiento component -->
-            <div class="controls-section">
-                @include('components.date-selector')
-                @include('components.action-buttons')
-            </div>
+            @include('components.date-selector')
+            @include('components.action-buttons')
 
             <!-- Seguimiento módulos (visible by default) -->
             <div x-show="!showRecords">

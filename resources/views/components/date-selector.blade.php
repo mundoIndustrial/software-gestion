@@ -1,5 +1,5 @@
 <!-- Date selector component -->
-<div class="date-selector-section">
+<div class="date-selector-section" x-show="!showRecords">
     <div class="date-input-group">
         <label>Fecha inicio</label>
         <input type="date" id="startDate" value="{{ request('start_date', now()->format('Y-m-d')) }}">
