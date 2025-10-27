@@ -33,7 +33,7 @@
                         <div class="form-group">
                             <label class="form-label">
                                 <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" stroke-width="2" stroke-linecap="round"/>
+                                    <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" stroke-width="2" stroke-linecap="round"/>
                                 </svg>
                                 Módulo *
                             </label>
@@ -471,9 +471,14 @@
                 const div = document.createElement('div');
                 div.className = 'hora-checkbox';
                 div.innerHTML = `
-                    <input type="checkbox" id="hora${i}" value="${i}" onchange="actualizarHorasSeleccionadas()">
-                    <label for="hora${i}">${horaId}</label>
+                    <input type="checkbox" id="hora${i}" value="${i}">
+                    <label>${horaId}</label>
                 `;
+                div.onclick = function() {
+                    const checkbox = this.querySelector('input[type="checkbox"]');
+                    checkbox.checked = !checkbox.checked;
+                    actualizarHorasSeleccionadas();
+                };
                 selector.appendChild(div);
             }
         }
