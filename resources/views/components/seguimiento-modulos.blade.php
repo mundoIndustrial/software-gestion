@@ -250,8 +250,8 @@
 .seguimiento-legend-color { width:20px; height:20px; border-radius:4px; }
 </style>
 
-<div class="records-table-container">
-    <div class="table-scroll-container">
+<div class="seguimiento-table-wrapper">
+    <div class="seguimiento-table-container">
         <table class="seguimiento-table">
             <thead>
                 <tr>
