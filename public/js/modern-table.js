@@ -626,6 +626,18 @@ class ModernTable {
         document.getElementById('modalOverlay')?.classList.remove('active');
     }
 
+    updateRowColor(orderId, status) {
+        const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
+        if (!row) return;
+
+        // Remover clases de color anteriores
+        row.classList.remove('status-pendiente', 'status-proceso', 'status-completado', 'status-cancelado');
+
+        // Agregar clase de color según el estado
+        const statusClass = `status-${status.toLowerCase().replace(/\s+/g, '-')}`;
+        row.classList.add(statusClass);
+    }
+
     async updateOrderStatus(dropdown) {
         const orderId = dropdown.dataset.id;
         const newStatus = dropdown.value;

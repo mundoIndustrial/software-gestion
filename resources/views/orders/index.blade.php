@@ -976,4 +976,187 @@ async function recargarTablaPedidos() {
     </div>
 
     <script src="{{ asset('js/modern-table.js') }}"></script>
+
+    <script>
+        // Sistema híbrido: localStorage + polling para actualizaciones en tiempo real
+        console.log('🔄 Configurando sistema de actualizaciones en tiempo real...');
+
+        // 1. Configurar localStorage listener (para pestañas del mismo navegador)
+        window.addEventListener('storage', function(event) {
+            if (event.key === 'orders-updates') {
+                try {
+                    const data = JSON.parse(event.newValue);
+                    console.log('📱 Actualización desde localStorage:', data);
+
+                    const { type, orderId, field, newValue, updatedFields, order, totalDiasCalculados, timestamp } = data;
+
+                    // Evitar procesar mensajes propios
+                    const lastTimestamp = parseInt(localStorage.getItem('last-orders-update-timestamp') || '0');
+                    if (timestamp && timestamp <= lastTimestamp) {
+                        console.log('🚫 Mensaje duplicado ignorado');
+                        return;
+                    }
+
+                    localStorage.setItem('last-orders-update-timestamp', timestamp.toString());
+                    updateRowFromBroadcast(orderId, field, newValue, updatedFields, order, totalDiasCalculados);
+                } catch (e) {
+                    console.error('❌ Error procesando localStorage:', e);
+                }
+            }
+        });
+
+        // 2. Configurar polling periódico (cada 30 segundos) para sincronización entre usuarios
+        let lastUpdateTimestamp = Date.now();
+        setInterval(async () => {
+            try {
+                const response = await fetch(`${window.fetchUrl}?_=${Date.now()}`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!response.ok) return;
+
+                const data = await response.json();
+                if (data.orders && data.orders.length > 0) {
+                    console.log('🔄 Verificando actualizaciones desde servidor...');
+
+                    // Comparar con datos actuales y actualizar si hay cambios
+                    data.orders.forEach(serverOrder => {
+                        const localRow = document.querySelector(`tr[data-order-id="${serverOrder.pedido}"]`);
+                        if (localRow) {
+                            // Verificar si hay cambios en estado o área
+                            const localStatus = localRow.querySelector('.estado-dropdown')?.value;
+                            const localArea = localRow.querySelector('.area-dropdown')?.value;
+
+                            if (serverOrder.estado !== localStatus) {
+                                console.log(`📡 Estado actualizado por polling: ${serverOrder.pedido} ${localStatus} → ${serverOrder.estado}`);
+                                updateRowFromBroadcast(serverOrder.pedido, 'estado', serverOrder.estado, {}, serverOrder, data.totalDiasCalculados);
+                            }
+
+                            if (serverOrder.area !== localArea) {
+                                console.log(`📡 Área actualizada por polling: ${serverOrder.pedido} ${localArea} → ${serverOrder.area}`);
+                                updateRowFromBroadcast(serverOrder.pedido, 'area', serverOrder.area, {}, serverOrder, data.totalDiasCalculados);
+                            }
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('❌ Error en polling:', error);
+            }
+        }, 2000); // Polling cada 5 segundos
+
+        // 3. Intentar configurar WebSocket (si está disponible)
+        setTimeout(() => {
+            if (window.Echo) {
+                console.log('✅ Intentando configurar Laravel Echo...');
+
+                try {
+                    const channel = window.Echo.channel('orders-updates');
+                    console.log('📡 Canal WebSocket conectado');
+
+                    channel.listen('.order.updated', (e) => {
+                        console.log('🎉 Evento recibido via WebSocket:', e);
+                        updateRowFromBroadcast(e.orderId, e.field, e.newValue, e.updatedFields, e.order, e.totalDiasCalculados);
+                    });
+
+                    console.log('🎯 WebSocket configurado correctamente');
+                } catch (error) {
+                    console.warn('⚠️ WebSocket no disponible, usando polling + localStorage');
+                }
+            } else {
+                console.log('ℹ️ WebSocket no disponible, usando polling + localStorage');
+            }
+        }, 1000);
+
+        function updateRowFromBroadcast(orderId, field, newValue, updatedFields, order, totalDiasCalculados) {
+            console.log('🔄 Actualizando fila:', { orderId, field, newValue });
+
+            const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
+            if (!row) {
+                console.warn(`❌ Fila con orderId ${orderId} no encontrada`);
+                return;
+            }
+
+            // Actualizar el dropdown de estado si cambió
+            if (field === 'estado') {
+                const statusDropdown = row.querySelector('.estado-dropdown');
+                if (statusDropdown) {
+                    statusDropdown.value = newValue;
+                    statusDropdown.dataset.value = newValue;
+                    console.log(`✅ Estado actualizado: ${statusDropdown.dataset.value} → ${newValue}`);
+                }
+
+                // Actualizar color de la fila
+                updateRowColor(orderId, newValue);
+            }
+
+            // Actualizar el dropdown de área si cambió
+            if (field === 'area') {
+                const areaDropdown = row.querySelector('.area-dropdown');
+                if (areaDropdown) {
+                    areaDropdown.value = newValue;
+                    areaDropdown.dataset.value = newValue;
+                    console.log(`✅ Área actualizada: ${areaDropdown.dataset.value} → ${newValue}`);
+                }
+            }
+
+            // Actualizar otros campos si se proporcionan
+            if (updatedFields) {
+                Object.entries(updatedFields).forEach(([updateField, value]) => {
+                    const cell = row.querySelector(`td[data-column="${updateField}"] .cell-text`);
+                    if (cell) {
+                        cell.textContent = value;
+                        console.log(`✅ Campo ${updateField} actualizado: ${value}`);
+                    }
+                });
+            }
+
+            // Actualizar total_de_dias_ si viene en totalDiasCalculados
+            if (totalDiasCalculados && totalDiasCalculados[orderId] !== undefined) {
+                const totalDiasCell = row.querySelector('td[data-column="total_de_dias_"] .cell-text');
+                if (totalDiasCell) {
+                    totalDiasCell.textContent = totalDiasCalculados[orderId];
+                    console.log(`✅ Total días actualizado: ${totalDiasCalculados[orderId]}`);
+                }
+            }
+
+            console.log(`🎯 Order ${orderId} completamente actualizada`);
+        }
+
+        function updateRowColor(orderId, status) {
+            const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
+            if (!row) return;
+
+            // Remover clases de color anteriores
+            row.classList.remove('row-delivered', 'row-anulada', 'row-warning', 'row-danger-light', 'row-secondary');
+
+            // Agregar clase de color según el estado
+            let conditionalClass = '';
+            if (status === 'Entregado') {
+                conditionalClass = 'row-delivered';
+            } else if (status === 'Anulada') {
+                conditionalClass = 'row-anulada';
+            }
+
+            // También considerar total_dias para colores adicionales
+            const totalDiasCell = row.querySelector('td[data-column="total_de_dias_"] .cell-text');
+            if (totalDiasCell) {
+                const totalDias = parseInt(totalDiasCell.textContent) || 0;
+                if (totalDias > 14 && totalDias < 20) {
+                    conditionalClass = 'row-warning';
+                } else if (totalDias === 20) {
+                    conditionalClass = 'row-danger-light';
+                } else if (totalDias > 20) {
+                    conditionalClass = 'row-secondary';
+                }
+            }
+
+            if (conditionalClass) {
+                row.classList.add(conditionalClass);
+                console.log(`🎨 Color de fila actualizado: ${conditionalClass}`);
+            }
+        }
+    </script>
 @endsection
