@@ -52,7 +52,8 @@
                 'porcion_tiempo_sum' => 0,
                 'tiempo_parada_no_programada_sum' => 0,
                 'tiempo_para_programada_sum' => 0,
-                'count' => 0
+                'count' => 0,
+                'meta_sum' => 0
             ];
         }
         $totales['modulos'][$modulo]['prendas'] += $registro->cantidad ?? 0;
@@ -62,6 +63,11 @@
         $totales['modulos'][$modulo]['tiempo_parada_no_programada_sum'] += $registro->tiempo_parada_no_programada ?? 0;
         $totales['modulos'][$modulo]['tiempo_para_programada_sum'] += $registro->tiempo_para_programada ?? 0;
         $totales['modulos'][$modulo]['count']++;
+
+        // Calcular meta por registro y sumar
+        $tiempo_disponible_registro = (3600 * $registro->porcion_tiempo * $registro->numero_operarios) - ($registro->tiempo_parada_no_programada ?? 0) - ($registro->tiempo_para_programada ?? 0);
+        $meta_registro = $registro->tiempo_ciclo > 0 ? ($tiempo_disponible_registro / $registro->tiempo_ciclo) * 0.9 : 0;
+        $totales['modulos'][$modulo]['meta_sum'] += $meta_registro;
     }
 
     // Calcular meta y eficiencia por hora
@@ -87,17 +93,11 @@
     // Calcular totales
     foreach ($totales['modulos'] as $modulo => &$modData) {
         if ($modData['count'] > 0) {
-            $avg_tiempo_ciclo = $modData['tiempo_ciclo_sum'] / $modData['count'];
-            $avg_numero_operarios = $modData['numero_operarios_sum'] / $modData['count'];
-            $avg_porcion_tiempo = $modData['porcion_tiempo_sum'] / $modData['count'];
-            $total_tiempo_parada_no_programada = $modData['tiempo_parada_no_programada_sum'];
-            $total_tiempo_para_programada = $modData['tiempo_para_programada_sum'];
+            $total_prendas = $modData['prendas'];
+            $total_meta = $modData['meta_sum'];
+            $eficiencia = $total_meta > 0 ? ($total_prendas / $total_meta) : 0;
 
-            $tiempo_disponible = (3600 * $avg_porcion_tiempo * $avg_numero_operarios) - $total_tiempo_parada_no_programada - $total_tiempo_para_programada;
-            $meta = $avg_tiempo_ciclo > 0 ? ($tiempo_disponible / $avg_tiempo_ciclo) * 0.9 : 0;
-            $eficiencia = $meta > 0 ? ($modData['prendas'] / $meta) : 0;
-
-            $modData['meta'] = $meta;
+            $modData['meta'] = $total_meta;
             $modData['eficiencia'] = $eficiencia;
         }
     }
