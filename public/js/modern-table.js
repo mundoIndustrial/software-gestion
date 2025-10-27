@@ -118,10 +118,8 @@ class ModernTable {
     createResizers() {
         const thead = document.querySelector('#tablaOrdenes thead');
         if (!thead) {
-            console.log('ModernTable: No se encontró thead para crear resizers');
             return;
         }
-        console.log('ModernTable: Creando resizers para', thead.querySelectorAll('th').length, 'columnas');
 
         thead.querySelectorAll('th').forEach((th, i) => {
             const resizer = document.createElement('div');
@@ -129,7 +127,6 @@ class ModernTable {
             resizer.dataset.column = i;
             th.style.position = 'relative';
             th.appendChild(resizer);
-            console.log(`ModernTable: Resizer creado para columna ${i}`);
         });
     }
 
@@ -144,7 +141,6 @@ class ModernTable {
 
 
     setupColumnResizing() {
-    console.log('ModernTable: Configurando redimensionamiento de columnas');
     let state = { isResizing: false, resizer: null, startX: 0, startWidth: 0, column: null };
 
     const handleMove = e => {
@@ -167,13 +163,10 @@ class ModernTable {
         // Guarda ancho en localStorage
         this.storage.columnWidths[colIndex] = newWidth;
         this.setStorage('table_columnWidths', JSON.stringify(this.storage.columnWidths));
-
-        console.log(`ModernTable: Moviendo resizer (columna ${colIndex}), ancho: ${newWidth}px`);
     };
 
     const handleUp = () => {
         if (!state.isResizing) return;
-        console.log('ModernTable: Finalizando redimensionamiento');
         state.isResizing = false;
         state.resizer?.classList.remove('dragging');
         document.body.style.cursor = '';
@@ -184,7 +177,6 @@ class ModernTable {
         if (e.target.classList.contains('column-resizer')) {
             const th = e.target.parentElement;
             const colIndex = parseInt(e.target.dataset.column);
-            console.log('ModernTable: Iniciando redimensionamiento en columna', colIndex);
             state = {
                 isResizing: true,
                 resizer: e.target,
@@ -200,7 +192,6 @@ class ModernTable {
 
     document.addEventListener('mousemove', handleMove);
     document.addEventListener('mouseup', handleUp);
-    console.log('ModernTable: Event listeners para redimensionamiento configurados');
 }
 
 
