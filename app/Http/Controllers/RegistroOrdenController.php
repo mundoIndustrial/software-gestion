@@ -382,7 +382,15 @@ class RegistroOrdenController extends Controller
                 }
             }
 
-            return response()->json(['success' => true, 'updated_fields' => $updatedFields]);
+            // Obtener la orden actualizada para retornar todos los campos
+            $ordenActualizada = TablaOriginal::where('pedido', $pedido)->first();
+
+            return response()->json([
+                'success' => true,
+                'updated_fields' => $updatedFields,
+                'order' => $ordenActualizada,
+                'totalDiasCalculados' => $this->calcularTotalDiasBatch([$ordenActualizada], Festivo::pluck('fecha')->toArray())
+            ]);
         } catch (\Exception $e) {
             // Capturar cualquier error y devolver JSON con mensaje
             return response()->json([

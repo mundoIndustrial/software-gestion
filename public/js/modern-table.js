@@ -294,6 +294,7 @@ class ModernTable {
 
         document.addEventListener('change', e => {
             if (e.target.classList.contains('estado-dropdown')) this.updateOrderStatus(e.target);
+            if (e.target.classList.contains('area-dropdown')) this.updateOrderArea(e.target);
         });
 
         document.addEventListener('click', e => {
@@ -326,6 +327,19 @@ class ModernTable {
             if (e.ctrlKey && e.key === 'c') {
                 const selected = document.querySelector('.table-cell.selected .cell-text');
                 if (selected) navigator.clipboard.writeText(selected.textContent);
+            }
+        });
+
+        // Configurar listener para localStorage events (comunicación entre pestañas)
+        const self = this;
+        window.addEventListener('storage', (event) => {
+            if (event.key === 'orders-updates') {
+                try {
+                    const data = JSON.parse(event.newValue);
+                    self.handleBroadcastMessage(data);
+                } catch (e) {
+                    console.error('Error parsing localStorage message:', e);
+                }
             }
         });
 
@@ -555,6 +569,7 @@ class ModernTable {
 
     async saveCellEdit() {
         const newValue = document.getElementById('cellEditInput').value;
+        const oldValue = document.querySelector('.table-cell.selected .cell-text')?.textContent || '';
 
         try {
             const response = await fetch(`${this.baseRoute}/${this.currentOrderId}`, {
@@ -566,9 +581,9 @@ class ModernTable {
                 },
                 body: JSON.stringify({ [this.currentColumn]: newValue })
             });
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 const selected = document.querySelector('.table-cell.selected');
                 if (selected) {
@@ -579,6 +594,23 @@ class ModernTable {
                         selected.querySelector('.cell-content').title = newValue;
                     }
                 }
+
+                // Enviar mensaje a otras pestañas usando localStorage
+                const timestamp = Date.now();
+                localStorage.setItem('orders-updates', JSON.stringify({
+                    type: 'cell_update',
+                    orderId: this.currentOrderId,
+                    field: this.currentColumn,
+                    newValue: newValue,
+                    oldValue: oldValue,
+                    updatedFields: data.updated_fields || {},
+                    order: data.order,
+                    totalDiasCalculados: data.totalDiasCalculados || {},
+                    timestamp: timestamp // Para evitar duplicados
+                }));
+                // Actualizar timestamp local para evitar procesar mensaje propio
+                localStorage.setItem('last-orders-update-timestamp', timestamp.toString());
+
                 this.closeCellModal();
             } else {
                 alert('Error al guardar los cambios');
@@ -595,20 +627,49 @@ class ModernTable {
     }
 
     async updateOrderStatus(dropdown) {
+        const orderId = dropdown.dataset.id;
+        const newStatus = dropdown.value;
+        const oldStatus = dropdown.dataset.value;
+
         try {
-            const response = await fetch(`${this.baseRoute}/${dropdown.dataset.id}`, {
+            const response = await fetch(`${this.baseRoute}/${orderId}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                 },
-                body: JSON.stringify({ estado: dropdown.value })
+                body: JSON.stringify({ estado: newStatus })
             });
-            
+
             const data = await response.json();
-            if (!data.success) console.error('Error actualizando:', data.message);
+            if (data.success) {
+                // Actualizar color de la fila dinámicamente
+                this.updateRowColor(orderId, newStatus);
+
+                // Enviar mensaje a otras pestañas usando localStorage
+                const timestamp = Date.now();
+                localStorage.setItem('orders-updates', JSON.stringify({
+                    type: 'status_update',
+                    orderId: orderId,
+                    field: 'estado',
+                    newValue: newStatus,
+                    oldValue: oldStatus,
+                    updatedFields: data.updated_fields || {},
+                    order: data.order,
+                    totalDiasCalculados: data.totalDiasCalculados || {},
+                    timestamp: timestamp // Para evitar duplicados
+                }));
+                // Actualizar timestamp local para evitar procesar mensaje propio
+                localStorage.setItem('last-orders-update-timestamp', timestamp.toString());
+            } else {
+                console.error('Error actualizando:', data.message);
+                // Revertir cambio en caso de error
+                dropdown.value = oldStatus;
+            }
         } catch (error) {
             console.error('Error:', error);
+            // Revertir cambio en caso de error
+            dropdown.value = oldStatus;
         }
     }
 
@@ -767,6 +828,139 @@ appendRowsToTable(orders, totalDiasCalculados) {
         document.querySelectorAll('.estado-dropdown').forEach(dropdown => {
             dropdown.addEventListener('change', e => this.updateOrderStatus(e.target));
         });
+    }
+
+    initializeAreaDropdowns() {
+        document.querySelectorAll('.area-dropdown').forEach(dropdown => {
+            dropdown.addEventListener('change', e => this.updateOrderArea(e.target));
+        });
+    }
+
+    async updateOrderArea(dropdown) {
+        const orderId = dropdown.dataset.id;
+        const newArea = dropdown.value;
+        const oldArea = dropdown.dataset.value;
+
+        try {
+            const response = await fetch(`${this.baseRoute}/${orderId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({ area: newArea })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                // Actualizar las celdas con las fechas actualizadas según la respuesta del servidor
+                if (data.updated_fields) {
+                    const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
+                    if (row) {
+                        for (const [field, date] of Object.entries(data.updated_fields)) {
+                            const cell = row.querySelector(`td[data-column="${field}"] .cell-text`);
+                            if (cell) {
+                                cell.textContent = date;
+                            }
+                        }
+                    }
+                }
+
+                // Enviar mensaje a otras pestañas usando localStorage
+                const timestamp = Date.now();
+                localStorage.setItem('orders-updates', JSON.stringify({
+                    type: 'area_update',
+                    orderId: orderId,
+                    field: 'area',
+                    newValue: newArea,
+                    oldValue: oldArea,
+                    updatedFields: data.updated_fields || {},
+                    order: data.order,
+                    totalDiasCalculados: data.totalDiasCalculados || {},
+                    timestamp: timestamp // Para evitar duplicados
+                }));
+                // Actualizar timestamp local para evitar procesar mensaje propio
+                localStorage.setItem('last-orders-update-timestamp', timestamp.toString());
+            } else {
+                console.error('Error actualizando área:', data.message);
+                // Revertir cambio en caso de error
+                dropdown.value = oldArea;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            // Revertir cambio en caso de error
+            dropdown.value = oldArea;
+        }
+    }
+
+    handleBroadcastMessage(data) {
+        console.log('Recibido mensaje de localStorage:', data);
+
+        const { type, orderId, field, newValue, updatedFields, order, totalDiasCalculados, timestamp } = data;
+
+        // Evitar procesar mensajes propios (usando timestamp)
+        const lastTimestamp = parseInt(localStorage.getItem('last-orders-update-timestamp') || '0');
+        if (timestamp && timestamp <= lastTimestamp) {
+            console.log('Mensaje duplicado ignorado');
+            return;
+        }
+
+        // Actualizar timestamp para evitar duplicados
+        localStorage.setItem('last-orders-update-timestamp', timestamp.toString());
+
+        // Actualizar la fila específica
+        this.updateRowFromBroadcast(orderId, field, newValue, updatedFields, order, totalDiasCalculados);
+    }
+
+    updateRowFromBroadcast(orderId, field, newValue, updatedFields, order, totalDiasCalculados) {
+        const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
+        if (!row) {
+            console.warn(`Fila con orderId ${orderId} no encontrada`);
+            return;
+        }
+
+        // Actualizar el campo específico
+        if (field === 'estado') {
+            const estadoDropdown = row.querySelector('.estado-dropdown');
+            if (estadoDropdown) {
+                estadoDropdown.value = newValue;
+                estadoDropdown.dataset.value = newValue;
+                this.updateRowColor(orderId, newValue);
+            }
+        } else if (field === 'area') {
+            const areaDropdown = row.querySelector('.area-dropdown');
+            if (areaDropdown) {
+                areaDropdown.value = newValue;
+                areaDropdown.dataset.value = newValue;
+            }
+        } else {
+            // Para otros campos (celdas editables)
+            const cell = row.querySelector(`td[data-column="${field}"] .cell-text`);
+            if (cell) {
+                cell.textContent = newValue;
+                cell.closest('.cell-content').title = newValue;
+            }
+        }
+
+        // Actualizar campos relacionados (fechas, etc.)
+        if (updatedFields) {
+            for (const [updateField, updateValue] of Object.entries(updatedFields)) {
+                const updateCell = row.querySelector(`td[data-column="${updateField}"] .cell-text`);
+                if (updateCell) {
+                    updateCell.textContent = updateValue;
+                }
+            }
+        }
+
+        // Actualizar total_de_dias_ si viene en totalDiasCalculados
+        if (totalDiasCalculados && totalDiasCalculados[orderId] !== undefined) {
+            const totalDiasCell = row.querySelector('td[data-column="total_de_dias_"] .cell-text');
+            if (totalDiasCell) {
+                totalDiasCell.textContent = totalDiasCalculados[orderId];
+            }
+        }
+
+        console.log(`Fila ${orderId} actualizada desde localStorage: ${field} = ${newValue}`);
     }
 
     async loadPageFromUrl(href) {

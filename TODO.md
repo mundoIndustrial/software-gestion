@@ -1,24 +1,34 @@
-# TODO: Modificar Sidebar - Unir Ordenes-Pedidos y Ordenes-Bodega en un solo botón "Ordenes"
+# TODO: Implementar Actualizaciones en Tiempo Real entre Múltiples Pestañas
 
-## Pasos a completar:
+## Archivos a Modificar
 
-- [x] Modificar `resources/views/layouts/sidebar.blade.php`:
-  - Reemplazar los dos elementos `<li>` separados para "Ordenes-Pedidos" y "Ordenes-Bodega" con un solo `<li>` que contenga un botón "Ordenes" y un submenú `<ul>` anidado con las dos opciones.
-  - Agregar clases CSS necesarias para el submenú (e.g., `submenu`, `submenu-item`).
+### 1. resources/views/orders/index.blade.php
+- Agregar script para BroadcastChannel API
+- Crear función para escuchar mensajes de otras pestañas
+- Crear función para enviar mensajes cuando se actualice estado/área/celda
+- Integrar con las funciones existentes de actualización
 
-- [x] Actualizar `public/css/sidebar.css`:
-  - Agregar estilos para el submenú desplegable: ocultar por defecto, animación de deslizamiento, colores consistentes con el tema.
-  - Asegurar que funcione en modo collapsed y expanded del sidebar.
+### 2. public/js/modern-table.js
+- Agregar BroadcastChannel en la clase ModernTable
+- Crear método updateRowFromBroadcast(data) para actualizar fila específica
+- Modificar updateOrderStatus y updateOrderArea para enviar mensajes broadcast
+- Modificar saveCellEdit para enviar mensajes broadcast
+- Asegurar que las actualizaciones se propaguen sin recargar
 
-- [x] Actualizar `public/js/sidebar.js`:
-  - Agregar event listener al botón "Ordenes" para toggle (mostrar/ocultar) el submenú.
-  - Prevenir que el sidebar se colapse cuando se hace clic en el botón del submenú si está en modo collapsed.
+### 3. app/Http/Controllers/RegistroOrdenController.php
+- Modificar método update para retornar todos los campos actualizados en la respuesta JSON
+- Incluir updated_fields en la respuesta para propagar cambios
 
-- [x] Unir "Entrega-Pedidos" y "Entrega Bodega" en un solo botón "Entregas" con submenú.
-  - Modificar `resources/views/layouts/sidebar.blade.php` para reemplazar los dos botones con uno solo.
-  - Actualizar `public/js/sidebar.js` para manejar múltiples submenús (usar querySelectorAll).
+## Pasos de Implementación
 
-- [x] Verificar funcionalidad:
-  - Probar que los submenús se desplieguen correctamente al hacer clic en "Ordenes" y "Entregas".
-  - Asegurar que las rutas y enlaces sigan funcionando.
-  - Verificar en diferentes tamaños de pantalla y modos (collapsed/expanded).
+1. Modificar RegistroOrdenController.php para retornar campos actualizados
+2. Agregar BroadcastChannel a modern-table.js
+3. Agregar BroadcastChannel a index.blade.php
+4. Probar funcionalidad entre múltiples pestañas
+5. Verificar que no haya conflictos de actualización
+
+## Notas Técnicas
+- Usar BroadcastChannel API (nativo del navegador, no requiere servidor)
+- Mensajes incluyen: orderId, field, newValue, updatedFields
+- Actualizaciones solo afectan la fila específica, no toda la tabla
+- Mantener consistencia con colores de fila basados en estado
