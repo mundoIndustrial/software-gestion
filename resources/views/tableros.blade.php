@@ -80,7 +80,7 @@
                                 @endforeach
                                 <td class="table-cell">
                                     <button class="delete-btn" data-id="{{ $registro->id }}" data-section="produccion" title="Eliminar registro">
-                                        ×
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-icon lucide-trash"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                                     </button>
                                 </td>
                             </tr>
@@ -143,7 +143,7 @@
                                 @endforeach
                                 <td class="table-cell">
                                     <button class="delete-btn" data-id="{{ $registro->id }}" data-section="polos" title="Eliminar registro">
-                                        ×
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-icon lucide-trash"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                                     </button>
                                 </td>
                             </tr>
@@ -206,7 +206,7 @@
                                 @endforeach
                                 <td class="table-cell">
                                     <button class="delete-btn" data-id="{{ $registro->id }}" data-section="corte" title="Eliminar registro">
-                                        ×
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-icon lucide-trash"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                                     </button>
                                 </td>
                             </tr>
@@ -215,7 +215,6 @@
                     </table>
                 </div>
 
-                <!-- Paginación -->
                 <!-- Paginación -->
                 <div class="table-pagination">
                     <div class="pagination-info">
@@ -243,6 +242,23 @@
         <div class="modal-footer">
             <button type="button" class="btn btn-secondary" id="cancelEdit">Cancelar</button>
             <button type="button" class="btn btn-primary" id="saveEdit">Guardar (Enter)</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para confirmar eliminación -->
+<div id="deleteConfirmModal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="width: 400px; background: #fff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <div class="modal-header" style="background: #333; color: #fff; border-bottom: 1px solid #dee2e6; padding: 15px 20px;">
+            <h3 class="modal-title" id="deleteModalTitle">Confirmar Eliminación</h3>
+            <button type="button" class="close" id="closeDeleteModal" style="background: none; border: none; font-size: 24px; color: #fff;">&times;</button>
+        </div>
+        <div class="modal-body" id="deleteModalBody" style="padding: 20px; background: #333; color: #fff;">
+            <p>¿Estás seguro de que quieres eliminar este registro?</p>
+        </div>
+        <div class="modal-footer" id="deleteModalFooter" style="background: #333; border-top: 1px solid #dee2e6; padding: 15px 20px; display: flex; justify-content: flex-end; gap: 10px;">
+            <button type="button" class="btn btn-secondary" id="cancelDelete">Cancelar</button>
+            <button type="button" class="btn btn-danger" id="confirmDelete">Eliminar</button>
         </div>
     </div>
 </div>
@@ -308,7 +324,7 @@ document.addEventListener('DOMContentLoaded', function() {
             deleteBtn.setAttribute('data-id', registro.id);
             deleteBtn.setAttribute('data-section', section);
             deleteBtn.title = 'Eliminar registro';
-            deleteBtn.textContent = '×';
+            deleteBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-icon lucide-trash"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
             deleteTd.appendChild(deleteBtn);
             tr.appendChild(deleteTd);
 
@@ -491,40 +507,76 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Función para manejar eliminación de registros
     function deleteRegistro(id, section) {
-        if (confirm('¿Estás seguro de que quieres eliminar este registro?')) {
-            fetch(`/tableros/${id}?section=${section}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        // Mostrar modal de confirmación
+        const modal = document.getElementById('deleteConfirmModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            modal.style.opacity = '1';
+            modal.style.visibility = 'visible';
+            // Guardar id y section para usar en confirmDelete
+            modal.dataset.deleteId = id;
+            modal.dataset.deleteSection = section;
+        }
+    }
+
+    function confirmDeleteRegistro() {
+        const modal = document.getElementById('deleteConfirmModal');
+        const id = modal.dataset.deleteId;
+        const section = modal.dataset.deleteSection;
+
+        fetch(`/tableros/${id}?section=${section}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Eliminar la fila de la tabla
+                const row = document.querySelector(`tr[data-id="${id}"]`);
+                if (row) {
+                    row.remove();
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Eliminar la fila de la tabla
-                    const row = document.querySelector(`tr[data-id="${id}"]`);
-                    if (row) {
-                        row.remove();
-                    }
-                    alert('Registro eliminado correctamente.');
-                } else {
-                    alert('Error al eliminar: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error al eliminar el registro');
-            });
+                alert('Registro eliminado correctamente.');
+                closeDeleteModal();
+            } else {
+                alert('Error al eliminar: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al eliminar el registro');
+        });
+    }
+
+    function closeDeleteModal() {
+        const modal = document.getElementById('deleteConfirmModal');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.style.opacity = '0';
+            modal.style.visibility = 'hidden';
         }
     }
 
     // Agregar event listeners a los botones de eliminar
     document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('delete-btn')) {
+        if (e.target.classList.contains('delete-btn') || e.target.closest('.delete-btn')) {
             e.preventDefault();
-            const id = e.target.dataset.id;
-            const section = e.target.dataset.section;
+            const btn = e.target.closest('.delete-btn');
+            const id = btn.dataset.id;
+            const section = btn.dataset.section;
             deleteRegistro(id, section);
+        }
+    });
+
+    // Event listeners para el modal de eliminación
+    document.getElementById('confirmDelete').addEventListener('click', confirmDeleteRegistro);
+    document.getElementById('cancelDelete').addEventListener('click', closeDeleteModal);
+    document.getElementById('closeDeleteModal').addEventListener('click', closeDeleteModal);
+    document.getElementById('deleteConfirmModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeDeleteModal();
         }
     });
 });
