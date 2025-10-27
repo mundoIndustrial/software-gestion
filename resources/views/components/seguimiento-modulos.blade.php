@@ -2,19 +2,6 @@
 
 @php
     // Lógica para determinar el modelo basado en la sección
-    $model = match($section) {
-        'produccion' => \App\Models\RegistroPisoProduccion::class,
-        'polos' => \App\Models\RegistroPisoPolo::class,
-        'corte' => \App\Models\RegistroPisoProduccion::class,
-        default => \App\Models\RegistroPisoProduccion::class,
-    };
-
-    // Obtener fechas del request o usar valores por defecto
-    $startDate = request('start_date', now()->format('Y-m-d'));
-    $endDate = request('end_date', now()->format('Y-m-d'));
-
-    // Obtener registros para el rango de fechas
-    $registros = $model::whereBetween('fecha', [$startDate, $endDate])->get();
 
     // Agrupar por hora
     $dataPorHora = [];
@@ -22,6 +9,11 @@
 
     // Obtener módulos únicos de los registros
     $modulosDisponibles = $registros->pluck('modulo')->unique()->sort()->values()->toArray();
+
+    // Si no hay módulos dinámicos, usar los módulos por defecto
+    if (empty($modulosDisponibles)) {
+        $modulosDisponibles = ['MÓDULO 1', 'MÓDULO 2', 'MÓDULO 3'];
+    }
 
     foreach ($registros as $registro) {
         // Normalizar hora a formato "HORA XX"
@@ -190,8 +182,8 @@
                                 $modData = $horaData['modulos'][$modulo] ?? ['meta'=>0,'eficiencia'=>0,'prendas'=>0];
                                 $eficiencia = $modData['eficiencia'];
                                 $eficienciaClass = $modData['prendas'] > 0
-                                    ? (($eficiencia >= 1.10) ? 'seguimiento-blue'
-                                    : (($eficiencia >= 0.98) ? 'seguimiento-green'
+                                    ? (($eficiencia > 1.00) ? 'seguimiento-blue'
+                                    : (($eficiencia >= 0.80) ? 'seguimiento-green'
                                     : (($eficiencia >= 0.70) ? 'seguimiento-orange' : 'seguimiento-red')))
                                     : 'seguimiento-gray';
                             @endphp
@@ -208,10 +200,10 @@
                         @php
                             $modTotal = $totales['modulos'][$modulo] ?? ['meta'=>0,'eficiencia'=>0,'prendas'=>0];
                             $eficiencia = $modTotal['eficiencia'];
-                            $eficienciaClass = $modTotal['prendas'] > 0 
-                                ? (($eficiencia >= 1.10) ? 'seguimiento-blue' 
-                                : (($eficiencia >= 0.98) ? 'seguimiento-green' 
-                                : (($eficiencia >= 0.70) ? 'seguimiento-orange' : 'seguimiento-red'))) 
+                            $eficienciaClass = $modTotal['prendas'] > 0
+                                ? (($eficiencia > 1.00) ? 'seguimiento-blue'
+                                : (($eficiencia >= 0.80) ? 'seguimiento-green'
+                                : (($eficiencia >= 0.70) ? 'seguimiento-orange' : 'seguimiento-red')))
                                 : 'seguimiento-gray';
                         @endphp
                         <td class="seguimiento-td">{{ number_format($modTotal['prendas'], 0) }}</td>
@@ -225,20 +217,22 @@
 </div>
 
 <div class="seguimiento-legend">
-    <div class="seguimiento-legend-item">
-        <div class="seguimiento-legend-color seguimiento-green"></div>
-        <span>98-110% Eficiencia</span>
-    </div>
+
     <div class="seguimiento-legend-item">
         <div class="seguimiento-legend-color seguimiento-blue"></div>
-        <span>110%+ Eficiencia</span>
+        <span>100%+ Eficiencia</span>
+    </div>
+        <div class="seguimiento-legend-item">
+        <div class="seguimiento-legend-color seguimiento-green"></div>
+        <span>80-100% Eficiencia</span>
+    </div>
+        <div class="seguimiento-legend-item">
+        <div class="seguimiento-legend-color seguimiento-orange"></div>
+        <span>70-79% Eficiencia</span>
     </div>
     <div class="seguimiento-legend-item">
         <div class="seguimiento-legend-color seguimiento-red"></div>
-        <span>Bajo 70% Eficiencia</span>
+        <span>≤ 70% Eficiencia</span>
     </div>
-    <div class="seguimiento-legend-item">
-        <div class="seguimiento-legend-color seguimiento-orange"></div>
-        <span>70-98% Eficiencia</span>
-    </div>
+
 </div>
