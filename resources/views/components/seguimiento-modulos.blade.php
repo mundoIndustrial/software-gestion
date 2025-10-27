@@ -1,4 +1,4 @@
-@props(['section' => 'produccion'])
+@props(['section' => 'produccion', 'registros' => collect()])
 
 @php
     // Lógica para determinar el modelo basado en la sección

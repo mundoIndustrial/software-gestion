@@ -47,7 +47,7 @@
 
             <!-- Seguimiento módulos (visible by default) -->
             <div x-show="!showRecords">
-                @include('components.seguimiento-modulos', ['section' => 'produccion'])
+                @include('components.seguimiento-modulos', ['section' => 'produccion', 'registros' => $registros])
             </div>
 
             <!-- Tabla de registros (hidden by default) -->
@@ -112,7 +112,7 @@
 
             <!-- Seguimiento módulos (visible by default) -->
             <div x-show="!showRecords">
-                @include('components.seguimiento-modulos', ['section' => 'polos'])
+                @include('components.seguimiento-modulos', ['section' => 'polos', 'registros' => $registrosPolos])
             </div>
 
             <!-- Tabla de registros (hidden by default) -->
@@ -177,7 +177,7 @@
 
             <!-- Seguimiento módulos (visible by default) -->
             <div x-show="!showRecords">
-                @include('components.seguimiento-modulos', ['section' => 'corte'])
+                @include('components.seguimiento-modulos', ['section' => 'corte', 'registros' => $registrosCorte])
             </div>
 
             <!-- Tabla de registros (hidden by default) -->
@@ -193,9 +193,9 @@
                             </tr>
                         </thead>
                         <tbody class="table-body">
-                            @foreach($registrosCorte ?? [] as $registro)
+                            @foreach($registrosCorte as $registro)
                             <tr class="table-row" data-id="{{ $registro->id }}">
-                                @foreach($columnsCorte ?? [] as $column)
+                                @foreach($columnsCorte as $column)
                                     @php
                                         $value = $registro->$column;
                                         $displayValue = $value;
@@ -222,20 +222,13 @@
                 </div>
 
                 <!-- Paginación -->
+                <!-- Paginación -->
                 <div class="table-pagination">
                     <div class="pagination-info">
-                        @php
-                            $corteCollection = $registrosCorte ?? collect();
-                            $total = method_exists($corteCollection, 'total') ? $corteCollection->total() : $corteCollection->count();
-                            $firstItem = method_exists($corteCollection, 'firstItem') ? $corteCollection->firstItem() : 1;
-                            $lastItem = method_exists($corteCollection, 'lastItem') ? $corteCollection->lastItem() : $total;
-                        @endphp
-                        <span>Mostrando {{ $firstItem }}-{{ $lastItem }} de {{ $total }} registros</span>
+                        <span>Mostrando {{ $registrosCorte->firstItem() }}-{{ $registrosCorte->lastItem() }} de {{ $registrosCorte->total() }} registros</span>
                     </div>
                     <div class="pagination-controls">
-                        @if(method_exists($corteCollection, 'appends'))
-                            {{ $corteCollection->appends(request()->query())->links() }}
-                        @endif
+                        {{ $registrosCorte->appends(request()->query())->links() }}
                     </div>
                 </div>
             </div>
