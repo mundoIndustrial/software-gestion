@@ -7,6 +7,11 @@ use Illuminate\Support\Facades\Schema;
 use App\Models\RegistroPisoProduccion;
 use App\Models\RegistroPisoPolo;
 use App\Models\RegistroPisoCorte;
+use App\Models\User;
+use App\Models\Hora;
+use App\Models\Maquina;
+use App\Models\Tela;
+use App\Models\TiempoCiclo;
 
 class TablerosController extends Controller
 {
@@ -54,7 +59,7 @@ class TablerosController extends Controller
             $registro->save();
         }
 
-        $queryCorte = RegistroPisoCorte::query();
+        $queryCorte = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela']);
         $this->aplicarFiltroFecha($queryCorte, request());
         $registrosCorte = $queryCorte->paginate(50);
         $columnsCorte = Schema::getColumnListing('registro_piso_corte');
@@ -81,7 +86,22 @@ class TablerosController extends Controller
                 'columns' => array_values($columns),
                 'registrosPolos' => $registrosPolos->items(),
                 'columnsPolos' => array_values($columnsPolos),
-                'registrosCorte' => $registrosCorte->items(),
+                'registrosCorte' => $registrosCorte->map(function($registro) {
+                    $registroArray = $registro->toArray();
+                    if ($registro->hora) {
+                        $registroArray['hora_display'] = 'HORA ' . $registro->hora->hora;
+                    }
+                    if ($registro->operario) {
+                        $registroArray['operario_display'] = $registro->operario->name;
+                    }
+                    if ($registro->maquina) {
+                        $registroArray['maquina_display'] = $registro->maquina->nombre_maquina;
+                    }
+                    if ($registro->tela) {
+                        $registroArray['tela_display'] = $registro->tela->nombre_tela;
+                    }
+                    return $registroArray;
+                })->toArray(),
                 'columnsCorte' => array_values($columnsCorte),
                 'pagination' => [
                     'current_page' => $registros->currentPage(),
@@ -119,7 +139,15 @@ class TablerosController extends Controller
         $seguimientoPolos = $this->calcularSeguimientoModulos($registrosPolosFiltrados);
         $seguimientoCorte = $this->calcularSeguimientoModulos($registrosCorteFiltrados);
 
-        return view('tableros', compact('registros', 'columns', 'registrosPolos', 'columnsPolos', 'registrosCorte', 'columnsCorte', 'seguimientoProduccion', 'seguimientoPolos', 'seguimientoCorte'));
+        // Obtener datos para selects en el formulario de corte
+        $horas = Hora::all();
+        $operarios = User::whereHas('role', function($query) {
+            $query->where('name', 'cortador');
+        })->get();
+        $maquinas = Maquina::all();
+        $telas = Tela::all();
+
+        return view('tableros', compact('registros', 'columns', 'registrosPolos', 'columnsPolos', 'registrosCorte', 'columnsCorte', 'seguimientoProduccion', 'seguimientoPolos', 'seguimientoCorte', 'horas', 'operarios', 'maquinas', 'telas'));
     }
 
     private function aplicarFiltroFecha($query, $request)
@@ -556,11 +584,11 @@ class TablerosController extends Controller
         $request->validate([
             'fecha' => 'required|date',
             'orden_produccion' => 'required|string',
-            'tela' => 'required|string',
-            'hora' => 'required|string',
-            'operario' => 'required|string',
+            'tela_id' => 'required|exists:telas,id',
+            'hora_id' => 'required|exists:horas,id',
+            'operario_id' => 'required|exists:users,id',
             'actividad' => 'required|string',
-            'maquina' => 'required|string',
+            'maquina_id' => 'required|exists:maquinas,id',
             'tiempo_ciclo' => 'required|numeric',
             'porcion_tiempo' => 'required|numeric|min:0|max:1',
             'cantidad_producida' => 'required|integer',
@@ -574,6 +602,19 @@ class TablerosController extends Controller
         ]);
 
         try {
+            // Check if tiempo_ciclo exists for this tela and maquina, if not, create it
+            $tiempoCiclo = TiempoCiclo::where('tela_id', $request->tela_id)
+                ->where('maquina_id', $request->maquina_id)
+                ->first();
+
+            if (!$tiempoCiclo) {
+                TiempoCiclo::create([
+                    'tela_id' => $request->tela_id,
+                    'maquina_id' => $request->maquina_id,
+                    'tiempo_ciclo' => $request->tiempo_ciclo,
+                ]);
+            }
+
             $tiempo_disponible = (3600 * $request->porcion_tiempo * 1) - ($request->tiempo_parada_no_programada ?? 0) - 0; // Asumiendo 1 operario por defecto para corte
             $meta = $request->tiempo_ciclo > 0 ? ($tiempo_disponible / $request->tiempo_ciclo) * 0.9 : 0;
             $eficiencia = $meta == 0 ? 0 : ($request->cantidad_producida / $meta);
@@ -581,9 +622,9 @@ class TablerosController extends Controller
             $registro = RegistroPisoCorte::create([
                 'fecha' => $request->fecha,
                 'orden_produccion' => $request->orden_produccion,
-                'hora' => $request->hora,
-                'operario' => $request->operario,
-                'maquina' => $request->maquina,
+                'hora_id' => $request->hora_id,
+                'operario_id' => $request->operario_id,
+                'maquina_id' => $request->maquina_id,
                 'porcion_tiempo' => $request->porcion_tiempo,
                 'cantidad' => $request->cantidad_producida,
                 'tiempo_ciclo' => $request->tiempo_ciclo,
@@ -596,11 +637,11 @@ class TablerosController extends Controller
                 'trazado' => $request->trazado,
                 'tiempo_trazado' => $request->tiempo_trazado,
                 'actividad' => $request->actividad,
-                'tela' => $request->tela,
+                'tela_id' => $request->tela_id,
                 'tiempo_disponible' => $tiempo_disponible,
                 'meta' => $meta,
                 'eficiencia' => $eficiencia,
-                        ]);
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -613,5 +654,97 @@ class TablerosController extends Controller
                 'message' => 'Error al guardar el registro: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function getTiempoCiclo(Request $request)
+    {
+        $request->validate([
+            'tela_id' => 'required|exists:telas,id',
+            'maquina_id' => 'required|exists:maquinas,id',
+        ]);
+
+        $tiempoCiclo = TiempoCiclo::where('tela_id', $request->tela_id)
+            ->where('maquina_id', $request->maquina_id)
+            ->first();
+
+        if ($tiempoCiclo) {
+            return response()->json([
+                'success' => true,
+                'tiempo_ciclo' => $tiempoCiclo->tiempo_ciclo
+            ]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontró tiempo de ciclo para esta combinación de tela y máquina.'
+            ]);
+        }
+    }
+
+    public function storeTela(Request $request)
+    {
+        $request->validate([
+            'nombre_tela' => 'required|string|unique:telas,nombre_tela',
+        ]);
+
+        try {
+            $tela = Tela::create([
+                'nombre_tela' => $request->nombre_tela,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tela creada correctamente.',
+                'tela' => $tela
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear la tela: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function searchTelas(Request $request)
+    {
+        $query = $request->get('q', '');
+        $telas = Tela::where('nombre_tela', 'like', '%' . $query . '%')->get();
+
+        return response()->json([
+            'telas' => $telas
+        ]);
+    }
+
+    public function storeMaquina(Request $request)
+    {
+        $request->validate([
+            'nombre_maquina' => 'required|string|unique:maquinas,nombre_maquina',
+        ]);
+
+        try {
+            $maquina = Maquina::create([
+                'nombre_maquina' => $request->nombre_maquina,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Máquina creada correctamente.',
+                'maquina' => $maquina
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear la máquina: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function searchMaquinas(Request $request)
+    {
+        $query = $request->get('q', '');
+        $maquinas = Maquina::where('nombre_maquina', 'like', '%' . $query . '%')->get();
+
+        return response()->json([
+            'maquinas' => $maquinas
+        ]);
     }
 }

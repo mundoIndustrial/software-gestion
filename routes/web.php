@@ -65,6 +65,11 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/tableros/{id}', [TablerosController::class, 'update'])->name('tableros.update');
     Route::delete('/tableros/{id}', [TablerosController::class, 'destroy'])->name('tableros.destroy');
     Route::post('/piso-corte', [TablerosController::class, 'storeCorte'])->name('piso-corte.store');
+    Route::get('/get-tiempo-ciclo', [TablerosController::class, 'getTiempoCiclo'])->name('get-tiempo-ciclo');
+    Route::post('/store-tela', [TablerosController::class, 'storeTela'])->name('store-tela');
+    Route::get('/search-telas', [TablerosController::class, 'searchTelas'])->name('search-telas');
+    Route::post('/store-maquina', [TablerosController::class, 'storeMaquina'])->name('store-maquina');
+    Route::get('/search-maquinas', [TablerosController::class, 'searchMaquinas'])->name('search-maquinas');
 });
 
 require __DIR__.'/auth.php';

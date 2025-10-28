@@ -46,7 +46,11 @@
                                 </svg>
                                 TELA *
                             </label>
-                            <input type="text" name="tela" class="form-input" placeholder="Tipo de tela" required />
+                            <div class="autocomplete-container">
+                                <input type="text" id="tela_autocomplete" class="form-input" placeholder="Buscar o crear tela" required autocomplete="off" />
+                                <input type="hidden" name="tela_id" id="tela_id" />
+                                <div id="tela_suggestions" class="autocomplete-suggestions"></div>
+                            </div>
                         </div>
 
                         <div class="form-group">
@@ -57,20 +61,11 @@
                                 </svg>
                                 HORA *
                             </label>
-                            <select name="hora" class="form-select" required>
+                            <select name="hora_id" class="form-select" required>
                                 <option value="">Seleccionar hora</option>
-                                <option value="HORA 01">HORA 01</option>
-                                <option value="HORA 02">HORA 02</option>
-                                <option value="HORA 03">HORA 03</option>
-                                <option value="HORA 04">HORA 04</option>
-                                <option value="HORA 05">HORA 05</option>
-                                <option value="HORA 06">HORA 06</option>
-                                <option value="HORA 07">HORA 07</option>
-                                <option value="HORA 08">HORA 08</option>
-                                <option value="HORA 09">HORA 09</option>
-                                <option value="HORA 10">HORA 10</option>
-                                <option value="HORA 11">HORA 11</option>
-                                <option value="HORA 12">HORA 12</option>
+                                @foreach($horas as $hora)
+                                    <option value="{{ $hora->id }}">HORA {{ $hora->hora }}</option>
+                                @endforeach
                             </select>
                         </div>
 
@@ -81,12 +76,12 @@
                                 </svg>
                                 OPERARIO *
                             </label>
-                            <input type="text" name="operario" list="operarios" class="form-input" placeholder="Seleccionar operario" required />
-                            <datalist id="operarios">
-                                <option value="Operario 1">
-                                <option value="Operario 2">
-                                <option value="Operario 3">
-                            </datalist>
+                            <select name="operario_id" class="form-select" required>
+                                <option value="">Seleccionar operario</option>
+                                @foreach($operarios as $operario)
+                                    <option value="{{ $operario->id }}">{{ $operario->name }}</option>
+                                @endforeach
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -117,13 +112,11 @@
                                 </svg>
                                 MÁQUINA *
                             </label>
-                            <select name="maquina" class="form-select" required>
-                                <option value="">Seleccionar máquina</option>
-                                <option value="BANANA">BANANA</option>
-                                <option value="VERTICAL">VERTICAL</option>
-                                <option value="TIJERA">TIJERA</option>
-                                <option value="N.A">N.A</option>
-                            </select>
+                            <div class="autocomplete-container">
+                                <input type="text" id="maquina_autocomplete" class="form-input" placeholder="Buscar o crear máquina" required autocomplete="off" />
+                                <input type="hidden" name="maquina_id" id="maquina_id" />
+                                <div id="maquina_suggestions" class="autocomplete-suggestions"></div>
+                            </div>
                         </div>
 
                         <div class="form-group">
@@ -462,6 +455,45 @@
             background: #cbd5e0;
         }
 
+        .piso-corte-form-modal-container .autocomplete-container {
+            position: relative;
+        }
+
+        .piso-corte-form-modal-container .autocomplete-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .piso-corte-form-modal-container .autocomplete-suggestions div {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f1f5f9;
+            color: #2d3748;
+        }
+
+        .piso-corte-form-modal-container .autocomplete-suggestions div:hover {
+            background: #f8fafc;
+        }
+
+        .piso-corte-form-modal-container .autocomplete-suggestions div:last-child {
+            border-bottom: none;
+        }
+
+        .piso-corte-form-modal-container .autocomplete-suggestions .create-new {
+            color: #3b82f6;
+            font-weight: 500;
+        }
+
         @media (max-width: 768px) {
             .piso-corte-form-modal-container .form-grid {
                 grid-template-columns: 1fr;
@@ -480,6 +512,196 @@
     <script>
         function closeCorteModal() {
             window.dispatchEvent(new CustomEvent('close-modal', { detail: 'piso-corte-form' }));
+        }
+
+        // Autocomplete para tela
+        const telaAutocomplete = document.getElementById('tela_autocomplete');
+        const telaId = document.getElementById('tela_id');
+        const telaSuggestions = document.getElementById('tela_suggestions');
+        let debounceTimer;
+
+        telaAutocomplete.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            const query = this.value.trim();
+
+            if (query.length < 2) {
+                telaSuggestions.style.display = 'none';
+                return;
+            }
+
+            debounceTimer = setTimeout(() => {
+                fetch(`{{ route('search-telas') }}?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        telaSuggestions.innerHTML = '';
+
+                        if (data.telas.length > 0) {
+                            data.telas.forEach(tela => {
+                                const div = document.createElement('div');
+                                div.textContent = tela.nombre_tela;
+                                div.addEventListener('click', () => {
+                                    telaAutocomplete.value = tela.nombre_tela;
+                                    telaId.value = tela.id;
+                                    telaSuggestions.style.display = 'none';
+                                    autoFillTiempoCiclo();
+                                });
+                                telaSuggestions.appendChild(div);
+                            });
+                        }
+
+                        // Opción para crear nueva tela
+                        const createDiv = document.createElement('div');
+                        createDiv.textContent = `Crear nueva tela: "${query}"`;
+                        createDiv.classList.add('create-new');
+                        createDiv.addEventListener('click', () => {
+                            createNuevaTela(query);
+                        });
+                        telaSuggestions.appendChild(createDiv);
+
+                        telaSuggestions.style.display = 'block';
+                    })
+                    .catch(error => {
+                        console.error('Error fetching telas:', error);
+                    });
+            }, 300);
+        });
+
+        function createNuevaTela(nombre) {
+            fetch('{{ route("store-tela") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({ nombre_tela: nombre })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    telaAutocomplete.value = data.tela.nombre_tela;
+                    telaId.value = data.tela.id;
+                    telaSuggestions.style.display = 'none';
+                    autoFillTiempoCiclo();
+                } else {
+                    alert('Error al crear la tela: ' + (data.message || 'Error desconocido'));
+                }
+            })
+            .catch(error => {
+                console.error('Error creating tela:', error);
+                alert('Error al crear la tela.');
+            });
+        }
+
+        // Ocultar sugerencias al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            if (!telaAutocomplete.contains(e.target) && !telaSuggestions.contains(e.target)) {
+                telaSuggestions.style.display = 'none';
+            }
+        });
+
+        // Autocomplete para máquina
+        const maquinaAutocomplete = document.getElementById('maquina_autocomplete');
+        const maquinaId = document.getElementById('maquina_id');
+        const maquinaSuggestions = document.getElementById('maquina_suggestions');
+
+        maquinaAutocomplete.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            const query = this.value.trim();
+
+            if (query.length < 2) {
+                maquinaSuggestions.style.display = 'none';
+                return;
+            }
+
+            debounceTimer = setTimeout(() => {
+                fetch(`{{ route('search-maquinas') }}?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        maquinaSuggestions.innerHTML = '';
+
+                        if (data.maquinas.length > 0) {
+                            data.maquinas.forEach(maquina => {
+                                const div = document.createElement('div');
+                                div.textContent = maquina.nombre_maquina;
+                                div.addEventListener('click', () => {
+                                    maquinaAutocomplete.value = maquina.nombre_maquina;
+                                    maquinaId.value = maquina.id;
+                                    maquinaSuggestions.style.display = 'none';
+                                    autoFillTiempoCiclo();
+                                });
+                                maquinaSuggestions.appendChild(div);
+                            });
+                        }
+
+                        // Opción para crear nueva máquina
+                        const createDiv = document.createElement('div');
+                        createDiv.textContent = `Crear nueva máquina: "${query}"`;
+                        createDiv.classList.add('create-new');
+                        createDiv.addEventListener('click', () => {
+                            createNuevaMaquina(query);
+                        });
+                        maquinaSuggestions.appendChild(createDiv);
+
+                        maquinaSuggestions.style.display = 'block';
+                    })
+                    .catch(error => {
+                        console.error('Error fetching maquinas:', error);
+                    });
+            }, 300);
+        });
+
+        function createNuevaMaquina(nombre) {
+            fetch('{{ route("store-maquina") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({ nombre_maquina: nombre })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    maquinaAutocomplete.value = data.maquina.nombre_maquina;
+                    maquinaId.value = data.maquina.id;
+                    maquinaSuggestions.style.display = 'none';
+                    autoFillTiempoCiclo();
+                } else {
+                    alert('Error al crear la máquina: ' + (data.message || 'Error desconocido'));
+                }
+            })
+            .catch(error => {
+                console.error('Error creating maquina:', error);
+                alert('Error al crear la máquina.');
+            });
+        }
+
+        // Ocultar sugerencias de máquina al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            if (!maquinaAutocomplete.contains(e.target) && !maquinaSuggestions.contains(e.target)) {
+                maquinaSuggestions.style.display = 'none';
+            }
+        });
+
+        // Auto-fill tiempo_ciclo cuando se seleccionan tela y maquina
+        function autoFillTiempoCiclo() {
+            const telaIdValue = telaId.value;
+            const maquinaIdValue = maquinaId.value;
+
+            if (telaIdValue && maquinaIdValue) {
+                fetch(`{{ route('get-tiempo-ciclo') }}?tela_id=${telaIdValue}&maquina_id=${maquinaIdValue}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            document.querySelector('input[name="tiempo_ciclo"]').value = data.tiempo_ciclo;
+                        } else {
+                            document.querySelector('input[name="tiempo_ciclo"]').value = '';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching tiempo_ciclo:', error);
+                    });
+            }
         }
 
         document.getElementById('registroCorteForm').addEventListener('submit', function(e) {
@@ -509,6 +731,8 @@
                     // Cerrar modal y resetear formulario
                     window.dispatchEvent(new CustomEvent('close-modal', { detail: 'piso-corte-form' }));
                     this.reset();
+                    telaId.value = ''; // Reset hidden input
+                    maquinaId.value = ''; // Reset hidden input
 
                     // Actualizar tabla si existe la función
                     if (window.actualizarTablaCorte) {

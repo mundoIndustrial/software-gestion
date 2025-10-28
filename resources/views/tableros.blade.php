@@ -70,7 +70,7 @@
                                         if ($column === 'fecha' && $value) {
                                             $displayValue = $value->format('d/m/Y');
                                         } elseif ($column === 'hora' && $value) {
-                                            $displayValue = $value;
+                                            $displayValue = 'HORA ' . $value;
                                         } elseif ($column === 'eficiencia' && $value) {
                                             $displayValue = $value . '%';
                                         }
@@ -132,7 +132,7 @@
                                         if ($column === 'fecha' && $value) {
                                             $displayValue = $value->format('d/m/Y');
                                         } elseif ($column === 'hora' && $value) {
-                                            $displayValue = $value;
+                                            $displayValue = 'HORA ' . $value;
                                         } elseif ($column === 'eficiencia' && $value) {
                                             $displayValue = $value . '%';
                                         }
@@ -180,7 +180,19 @@
                         <thead class="table-head">
                             <tr>
                                 @foreach($columnsCorte ?? [] as $column)
-                                    <th class="table-header-cell" data-column="{{ $column }}">{{ ucfirst(str_replace('_', ' ', $column)) }}</th>
+                                    @php
+                                        $headerText = ucfirst(str_replace('_', ' ', $column));
+                                        if ($column === 'hora_id') {
+                                            $headerText = 'Hora';
+                                        } elseif ($column === 'operario_id') {
+                                            $headerText = 'Operario';
+                                        } elseif ($column === 'maquina_id') {
+                                            $headerText = 'Máquina';
+                                        } elseif ($column === 'tela_id') {
+                                            $headerText = 'Tela';
+                                        }
+                                    @endphp
+                                    <th class="table-header-cell" data-column="{{ $column }}">{{ $headerText }}</th>
                                 @endforeach
                                 <th class="table-header-cell">Acciones</th>
                             </tr>
@@ -194,8 +206,14 @@
                                         $displayValue = $value;
                                         if ($column === 'fecha' && $value) {
                                             $displayValue = $value->format('d/m/Y');
-                                        } elseif ($column === 'hora' && $value) {
-                                            $displayValue = $value;
+                                        } elseif ($column === 'hora_id' && $registro->hora) {
+                                            $displayValue = 'HORA ' . $registro->hora->hora;
+                                        } elseif ($column === 'operario_id' && $registro->operario) {
+                                            $displayValue = $registro->operario->name;
+                                        } elseif ($column === 'maquina_id' && $registro->maquina) {
+                                            $displayValue = $registro->maquina->nombre_maquina;
+                                        } elseif ($column === 'tela_id' && $registro->tela) {
+                                            $displayValue = $registro->tela->nombre_tela;
                                         } elseif ($column === 'eficiencia' && $value) {
                                             $displayValue = $value . '%';
                                         }
@@ -298,8 +316,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (column === 'fecha' && value) {
                     const date = new Date(value);
                     displayValue = date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                } else if (column === 'hora' && value) {
-                    displayValue = value;
+                } else if (column === 'hora_id' && registro.hora_display) {
+                    displayValue = registro.hora_display;
+                } else if (column === 'operario_id' && registro.operario_display) {
+                    displayValue = registro.operario_display;
+                } else if (column === 'maquina_id' && registro.maquina_display) {
+                    displayValue = registro.maquina_display;
+                } else if (column === 'tela_id' && registro.tela_display) {
+                    displayValue = registro.tela_display;
                 } else if (column === 'eficiencia' && value !== null) {
                     displayValue = value + '%';
                     eficienciaClass = getEficienciaClass(value);
@@ -486,7 +510,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
         }
         if (column === 'hora' && value) {
-            return value;
+            return 'HORA ' + value;
         }
         if (column === 'eficiencia' && value) {
             return value + '%';

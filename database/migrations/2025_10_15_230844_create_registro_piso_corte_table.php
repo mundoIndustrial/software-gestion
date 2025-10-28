@@ -16,7 +16,7 @@ return new class extends Migration
             $table->date('fecha');
             $table->string('orden_produccion');
             $table->string('hora');
-            $table->string('operario');
+            $table->string('cortador');
             $table->string('maquina');
             $table->decimal('porcion_tiempo', 8, 2);
             $table->integer('cantidad');
