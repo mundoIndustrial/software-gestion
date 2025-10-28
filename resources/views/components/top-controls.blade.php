@@ -32,10 +32,10 @@
          x-show="!showRecords"
          x-data="{
             filterType: '{{ request('filter_type', 'range') }}',
-            startDate: '{{ request('start_date', now()->format('Y-m-d')) }}',
-            endDate: '{{ request('end_date', now()->format('Y-m-d')) }}',
-            specificDate: '{{ request('specific_date', now()->format('Y-m-d')) }}',
-            month: '{{ request('month', now()->format('Y-m')) }}',
+            startDate: '{{ request('start_date', '') }}',
+            endDate: '{{ request('end_date', '') }}',
+            specificDate: '{{ request('specific_date', '') }}',
+            month: '{{ request('month', '') }}',
             specificDates: '{{ request('specific_dates', '') }}'
          }">
 

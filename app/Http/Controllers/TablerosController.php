@@ -12,7 +12,9 @@ class TablerosController extends Controller
 {
     public function index()
     {
-        $registros = RegistroPisoProduccion::paginate(50);
+        $queryProduccion = RegistroPisoProduccion::query();
+        $this->aplicarFiltroFecha($queryProduccion, request());
+        $registros = $queryProduccion->paginate(50);
         $columns = Schema::getColumnListing('registro_piso_produccion');
         $columns = array_diff($columns, ['id', 'created_at', 'updated_at', 'producida']);
 
@@ -31,7 +33,9 @@ class TablerosController extends Controller
             $registro->save();
         }
 
-        $registrosPolos = RegistroPisoPolo::paginate(50);
+        $queryPolos = RegistroPisoPolo::query();
+        $this->aplicarFiltroFecha($queryPolos, request());
+        $registrosPolos = $queryPolos->paginate(50);
         $columnsPolos = Schema::getColumnListing('registro_piso_polo');
         $columnsPolos = array_diff($columnsPolos, ['id', 'created_at', 'updated_at', 'producida']);
 
@@ -50,7 +54,9 @@ class TablerosController extends Controller
             $registro->save();
         }
 
-        $registrosCorte = RegistroPisoCorte::paginate(50);
+        $queryCorte = RegistroPisoCorte::query();
+        $this->aplicarFiltroFecha($queryCorte, request());
+        $registrosCorte = $queryCorte->paginate(50);
         $columnsCorte = Schema::getColumnListing('registro_piso_corte');
         $columnsCorte = array_diff($columnsCorte, ['id', 'created_at', 'updated_at', 'producida']);
 
@@ -116,16 +122,56 @@ class TablerosController extends Controller
         return view('tableros', compact('registros', 'columns', 'registrosPolos', 'columnsPolos', 'registrosCorte', 'columnsCorte', 'seguimientoProduccion', 'seguimientoPolos', 'seguimientoCorte'));
     }
 
-    private function filtrarRegistrosPorFecha($registros, $request)
+    private function aplicarFiltroFecha($query, $request)
     {
-        $filterType = $request->get('filter_type', 'range');
+        $filterType = $request->get('filter_type');
 
         if (!$filterType || $filterType === 'range') {
             $startDate = $request->get('start_date');
             $endDate = $request->get('end_date');
 
             if ($startDate && $endDate) {
-                return $registros->whereBetween('fecha', [$startDate, $endDate]);
+                $query->whereDate('fecha', '>=', $startDate)
+                      ->whereDate('fecha', '<=', $endDate);
+            }
+        } elseif ($filterType === 'day') {
+            $specificDate = $request->get('specific_date');
+            if ($specificDate) {
+                $query->whereDate('fecha', $specificDate);
+            }
+        } elseif ($filterType === 'month') {
+            $month = $request->get('month');
+            if ($month) {
+                // Formato esperado: YYYY-MM
+                $year = substr($month, 0, 4);
+                $monthNum = substr($month, 5, 2);
+                $startOfMonth = "{$year}-{$monthNum}-01";
+                $endOfMonth = date('Y-m-t', strtotime($startOfMonth));
+                $query->whereDate('fecha', '>=', $startOfMonth)
+                      ->whereDate('fecha', '<=', $endOfMonth);
+            }
+        } elseif ($filterType === 'specific') {
+            $specificDates = $request->get('specific_dates');
+            if ($specificDates) {
+                $dates = explode(',', $specificDates);
+                $query->whereIn('fecha', $dates);
+            }
+        }
+    }
+
+    private function filtrarRegistrosPorFecha($registros, $request)
+    {
+        $filterType = $request->get('filter_type');
+
+        if (!$filterType || $filterType === 'range') {
+            $startDate = $request->get('start_date');
+            $endDate = $request->get('end_date');
+
+            if ($startDate && $endDate) {
+                return $registros->filter(function($registro) use ($startDate, $endDate) {
+                    $fecha = $registro->fecha->format('Y-m-d');
+                    return $fecha >= $startDate && $fecha <= $endDate;
+                });
             }
         } elseif ($filterType === 'day') {
             $specificDate = $request->get('specific_date');
@@ -140,7 +186,10 @@ class TablerosController extends Controller
                 $monthNum = substr($month, 5, 2);
                 $startOfMonth = "{$year}-{$monthNum}-01";
                 $endOfMonth = date('Y-m-t', strtotime($startOfMonth));
-                return $registros->whereBetween('fecha', [$startOfMonth, $endOfMonth]);
+                return $registros->filter(function($registro) use ($startOfMonth, $endOfMonth) {
+                    $fecha = $registro->fecha->format('Y-m-d');
+                    return $fecha >= $startOfMonth && $fecha <= $endOfMonth;
+                });
             }
         } elseif ($filterType === 'specific') {
             $specificDates = $request->get('specific_dates');
