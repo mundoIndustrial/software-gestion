@@ -64,6 +64,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/tableros', [TablerosController::class, 'store'])->name('tableros.store');
     Route::patch('/tableros/{id}', [TablerosController::class, 'update'])->name('tableros.update');
     Route::delete('/tableros/{id}', [TablerosController::class, 'destroy'])->name('tableros.destroy');
+    Route::post('/piso-corte', [TablerosController::class, 'storeCorte'])->name('piso-corte.store');
 });
 
 require __DIR__.'/auth.php';

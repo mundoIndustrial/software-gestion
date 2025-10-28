@@ -15,7 +15,11 @@ class RegistroPisoCorte extends Model
         'fecha',
         'modulo',
         'orden_produccion',
+        'tela',
         'hora',
+        'operario',
+        'actividad',
+        'maquina',
         'tiempo_ciclo',
         'porcion_tiempo',
         'cantidad',
@@ -28,6 +32,10 @@ class RegistroPisoCorte extends Model
         'tiempo_disponible',
         'meta',
         'eficiencia',
+        'tipo_extendido',
+        'numero_capas',
+        'trazado',
+        'tiempo_trazado',
     ];
 
     protected $casts = [

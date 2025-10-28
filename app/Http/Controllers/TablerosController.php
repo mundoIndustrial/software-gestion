@@ -550,4 +550,66 @@ class TablerosController extends Controller
             ], 500);
         }
     }
+
+    public function storeCorte(Request $request)
+    {
+        $request->validate([
+            'fecha' => 'required|date',
+            'orden_produccion' => 'required|string',
+            'tela' => 'required|string',
+            'hora' => 'required|string',
+            'operario' => 'required|string',
+            'actividad' => 'required|string',
+            'maquina' => 'required|string',
+            'tiempo_ciclo' => 'required|numeric',
+            'porcion_tiempo' => 'required|numeric|min:0|max:1',
+            'cantidad_producida' => 'required|integer',
+            'paradas_programadas' => 'required|string',
+            'paradas_no_programadas' => 'nullable|string',
+            'tipo_extendido' => 'required|string',
+            'numero_capas' => 'required|integer',
+            'trazado' => 'required|string',
+            'tiempo_trazado' => 'nullable|numeric',
+        ]);
+
+        try {
+            $tiempo_disponible = (3600 * $request->porcion_tiempo * 1) - 0 - 0; // Asumiendo 1 operario por defecto para corte
+            $meta = $request->tiempo_ciclo > 0 ? ($tiempo_disponible / $request->tiempo_ciclo) * 0.9 : 0;
+            $eficiencia = $meta == 0 ? 0 : ($request->cantidad_producida / $meta);
+
+            $registro = RegistroPisoCorte::create([
+                'fecha' => $request->fecha,
+                'orden_produccion' => $request->orden_produccion,
+                'tela' => $request->tela,
+                'hora' => $request->hora,
+                'operario' => $request->operario,
+                'actividad' => $request->actividad,
+                'maquina' => $request->maquina,
+                'tiempo_ciclo' => $request->tiempo_ciclo,
+                'porcion_tiempo' => $request->porcion_tiempo,
+                'cantidad' => $request->cantidad_producida,
+                'paradas_programadas' => $request->paradas_programadas,
+                'paradas_no_programadas' => $request->paradas_no_programadas,
+                'numero_operarios' => 1, // Asumiendo 1 operario por defecto
+                'tiempo_disponible' => $tiempo_disponible,
+                'meta' => $meta,
+                'eficiencia' => $eficiencia,
+                'tipo_extendido' => $request->tipo_extendido,
+                'numero_capas' => $request->numero_capas,
+                'trazado' => $request->trazado,
+                'tiempo_trazado' => $request->tiempo_trazado,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Registro de piso de corte guardado correctamente.',
+                'registro' => $registro
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar el registro: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
