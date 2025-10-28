@@ -9,6 +9,7 @@ use App\Http\Controllers\ConfiguracionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EntregaController;
 use App\Http\Controllers\TablerosController;
+use App\Http\Controllers\WebSocketBroadcastController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -64,6 +65,15 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/tableros', [TablerosController::class, 'store'])->name('tableros.store');
     Route::patch('/tableros/{id}', [TablerosController::class, 'update'])->name('tableros.update');
     Route::delete('/tableros/{id}', [TablerosController::class, 'destroy'])->name('tableros.destroy');
+
+    
+    
+    
+    
+    
+    
+    // WebSocket broadcast endpoint (for internal use)
+    Route::post('/websocket/broadcast', [WebSocketBroadcastController::class, 'broadcast']);
 });
 
 require __DIR__.'/auth.php';

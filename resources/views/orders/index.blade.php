@@ -978,104 +978,66 @@ async function recargarTablaPedidos() {
     <script src="{{ asset('js/modern-table.js') }}"></script>
 
     <script>
-        // Sistema híbrido: localStorage + polling para actualizaciones en tiempo real
-        console.log('🔄 Configurando sistema de actualizaciones en tiempo real...');
+        // Sistema WebSocket + localStorage para actualizaciones en tiempo real
+        console.log('🔄 Configurando sistema WebSocket + localStorage...');
 
         // 1. Configurar localStorage listener (para pestañas del mismo navegador)
         window.addEventListener('storage', function(event) {
             if (event.key === 'orders-updates') {
                 try {
                     const data = JSON.parse(event.newValue);
-                    console.log('📱 Actualización desde localStorage:', data);
+                    console.log('📱 [localStorage] Actualización desde otra pestaña:', data);
 
                     const { type, orderId, field, newValue, updatedFields, order, totalDiasCalculados, timestamp } = data;
 
                     // Evitar procesar mensajes propios
                     const lastTimestamp = parseInt(localStorage.getItem('last-orders-update-timestamp') || '0');
                     if (timestamp && timestamp <= lastTimestamp) {
-                        console.log('🚫 Mensaje duplicado ignorado');
+                        console.log('🚫 [localStorage] Mensaje duplicado ignorado');
                         return;
                     }
 
                     localStorage.setItem('last-orders-update-timestamp', timestamp.toString());
                     updateRowFromBroadcast(orderId, field, newValue, updatedFields, order, totalDiasCalculados);
                 } catch (e) {
-                    console.error('❌ Error procesando localStorage:', e);
+                    console.error('❌ [localStorage] Error procesando mensaje:', e);
                 }
             }
         });
 
-        // 2. Configurar polling periódico (cada 30 segundos) para sincronización entre usuarios
-        let lastUpdateTimestamp = Date.now();
-        setInterval(async () => {
-            try {
-                const response = await fetch(`${window.fetchUrl}?_=${Date.now()}`, {
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
+        // 2. REMOVIDO: Polling periódico eliminado - ahora usamos solo WebSockets
+        console.log('ℹ️ Polling deshabilitado - usando solo WebSockets para actualizaciones en tiempo real');
 
-                if (!response.ok) return;
-
-                const data = await response.json();
-                if (data.orders && data.orders.length > 0) {
-                    console.log('🔄 Verificando actualizaciones desde servidor...');
-
-                    // Comparar con datos actuales y actualizar si hay cambios
-                    data.orders.forEach(serverOrder => {
-                        const localRow = document.querySelector(`tr[data-order-id="${serverOrder.pedido}"]`);
-                        if (localRow) {
-                            // Verificar si hay cambios en estado o área
-                            const localStatus = localRow.querySelector('.estado-dropdown')?.value;
-                            const localArea = localRow.querySelector('.area-dropdown')?.value;
-
-                            if (serverOrder.estado !== localStatus) {
-                                console.log(`📡 Estado actualizado por polling: ${serverOrder.pedido} ${localStatus} → ${serverOrder.estado}`);
-                                updateRowFromBroadcast(serverOrder.pedido, 'estado', serverOrder.estado, {}, serverOrder, data.totalDiasCalculados);
-                            }
-
-                            if (serverOrder.area !== localArea) {
-                                console.log(`📡 Área actualizada por polling: ${serverOrder.pedido} ${localArea} → ${serverOrder.area}`);
-                                updateRowFromBroadcast(serverOrder.pedido, 'area', serverOrder.area, {}, serverOrder, data.totalDiasCalculados);
-                            }
-                        }
-                    });
-                }
-            } catch (error) {
-                console.error('❌ Error en polling:', error);
-            }
-        }, 2000); // Polling cada 5 segundos
-
-        // 3. Intentar configurar WebSocket (si está disponible)
+        // 3. Configurar WebSocket para actualizaciones en tiempo real
         setTimeout(() => {
             if (window.Echo) {
-                console.log('✅ Intentando configurar Laravel Echo...');
+                console.log('✅ Configurando WebSocket con Laravel Echo...');
 
                 try {
                     const channel = window.Echo.channel('orders-updates');
-                    console.log('📡 Canal WebSocket conectado');
+                    console.log('📡 Canal WebSocket conectado exitosamente');
 
                     channel.listen('.order.updated', (e) => {
-                        console.log('🎉 Evento recibido via WebSocket:', e);
+                        console.log('🎉 Evento WebSocket recibido:', e);
                         updateRowFromBroadcast(e.orderId, e.field, e.newValue, e.updatedFields, e.order, e.totalDiasCalculados);
                     });
 
-                    console.log('🎯 WebSocket configurado correctamente');
+                    console.log('🎯 WebSocket configurado correctamente - listo para actualizaciones en tiempo real');
                 } catch (error) {
-                    console.warn('⚠️ WebSocket no disponible, usando polling + localStorage');
+                    console.error('❌ Error configurando WebSocket:', error);
+                    console.warn('⚠️ WebSocket falló - verifica configuración de Pusher');
                 }
             } else {
-                console.log('ℹ️ WebSocket no disponible, usando polling + localStorage');
+                console.error('❌ Laravel Echo no disponible - verifica que esté incluido en bootstrap.js');
             }
         }, 1000);
 
         function updateRowFromBroadcast(orderId, field, newValue, updatedFields, order, totalDiasCalculados) {
-            console.log('🔄 Actualizando fila:', { orderId, field, newValue });
+            console.log('🔄 [WebSocket] Actualizando fila:', { orderId, field, newValue });
 
             const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
             if (!row) {
-                console.warn(`❌ Fila con orderId ${orderId} no encontrada`);
+                console.warn(`❌ [WebSocket] Fila con orderId ${orderId} no encontrada`);
                 return;
             }
 
@@ -1085,7 +1047,7 @@ async function recargarTablaPedidos() {
                 if (statusDropdown) {
                     statusDropdown.value = newValue;
                     statusDropdown.dataset.value = newValue;
-                    console.log(`✅ Estado actualizado: ${statusDropdown.dataset.value} → ${newValue}`);
+                    console.log(`✅ [WebSocket] Estado actualizado: ${statusDropdown.dataset.value} → ${newValue}`);
                 }
 
                 // Actualizar color de la fila
@@ -1098,7 +1060,7 @@ async function recargarTablaPedidos() {
                 if (areaDropdown) {
                     areaDropdown.value = newValue;
                     areaDropdown.dataset.value = newValue;
-                    console.log(`✅ Área actualizada: ${areaDropdown.dataset.value} → ${newValue}`);
+                    console.log(`✅ [WebSocket] Área actualizada: ${areaDropdown.dataset.value} → ${newValue}`);
                 }
             }
 
@@ -1108,7 +1070,7 @@ async function recargarTablaPedidos() {
                     const cell = row.querySelector(`td[data-column="${updateField}"] .cell-text`);
                     if (cell) {
                         cell.textContent = value;
-                        console.log(`✅ Campo ${updateField} actualizado: ${value}`);
+                        console.log(`✅ [WebSocket] Campo ${updateField} actualizado: ${value}`);
                     }
                 });
             }
@@ -1118,11 +1080,11 @@ async function recargarTablaPedidos() {
                 const totalDiasCell = row.querySelector('td[data-column="total_de_dias_"] .cell-text');
                 if (totalDiasCell) {
                     totalDiasCell.textContent = totalDiasCalculados[orderId];
-                    console.log(`✅ Total días actualizado: ${totalDiasCalculados[orderId]}`);
+                    console.log(`✅ [WebSocket] Total días actualizado: ${totalDiasCalculados[orderId]}`);
                 }
             }
 
-            console.log(`🎯 Order ${orderId} completamente actualizada`);
+            console.log(`🎯 [WebSocket] Order ${orderId} completamente actualizada`);
         }
 
         function updateRowColor(orderId, status) {
@@ -1155,7 +1117,7 @@ async function recargarTablaPedidos() {
 
             if (conditionalClass) {
                 row.classList.add(conditionalClass);
-                console.log(`🎨 Color de fila actualizado: ${conditionalClass}`);
+                console.log(`🎨 [WebSocket] Color de fila actualizado: ${conditionalClass}`);
             }
         }
     </script>

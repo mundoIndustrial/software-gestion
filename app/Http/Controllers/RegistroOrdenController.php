@@ -392,7 +392,7 @@ class RegistroOrdenController extends Controller
             $newValue = $request->has('estado') ? $request->estado : $request->area;
             $oldValue = $field === 'estado' ? $oldStatus : $oldArea;
 
-            event(new OrderUpdated(
+            broadcast(new OrderUpdated(
                 $pedido,
                 $field,
                 $newValue,

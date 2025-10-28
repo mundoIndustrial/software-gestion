@@ -16,3 +16,7 @@ use Illuminate\Support\Facades\Broadcast;
 Broadcast::channel('orders', function ($user) {
     return $user ? ['id' => $user->id] : false;
 });
+
+Broadcast::channel('orders-updates-public', function ($user) {
+    return true; // Canal público - cualquier usuario autenticado puede escuchar
+});

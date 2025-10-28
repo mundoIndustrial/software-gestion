@@ -36,6 +36,14 @@ class OrderUpdated implements ShouldBroadcast
         $this->order = $order;
         $this->totalDiasCalculados = $totalDiasCalculados;
         $this->userId = $userId ?: auth()->id();
+
+        // Log para debugging
+        \Log::info('📢 OrderUpdated event created', [
+            'orderId' => $this->orderId,
+            'field' => $this->field,
+            'newValue' => $this->newValue,
+            'broadcasting_driver' => config('broadcasting.default')
+        ]);
     }
 
     /**
@@ -46,7 +54,7 @@ class OrderUpdated implements ShouldBroadcast
     public function broadcastOn(): array
     {
         return [
-            new Channel('orders-updates'),
+            new Channel('orders-updates-public'),
         ];
     }
 

@@ -343,6 +343,60 @@ class ModernTable {
             }
         });
 
+        // Configurar listener para WebSocket broadcasts con Laravel Echo
+        if (window.Echo) {
+            console.log('🎧 Configurando listener de Laravel Echo para canal orders-updates-public');
+
+            // Agregar listeners de conexión para debugging
+            window.Echo.connector.pusher.connection.bind('connected', () => {
+                console.log('🔗 WebSocket conectado exitosamente');
+            });
+
+            window.Echo.connector.pusher.connection.bind('disconnected', () => {
+                console.log('🔌 WebSocket desconectado');
+            });
+
+            window.Echo.connector.pusher.connection.bind('error', (error) => {
+                console.error('❌ Error WebSocket:', error);
+            });
+
+            // Suscribirse al canal
+            const channel = window.Echo.channel('orders-updates-public');
+            console.log('📺 Canal suscrito:', channel);
+
+            channel.listen('order.updated', (e) => {
+                console.log('📡 ¡BROADCAST RECIBIDO! Datos:', e);
+                console.log('📡 Tipo de evento:', typeof e);
+                console.log('📡 Keys del evento:', Object.keys(e));
+                console.log('📡 orderId:', e.orderId, 'field:', e.field, 'newValue:', e.newValue);
+
+                self.handleBroadcastMessage({
+                    type: 'order_update',
+                    orderId: e.orderId,
+                    field: e.field,
+                    newValue: e.newValue,
+                    oldValue: e.oldValue,
+                    updatedFields: e.updatedFields,
+                    order: e.order,
+                    totalDiasCalculados: e.totalDiasCalculados
+                });
+            });
+
+            /*
+    // Cada 30 segundos revisa el estado del canal para verificar conexión (solo para debugging)
+    setInterval(() => {
+        console.log('🔍 Estado del canal:', {
+            subscribed: channel.subscribed,
+            pusher: window.Echo.connector.pusher.connection.state
+        });
+    }, 30000);
+*/
+
+
+        } else {
+            console.warn('⚠️ Laravel Echo no está disponible');
+        }
+
         this.setupModalEvents();
     }
 
