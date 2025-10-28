@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="{{ asset('css/modern-table.css') }}">
 <script src="{{ asset('js/tableros.js') }}"></script>
 @include('components.tableros-form-modal')
+@include('components.form_modal_piso_corte')
 <div class="tableros-container" x-data="tablerosApp()">
     <h1 class="tableros-title">Tableros de Producción</h1>
 

@@ -19,6 +19,9 @@ function tablerosApp() {
                 modalTitle.textContent = 'Registro Control de Piso Producción';
             } else if (this.activeTab === 'polos') {
                 modalTitle.textContent = 'Registro Control de Piso Polos';
+            } else if (this.activeTab === 'corte') {
+                window.dispatchEvent(new CustomEvent('open-modal', { detail: 'piso-corte-form' }));
+                return;
             }
             window.dispatchEvent(new CustomEvent('open-modal', { detail: 'tableros-form' }));
         }
