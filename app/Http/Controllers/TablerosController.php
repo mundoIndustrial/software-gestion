@@ -176,7 +176,9 @@ class TablerosController extends Controller
         } elseif ($filterType === 'day') {
             $specificDate = $request->get('specific_date');
             if ($specificDate) {
-                return $registros->where('fecha', $specificDate);
+                return $registros->filter(function($registro) use ($specificDate) {
+                    return $registro->fecha->format('Y-m-d') == $specificDate;
+                });
             }
         } elseif ($filterType === 'month') {
             $month = $request->get('month');
@@ -195,7 +197,9 @@ class TablerosController extends Controller
             $specificDates = $request->get('specific_dates');
             if ($specificDates) {
                 $dates = explode(',', $specificDates);
-                return $registros->whereIn('fecha', $dates);
+                return $registros->filter(function($registro) use ($dates) {
+                    return in_array($registro->fecha->format('Y-m-d'), $dates);
+                });
             }
         }
 
