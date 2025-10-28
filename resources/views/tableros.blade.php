@@ -165,11 +165,11 @@
         <div x-show="activeTab === 'corte'" class="chart-placeholder">
             <!-- Barra de opciones unificada -->
             @include('components.top-controls')
-          
 
-            <!-- Seguimiento módulos (visible by default) -->
+
+            <!-- Dashboard Tables Corte (visible by default) -->
             <div x-show="!showRecords">
-                @include('components.seguimiento-modulos', ['section' => 'corte', 'seguimiento' => $seguimientoCorte])
+                @include('components.dashboard-tables-corte')
             </div>
 
             <!-- Tabla de registros (hidden by default) -->
