@@ -1,6 +1,6 @@
-<!-- Controles superiores: botones + selector de fechas -->
+<!-- Controles superiores: botones + selector de fechas en una sola barra -->
 <div class="top-controls">
-    <!-- Botones de acción -->
+    <!-- Botones de acción (IZQUIERDA) -->
     <div class="action-icons">
         <!-- Mostrar / ocultar registros -->
         <button class="icon-btn" @click="showRecords = !showRecords" :title="showRecords ? 'Ocultar registros' : 'Mostrar registros'">
@@ -27,8 +27,9 @@
         </button>
     </div>
 
-    <!-- Selector de fechas -->
-    <div class="date-selector-section" x-show="!showRecords"
+    <!-- Selector de fechas (DERECHA) -->
+    <div class="date-selector-section" 
+         x-show="!showRecords"
          x-data="{
             filterType: '{{ request('filter_type', 'range') }}',
             startDate: '{{ request('start_date', now()->format('Y-m-d')) }}',
@@ -41,8 +42,9 @@
         <div class="filters-row">
             <!-- Tipo de filtro -->
             <div class="filter-type-group">
-                <label class="filter-type-label">Tipo de filtro</label>
-                <select x-model="filterType" class="filter-select">
+                <select x-model="filterType" 
+                        class="filter-select"
+                        @change="if ($event.target.value === 'specific') { setTimeout(() => initCalendar(), 50); }">
                     <option value="range">Rango de fechas</option>
                     <option value="day">Día específico</option>
                     <option value="month">Mes completo</option>
@@ -53,43 +55,31 @@
             <!-- Rango -->
             <template x-if="filterType === 'range'">
                 <div class="date-inputs-inline">
-                    <div class="date-input-group">
-                        <label>Inicio</label>
-                        <input type="date" id="startDate" x-model="startDate">
-                    </div>
-                    <div class="date-input-group">
-                        <label>Fin</label>
-                        <input type="date" id="endDate" x-model="endDate">
-                    </div>
+                    <input type="date" id="startDate" x-model="startDate" placeholder="Inicio">
+                    <input type="date" id="endDate" x-model="endDate" placeholder="Fin">
                 </div>
             </template>
 
             <!-- Día -->
             <template x-if="filterType === 'day'">
                 <div class="date-inputs-inline">
-                    <div class="date-input-group">
-                        <label>Día</label>
-                        <input type="date" id="specificDate" x-model="specificDate">
-                    </div>
+                    <input type="date" id="specificDate" x-model="specificDate">
                 </div>
             </template>
 
             <!-- Mes -->
             <template x-if="filterType === 'month'">
                 <div class="date-inputs-inline">
-                    <div class="date-input-group">
-                        <label>Mes</label>
-                        <input type="month" id="month" x-model="month">
-                    </div>
+                    <input type="month" id="month" x-model="month">
                 </div>
             </template>
 
-            <button class="btn-apply" onclick="filtrarPorFechas()">Aplicar Filtro</button>
+            <button class="btn-apply" onclick="filtrarPorFechas()">Aplicar</button>
         </div>
 
-        <!-- Calendario solo para días específicos -->
+        <!-- Calendario para días específicos (dentro del selector) -->
         <template x-if="filterType === 'specific'">
-            <div class="calendar-container">
+            <div class="calendar-container" x-init="setTimeout(() => initCalendar(), 100)">
                 <div class="calendar-wrapper">
                     <div id="calendar" class="calendar-widget"></div>
                 </div>
@@ -99,107 +89,137 @@
 </div>
 
 <style>
-/* === General layout === */
+/* === Top Controls Bar === */
+.top-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+    padding: 0.8rem 1.2rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* === Action Icons (LEFT) === */
+.action-icons {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+}
+
+.icon-btn {
+    background: #374151;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    padding: 0.6rem;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-btn:hover {
+    background: #4b5563;
+    transform: scale(1.05);
+    border-color: rgba(255, 107, 53, 0.4);
+}
+
+.icon-btn svg {
+    stroke: #f0f0f0;
+}
+
+/* === Date Selector (RIGHT) === */
 .date-selector-section {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    margin: 10px auto;
-    padding: 15px 20px;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 12px;
-    width: 100%;
+    align-items: flex-end;
+    flex: 1;
+    gap: 1rem;
 }
 
 .filters-row {
     display: flex;
-    align-items: flex-end;
-    gap: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
-    width: 100%;
+    align-items: center;
+    gap: 0.8rem;
+    flex-wrap: nowrap;
 }
 
-/* === Filter group === */
 .filter-type-group {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.filter-type-label {
-    color: #9ca3af;
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
+    align-items: center;
 }
 
 .filter-select {
     background: #374151;
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 8px;
-    padding: 10px 12px;
+    padding: 0.5rem 0.8rem;
     color: #fff;
-    font-size: 14px;
+    font-size: 13px;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.2s;
+    min-width: 140px;
 }
-.filter-select:hover { background: #4b5563; }
 
-/* === Date inputs inline === */
+.filter-select:hover {
+    background: #4b5563;
+    border-color: rgba(255, 107, 53, 0.3);
+}
+
+/* === Date Inputs === */
 .date-inputs-inline {
     display: flex;
-    gap: 15px;
+    gap: 0.5rem;
+    align-items: center;
 }
 
-.date-input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.date-input-group label {
-    color: #9ca3af;
-    font-size: 12px;
-    text-transform: uppercase;
-}
-
-.date-input-group input[type="date"],
-.date-input-group input[type="month"] {
-    background: rgba(255, 255, 255, 0.08);
+.date-inputs-inline input[type="date"],
+.date-inputs-inline input[type="month"] {
+    background: #374151;
     border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 8px;
-    padding: 8px 12px;
+    padding: 0.5rem 0.8rem;
     color: #fff;
-    font-size: 14px;
+    font-size: 13px;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.2s;
+    min-width: 140px;
 }
-.date-input-group input:hover { background: rgba(255, 255, 255, 0.12); }
 
-/* === Button === */
+.date-inputs-inline input:hover {
+    background: #4b5563;
+    border-color: rgba(255, 107, 53, 0.3);
+}
+
+/* === Apply Button === */
 .btn-apply {
     background: linear-gradient(135deg, #f97316, #ea580c);
     color: white;
     border: none;
-    padding: 10px 18px;
+    padding: 0.55rem 1.2rem;
     border-radius: 8px;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s;
-}
-.btn-apply:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+    transition: all 0.2s;
+    white-space: nowrap;
 }
 
-/* === Calendar compact modern === */
+.btn-apply:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
+}
+
+/* === Calendar === */
 .calendar-container {
     display: flex;
-    justify-content: center;
-    margin-top: 15px;
+    justify-content: flex-end;
     width: 100%;
+    margin-top: 0.5rem;
 }
 
 .calendar-wrapper {
@@ -212,6 +232,7 @@
     box-shadow: 0 6px 20px rgba(0,0,0,0.2);
     transition: all 0.3s;
 }
+
 .calendar-wrapper:hover {
     transform: translateY(-2px);
 }
@@ -240,6 +261,7 @@
     height: 28px;
     transition: background 0.3s;
 }
+
 .calendar-widget .calendar-header button:hover {
     background: rgba(255, 255, 255, 0.2);
 }
@@ -265,13 +287,17 @@
     cursor: pointer;
     transition: all 0.2s;
     font-size: 13px;
+    color: #fff;
 }
+
 .calendar-widget .day.other-month {
     color: #6b7280;
 }
+
 .calendar-widget .day:hover {
     background: rgba(255, 255, 255, 0.08);
 }
+
 .calendar-widget .day.selected {
     background: #6366f1;
     color: white;
@@ -280,23 +306,60 @@
 }
 
 /* === Responsive === */
+@media (max-width: 1024px) {
+    .top-controls {
+        flex-wrap: wrap;
+    }
+    
+    .date-selector-section {
+        width: 100%;
+        align-items: center;
+    }
+    
+    .calendar-container {
+        justify-content: center;
+    }
+}
+
 @media (max-width: 768px) {
-    .filters-row {
+    .top-controls {
         flex-direction: column;
         align-items: stretch;
     }
+    
+    .action-icons {
+        justify-content: center;
+    }
+    
+    .date-selector-section {
+        align-items: stretch;
+    }
+    
+    .filters-row {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
     .date-inputs-inline {
         flex-direction: column;
+        width: 100%;
     }
+    
+    .date-inputs-inline input {
+        width: 100%;
+    }
+    
     .btn-apply {
         width: 100%;
     }
 }
+
 @media (max-width: 480px) {
     .calendar-wrapper {
         max-width: 280px;
         padding: 10px;
     }
+    
     .calendar-widget .day {
         padding: 5px 0;
         font-size: 12px;
@@ -309,7 +372,11 @@ let selectedDates = new Set();
 
 function initCalendar() {
     const calendarEl = document.getElementById('calendar');
-    if (!calendarEl) return;
+    if (!calendarEl) {
+        console.log('Calendar element not found, retrying...');
+        setTimeout(initCalendar, 100);
+        return;
+    }
 
     const now = new Date();
     renderCalendar(now.getFullYear(), now.getMonth());
@@ -317,12 +384,13 @@ function initCalendar() {
 
 function renderCalendar(year, month) {
     const calendarEl = document.getElementById('calendar');
+    if (!calendarEl) return;
+    
     const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                         'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     const dayNames = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 
     const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
     const startDate = new Date(firstDay);
     startDate.setDate(startDate.getDate() - firstDay.getDay());
 
@@ -356,6 +424,8 @@ function renderCalendar(year, month) {
 
 function changeMonth(delta) {
     const header = document.querySelector('.calendar-header span');
+    if (!header) return;
+    
     const [monthName, yearStr] = header.textContent.split(' ');
     const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -373,6 +443,8 @@ function toggleDate(dateStr) {
     else selectedDates.add(dateStr);
 
     const header = document.querySelector('.calendar-header span');
+    if (!header) return;
+    
     const [monthName, yearStr] = header.textContent.split(' ');
     const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -380,26 +452,29 @@ function toggleDate(dateStr) {
 }
 
 function filtrarPorFechas() {
-    const filterType = document.querySelector('.filter-select').value;
+    const filterSelect = document.querySelector('.filter-select');
+    if (!filterSelect) return;
+    
+    const filterType = filterSelect.value;
     const url = new URL(window.location);
     url.search = '';
 
     url.searchParams.set('filter_type', filterType);
 
     if (filterType === 'range') {
-        const start = document.getElementById('startDate').value;
-        const end = document.getElementById('endDate').value;
+        const start = document.getElementById('startDate')?.value;
+        const end = document.getElementById('endDate')?.value;
         if (!start || !end) return alert('Selecciona ambas fechas');
         url.searchParams.set('start_date', start);
         url.searchParams.set('end_date', end);
     }
     else if (filterType === 'day') {
-        const day = document.getElementById('specificDate').value;
+        const day = document.getElementById('specificDate')?.value;
         if (!day) return alert('Selecciona un día');
         url.searchParams.set('specific_date', day);
     }
     else if (filterType === 'month') {
-        const month = document.getElementById('month').value;
+        const month = document.getElementById('month')?.value;
         if (!month) return alert('Selecciona un mes');
         url.searchParams.set('month', month);
     }
@@ -411,9 +486,12 @@ function filtrarPorFechas() {
     window.location.href = url.toString();
 }
 
+// Inicialización al cargar la página
 document.addEventListener('DOMContentLoaded', () => {
-    document.querySelector('.filter-select').addEventListener('change', e => {
-        if (e.target.value === 'specific') initCalendar();
-    });
+    // Si ya está seleccionado "specific" en el request, inicializar el calendario
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('filter_type') === 'specific') {
+        setTimeout(initCalendar, 200);
+    }
 });
 </script>

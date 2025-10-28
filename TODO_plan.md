@@ -1,44 +1,31 @@
-# Plan para Rediseñar la Barra de Opciones en Tableros
+# Plan para reorganizar top-controls
 
 ## Información Recopilada
-- **tableros.blade.php**: Incluye `@include('components.action-buttons')` y `@include('components.date-selector')` por separado para cada tab (produccion, polos, corte). El orden varía, pero actualmente están separados.
-- **action-buttons.blade.php**: Contiene botones con texto ("Mostrar Registros", "Registro Nuevo") y un spacer.
-- **date-selector.blade.php**: Selector de fechas completo con tipos de filtro (rango, día, mes, específicos), inputs dinámicos, calendario para días específicos, estilos y script.
-- **top-controls.blade.php**: Ya combina actions como iconos a la izquierda (mostrar/ocultar y nuevo registro) y filtro a la derecha, con `x-show="!showRecords"` para ocultar cuando se muestran registros. Tiene tooltips básicos, pero le falta el calendario completo y el script para filtrar.
-- **tableros.css**: Tiene estilos para `.top-controls`, `.action-icons`, `.icon-btn`, etc., pero necesita ajustes para el calendario.
-- **TODO_date_selector.md**: Indica que date-selector tiene calendario y funcionalidades avanzadas.
+- El componente `top-controls.blade.php` contiene tanto los botones de acción (action-icons) como el selector de fechas (date-selector-section).
+- Actualmente, el layout usa `justify-content: space-between` en `.top-controls`, pero el `.date-selector-section` tiene `margin: 10px auto` que lo centra y lo separa verticalmente.
+- Los estilos inline en `top-controls.blade.php` sobrescriben los estilos globales y causan que el selector de fechas aparezca como un bloque separado debajo.
+- El selector de fechas tiene `flex-direction: column`, lo que apila los elementos verticalmente.
 
-## Plan Detallado
-1. **Reemplazar inclusiones en tableros.blade.php**:
-   - Quitar `@include('components.action-buttons')` y `@include('components.date-selector')`.
-   - Agregar `@include('components.top-controls')` para cada tab, asegurando consistencia.
-
-2. **Actualizar top-controls.blade.php**:
-   - Mantener actions como iconos a la izquierda con tooltips ("Mostrar / Ocultar registros", "Nuevo registro").
-   - Integrar el date-selector completo a la derecha, incluyendo el calendario para "Días específicos".
-   - Copiar estilos y script de date-selector.blade.php para funcionalidad completa (calendario, filtrarPorFechas).
-   - Asegurar que el filtro se oculte con `x-show="!showRecords"`.
-   - Cambiar icono de mostrar/ocultar dinámicamente (ya implementado con templates).
-
-3. **Actualizar estilos en tableros.css**:
-   - Ajustar `.top-controls` para layout horizontal (actions izquierda, filtro derecha).
-   - Agregar estilos para calendario si no están (copiar de date-selector).
-
-4. **Funcionalidad JavaScript**:
-   - Integrar script de calendario y filtrarPorFechas en top-controls o tableros.blade.php.
-   - Asegurar que el botón "Aplicar Filtro" funcione y actualice URL.
+## Plan de Cambios
+- Editar `resources/views/components/top-controls.blade.php` para ajustar los estilos CSS inline del `.date-selector-section`:
+  - Quitar `margin: 10px auto` y reemplazar con `margin: 0`.
+  - Quitar `background: rgba(255, 255, 255, 0.03)` para que no tenga fondo separado.
+  - Cambiar `align-items: center` a `align-items: flex-start` para alinear a la izquierda dentro del contenedor derecho.
+  - Reducir `padding: 15px 20px` a `padding: 0` para compactar.
+  - Cambiar `width: 100%` a `width: auto` para que no ocupe todo el ancho.
+  - Quitar `border-radius: 12px` para que no tenga bordes redondeados separados.
+- Ajustar `.filters-row` para que los filtros se alineen a la izquierda: cambiar `justify-content: center` a `justify-content: flex-start`.
+- Reducir gaps para compactar: `gap: 20px` a `gap: 10px` en `.filters-row`, y `gap: 15px` a `gap: 10px` en `.date-inputs-inline`.
 
 ## Archivos a Editar
-- resources/views/tableros.blade.php
-- resources/views/components/top-controls.blade.php
-- resources/css/tableros.css
-
-## Archivos Dependientes
-- Ninguno nuevo, reutilizar existentes.
+- `resources/views/components/top-controls.blade.php`
 
 ## Pasos de Seguimiento
-- Probar la barra unificada en cada tab.
-- Verificar que el filtro se oculte al mostrar registros.
-- Confirmar tooltips y cambio de iconos.
-- Probar calendario y filtros.
-- Ajustar responsive si necesario.
+- Aplicar los cambios CSS.
+- Verificar que los action-buttons estén a la izquierda y el date-selector a la derecha en la misma barra.
+- Probar en diferentes tamaños de pantalla para asegurar responsividad.
+
+## Cambios Aplicados
+- [x] Ajustado `.date-selector-section`: quitado margin, padding, background, border-radius; cambiado align-items a flex-start, width a auto.
+- [x] Ajustado `.filters-row`: cambiado justify-content a flex-start, reducido gap a 10px.
+- [x] Ajustado `.date-inputs-inline`: reducido gap a 10px.
