@@ -363,6 +363,13 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
         }
 
+        .piso-corte-form-modal-container .section-title {
+            color: #1a202c;
+            font-weight: 600;
+            font-size: 18px;
+            margin-bottom: 16px;
+        }
+
         .piso-corte-form-modal-container .form-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
