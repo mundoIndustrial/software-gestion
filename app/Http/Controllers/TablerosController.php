@@ -98,16 +98,60 @@ class TablerosController extends Controller
             ]);
         }
 
-        // Calcular seguimiento de módulos para producción
-        $seguimientoProduccion = $this->calcularSeguimientoModulos(RegistroPisoProduccion::all());
+        // Obtener todos los registros para seguimiento
+        $todosRegistrosProduccion = RegistroPisoProduccion::all();
+        $todosRegistrosPolos = RegistroPisoPolo::all();
+        $todosRegistrosCorte = RegistroPisoCorte::all();
 
-        // Calcular seguimiento de módulos para polos
-        $seguimientoPolos = $this->calcularSeguimientoModulos(RegistroPisoPolo::all());
+        // Filtrar registros por fecha para seguimiento
+        $registrosProduccionFiltrados = $this->filtrarRegistrosPorFecha($todosRegistrosProduccion, request());
+        $registrosPolosFiltrados = $this->filtrarRegistrosPorFecha($todosRegistrosPolos, request());
+        $registrosCorteFiltrados = $this->filtrarRegistrosPorFecha($todosRegistrosCorte, request());
 
-        // Calcular seguimiento de módulos para corte
-        $seguimientoCorte = $this->calcularSeguimientoModulos(RegistroPisoCorte::all());
+        // Calcular seguimiento de módulos con registros filtrados
+        $seguimientoProduccion = $this->calcularSeguimientoModulos($registrosProduccionFiltrados);
+        $seguimientoPolos = $this->calcularSeguimientoModulos($registrosPolosFiltrados);
+        $seguimientoCorte = $this->calcularSeguimientoModulos($registrosCorteFiltrados);
 
         return view('tableros', compact('registros', 'columns', 'registrosPolos', 'columnsPolos', 'registrosCorte', 'columnsCorte', 'seguimientoProduccion', 'seguimientoPolos', 'seguimientoCorte'));
+    }
+
+    private function filtrarRegistrosPorFecha($registros, $request)
+    {
+        $filterType = $request->get('filter_type', 'range');
+
+        if (!$filterType || $filterType === 'range') {
+            $startDate = $request->get('start_date');
+            $endDate = $request->get('end_date');
+
+            if ($startDate && $endDate) {
+                return $registros->whereBetween('fecha', [$startDate, $endDate]);
+            }
+        } elseif ($filterType === 'day') {
+            $specificDate = $request->get('specific_date');
+            if ($specificDate) {
+                return $registros->where('fecha', $specificDate);
+            }
+        } elseif ($filterType === 'month') {
+            $month = $request->get('month');
+            if ($month) {
+                // Formato esperado: YYYY-MM
+                $year = substr($month, 0, 4);
+                $monthNum = substr($month, 5, 2);
+                $startOfMonth = "{$year}-{$monthNum}-01";
+                $endOfMonth = date('Y-m-t', strtotime($startOfMonth));
+                return $registros->whereBetween('fecha', [$startOfMonth, $endOfMonth]);
+            }
+        } elseif ($filterType === 'specific') {
+            $specificDates = $request->get('specific_dates');
+            if ($specificDates) {
+                $dates = explode(',', $specificDates);
+                return $registros->whereIn('fecha', $dates);
+            }
+        }
+
+        // Si no hay filtro válido, devolver todos los registros
+        return $registros;
     }
 
     private function calcularSeguimientoModulos($registros)
