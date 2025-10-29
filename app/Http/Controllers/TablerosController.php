@@ -490,6 +490,13 @@ class TablerosController extends Controller
                 ]);
 
                 $createdRecords[] = $record;
+                
+                // Broadcast event for real-time updates
+                if ($request->section === 'produccion') {
+                    broadcast(new \App\Events\ProduccionRecordCreated($record));
+                } elseif ($request->section === 'polos') {
+                    broadcast(new \App\Events\PoloRecordCreated($record));
+                }
             }
 
             return response()->json([

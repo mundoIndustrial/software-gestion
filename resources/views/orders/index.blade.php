@@ -845,4 +845,291 @@ async function recargarTablaPedidos() {
     </div>
 
     <script src="{{ asset('js/modern-table.js') }}"></script>
+
+    <!-- Real-time updates script for orders -->
+    <script>
+    // Initialize real-time listeners for orders
+    function initializeOrdenesRealtimeListeners() {
+        console.log('=== ÓRDENES - Inicializando Echo para tiempo real ===');
+        console.log('window.Echo disponible:', !!window.Echo);
+
+        if (!window.Echo) {
+            console.error('❌ Echo NO está disponible. Reintentando en 500ms...');
+            setTimeout(initializeOrdenesRealtimeListeners, 500);
+            return;
+        }
+
+        console.log('✅ Echo disponible. Suscribiendo al canal "ordenes"...');
+
+        // Canal de Órdenes
+        const ordenesChannel = window.Echo.channel('ordenes');
+        
+        ordenesChannel.subscribed(() => {
+            console.log('✅ Suscrito al canal "ordenes"');
+        });
+        
+        ordenesChannel.error((error) => {
+            console.error('❌ Error en canal "ordenes":', error);
+        });
+        
+        ordenesChannel.listen('OrdenUpdated', (e) => {
+            console.log('🎉 Evento OrdenUpdated recibido!', e);
+            handleOrdenUpdate(e.orden, e.action);
+        });
+
+        console.log('✅ Listener de órdenes configurado');
+    }
+
+    // Debounce map to prevent duplicate updates
+    const updateDebounceMap = new Map();
+
+    // Handle orden updates (created, updated, deleted)
+    function handleOrdenUpdate(orden, action) {
+        const pedido = orden.pedido;
+        const updateKey = `${pedido}-${action}`;
+        
+        // Debounce: ignore if same update happened in last 500ms
+        if (updateDebounceMap.has(updateKey)) {
+            const lastUpdate = updateDebounceMap.get(updateKey);
+            if (Date.now() - lastUpdate < 500) {
+                console.log(`⏭️ Ignorando actualización duplicada para orden ${pedido}`);
+                return;
+            }
+        }
+        updateDebounceMap.set(updateKey, Date.now());
+
+        console.log(`Procesando acción: ${action} para orden:`, orden);
+
+        const table = document.querySelector('.modern-table tbody');
+        if (!table) {
+            console.warn('Tabla de órdenes no encontrada');
+            return;
+        }
+
+        if (action === 'deleted') {
+            // Remove row - usar data-order-id
+            const row = table.querySelector(`tr[data-order-id="${pedido}"]`);
+            if (row) {
+                row.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
+                setTimeout(() => {
+                    row.remove();
+                    console.log(`✅ Orden ${pedido} eliminada de la tabla`);
+                }, 500);
+            }
+            return;
+        }
+
+        if (action === 'created') {
+            // Add new row
+            agregarOrdenATabla(orden);
+            return;
+        }
+
+        if (action === 'updated') {
+            // Update existing row
+            actualizarOrdenEnTabla(orden);
+            return;
+        }
+    }
+
+    // Add new orden to table
+    function agregarOrdenATabla(orden) {
+        const table = document.querySelector('.modern-table tbody');
+        if (!table) return;
+
+        // Check if row already exists - usar data-order-id
+        const existingRow = table.querySelector(`tr[data-order-id="${orden.pedido}"]`);
+        if (existingRow) {
+            console.log(`Orden ${orden.pedido} ya existe, actualizando...`);
+            actualizarOrdenEnTabla(orden);
+            return;
+        }
+
+        // Create new row - usar data-order-id
+        const row = document.createElement('tr');
+        row.className = 'table-row';
+        row.setAttribute('data-order-id', orden.pedido);
+
+        // Get all columns from the table header
+        const headers = document.querySelectorAll('.modern-table thead th');
+        const columns = Array.from(headers).map(th => th.getAttribute('data-column')).filter(Boolean);
+
+        // Create cells for each column
+        columns.forEach(column => {
+            const td = document.createElement('td');
+            td.className = 'table-cell editable-cell';
+            td.setAttribute('data-column', column);
+            td.title = 'Doble clic para editar';
+
+            let value = orden[column];
+            let displayValue = value || '';
+
+            // Format special columns
+            if (column === 'fecha_de_creacion_de_orden' && value) {
+                displayValue = new Date(value).toLocaleDateString('es-ES');
+            } else if (column === 'total_de_dias_') {
+                // This is calculated, might need special handling
+                displayValue = value || '0';
+            }
+
+            td.setAttribute('data-value', value);
+            td.textContent = displayValue;
+            row.appendChild(td);
+        });
+
+        // Add actions cell
+        const actionsTd = document.createElement('td');
+        actionsTd.className = 'table-cell';
+        actionsTd.innerHTML = `
+            <button class="view-details-btn" data-pedido="${orden.pedido}" title="Ver detalles">
+                <i class="fas fa-eye"></i>
+            </button>
+            <button class="delete-order-btn" data-pedido="${orden.pedido}" title="Eliminar orden">
+                <i class="fas fa-trash"></i>
+            </button>
+        `;
+        row.appendChild(actionsTd);
+
+        // Insert at the beginning of the table
+        table.insertBefore(row, table.firstChild);
+
+        // Animation
+        row.style.backgroundColor = 'rgba(34, 197, 94, 0.3)';
+        setTimeout(() => {
+            row.style.transition = 'background-color 1s ease';
+            row.style.backgroundColor = '';
+        }, 100);
+
+        console.log(`✅ Orden ${orden.pedido} agregada a la tabla`);
+    }
+
+    // Update existing orden in table
+    function actualizarOrdenEnTabla(orden) {
+        const table = document.querySelector('.modern-table tbody');
+        if (!table) return;
+
+        // Usar data-order-id para encontrar la fila
+        const row = table.querySelector(`tr[data-order-id="${orden.pedido}"]`);
+        if (!row) {
+            console.log(`Orden ${orden.pedido} no encontrada en la tabla actual`);
+            return; // No agregar si no existe, solo actualizar las que ya están visibles
+        }
+
+        let hasChanges = false;
+
+        // Update each cell WITHOUT changing the structure
+        const cells = row.querySelectorAll('td[data-column]');
+        cells.forEach(cell => {
+            const column = cell.getAttribute('data-column');
+            if (!column) return;
+            
+            let value = orden[column];
+            if (value === null || value === undefined) return;
+
+            // Find the element to update (could be select, span, or div)
+            const cellContent = cell.querySelector('.cell-content');
+            if (!cellContent) return;
+
+            // Handle different cell types
+            if (column === 'estado') {
+                const select = cellContent.querySelector('.estado-dropdown');
+                if (select && select.value !== value) {
+                    select.value = value;
+                    select.setAttribute('data-value', value);
+                    hasChanges = true;
+                    // Flash animation only on this cell
+                    cell.style.backgroundColor = 'rgba(59, 130, 246, 0.3)';
+                    setTimeout(() => {
+                        cell.style.transition = 'background-color 0.3s ease';
+                        cell.style.backgroundColor = '';
+                    }, 30);
+                }
+            } else if (column === 'area') {
+                const select = cellContent.querySelector('.area-dropdown');
+                if (select && select.value !== value) {
+                    select.value = value;
+                    select.setAttribute('data-value', value);
+                    hasChanges = true;
+                    // Flash animation only on this cell
+                    cell.style.backgroundColor = 'rgba(59, 130, 246, 0.3)';
+                    setTimeout(() => {
+                        cell.style.transition = 'background-color 0.3s ease';
+                        cell.style.backgroundColor = '';
+                    }, 30);
+                }
+            } else {
+                const span = cellContent.querySelector('.cell-text');
+                if (span) {
+                    let displayValue = value;
+                    if (column === 'fecha_de_creacion_de_orden' && value) {
+                        displayValue = new Date(value).toLocaleDateString('es-ES');
+                    }
+                    
+                    if (span.textContent.trim() !== String(displayValue).trim()) {
+                        span.textContent = displayValue;
+                        hasChanges = true;
+                        // Flash animation only on this cell
+                        cell.style.backgroundColor = 'rgba(59, 130, 246, 0.3)';
+                        setTimeout(() => {
+                            cell.style.transition = 'background-color 0.3s ease';
+                            cell.style.backgroundColor = '';
+                        }, 30);
+                    }
+                }
+            }
+        });
+
+        // Update row classes based on estado and total_de_dias_
+        const estado = orden.estado || '';
+        
+        // Si total_de_dias_ no viene en el evento, leer de la celda existente
+        let totalDias = parseInt(orden.total_de_dias_) || 0;
+        if (!totalDias || totalDias === 0) {
+            const totalDiasCell = row.querySelector('td[data-column="total_de_dias_"] .cell-text');
+            if (totalDiasCell) {
+                totalDias = parseInt(totalDiasCell.textContent) || 0;
+            }
+        }
+        
+        console.log(`🔍 Debug - Orden ${orden.pedido}: estado="${estado}", totalDias=${totalDias}, clase a aplicar: ${
+            estado === 'Entregado' ? 'row-delivered' :
+            estado === 'Anulada' ? 'row-anulada' :
+            totalDias > 20 ? 'row-secondary' :
+            totalDias === 20 ? 'row-danger-light' :
+            totalDias > 14 ? 'row-warning' : 'ninguna'
+        }`);
+        
+        // Remove all conditional classes
+        row.classList.remove('row-delivered', 'row-anulada', 'row-warning', 'row-danger-light', 'row-secondary');
+        
+        // Remove any inline background color that might override CSS
+        row.style.backgroundColor = '';
+        
+        // Apply new class based on estado and dias (ORDEN DE PRIORIDAD)
+        if (estado === 'Entregado') {
+            row.classList.add('row-delivered');
+        } else if (estado === 'Anulada') {
+            row.classList.add('row-anulada');
+        } else if (totalDias > 20) {
+            row.classList.add('row-secondary');
+        } else if (totalDias === 20) {
+            row.classList.add('row-danger-light');
+        } else if (totalDias > 14 && totalDias < 20) {
+            row.classList.add('row-warning');
+        }
+        
+        if (hasChanges) {
+            console.log(`✅ Orden ${orden.pedido} actualizada (estado: ${estado}, días: ${totalDias})`);
+        }
+    }
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(initializeOrdenesRealtimeListeners, 100);
+        });
+    } else {
+        setTimeout(initializeOrdenesRealtimeListeners, 100);
+    }
+    </script>
 @endsection

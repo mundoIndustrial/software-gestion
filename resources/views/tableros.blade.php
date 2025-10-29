@@ -645,4 +645,204 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 100);
 });
 </script>
+
+<!-- Real-time updates script -->
+<script>
+// Initialize real-time listeners for all tableros
+function initializeRealtimeListeners() {
+    console.log('=== TABLEROS - Inicializando Echo para tiempo real ===');
+    console.log('window.Echo disponible:', !!window.Echo);
+
+    if (!window.Echo) {
+        console.error('❌ Echo NO está disponible. Reintentando en 500ms...');
+        setTimeout(initializeRealtimeListeners, 500);
+        return;
+    }
+
+    console.log('✅ Echo disponible. Suscribiendo a canales...');
+
+    // Canal de Producción
+    const produccionChannel = window.Echo.channel('produccion');
+    produccionChannel.subscribed(() => {
+        console.log('✅ Suscrito al canal "produccion"');
+    });
+    produccionChannel.error((error) => {
+        console.error('❌ Error en canal "produccion":', error);
+    });
+    produccionChannel.listen('ProduccionRecordCreated', (e) => {
+        console.log('🎉 Evento ProduccionRecordCreated recibido!', e);
+        agregarRegistroTiempoReal(e.registro, 'produccion');
+    });
+
+    // Canal de Polo
+    const poloChannel = window.Echo.channel('polo');
+    poloChannel.subscribed(() => {
+        console.log('✅ Suscrito al canal "polo"');
+    });
+    poloChannel.error((error) => {
+        console.error('❌ Error en canal "polo":', error);
+    });
+    poloChannel.listen('PoloRecordCreated', (e) => {
+        console.log('🎉 Evento PoloRecordCreated recibido!', e);
+        agregarRegistroTiempoReal(e.registro, 'polos');
+    });
+
+    // Canal de Corte
+    const corteChannel = window.Echo.channel('corte');
+    corteChannel.subscribed(() => {
+        console.log('✅ Suscrito al canal "corte"');
+    });
+    corteChannel.error((error) => {
+        console.error('❌ Error en canal "corte":', error);
+    });
+    corteChannel.listen('CorteRecordCreated', (e) => {
+        console.log('🎉 Evento CorteRecordCreated recibido!', e);
+        agregarRegistroTiempoReal(e.registro, 'corte');
+    });
+
+    console.log('✅ Todos los listeners configurados');
+}
+
+// Función para agregar un registro en tiempo real a la tabla
+function agregarRegistroTiempoReal(registro, section) {
+    console.log(`Agregando registro en tiempo real a sección: ${section}`, registro);
+    
+    const table = document.querySelector(`table[data-section="${section}"]`);
+    if (!table) {
+        console.warn(`Tabla no encontrada para sección: ${section}`);
+        return;
+    }
+
+    const tbody = table.querySelector('tbody');
+    if (!tbody) {
+        console.warn(`tbody no encontrado en tabla de sección: ${section}`);
+        return;
+    }
+
+    // Verificar si el registro ya existe
+    const existingRow = tbody.querySelector(`tr[data-id="${registro.id}"]`);
+    if (existingRow) {
+        console.log(`Registro ${registro.id} ya existe, actualizando...`);
+        // Actualizar fila existente
+        actualizarFilaExistente(existingRow, registro, section);
+        return;
+    }
+
+    // Crear nueva fila
+    const row = document.createElement('tr');
+    row.className = 'table-row';
+    row.setAttribute('data-id', registro.id);
+
+    // Obtener columnas según la sección
+    const columns = getColumnsForSection(section);
+    
+    // Crear celdas
+    columns.forEach(column => {
+        const td = document.createElement('td');
+        td.className = 'table-cell editable-cell';
+        td.setAttribute('data-column', column);
+        td.title = 'Doble clic para editar';
+        
+        let value = registro[column];
+        let displayValue = value;
+        
+        // Formatear valores especiales
+        if (column === 'fecha' && value) {
+            displayValue = new Date(value).toLocaleDateString('es-ES');
+        } else if (column === 'eficiencia' && value !== null) {
+            displayValue = value + '%';
+            td.classList.add(getEficienciaClass(value));
+        }
+        
+        td.setAttribute('data-value', value);
+        td.textContent = displayValue;
+        row.appendChild(td);
+    });
+
+    // Agregar botón de eliminar
+    const deleteTd = document.createElement('td');
+    deleteTd.className = 'table-cell';
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'delete-btn';
+    deleteBtn.setAttribute('data-id', registro.id);
+    deleteBtn.setAttribute('data-section', section);
+    deleteBtn.title = 'Eliminar registro';
+    deleteBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
+    deleteTd.appendChild(deleteBtn);
+    row.appendChild(deleteTd);
+
+    // Agregar fila al inicio de la tabla (más reciente primero)
+    tbody.insertBefore(row, tbody.firstChild);
+    
+    // Animación de entrada
+    row.style.backgroundColor = 'rgba(34, 197, 94, 0.2)';
+    setTimeout(() => {
+        row.style.transition = 'background-color 1s ease';
+        row.style.backgroundColor = '';
+    }, 100);
+
+    console.log(`✅ Registro ${registro.id} agregado a la tabla de ${section}`);
+}
+
+// Función auxiliar para actualizar fila existente
+function actualizarFilaExistente(row, registro, section) {
+    const columns = getColumnsForSection(section);
+    const cells = row.querySelectorAll('.editable-cell');
+    
+    columns.forEach((column, index) => {
+        if (cells[index]) {
+            let value = registro[column];
+            let displayValue = value;
+            
+            if (column === 'fecha' && value) {
+                displayValue = new Date(value).toLocaleDateString('es-ES');
+            } else if (column === 'eficiencia' && value !== null) {
+                displayValue = value + '%';
+                cells[index].className = 'table-cell editable-cell ' + getEficienciaClass(value);
+            }
+            
+            cells[index].setAttribute('data-value', value);
+            cells[index].textContent = displayValue;
+        }
+    });
+    
+    // Animación de actualización
+    row.style.backgroundColor = 'rgba(59, 130, 246, 0.2)';
+    setTimeout(() => {
+        row.style.transition = 'background-color 1s ease';
+        row.style.backgroundColor = '';
+    }, 100);
+}
+
+// Función auxiliar para obtener columnas según sección
+function getColumnsForSection(section) {
+    // Estas columnas deben coincidir con las definidas en el controlador
+    const columnMap = {
+        'produccion': ['fecha', 'modulo', 'orden_produccion', 'hora', 'tiempo_ciclo', 'porcion_tiempo', 'cantidad', 'paradas_programadas', 'paradas_no_programadas', 'tiempo_parada_no_programada', 'numero_operarios', 'tiempo_para_programada', 'tiempo_disponible', 'meta', 'eficiencia'],
+        'polos': ['fecha', 'modulo', 'orden_produccion', 'hora', 'tiempo_ciclo', 'porcion_tiempo', 'cantidad', 'paradas_programadas', 'paradas_no_programadas', 'tiempo_parada_no_programada', 'numero_operarios', 'tiempo_para_programada', 'tiempo_disponible', 'meta', 'eficiencia'],
+        'corte': ['fecha', 'orden_produccion', 'hora', 'operario', 'maquina', 'porcion_tiempo', 'cantidad', 'tiempo_ciclo', 'paradas_programadas', 'tiempo_para_programada', 'paradas_no_programadas', 'tiempo_parada_no_programada', 'tipo_extendido', 'numero_capas', 'tiempo_extendido', 'trazado', 'tiempo_trazado', 'actividad', 'tela', 'tiempo_disponible', 'meta', 'eficiencia']
+    };
+    return columnMap[section] || [];
+}
+
+// Función auxiliar para obtener clase de eficiencia
+function getEficienciaClass(eficiencia) {
+    if (eficiencia === null) return '';
+    const value = parseFloat(eficiencia);
+    if (value < 70) return 'eficiencia-red';
+    if (value >= 70 && value < 80) return 'eficiencia-yellow';
+    if (value >= 80 && value < 100) return 'eficiencia-green';
+    if (value >= 100) return 'eficiencia-blue';
+    return '';
+}
+
+// Inicializar cuando el DOM esté listo
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(initializeRealtimeListeners, 100);
+    });
+} else {
+    setTimeout(initializeRealtimeListeners, 100);
+}
+</script>
 @endsection
