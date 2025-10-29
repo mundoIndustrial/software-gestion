@@ -446,8 +446,15 @@
 </style>
 
 <script>
-let selectedDatesTopControls = new Set();
-let currentCalendarYear, currentCalendarMonth;
+if (typeof window.selectedDatesTopControls === 'undefined') {
+    window.selectedDatesTopControls = new Set();
+}
+if (typeof window.currentCalendarYear === 'undefined') {
+    window.currentCalendarYear = null;
+}
+if (typeof window.currentCalendarMonth === 'undefined') {
+    window.currentCalendarMonth = null;
+}
 
 function initCalendar() {
     const calendarEl = document.getElementById('calendar');
@@ -461,7 +468,7 @@ function initCalendar() {
     const urlParams = new URLSearchParams(window.location.search);
     const specificDates = urlParams.get('specific_dates');
     if (specificDates) {
-        selectedDatesTopControls = new Set(specificDates.split(','));
+        window.selectedDatesTopControls = new Set(specificDates.split(','));
     }
 
     // Sync with Alpine.js selectedDates
@@ -469,22 +476,22 @@ function initCalendar() {
     if (alpineComponent && alpineComponent._x_dataStack) {
         const data = alpineComponent._x_dataStack[alpineComponent._x_dataStack.length - 1];
         if (data.selectedDates) {
-            selectedDatesTopControls = new Set([...data.selectedDates]);
+            window.selectedDatesTopControls = new Set([...data.selectedDates]);
         }
     }
 
     const now = new Date();
-    currentCalendarYear = now.getFullYear();
-    currentCalendarMonth = now.getMonth();
-    renderCalendar(currentCalendarYear, currentCalendarMonth);
+    window.currentCalendarYear = now.getFullYear();
+    window.currentCalendarMonth = now.getMonth();
+    renderCalendar(window.currentCalendarYear, window.currentCalendarMonth);
 }
 
 function renderCalendar(year, month) {
     const calendarEl = document.getElementById('calendar');
     if (!calendarEl) return;
 
-    currentCalendarYear = year;
-    currentCalendarMonth = month;
+    window.currentCalendarYear = year;
+    window.currentCalendarMonth = month;
 
     const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                         'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -512,7 +519,7 @@ function renderCalendar(year, month) {
     for (let i = 0; i < 42; i++) {
         const isCurrentMonth = currentDate.getMonth() === month;
         const dateStr = currentDate.toISOString().split('T')[0];
-        const isSelected = selectedDatesTopControls.has(dateStr);
+        const isSelected = window.selectedDatesTopControls.has(dateStr);
         html += `<div class="day ${isCurrentMonth ? '' : 'other-month'} ${isSelected ? 'selected' : ''}"
                  onclick="toggleDate('${dateStr}')">${currentDate.getDate()}</div>`;
         currentDate.setDate(currentDate.getDate() + 1);
@@ -523,21 +530,21 @@ function renderCalendar(year, month) {
 }
 
 function changeMonth(delta) {
-    const newMonth = currentCalendarMonth + delta;
-    const newYear = newMonth < 0 ? currentCalendarYear - 1 : newMonth > 11 ? currentCalendarYear + 1 : currentCalendarYear;
+    const newMonth = window.currentCalendarMonth + delta;
+    const newYear = newMonth < 0 ? window.currentCalendarYear - 1 : newMonth > 11 ? window.currentCalendarYear + 1 : window.currentCalendarYear;
     const adjustedMonth = (newMonth + 12) % 12;
 
     renderCalendar(newYear, adjustedMonth);
 }
 
 function toggleDate(dateStr) {
-    if (selectedDatesTopControls.has(dateStr)) {
-        selectedDatesTopControls.delete(dateStr);
+    if (window.selectedDatesTopControls.has(dateStr)) {
+        window.selectedDatesTopControls.delete(dateStr);
     } else {
-        selectedDatesTopControls.add(dateStr);
+        window.selectedDatesTopControls.add(dateStr);
     }
 
-    renderCalendar(currentCalendarYear, currentCalendarMonth);
+    renderCalendar(window.currentCalendarYear, window.currentCalendarMonth);
 
     // Update Alpine.js selectedDates
     const alpineComponent = document.querySelector('[x-data]');
@@ -545,7 +552,7 @@ function toggleDate(dateStr) {
         const data = alpineComponent._x_dataStack[alpineComponent._x_dataStack.length - 1];
         if (data.selectedDates) {
             data.selectedDates.clear();
-            selectedDatesTopControls.forEach(date => data.selectedDates.add(date));
+            window.selectedDatesTopControls.forEach(date => data.selectedDates.add(date));
         }
     }
 }
