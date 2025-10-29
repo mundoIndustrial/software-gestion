@@ -513,370 +513,492 @@
     </style>
 
     <script>
-        // Función para cerrar el modal
+        // ========================================
+        // UTILIDADES GENERALES (Single Responsibility)
+        // ========================================
+        const Utils = {
+            debounce(func, delay) {
+                let timeout;
+                return function(...args) {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), delay);
+                };
+            },
+
+            getCsrfToken() {
+                return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            },
+
+            handleError(error, message) {
+                console.error(message, error);
+                alert(`${message}: ${error.message || 'Error desconocido'}`);
+            }
+        };
+
+        // ========================================
+        // GESTOR DE INPUTS EN MAYÚSCULAS (Single Responsibility)
+        // ========================================
+        class UppercaseInputManager {
+            constructor(selector) {
+                this.inputs = document.querySelectorAll(selector);
+                this.initialize();
+            }
+
+            initialize() {
+                this.inputs.forEach(input => {
+                    input.addEventListener('input', this.handleInput.bind(this));
+                    input.addEventListener('paste', this.handlePaste.bind(this));
+                });
+            }
+
+            handleInput(e) {
+                const input = e.target;
+                const start = input.selectionStart;
+                const end = input.selectionEnd;
+                input.value = input.value.toUpperCase();
+                input.setSelectionRange(start, end);
+            }
+
+            handlePaste(e) {
+                e.preventDefault();
+                const input = e.target;
+                const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+                const start = input.selectionStart;
+                const end = input.selectionEnd;
+                const before = input.value.substring(0, start);
+                const after = input.value.substring(end);
+                input.value = before + pastedText.toUpperCase() + after;
+                const newPosition = start + pastedText.length;
+                input.setSelectionRange(newPosition, newPosition);
+            }
+        }
+
+        // ========================================
+        // SERVICIO HTTP (Single Responsibility)
+        // ========================================
+        class HttpService {
+            async get(url) {
+                try {
+                    const response = await fetch(url);
+                    return await response.json();
+                } catch (error) {
+                    throw new Error(`GET request failed: ${error.message}`);
+                }
+            }
+
+            async post(url, data) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': Utils.getCsrfToken()
+                        },
+                        body: JSON.stringify(data)
+                    });
+                    return await response.json();
+                } catch (error) {
+                    throw new Error(`POST request failed: ${error.message}`);
+                }
+            }
+        }
+
+        // ========================================
+        // GESTOR DE SUGERENCIAS (Single Responsibility)
+        // ========================================
+        class SuggestionsManager {
+            constructor(container) {
+                this.container = container;
+            }
+
+            show() {
+                this.container.style.display = 'block';
+            }
+
+            hide() {
+                this.container.style.display = 'none';
+            }
+
+            clear() {
+                this.container.innerHTML = '';
+            }
+
+            addItem(text, onClick, isCreateNew = false) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                if (isCreateNew) {
+                    div.classList.add('create-new');
+                }
+                div.addEventListener('click', onClick);
+                this.container.appendChild(div);
+            }
+        }
+
+        // ========================================
+        // AUTOCOMPLETE BASE (Open/Closed Principle)
+        // ========================================
+        class AutocompleteBase {
+            constructor(config) {
+                this.inputElement = document.getElementById(config.inputId);
+                this.hiddenElement = document.getElementById(config.hiddenId);
+                this.suggestionsElement = document.getElementById(config.suggestionsId);
+                this.searchRoute = config.searchRoute;
+                this.createRoute = config.createRoute;
+                this.displayKey = config.displayKey;
+                this.createKey = config.createKey;
+                this.onSelect = config.onSelect || (() => {});
+                
+                this.httpService = new HttpService();
+                this.suggestionsManager = new SuggestionsManager(this.suggestionsElement);
+                
+                this.initialize();
+            }
+
+            initialize() {
+                this.inputElement.addEventListener('input', 
+                    Utils.debounce(this.handleInput.bind(this), 300)
+                );
+            }
+
+            async handleInput(e) {
+                const query = e.target.value.trim();
+                
+                if (query.length < 2) {
+                    this.suggestionsManager.hide();
+                    return;
+                }
+
+                try {
+                    const data = await this.search(query);
+                    this.renderSuggestions(data, query);
+                } catch (error) {
+                    Utils.handleError(error, 'Error al buscar');
+                }
+            }
+
+            async search(query) {
+                return await this.httpService.get(`${this.searchRoute}?q=${encodeURIComponent(query)}`);
+            }
+
+            renderSuggestions(data, query) {
+                this.suggestionsManager.clear();
+                
+                const items = this.getItemsFromData(data);
+                
+                if (items.length > 0) {
+                    items.forEach(item => {
+                        this.suggestionsManager.addItem(
+                            item[this.displayKey],
+                            () => this.selectItem(item)
+                        );
+                    });
+                }
+
+                this.suggestionsManager.addItem(
+                    `Crear nuevo: "${query}"`,
+                    () => this.createNewItem(query),
+                    true
+                );
+
+                this.suggestionsManager.show();
+            }
+
+            getItemsFromData(data) {
+                // Override en clases hijas
+                return [];
+            }
+
+            selectItem(item) {
+                this.inputElement.value = item[this.displayKey];
+                this.hiddenElement.value = item.id;
+                this.suggestionsManager.hide();
+                this.onSelect(item);
+            }
+
+            async createNewItem(nombre) {
+                try {
+                    const data = await this.httpService.post(this.createRoute, {
+                        [this.createKey]: nombre.toUpperCase()
+                    });
+
+                    if (data.success) {
+                        const createdItem = this.getCreatedItemFromData(data);
+                        this.selectItem(createdItem);
+                    } else {
+                        alert(`Error al crear: ${data.message || 'Error desconocido'}`);
+                    }
+                } catch (error) {
+                    Utils.handleError(error, 'Error al crear el elemento');
+                }
+            }
+
+            getCreatedItemFromData(data) {
+                // Override en clases hijas
+                return null;
+            }
+        }
+
+        // ========================================
+        // AUTOCOMPLETE ESPECÍFICOS (Liskov Substitution)
+        // ========================================
+        class TelaAutocomplete extends AutocompleteBase {
+            getItemsFromData(data) {
+                return data.telas || [];
+            }
+
+            getCreatedItemFromData(data) {
+                return data.tela;
+            }
+        }
+
+        class MaquinaAutocomplete extends AutocompleteBase {
+            getItemsFromData(data) {
+                return data.maquinas || [];
+            }
+
+            getCreatedItemFromData(data) {
+                return data.maquina;
+            }
+        }
+
+        class OperarioAutocomplete extends AutocompleteBase {
+            getItemsFromData(data) {
+                return data.operarios || [];
+            }
+
+            getCreatedItemFromData(data) {
+                return data.operario;
+            }
+        }
+
+        // ========================================
+        // GESTOR DE TIEMPO DE CICLO (Single Responsibility)
+        // ========================================
+        class TiempoCicloManager {
+            constructor(telaIdSelector, maquinaIdSelector, tiempoCicloSelector, route) {
+                this.telaIdElement = document.getElementById(telaIdSelector);
+                this.maquinaIdElement = document.getElementById(maquinaIdSelector);
+                this.tiempoCicloElement = document.querySelector(tiempoCicloSelector);
+                this.route = route;
+                this.httpService = new HttpService();
+            }
+
+            async update() {
+                const telaId = this.telaIdElement.value;
+                const maquinaId = this.maquinaIdElement.value;
+
+                if (!telaId || !maquinaId) {
+                    return;
+                }
+
+                try {
+                    const data = await this.httpService.get(
+                        `${this.route}?tela_id=${telaId}&maquina_id=${maquinaId}`
+                    );
+
+                    if (data.success) {
+                        this.tiempoCicloElement.value = data.tiempo_ciclo;
+                    } else {
+                        this.tiempoCicloElement.value = '';
+                    }
+                } catch (error) {
+                    console.error('Error al obtener tiempo de ciclo:', error);
+                    this.tiempoCicloElement.value = '';
+                }
+            }
+        }
+
+        // ========================================
+        // GESTOR DE FORMULARIO (Single Responsibility)
+        // ========================================
+        class FormManager {
+            constructor(formId, submitRoute) {
+                this.form = document.getElementById(formId);
+                this.submitRoute = submitRoute;
+                this.httpService = new HttpService();
+                this.initialize();
+            }
+
+            initialize() {
+                this.form.addEventListener('submit', this.handleSubmit.bind(this));
+            }
+
+            async handleSubmit(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(this.form);
+                const data = {};
+                formData.forEach((value, key) => {
+                    data[key] = value;
+                });
+
+                try {
+                    const response = await this.httpService.post(this.submitRoute, data);
+                    
+                    if (response.success) {
+                        this.onSuccess(response);
+                    } else {
+                        alert(`Error al guardar: ${response.message || 'Error desconocido'}`);
+                    }
+                } catch (error) {
+                    Utils.handleError(error, 'Error al procesar la solicitud');
+                }
+            }
+
+            onSuccess(response) {
+                NotificationManager.showSuccess('✅ Registro guardado correctamente');
+                this.closeModal();
+                this.resetForm();
+                this.updateTable(response.registro);
+            }
+
+            closeModal() {
+                window.dispatchEvent(new CustomEvent('close-modal', { detail: 'piso-corte-form' }));
+            }
+
+            resetForm() {
+                this.form.reset();
+                document.getElementById('tela_id').value = '';
+                document.getElementById('maquina_id').value = '';
+                document.getElementById('operario_id').value = '';
+            }
+
+            updateTable(registro) {
+                if (window.actualizarTablaCorte) {
+                    window.actualizarTablaCorte(registro);
+                } else {
+                    window.location.reload();
+                }
+            }
+        }
+
+        // ========================================
+        // GESTOR DE NOTIFICACIONES (Single Responsibility)
+        // ========================================
+        class NotificationManager {
+            static showSuccess(text) {
+                const notification = document.createElement('div');
+                notification.textContent = text;
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background-color: #2e7d32;
+                    color: white;
+                    padding: 20px 40px;
+                    font-size: 18px;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                    z-index: 9999;
+                    text-align: center;
+                `;
+
+                document.body.appendChild(notification);
+
+                setTimeout(() => {
+                    notification.remove();
+                }, 3000);
+            }
+        }
+
+        // ========================================
+        // GESTOR DE CLICKS EXTERNOS (Single Responsibility)
+        // ========================================
+        class OutsideClickManager {
+            constructor(elements) {
+                this.elements = elements;
+                this.initialize();
+            }
+
+            initialize() {
+                document.addEventListener('click', this.handleClick.bind(this));
+            }
+
+            handleClick(e) {
+                this.elements.forEach(({ trigger, target }) => {
+                    if (!trigger.contains(e.target) && !target.contains(e.target)) {
+                        target.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+        // ========================================
+        // FUNCIÓN PARA CERRAR MODAL
+        // ========================================
         function closeCorteModal() {
             window.dispatchEvent(new CustomEvent('close-modal', { detail: 'piso-corte-form' }));
         }
 
         // ========================================
-        // CONFIGURACIÓN OPTIMIZADA DE MAYÚSCULAS
+        // INICIALIZACIÓN (Dependency Injection)
         // ========================================
-        function setupUppercaseInputs() {
-            const uppercaseInputs = document.querySelectorAll('.uppercase-input');
-            
-            uppercaseInputs.forEach(input => {
-                // Convertir a mayúsculas en tiempo real
-                input.addEventListener('input', function(e) {
-                    const start = this.selectionStart;
-                    const end = this.selectionEnd;
-                    this.value = this.value.toUpperCase();
-                    this.setSelectionRange(start, end);
-                });
+        document.addEventListener('DOMContentLoaded', () => {
+            // Inicializar inputs en mayúsculas
+            new UppercaseInputManager('.uppercase-input');
 
-                // También al pegar texto
-                input.addEventListener('paste', function(e) {
-                    e.preventDefault();
-                    const pastedText = (e.clipboardData || window.clipboardData).getData('text');
-                    const start = this.selectionStart;
-                    const end = this.selectionEnd;
-                    const before = this.value.substring(0, start);
-                    const after = this.value.substring(end);
-                    this.value = before + pastedText.toUpperCase() + after;
-                    const newPosition = start + pastedText.length;
-                    this.setSelectionRange(newPosition, newPosition);
-                });
+            // Gestor de tiempo de ciclo
+            const tiempoCicloManager = new TiempoCicloManager(
+                'tela_id',
+                'maquina_id',
+                'input[name="tiempo_ciclo"]',
+                '{{ route("get-tiempo-ciclo") }}'
+            );
+
+            // Inicializar autocompletes con callback para tiempo de ciclo
+            const onSelectCallback = () => tiempoCicloManager.update();
+
+            new TelaAutocomplete({
+                inputId: 'tela_autocomplete',
+                hiddenId: 'tela_id',
+                suggestionsId: 'tela_suggestions',
+                searchRoute: '{{ route("search-telas") }}',
+                createRoute: '{{ route("store-tela") }}',
+                displayKey: 'nombre_tela',
+                createKey: 'nombre_tela',
+                onSelect: onSelectCallback
             });
-        }
 
-        // Inicializar cuando se carga el documento
-        document.addEventListener('DOMContentLoaded', setupUppercaseInputs);
+            new MaquinaAutocomplete({
+                inputId: 'maquina_autocomplete',
+                hiddenId: 'maquina_id',
+                suggestionsId: 'maquina_suggestions',
+                searchRoute: '{{ route("search-maquinas") }}',
+                createRoute: '{{ route("store-maquina") }}',
+                displayKey: 'nombre_maquina',
+                createKey: 'nombre_maquina',
+                onSelect: onSelectCallback
+            });
 
-        // ========================================
-        // AUTOCOMPLETE DE TELA
-        // ========================================
-        const telaAutocomplete = document.getElementById('tela_autocomplete');
-        const telaId = document.getElementById('tela_id');
-        const telaSuggestions = document.getElementById('tela_suggestions');
-        let debounceTimer;
+            new OperarioAutocomplete({
+                inputId: 'operario_autocomplete',
+                hiddenId: 'operario_id',
+                suggestionsId: 'operario_suggestions',
+                searchRoute: '{{ route("search-operarios") }}',
+                createRoute: '{{ route("store-operario") }}',
+                displayKey: 'name',
+                createKey: 'name'
+            });
 
-        telaAutocomplete.addEventListener('input', function() {
-            clearTimeout(debounceTimer);
-            const query = this.value.trim();
-
-            if (query.length < 2) {
-                telaSuggestions.style.display = 'none';
-                return;
-            }
-
-            debounceTimer = setTimeout(() => {
-                fetch(`{{ route('search-telas') }}?q=${encodeURIComponent(query)}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        telaSuggestions.innerHTML = '';
-
-                        if (data.telas.length > 0) {
-                            data.telas.forEach(tela => {
-                                const div = document.createElement('div');
-                                div.textContent = tela.nombre_tela;
-                                div.addEventListener('click', () => {
-                                    telaAutocomplete.value = tela.nombre_tela;
-                                    telaId.value = tela.id;
-                                    telaSuggestions.style.display = 'none';
-                                    autoFillTiempoCiclo();
-                                });
-                                telaSuggestions.appendChild(div);
-                            });
-                        }
-
-                        const createDiv = document.createElement('div');
-                        createDiv.textContent = `Crear nueva tela: "${query}"`;
-                        createDiv.classList.add('create-new');
-                        createDiv.addEventListener('click', () => createNuevaTela(query));
-                        telaSuggestions.appendChild(createDiv);
-
-                        telaSuggestions.style.display = 'block';
-                    })
-                    .catch(error => console.error('Error fetching telas:', error));
-            }, 300);
-        });
-
-        function createNuevaTela(nombre) {
-            fetch('{{ route("store-tela") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            // Gestor de clicks externos
+            new OutsideClickManager([
+                {
+                    trigger: document.getElementById('tela_autocomplete'),
+                    target: document.getElementById('tela_suggestions')
                 },
-                body: JSON.stringify({ nombre_tela: nombre.toUpperCase() })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    telaAutocomplete.value = data.tela.nombre_tela;
-                    telaId.value = data.tela.id;
-                    telaSuggestions.style.display = 'none';
-                    autoFillTiempoCiclo();
-                } else {
-                    alert('Error al crear la tela: ' + (data.message || 'Error desconocido'));
-                }
-            })
-            .catch(error => {
-                console.error('Error creating tela:', error);
-                alert('Error al crear la tela.');
-            });
-        }
-
-        // ========================================
-        // AUTOCOMPLETE DE MÁQUINA
-        // ========================================
-        const maquinaAutocomplete = document.getElementById('maquina_autocomplete');
-        const maquinaId = document.getElementById('maquina_id');
-        const maquinaSuggestions = document.getElementById('maquina_suggestions');
-
-        maquinaAutocomplete.addEventListener('input', function() {
-            clearTimeout(debounceTimer);
-            const query = this.value.trim();
-
-            if (query.length < 2) {
-                maquinaSuggestions.style.display = 'none';
-                return;
-            }
-
-            debounceTimer = setTimeout(() => {
-                fetch(`{{ route('search-maquinas') }}?q=${encodeURIComponent(query)}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        maquinaSuggestions.innerHTML = '';
-
-                        if (data.maquinas.length > 0) {
-                            data.maquinas.forEach(maquina => {
-                                const div = document.createElement('div');
-                                div.textContent = maquina.nombre_maquina;
-                                div.addEventListener('click', () => {
-                                    maquinaAutocomplete.value = maquina.nombre_maquina;
-                                    maquinaId.value = maquina.id;
-                                    maquinaSuggestions.style.display = 'none';
-                                    autoFillTiempoCiclo();
-                                });
-                                maquinaSuggestions.appendChild(div);
-                            });
-                        }
-
-                        const createDiv = document.createElement('div');
-                        createDiv.textContent = `Crear nueva máquina: "${query}"`;
-                        createDiv.classList.add('create-new');
-                        createDiv.addEventListener('click', () => createNuevaMaquina(query));
-                        maquinaSuggestions.appendChild(createDiv);
-
-                        maquinaSuggestions.style.display = 'block';
-                    })
-                    .catch(error => console.error('Error fetching maquinas:', error));
-            }, 300);
-        });
-
-        function createNuevaMaquina(nombre) {
-            fetch('{{ route("store-maquina") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                {
+                    trigger: document.getElementById('maquina_autocomplete'),
+                    target: document.getElementById('maquina_suggestions')
                 },
-                body: JSON.stringify({ nombre_maquina: nombre.toUpperCase() })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    maquinaAutocomplete.value = data.maquina.nombre_maquina;
-                    maquinaId.value = data.maquina.id;
-                    maquinaSuggestions.style.display = 'none';
-                    autoFillTiempoCiclo();
-                } else {
-                    alert('Error al crear la máquina: ' + (data.message || 'Error desconocido'));
+                {
+                    trigger: document.getElementById('operario_autocomplete'),
+                    target: document.getElementById('operario_suggestions')
                 }
-            })
-            .catch(error => {
-                console.error('Error creating maquina:', error);
-                alert('Error al crear la máquina.');
-            });
-        }
+            ]);
 
-        // ========================================
-        // AUTOCOMPLETE DE OPERARIO
-        // ========================================
-        const operarioAutocomplete = document.getElementById('operario_autocomplete');
-        const operarioId = document.getElementById('operario_id');
-        const operarioSuggestions = document.getElementById('operario_suggestions');
-
-        operarioAutocomplete.addEventListener('input', function() {
-            clearTimeout(debounceTimer);
-            const query = this.value.trim();
-
-            if (query.length < 2) {
-                operarioSuggestions.style.display = 'none';
-                return;
-            }
-
-            debounceTimer = setTimeout(() => {
-                fetch(`{{ route('search-operarios') }}?q=${encodeURIComponent(query)}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        operarioSuggestions.innerHTML = '';
-
-                        if (data.operarios.length > 0) {
-                            data.operarios.forEach(operario => {
-                                const div = document.createElement('div');
-                                div.textContent = operario.name;
-                                div.addEventListener('click', () => {
-                                    operarioAutocomplete.value = operario.name;
-                                    operarioId.value = operario.id;
-                                    operarioSuggestions.style.display = 'none';
-                                });
-                                operarioSuggestions.appendChild(div);
-                            });
-                        }
-
-                        const createDiv = document.createElement('div');
-                        createDiv.textContent = `Crear nuevo operario: "${query}"`;
-                        createDiv.classList.add('create-new');
-                        createDiv.addEventListener('click', () => createNuevoOperario(query));
-                        operarioSuggestions.appendChild(createDiv);
-
-                        operarioSuggestions.style.display = 'block';
-                    })
-                    .catch(error => console.error('Error fetching operarios:', error));
-            }, 300);
+            // Gestor de formulario
+            new FormManager('registroCorteForm', '{{ route("piso-corte.store") }}');
         });
-
-        function createNuevoOperario(nombre) {
-            fetch('{{ route("store-operario") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({ name: nombre.toUpperCase() })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    operarioAutocomplete.value = data.operario.name;
-                    operarioId.value = data.operario.id;
-                    operarioSuggestions.style.display = 'none';
-                } else {
-                    alert('Error al crear el operario: ' + (data.message || 'Error desconocido'));
-                }
-            })
-            .catch(error => {
-                console.error('Error creating operario:', error);
-                alert('Error al crear el operario.');
-            });
-        }
-
-        // ========================================
-        // OCULTAR SUGERENCIAS AL HACER CLIC FUERA
-        // ========================================
-        document.addEventListener('click', function(e) {
-            if (!telaAutocomplete.contains(e.target) && !telaSuggestions.contains(e.target)) {
-                telaSuggestions.style.display = 'none';
-            }
-            if (!maquinaAutocomplete.contains(e.target) && !maquinaSuggestions.contains(e.target)) {
-                maquinaSuggestions.style.display = 'none';
-            }
-            if (!operarioAutocomplete.contains(e.target) && !operarioSuggestions.contains(e.target)) {
-                operarioSuggestions.style.display = 'none';
-            }
-        });
-
-        // ========================================
-        // AUTO-FILL TIEMPO DE CICLO
-        // ========================================
-        function autoFillTiempoCiclo() {
-            const telaIdValue = telaId.value;
-            const maquinaIdValue = maquinaId.value;
-
-            if (telaIdValue && maquinaIdValue) {
-                fetch(`{{ route('get-tiempo-ciclo') }}?tela_id=${telaIdValue}&maquina_id=${maquinaIdValue}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            document.querySelector('input[name="tiempo_ciclo"]').value = data.tiempo_ciclo;
-                        } else {
-                            document.querySelector('input[name="tiempo_ciclo"]').value = '';
-                        }
-                    })
-                    .catch(error => console.error('Error fetching tiempo_ciclo:', error));
-            }
-        }
-
-        // ========================================
-        // ENVÍO DEL FORMULARIO
-        // ========================================
-        document.getElementById('registroCorteForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-
-            const data = {};
-            formData.forEach((value, key) => {
-                data[key] = value;
-            });
-
-            fetch('{{ route("piso-corte.store") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    mostrarMensajeExito('✅ Registro guardado correctamente');
-
-                    window.dispatchEvent(new CustomEvent('close-modal', { detail: 'piso-corte-form' }));
-                    this.reset();
-                    telaId.value = '';
-                    maquinaId.value = '';
-                    operarioId.value = '';
-
-                    if (window.actualizarTablaCorte) {
-                        window.actualizarTablaCorte(data.registro);
-                    } else {
-                        window.location.reload();
-                    }
-                } else {
-                    alert('Error al guardar el registro: ' + (data.message || 'Error desconocido'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error al procesar la solicitud.');
-            });
-        });
-
-        function mostrarMensajeExito(texto) {
-            const mensaje = document.createElement("div");
-            mensaje.textContent = texto;
-            mensaje.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                background-color: #2e7d32;
-                color: white;
-                padding: 20px 40px;
-                font-size: 18px;
-                border-radius: 10px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-                z-index: 9999;
-                text-align: center;
-            `;
-
-            document.body.appendChild(mensaje);
-
-            setTimeout(() => {
-                mensaje.remove();
-            }, 3000);
-        }
     </script>
 </x-modal>

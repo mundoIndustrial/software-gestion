@@ -234,7 +234,25 @@
     background: rgba(255, 255, 255, 0.05);
 }
 
-.seguimiento-table { width: 100%; border-collapse: collapse; min-width: 1200px; table-layout: fixed; }
+.seguimiento-table { 
+    width: auto; 
+    border-collapse: collapse; 
+    min-width: 600px; /* ancho mínimo más pequeño */
+    table-layout: auto; /* permite ajustar el ancho según contenido */
+    margin: 0 auto; /* centra la tabla si hay pocas columnas */
+}
+
+.seguimiento-table-small {
+    min-width: 600px;
+    table-layout: auto;
+    width: auto;
+}
+
+.seguimiento-table-small th,
+.seguimiento-table-small td {
+    padding: 12px 16px;
+}
+
 .seguimiento-table th, .seguimiento-table td { box-sizing: border-box; }
 .seguimiento-th { background: rgba(255, 255, 255, 0.05); color: #e0e0e0; padding: 16px 8px; text-align: center; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid rgba(255,255,255,0.1); border-right:1px solid rgba(255,255,255,0.05); }
 .seguimiento-th:last-child { border-right:none; }
@@ -257,7 +275,7 @@
 
 <div class="records-table-container">
     <div class="table-scroll-container">
-        <table class="seguimiento-table">
+        <table class="seguimiento-table {{ count($modulosDisponibles) <= 2 ? 'seguimiento-table-small' : '' }}">
             <thead>
                 <tr>
                     <th rowspan="2" class="seguimiento-th">HORA</th>
@@ -298,7 +316,7 @@
                             @endphp
                             <td class="seguimiento-td">{{ number_format($modData['prendas'], 0) }}</td>
                             <td class="seguimiento-td">{{ number_format($modData['meta'], 2) }}</td>
-                            <td class="seguimiento-td seguimiento-efficiency-cell {{ $eficienciaClass }}">{{ $modData['prendas'] > 0 ? number_format($modData['eficiencia'] * 100, 2) . '%' : '0.00%' }}</td>
+                            <td class="seguimiento-td seguimiento-efficiency-cell {{ $eficienciaClass }}">{{ $modData['prendas'] > 0 ? round($modData['eficiencia'] * 100) . '%' : '0%' }}</td>
                         @endforeach
                     </tr>
                 @endforeach
@@ -317,7 +335,7 @@
                         @endphp
                         <td class="seguimiento-td">{{ number_format($modTotal['prendas'], 0) }}</td>
                         <td class="seguimiento-td">{{ number_format($modTotal['meta'], 2) }}</td>
-                        <td class="seguimiento-td seguimiento-efficiency-cell {{ $eficienciaClass }}">{{ $modTotal['prendas'] > 0 ? number_format($modTotal['eficiencia'] * 100, 2) . '%' : '0.00%' }}</td>
+                        <td class="seguimiento-td seguimiento-efficiency-cell {{ $eficienciaClass }}">{{ $modTotal['prendas'] > 0 ? round($modTotal['eficiencia'] * 100) . '%' : '0%' }}</td>
                     @endforeach
                 </tr>
             </tbody>
