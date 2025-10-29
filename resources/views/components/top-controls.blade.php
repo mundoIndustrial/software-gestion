@@ -38,6 +38,33 @@
             month: '{{ request('month', '') }}',
             specificDates: '{{ request('specific_dates', '') }}',
             selectedDates: new Set('{{ request('specific_dates', '') }}'.split(',').filter(d => d)),
+            limpiarFiltros() {
+                // Reset all filter fields to default values
+                this.filterType = 'range';
+                this.startDate = '';
+                this.endDate = '';
+                this.specificDate = '';
+                this.month = '';
+                this.selectedDates.clear();
+
+                // Clear calendar selection if calendar is visible
+                if (typeof clearCalendarSelection === 'function') {
+                    clearCalendarSelection();
+                }
+
+                // Clear URL parameters
+                const url = new URL(window.location);
+                url.search = '';
+                window.history.pushState({}, '', url.toString());
+
+                // Update dashboard tables with no filters (show all data)
+                if (typeof updateDashboardTablesFromFilter === 'function') {
+                    updateDashboardTablesFromFilter(new URLSearchParams());
+                } else {
+                    // If function doesn't exist, reload page to show all data
+                    window.location.href = url.toString();
+                }
+            },
             filtrarPorFechas() {
                 console.log('Filter type:', this.filterType);
 
@@ -146,6 +173,7 @@
             </template>
 
             <button class="btn-apply" @click="filtrarPorFechas()">Aplicar</button>
+            <button class="btn-clear" @click="limpiarFiltros()">Limpiar Filtros</button>
         </div>
 
         <!-- Calendario para días específicos (dentro del selector) -->
@@ -290,6 +318,27 @@
 .btn-apply:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(249, 115, 22, 0.4);
+}
+
+/* === Clear Button === */
+.btn-clear {
+    background: linear-gradient(135deg, #6b7280, #4b5563);
+    color: white;
+    border: none;
+    padding: 0.55rem 1.2rem;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    margin-left: 0.5rem;
+}
+
+.btn-clear:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.4);
+    background: linear-gradient(135deg, #4b5563, #374151);
 }
 
 /* === Calendar === */
@@ -484,6 +533,16 @@ function initCalendar() {
     window.currentCalendarYear = now.getFullYear();
     window.currentCalendarMonth = now.getMonth();
     renderCalendar(window.currentCalendarYear, window.currentCalendarMonth);
+}
+
+function clearCalendarSelection() {
+    // Clear global calendar selection
+    window.selectedDatesTopControls.clear();
+
+    // Re-render calendar to reflect cleared selection
+    if (window.currentCalendarYear !== null && window.currentCalendarMonth !== null) {
+        renderCalendar(window.currentCalendarYear, window.currentCalendarMonth);
+    }
 }
 
 function renderCalendar(year, month) {
