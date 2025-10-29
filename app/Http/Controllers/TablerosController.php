@@ -912,4 +912,20 @@ class TablerosController extends Controller
 
         return array_values($operariosData);
     }
+
+    public function getDashboardTablesData(Request $request)
+    {
+        $queryCorte = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela']);
+        $this->aplicarFiltroFecha($queryCorte, $request);
+        $registrosCorte = $queryCorte->get();
+
+        // Calcular datos dinámicos para las tablas de horas y operarios
+        $horasData = $this->calcularProduccionPorHoras($registrosCorte);
+        $operariosData = $this->calcularProduccionPorOperarios($registrosCorte);
+
+        return response()->json([
+            'horasData' => $horasData,
+            'operariosData' => $operariosData
+        ]);
+    }
 }

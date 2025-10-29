@@ -72,6 +72,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/search-maquinas', [TablerosController::class, 'searchMaquinas'])->name('search-maquinas');
     Route::get('/search-operarios', [TablerosController::class, 'searchOperarios'])->name('search-operarios');
     Route::post('/store-operario', [TablerosController::class, 'storeOperario'])->name('store-operario');
+    Route::get('/tableros/dashboard-tables-data', [TablerosController::class, 'getDashboardTablesData'])->name('tableros.dashboard-tables-data');
 });
 
 require __DIR__.'/auth.php';

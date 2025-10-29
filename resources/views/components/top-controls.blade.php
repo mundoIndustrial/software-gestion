@@ -483,7 +483,106 @@ function filtrarPorFechas() {
         url.searchParams.set('specific_dates', Array.from(selectedDatesTopControls).join(','));
     }
 
-    window.location.href = url.toString();
+    // Update URL without reloading page
+    window.history.pushState({}, '', url.toString());
+
+    // Update dashboard tables dynamically
+    updateDashboardTablesFromFilter(url.searchParams);
+}
+
+function updateDashboardTablesFromFilter(params) {
+    const dashboardUrl = new URL('/tableros/dashboard-tables-data', window.location.origin);
+    dashboardUrl.search = params.toString();
+
+    fetch(dashboardUrl.toString(), {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        updateDashboardTables(data.horasData, data.operariosData);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al filtrar los datos del dashboard');
+    });
+}
+
+function updateDashboardTables(horasData, operariosData) {
+    // Update horas table
+    const horasTableBody = document.getElementById('horasTableBody');
+    if (horasTableBody) {
+        let html = '';
+        let totalCantidadHoras = 0;
+        let totalMetaHoras = 0;
+
+        horasData.forEach(row => {
+            const eficienciaClass = row.eficiencia < 70 ? '#7f1d1d' : (row.eficiencia >= 70 && row.eficiencia < 80 ? '#92400e' : (row.eficiencia >= 80 && row.eficiencia < 100 ? '#166534' : (row.eficiencia >= 100 ? '#0c4a6e' : '#374151')));
+            html += `
+                <tr style="background: rgba(255,255,255,0.02); transition: background-color 0.2s ease;">
+                    <td style="padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #ffffff; font-weight: 500;">${row.hora}</td>
+                    <td style="padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; color: #94a3b8; font-weight: 500;">${row.cantidad.toLocaleString()}</td>
+                    <td style="padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; color: #94a3b8; font-weight: 500;">${row.meta.toLocaleString()}</td>
+                    <td style="padding: 0; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; background: ${eficienciaClass}; color: #ffffff; font-weight: 600; font-size: 13px;">
+                        <div style="padding: 14px 20px; width: 100%; height: 100%;">${row.eficiencia > 0 ? row.eficiencia.toFixed(1) + '%' : '-'}</div>
+                    </td>
+                </tr>
+            `;
+            totalCantidadHoras += row.cantidad;
+            totalMetaHoras += row.meta;
+        });
+
+        // Add total row
+        html += `
+            <tr style="background: linear-gradient(135deg, #1f2937, #374151); font-weight: 600; border-radius: 0 0 8px 8px;">
+                <td style="padding: 16px 20px; border-bottom: none; color: #ffffff; border-radius: 0 0 0 8px;">TOTAL</td>
+                <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;" id="totalCantidadHoras">${totalCantidadHoras.toLocaleString()}</td>
+                <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;" id="totalMetaHoras">${totalMetaHoras.toLocaleString()}</td>
+                <td style="padding: 16px 20px; border-bottom: none; border-radius: 0 0 8px 0;"></td>
+            </tr>
+        `;
+
+        horasTableBody.innerHTML = html;
+    }
+
+    // Update operarios table
+    const operariosTableBody = document.getElementById('operariosTableBody');
+    if (operariosTableBody) {
+        let html = '';
+        let totalCantidadOperarios = 0;
+        let totalMetaOperarios = 0;
+
+        operariosData.forEach(row => {
+            const eficienciaClass = row.eficiencia < 70 ? '#7f1d1d' : (row.eficiencia >= 70 && row.eficiencia < 80 ? '#92400e' : (row.eficiencia >= 80 && row.eficiencia < 100 ? '#166534' : (row.eficiencia >= 100 ? '#0c4a6e' : '#374151')));
+            html += `
+                <tr style="background: rgba(255,255,255,0.02); transition: background-color 0.2s ease;">
+                    <td style="padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #ffffff; font-weight: 500;">${row.operario}</td>
+                    <td style="padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; color: #94a3b8; font-weight: 500;">${row.cantidad.toLocaleString()}</td>
+                    <td style="padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; color: #94a3b8; font-weight: 500;">${row.meta.toLocaleString()}</td>
+                    <td style="padding: 0; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; background: ${eficienciaClass}; color: #ffffff; font-weight: 600; font-size: 13px;">
+                        <div style="padding: 14px 20px; width: 100%; height: 100%;">${row.eficiencia > 0 ? row.eficiencia.toFixed(1) + '%' : '-'}</div>
+                    </td>
+                </tr>
+            `;
+            totalCantidadOperarios += row.cantidad;
+            totalMetaOperarios += row.meta;
+        });
+
+        // Add total row
+        html += `
+            <tr style="background: linear-gradient(135deg, #1f2937, #374151); font-weight: 600; border-radius: 0 0 8px 8px;">
+                <td style="padding: 16px 20px; border-bottom: none; color: #ffffff; border-radius: 0 0 0 8px;">TOTAL</td>
+                <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;" id="totalCantidadOperarios">${totalCantidadOperarios.toLocaleString()}</td>
+                <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;" id="totalMetaOperarios">${totalMetaOperarios.toLocaleString()}</td>
+                <td style="padding: 16px 20px; border-bottom: none; border-radius: 0 0 8px 0;"></td>
+            </tr>
+        `;
+
+        operariosTableBody.innerHTML = html;
+    }
 }
 
 // Inicialización al cargar la página

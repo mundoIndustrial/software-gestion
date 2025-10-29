@@ -25,7 +25,7 @@
                                 <th style="padding: 16px 20px; font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.8px; border-bottom: 2px solid rgba(255,255,255,0.1); text-align: center; color: #ffffff; border-radius: 0 8px 0 0;">EFICIENCIA</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="horasTableBody">
                             @foreach($horasData as $row)
                             <tr style="background: rgba(255,255,255,0.02); transition: background-color 0.2s ease;">
                                 <td style="padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #ffffff; font-weight: 500;">{{ $row['hora'] }}</td>
@@ -38,8 +38,8 @@
                             @endforeach
                             <tr style="background: linear-gradient(135deg, #1f2937, #374151); font-weight: 600; border-radius: 0 0 8px 8px;">
                                 <td style="padding: 16px 20px; border-bottom: none; color: #ffffff; border-radius: 0 0 0 8px;">TOTAL</td>
-                                <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;">{{ number_format($totalCantidadHoras) }}</td>
-                                <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;">{{ number_format($totalMetaHoras) }}</td>
+                                <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;" id="totalCantidadHoras">{{ number_format($totalCantidadHoras) }}</td>
+                                <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;" id="totalMetaHoras">{{ number_format($totalMetaHoras) }}</td>
                                 <td style="padding: 16px 20px; border-bottom: none; border-radius: 0 0 8px 0;"></td>
                             </tr>
                         </tbody>
@@ -60,7 +60,7 @@
                                 <th style="padding: 16px 20px; font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.8px; border-bottom: 2px solid rgba(255,255,255,0.1); text-align: center; color: #ffffff; border-radius: 0 8px 0 0;">EFICIENCIA</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="operariosTableBody">
                             @foreach($operariosData as $row)
                             <tr style="background: rgba(255,255,255,0.02); transition: background-color 0.2s ease;">
                                 <td style="padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #ffffff; font-weight: 500;">{{ $row['operario'] }}</td>
@@ -73,8 +73,8 @@
                             @endforeach
                             <tr style="background: linear-gradient(135deg, #1f2937, #374151); font-weight: 600; border-radius: 0 0 8px 8px;">
                                 <td style="padding: 16px 20px; border-bottom: none; color: #ffffff; border-radius: 0 0 0 8px;">TOTAL</td>
-                                <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;">{{ number_format($totalCantidadOperarios) }}</td>
-                                <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;">{{ number_format($totalMetaOperarios) }}</td>
+                                <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;" id="totalCantidadOperarios">{{ number_format($totalCantidadOperarios) }}</td>
+                                <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;" id="totalMetaOperarios">{{ number_format($totalMetaOperarios) }}</td>
                                 <td style="padding: 16px 20px; border-bottom: none; border-radius: 0 0 8px 0;"></td>
                             </tr>
                         </tbody>
