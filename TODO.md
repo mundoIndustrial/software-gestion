@@ -1,34 +1,15 @@
-# TODO: Implementar Actualizaciones en Tiempo Real entre Múltiples Pestañas
+# TODO: Cambiar Vista Costura a Tarjetas Agrupadas por Pedido
 
-## Archivos a Modificar
+## Pasos a Realizar
+- [x] Modificar `resources/views/vista-costura/index.blade.php` para reemplazar la tabla con tarjetas agrupadas por pedido.
+- [x] Actualizar `public/css/vista-costura.css` para estilizar las nuevas tarjetas.
+- [x] Verificar que el modal de celdas clickables siga funcionando en las tarjetas.
+- [x] Probar la vista para asegurar que se muestren correctamente las tarjetas con los datos agrupados.
+- [x] Implementar barra de búsqueda en tiempo real para filtrar por número de pedido.
 
-### 1. resources/views/orders/index.blade.php
-- Agregar script para BroadcastChannel API
-- Crear función para escuchar mensajes de otras pestañas
-- Crear función para enviar mensajes cuando se actualice estado/área/celda
-- Integrar con las funciones existentes de actualización
-
-### 2. public/js/modern-table.js
-- Agregar BroadcastChannel en la clase ModernTable
-- Crear método updateRowFromBroadcast(data) para actualizar fila específica
-- Modificar updateOrderStatus y updateOrderArea para enviar mensajes broadcast
-- Modificar saveCellEdit para enviar mensajes broadcast
-- Asegurar que las actualizaciones se propaguen sin recargar
-
-### 3. app/Http/Controllers/RegistroOrdenController.php
-- Modificar método update para retornar todos los campos actualizados en la respuesta JSON
-- Incluir updated_fields en la respuesta para propagar cambios
-
-## Pasos de Implementación
-
-1. Modificar RegistroOrdenController.php para retornar campos actualizados
-2. Agregar BroadcastChannel a modern-table.js
-3. Agregar BroadcastChannel a index.blade.php
-4. Probar funcionalidad entre múltiples pestañas
-5. Verificar que no haya conflictos de actualización
-
-## Notas Técnicas
-- Usar BroadcastChannel API (nativo del navegador, no requiere servidor)
-- Mensajes incluyen: orderId, field, newValue, updatedFields
-- Actualizaciones solo afectan la fila específica, no toda la tabla
-- Mantener consistencia con colores de fila basados en estado
+## Detalles del Cambio
+- Cada tarjeta representa un pedido único.
+- Título de la tarjeta: "Pedido - Cliente".
+- Dentro de cada tarjeta: tabla con columnas Prenda, Descripción, Talla, Cantidad, Costurero, Total Producido, Total Pendiente, Fecha Completado.
+- Barra de búsqueda automática que filtra por número de pedido a medida que se escribe.
+- Mantener paginación y modal existente.

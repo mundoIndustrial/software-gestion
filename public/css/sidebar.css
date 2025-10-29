@@ -279,6 +279,77 @@ body {
   min-height: 40px;
 }
 
+/* Menu link container for hover buttons */
+.menu-link-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+/* Mini button styles */
+.mini-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-hover-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  font-size: 0.8rem;
+  z-index: 10;
+}
+
+.mini-btn:hover {
+  background: #e68742;
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 2px 8px rgba(255, 157, 88, 0.4);
+}
+
+/* Show mini button on hover */
+.menu-link-container:hover .mini-btn {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Tooltip for mini button */
+.mini-btn[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  right: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--color-text-primary);
+  color: var(--color-bg-sidebar);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  z-index: 20;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.mini-btn[data-tooltip]:hover::before {
+  content: '';
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 4px solid transparent;
+  border-left-color: var(--color-text-primary);
+  z-index: 20;
+}
+
 .submenu-item .menu-link:hover {
   background: var(--color-hover-secondary);
 }

@@ -44,25 +44,35 @@
         <button class="menu-link submenu-toggle {{ (request()->routeIs('registros.index') || request()->routeIs('bodega.index')) ? 'active' : '' }}"
                 aria-label="Ver órdenes">
           <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
-          <span class="menu-label">Ordenes</span>
+          <span class="menu-label">Gestiónar Ordenes</span>
           <span class="material-symbols-rounded submenu-arrow" aria-hidden="true">expand_more</span>
         </button>
         <ul class="submenu">
           <li class="submenu-item">
-            <a href="{{ route('registros.index') }}"
-               class="menu-link {{ request()->routeIs('registros.index') ? 'active' : '' }}"
-               aria-label="Ver registro de órdenes">
-              <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
-              <span class="menu-label">Pedidos</span>
-            </a>
+            <div class="menu-link-container">
+              <a href="{{ route('registros.index') }}"
+                 class="menu-link {{ request()->routeIs('registros.index') ? 'active' : '' }}"
+                 aria-label="Ver registro de órdenes">
+                <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
+                <span class="menu-label">Pedidos</span>
+              </a>
+              <button class="mini-btn hover-btn" onclick="window.location.href='{{ route('vista-costura.index') }}'" data-tooltip="Gestión Vista Costura">
+                <span class="material-symbols-rounded">visibility</span>
+              </button>
+            </div>
           </li>
           <li class="submenu-item">
-            <a href="{{ route('bodega.index') }}"
-               class="menu-link {{ request()->routeIs('bodega.index') ? 'active' : '' }}"
-               aria-label="Ver órdenes de bodega">
-              <span class="material-symbols-rounded" aria-hidden="true">inventory</span>
-              <span class="menu-label">Bodega</span>
-            </a>
+            <div class="menu-link-container">
+              <a href="{{ route('bodega.index') }}"
+                 class="menu-link {{ request()->routeIs('bodega.index') ? 'active' : '' }}"
+                 aria-label="Ver órdenes de bodega">
+                <span class="material-symbols-rounded" aria-hidden="true">inventory</span>
+                <span class="menu-label">Bodega</span>
+              </a>
+              <button class="mini-btn hover-btn" onclick="window.location.href='{{ route('vista-costura.index') }}'" data-tooltip="Gestión Vista Costura">
+                <span class="material-symbols-rounded">visibility</span>
+              </button>
+            </div>
           </li>
         </ul>
       </li>
