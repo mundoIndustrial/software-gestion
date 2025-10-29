@@ -55,7 +55,16 @@
                         <thead class="table-head">
                             <tr>
                                 @foreach($columns as $column)
-                                    <th class="table-header-cell" data-column="{{ $column }}">{{ ucfirst(str_replace('_', ' ', $column)) }}</th>
+                                    <th class="table-header-cell" data-column="{{ $column }}">
+                                        <div class="header-content">
+                                            {{ ucfirst(str_replace('_', ' ', $column)) }}
+                                            <button class="filter-icon" data-column="{{ $column }}" title="Filtrar por {{ ucfirst(str_replace('_', ' ', $column)) }}">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </th>
                                 @endforeach
                                 <th class="table-header-cell">Acciones</th>
                             </tr>
@@ -117,7 +126,16 @@
                         <thead class="table-head">
                             <tr>
                                 @foreach($columnsPolos as $column)
-                                    <th class="table-header-cell" data-column="{{ $column }}">{{ ucfirst(str_replace('_', ' ', $column)) }}</th>
+                                    <th class="table-header-cell" data-column="{{ $column }}">
+                                        <div class="header-content">
+                                            {{ ucfirst(str_replace('_', ' ', $column)) }}
+                                            <button class="filter-icon" data-column="{{ $column }}" title="Filtrar por {{ ucfirst(str_replace('_', ' ', $column)) }}">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </th>
                                 @endforeach
                                 <th class="table-header-cell">Acciones</th>
                             </tr>
@@ -192,7 +210,16 @@
                                             $headerText = 'Tela';
                                         }
                                     @endphp
-                                    <th class="table-header-cell" data-column="{{ $column }}">{{ $headerText }}</th>
+                                    <th class="table-header-cell" data-column="{{ $column }}">
+                                        <div class="header-content">
+                                            {{ $headerText }}
+                                            <button class="filter-icon" data-column="{{ $column }}" title="Filtrar por {{ $headerText }}">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </th>
                                 @endforeach
                                 <th class="table-header-cell">Acciones</th>
                             </tr>
@@ -282,7 +309,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('JavaScript cargado para edición de celdas');
+    console.log('JavaScript cargado para edición de celdas y filtros');
     let currentCell = null;
     let currentRowId = null;
     let currentColumn = null;
@@ -609,6 +636,13 @@ document.addEventListener('DOMContentLoaded', function() {
             closeDeleteModal();
         }
     });
+
+    // Initialize filters for all sections on page load
+    setTimeout(() => {
+        initializeTableFilters('produccion');
+        initializeTableFilters('polos');
+        initializeTableFilters('corte');
+    }, 100);
 });
 </script>
 @endsection
