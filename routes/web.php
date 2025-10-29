@@ -14,6 +14,11 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// Ruta de prueba para verificar Echo/Reverb
+Route::get('/test-echo', function () {
+    return view('test-echo');
+})->name('test.echo');
+
 Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {

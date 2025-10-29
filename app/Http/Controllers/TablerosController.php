@@ -699,6 +699,12 @@ class TablerosController extends Controller
                 'eficiencia' => $eficiencia,
             ]);
 
+            // Load relations for broadcasting
+            $registro->load(['hora', 'operario']);
+
+            // Broadcast the new record to ALL clients (including other windows)
+            broadcast(new \App\Events\CorteRecordCreated($registro));
+
             return response()->json([
                 'success' => true,
                 'message' => 'Registro de piso de corte guardado correctamente.',

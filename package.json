@@ -20,6 +20,7 @@
     },
     "dependencies": {
         "laravel-echo": "^2.2.3",
+        "pusher-js": "^8.4.0-rc2",
         "chart.js": "^4.4.0"
     }
 }
