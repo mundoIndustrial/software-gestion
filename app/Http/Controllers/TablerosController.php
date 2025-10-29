@@ -67,12 +67,29 @@ class TablerosController extends Controller
 
         // Recalcular tiempo_disponible, meta y eficiencia para cada registro de corte
         foreach ($registrosCorte as $registro) {
-            $tiempo_disponible = (3600 * $registro->porcion_tiempo * $registro->numero_operarios) -
-                               ($registro->tiempo_parada_no_programada ?? 0) -
-                               ($registro->tiempo_para_programada ?? 0);
+            $tiempo_para_programada = ($registro->paradas_programadas === 'DESAYUNO' || $registro->paradas_programadas === 'MEDIA TARDE') ? 900 : 0;
+            $tiempo_extendido = 0;
+            if ($registro->tipo_extendido === 'Trazo Largo') {
+                $tiempo_extendido = 40 * $registro->numero_capas;
+            } elseif ($registro->tipo_extendido === 'Trazo Corto') {
+                $tiempo_extendido = 25 * $registro->numero_capas;
+            }
 
-            $meta = $registro->tiempo_ciclo > 0 ? ($tiempo_disponible / $registro->tiempo_ciclo) * 0.9 : 0;
-            $eficiencia = $meta == 0 ? 0 : ($registro->cantidad / $meta);
+            $tiempo_disponible = (3600 * $registro->porcion_tiempo) -
+                               $tiempo_para_programada -
+                               ($registro->tiempo_parada_no_programada ?? 0) -
+                               $tiempo_extendido -
+                               ($registro->tiempo_trazado ?? 0);
+
+            $tiempo_disponible = max(0, $tiempo_disponible);
+
+            if (str_contains(strtolower($registro->actividad), 'extender') || str_contains(strtolower($registro->actividad), 'trazar')) {
+                $meta = $registro->cantidad;
+                $eficiencia = 1.0;
+            } else {
+                $meta = $registro->tiempo_ciclo > 0 ? $tiempo_disponible / $registro->tiempo_ciclo : 0;
+                $eficiencia = $meta == 0 ? 0 : ($registro->cantidad / $meta);
+            }
 
             $registro->tiempo_disponible = $tiempo_disponible;
             $registro->meta = $meta;
@@ -615,9 +632,43 @@ class TablerosController extends Controller
                 ]);
             }
 
-            $tiempo_disponible = (3600 * $request->porcion_tiempo * 1) - ($request->tiempo_parada_no_programada ?? 0) - 0; // Asumiendo 1 operario por defecto para corte
-            $meta = $request->tiempo_ciclo > 0 ? ($tiempo_disponible / $request->tiempo_ciclo) * 0.9 : 0;
-            $eficiencia = $meta == 0 ? 0 : ($request->cantidad_producida / $meta);
+            // Calculate tiempo_para_programada based on paradas_programadas
+            $tiempo_para_programada = 0;
+            if ($request->paradas_programadas === 'DESAYUNO' || $request->paradas_programadas === 'MEDIA TARDE') {
+                $tiempo_para_programada = 900; // 15 minutes in seconds
+            } elseif ($request->paradas_programadas === 'NINGUNA') {
+                $tiempo_para_programada = 0;
+            }
+
+            // Calculate tiempo_extendido based on tipo_extendido and numero_capas
+            $tiempo_extendido = 0;
+            if ($request->tipo_extendido === 'Trazo Largo') {
+                $tiempo_extendido = 40 * $request->numero_capas;
+            } elseif ($request->tipo_extendido === 'Trazo Corto') {
+                $tiempo_extendido = 25 * $request->numero_capas;
+            }
+
+            // Calculate tiempo_disponible: (3600 * porcion_tiempo) - (tiempo_para_programada + tiempo_parada_no_programada + tiempo_extendido + tiempo_trazado)
+            $tiempo_disponible = (3600 * $request->porcion_tiempo) -
+                               $tiempo_para_programada -
+                               ($request->tiempo_parada_no_programada ?? 0) -
+                               $tiempo_extendido -
+                               ($request->tiempo_trazado ?? 0);
+
+            // Ensure tiempo_disponible is not negative
+            $tiempo_disponible = max(0, $tiempo_disponible);
+
+            // Calculate meta and eficiencia based on activity (case insensitive)
+            if (str_contains(strtolower($request->actividad), 'extender') || str_contains(strtolower($request->actividad), 'trazar')) {
+                // For activities containing "extender" or "trazar", meta is the cantidad_producida, eficiencia is 100%
+                $meta = $request->cantidad_producida;
+                $eficiencia = 1.0;
+            } else {
+                // Calculate meta: tiempo_disponible / tiempo_ciclo
+                $meta = $request->tiempo_ciclo > 0 ? $tiempo_disponible / $request->tiempo_ciclo : 0;
+                // Calculate eficiencia: cantidad_producida / meta
+                $eficiencia = $meta == 0 ? 0 : ($request->cantidad_producida / $meta);
+            }
 
             $registro = RegistroPisoCorte::create([
                 'fecha' => $request->fecha,
@@ -629,11 +680,12 @@ class TablerosController extends Controller
                 'cantidad' => $request->cantidad_producida,
                 'tiempo_ciclo' => $request->tiempo_ciclo,
                 'paradas_programadas' => $request->paradas_programadas,
+                'tiempo_para_programada' => $tiempo_para_programada,
                 'paradas_no_programadas' => $request->paradas_no_programadas,
                 'tiempo_parada_no_programada' => $request->tiempo_parada_no_programada ?? null,
                 'tipo_extendido' => $request->tipo_extendido,
                 'numero_capas' => $request->numero_capas,
-                'tiempo_extendido' => $request->tiempo_trazado,
+                'tiempo_extendido' => $tiempo_extendido,
                 'trazado' => $request->trazado,
                 'tiempo_trazado' => $request->tiempo_trazado,
                 'actividad' => $request->actividad,

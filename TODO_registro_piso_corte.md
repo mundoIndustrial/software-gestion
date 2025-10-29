@@ -24,6 +24,10 @@
 
 11. **Probar funcionalidad**: Ejecutar migraciones, probar formulario, verificar relaciones y lógica de auto-fill.
 
+12. **Implementar cálculos correctos para piso de corte**: Actualizar lógica de cálculo de tiempo_disponible, meta y eficiencia considerando paradas programadas, tiempo extendido y tiempo trazado.
+
+13. **Agregar visualización diferenciada para actividad "Extender/Trazar"**: Agregar clase CSS para resaltar filas con actividad "Extender/Trazar" en la tabla de corte.
+
 ## Progreso:
 - [x] Paso 1
 - [x] Paso 2
@@ -36,3 +40,5 @@
 - [x] Paso 9
 - [x] Paso 10
 - [x] Paso 11
+- [x] Paso 12
+- [x] Paso 13

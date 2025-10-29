@@ -199,7 +199,7 @@
                         </thead>
                         <tbody class="table-body">
                             @foreach($registrosCorte as $registro)
-                            <tr class="table-row" data-id="{{ $registro->id }}">
+                            <tr class="table-row {{ (str_contains(strtolower($registro->actividad), 'extender') || str_contains(strtolower($registro->actividad), 'trazar')) ? 'extend-trazar-row' : '' }}" data-id="{{ $registro->id }}">
                                 @foreach($columnsCorte as $column)
                                     @php
                                         $value = $registro->$column;
