@@ -97,6 +97,10 @@ class TablerosController extends Controller
             $registro->save();
         }
 
+        // Calcular datos dinámicos para las tablas de horas y operarios
+        $horasData = $this->calcularProduccionPorHoras($registrosCorte);
+        $operariosData = $this->calcularProduccionPorOperarios($registrosCorte);
+
         if (request()->wantsJson()) {
             return response()->json([
                 'registros' => $registros->items(),
@@ -164,7 +168,7 @@ class TablerosController extends Controller
         $maquinas = Maquina::all();
         $telas = Tela::all();
 
-        return view('tableros', compact('registros', 'columns', 'registrosPolos', 'columnsPolos', 'registrosCorte', 'columnsCorte', 'seguimientoProduccion', 'seguimientoPolos', 'seguimientoCorte', 'horas', 'operarios', 'maquinas', 'telas'));
+        return view('tableros', compact('registros', 'columns', 'registrosPolos', 'columnsPolos', 'registrosCorte', 'columnsCorte', 'seguimientoProduccion', 'seguimientoPolos', 'seguimientoCorte', 'horas', 'operarios', 'maquinas', 'telas', 'horasData', 'operariosData'));
     }
 
     private function aplicarFiltroFecha($query, $request)
@@ -837,5 +841,75 @@ class TablerosController extends Controller
                 'message' => 'Error al crear el operario: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    private function calcularProduccionPorHoras($registrosCorte)
+    {
+        $horasData = [];
+
+        foreach ($registrosCorte as $registro) {
+            $hora = $registro->hora ? $registro->hora->hora : 'SIN HORA';
+            if (!isset($horasData[$hora])) {
+                $horasData[$hora] = [
+                    'hora' => $hora,
+                    'cantidad' => 0,
+                    'meta' => 0,
+                    'eficiencia' => 0
+                ];
+            }
+            $horasData[$hora]['cantidad'] += $registro->cantidad ?? 0;
+            $horasData[$hora]['meta'] += $registro->meta ?? 0;
+        }
+
+        // Calcular eficiencia para cada hora
+        foreach ($horasData as &$horaData) {
+            if ($horaData['meta'] > 0) {
+                $horaData['eficiencia'] = round(($horaData['cantidad'] / $horaData['meta']) * 100, 1);
+            } else {
+                $horaData['eficiencia'] = 0;
+            }
+        }
+
+        // Ordenar por hora (asumiendo formato HORA XX)
+        uasort($horasData, function($a, $b) {
+            $numA = (int) preg_replace('/\D/', '', $a['hora']);
+            $numB = (int) preg_replace('/\D/', '', $b['hora']);
+            return $numA <=> $numB;
+        });
+
+        return array_values($horasData);
+    }
+
+    private function calcularProduccionPorOperarios($registrosCorte)
+    {
+        $operariosData = [];
+
+        foreach ($registrosCorte as $registro) {
+            $operario = $registro->operario ? $registro->operario->name : 'SIN OPERARIO';
+            if (!isset($operariosData[$operario])) {
+                $operariosData[$operario] = [
+                    'operario' => $operario,
+                    'cantidad' => 0,
+                    'meta' => 0,
+                    'eficiencia' => 0
+                ];
+            }
+            $operariosData[$operario]['cantidad'] += $registro->cantidad ?? 0;
+            $operariosData[$operario]['meta'] += $registro->meta ?? 0;
+        }
+
+        // Calcular eficiencia para cada operario
+        foreach ($operariosData as &$operarioData) {
+            if ($operarioData['meta'] > 0) {
+                $operarioData['eficiencia'] = round(($operarioData['cantidad'] / $operarioData['meta']) * 100, 1);
+            } else {
+                $operarioData['eficiencia'] = 0;
+            }
+        }
+
+        // Ordenar alfabéticamente por operario
+        ksort($operariosData);
+
+        return array_values($operariosData);
     }
 }

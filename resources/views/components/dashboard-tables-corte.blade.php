@@ -1,28 +1,5 @@
 @php
-    // Datos dummy para horas (adaptar lógica después)
-    $horasData = [
-        ['hora' => 'HORA 01', 'cantidad' => 16713, 'meta' => 17852, 'eficiencia' => 93.6],
-        ['hora' => 'HORA 02', 'cantidad' => 18413, 'meta' => 18291, 'eficiencia' => 100.7],
-        ['hora' => 'HORA 03', 'cantidad' => 16425, 'meta' => 19687, 'eficiencia' => 98.1],
-        ['hora' => 'HORA 04', 'cantidad' => 18348, 'meta' => 18690, 'eficiencia' => 98.2],
-        ['hora' => 'HORA 05', 'cantidad' => 18515, 'meta' => 18775, 'eficiencia' => 98.6],
-        ['hora' => 'HORA 06', 'cantidad' => 17086, 'meta' => 17530, 'eficiencia' => 97.5],
-        ['hora' => 'HORA 07', 'cantidad' => 14606, 'meta' => 14961, 'eficiencia' => 97.6],
-        ['hora' => 'HORA 08', 'cantidad' => 14800, 'meta' => 16110, 'eficiencia' => 91.9],
-        ['hora' => 'HORA 09', 'cantidad' => 5243, 'meta' => 5407, 'eficiencia' => 97.0],
-        ['hora' => 'HORA 10', 'cantidad' => 3095, 'meta' => 3271, 'eficiencia' => 94.6],
-        ['hora' => 'HORA 11', 'cantidad' => 41, 'meta' => 32, 'eficiencia' => 130.1],
-        ['hora' => 'HORA 12', 'cantidad' => 1, 'meta' => 1, 'eficiencia' => 0]
-    ];
-
-    // Datos dummy para operarios
-    $operariosData = [
-        ['operario' => 'ADRIAN', 'cantidad' => 51152, 'meta' => 49549, 'eficiencia' => 103.2],
-        ['operario' => 'JHONNY', 'cantidad' => 1739, 'meta' => 4241, 'eficiencia' => 41.0],
-        ['operario' => 'JULIAN', 'cantidad' => 38757, 'meta' => 44307, 'eficiencia' => 87.5],
-        ['operario' => 'PAOLA', 'cantidad' => 54635, 'meta' => 52630, 'eficiencia' => 103.8]
-    ];
-
+    // Los datos dinámicos de horas y operarios se pasan desde el controlador
     $totalCantidadHoras = array_sum(array_column($horasData, 'cantidad'));
     $totalMetaHoras = array_sum(array_column($horasData, 'meta'));
 
