@@ -106,7 +106,7 @@ class TablerosController extends Controller
                 'registrosCorte' => $registrosCorte->map(function($registro) {
                     $registroArray = $registro->toArray();
                     if ($registro->hora) {
-                        $registroArray['hora_display'] = 'HORA ' . $registro->hora->hora;
+                        $registroArray['hora_display'] = $registro->hora->hora;
                     }
                     if ($registro->operario) {
                         $registroArray['operario_display'] = $registro->operario->name;

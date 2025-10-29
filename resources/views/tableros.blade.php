@@ -77,15 +77,15 @@
                                         $value = $registro->$column;
                                         $displayValue = $value;
                                         if ($column === 'fecha' && $value) {
-                                            $displayValue = $value->format('d/m/Y');
+                                            $displayValue = $value->format('d-m-Y');
                                         } elseif ($column === 'hora' && $value) {
-                                            $displayValue = 'HORA ' . $value;
+                                            $displayValue = $value;
                                         } elseif ($column === 'eficiencia' && $value) {
                                             $displayValue = $value . '%';
                                         }
                                         $eficienciaClass = ($column === 'eficiencia' && $value !== null) ? getEficienciaClass($value) : '';
                                     @endphp
-                                    <td class="table-cell editable-cell {{ $eficienciaClass }}" data-column="{{ $column }}" data-value="{{ $value }}" title="Doble clic para editar">{{ $displayValue }}</td>
+                                    <td class="table-cell editable-cell {{ $eficienciaClass }}" data-column="{{ $column }}" data-value="{{ $column === 'fecha' ? $displayValue : $value }}" title="Doble clic para editar">{{ $displayValue }}</td>
                                 @endforeach
                                 <td class="table-cell">
                                     <button class="delete-btn" data-id="{{ $registro->id }}" data-section="produccion" title="Eliminar registro">
@@ -148,15 +148,15 @@
                                         $value = $registro->$column;
                                         $displayValue = $value;
                                         if ($column === 'fecha' && $value) {
-                                            $displayValue = $value->format('d/m/Y');
+                                            $displayValue = $value->format('d-m-Y');
                                         } elseif ($column === 'hora' && $value) {
-                                            $displayValue = 'HORA ' . $value;
+                                            $displayValue = $value;
                                         } elseif ($column === 'eficiencia' && $value) {
                                             $displayValue = $value . '%';
                                         }
                                         $eficienciaClass = ($column === 'eficiencia' && $value !== null) ? getEficienciaClass($value) : '';
                                     @endphp
-                                    <td class="table-cell editable-cell {{ $eficienciaClass }}" data-column="{{ $column }}" data-value="{{ $value }}" title="Doble clic para editar">{{ $displayValue }}</td>
+                                    <td class="table-cell editable-cell {{ $eficienciaClass }}" data-column="{{ $column }}" data-value="{{ $column === 'fecha' ? $displayValue : $value }}" title="Doble clic para editar">{{ $displayValue }}</td>
                                 @endforeach
                                 <td class="table-cell">
                                     <button class="delete-btn" data-id="{{ $registro->id }}" data-section="polos" title="Eliminar registro">
@@ -232,9 +232,9 @@
                                         $value = $registro->$column;
                                         $displayValue = $value;
                                         if ($column === 'fecha' && $value) {
-                                            $displayValue = $value->format('d/m/Y');
+                                            $displayValue = $value->format('d-m-Y');
                                         } elseif ($column === 'hora_id' && $registro->hora) {
-                                            $displayValue = 'HORA ' . $registro->hora->hora;
+                                            $displayValue = $registro->hora->hora;
                                         } elseif ($column === 'operario_id' && $registro->operario) {
                                             $displayValue = $registro->operario->name;
                                         } elseif ($column === 'maquina_id' && $registro->maquina) {
@@ -246,7 +246,7 @@
                                         }
                                         $eficienciaClass = ($column === 'eficiencia' && $value !== null) ? getEficienciaClass($value) : '';
                                     @endphp
-                                    <td class="table-cell editable-cell {{ $eficienciaClass }}" data-column="{{ $column }}" data-value="{{ $value }}" title="Doble clic para editar">{{ $displayValue }}</td>
+                                    <td class="table-cell editable-cell {{ $eficienciaClass }}" data-column="{{ $column }}" data-value="{{ $column === 'fecha' ? $displayValue : $value }}" title="Doble clic para editar">{{ $displayValue }}</td>
                                 @endforeach
                                 <td class="table-cell">
                                     <button class="delete-btn" data-id="{{ $registro->id }}" data-section="corte" title="Eliminar registro">
@@ -532,16 +532,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function formatDisplayValue(column, value) {
-        if (column === 'fecha' && value) {
-            const date = new Date(value);
-            return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        }
-        if (column === 'hora' && value) {
-            return 'HORA ' + value;
-        }
-        if (column === 'eficiencia' && value) {
-            return value + '%';
-        }
+                if (column === 'fecha' && value) {
+                    const date = new Date(value);
+                    return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-');
+                }
+                if (column === 'hora' && value) {
+                    return value;
+                }
+                if (column === 'eficiencia' && value) {
+                    return value + '%';
+                }
         return value;
     }
 

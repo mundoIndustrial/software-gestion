@@ -171,10 +171,23 @@ function showFilterDropdown(column, section) {
 
     clearAllBtn.addEventListener('click', () => {
         checkboxes.forEach(cb => cb.checked = false);
+        // Reset all filters and show all rows
+        applyFilters(section);
     });
 
     applyBtn.addEventListener('click', () => {
-        applyFilters(section);
+        // Only apply filters if there are checked values, otherwise show all rows
+        const checkedBoxes = dropdown.querySelectorAll('input[type="checkbox"]:checked');
+        if (checkedBoxes.length > 0) {
+            applyFilters(section);
+        } else {
+            // Show all rows if no filters are selected
+            const table = document.querySelector(`table[data-section="${section}"]`);
+            const tbody = table.querySelector('tbody');
+            const rows = tbody.querySelectorAll('tr');
+            rows.forEach(row => row.style.display = '');
+            updatePaginationInfo(section, rows.length, rows.length);
+        }
         dropdown.classList.remove('show');
     });
 
