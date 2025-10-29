@@ -20,6 +20,7 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
+
         </div>
 
         <div id="results-container">
@@ -46,6 +47,23 @@
                         <div class="pedido-card">
                             <div class="card-header">
                                 <h3>{{ $pedido ?: '-' }} - {{ $cliente ?: '-' }}</h3>
+                                <div class="encargado-corte">
+                                    <span class="encargado-label">Encargado de Corte:</span>
+                                    <span class="encargado-value">
+                                        @php
+                                            $encargado = '-';
+                                            if ($tipo === 'bodega') {
+                                                $registro = \App\Models\TablaOriginalBodega::where('pedido', $pedido)->first();
+                                            } else {
+                                                $registro = \App\Models\TablaOriginal::where('pedido', $pedido)->first();
+                                            }
+                                            if ($registro && isset($registro->encargados_de_corte)) {
+                                                $encargado = $registro->encargados_de_corte;
+                                            }
+                                        @endphp
+                                        {{ $encargado }}
+                                    </span>
+                                </div>
                             </div>
                             <div class="card-body">
                                 <table class="card-table">
@@ -102,41 +120,20 @@
         </div>
     </div>
 
-    <!-- Modal para contenido de celda -->
-    <div class="cell-modal-overlay" id="cellModalOverlay"></div>
-    <div class="cell-modal" id="cellModal">
-        <div class="cell-modal-header">
-            <h3 class="cell-modal-title">Contenido de la celda</h3>
-            <button class="cell-modal-close" id="cellModalClose">&times;</button>
-        </div>
-        <div class="cell-modal-content" id="cellModalContent"></div>
-    </div>
+
+
+
+
+
 
     <script>
         const tipoVista = '{{ $tipo }}';
 
         document.addEventListener('DOMContentLoaded', function() {
-            const modal = document.getElementById('cellModal');
-            const modalOverlay = document.getElementById('cellModalOverlay');
-            const modalContent = document.getElementById('cellModalContent');
-            const modalClose = document.getElementById('cellModalClose');
             const searchInput = document.getElementById('searchInput');
             const clearSearch = document.getElementById('clearSearch');
 
-            // Función para abrir modal
-            function openModal(content) {
-                modalContent.textContent = content;
-                modal.style.display = 'block';
-                modalOverlay.style.display = 'block';
-                document.body.style.overflow = 'hidden';
-            }
 
-            // Función para cerrar modal
-            function closeModal() {
-                modal.style.display = 'none';
-                modalOverlay.style.display = 'none';
-                document.body.style.overflow = 'auto';
-            }
 
             // Función para búsqueda AJAX en tiempo real
             function performAjaxSearch(query) {
@@ -146,7 +143,10 @@
                 // Mostrar indicador de carga
                 resultsContainer.innerHTML = '<div class="no-data"><h3>Buscando...</h3></div>';
 
-                fetch('/api/vista-costura/search?q=' + encodeURIComponent(query) + '&tipo=' + encodeURIComponent(tipoVista), {
+                // Construir URL con parámetros
+                let url = '/api/vista-costura/search?q=' + encodeURIComponent(query) + '&tipo=' + encodeURIComponent(tipoVista);
+
+                fetch(url, {
                     method: 'GET',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
@@ -168,16 +168,6 @@
                     if (paginationContainer && data.pagination) {
                         paginationContainer.innerHTML = data.pagination;
                     }
-
-                    // Re-inicializar event listeners para celdas clickables
-                    document.querySelectorAll('.cell-clickable').forEach(cell => {
-                        cell.addEventListener('dblclick', function() {
-                            const content = this.getAttribute('data-content');
-                            if (content && content.trim() !== '' && content !== '-') {
-                                openModal(content);
-                            }
-                        });
-                    });
                 })
                 .catch(error => {
                     console.error('Error en búsqueda:', error);
@@ -203,29 +193,6 @@
                 searchInput.value = '';
                 clearSearch.style.display = 'none';
                 performAjaxSearch('');
-            });
-
-            // Event listeners para celdas clickables
-            document.querySelectorAll('.cell-clickable').forEach(cell => {
-                cell.addEventListener('dblclick', function() {
-                    const content = this.getAttribute('data-content');
-                    if (content && content.trim() !== '' && content !== '-') {
-                        openModal(content);
-                    }
-                });
-            });
-
-            // Cerrar modal con botón
-            modalClose.addEventListener('click', closeModal);
-
-            // Cerrar modal al hacer click en overlay
-            modalOverlay.addEventListener('click', closeModal);
-
-            // Cerrar modal con tecla Escape
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && modal.style.display === 'block') {
-                    closeModal();
-                }
             });
         });
     </script>

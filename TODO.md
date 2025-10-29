@@ -1,15 +1,46 @@
-# TODO: Cambiar Vista Costura a Tarjetas Agrupadas por Pedido
+# TODO: Implementar Filtro Global en Vista Costura
 
-## Pasos a Realizar
-- [x] Modificar `resources/views/vista-costura/index.blade.php` para reemplazar la tabla con tarjetas agrupadas por pedido.
-- [x] Actualizar `public/css/vista-costura.css` para estilizar las nuevas tarjetas.
-- [x] Verificar que el modal de celdas clickables siga funcionando en las tarjetas.
-- [x] Probar la vista para asegurar que se muestren correctamente las tarjetas con los datos agrupados.
-- [x] Implementar barra de búsqueda en tiempo real para filtrar por número de pedido.
+## Información Recopilada
+- Vista actual muestra cards agrupados por pedido y cliente.
+- Controlador maneja búsqueda AJAX.
+- Datos: cliente, costurero, cortador (encargado de corte).
+- Funcionalidad existente: búsqueda por pedido en tiempo real.
 
-## Detalles del Cambio
-- Cada tarjeta representa un pedido único.
-- Título de la tarjeta: "Pedido - Cliente".
-- Dentro de cada tarjeta: tabla con columnas Prenda, Descripción, Talla, Cantidad, Costurero, Total Producido, Total Pendiente, Fecha Completado.
-- Barra de búsqueda automática que filtra por número de pedido a medida que se escribe.
-- Mantener paginación y modal existente.
+## Plan Aprobado
+1. **Agregar Botón de Filtro**: Botón con ícono al lado derecho de la barra de búsqueda.
+2. **Crear Modal de Filtros**: Modal con checkboxes para cliente, costurero, cortador. Botones "Aplicar" y "Limpiar".
+3. **Actualizar Controlador**: Modificar método `search` para aceptar y aplicar filtros (cliente, costurero, cortador).
+4. **JavaScript para Filtros**: Manejar modal, cargar opciones dinámicas, enviar AJAX con filtros, persistir en localStorage.
+5. **Estilos CSS**: Agregar estilos para botón y modal.
+
+## Archivos a Editar
+- `resources/views/vista-costura/index.blade.php`: HTML del botón/modal, JS.
+- `app/Http/Controllers/VistaCosturaController.php`: Lógica de filtros en `search`.
+- `public/css/vista-costura.css`: Estilos.
+
+## Pasos de Implementación
+- [x] Editar `VistaCosturaController.php` para manejar filtros en método `search`.
+- [x] Editar `index.blade.php` para agregar botón de filtro y modal HTML.
+- [x] Agregar JS en `index.blade.php` para funcionalidad del modal y filtros.
+- [x] Editar `vista-costura.css` para estilos del botón y modal.
+- [ ] Probar filtro en diferentes escenarios (con/sin búsqueda, múltiples filtros).
+- [ ] Verificar persistencia en localStorage.
+- [ ] Ajustar responsive si necesario.
+
+---
+
+# TODO: Refactorizar Botones de Acción en Tabla de Órdenes - CANCELADO
+
+## Información Recopilada
+- Los botones "Limpiar Filtros" y "Agregar Orden" se estaban creando dinámicamente en JavaScript dentro de `modern-table.js`.
+- El usuario pidió mantener la vista como estaba originalmente.
+
+## Plan Cancelado
+- Se revirtió todos los cambios realizados.
+- La vista `resources/views/orders/index.blade.php` se dejó como estaba originalmente.
+- El archivo `public/js/orders.js` creado se mantiene por si se necesita en el futuro, pero no se usa actualmente.
+
+## Archivos Revertidos
+- `resources/views/orders/index.blade.php`: Revertido a estado original.
+- `public/js/modern-table.js`: Restaurada creación dinámica de botones.
+- `public/js/orders.js`: Archivo creado pero no utilizado actualmente.

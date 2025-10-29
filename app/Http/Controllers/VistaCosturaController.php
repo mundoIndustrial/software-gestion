@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\RegistrosPorOrden;
 use App\Models\RegistrosPorOrdenBodega;
+use App\Models\TablaOriginal;
+use App\Models\TablaOriginalBodega;
 
 class VistaCosturaController extends Controller
 {
@@ -39,6 +41,9 @@ class VistaCosturaController extends Controller
     {
         $tipo = $request->get('tipo', $this->determinarTipo($request));
         $query = $request->get('q', '');
+        $clientes = $request->get('clientes', []);
+        $costureros = $request->get('costureros', []);
+        $cortadores = $request->get('cortadores', []);
 
         if ($tipo === 'bodega') {
             $registrosQuery = RegistrosPorOrdenBodega::query();
@@ -51,12 +56,51 @@ class VistaCosturaController extends Controller
             $registrosQuery->where('pedido', 'like', '%' . $query . '%');
         }
 
+        // Aplicar filtros adicionales
+        if (!empty($clientes)) {
+            $registrosQuery->whereIn('cliente', $clientes);
+        }
+        if (!empty($costureros)) {
+            $registrosQuery->whereIn('costurero', $costureros);
+        }
+
         $registros = $registrosQuery->paginate(50);
 
-        // Agrupar los registros por pedido y cliente
+        // Agrupar los registros por pedido y cliente, y obtener el encargado de corte
         $groupedRegistros = $registros->groupBy(function($item) {
             return $item->pedido . '-' . $item->cliente;
         });
+
+        // Obtener los encargados de corte únicos por pedido desde la tabla original
+        $pedidos = $groupedRegistros->keys()->map(function($key) {
+            return explode('-', $key)[0];
+        })->unique()->values()->toArray();
+
+        $encargadosCorte = [];
+        if ($tipo === 'bodega') {
+            $encargadosCorte = TablaOriginalBodega::whereIn('pedido', $pedidos)
+                ->whereNotNull('encargados_de_corte')
+                ->pluck('encargados_de_corte', 'pedido')
+                ->toArray();
+        } else {
+            $encargadosCorte = TablaOriginal::whereIn('pedido', $pedidos)
+                ->whereNotNull('encargados_de_corte')
+                ->pluck('encargados_de_corte', 'pedido')
+                ->toArray();
+        }
+
+        // Aplicar filtro de cortadores si se especifica
+        if (!empty($cortadores)) {
+            $filteredGroupedRegistros = [];
+            foreach ($groupedRegistros as $groupKey => $groupRegistros) {
+                $pedido = explode('-', $groupKey)[0];
+                $encargado = isset($encargadosCorte[$pedido]) ? $encargadosCorte[$pedido] : '';
+                if (in_array($encargado, $cortadores)) {
+                    $filteredGroupedRegistros[$groupKey] = $groupRegistros;
+                }
+            }
+            $groupedRegistros = collect($filteredGroupedRegistros);
+        }
 
         $html = '';
         if ($groupedRegistros->isEmpty()) {
@@ -65,14 +109,21 @@ class VistaCosturaController extends Controller
                         <p>No se encontraron registros de costura para mostrar.</p>
                     </div>';
         } else {
+            $html .= '<div class="cards-container">';
             foreach($groupedRegistros as $groupKey => $groupRegistros) {
                 $pedidoCliente = explode('-', $groupKey);
                 $pedido = $pedidoCliente[0];
                 $cliente = $pedidoCliente[1];
 
+                $encargadoCorte = isset($encargadosCorte[$pedido]) ? $encargadosCorte[$pedido] : '-';
+
                 $html .= '<div class="pedido-card">
                             <div class="card-header">
                                 <h3>' . ($pedido ?: '-') . ' - ' . ($cliente ?: '-') . '</h3>
+                                <div class="encargado-corte">
+                                    <span class="encargado-label">Encargado de Corte:</span>
+                                    <span class="encargado-value">' . htmlspecialchars($encargadoCorte) . '</span>
+                                </div>
                             </div>
                             <div class="card-body">
                                 <table class="card-table">
@@ -122,6 +173,7 @@ class VistaCosturaController extends Controller
 
                 $html .= '</tbody></table></div></div>';
             }
+            $html .= '</div>';
         }
 
         // Generar paginación
