@@ -28,7 +28,7 @@
     </div>
 
     <!-- Selector de fechas (DERECHA) -->
-    <div class="date-selector-section" 
+    <div class="date-selector-section"
          x-show="!showRecords"
          x-data="{
             filterType: '{{ request('filter_type', 'range') }}',
@@ -36,13 +36,84 @@
             endDate: '{{ request('end_date', '') }}',
             specificDate: '{{ request('specific_date', '') }}',
             month: '{{ request('month', '') }}',
-            specificDates: '{{ request('specific_dates', '') }}'
+            specificDates: '{{ request('specific_dates', '') }}',
+            selectedDates: new Set('{{ request('specific_dates', '') }}'.split(',').filter(d => d)),
+            filtrarPorFechas() {
+                console.log('Filter type:', this.filterType);
+
+                // Construir la URL
+                const url = new URL(window.location);
+                url.search = '';
+                url.searchParams.set('filter_type', this.filterType);
+
+                if (this.filterType === 'range') {
+                    const start = this.startDate;
+                    const end = this.endDate;
+
+                    console.log('Start date:', start);
+                    console.log('End date:', end);
+
+                    if (!start || !end) {
+                        alert('Selecciona ambas fechas (inicio y fin)');
+                        return;
+                    }
+
+                    url.searchParams.set('start_date', start);
+                    url.searchParams.set('end_date', end);
+                }
+                else if (this.filterType === 'day') {
+                    const day = this.specificDate;
+                    console.log('Specific date:', day);
+
+                    if (!day) {
+                        alert('Selecciona un día');
+                        return;
+                    }
+
+                    url.searchParams.set('specific_date', day);
+                }
+                else if (this.filterType === 'month') {
+                    const month = this.month;
+                    console.log('Month:', month);
+
+                    if (!month) {
+                        alert('Selecciona un mes');
+                        return;
+                    }
+
+                    url.searchParams.set('month', month);
+                }
+                else if (this.filterType === 'specific') {
+                    if (this.selectedDates.size === 0) {
+                        alert('Selecciona al menos una fecha en el calendario');
+                        return;
+                    }
+
+                    const datesArray = Array.from(this.selectedDates).sort();
+                    console.log('Specific dates:', datesArray);
+                    url.searchParams.set('specific_dates', datesArray.join(','));
+                }
+
+                console.log('Final URL:', url.toString());
+
+                // Actualizar la URL sin recargar la página
+                window.history.pushState({}, '', url.toString());
+
+                // Llamar a la función para actualizar las tablas del dashboard
+                if (typeof updateDashboardTablesFromFilter === 'function') {
+                    updateDashboardTablesFromFilter(url.searchParams);
+                } else {
+                    // Si no existe la función, recargar la página
+                    window.location.href = url.toString();
+                }
+            }
          }">
 
         <div class="filters-row">
             <!-- Tipo de filtro -->
             <div class="filter-type-group">
                 <select x-model="filterType" 
+                        id="filterTypeSelect"
                         class="filter-select"
                         @change="if ($event.target.value === 'specific') { setTimeout(() => initCalendar(), 50); }">
                     <option value="range">Rango de fechas</option>
@@ -74,7 +145,7 @@
                 </div>
             </template>
 
-            <button class="btn-apply" onclick="filtrarPorFechas()">Aplicar</button>
+            <button class="btn-apply" @click="filtrarPorFechas()">Aplicar</button>
         </div>
 
         <!-- Calendario para días específicos (dentro del selector) -->
@@ -193,6 +264,13 @@
 .date-inputs-inline input:hover {
     background: #4b5563;
     border-color: rgba(255, 107, 53, 0.3);
+}
+
+/* Color scheme para inputs date en navegadores webkit */
+.date-inputs-inline input[type="date"]::-webkit-calendar-picker-indicator,
+.date-inputs-inline input[type="month"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
 }
 
 /* === Apply Button === */
@@ -369,6 +447,7 @@
 
 <script>
 let selectedDatesTopControls = new Set();
+let currentCalendarYear, currentCalendarMonth;
 
 function initCalendar() {
     const calendarEl = document.getElementById('calendar');
@@ -378,13 +457,34 @@ function initCalendar() {
         return;
     }
 
+    // Cargar fechas previamente seleccionadas desde URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const specificDates = urlParams.get('specific_dates');
+    if (specificDates) {
+        selectedDatesTopControls = new Set(specificDates.split(','));
+    }
+
+    // Sync with Alpine.js selectedDates
+    const alpineComponent = document.querySelector('[x-data]');
+    if (alpineComponent && alpineComponent._x_dataStack) {
+        const data = alpineComponent._x_dataStack[alpineComponent._x_dataStack.length - 1];
+        if (data.selectedDates) {
+            selectedDatesTopControls = new Set([...data.selectedDates]);
+        }
+    }
+
     const now = new Date();
-    renderCalendar(now.getFullYear(), now.getMonth());
+    currentCalendarYear = now.getFullYear();
+    currentCalendarMonth = now.getMonth();
+    renderCalendar(currentCalendarYear, currentCalendarMonth);
 }
 
 function renderCalendar(year, month) {
     const calendarEl = document.getElementById('calendar');
     if (!calendarEl) return;
+
+    currentCalendarYear = year;
+    currentCalendarMonth = month;
 
     const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                         'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -423,71 +523,31 @@ function renderCalendar(year, month) {
 }
 
 function changeMonth(delta) {
-    const header = document.querySelector('.calendar-header span');
-    if (!header) return;
-
-    const [monthName, yearStr] = header.textContent.split(' ');
-    const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
-                    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    const monthIndex = months.indexOf(monthName);
-    const year = parseInt(yearStr);
-    const newMonth = monthIndex + delta;
-    const newYear = newMonth < 0 ? year - 1 : newMonth > 11 ? year + 1 : year;
+    const newMonth = currentCalendarMonth + delta;
+    const newYear = newMonth < 0 ? currentCalendarYear - 1 : newMonth > 11 ? currentCalendarYear + 1 : currentCalendarYear;
     const adjustedMonth = (newMonth + 12) % 12;
 
     renderCalendar(newYear, adjustedMonth);
 }
 
 function toggleDate(dateStr) {
-    if (selectedDatesTopControls.has(dateStr)) selectedDatesTopControls.delete(dateStr);
-    else selectedDatesTopControls.add(dateStr);
-
-    const header = document.querySelector('.calendar-header span');
-    if (!header) return;
-
-    const [monthName, yearStr] = header.textContent.split(' ');
-    const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
-                    'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-    renderCalendar(parseInt(yearStr), months.indexOf(monthName));
-}
-
-function filtrarPorFechas() {
-    const filterSelect = document.querySelector('.filter-select');
-    if (!filterSelect) return;
-
-    const filterType = filterSelect.value;
-    const url = new URL(window.location);
-    url.search = '';
-
-    url.searchParams.set('filter_type', filterType);
-
-    if (filterType === 'range') {
-        const start = document.getElementById('startDate')?.value;
-        const end = document.getElementById('endDate')?.value;
-        if (!start || !end) return alert('Selecciona ambas fechas');
-        url.searchParams.set('start_date', start);
-        url.searchParams.set('end_date', end);
-    }
-    else if (filterType === 'day') {
-        const day = document.getElementById('specificDate')?.value;
-        if (!day) return alert('Selecciona un día');
-        url.searchParams.set('specific_date', day);
-    }
-    else if (filterType === 'month') {
-        const month = document.getElementById('month')?.value;
-        if (!month) return alert('Selecciona un mes');
-        url.searchParams.set('month', month);
-    }
-    else if (filterType === 'specific') {
-        if (selectedDatesTopControls.size === 0) return alert('Selecciona al menos una fecha');
-        url.searchParams.set('specific_dates', Array.from(selectedDatesTopControls).join(','));
+    if (selectedDatesTopControls.has(dateStr)) {
+        selectedDatesTopControls.delete(dateStr);
+    } else {
+        selectedDatesTopControls.add(dateStr);
     }
 
-    // Update URL without reloading page
-    window.history.pushState({}, '', url.toString());
+    renderCalendar(currentCalendarYear, currentCalendarMonth);
 
-    // Update dashboard tables dynamically
-    updateDashboardTablesFromFilter(url.searchParams);
+    // Update Alpine.js selectedDates
+    const alpineComponent = document.querySelector('[x-data]');
+    if (alpineComponent && alpineComponent._x_dataStack) {
+        const data = alpineComponent._x_dataStack[alpineComponent._x_dataStack.length - 1];
+        if (data.selectedDates) {
+            data.selectedDates.clear();
+            selectedDatesTopControls.forEach(date => data.selectedDates.add(date));
+        }
+    }
 }
 
 function updateDashboardTablesFromFilter(params) {
@@ -501,13 +561,23 @@ function updateDashboardTablesFromFilter(params) {
             'Accept': 'application/json'
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
     .then(data => {
-        updateDashboardTables(data.horasData, data.operariosData);
+        if (data.horasData && data.operariosData) {
+            updateDashboardTables(data.horasData, data.operariosData);
+        } else {
+            console.error('Invalid data structure received:', data);
+            alert('Error: Datos inválidos recibidos del servidor');
+        }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error al filtrar los datos del dashboard');
+        alert('Error al filtrar los datos del dashboard. Por favor, recarga la página.');
     });
 }
 
