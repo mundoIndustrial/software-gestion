@@ -588,13 +588,17 @@
 
             async post(url, data) {
                 try {
+                    const formData = new FormData();
+                    for (const key in data) {
+                        formData.append(key, data[key]);
+                    }
                     const response = await fetch(url, {
                         method: 'POST',
                         headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': Utils.getCsrfToken()
+                            'X-CSRF-TOKEN': Utils.getCsrfToken(),
+                            'X-Requested-With': 'XMLHttpRequest'
                         },
-                        body: JSON.stringify(data)
+                        body: formData
                     });
                     return await response.json();
                 } catch (error) {
@@ -825,7 +829,30 @@
 
             async handleSubmit(e) {
                 e.preventDefault();
-                
+
+                // Validate hidden inputs
+                const telaId = document.getElementById('tela_id').value;
+                const maquinaId = document.getElementById('maquina_id').value;
+                const operarioId = document.getElementById('operario_id').value;
+
+                if (!telaId) {
+                    alert('Por favor selecciona una tela válida.');
+                    document.getElementById('tela_autocomplete').focus();
+                    return;
+                }
+
+                if (!maquinaId) {
+                    alert('Por favor selecciona una máquina válida.');
+                    document.getElementById('maquina_autocomplete').focus();
+                    return;
+                }
+
+                if (!operarioId) {
+                    alert('Por favor selecciona un operario válido.');
+                    document.getElementById('operario_autocomplete').focus();
+                    return;
+                }
+
                 const formData = new FormData(this.form);
                 const data = {};
                 formData.forEach((value, key) => {
@@ -834,7 +861,7 @@
 
                 try {
                     const response = await this.httpService.post(this.submitRoute, data);
-                    
+
                     if (response.success) {
                         this.onSuccess(response);
                     } else {

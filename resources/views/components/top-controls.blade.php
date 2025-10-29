@@ -368,7 +368,7 @@
 </style>
 
 <script>
-let selectedDates = new Set();
+let selectedDatesTopControls = new Set();
 
 function initCalendar() {
     const calendarEl = document.getElementById('calendar');
@@ -385,7 +385,7 @@ function initCalendar() {
 function renderCalendar(year, month) {
     const calendarEl = document.getElementById('calendar');
     if (!calendarEl) return;
-    
+
     const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                         'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
     const dayNames = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
@@ -412,7 +412,7 @@ function renderCalendar(year, month) {
     for (let i = 0; i < 42; i++) {
         const isCurrentMonth = currentDate.getMonth() === month;
         const dateStr = currentDate.toISOString().split('T')[0];
-        const isSelected = selectedDates.has(dateStr);
+        const isSelected = selectedDatesTopControls.has(dateStr);
         html += `<div class="day ${isCurrentMonth ? '' : 'other-month'} ${isSelected ? 'selected' : ''}"
                  onclick="toggleDate('${dateStr}')">${currentDate.getDate()}</div>`;
         currentDate.setDate(currentDate.getDate() + 1);
@@ -425,7 +425,7 @@ function renderCalendar(year, month) {
 function changeMonth(delta) {
     const header = document.querySelector('.calendar-header span');
     if (!header) return;
-    
+
     const [monthName, yearStr] = header.textContent.split(' ');
     const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -439,12 +439,12 @@ function changeMonth(delta) {
 }
 
 function toggleDate(dateStr) {
-    if (selectedDates.has(dateStr)) selectedDates.delete(dateStr);
-    else selectedDates.add(dateStr);
+    if (selectedDatesTopControls.has(dateStr)) selectedDatesTopControls.delete(dateStr);
+    else selectedDatesTopControls.add(dateStr);
 
     const header = document.querySelector('.calendar-header span');
     if (!header) return;
-    
+
     const [monthName, yearStr] = header.textContent.split(' ');
     const months = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
                     'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
@@ -454,7 +454,7 @@ function toggleDate(dateStr) {
 function filtrarPorFechas() {
     const filterSelect = document.querySelector('.filter-select');
     if (!filterSelect) return;
-    
+
     const filterType = filterSelect.value;
     const url = new URL(window.location);
     url.search = '';
@@ -479,8 +479,8 @@ function filtrarPorFechas() {
         url.searchParams.set('month', month);
     }
     else if (filterType === 'specific') {
-        if (selectedDates.size === 0) return alert('Selecciona al menos una fecha');
-        url.searchParams.set('specific_dates', Array.from(selectedDates).join(','));
+        if (selectedDatesTopControls.size === 0) return alert('Selecciona al menos una fecha');
+        url.searchParams.set('specific_dates', Array.from(selectedDatesTopControls).join(','));
     }
 
     window.location.href = url.toString();

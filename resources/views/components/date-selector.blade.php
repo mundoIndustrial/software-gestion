@@ -276,7 +276,7 @@
 </style>
 
 <script>
-let selectedDates = new Set();
+let selectedDatesDateSelector = new Set();
 
 function initCalendar() {
     const calendarEl = document.getElementById('calendar');
@@ -315,7 +315,7 @@ function renderCalendar(year, month) {
     for (let i = 0; i < 42; i++) {
         const isCurrentMonth = currentDate.getMonth() === month;
         const dateStr = currentDate.toISOString().split('T')[0];
-        const isSelected = selectedDates.has(dateStr);
+        const isSelected = selectedDatesDateSelector.has(dateStr);
         html += `<div class="day ${isCurrentMonth ? '' : 'other-month'} ${isSelected ? 'selected' : ''}"
                  onclick="toggleDate('${dateStr}')">${currentDate.getDate()}</div>`;
         currentDate.setDate(currentDate.getDate() + 1);
@@ -340,8 +340,8 @@ function changeMonth(delta) {
 }
 
 function toggleDate(dateStr) {
-    if (selectedDates.has(dateStr)) selectedDates.delete(dateStr);
-    else selectedDates.add(dateStr);
+    if (selectedDatesDateSelector.has(dateStr)) selectedDatesDateSelector.delete(dateStr);
+    else selectedDatesDateSelector.add(dateStr);
 
     const header = document.querySelector('.calendar-header span');
     const [monthName, yearStr] = header.textContent.split(' ');
@@ -375,8 +375,8 @@ function filtrarPorFechas() {
         url.searchParams.set('month', month);
     }
     else if (filterType === 'specific') {
-        if (selectedDates.size === 0) return alert('Selecciona al menos una fecha');
-        url.searchParams.set('specific_dates', Array.from(selectedDates).join(','));
+        if (selectedDatesDateSelector.size === 0) return alert('Selecciona al menos una fecha');
+        url.searchParams.set('specific_dates', Array.from(selectedDatesDateSelector).join(','));
     }
 
     window.location.href = url.toString();
