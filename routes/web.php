@@ -70,6 +70,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/search-telas', [TablerosController::class, 'searchTelas'])->name('search-telas');
     Route::post('/store-maquina', [TablerosController::class, 'storeMaquina'])->name('store-maquina');
     Route::get('/search-maquinas', [TablerosController::class, 'searchMaquinas'])->name('search-maquinas');
+    Route::get('/search-operarios', [TablerosController::class, 'searchOperarios'])->name('search-operarios');
+    Route::post('/store-operario', [TablerosController::class, 'storeOperario'])->name('store-operario');
 });
 
 require __DIR__.'/auth.php';

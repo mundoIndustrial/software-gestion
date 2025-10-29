@@ -30,7 +30,7 @@ class TablerosController extends Controller
                                ($registro->tiempo_para_programada ?? 0);
 
             $meta = $registro->tiempo_ciclo > 0 ? ($tiempo_disponible / $registro->tiempo_ciclo) * 0.9 : 0;
-            $eficiencia = $meta == 0 ? 0 : ($registro->cantidad / $meta);
+            $eficiencia = $meta == 0 ? 0 : round(($registro->cantidad / $meta) * 100);
 
             $registro->tiempo_disponible = $tiempo_disponible;
             $registro->meta = $meta;
@@ -51,7 +51,7 @@ class TablerosController extends Controller
                                ($registro->tiempo_para_programada ?? 0);
 
             $meta = $registro->tiempo_ciclo > 0 ? ($tiempo_disponible / $registro->tiempo_ciclo) * 0.9 : 0;
-            $eficiencia = $meta == 0 ? 0 : ($registro->cantidad / $meta);
+            $eficiencia = $meta == 0 ? 0 : round(($registro->cantidad / $meta) * 100);
 
             $registro->tiempo_disponible = $tiempo_disponible;
             $registro->meta = $meta;
@@ -85,10 +85,10 @@ class TablerosController extends Controller
 
             if (str_contains(strtolower($registro->actividad), 'extender') || str_contains(strtolower($registro->actividad), 'trazar')) {
                 $meta = $registro->cantidad;
-                $eficiencia = 1.0;
+                $eficiencia = 100;
             } else {
                 $meta = $registro->tiempo_ciclo > 0 ? $tiempo_disponible / $registro->tiempo_ciclo : 0;
-                $eficiencia = $meta == 0 ? 0 : ($registro->cantidad / $meta);
+                $eficiencia = $meta == 0 ? 0 : round(($registro->cantidad / $meta) * 100);
             }
 
             $registro->tiempo_disponible = $tiempo_disponible;
@@ -464,7 +464,7 @@ class TablerosController extends Controller
                                    ($registroData['tiempo_para_programada'] ?? 0);
 
                 $meta = ($tiempo_disponible / $registroData['tiempo_ciclo']) * 0.9;
-                $eficiencia = $meta == 0 ? 0 : (($registroData['cantidad'] ?? 0) / $meta);
+                $eficiencia = $meta == 0 ? 0 : round((($registroData['cantidad'] ?? 0) / $meta) * 100);
 
                 $record = $model::create([
                     'fecha' => $registroData['fecha'],
@@ -545,7 +545,7 @@ class TablerosController extends Controller
             $meta = $registro->tiempo_ciclo > 0 ? ($tiempo_disponible / $registro->tiempo_ciclo) * 0.9 : 0;
 
             // Recalcular eficiencia después de la actualización
-            $eficiencia = $meta == 0 ? 0 : ($registro->cantidad / $meta);
+            $eficiencia = $meta == 0 ? 0 : round(($registro->cantidad / $meta) * 100);
 
             $registro->tiempo_disponible = $tiempo_disponible;
             $registro->meta = $meta;
@@ -662,12 +662,12 @@ class TablerosController extends Controller
             if (str_contains(strtolower($request->actividad), 'extender') || str_contains(strtolower($request->actividad), 'trazar')) {
                 // For activities containing "extender" or "trazar", meta is the cantidad_producida, eficiencia is 100%
                 $meta = $request->cantidad_producida;
-                $eficiencia = 1.0;
+                $eficiencia = 100;
             } else {
                 // Calculate meta: tiempo_disponible / tiempo_ciclo
                 $meta = $request->tiempo_ciclo > 0 ? $tiempo_disponible / $request->tiempo_ciclo : 0;
                 // Calculate eficiencia: cantidad_producida / meta
-                $eficiencia = $meta == 0 ? 0 : ($request->cantidad_producida / $meta);
+                $eficiencia = $meta == 0 ? 0 : round(($request->cantidad_producida / $meta) * 100);
             }
 
             $registro = RegistroPisoCorte::create([
@@ -798,5 +798,44 @@ class TablerosController extends Controller
         return response()->json([
             'maquinas' => $maquinas
         ]);
+    }
+
+    public function searchOperarios(Request $request)
+    {
+        $query = $request->get('q', '');
+        $operarios = User::whereHas('role', function($queryBuilder) {
+            $queryBuilder->where('name', 'cortador');
+        })->where('name', 'like', '%' . $query . '%')->get();
+
+        return response()->json([
+            'operarios' => $operarios
+        ]);
+    }
+
+    public function storeOperario(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|unique:users,name',
+        ]);
+
+        try {
+            $operario = User::create([
+                'name' => strtoupper($request->name),
+                'email' => strtolower(str_replace(' ', '.', $request->name)) . '@example.com', // Generate email
+                'password' => bcrypt('password'), // Default password
+                'role_id' => 3, // Cortador role id is 3
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Operario creado correctamente.',
+                'operario' => $operario
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear el operario: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }
