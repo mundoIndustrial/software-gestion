@@ -244,7 +244,7 @@ class EntregaController extends Controller
                         'metadata' => ['tipo' => $tipo, 'subtipo' => 'costura', 'cantidad' => $entrega['cantidad_entregada'], 'costurero' => $entrega['costurero']]
                     ]);
 
-                    // Update total_pendiente_por_talla and total_producido_por_talla
+                    // Update total_pendiente_por_talla, total_producido_por_talla, and costurero
                     if ($tipo === 'pedido') {
                         \App\Models\RegistrosPorOrden::where('pedido', $entrega['pedido'])
                             ->where('prenda', $entrega['prenda'])
@@ -255,6 +255,12 @@ class EntregaController extends Controller
                             ->where('prenda', $entrega['prenda'])
                             ->where('talla', $entrega['talla'])
                             ->increment('total_producido_por_talla', $entrega['cantidad_entregada']);
+
+                        // Update costurero in production table
+                        \App\Models\RegistrosPorOrden::where('pedido', $entrega['pedido'])
+                            ->where('prenda', $entrega['prenda'])
+                            ->where('talla', $entrega['talla'])
+                            ->update(['costurero' => $entrega['costurero']]);
                     } elseif ($tipo === 'bodega') {
                         \App\Models\RegistrosPorOrdenBodega::where('pedido', $entrega['pedido'])
                             ->where('prenda', $entrega['prenda'])
@@ -265,6 +271,12 @@ class EntregaController extends Controller
                             ->where('prenda', $entrega['prenda'])
                             ->where('talla', $entrega['talla'])
                             ->increment('total_producido_por_talla', $entrega['cantidad_entregada']);
+
+                        // Update costurero in production table
+                        \App\Models\RegistrosPorOrdenBodega::where('pedido', $entrega['pedido'])
+                            ->where('prenda', $entrega['prenda'])
+                            ->where('talla', $entrega['talla'])
+                            ->update(['costurero' => $entrega['costurero']]);
                     }
                 }
 

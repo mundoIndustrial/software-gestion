@@ -118,10 +118,8 @@ class ModernTable {
     createResizers() {
         const thead = document.querySelector('#tablaOrdenes thead');
         if (!thead) {
-            console.log('ModernTable: No se encontró thead para crear resizers');
             return;
         }
-        console.log('ModernTable: Creando resizers para', thead.querySelectorAll('th').length, 'columnas');
 
         thead.querySelectorAll('th').forEach((th, i) => {
             const resizer = document.createElement('div');
@@ -129,7 +127,6 @@ class ModernTable {
             resizer.dataset.column = i;
             th.style.position = 'relative';
             th.appendChild(resizer);
-            console.log(`ModernTable: Resizer creado para columna ${i}`);
         });
     }
 
@@ -144,7 +141,6 @@ class ModernTable {
 
 
     setupColumnResizing() {
-    console.log('ModernTable: Configurando redimensionamiento de columnas');
     let state = { isResizing: false, resizer: null, startX: 0, startWidth: 0, column: null };
 
     const handleMove = e => {
@@ -167,13 +163,10 @@ class ModernTable {
         // Guarda ancho en localStorage
         this.storage.columnWidths[colIndex] = newWidth;
         this.setStorage('table_columnWidths', JSON.stringify(this.storage.columnWidths));
-
-        console.log(`ModernTable: Moviendo resizer (columna ${colIndex}), ancho: ${newWidth}px`);
     };
 
     const handleUp = () => {
         if (!state.isResizing) return;
-        console.log('ModernTable: Finalizando redimensionamiento');
         state.isResizing = false;
         state.resizer?.classList.remove('dragging');
         document.body.style.cursor = '';
@@ -184,7 +177,6 @@ class ModernTable {
         if (e.target.classList.contains('column-resizer')) {
             const th = e.target.parentElement;
             const colIndex = parseInt(e.target.dataset.column);
-            console.log('ModernTable: Iniciando redimensionamiento en columna', colIndex);
             state = {
                 isResizing: true,
                 resizer: e.target,
@@ -200,7 +192,6 @@ class ModernTable {
 
     document.addEventListener('mousemove', handleMove);
     document.addEventListener('mouseup', handleUp);
-    console.log('ModernTable: Event listeners para redimensionamiento configurados');
 }
 
 
@@ -303,6 +294,7 @@ class ModernTable {
 
         document.addEventListener('change', e => {
             if (e.target.classList.contains('estado-dropdown')) this.updateOrderStatus(e.target);
+            if (e.target.classList.contains('area-dropdown')) this.updateOrderArea(e.target);
         });
 
         document.addEventListener('click', e => {
@@ -564,6 +556,7 @@ class ModernTable {
 
     async saveCellEdit() {
         const newValue = document.getElementById('cellEditInput').value;
+        const oldValue = document.querySelector('.table-cell.selected .cell-text')?.textContent || '';
 
         try {
             const response = await fetch(`${this.baseRoute}/${this.currentOrderId}`, {
@@ -575,9 +568,9 @@ class ModernTable {
                 },
                 body: JSON.stringify({ [this.currentColumn]: newValue })
             });
-            
+
             const data = await response.json();
-            
+
             if (data.success) {
                 const selected = document.querySelector('.table-cell.selected');
                 if (selected) {
@@ -588,6 +581,7 @@ class ModernTable {
                         selected.querySelector('.cell-content').title = newValue;
                     }
                 }
+
                 this.closeCellModal();
             } else {
                 alert('Error al guardar los cambios');
@@ -603,21 +597,46 @@ class ModernTable {
         document.getElementById('modalOverlay')?.classList.remove('active');
     }
 
+    updateRowColor(orderId, status) {
+        const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
+        if (!row) return;
+
+        // Remover clases de color anteriores
+        row.classList.remove('status-pendiente', 'status-proceso', 'status-completado', 'status-cancelado');
+
+        // Agregar clase de color según el estado
+        const statusClass = `status-${status.toLowerCase().replace(/\s+/g, '-')}`;
+        row.classList.add(statusClass);
+    }
+
     async updateOrderStatus(dropdown) {
+        const orderId = dropdown.dataset.id;
+        const newStatus = dropdown.value;
+        const oldStatus = dropdown.dataset.value;
+
         try {
-            const response = await fetch(`${this.baseRoute}/${dropdown.dataset.id}`, {
+            const response = await fetch(`${this.baseRoute}/${orderId}`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                 },
-                body: JSON.stringify({ estado: dropdown.value })
+                body: JSON.stringify({ estado: newStatus })
             });
-            
+
             const data = await response.json();
-            if (!data.success) console.error('Error actualizando:', data.message);
+            if (data.success) {
+                // Actualizar color de la fila dinámicamente
+                this.updateRowColor(orderId, newStatus);
+            } else {
+                console.error('Error actualizando:', data.message);
+                // Revertir cambio en caso de error
+                dropdown.value = oldStatus;
+            }
         } catch (error) {
             console.error('Error:', error);
+            // Revertir cambio en caso de error
+            dropdown.value = oldStatus;
         }
     }
 
@@ -776,6 +795,53 @@ appendRowsToTable(orders, totalDiasCalculados) {
         document.querySelectorAll('.estado-dropdown').forEach(dropdown => {
             dropdown.addEventListener('change', e => this.updateOrderStatus(e.target));
         });
+    }
+
+    initializeAreaDropdowns() {
+        document.querySelectorAll('.area-dropdown').forEach(dropdown => {
+            dropdown.addEventListener('change', e => this.updateOrderArea(e.target));
+        });
+    }
+
+    async updateOrderArea(dropdown) {
+        const orderId = dropdown.dataset.id;
+        const newArea = dropdown.value;
+        const oldArea = dropdown.dataset.value;
+
+        try {
+            const response = await fetch(`${this.baseRoute}/${orderId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({ area: newArea })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                // Actualizar las celdas con las fechas actualizadas según la respuesta del servidor
+                if (data.updated_fields) {
+                    const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
+                    if (row) {
+                        for (const [field, date] of Object.entries(data.updated_fields)) {
+                            const cell = row.querySelector(`td[data-column="${field}"] .cell-text`);
+                            if (cell) {
+                                cell.textContent = date;
+                            }
+                        }
+                    }
+                }
+            } else {
+                console.error('Error actualizando área:', data.message);
+                // Revertir cambio en caso de error
+                dropdown.value = oldArea;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            // Revertir cambio en caso de error
+            dropdown.value = oldArea;
+        }
     }
 
     async loadPageFromUrl(href) {

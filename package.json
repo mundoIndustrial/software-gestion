@@ -19,7 +19,6 @@
         "vite": "^7.0.4"
     },
     "dependencies": {
-        "laravel-echo": "^2.2.3",
         "chart.js": "^4.4.0"
     }
 }

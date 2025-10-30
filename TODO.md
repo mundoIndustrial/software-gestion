@@ -1,24 +1,46 @@
-# TODO: Modificar Sidebar - Unir Ordenes-Pedidos y Ordenes-Bodega en un solo botón "Ordenes"
+# TODO: Implementar Filtro Global en Vista Costura
 
-## Pasos a completar:
+## Información Recopilada
+- Vista actual muestra cards agrupados por pedido y cliente.
+- Controlador maneja búsqueda AJAX.
+- Datos: cliente, costurero, cortador (encargado de corte).
+- Funcionalidad existente: búsqueda por pedido en tiempo real.
 
-- [x] Modificar `resources/views/layouts/sidebar.blade.php`:
-  - Reemplazar los dos elementos `<li>` separados para "Ordenes-Pedidos" y "Ordenes-Bodega" con un solo `<li>` que contenga un botón "Ordenes" y un submenú `<ul>` anidado con las dos opciones.
-  - Agregar clases CSS necesarias para el submenú (e.g., `submenu`, `submenu-item`).
+## Plan Aprobado
+1. **Agregar Botón de Filtro**: Botón con ícono al lado derecho de la barra de búsqueda.
+2. **Crear Modal de Filtros**: Modal con checkboxes para cliente, costurero, cortador. Botones "Aplicar" y "Limpiar".
+3. **Actualizar Controlador**: Modificar método `search` para aceptar y aplicar filtros (cliente, costurero, cortador).
+4. **JavaScript para Filtros**: Manejar modal, cargar opciones dinámicas, enviar AJAX con filtros, persistir en localStorage.
+5. **Estilos CSS**: Agregar estilos para botón y modal.
 
-- [x] Actualizar `public/css/sidebar.css`:
-  - Agregar estilos para el submenú desplegable: ocultar por defecto, animación de deslizamiento, colores consistentes con el tema.
-  - Asegurar que funcione en modo collapsed y expanded del sidebar.
+## Archivos a Editar
+- `resources/views/vista-costura/index.blade.php`: HTML del botón/modal, JS.
+- `app/Http/Controllers/VistaCosturaController.php`: Lógica de filtros en `search`.
+- `public/css/vista-costura.css`: Estilos.
 
-- [x] Actualizar `public/js/sidebar.js`:
-  - Agregar event listener al botón "Ordenes" para toggle (mostrar/ocultar) el submenú.
-  - Prevenir que el sidebar se colapse cuando se hace clic en el botón del submenú si está en modo collapsed.
+## Pasos de Implementación
+- [x] Editar `VistaCosturaController.php` para manejar filtros en método `search`.
+- [x] Editar `index.blade.php` para agregar botón de filtro y modal HTML.
+- [x] Agregar JS en `index.blade.php` para funcionalidad del modal y filtros.
+- [x] Editar `vista-costura.css` para estilos del botón y modal.
+- [ ] Probar filtro en diferentes escenarios (con/sin búsqueda, múltiples filtros).
+- [ ] Verificar persistencia en localStorage.
+- [ ] Ajustar responsive si necesario.
 
-- [x] Unir "Entrega-Pedidos" y "Entrega Bodega" en un solo botón "Entregas" con submenú.
-  - Modificar `resources/views/layouts/sidebar.blade.php` para reemplazar los dos botones con uno solo.
-  - Actualizar `public/js/sidebar.js` para manejar múltiples submenús (usar querySelectorAll).
+---
 
-- [x] Verificar funcionalidad:
-  - Probar que los submenús se desplieguen correctamente al hacer clic en "Ordenes" y "Entregas".
-  - Asegurar que las rutas y enlaces sigan funcionando.
-  - Verificar en diferentes tamaños de pantalla y modos (collapsed/expanded).
+# TODO: Refactorizar Botones de Acción en Tabla de Órdenes - CANCELADO
+
+## Información Recopilada
+- Los botones "Limpiar Filtros" y "Agregar Orden" se estaban creando dinámicamente en JavaScript dentro de `modern-table.js`.
+- El usuario pidió mantener la vista como estaba originalmente.
+
+## Plan Cancelado
+- Se revirtió todos los cambios realizados.
+- La vista `resources/views/orders/index.blade.php` se dejó como estaba originalmente.
+- El archivo `public/js/orders.js` creado se mantiene por si se necesita en el futuro, pero no se usa actualmente.
+
+## Archivos Revertidos
+- `resources/views/orders/index.blade.php`: Revertido a estado original.
+- `public/js/modern-table.js`: Restaurada creación dinámica de botones.
+- `public/js/orders.js`: Archivo creado pero no utilizado actualmente.

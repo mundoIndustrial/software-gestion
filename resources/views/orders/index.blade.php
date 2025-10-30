@@ -3,7 +3,7 @@
 @section('content')
     <!-- Agregar referencia a FontAwesome para iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
-        integrity="sha512-dyZt+6Q6VbUaz2+miFj7XwjlzAIXazhbug+DUFc1l1b/HFB70dNDO7xjOIKPQ4j/wZUp3NEiqPFwAckj4iigcw=="
+        integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="{{ asset('css/modern-table.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dropdown-styles.css') }}">
@@ -456,6 +456,9 @@ async function recargarTablaPedidos() {
 
         // Función para actualizar estado en la base de datos
         function updateOrderStatus(orderId, newStatus) {
+            const dropdown = document.querySelector(`.estado-dropdown[data-id="${orderId}"]`);
+            const oldStatus = dropdown ? dropdown.dataset.value : '';
+
             fetch(`${window.updateUrl}/${orderId}`, {
                 method: 'PATCH',
                 headers: {
@@ -470,16 +473,40 @@ async function recargarTablaPedidos() {
                         console.log('Estado actualizado correctamente');
                         // Actualizar color de la fila dinámicamente
                         updateRowColor(orderId, newStatus);
-                        // El broadcast se maneja automáticamente por el evento OrderStatusUpdated
+
+                        // Enviar mensaje a otras pestañas usando localStorage
+                        const timestamp = Date.now();
+                        localStorage.setItem('orders-updates', JSON.stringify({
+                            type: 'status_update',
+                            orderId: orderId,
+                            field: 'estado',
+                            newValue: newStatus,
+                            oldValue: oldStatus,
+                            updatedFields: data.updated_fields || {},
+                            order: data.order,
+                            totalDiasCalculados: data.totalDiasCalculados || {},
+                            timestamp: timestamp // Para evitar duplicados
+                        }));
+                        // Actualizar timestamp local para evitar procesar mensaje propio
+                        localStorage.setItem('last-orders-update-timestamp', timestamp.toString());
                     } else {
                         console.error('Error al actualizar el estado:', data.message);
+                        // Revertir cambio en caso de error
+                        if (dropdown) dropdown.value = oldStatus;
                     }
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => {
+                    console.error('Error:', error);
+                    // Revertir cambio en caso de error
+                    if (dropdown) dropdown.value = oldStatus;
+                });
         }
 
         // Función para actualizar area en la base de datos
         function updateOrderArea(orderId, newArea) {
+            const dropdown = document.querySelector(`.area-dropdown[data-id="${orderId}"]`);
+            const oldArea = dropdown ? dropdown.dataset.value : '';
+
             fetch(`${window.updateUrl}/${orderId}`, {
                 method: 'PATCH',
                 headers: {
@@ -504,11 +531,33 @@ async function recargarTablaPedidos() {
                                 }
                             }
                         }
+
+                        // Enviar mensaje a otras pestañas usando localStorage
+                        const timestamp = Date.now();
+                        localStorage.setItem('orders-updates', JSON.stringify({
+                            type: 'area_update',
+                            orderId: orderId,
+                            field: 'area',
+                            newValue: newArea,
+                            oldValue: oldArea,
+                            updatedFields: data.updated_fields || {},
+                            order: data.order,
+                            totalDiasCalculados: data.totalDiasCalculados || {},
+                            timestamp: timestamp // Para evitar duplicados
+                        }));
+                        // Actualizar timestamp local para evitar procesar mensaje propio
+                        localStorage.setItem('last-orders-update-timestamp', timestamp.toString());
                     } else {
                         console.error('Error al actualizar el area:', data.message);
+                        // Revertir cambio en caso de error
+                        if (dropdown) dropdown.value = oldArea;
                     }
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => {
+                    console.error('Error:', error);
+                    // Revertir cambio en caso de error
+                    if (dropdown) dropdown.value = oldArea;
+                });
         }
 
         // Función para actualizar el color de la fila basado en estado y total_dias
@@ -542,6 +591,10 @@ async function recargarTablaPedidos() {
             }
         }
 
+
+
+
+
         // Ejecutar en diferentes momentos para asegurar que funcione
         document.addEventListener('DOMContentLoaded', function () {
             initializeStatusDropdowns();
@@ -554,7 +607,6 @@ async function recargarTablaPedidos() {
 
         // Observer para detectar cambios dinámicos en la tabla
         if (typeof MutationObserver !== 'undefined') {
-
             const observer = new MutationObserver(function (mutations) {
                 mutations.forEach(function (mutation) {
                     if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
@@ -575,6 +627,85 @@ async function recargarTablaPedidos() {
                     subtree: true
                 });
             }
+        }
+
+        // Listener para mensajes de localStorage (comunicación entre pestañas/ventanas)
+        window.addEventListener('storage', function(event) {
+            if (event.key === 'orders-updates') {
+                try {
+                    const data = JSON.parse(event.newValue);
+                    console.log('Recibido mensaje de localStorage en index.blade.php:', data);
+
+                    const { type, orderId, field, newValue, updatedFields, order, totalDiasCalculados, timestamp } = data;
+
+                    // Evitar procesar mensajes propios (usando timestamp)
+                    const lastTimestamp = parseInt(localStorage.getItem('last-orders-update-timestamp') || '0');
+                    if (timestamp && timestamp <= lastTimestamp) {
+                        console.log('Mensaje duplicado ignorado en index.blade.php');
+                        return;
+                    }
+
+                    // Actualizar timestamp para evitar duplicados
+                    localStorage.setItem('last-orders-update-timestamp', timestamp.toString());
+
+                    // Actualizar la fila específica
+                    updateRowFromBroadcast(orderId, field, newValue, updatedFields, order, totalDiasCalculados);
+                } catch (e) {
+                    console.error('Error parsing localStorage message:', e);
+                }
+            }
+        });
+
+        // Función para actualizar fila desde localStorage
+        function updateRowFromBroadcast(orderId, field, newValue, updatedFields, order, totalDiasCalculados) {
+            const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
+            if (!row) {
+                console.warn(`Fila con orderId ${orderId} no encontrada`);
+                return;
+            }
+
+            // Actualizar el campo específico
+            if (field === 'estado') {
+                const estadoDropdown = row.querySelector('.estado-dropdown');
+                if (estadoDropdown) {
+                    estadoDropdown.value = newValue;
+                    estadoDropdown.dataset.value = newValue;
+                    updateRowColor(orderId, newValue);
+                }
+            } else if (field === 'area') {
+                const areaDropdown = row.querySelector('.area-dropdown');
+                if (areaDropdown) {
+                    areaDropdown.value = newValue;
+                    areaDropdown.dataset.value = newValue;
+                }
+            } else {
+                // Para otros campos (celdas editables)
+                const cell = row.querySelector(`td[data-column="${field}"] .cell-text`);
+                if (cell) {
+                    cell.textContent = newValue;
+                    cell.closest('.cell-content').title = newValue;
+                }
+            }
+
+            // Actualizar campos relacionados (fechas, etc.)
+            if (updatedFields) {
+                for (const [updateField, updateValue] of Object.entries(updatedFields)) {
+                    const updateCell = row.querySelector(`td[data-column="${updateField}"] .cell-text`);
+                    if (updateCell) {
+                        updateCell.textContent = updateValue;
+                    }
+                }
+            }
+
+            // Actualizar total_de_dias_ si viene en totalDiasCalculados
+            if (totalDiasCalculados && totalDiasCalculados[orderId] !== undefined) {
+                const totalDiasCell = row.querySelector('td[data-column="total_de_dias_"] .cell-text');
+                if (totalDiasCell) {
+                    totalDiasCell.textContent = totalDiasCalculados[orderId];
+                }
+            }
+
+            console.log(`Fila ${orderId} actualizada desde localStorage: ${field} = ${newValue}`);
         }
 
         // Función para eliminar orden
