@@ -1,46 +1,28 @@
-# TODO: Implementar Filtro Global en Vista Costura
+# TODO - Cambiar diseño de formularios
 
-## Información Recopilada
-- Vista actual muestra cards agrupados por pedido y cliente.
-- Controlador maneja búsqueda AJAX.
-- Datos: cliente, costurero, cortador (encargado de corte).
-- Funcionalidad existente: búsqueda por pedido en tiempo real.
+## Tareas Pendientes
+- [x] Actualizar diseño del formulario "Crear Prenda" (create-prenda.blade.php) para que coincida con "Editar Prenda"
+- [x] Actualizar diseño del modal "Nueva Operación" (modal-operacion.blade.php) para que coincida con "Editar Prenda"
 
-## Plan Aprobado
-1. **Agregar Botón de Filtro**: Botón con ícono al lado derecho de la barra de búsqueda.
-2. **Crear Modal de Filtros**: Modal con checkboxes para cliente, costurero, cortador. Botones "Aplicar" y "Limpiar".
-3. **Actualizar Controlador**: Modificar método `search` para aceptar y aplicar filtros (cliente, costurero, cortador).
-4. **JavaScript para Filtros**: Manejar modal, cargar opciones dinámicas, enviar AJAX con filtros, persistir en localStorage.
-5. **Estilos CSS**: Agregar estilos para botón y modal.
+## Detalles de Cambios
+- Cambiar tema de claro a oscuro
+- Cambiar colores de azul (#667eea) a naranja (#ff9d58)
+- Actualizar fondos, bordes, colores de texto y botones
+- Mantener funcionalidad intacta
 
-## Archivos a Editar
-- `resources/views/vista-costura/index.blade.php`: HTML del botón/modal, JS.
-- `app/Http/Controllers/VistaCosturaController.php`: Lógica de filtros en `search`.
-- `public/css/vista-costura.css`: Estilos.
-
-## Pasos de Implementación
-- [x] Editar `VistaCosturaController.php` para manejar filtros en método `search`.
-- [x] Editar `index.blade.php` para agregar botón de filtro y modal HTML.
-- [x] Agregar JS en `index.blade.php` para funcionalidad del modal y filtros.
-- [x] Editar `vista-costura.css` para estilos del botón y modal.
-- [ ] Probar filtro en diferentes escenarios (con/sin búsqueda, múltiples filtros).
-- [ ] Verificar persistencia en localStorage.
-- [ ] Ajustar responsive si necesario.
-
----
-
-# TODO: Refactorizar Botones de Acción en Tabla de Órdenes - CANCELADO
-
-## Información Recopilada
-- Los botones "Limpiar Filtros" y "Agregar Orden" se estaban creando dinámicamente en JavaScript dentro de `modern-table.js`.
-- El usuario pidió mantener la vista como estaba originalmente.
-
-## Plan Cancelado
-- Se revirtió todos los cambios realizados.
-- La vista `resources/views/orders/index.blade.php` se dejó como estaba originalmente.
-- El archivo `public/js/orders.js` creado se mantiene por si se necesita en el futuro, pero no se usa actualmente.
-
-## Archivos Revertidos
-- `resources/views/orders/index.blade.php`: Revertido a estado original.
-- `public/js/modern-table.js`: Restaurada creación dinámica de botones.
-- `public/js/orders.js`: Archivo creado pero no utilizado actualmente.
+## Cambios Completados
+- ✅ Cambiado header y título de "Crear Prenda" a tema oscuro con colores naranja
+- ✅ Actualizado contenedor principal con fondo transparente y borde naranja
+- ✅ Cambiados estilos de inputs: bordes, fondos, colores de texto y focus states
+- ✅ Actualizado selector de tipo de prenda
+- ✅ Cambiado textarea de descripción
+- ✅ Actualizado área de subida de imagen con colores naranja
+- ✅ Cambiados botones de acción (Cancelar y Crear Prenda)
+- ✅ Rediseñado modal "Nueva Operación" completamente:
+  - Mejorado diseño centrado y organizado
+  - Mejorada organización de campos en grid responsive
+  - Mejorado UX con animaciones y transiciones
+  - Campos organizados de manera más intuitiva
+  - Revertido a funcionalidad original de una operación por modal
+- ✅ Todos los inputs ahora tienen color de texto blanco y fondos transparentes
+- ✅ Focus states actualizados con colores naranja

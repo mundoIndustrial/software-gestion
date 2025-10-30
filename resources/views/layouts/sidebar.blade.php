@@ -104,6 +104,15 @@
       </li>
 
       <li class="menu-item">
+        <a href="{{ route('balanceo.index') }}"
+           class="menu-link {{ request()->routeIs('balanceo.index') ? 'active' : '' }}"
+           aria-label="Ver balanceo">
+          <span class="material-symbols-rounded" aria-hidden="true">schedule</span>
+          <span class="menu-label">Balanceo</span>
+        </a>
+      </li>
+
+      <li class="menu-item">
         <button class="menu-link submenu-toggle"
                 aria-label="Ver vistas">
           <span class="material-symbols-rounded" aria-hidden="true">visibility</span>
