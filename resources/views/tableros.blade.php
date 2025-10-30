@@ -80,8 +80,8 @@
                                             $displayValue = $value->format('d-m-Y');
                                         } elseif ($column === 'hora' && $value) {
                                             $displayValue = $value;
-                                        } elseif ($column === 'eficiencia' && $value) {
-                                            $displayValue = $value . '%';
+                                        } elseif ($column === 'eficiencia' && $value !== null) {
+                                            $displayValue = round($value * 100, 1) . '%';
                                         }
                                         $eficienciaClass = ($column === 'eficiencia' && $value !== null) ? getEficienciaClass($value) : '';
                                     @endphp
@@ -99,12 +99,15 @@
                 </div>
 
                 <!-- Paginación -->
-                <div class="table-pagination">
+                <div class="table-pagination" data-section="produccion">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ ($registros->currentPage() / $registros->lastPage()) * 100 }}%"></div>
+                    </div>
                     <div class="pagination-info">
                         <span>Mostrando {{ $registros->firstItem() }}-{{ $registros->lastItem() }} de {{ $registros->total() }} registros</span>
                     </div>
                     <div class="pagination-controls">
-                        {{ $registros->appends(request()->query())->links() }}
+                        {{ $registros->appends(request()->query())->links('vendor.pagination.custom') }}
                     </div>
                 </div>
             </div>
@@ -151,8 +154,8 @@
                                             $displayValue = $value->format('d-m-Y');
                                         } elseif ($column === 'hora' && $value) {
                                             $displayValue = $value;
-                                        } elseif ($column === 'eficiencia' && $value) {
-                                            $displayValue = $value . '%';
+                                        } elseif ($column === 'eficiencia' && $value !== null) {
+                                            $displayValue = round($value * 100, 1) . '%';
                                         }
                                         $eficienciaClass = ($column === 'eficiencia' && $value !== null) ? getEficienciaClass($value) : '';
                                     @endphp
@@ -170,12 +173,15 @@
                 </div>
 
                 <!-- Paginación -->
-                <div class="table-pagination">
+                <div class="table-pagination" data-section="polos">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ ($registrosPolos->currentPage() / $registrosPolos->lastPage()) * 100 }}%"></div>
+                    </div>
                     <div class="pagination-info">
                         <span>Mostrando {{ $registrosPolos->firstItem() }}-{{ $registrosPolos->lastItem() }} de {{ $registrosPolos->total() }} registros</span>
                     </div>
                     <div class="pagination-controls">
-                        {{ $registrosPolos->appends(request()->query())->links() }}
+                        {{ $registrosPolos->appends(request()->query())->links('vendor.pagination.custom') }}
                     </div>
                 </div>
             </div>
@@ -247,8 +253,8 @@
                                         } elseif ($column === 'tela_id' && $registro->tela) {
                                             $displayValue = $registro->tela->nombre_tela;
                                             $dataValue = $registro->tela->nombre_tela; // Usar nombre en lugar de ID
-                                        } elseif ($column === 'eficiencia' && $value) {
-                                            $displayValue = $value . '%';
+                                        } elseif ($column === 'eficiencia' && $value !== null) {
+                                            $displayValue = round($value * 100, 1) . '%';
                                         }
                                         $eficienciaClass = ($column === 'eficiencia' && $value !== null) ? getEficienciaClass($value) : '';
                                     @endphp
@@ -266,12 +272,15 @@
                 </div>
 
                 <!-- Paginación -->
-                <div class="table-pagination">
+                <div class="table-pagination" data-section="corte">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ ($registrosCorte->currentPage() / $registrosCorte->lastPage()) * 100 }}%"></div>
+                    </div>
                     <div class="pagination-info">
                         <span>Mostrando {{ $registrosCorte->firstItem() }}-{{ $registrosCorte->lastItem() }} de {{ $registrosCorte->total() }} registros</span>
                     </div>
                     <div class="pagination-controls">
-                        {{ $registrosCorte->appends(request()->query())->links() }}
+                        {{ $registrosCorte->appends(request()->query())->links('vendor.pagination.custom') }}
                     </div>
                 </div>
             </div>
@@ -316,11 +325,13 @@
 </div>
 
 <script>
+// Variables globales
+let currentCell = null;
+let currentRowId = null;
+let currentColumn = null;
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('JavaScript cargado para edición de celdas y filtros');
-    let currentCell = null;
-    let currentRowId = null;
-    let currentColumn = null;
 
     // Función para agregar registros a la tabla dinámicamente
     window.agregarRegistrosATabla = function(registros, section) {
@@ -700,8 +711,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (column === 'hora' && value) {
                     return value;
                 }
-                if (column === 'eficiencia' && value) {
-                    return value + '%';
+                if (column === 'eficiencia' && value !== null) {
+                    return Math.round(value * 100 * 10) / 10 + '%';
                 }
         return value;
     }
@@ -805,6 +816,52 @@ document.addEventListener('DOMContentLoaded', function() {
         initializeTableFilters('corte');
     }, 100);
 });
+
+// Mover attachEditableCellListeners fuera para que sea global
+window.attachEditableCellListeners = function() {
+    const editableCells = document.querySelectorAll('.editable-cell');
+    console.log('Celdas editables encontradas:', editableCells.length);
+    editableCells.forEach(cell => {
+        cell.removeEventListener('dblclick', handleCellDoubleClick);
+        cell.addEventListener('dblclick', handleCellDoubleClick);
+    });
+};
+
+function handleCellDoubleClick() {
+    console.log('Doble clic detectado en celda');
+    currentCell = this;
+    currentRowId = this.closest('tr').dataset.id;
+    currentColumn = this.dataset.column;
+
+    const currentValue = this.dataset.value || this.textContent.trim();
+    console.log('Valor actual:', currentValue, 'Columna:', currentColumn);
+    
+    const modal = document.getElementById('editCellModal');
+    const input = document.getElementById('editCellInput');
+    const datalist = document.getElementById('autocompleteList');
+    const modalTitle = document.getElementById('editModalTitle');
+    const hint = document.getElementById('editHint');
+    
+    console.log('Modal encontrado:', !!modal);
+    if (modal) {
+        modal.style.display = 'flex';
+        input.value = currentValue;
+        input.focus();
+        input.select();
+        
+        modalTitle.textContent = `Editar ${currentColumn}`;
+        
+        // Configurar autocompletado si es necesario
+        if (currentColumn === 'operario_id' || currentColumn === 'maquina_id' || currentColumn === 'tela_id') {
+            hint.style.display = 'block';
+            const type = currentColumn.replace('_id', '');
+            setupAutocomplete(type);
+        } else {
+            hint.style.display = 'none';
+            datalist.innerHTML = '';
+        }
+    }
+}
 </script>
 
 <!-- Real-time updates script -->
@@ -911,7 +968,7 @@ function agregarRegistroTiempoReal(registro, section) {
         if (column === 'fecha' && value) {
             displayValue = new Date(value).toLocaleDateString('es-ES');
         } else if (column === 'eficiencia' && value !== null) {
-            displayValue = value + '%';
+            displayValue = Math.round(value * 100 * 10) / 10 + '%';
             td.classList.add(getEficienciaClass(value));
         }
         
@@ -958,7 +1015,7 @@ function actualizarFilaExistente(row, registro, section) {
             if (column === 'fecha' && value) {
                 displayValue = new Date(value).toLocaleDateString('es-ES');
             } else if (column === 'eficiencia' && value !== null) {
-                displayValue = value + '%';
+                displayValue = Math.round(value * 100 * 10) / 10 + '%';
                 cells[index].className = 'table-cell editable-cell ' + getEficienciaClass(value);
             }
             
@@ -997,13 +1054,534 @@ function getEficienciaClass(eficiencia) {
     return '';
 }
 
+// Función para actualizar tablas de seguimiento cuando se aplica filtro de fecha
+window.updateDashboardTablesFromFilter = function(searchParams) {
+    console.log('Actualizando tablas de seguimiento con filtros:', searchParams.toString());
+    
+    // Construir URL con filtros
+    const url = new URL(window.location.origin + window.location.pathname);
+    searchParams.forEach((value, key) => {
+        url.searchParams.set(key, value);
+    });
+    
+    // Mostrar indicador de carga en las secciones de seguimiento
+    const seguimientoSections = document.querySelectorAll('.seguimiento-modulos, .seguimiento-horas, .seguimiento-operarios');
+    seguimientoSections.forEach(section => {
+        if (section) {
+            section.style.opacity = '0.5';
+            section.style.pointerEvents = 'none';
+        }
+    });
+    
+    // Hacer petición AJAX
+    fetch(url.toString(), {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'text/html'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.text();
+    })
+    .then(html => {
+        console.log('HTML recibido para seguimiento');
+        
+        // Crear un documento temporal para parsear el HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        
+        // Actualizar cada sección de seguimiento
+        const newSeguimientoModulos = tempDiv.querySelector('.seguimiento-modulos');
+        const newSeguimientoHoras = tempDiv.querySelector('.seguimiento-horas');
+        const newSeguimientoOperarios = tempDiv.querySelector('.seguimiento-operarios');
+        
+        if (newSeguimientoModulos) {
+            const currentSeguimientoModulos = document.querySelector('.seguimiento-modulos');
+            if (currentSeguimientoModulos) {
+                currentSeguimientoModulos.innerHTML = newSeguimientoModulos.innerHTML;
+            }
+        }
+        
+        if (newSeguimientoHoras) {
+            const currentSeguimientoHoras = document.querySelector('.seguimiento-horas');
+            if (currentSeguimientoHoras) {
+                currentSeguimientoHoras.innerHTML = newSeguimientoHoras.innerHTML;
+            }
+        }
+        
+        if (newSeguimientoOperarios) {
+            const currentSeguimientoOperarios = document.querySelector('.seguimiento-operarios');
+            if (currentSeguimientoOperarios) {
+                currentSeguimientoOperarios.innerHTML = newSeguimientoOperarios.innerHTML;
+            }
+        }
+        
+        // Actualizar URL sin recargar
+        window.history.pushState({}, '', url.toString());
+        
+        // Restaurar opacidad
+        seguimientoSections.forEach(section => {
+            if (section) {
+                section.style.opacity = '1';
+                section.style.pointerEvents = 'auto';
+            }
+        });
+        
+        console.log('✅ Tablas de seguimiento actualizadas correctamente');
+    })
+    .catch(error => {
+        console.error('Error al aplicar filtros:', error);
+        
+        // Restaurar opacidad
+        seguimientoSections.forEach(section => {
+            if (section) {
+                section.style.opacity = '1';
+                section.style.pointerEvents = 'auto';
+            }
+        });
+    });
+};
+
+// Función para actualizar tabla de seguimiento
+function updateSeguimientoTable(section, data) {
+    console.log(`Actualizando tabla de seguimiento para ${section}`, data);
+    // TODO: Implementar actualización dinámica de la tabla de seguimiento
+    // Por ahora solo mostramos un mensaje en consola
+}
+
 // Inicializar cuando el DOM esté listo
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         setTimeout(initializeRealtimeListeners, 100);
+        initializePaginationAjax();
     });
 } else {
     setTimeout(initializeRealtimeListeners, 100);
+    initializePaginationAjax();
+}
+
+// Paginación AJAX sin recargar la página
+function initializePaginationAjax() {
+    console.log('🔧 Inicializando event listeners de paginación AJAX');
+    
+    document.addEventListener('click', function(e) {
+        console.log('👆 Click detectado en:', e.target);
+        
+        // Buscar si el click fue en un enlace o botón de paginación
+        const paginationLink = e.target.closest('.pagination a, .pagination button:not([disabled])');
+        
+        if (paginationLink) {
+            console.log('🎯 Click en elemento de paginación:', paginationLink);
+            console.log('🎯 Texto del elemento:', paginationLink.textContent.trim());
+            console.log('🎯 Tag:', paginationLink.tagName);
+            console.log('🎯 Clases:', paginationLink.className);
+            
+            // Si es un botón activo, no hacer nada
+            if (paginationLink.classList.contains('active')) {
+                console.log('⚠️ Es el botón activo, no hacer nada');
+                return;
+            }
+            
+            e.preventDefault();
+            console.log('✋ Evento preventDefault aplicado');
+            
+            let page = null;
+            
+            // Si es un enlace, obtener la página de la URL
+            if (paginationLink.tagName === 'A' && paginationLink.href) {
+                const url = new URL(paginationLink.href);
+                page = url.searchParams.get('page');
+                console.log('🔗 Página obtenida del enlace:', page);
+            }
+            // Si es un botón, obtener el número del texto
+            else if (paginationLink.tagName === 'BUTTON') {
+                const pageText = paginationLink.textContent.trim();
+                // Verificar si es un número
+                if (!isNaN(pageText)) {
+                    page = pageText;
+                    console.log('🔘 Página obtenida del botón:', page);
+                }
+            }
+            
+            if (!page) {
+                console.log('❌ No se pudo obtener el número de página');
+                return;
+            }
+            
+            // Determinar qué tabla actualizar según el contenedor padre
+            const paginationContainer = paginationLink.closest('.table-pagination');
+            let section = 'produccion'; // Default
+            
+            if (paginationContainer) {
+                section = paginationContainer.dataset.section || 'produccion';
+            }
+            
+            console.log('🎯 Sección detectada:', section);
+            
+            console.log('📋 Sección determinada:', section);
+            
+            // ✨ ACTUALIZAR BOTÓN ACTIVO INMEDIATAMENTE (antes del AJAX)
+            updateActiveButtonImmediately(paginationLink, section, page);
+            
+            // Hacer petición AJAX
+            loadPage(page, section);
+        } else {
+            console.log('❌ Click NO fue en elemento de paginación');
+        }
+    });
+    
+    console.log('✅ Event listeners de paginación inicializados');
+}
+
+// Función para actualizar el botón activo INMEDIATAMENTE al hacer click
+function updateActiveButtonImmediately(clickedElement, section, page) {
+    console.log(`🚀 Actualizando botón activo INMEDIATAMENTE: página ${page} en ${section}`);
+    console.log('Elemento clickeado:', clickedElement);
+    console.log('Clases antes:', clickedElement.className);
+    
+    const paginationContainer = document.querySelector(`[data-section="${section}"]`);
+    if (!paginationContainer) {
+        console.error('❌ No se encontró paginationContainer para sección:', section);
+        return;
+    }
+    
+    console.log('✅ paginationContainer encontrado:', paginationContainer);
+    
+    const paginationNav = paginationContainer.querySelector('.pagination');
+    if (!paginationNav) {
+        console.error('❌ No se encontró paginationNav dentro de:', paginationContainer);
+        console.log('🔍 Elementos dentro del container:', paginationContainer.innerHTML);
+        
+        // Buscar en todo el documento como fallback
+        const allPaginations = document.querySelectorAll('.pagination');
+        console.log('🔍 Todas las paginaciones encontradas:', allPaginations.length);
+        
+        if (allPaginations.length > 0) {
+            // Buscar la paginación de la sección correcta
+            let fallbackNav = null;
+            
+            allPaginations.forEach(pagination => {
+                const paginationContainer = pagination.closest('.table-pagination');
+                if (paginationContainer && paginationContainer.dataset.section === section) {
+                    fallbackNav = pagination;
+                    console.log(`🎯 Paginación encontrada para sección ${section}:`, fallbackNav);
+                }
+            });
+            
+            // Si no encuentra la sección específica, usar la primera
+            if (!fallbackNav) {
+                fallbackNav = allPaginations[0];
+                console.log('🔄 Usando paginación fallback (primera encontrada):', fallbackNav);
+            }
+            
+            // PASO 1: Quitar estilos de TODOS los elementos
+            fallbackNav.querySelectorAll('button, a').forEach((element, index) => {
+                const hadActive = element.classList.contains('active');
+                element.classList.remove('active');
+                
+                // Quitar estilos directos también
+                element.style.background = '';
+                element.style.color = '';
+                element.style.boxShadow = '';
+                
+                console.log(`${index}: "${element.textContent.trim()}" - Tenía active: ${hadActive}, Estilos removidos`);
+            });
+            
+            // PASO 2: Agregar 'active' al elemento clickeado
+            clickedElement.classList.add('active');
+            console.log(`✅ Clases después de agregar active: ${clickedElement.className}`);
+            
+            // PASO 3: Aplicar estilos directamente SOLO al elemento clickeado
+            clickedElement.style.background = 'linear-gradient(135deg, #f97316 0%, #fb923c 100%)';
+            clickedElement.style.color = 'white';
+            clickedElement.style.boxShadow = '0 4px 12px rgba(249, 115, 22, 0.4)';
+            console.log('🎨 Estilos aplicados directamente al elemento clickeado');
+        }
+        return;
+    }
+    
+    console.log('📋 Elementos encontrados en paginación:');
+    
+    // PASO 1: Quitar 'active' y estilos de TODOS los botones/enlaces
+    paginationNav.querySelectorAll('button, a').forEach((element, index) => {
+        const hadActive = element.classList.contains('active');
+        element.classList.remove('active');
+        
+        // Quitar estilos directos también
+        element.style.background = '';
+        element.style.color = '';
+        element.style.boxShadow = '';
+        
+        console.log(`${index}: "${element.textContent.trim()}" - Tenía active: ${hadActive}, Estilos removidos`);
+    });
+    
+    // PASO 2: Agregar 'active' al elemento clickeado
+    clickedElement.classList.add('active');
+    console.log(`✅ Clases después de agregar active: ${clickedElement.className}`);
+    
+    // PASO 3: Aplicar estilos directamente SOLO al elemento clickeado
+    clickedElement.style.background = 'linear-gradient(135deg, #f97316 0%, #fb923c 100%)';
+    clickedElement.style.color = 'white';
+    clickedElement.style.boxShadow = '0 4px 12px rgba(249, 115, 22, 0.4)';
+    console.log('🎨 Estilos aplicados directamente al elemento clickeado');
+    
+    // PASO 5: Actualizar barra de progreso inmediatamente (estimado)
+    const progressFill = paginationContainer.querySelector('.progress-fill');
+    if (progressFill) {
+        // Obtener total de páginas del último enlace visible
+        const allPageNumbers = [];
+        paginationNav.querySelectorAll('button, a').forEach(element => {
+            const pageText = element.textContent.trim();
+            const pageNumber = parseInt(pageText);
+            if (!isNaN(pageNumber)) {
+                allPageNumbers.push(pageNumber);
+            }
+        });
+        
+        const maxPage = Math.max(...allPageNumbers);
+        if (maxPage > 0) {
+            const progressPercent = (parseInt(page) / maxPage) * 100;
+            progressFill.style.width = progressPercent + '%';
+            console.log(`📊 Barra de progreso actualizada INMEDIATAMENTE: ${progressPercent}%`);
+        }
+    }
+}
+
+function loadPage(page, section) {
+    console.log(`Cargando página ${page} para sección ${section}`);
+    
+    const url = new URL(window.location.origin + window.location.pathname);
+    url.searchParams.set('page', page);
+    
+    // Copiar otros parámetros existentes (filtros, etc.)
+    const currentParams = new URLSearchParams(window.location.search);
+    currentParams.forEach((value, key) => {
+        if (key !== 'page') {
+            url.searchParams.set(key, value);
+        }
+    });
+    
+    // Mostrar indicador de carga
+    const paginationContainer = document.querySelector(`[data-section="${section}"]`);
+    const tableContainer = paginationContainer ? paginationContainer.closest('.chart-placeholder') : null;
+    const tableBody = tableContainer ? tableContainer.querySelector('.table-body') : null;
+    
+    if (tableBody) {
+        tableBody.style.opacity = '0.5';
+        tableBody.style.pointerEvents = 'none';
+    }
+    
+    fetch(url.toString(), {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Datos recibidos:', data);
+        
+        try {
+            // Actualizar la tabla según la sección
+            if (section === 'produccion' && data.registros) {
+                updateTableContent(data.registros, data.columns, 'produccion');
+                updatePaginationInfo(data.pagination, 'produccion');
+                updatePaginationLinks(data.pagination, 'produccion');
+            } else if (section === 'polos' && data.registrosPolos) {
+                updateTableContent(data.registrosPolos, data.columnsPolos, 'polos');
+                updatePaginationInfo(data.paginationPolos, 'polos');
+                updatePaginationLinks(data.paginationPolos, 'polos');
+            } else if (section === 'corte' && data.registrosCorte) {
+                updateTableContent(data.registrosCorte, data.columnsCorte, 'corte');
+                updatePaginationInfo(data.paginationCorte, 'corte');
+                updatePaginationLinks(data.paginationCorte, 'corte');
+            }
+            
+            // Actualizar URL sin recargar
+            window.history.pushState({}, '', url.toString());
+            
+            console.log('✅ Tabla actualizada exitosamente');
+        } catch (updateError) {
+            console.error('Error al actualizar tabla:', updateError);
+            // No recargar la página, solo mostrar el error
+        } finally {
+            // Restaurar opacidad siempre
+            if (tableBody) {
+                tableBody.style.opacity = '1';
+                tableBody.style.pointerEvents = 'auto';
+            }
+            
+            // Scroll suave a la tabla
+            if (tableContainer) {
+                tableContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error al cargar página:', error);
+        // NO recargar la página, solo restaurar el estado
+        if (tableBody) {
+            tableBody.style.opacity = '1';
+            tableBody.style.pointerEvents = 'auto';
+        }
+    });
+}
+
+// Función para actualizar los enlaces de paginación
+function updatePaginationLinks(pagination, section) {
+    const paginationContainer = document.querySelector(`[data-section="${section}"]`);
+    if (!paginationContainer || !pagination) return;
+    
+    const paginationNav = paginationContainer.querySelector('.pagination');
+    if (!paginationNav) return;
+    
+    console.log(`🔄 Actualizando paginación para ${section}, página actual: ${pagination.current_page}`);
+    
+    // PASO 1: Quitar clase 'active' de TODOS los elementos
+    paginationNav.querySelectorAll('button, a').forEach(element => {
+        element.classList.remove('active');
+        console.log(`Removiendo 'active' de: ${element.textContent.trim()}`);
+    });
+    
+    // PASO 2: Buscar el elemento que corresponde a la página actual y marcarlo como activo
+    paginationNav.querySelectorAll('button, a').forEach(element => {
+        const pageText = element.textContent.trim();
+        const pageNumber = parseInt(pageText);
+        
+        // Si es un número y coincide con la página actual
+        if (!isNaN(pageNumber) && pageNumber === pagination.current_page) {
+            element.classList.add('active');
+            console.log(`✅ Marcando como activo: página ${pageNumber}`);
+        }
+    });
+    
+    // PASO 3: Actualizar barra de progreso
+    const progressFill = paginationContainer.querySelector('.progress-fill');
+    if (progressFill && pagination.last_page > 0) {
+        const progressPercent = (pagination.current_page / pagination.last_page) * 100;
+        progressFill.style.width = progressPercent + '%';
+        console.log(`📊 Barra de progreso: ${progressPercent}%`);
+    }
+    
+    console.log(`✅ Paginación actualizada para ${section}`);
+}
+
+function updateTableContent(registros, columns, section) {
+    console.log(`Actualizando contenido de tabla para ${section}`, registros.length, 'registros');
+    
+    // Buscar el tbody de la sección correcta
+    const allTableBodies = document.querySelectorAll('.table-body');
+    let tableBody = null;
+    
+    // Encontrar el tbody correcto según la sección
+    allTableBodies.forEach(tbody => {
+        const table = tbody.closest('table');
+        if (table && table.dataset.section === section) {
+            tableBody = tbody;
+            console.log(`✅ Tabla encontrada para sección ${section}:`, table);
+        }
+    });
+    
+    if (!tableBody) {
+        console.error(`No se encontró tabla para la sección: ${section}`);
+        return;
+    }
+    
+    console.log('Tabla encontrada, actualizando contenido...');
+    tableBody.innerHTML = '';
+    
+    registros.forEach(registro => {
+        const row = document.createElement('tr');
+        row.className = 'table-row';
+        row.dataset.id = registro.id;
+        
+        columns.forEach(column => {
+            const td = document.createElement('td');
+            td.className = 'table-cell editable-cell';
+            td.dataset.column = column;
+            td.title = 'Doble clic para editar';
+            
+            let value = registro[column];
+            let displayValue = value;
+            
+            // Formatear valores especiales según la sección
+            if (column === 'fecha' && value) {
+                displayValue = new Date(value).toLocaleDateString('es-ES');
+            } else if (column === 'eficiencia' && value !== null) {
+                displayValue = Math.round(value * 100 * 10) / 10 + '%';
+                td.classList.add(getEficienciaClass(value));
+            } else if (section === 'corte') {
+                // Formateo específico para tabla de Corte
+                if (column === 'hora_id' && registro.hora_display) {
+                    displayValue = registro.hora_display;
+                } else if (column === 'operario_id' && registro.operario_display) {
+                    displayValue = registro.operario_display;
+                } else if (column === 'maquina_id' && registro.maquina_display) {
+                    displayValue = registro.maquina_display;
+                } else if (column === 'tela_id' && registro.tela_display) {
+                    displayValue = registro.tela_display;
+                }
+            }
+            // Las tablas de 'produccion' y 'polos' usan el formateo estándar
+            
+            td.dataset.value = value;
+            td.textContent = displayValue;
+            row.appendChild(td);
+        });
+        
+        // Agregar botón de eliminar
+        const deleteTd = document.createElement('td');
+        deleteTd.className = 'table-cell';
+        deleteTd.innerHTML = `
+            <button class="delete-btn" data-id="${registro.id}" data-section="${section}" title="Eliminar registro">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                    <path d="M3 6h18"/>
+                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+            </button>
+        `;
+        row.appendChild(deleteTd);
+        
+        tableBody.appendChild(row);
+    });
+    
+    console.log(`Tabla actualizada con ${registros.length} registros`);
+    
+    // Reinicializar event listeners
+    if (typeof window.attachEditableCellListeners === 'function') {
+        window.attachEditableCellListeners();
+    } else {
+        console.warn('attachEditableCellListeners no está disponible');
+    }
+}
+
+function updatePaginationInfo(pagination, section) {
+    const paginationContainer = document.querySelector(`[data-section="${section}"]`);
+    if (!paginationContainer || !pagination) return;
+    
+    // Actualizar texto de información
+    const paginationInfo = paginationContainer.querySelector('.pagination-info span');
+    if (paginationInfo) {
+        const firstItem = ((pagination.current_page - 1) * pagination.per_page) + 1;
+        const lastItem = Math.min(pagination.current_page * pagination.per_page, pagination.total);
+        paginationInfo.textContent = `Mostrando ${firstItem}-${lastItem} de ${pagination.total} registros`;
+    }
+    
+    // Actualizar barra de progreso
+    const progressFill = paginationContainer.querySelector('.progress-fill');
+    if (progressFill) {
+        const progress = (pagination.current_page / pagination.last_page) * 100;
+        progressFill.style.width = progress + '%';
+    }
 }
 </script>
 @endsection

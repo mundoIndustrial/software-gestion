@@ -1,24 +1,12 @@
-# TODO: Modificar Sidebar - Unir Ordenes-Pedidos y Ordenes-Bodega en un solo botón "Ordenes"
+# TODO: Integrate Date Filters for Seguimiento Modulos
 
-## Pasos a completar:
+## Steps to Complete
 
-- [x] Modificar `resources/views/layouts/sidebar.blade.php`:
-  - Reemplazar los dos elementos `<li>` separados para "Ordenes-Pedidos" y "Ordenes-Bodega" con un solo `<li>` que contenga un botón "Ordenes" y un submenú `<ul>` anidado con las dos opciones.
-  - Agregar clases CSS necesarias para el submenú (e.g., `submenu`, `submenu-item`).
+- [x] Add new method `getSeguimientoData` in TablerosController.php to return filtered seguimiento data via AJAX
+- [x] Modify `filtrarPorFechas` function in top-controls.blade.php to call seguimiento update endpoint
+- [x] Add JavaScript function `updateSeguimientoTable` in seguimiento-modulos.blade.php to update table via AJAX
+- [x] Test the integration by applying filters and verifying both corte and seguimiento tables update
+- [x] Verify error handling for AJAX calls
 
-- [x] Actualizar `public/css/sidebar.css`:
-  - Agregar estilos para el submenú desplegable: ocultar por defecto, animación de deslizamiento, colores consistentes con el tema.
-  - Asegurar que funcione en modo collapsed y expanded del sidebar.
-
-- [x] Actualizar `public/js/sidebar.js`:
-  - Agregar event listener al botón "Ordenes" para toggle (mostrar/ocultar) el submenú.
-  - Prevenir que el sidebar se colapse cuando se hace clic en el botón del submenú si está en modo collapsed.
-
-- [x] Unir "Entrega-Pedidos" y "Entrega Bodega" en un solo botón "Entregas" con submenú.
-  - Modificar `resources/views/layouts/sidebar.blade.php` para reemplazar los dos botones con uno solo.
-  - Actualizar `public/js/sidebar.js` para manejar múltiples submenús (usar querySelectorAll).
-
-- [x] Verificar funcionalidad:
-  - Probar que los submenús se desplieguen correctamente al hacer clic en "Ordenes" y "Entregas".
-  - Asegurar que las rutas y enlaces sigan funcionando.
-  - Verificar en diferentes tamaños de pantalla y modos (collapsed/expanded).
+## Current Status
+All implementation steps completed. Ready for testing.

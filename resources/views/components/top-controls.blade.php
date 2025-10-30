@@ -133,6 +133,11 @@
                     // Si no existe la función, recargar la página
                     window.location.href = url.toString();
                 }
+
+                // Actualizar tabla de seguimiento de módulos
+                if (typeof updateSeguimientoTable === 'function') {
+                    updateSeguimientoTable(url.searchParams);
+                }
             }
          }">
 

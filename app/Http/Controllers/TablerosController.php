@@ -17,85 +17,31 @@ class TablerosController extends Controller
 {
     public function index()
     {
+        // TABLAS PRINCIPALES: SIN FILTRO DE FECHA (mostrar todos los registros)
         $queryProduccion = RegistroPisoProduccion::query();
-        $this->aplicarFiltroFecha($queryProduccion, request());
+        // Paginación: 50 registros por página
         $registros = $queryProduccion->paginate(50);
         $columns = Schema::getColumnListing('registro_piso_produccion');
         $columns = array_diff($columns, ['id', 'created_at', 'updated_at', 'producida']);
 
-        // Recalcular tiempo_disponible, meta y eficiencia para cada registro
-        foreach ($registros as $registro) {
-            $tiempo_disponible = (3600 * $registro->porcion_tiempo * $registro->numero_operarios) -
-                               ($registro->tiempo_parada_no_programada ?? 0) -
-                               ($registro->tiempo_para_programada ?? 0);
-
-            $meta = $registro->tiempo_ciclo > 0 ? ($tiempo_disponible / $registro->tiempo_ciclo) * 0.9 : 0;
-            $eficiencia = $meta == 0 ? 0 : round(($registro->cantidad / $meta) * 100);
-
-            $registro->tiempo_disponible = $tiempo_disponible;
-            $registro->meta = $meta;
-            $registro->eficiencia = $eficiencia;
-            $registro->save();
-        }
+        // NO recalcular en cada carga - solo cuando se crea/actualiza un registro
+        // Los cálculos se hacen en el método store() y update()
 
         $queryPolos = RegistroPisoPolo::query();
-        $this->aplicarFiltroFecha($queryPolos, request());
+        // Paginación: 50 registros por página
         $registrosPolos = $queryPolos->paginate(50);
         $columnsPolos = Schema::getColumnListing('registro_piso_polo');
         $columnsPolos = array_diff($columnsPolos, ['id', 'created_at', 'updated_at', 'producida']);
 
-        // Recalcular tiempo_disponible, meta y eficiencia para cada registro de polos
-        foreach ($registrosPolos as $registro) {
-            $tiempo_disponible = (3600 * $registro->porcion_tiempo * $registro->numero_operarios) -
-                               ($registro->tiempo_parada_no_programada ?? 0) -
-                               ($registro->tiempo_para_programada ?? 0);
-
-            $meta = $registro->tiempo_ciclo > 0 ? ($tiempo_disponible / $registro->tiempo_ciclo) * 0.9 : 0;
-            $eficiencia = $meta == 0 ? 0 : round(($registro->cantidad / $meta) * 100);
-
-            $registro->tiempo_disponible = $tiempo_disponible;
-            $registro->meta = $meta;
-            $registro->eficiencia = $eficiencia;
-            $registro->save();
-        }
+        // NO recalcular en cada carga - solo cuando se crea/actualiza un registro
 
         $queryCorte = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela']);
-        $this->aplicarFiltroFecha($queryCorte, request());
+        // Paginación: 50 registros por página
         $registrosCorte = $queryCorte->paginate(50);
         $columnsCorte = Schema::getColumnListing('registro_piso_corte');
         $columnsCorte = array_diff($columnsCorte, ['id', 'created_at', 'updated_at', 'producida']);
 
-        // Recalcular tiempo_disponible, meta y eficiencia para cada registro de corte
-        foreach ($registrosCorte as $registro) {
-            $tiempo_para_programada = ($registro->paradas_programadas === 'DESAYUNO' || $registro->paradas_programadas === 'MEDIA TARDE') ? 900 : 0;
-            $tiempo_extendido = 0;
-            if ($registro->tipo_extendido === 'Trazo Largo') {
-                $tiempo_extendido = 40 * $registro->numero_capas;
-            } elseif ($registro->tipo_extendido === 'Trazo Corto') {
-                $tiempo_extendido = 25 * $registro->numero_capas;
-            }
-
-            $tiempo_disponible = (3600 * $registro->porcion_tiempo) -
-                               $tiempo_para_programada -
-                               ($registro->tiempo_parada_no_programada ?? 0) -
-                               $tiempo_extendido -
-                               ($registro->tiempo_trazado ?? 0);
-
-            $tiempo_disponible = max(0, $tiempo_disponible);
-
-            if (str_contains(strtolower($registro->actividad), 'extender') || str_contains(strtolower($registro->actividad), 'trazar')) {
-                $meta = $registro->cantidad;
-                $eficiencia = 100;
-            } else {
-                $meta = $registro->tiempo_ciclo > 0 ? $tiempo_disponible / $registro->tiempo_ciclo : 0;
-                $eficiencia = $meta == 0 ? 0 : round(($registro->cantidad / $meta) * 100);
-            }
-
-            $registro->tiempo_disponible = $tiempo_disponible;
-            $registro->meta = $meta;
-            $registro->eficiencia = $eficiencia;
-            $registro->save();
-        }
+        // NO recalcular en cada carga - solo cuando se crea/actualiza un registro
 
         // Calcular datos dinámicos para las tablas de horas y operarios
         $horasData = $this->calcularProduccionPorHoras($registrosCorte);
@@ -565,37 +511,51 @@ class TablerosController extends Controller
                 // Recalcular según la sección
                 if ($request->section === 'corte') {
                     // Fórmula para CORTE (sin numero_operarios)
-                    $tiempo_para_programada = ($registro->paradas_programadas === 'DESAYUNO' || $registro->paradas_programadas === 'MEDIA TARDE') ? 900 : 0;
-                    $tiempo_extendido = 0;
-                    if ($registro->tipo_extendido === 'Trazo Largo') {
-                        $tiempo_extendido = 40 * $registro->numero_capas;
-                    } elseif ($registro->tipo_extendido === 'Trazo Corto') {
-                        $tiempo_extendido = 25 * $registro->numero_capas;
-                    }
+                    $tiempo_para_programada = match($registro->paradas_programadas) {
+                        'DESAYUNO' => 900,
+                        'MEDIA TARDE' => 900,
+                        'NINGUNA' => 0,
+                        default => 0
+                    };
+
+                    $tiempo_extendido = match($registro->tipo_extendido) {
+                        'Trazo Largo' => 40 * ($registro->numero_capas ?? 0),
+                        'Trazo Corto' => 25 * ($registro->numero_capas ?? 0),
+                        'Ninguno' => 0,
+                        default => 0
+                    };
 
                     $tiempo_disponible = (3600 * $registro->porcion_tiempo) -
-                                       $tiempo_para_programada -
-                                       ($registro->tiempo_parada_no_programada ?? 0) -
-                                       $tiempo_extendido -
-                                       ($registro->tiempo_trazado ?? 0);
+                                       ($tiempo_para_programada +
+                                       ($registro->tiempo_parada_no_programada ?? 0) +
+                                       $tiempo_extendido +
+                                       ($registro->tiempo_trazado ?? 0));
 
                     $tiempo_disponible = max(0, $tiempo_disponible);
 
-                    if (str_contains(strtolower($registro->actividad), 'extender') || str_contains(strtolower($registro->actividad), 'trazar')) {
-                        $meta = $registro->cantidad;
-                        $eficiencia = 100;
-                    } else {
-                        $meta = $registro->tiempo_ciclo > 0 ? $tiempo_disponible / $registro->tiempo_ciclo : 0;
-                        $eficiencia = $meta == 0 ? 0 : round(($registro->cantidad / $meta) * 100);
-                    }
+                    // Meta: tiempo_disponible / tiempo_ciclo (SIN multiplicar por 0.9)
+                    $meta = $registro->tiempo_ciclo > 0 ? $tiempo_disponible / $registro->tiempo_ciclo : 0;
+                    
+                    // Eficiencia: cantidad / meta (SIN multiplicar por 100)
+                    $eficiencia = $meta > 0 ? ($registro->cantidad / $meta) : 0;
                 } else {
                     // Fórmula para PRODUCCIÓN y POLOS (con numero_operarios)
+                    $tiempo_para_programada = match($registro->paradas_programadas) {
+                        'DESAYUNO' => 900,
+                        'MEDIA TARDE' => 900,
+                        'NINGUNA' => 0,
+                        default => 0
+                    };
+
                     $tiempo_disponible = (3600 * $registro->porcion_tiempo * $registro->numero_operarios) -
                                        ($registro->tiempo_parada_no_programada ?? 0) -
-                                       ($registro->tiempo_para_programada ?? 0);
+                                       $tiempo_para_programada;
 
+                    // Meta: (tiempo_disponible / tiempo_ciclo) * 0.9
                     $meta = $registro->tiempo_ciclo > 0 ? ($tiempo_disponible / $registro->tiempo_ciclo) * 0.9 : 0;
-                    $eficiencia = $meta == 0 ? 0 : round(($registro->cantidad / $meta) * 100);
+                    
+                    // Eficiencia: cantidad / meta (SIN multiplicar por 100)
+                    $eficiencia = $meta > 0 ? ($registro->cantidad / $meta) : 0;
                 }
 
                 $registro->tiempo_disponible = $tiempo_disponible;
@@ -988,6 +948,25 @@ class TablerosController extends Controller
             'horasData' => $horasData,
             'operariosData' => $operariosData
         ]);
+    }
+
+    public function getSeguimientoData(Request $request)
+    {
+        $section = $request->get('section', 'produccion');
+
+        $model = match($section) {
+            'produccion' => RegistroPisoProduccion::class,
+            'polos' => RegistroPisoPolo::class,
+            'corte' => RegistroPisoCorte::class,
+        };
+
+        $query = $model::query();
+        $this->aplicarFiltroFecha($query, $request);
+        $registrosFiltrados = $query->get();
+
+        $seguimiento = $this->calcularSeguimientoModulos($registrosFiltrados);
+
+        return response()->json($seguimiento);
     }
 
     /**

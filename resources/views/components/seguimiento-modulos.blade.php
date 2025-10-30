@@ -361,3 +361,128 @@
         <span>≤ 70% Eficiencia</span>
     </div>
 </div>
+
+<script>
+// Función para actualizar la tabla de seguimiento de módulos
+function updateSeguimientoTable(params) {
+    // Determinar la sección actual desde la URL o un elemento en la página
+    const currentSection = getCurrentSection();
+
+    const seguimientoUrl = new URL('/tableros/get-seguimiento-data', window.location.origin);
+    seguimientoUrl.search = params.toString();
+    seguimientoUrl.searchParams.set('section', currentSection);
+
+    fetch(seguimientoUrl.toString(), {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        updateSeguimientoTableContent(data);
+    })
+    .catch(error => {
+        console.error('Error updating seguimiento table:', error);
+        alert('Error al actualizar la tabla de seguimiento. Por favor, recarga la página.');
+    });
+}
+
+// Función para determinar la sección actual
+function getCurrentSection() {
+    // Intentar obtener la sección desde elementos de la página
+    const activeTab = document.querySelector('.tab.active, .nav-link.active');
+    if (activeTab) {
+        const tabText = activeTab.textContent.toLowerCase();
+        if (tabText.includes('produccion')) return 'produccion';
+        if (tabText.includes('polo')) return 'polos';
+        if (tabText.includes('corte')) return 'corte';
+    }
+
+    // Intentar desde la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const section = urlParams.get('section');
+    if (section) return section;
+
+    // Default
+    return 'produccion';
+}
+
+// Función para actualizar el contenido de la tabla de seguimiento
+function updateSeguimientoTableContent(seguimientoData) {
+    const tableContainer = document.querySelector('.seguimiento-table');
+    if (!tableContainer) return;
+
+    // Actualizar módulos disponibles
+    const modulosDisponibles = seguimientoData.modulosDisponibles || [];
+    const dataPorHora = seguimientoData.dataPorHora || {};
+    const totales = seguimientoData.totales || { modulos: {} };
+
+    // Reconstruir la tabla
+    let html = '';
+
+    // Header
+    html += '<thead><tr><th rowspan="2" class="seguimiento-th">HORA</th>';
+    modulosDisponibles.forEach(modulo => {
+        html += `<th colspan="3" class="seguimiento-th seguimiento-module-header seguimiento-module${modulosDisponibles.indexOf(modulo) + 1}">${modulo}</th>`;
+    });
+    html += '</tr><tr>';
+    modulosDisponibles.forEach(modulo => {
+        html += `<th class="seguimiento-th seguimiento-module${modulosDisponibles.indexOf(modulo) + 1}">Prendas</th>`;
+        html += `<th class="seguimiento-th seguimiento-module${modulosDisponibles.indexOf(modulo) + 1}">Meta</th>`;
+        html += `<th class="seguimiento-th seguimiento-module${modulosDisponibles.indexOf(modulo) + 1}">Eficiencia</th>`;
+    });
+    html += '</tr></thead>';
+
+    // Body
+    html += '<tbody>';
+    const horasOrdenadas = Object.keys(dataPorHora).sort();
+    horasOrdenadas.slice(0, 12).forEach(horaKey => {
+        const horaData = dataPorHora[horaKey] || { modulos: {} };
+        html += `<tr class="seguimiento-tr"><td class="seguimiento-td seguimiento-hora-cell">${horaKey}</td>`;
+        modulosDisponibles.forEach(modulo => {
+            const modData = horaData.modulos[modulo] || { prendas: 0, meta: 0, eficiencia: 0 };
+            const eficienciaClass = getEficienciaClass(modData.eficiencia);
+            html += `<td class="seguimiento-td">${number_format(modData.prendas, 0)}</td>`;
+            html += `<td class="seguimiento-td">${number_format(modData.meta, 2)}</td>`;
+            html += `<td class="seguimiento-td seguimiento-efficiency-cell ${eficienciaClass}">${modData.prendas > 0 ? Math.round(modData.eficiencia * 100) + '%' : '0%'}</td>`;
+        });
+        html += '</tr>';
+    });
+
+    // Total row
+    html += '<tr class="seguimiento-total-row"><td class="seguimiento-td seguimiento-hora-cell">Suma total</td>';
+    modulosDisponibles.forEach(modulo => {
+        const modTotal = totales.modulos[modulo] || { prendas: 0, meta: 0, eficiencia: 0 };
+        const eficienciaClass = getEficienciaClass(modTotal.eficiencia);
+        html += `<td class="seguimiento-td">${number_format(modTotal.prendas, 0)}</td>`;
+        html += `<td class="seguimiento-td">${number_format(modTotal.meta, 2)}</td>`;
+        html += `<td class="seguimiento-td seguimiento-efficiency-cell ${eficienciaClass}">${modTotal.prendas > 0 ? Math.round(modTotal.eficiencia * 100) + '%' : '0%'}</td>`;
+    });
+    html += '</tr></tbody>';
+
+    tableContainer.innerHTML = html;
+}
+
+// Función auxiliar para formatear números
+function number_format(number, decimals) {
+    return parseFloat(number).toLocaleString('es-ES', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals
+    });
+}
+
+// Función para determinar la clase de eficiencia
+function getEficienciaClass(eficiencia) {
+    if (eficiencia > 1.00) return 'seguimiento-blue';
+    if (eficiencia >= 0.80) return 'seguimiento-green';
+    if (eficiencia >= 0.70) return 'seguimiento-orange';
+    return 'seguimiento-red';
+}
+</script>
