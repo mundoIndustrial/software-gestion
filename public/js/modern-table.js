@@ -298,10 +298,12 @@ class ModernTable {
         });
 
         document.addEventListener('click', e => {
-            if (e.target.classList.contains('filter-btn')) {
+            // Buscar el botón de filtro, ya sea que se haga clic en el botón o en el icono dentro
+            const filterBtn = e.target.closest('.filter-btn');
+            if (filterBtn) {
                 e.preventDefault();
                 e.stopPropagation();
-                this.openFilterModal(parseInt(e.target.dataset.column), e.target.dataset.columnName);
+                this.openFilterModal(parseInt(filterBtn.dataset.column), filterBtn.dataset.columnName);
             } else if (e.target.classList.contains('page-link') && !e.target.classList.contains('disabled')) {
                 e.preventDefault();
                 const href = e.target.getAttribute('href');

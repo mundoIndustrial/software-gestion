@@ -182,6 +182,7 @@
 
     <script>
         const tipoVista = '{{ $tipo }}';
+        const origenVista = new URLSearchParams(window.location.search).get('origen') || 'pedido';
 
         document.addEventListener('DOMContentLoaded', function() {
             const searchInput = document.getElementById('searchInput');
@@ -198,7 +199,7 @@
                 resultsContainer.innerHTML = '<div class="no-data"><h3>Buscando...</h3></div>';
 
                 // Construir URL con parámetros
-                let url = '/api/vista-costura/search?q=' + encodeURIComponent(query) + '&tipo=' + encodeURIComponent(tipoVista);
+                let url = '/api/vistas/search?q=' + encodeURIComponent(query) + '&tipo=' + encodeURIComponent(tipoVista) + '&origen=' + encodeURIComponent(origenVista);
 
                 fetch(url, {
                     method: 'GET',

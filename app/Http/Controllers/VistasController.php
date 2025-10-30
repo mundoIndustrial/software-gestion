@@ -8,8 +8,9 @@ use App\Models\RegistrosPorOrdenBodega;
 use App\Models\TablaOriginal;
 use App\Models\TablaOriginalBodega;
 use App\Models\EntregaPedidoCorte;
+use App\Models\EntregaBodegaCorte;
 
-class VistaCosturaController extends Controller
+class VistasController extends Controller
 {
     public function index(Request $request)
     {
@@ -17,15 +18,22 @@ class VistaCosturaController extends Controller
         $tipo = $this->determinarTipo($request);
 
         $query = $request->get('search', '');
+        $origen = $request->get('origen', 'pedido'); // pedido o bodega
 
         if ($tipo === 'bodega') {
             $registrosQuery = RegistrosPorOrdenBodega::query();
             $title = 'Vista Costura - Bodega';
             $icon = 'fas fa-warehouse';
         } elseif ($tipo === 'corte') {
-            $registrosQuery = EntregaPedidoCorte::query();
-            $title = 'Vista Corte - Pedidos';
-            $icon = 'fas fa-cut';
+            if ($origen === 'bodega') {
+                $registrosQuery = EntregaBodegaCorte::query();
+                $title = 'Vista Corte - Bodega';
+                $icon = 'fas fa-cut';
+            } else {
+                $registrosQuery = EntregaPedidoCorte::query();
+                $title = 'Vista Corte - Pedidos';
+                $icon = 'fas fa-cut';
+            }
         } else {
             $registrosQuery = RegistrosPorOrden::query();
             $title = 'Vista Costura - Pedidos';
@@ -43,7 +51,7 @@ class VistaCosturaController extends Controller
 
         $registros = $registrosQuery->paginate(50)->appends(['search' => $query]);
 
-        return view('vista-costura.index', compact('registros', 'title', 'icon', 'tipo', 'query'));
+        return view('vistas.index', compact('registros', 'title', 'icon', 'tipo', 'query'));
     }
 
     public function search(Request $request)
@@ -53,11 +61,16 @@ class VistaCosturaController extends Controller
         $clientes = $request->get('clientes', []);
         $costureros = $request->get('costureros', []);
         $cortadores = $request->get('cortadores', []);
+        $origen = $request->get('origen', 'pedido'); // pedido o bodega
 
         if ($tipo === 'bodega') {
             $registrosQuery = RegistrosPorOrdenBodega::query();
         } elseif ($tipo === 'corte') {
-            $registrosQuery = EntregaPedidoCorte::query();
+            if ($origen === 'bodega') {
+                $registrosQuery = EntregaBodegaCorte::query();
+            } else {
+                $registrosQuery = EntregaPedidoCorte::query();
+            }
         } else {
             $registrosQuery = RegistrosPorOrden::query();
         }

@@ -2,18 +2,18 @@
 .costura-container {
     max-width: 100%;
     margin: 0 auto;
-    padding: 20px;
+    padding: 15px;
     font-family: "Poppins", sans-serif;
 }
 .costura-header {
     text-align: center;
-    margin-bottom: 1rem;
-    padding: 0.5rem;
+    margin-bottom: 0.75rem;
+    padding: 0.375rem;
 }
 
 .costura-header h1 {
     margin: 0;
-    font-size: 1.8rem;
+    font-size: 1.35rem;
     font-weight: 600;
     color: white;
     position: relative;
@@ -21,8 +21,8 @@
 }
 
 .costura-header i {
-    margin-right: 15px;
-    font-size: 2.2rem;
+    margin-right: 11px;
+    font-size: 1.65rem;
     opacity: 0.9;
 }
 
@@ -33,30 +33,30 @@
 
 /* Barra de búsqueda */
 .search-container {
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 10px;
+    gap: 7.5px;
 }
 
 .search-bar {
     position: relative;
     width: 100%;
-    max-width: 500px;
+    max-width: 375px;
     display: flex;
     align-items: center;
     background: #2d2d2d;
-    border-radius: 25px;
-    padding: 12px 20px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    border: 2px solid #404040;
+    border-radius: 19px;
+    padding: 9px 15px;
+    box-shadow: 0 3px 11px rgba(0, 0, 0, 0.3);
+    border: 1.5px solid #404040;
 }
 
 .search-icon {
     color: #cccccc;
-    margin-right: 10px;
-    font-size: 1.1rem;
+    margin-right: 7.5px;
+    font-size: 0.825rem;
 }
 
 #searchInput {
@@ -65,7 +65,7 @@
     border: none;
     outline: none;
     color: #ffffff;
-    font-size: 1rem;
+    font-size: 0.75rem;
     padding: 0;
     font-family: "Poppins", sans-serif;
 }
@@ -94,20 +94,20 @@
 .cards-container {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    margin-bottom: 20px;
-    max-width: 1400px;
+    gap: 15px;
+    margin-bottom: 15px;
+    max-width: 1050px;
     margin-left: auto;
     margin-right: auto;
-    padding: 0 20px;
+    padding: 0 15px;
 }
 
 /* Tarjeta de pedido */
 .pedido-card {
     background: #2d2d2d;
-    border-radius: 15px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    border: 2px solid #404040;
+    border-radius: 11px;
+    box-shadow: 0 7.5px 22.5px rgba(0, 0, 0, 0.3);
+    border: 1.5px solid #404040;
     overflow: hidden;
     width: 100%;
 }
@@ -115,29 +115,29 @@
 /* Encabezado de la tarjeta */
 .card-header {
     background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
-    padding: 16px 20px;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    padding: 12px 15px;
+    border-bottom: 1.5px solid rgba(255, 255, 255, 0.2);
     position: relative;
 }
 
 .card-header h3 {
     margin: 0;
     color: #ffcc80;
-    font-size: 1.2rem;
+    font-size: 0.9rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
+    letter-spacing: 0.6px;
 }
 
 /* Encargado de corte */
 .encargado-corte {
     position: absolute;
-    top: 16px;
-    right: 20px;
+    top: 12px;
+    right: 15px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 0.85rem;
+    gap: 6px;
+    font-size: 0.64rem;
 }
 
 .encargado-label {
@@ -149,15 +149,15 @@
     color: #81c784;
     font-weight: 600;
     background: rgba(129, 199, 132, 0.1);
-    padding: 4px 8px;
-    border-radius: 4px;
+    padding: 3px 6px;
+    border-radius: 3px;
     border: 1px solid rgba(129, 199, 132, 0.3);
 }
 
 /* Cuerpo de la tarjeta */
 .card-body {
     padding: 0;
-    max-height: 400px;
+    max-height: 300px;
     overflow-y: auto;
     overflow-x: auto;
 }
@@ -179,17 +179,17 @@
 }
 
 .card-table th {
-    padding: 14px 12px;
+    padding: 10.5px 9px;
     text-align: left;
     font-weight: 600;
-    font-size: 0.8rem;
+    font-size: 0.6rem;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    letter-spacing: 0.375px;
+    border-bottom: 1.5px solid rgba(255, 255, 255, 0.2);
     border-right: 1px solid rgba(255, 255, 255, 0.1);
     position: relative;
     white-space: nowrap;
-    min-width: 80px;
+    min-width: 60px;
 }
 
 .card-table th:last-child {
@@ -197,15 +197,15 @@
 }
 
 .card-table td {
-    padding: 12px 8px;
+    padding: 9px 6px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     border-right: 1px solid rgba(255, 255, 255, 0.1);
-    font-size: 0.8rem;
+    font-size: 0.6rem;
     color: #ffffff;
     transition: all 0.3s ease;
     cursor: pointer;
     word-wrap: break-word;
-    max-width: 150px;
+    max-width: 112px;
 }
 
 .card-table td:last-child {
@@ -277,11 +277,12 @@
 
 .pagination-info {
     background: #2d2d2d;
-    padding: 12px 25px;
-    border-radius: 25px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    padding: 9px 19px;
+    border-radius: 19px;
+    box-shadow: 0 3px 11px rgba(0, 0, 0, 0.3);
     color: #ffffff;
     font-weight: 500;
+    font-size: 0.75rem;
     border: 1px solid #404040;
 }
 
@@ -426,6 +427,7 @@
 
 .filter-btn-main i {
     font-size: 14px;
+    pointer-events: none;
 }
 
 
