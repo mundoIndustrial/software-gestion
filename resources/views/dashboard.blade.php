@@ -3,34 +3,35 @@
 @section('content')
 <style>
     .filter-select option { color: black !important; background-color: white !important; }
-    body { background: #1a1d29; overflow-x: hidden; margin: 0; padding: 0; }
+    body { background: #111827; overflow-x: hidden; margin: 0; padding: 0; }
     
     .dashboard-container {
         min-height: 100vh;
         display: flex;
         flex-direction: column;
-        padding: 1.5rem;
-        gap: 1rem;
+        padding: 1rem;
+        gap: 0.75rem;
     }
 
     .header-compact {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0.75rem 1.5rem;
-        background: rgba(255, 255, 255, 0.03);
+        padding: 0.5rem 1rem;
+        background: #1f2937;
         border-radius: 12px;
-        border: 1px solid rgba(255, 107, 53, 0.1);
+        border: 1px solid #374151;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 
-    .header-compact h1 { font-size: 1.5rem; font-weight: 700; color: white; margin: 0; }
-    .header-compact .welcome { font-size: 0.9rem; color: #94a3b8; }
+    .header-compact h1 { font-size: 1.125rem; font-weight: 700; color: white; margin: 0; }
+    .header-compact .welcome { font-size: 0.7rem; color: #94a3b8; }
 
     .main-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
         grid-template-rows: 1fr auto;
-        gap: 1rem;
+        gap: 0.75rem;
         flex: 1;
         overflow: hidden;
     }
@@ -41,86 +42,102 @@
         grid-column: 1 / -1;
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 0.75rem;
+        gap: 0.5rem;
     }
 
     .kpi-card {
-        background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(255, 107, 53, 0.05));
-        border: 1px solid rgba(255, 107, 53, 0.2);
+        background: #1f2937;
+        border: 1px solid #374151;
         border-radius: 12px;
-        padding: 1rem;
+        padding: 0.75rem;
         text-align: center;
         transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #FF6B35, #ff8555, #ffa075);
     }
 
     .kpi-card:hover {
         transform: translateY(-3px);
-        border-color: rgba(255, 107, 53, 0.4);
-        box-shadow: 0 8px 20px rgba(255, 107, 53, 0.2);
+        border-color: #FF6B35;
+        box-shadow: 0 8px 20px rgba(255, 107, 53, 0.3);
+        background: #252f3f;
     }
 
     .kpi-card h3 {
-        font-size: 0.75rem;
+        font-size: 0.6rem;
         font-weight: 600;
         color: #94a3b8;
-        margin: 0 0 0.5rem 0;
+        margin: 0 0 0.35rem 0;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
 
-    .kpi-card .value { font-size: 1.75rem; font-weight: 700; color: #FF6B35; margin: 0; }
+    .kpi-card .value { font-size: 1.3rem; font-weight: 700; color: #FF6B35; margin: 0; text-shadow: 0 0 20px rgba(255, 107, 53, 0.3); }
 
     .chart-card {
-        background: rgba(255, 255, 255, 0.03);
-        border: 1px solid rgba(255, 107, 53, 0.15);
+        background: #1f2937;
+        border: 1px solid #374151;
         border-radius: 12px;
-        padding: 1.25rem;
+        padding: 0.9rem;
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 
     .chart-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 1rem;
+        margin-bottom: 0.75rem;
         flex-shrink: 0;
     }
 
-    .chart-header h2 { font-size: 1rem; font-weight: 600; color: white; margin: 0; }
+    .chart-header h2 { font-size: 0.8rem; font-weight: 600; color: white; margin: 0; }
 
     .toggle-btn {
-        padding: 0.4rem 0.8rem;
-        background: #FF6B35;
+        padding: 0.3rem 0.6rem;
+        background: linear-gradient(135deg, #f97316, #ec4899);
         color: white;
         border: none;
         border-radius: 6px;
-        font-size: 0.75rem;
+        font-size: 0.6rem;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s;
+        box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
     }
 
-    .toggle-btn:hover { background: #ff8555; transform: scale(1.05); }
+    .toggle-btn:hover { background: linear-gradient(135deg, #fb923c, #f472b6); transform: scale(1.05); box-shadow: 0 6px 16px rgba(249, 115, 22, 0.4); }
     .chart-body { flex: 1; position: relative; overflow: hidden; }
 
     .filters-inline {
         display: flex;
-        gap: 0.5rem;
-        margin-bottom: 0.75rem;
+        gap: 0.35rem;
+        margin-bottom: 0.5rem;
         flex-shrink: 0;
     }
 
     .filters-inline select,
     .filters-inline input {
         flex: 1;
-        padding: 0.5rem;
+        padding: 0.35rem;
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(255, 107, 53, 0.2);
-        border-radius: 6px;
+        border-radius: 4px;
         color: white;
-        font-size: 0.75rem;
+        font-size: 0.6rem;
     }
 
     .filters-inline select option { color: black; background: white; }
@@ -137,17 +154,17 @@
     .news-compact::-webkit-scrollbar-thumb { background: #FF6B35; border-radius: 2px; }
 
     .news-item {
-        background: rgba(255, 107, 53, 0.05);
+        background: #111827;
         border-left: 3px solid #FF6B35;
-        padding: 0.75rem;
-        margin-bottom: 0.5rem;
+        padding: 0.5rem;
+        margin-bottom: 0.35rem;
         border-radius: 6px;
         transition: all 0.2s;
     }
 
-    .news-item:hover { background: rgba(255, 107, 53, 0.1); transform: translateX(3px); }
-    .news-item .title { color: white; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem; }
-    .news-item .meta { display: flex; justify-content: space-between; font-size: 0.7rem; color: #94a3b8; }
+    .news-item:hover { background: #1f2937; transform: translateX(5px); box-shadow: 0 4px 12px rgba(255, 107, 53, 0.2); border-left-color: #ff8555; }
+    .news-item .title { color: white; font-size: 0.65rem; font-weight: 600; margin-bottom: 0.2rem; }
+    .news-item .meta { display: flex; justify-content: space-between; font-size: 0.55rem; color: #94a3b8; }
 
     @keyframes fadeInUp {
         from { opacity: 0; transform: translateY(20px); }
@@ -216,10 +233,33 @@
 <script>
 // ===== CONFIG =====
 const CONFIG = {
-    colors: ['#FF6B35', '#ff8555', '#ffa075', '#ffba95', '#ffd4b5', '#4f46e5', '#06b6d4', '#10b981',
-        '#e11d48', '#dc2626', '#ea580c', '#d97706', '#65a30d', '#16a34a', '#059669', '#0d9488',
-        '#0891b2', '#0284c7', '#2563eb', '#4f46e5', '#7c3aed', '#a855f7', '#c084fc', '#ec4899',
-        '#f97316', '#f59e0b', '#eab308', '#84cc16', '#22c55e', '#06b6d4', '#3b82f6', '#6366f1'],
+    colors: [
+        '#38bdf8', // Cyan brillante
+        '#8b5cf6', // Púrpura vibrante
+        '#ec4899', // Rosa fucsia
+        '#f97316', // Naranja intenso
+        '#10b981', // Verde esmeralda
+        '#f59e0b', // Ámbar dorado
+        '#6366f1', // Índigo
+        '#14b8a6', // Teal
+        '#ef4444', // Rojo brillante
+        '#a855f7', // Púrpura claro
+        '#06b6d4', // Cyan oscuro
+        '#84cc16', // Lima
+        '#f472b6', // Rosa claro
+        '#fb923c', // Naranja claro
+        '#22c55e', // Verde brillante
+        '#eab308', // Amarillo
+        '#3b82f6', // Azul brillante
+        '#d946ef', // Magenta
+        '#0ea5e9', // Azul cielo
+        '#22d3ee', // Cyan claro
+        '#a78bfa', // Púrpura pastel
+        '#fbbf24', // Amarillo dorado
+        '#34d399', // Verde menta
+        '#fb7185', // Rosa coral
+        '#fdba74', // Naranja melocotón
+    ],
     months: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
     currentYear: new Date().getFullYear(),
     currentMonth: new Date().getMonth() + 1,
@@ -340,12 +380,30 @@ class ChartBase {
         return {
             responsive: true,
             maintainAspectRatio: false,
+            animation: {
+                duration: 800,
+                easing: 'easeInOutQuart'
+            },
             plugins: {
                 tooltip: {
-                    backgroundColor: 'rgba(0,0,0,0.9)',
-                    titleColor: '#fff',
-                    bodyColor: '#fff',
-                    padding: 12,
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    titleColor: '#38bdf8',
+                    bodyColor: '#e2e8f0',
+                    padding: 14,
+                    borderColor: 'rgba(56, 189, 248, 0.3)',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    titleFont: {
+                        size: 13,
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 12
+                    },
+                    displayColors: true,
+                    boxWidth: 12,
+                    boxHeight: 12,
+                    boxPadding: 6
                 }
             }
         };
@@ -378,6 +436,11 @@ class CosturaChart extends ChartBase {
             const data = await Utils.fetchData(`/dashboard/entregas-costura-data?tipo=${this.tipo}`, this.filters.get());
             const labels = data.map(d => d.costurero);
             const values = data.map(d => d.total_entregas);
+            
+            // Calcular el máximo para establecer altura mínima visible
+            const maxValue = Math.max(...values);
+            const minVisibleHeight = maxValue * 0.05; // 5% del máximo
+            const adjustedValues = values.map(v => v === 0 ? 0 : Math.max(v, minVisibleHeight));
 
             this.render({
                 type: 'bar',
@@ -385,11 +448,14 @@ class CosturaChart extends ChartBase {
                     labels,
                     datasets: [{
                         label: 'Entregas',
-                        data: values,
+                        data: adjustedValues,
                         backgroundColor: CONFIG.colors.slice(0, labels.length),
-                        borderColor: CONFIG.colors.slice(0, labels.length).map(c => c.replace(')', ', 0.8)').replace('rgb', 'rgba')),
-                        borderWidth: 2,
-                        borderRadius: 6,
+                        borderColor: CONFIG.colors.slice(0, labels.length),
+                        borderWidth: 0,
+                        borderRadius: 8,
+                        borderSkipped: false,
+                        barPercentage: 0.8,
+                        categoryPercentage: 0.9,
                     }]
                 },
                 options: {
@@ -397,11 +463,26 @@ class CosturaChart extends ChartBase {
                     plugins: {
                         ...this.getBaseOptions().plugins,
                         legend: { display: false },
-                        tooltip: { ...this.getBaseOptions().plugins.tooltip, displayColors: false }
+                        tooltip: { 
+                            ...this.getBaseOptions().plugins.tooltip, 
+                            displayColors: false,
+                            callbacks: {
+                                label: (context) => `Entregas: ${values[context.dataIndex]}`
+                            }
+                        }
                     },
                     scales: {
-                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', font: { size: 10 } } },
-                        x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } }
+                        y: { 
+                            beginAtZero: true, 
+                            grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false }, 
+                            ticks: { color: '#94a3b8', font: { size: 9 }, padding: 8 },
+                            border: { display: false }
+                        },
+                        x: { 
+                            grid: { display: false, drawBorder: false }, 
+                            ticks: { color: '#94a3b8', font: { size: 9 }, maxRotation: 45, minRotation: 45 },
+                            border: { display: false }
+                        }
                     }
                 }
             });
@@ -442,19 +523,29 @@ class CorteChart extends ChartBase {
                     datasets: [{
                         data: data.map(d => d.total_etiquetadas),
                         backgroundColor: CONFIG.colors.slice(0, labels.length),
-                        borderColor: '#1a1d29',
-                        borderWidth: 3,
+                        borderColor: '#1f2937',
+                        borderWidth: 4,
+                        hoverBorderWidth: 4,
+                        hoverBorderColor: '#1f2937',
                     }]
                 },
                 options: {
                     ...this.getBaseOptions(),
-                    cutout: '70%',
+                    cutout: '65%',
                     plugins: {
                         ...this.getBaseOptions().plugins,
                         legend: {
                             display: true,
                             position: 'bottom',
-                            labels: { color: '#94a3b8', font: { size: 10 }, padding: 10, boxWidth: 12, boxHeight: 12 }
+                            labels: { 
+                                color: '#94a3b8', 
+                                font: { size: 9 }, 
+                                padding: 10, 
+                                boxWidth: 12, 
+                                boxHeight: 12,
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
                         },
                         tooltip: {
                             ...this.getBaseOptions().plugins.tooltip,

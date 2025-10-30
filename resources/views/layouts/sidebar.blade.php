@@ -44,7 +44,7 @@
         <button class="menu-link submenu-toggle {{ (request()->routeIs('registros.index') || request()->routeIs('bodega.index')) ? 'active' : '' }}"
                 aria-label="Ver órdenes">
           <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
-          <span class="menu-label">Ordenes</span>
+          <span class="menu-label">Gestiónar Ordenes</span>
           <span class="material-symbols-rounded submenu-arrow" aria-hidden="true">expand_more</span>
         </button>
         <ul class="submenu">
@@ -101,6 +101,49 @@
           <span class="material-symbols-rounded" aria-hidden="true">table_chart</span>
           <span class="menu-label">Tableros</span>
         </a>
+      </li>
+
+      <li class="menu-item">
+        <button class="menu-link submenu-toggle"
+                aria-label="Ver vistas">
+          <span class="material-symbols-rounded" aria-hidden="true">visibility</span>
+          <span class="menu-label">Vistas</span>
+          <span class="material-symbols-rounded submenu-arrow" aria-hidden="true">expand_more</span>
+        </button>
+        <ul class="submenu">
+          <li class="submenu-item">
+            <a href="{{ route('vistas.index', ['tipo' => 'corte']) }}"
+               class="menu-link"
+               aria-label="Ver corte">
+              <span class="material-symbols-rounded" aria-hidden="true">content_cut</span>
+              <span class="menu-label">Corte</span>
+            </a>
+          </li>
+          <li class="submenu-item">
+            <a href="{{ route('vistas.index') }}"
+               class="menu-link"
+               aria-label="Ver producción">
+              <span class="material-symbols-rounded" aria-hidden="true">build</span>
+              <span class="menu-label">Producción</span>
+            </a>
+          </li>
+          <li class="submenu-item">
+            <a href="{{ route('vistas.index', ['tipo' => 'corte', 'origen' => 'bodega']) }}"
+               class="menu-link"
+               aria-label="Ver corte bodega">
+              <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
+              <span class="menu-label">Corte Bodega</span>
+            </a>
+          </li>
+          <li class="submenu-item">
+            <a href="{{ route('vistas.index', ['tipo' => 'bodega']) }}"
+               class="menu-link"
+               aria-label="Ver producción bodega">
+              <span class="material-symbols-rounded" aria-hidden="true">factory</span>
+              <span class="menu-label">Producción Bodega</span>
+            </a>
+          </li>
+        </ul>
       </li>
 
       @if(auth()->user()->role === 'admin')

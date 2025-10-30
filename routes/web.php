@@ -9,6 +9,7 @@ use App\Http\Controllers\ConfiguracionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EntregaController;
 use App\Http\Controllers\TablerosController;
+use App\Http\Controllers\VistasController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -46,8 +47,8 @@ Route::middleware(['auth'])->group(function () {
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/registros', [RegistroOrdenController::class, 'index'])->name('registros.index');
-    Route::get('/registros/{pedido}', [RegistroOrdenController::class, 'show'])->name('registros.show');
     Route::get('/registros/next-pedido', [RegistroOrdenController::class, 'getNextPedido'])->name('registros.next-pedido');
+    Route::get('/registros/{pedido}', [RegistroOrdenController::class, 'show'])->name('registros.show');
     Route::post('/registros', [RegistroOrdenController::class, 'store'])->name('registros.store');
     Route::post('/registros/validate-pedido', [RegistroOrdenController::class, 'validatePedido'])->name('registros.validatePedido');
     Route::patch('/registros/{pedido}', [RegistroOrdenController::class, 'update'])->name('registros.update');
@@ -55,9 +56,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/registros/update-status', [RegistroOrdenController::class, 'updateStatus'])->name('registros.updateStatus');
     Route::get('/registros/{pedido}/entregas', [RegistroOrdenController::class, 'getEntregas'])->name('registros.entregas');
     Route::get('/bodega', [RegistroBodegaController::class, 'index'])->name('bodega.index');
+    Route::get('/bodega/next-pedido', [RegistroBodegaController::class, 'getNextPedido'])->name('bodega.next-pedido');
     Route::get('/bodega/{pedido}', [RegistroBodegaController::class, 'show'])->name('bodega.show');
     Route::get('/bodega/{pedido}/entregas', [RegistroBodegaController::class, 'getEntregas'])->name('bodega.entregas');
-    Route::get('/bodega/next-pedido', [RegistroBodegaController::class, 'getNextPedido'])->name('bodega.next-pedido');
     Route::post('/bodega', [RegistroBodegaController::class, 'store'])->name('bodega.store');
     Route::post('/bodega/validate-pedido', [RegistroBodegaController::class, 'validatePedido'])->name('bodega.validatePedido');
     Route::patch('/bodega/{pedido}', [RegistroBodegaController::class, 'update'])->name('bodega.update');
@@ -82,6 +83,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/find-or-create-tela', [TablerosController::class, 'findOrCreateTela'])->name('find-or-create-tela');
     Route::get('/tableros/dashboard-tables-data', [TablerosController::class, 'getDashboardTablesData'])->name('tableros.dashboard-tables-data');
     Route::get('/tableros/get-seguimiento-data', [TablerosController::class, 'getSeguimientoData'])->name('tableros.get-seguimiento-data');
+    Route::get('/vistas', [VistasController::class, 'index'])->name('vistas.index');
+    Route::get('/api/vistas/search', [VistasController::class, 'search'])->name('api.vistas.search');
 });
 
 require __DIR__.'/auth.php';
