@@ -244,7 +244,7 @@
     display: flex;
     align-items: center;
     gap: 0.8rem;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
 }
 
 .filter-type-group {
@@ -274,6 +274,7 @@
     display: flex;
     gap: 0.5rem;
     align-items: center;
+    flex-wrap: wrap;
 }
 
 .date-inputs-inline input[type="date"],
@@ -286,7 +287,8 @@
     font-size: 13px;
     cursor: pointer;
     transition: all 0.2s;
-    min-width: 140px;
+    min-width: 120px;
+    flex: 1;
 }
 
 .date-inputs-inline input:hover {
@@ -306,13 +308,14 @@
     background: linear-gradient(135deg, #f97316, #ea580c);
     color: white;
     border: none;
-    padding: 0.55rem 1.2rem;
+    padding: 0.55rem 1rem;
     border-radius: 8px;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
     white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .btn-apply:hover {
@@ -325,14 +328,14 @@
     background: linear-gradient(135deg, #6b7280, #4b5563);
     color: white;
     border: none;
-    padding: 0.55rem 1.2rem;
+    padding: 0.55rem 0.8rem;
     border-radius: 8px;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
     white-space: nowrap;
-    margin-left: 0.5rem;
+    flex-shrink: 0;
 }
 
 .btn-clear:hover {
@@ -433,14 +436,70 @@
 }
 
 /* === Responsive === */
-@media (max-width: 1024px) {
+@media (max-width: 1400px) {
+    .filters-row {
+        flex-wrap: wrap;
+        gap: 0.6rem;
+    }
+    
+    .filter-select {
+        min-width: 130px;
+        font-size: 12px;
+    }
+    
+    .date-inputs-inline input[type="date"],
+    .date-inputs-inline input[type="month"] {
+        min-width: 130px;
+        font-size: 12px;
+    }
+    
+    .btn-apply,
+    .btn-clear {
+        padding: 0.5rem 1rem;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 1300px) {
+    .date-inputs-inline {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .date-inputs-inline input[type="date"],
+    .date-inputs-inline input[type="month"] {
+        width: 100%;
+    }
+}
+
+@media (max-width: 1200px) {
     .top-controls {
         flex-wrap: wrap;
+        gap: 1rem;
     }
     
     .date-selector-section {
         width: 100%;
+        align-items: flex-start;
+    }
+    
+    .filters-row {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 1024px) {
+    .top-controls {
+        padding: 0.8rem;
+    }
+    
+    .date-selector-section {
         align-items: center;
+    }
+    
+    .filters-row {
+        justify-content: center;
     }
     
     .calendar-container {
@@ -452,6 +511,7 @@
     .top-controls {
         flex-direction: column;
         align-items: stretch;
+        gap: 0.8rem;
     }
     
     .action-icons {
@@ -463,25 +523,81 @@
     }
     
     .filters-row {
-        flex-wrap: wrap;
-        justify-content: center;
+        flex-direction: column;
+        gap: 0.6rem;
     }
     
+    .filter-type-group,
     .date-inputs-inline {
-        flex-direction: column;
         width: 100%;
     }
     
+    .filter-select,
+    .date-inputs-inline input {
+        width: 100%;
+        min-width: unset;
+    }
+    
+    .btn-apply,
+    .btn-clear {
+        width: 100%;
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 900px) {
+    .btn-apply,
+    .btn-clear {
+        padding: 0.5rem 0.9rem;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 640px) {
+    .filters-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+    
+    .filter-type-group,
+    .date-inputs-inline {
+        width: 100%;
+    }
+    
+    .filter-select,
     .date-inputs-inline input {
         width: 100%;
     }
     
-    .btn-apply {
+    .btn-apply,
+    .btn-clear {
         width: 100%;
+        margin-left: 0 !important;
     }
 }
 
 @media (max-width: 480px) {
+    .top-controls {
+        padding: 0.6rem;
+    }
+    
+    .icon-btn {
+        padding: 0.5rem;
+    }
+    
+    .filter-select,
+    .date-inputs-inline input {
+        font-size: 11px;
+        padding: 0.4rem 0.6rem;
+    }
+    
+    .btn-apply,
+    .btn-clear {
+        font-size: 11px;
+        padding: 0.45rem 0.8rem;
+    }
+    
     .calendar-wrapper {
         max-width: 280px;
         padding: 10px;
