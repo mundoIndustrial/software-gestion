@@ -9,4 +9,4 @@
 </div>
 
 <!-- Espacio adicional -->
-<div class="spacer-section"></div>
+<div class="spacer-section" x-show="!showRecords"></div>

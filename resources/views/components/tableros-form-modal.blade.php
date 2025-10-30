@@ -33,7 +33,7 @@
                         <div class="form-group">
                             <label class="form-label">
                                 <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" stroke-width="2" stroke-linecap="round"/>
+                                    <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" stroke-width="2" stroke-linecap="round"/>
                                 </svg>
                                 Módulo *
                             </label>
@@ -68,7 +68,14 @@
                             ✅ Seleccionar todas
                         </button>
                         <button type="button" class="btn-deseleccionar-todas" onclick="deseleccionarTodasHoras()">
-                        </button>
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+class="lucide lucide-trash-icon lucide-trash">
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+            <path d="M3 6h18"/>
+            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        </svg>
+    </button>
                     </div>
                     <div class="horas-seleccionadas" id="horasSeleccionadas" style="display: none;">
                         <strong>Horas seleccionadas:</strong>
@@ -94,8 +101,11 @@
                         <div class="form-group">
                             <label class="form-label">
                                 <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" stroke-width="2" stroke-linecap="round"/>
-                                </svg>
+    <line x1="10" y1="2" x2="14" y2="2" stroke-width="2" stroke-linecap="round"/>
+    <line x1="12" y1="14" x2="15" y2="11" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="12" cy="14" r="8" stroke-width="2"/>
+</svg>
+
                                 Porción de Tiempo *
                             </label>
                             <select name="porcion_tiempo" class="form-select" required>
@@ -115,9 +125,14 @@
 
                         <div class="form-group">
                             <label class="form-label">
-                                <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" stroke-width="2" stroke-linecap="round"/>
-                                </svg>
+<svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <rect x="4" y="2" width="16" height="20" rx="2" stroke-width="2"/>
+    <line x1="8" y1="6" x2="16" y2="6" stroke-width="2" stroke-linecap="round"/>
+    <line x1="16" y1="14" x2="16" y2="18" stroke-width="2" stroke-linecap="round"/>
+    <path d="M16 10h.01M12 10h.01M8 10h.01M12 14h.01M8 14h.01M12 18h.01M8 18h.01" stroke-width="2" stroke-linecap="round"/>
+</svg>
+
+
                                 Cantidad Producida
                             </label>
                             <input type="number" name="cantidad" class="form-input" />
@@ -125,10 +140,13 @@
 
                         <div class="form-group">
                             <label class="form-label">
-                                <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                                    <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-width="2" stroke-linecap="round"/>
-                                </svg>
+<svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <path d="M14 2v4a2 2 0 0 0 2 2h4" stroke-width="2" stroke-linecap="round"/>
+    <path d="M16 22h2a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v3" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="8" cy="16" r="6" stroke-width="2"/>
+    <path d="M8 14v2.2l1.6 1" stroke-width="2" stroke-linecap="round"/>
+</svg>
+
                                 Paradas Programadas *
                             </label>
                             <select name="paradas_programadas" class="form-select" required>
@@ -140,9 +158,13 @@
 
                         <div class="form-group">
                             <label class="form-label">
-                                <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" stroke-width="2" stroke-linecap="round"/>
-                                </svg>
+                               <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <path d="M12 6v6l4 2" stroke-width="2" stroke-linecap="round"/>
+    <path d="M20 12v5" stroke-width="2" stroke-linecap="round"/>
+    <path d="M20 21h.01" stroke-width="2" stroke-linecap="round"/>
+    <path d="M21.25 8.2A10 10 0 1 0 16 21.16" stroke-width="2" stroke-linecap="round"/>
+</svg>
+
                                 Paradas No Programadas
                             </label>
                             <input type="text" name="paradas_no_programadas" class="form-input" />
@@ -548,7 +570,7 @@
                     fecha: form.get("fecha"),
                     modulo: form.get("modulo"),
                     orden_produccion: form.get("orden_produccion"),
-                    hora: String(horaNum).padStart(2, '0') + ":00:00",
+                    hora: "HORA " + String(horaNum).padStart(2, '0'),
                     tiempo_ciclo: parseFloat(form.get("tiempo_ciclo")),
                     porcion_tiempo: parseFloat(form.get("porcion_tiempo")),
                     cantidad: form.get("cantidad") ? parseInt(form.get("cantidad")) : null,

@@ -1,88 +1,232 @@
-@props(['section' => 'produccion'])
+@props(['section' => 'produccion', 'registros' => collect()])
 
 @php
-    // Lógica para determinar el modelo basado en la sección
-    $model = match($section) {
-        'produccion' => \App\Models\RegistroPisoProduccion::class,
-        'polos' => \App\Models\RegistroPisoPolo::class,
-        'corte' => \App\Models\RegistroPisoProduccion::class,
-        default => \App\Models\RegistroPisoProduccion::class,
-    };
+    // Obtener módulos únicos de los registros y ordenarlos
+    $modulosDisponibles = $registros->pluck('modulo')->unique()->values()->toArray();
+    
+    // Normalizar los nombres de módulos (trim espacios, uppercase consistente)
+    $modulosDisponibles = array_map(function($mod) {
+        return strtoupper(trim($mod));
+    }, $modulosDisponibles);
+    
+    // Remover duplicados después de normalizar
+    $modulosDisponibles = array_unique($modulosDisponibles);
+    
+    // Ordenar los módulos
+    sort($modulosDisponibles);
+    
+    // Si no hay módulos dinámicos, usar los módulos por defecto
+    if (empty($modulosDisponibles)) {
+        $modulosDisponibles = ['MÓDULO 1', 'MÓDULO 2', 'MÓDULO 3'];
+    }
 
-    // Obtener fechas del request o usar valores por defecto
-    $startDate = request('start_date', now()->format('Y-m-d'));
-    $endDate = request('end_date', now()->format('Y-m-d'));
+    // Log para debugging (opcional - puedes comentar después)
+    // dd(['modulos' => $modulosDisponibles, 'registros_count' => $registros->count()]);
 
-    // Obtener registros para el rango de fechas
-    $registros = $model::whereBetween('fecha', [$startDate, $endDate])->get();
-
-    // Agrupar por hora
+    // Inicializar estructuras de datos
     $dataPorHora = [];
     $totales = ['modulos' => []];
 
-    $modulosDisponibles = ['MÓDULO 1', 'MÓDULO 2', 'MÓDULO 3'];
-
-    foreach ($registros as $registro) {
-        $hora = 'HORA ' . str_pad($registro->hora, 2, '0', STR_PAD_LEFT);
-        if (!isset($dataPorHora[$hora])) {
-            $dataPorHora[$hora] = ['modulos' => []];
-        }
-
-        $modulo = $registro->modulo;
-        if (!isset($dataPorHora[$hora]['modulos'][$modulo])) {
-            $dataPorHora[$hora]['modulos'][$modulo] = ['meta' => 0, 'eficiencia' => 0, 'prendas' => 0, 'count' => 0];
-        }
-
-        $dataPorHora[$hora]['modulos'][$modulo]['meta'] += $registro->meta ?? 0;
-        $dataPorHora[$hora]['modulos'][$modulo]['eficiencia'] += $registro->eficiencia ?? 0;
-        $dataPorHora[$hora]['modulos'][$modulo]['prendas'] += $registro->cantidad ?? 0;
-        $dataPorHora[$hora]['modulos'][$modulo]['count']++;
-
-        if (!isset($totales['modulos'][$modulo])) {
-            $totales['modulos'][$modulo] = ['meta' => 0, 'eficiencia' => 0, 'prendas' => 0, 'count' => 0];
-        }
-        $totales['modulos'][$modulo]['meta'] += $registro->meta ?? 0;
-        $totales['modulos'][$modulo]['eficiencia'] += $registro->eficiencia ?? 0;
-        $totales['modulos'][$modulo]['prendas'] += $registro->cantidad ?? 0;
-        $totales['modulos'][$modulo]['count']++;
+    // INICIALIZAR todos los módulos en totales
+    foreach ($modulosDisponibles as $modulo) {
+        $totales['modulos'][$modulo] = [
+            'prendas' => 0,
+            'tiempo_ciclo_sum' => 0,
+            'numero_operarios_sum' => 0,
+            'porcion_tiempo_sum' => 0,
+            'tiempo_parada_no_programada_sum' => 0,
+            'tiempo_para_programada_sum' => 0,
+            'count' => 0,
+            'meta_sum' => 0
+        ];
     }
 
-    // Calcular promedios para eficiencia
+    // Procesar cada registro
+    foreach ($registros as $registro) {
+        // Normalizar el nombre del módulo del registro
+        $modulo = strtoupper(trim($registro->modulo));
+        
+        // Normalizar hora a formato "HORA XX"
+        $horaNum = (int) preg_replace('/\D/', '', $registro->hora);
+        $hora = 'HORA ' . str_pad($horaNum, 2, '0', STR_PAD_LEFT);
+        
+        // Inicializar hora si no existe
+        if (!isset($dataPorHora[$hora])) {
+            $dataPorHora[$hora] = ['modulos' => []];
+            // Pre-inicializar todos los módulos para esta hora
+            foreach ($modulosDisponibles as $mod) {
+                $dataPorHora[$hora]['modulos'][$mod] = [
+                    'prendas' => 0,
+                    'tiempo_ciclo_sum' => 0,
+                    'numero_operarios_sum' => 0,
+                    'porcion_tiempo_sum' => 0,
+                    'tiempo_parada_no_programada_sum' => 0,
+                    'tiempo_para_programada_sum' => 0,
+                    'count' => 0
+                ];
+            }
+        }
+
+        // Verificar que el módulo exista en modulosDisponibles
+        if (!in_array($modulo, $modulosDisponibles)) {
+            // Si el módulo no existe, agregarlo dinámicamente
+            $modulosDisponibles[] = $modulo;
+            $totales['modulos'][$modulo] = [
+                'prendas' => 0,
+                'tiempo_ciclo_sum' => 0,
+                'numero_operarios_sum' => 0,
+                'porcion_tiempo_sum' => 0,
+                'tiempo_parada_no_programada_sum' => 0,
+                'tiempo_para_programada_sum' => 0,
+                'count' => 0,
+                'meta_sum' => 0
+            ];
+            
+            // Inicializar en todas las horas existentes
+            foreach ($dataPorHora as $h => &$hData) {
+                $hData['modulos'][$modulo] = [
+                    'prendas' => 0,
+                    'tiempo_ciclo_sum' => 0,
+                    'numero_operarios_sum' => 0,
+                    'porcion_tiempo_sum' => 0,
+                    'tiempo_parada_no_programada_sum' => 0,
+                    'tiempo_para_programada_sum' => 0,
+                    'count' => 0
+                ];
+            }
+        }
+
+        // Acumular datos por hora y módulo
+        $dataPorHora[$hora]['modulos'][$modulo]['prendas'] += floatval($registro->cantidad ?? 0);
+        $dataPorHora[$hora]['modulos'][$modulo]['tiempo_ciclo_sum'] += floatval($registro->tiempo_ciclo ?? 0);
+        $dataPorHora[$hora]['modulos'][$modulo]['numero_operarios_sum'] += floatval($registro->numero_operarios ?? 0);
+        $dataPorHora[$hora]['modulos'][$modulo]['porcion_tiempo_sum'] += floatval($registro->porcion_tiempo ?? 0);
+        $dataPorHora[$hora]['modulos'][$modulo]['tiempo_parada_no_programada_sum'] += floatval($registro->tiempo_parada_no_programada ?? 0);
+        $dataPorHora[$hora]['modulos'][$modulo]['tiempo_para_programada_sum'] += floatval($registro->tiempo_para_programada ?? 0);
+        $dataPorHora[$hora]['modulos'][$modulo]['count']++;
+
+        // Acumular totales generales
+        $totales['modulos'][$modulo]['prendas'] += floatval($registro->cantidad ?? 0);
+        $totales['modulos'][$modulo]['tiempo_ciclo_sum'] += floatval($registro->tiempo_ciclo ?? 0);
+        $totales['modulos'][$modulo]['numero_operarios_sum'] += floatval($registro->numero_operarios ?? 0);
+        $totales['modulos'][$modulo]['porcion_tiempo_sum'] += floatval($registro->porcion_tiempo ?? 0);
+        $totales['modulos'][$modulo]['tiempo_parada_no_programada_sum'] += floatval($registro->tiempo_parada_no_programada ?? 0);
+        $totales['modulos'][$modulo]['tiempo_para_programada_sum'] += floatval($registro->tiempo_para_programada ?? 0);
+        $totales['modulos'][$modulo]['count']++;
+
+        // Calcular meta por registro y sumar
+        $tiempo_disponible_registro = (3600 * floatval($registro->porcion_tiempo) * floatval($registro->numero_operarios)) 
+            - floatval($registro->tiempo_parada_no_programada ?? 0) 
+            - floatval($registro->tiempo_para_programada ?? 0);
+        $meta_registro = floatval($registro->tiempo_ciclo) > 0 ? ($tiempo_disponible_registro / floatval($registro->tiempo_ciclo)) * 0.9 : 0;
+        $totales['modulos'][$modulo]['meta_sum'] += $meta_registro;
+    }
+
+    // Calcular meta y eficiencia por hora
     foreach ($dataPorHora as $hora => &$data) {
         foreach ($data['modulos'] as $modulo => &$modData) {
             if ($modData['count'] > 0) {
-                $modData['eficiencia'] = $modData['eficiencia'] / $modData['count'];
+                $avg_tiempo_ciclo = $modData['tiempo_ciclo_sum'] / $modData['count'];
+                $avg_numero_operarios = $modData['numero_operarios_sum'] / $modData['count'];
+                $avg_porcion_tiempo = $modData['porcion_tiempo_sum'] / $modData['count'];
+                $total_tiempo_parada_no_programada = $modData['tiempo_parada_no_programada_sum'];
+                $total_tiempo_para_programada = $modData['tiempo_para_programada_sum'];
+
+                $tiempo_disponible = (3600 * $avg_porcion_tiempo * $avg_numero_operarios) 
+                    - $total_tiempo_parada_no_programada 
+                    - $total_tiempo_para_programada;
+                $meta = $avg_tiempo_ciclo > 0 ? ($tiempo_disponible / $avg_tiempo_ciclo) * 0.9 : 0;
+                $eficiencia = $meta > 0 ? ($modData['prendas'] / $meta) : 0;
+
+                $modData['meta'] = $meta;
+                $modData['eficiencia'] = $eficiencia;
+            } else {
+                $modData['meta'] = 0;
+                $modData['eficiencia'] = 0;
             }
         }
     }
 
+    // Calcular totales finales
     foreach ($totales['modulos'] as $modulo => &$modData) {
         if ($modData['count'] > 0) {
-            $modData['eficiencia'] = $modData['eficiencia'] / $modData['count'];
+            $total_prendas = $modData['prendas'];
+            $total_meta = $modData['meta_sum'];
+            $eficiencia = $total_meta > 0 ? ($total_prendas / $total_meta) : 0;
+
+            $modData['meta'] = $total_meta;
+            $modData['eficiencia'] = $eficiencia;
+        } else {
+            $modData['meta'] = 0;
+            $modData['eficiencia'] = 0;
         }
     }
+
+    // Re-ordenar módulos alfabéticamente para consistencia en la visualización
+    ksort($modulosDisponibles);
 @endphp
 
 <style>
-/* Estilos sin cambios, solo se mantiene la estructura de la tabla y módulos */
-.seguimiento-table-wrapper {
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 16px;
+.records-table-container {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+    padding: 0;
     overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-    margin: 20px 0;
-    width: 100%;        /* se ajusta al ancho del div padre */
-    max-width: 900px;   /* ancho máximo deseado */
-    height: 100%;       /* se ajusta al alto del div padre */
-    max-height: 600px;  /* alto máximo deseado */
+    margin: 2rem 0 0 0;
 }
 
+.table-scroll-container {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: 600px;
+}
 
-.seguimiento-table-container {
-    width: 100%;
-    height: 100%;
-    overflow-x: auto; /* permite scroll horizontal */
-    overflow-y: hidden; /* desactiva scroll vertical */
+/* Scrollbar styles to match the records table */
+.table-scroll-container::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.table-scroll-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.table-scroll-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 107, 53, 0.5);
+    border-radius: 4px;
+}
+
+.table-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 107, 53, 0.7);
+}
+
+.table-scroll-container::-webkit-scrollbar-corner {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Custom scrollbar styles to match the theme */
+.seguimiento-table-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.seguimiento-table-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.seguimiento-table-container::-webkit-scrollbar-thumb {
+    background: rgba(255, 107, 53, 0.5);
+    border-radius: 4px;
+}
+
+.seguimiento-table-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 107, 53, 0.7);
+}
+
+.seguimiento-table-container::-webkit-scrollbar-corner {
+    background: rgba(255, 255, 255, 0.05);
 }
 
 .seguimiento-table { width: 100%; border-collapse: collapse; min-width: 1200px; table-layout: fixed; }
@@ -126,9 +270,13 @@
             </thead>
 
             <tbody>
-                @for($hora = 1; $hora <= 8; $hora++)
+                @php
+                    $horasOrdenadas = array_keys($dataPorHora);
+                    sort($horasOrdenadas);
+                    $horasOrdenadas = array_slice($horasOrdenadas, 0, 12);
+                @endphp
+                @foreach($horasOrdenadas as $horaKey)
                     @php
-                        $horaKey = 'HORA ' . str_pad($hora, 2, '0', STR_PAD_LEFT);
                         $horaData = $dataPorHora[$horaKey] ?? ['modulos' => []];
                     @endphp
                     <tr class="seguimiento-tr">
@@ -137,10 +285,10 @@
                             @php
                                 $modData = $horaData['modulos'][$modulo] ?? ['meta'=>0,'eficiencia'=>0,'prendas'=>0];
                                 $eficiencia = $modData['eficiencia'];
-                                $eficienciaClass = $modData['prendas'] > 0 
-                                    ? (($eficiencia >= 1.10) ? 'seguimiento-blue' 
-                                    : (($eficiencia >= 0.98) ? 'seguimiento-green' 
-                                    : (($eficiencia >= 0.70) ? 'seguimiento-orange' : 'seguimiento-red'))) 
+                                $eficienciaClass = $modData['prendas'] > 0
+                                    ? (($eficiencia > 1.00) ? 'seguimiento-blue'
+                                    : (($eficiencia >= 0.80) ? 'seguimiento-green'
+                                    : (($eficiencia >= 0.70) ? 'seguimiento-orange' : 'seguimiento-red')))
                                     : 'seguimiento-gray';
                             @endphp
                             <td class="seguimiento-td">{{ number_format($modData['prendas'], 0) }}</td>
@@ -148,7 +296,7 @@
                             <td class="seguimiento-td seguimiento-efficiency-cell {{ $eficienciaClass }}">{{ $modData['prendas'] > 0 ? number_format($modData['eficiencia'] * 100, 2) . '%' : '0.00%' }}</td>
                         @endforeach
                     </tr>
-                @endfor
+                @endforeach
 
                 <tr class="seguimiento-total-row">
                     <td class="seguimiento-td seguimiento-hora-cell">Suma total</td>
@@ -156,10 +304,10 @@
                         @php
                             $modTotal = $totales['modulos'][$modulo] ?? ['meta'=>0,'eficiencia'=>0,'prendas'=>0];
                             $eficiencia = $modTotal['eficiencia'];
-                            $eficienciaClass = $modTotal['prendas'] > 0 
-                                ? (($eficiencia >= 1.10) ? 'seguimiento-blue' 
-                                : (($eficiencia >= 0.98) ? 'seguimiento-green' 
-                                : (($eficiencia >= 0.70) ? 'seguimiento-orange' : 'seguimiento-red'))) 
+                            $eficienciaClass = $modTotal['prendas'] > 0
+                                ? (($eficiencia > 1.00) ? 'seguimiento-blue'
+                                : (($eficiencia >= 0.80) ? 'seguimiento-green'
+                                : (($eficiencia >= 0.70) ? 'seguimiento-orange' : 'seguimiento-red')))
                                 : 'seguimiento-gray';
                         @endphp
                         <td class="seguimiento-td">{{ number_format($modTotal['prendas'], 0) }}</td>
@@ -174,19 +322,19 @@
 
 <div class="seguimiento-legend">
     <div class="seguimiento-legend-item">
-        <div class="seguimiento-legend-color seguimiento-green"></div>
-        <span>98-110% Eficiencia</span>
-    </div>
-    <div class="seguimiento-legend-item">
         <div class="seguimiento-legend-color seguimiento-blue"></div>
-        <span>110%+ Eficiencia</span>
+        <span>100%+ Eficiencia</span>
     </div>
     <div class="seguimiento-legend-item">
-        <div class="seguimiento-legend-color seguimiento-red"></div>
-        <span>Bajo 70% Eficiencia</span>
+        <div class="seguimiento-legend-color seguimiento-green"></div>
+        <span>80-100% Eficiencia</span>
     </div>
     <div class="seguimiento-legend-item">
         <div class="seguimiento-legend-color seguimiento-orange"></div>
-        <span>70-98% Eficiencia</span>
+        <span>70-79% Eficiencia</span>
+    </div>
+    <div class="seguimiento-legend-item">
+        <div class="seguimiento-legend-color seguimiento-red"></div>
+        <span>≤ 70% Eficiencia</span>
     </div>
 </div>

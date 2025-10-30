@@ -38,16 +38,14 @@
     </div>
 
     <div class="tab-content">
-        <div x-show="activeTab === 'produccion'">
+        <div x-show="activeTab === 'produccion'" class="chart-placeholder">
             <!-- Date selector and action buttons above the seguimiento component -->
-            <div class="controls-section">
-                @include('components.date-selector')
-                @include('components.action-buttons')
-            </div>
+            @include('components.date-selector')
+            @include('components.action-buttons')
 
             <!-- Seguimiento módulos (visible by default) -->
             <div x-show="!showRecords">
-                @include('components.seguimiento-modulos', ['section' => 'produccion'])
+                @include('components.seguimiento-modulos', ['section' => 'produccion', 'registros' => $registros])
             </div>
 
             <!-- Tabla de registros (hidden by default) -->
@@ -72,7 +70,7 @@
                                         if ($column === 'fecha' && $value) {
                                             $displayValue = $value->format('d/m/Y');
                                         } elseif ($column === 'hora' && $value) {
-                                            $displayValue = $value->format('H:i');
+                                            $displayValue = $value;
                                         } elseif ($column === 'eficiencia' && $value) {
                                             $displayValue = $value . '%';
                                         }
@@ -103,16 +101,14 @@
             </div>
         </div>
 
-        <div x-show="activeTab === 'polos'">
+        <div x-show="activeTab === 'polos'" class="chart-placeholder">
             <!-- Date selector and action buttons above the seguimiento component -->
-            <div class="controls-section">
-                @include('components.date-selector')
-                @include('components.action-buttons')
-            </div>
+            @include('components.date-selector')
+            @include('components.action-buttons')
 
             <!-- Seguimiento módulos (visible by default) -->
             <div x-show="!showRecords">
-                @include('components.seguimiento-modulos', ['section' => 'polos'])
+                @include('components.seguimiento-modulos', ['section' => 'polos', 'registros' => $registrosPolos])
             </div>
 
             <!-- Tabla de registros (hidden by default) -->
@@ -137,7 +133,7 @@
                                         if ($column === 'fecha' && $value) {
                                             $displayValue = $value->format('d/m/Y');
                                         } elseif ($column === 'hora' && $value) {
-                                            $displayValue = $value->format('H:i');
+                                            $displayValue = $value;
                                         } elseif ($column === 'eficiencia' && $value) {
                                             $displayValue = $value . '%';
                                         }
@@ -168,16 +164,14 @@
             </div>
         </div>
 
-        <div x-show="activeTab === 'corte'">
+        <div x-show="activeTab === 'corte'" class="chart-placeholder">
             <!-- Date selector and action buttons above the seguimiento component -->
-            <div class="controls-section">
-                @include('components.date-selector')
-                @include('components.action-buttons')
-            </div>
+            @include('components.date-selector')
+            @include('components.action-buttons')
 
             <!-- Seguimiento módulos (visible by default) -->
             <div x-show="!showRecords">
-                @include('components.seguimiento-modulos', ['section' => 'corte'])
+                @include('components.seguimiento-modulos', ['section' => 'corte', 'registros' => $registrosCorte])
             </div>
 
             <!-- Tabla de registros (hidden by default) -->
@@ -193,16 +187,16 @@
                             </tr>
                         </thead>
                         <tbody class="table-body">
-                            @foreach($registrosCorte ?? [] as $registro)
+                            @foreach($registrosCorte as $registro)
                             <tr class="table-row" data-id="{{ $registro->id }}">
-                                @foreach($columnsCorte ?? [] as $column)
+                                @foreach($columnsCorte as $column)
                                     @php
                                         $value = $registro->$column;
                                         $displayValue = $value;
                                         if ($column === 'fecha' && $value) {
                                             $displayValue = $value->format('d/m/Y');
                                         } elseif ($column === 'hora' && $value) {
-                                            $displayValue = $value->format('H:i');
+                                            $displayValue = $value;
                                         } elseif ($column === 'eficiencia' && $value) {
                                             $displayValue = $value . '%';
                                         }
@@ -222,21 +216,15 @@
                 </div>
 
                 <!-- Paginación -->
+                <!-- Paginación -->
                 <div class="table-pagination">
                     <div class="pagination-info">
-                        @php
-                            $corteCollection = $registrosCorte ?? collect();
-                            $total = method_exists($corteCollection, 'total') ? $corteCollection->total() : $corteCollection->count();
-                            $firstItem = method_exists($corteCollection, 'firstItem') ? $corteCollection->firstItem() : 1;
-                            $lastItem = method_exists($corteCollection, 'lastItem') ? $corteCollection->lastItem() : $total;
-                        @endphp
-                        <span>Mostrando {{ $firstItem }}-{{ $lastItem }} de {{ $total }} registros</span>
+                        <span>Mostrando {{ $registrosCorte->firstItem() }}-{{ $registrosCorte->lastItem() }} de {{ $registrosCorte->total() }} registros</span>
                     </div>
                     <div class="pagination-controls">
-                        @if(method_exists($corteCollection, 'appends'))
-                            {{ $corteCollection->appends(request()->query())->links() }}
-                        @endif
+                        {{ $registrosCorte->appends(request()->query())->links() }}
                     </div>
+                </div>
             </div>
         </div>
     </div>
@@ -282,8 +270,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const tr = document.createElement('tr');
             tr.className = 'table-row';
             tr.setAttribute('data-id', registro.id);
-
-
 
             columns.forEach(column => {
                 const td = document.createElement('td');
@@ -347,32 +333,39 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Función para hacer celdas editables con doble click
-    const editableCells = document.querySelectorAll('.editable-cell');
-    console.log('Celdas editables encontradas:', editableCells.length);
-    editableCells.forEach(cell => {
-        console.log('Registrando evento dblclick para celda:', cell);
-        cell.addEventListener('dblclick', function() {
-            console.log('Doble clic detectado en celda');
-            currentCell = this;
-            currentRowId = this.closest('tr').dataset.id;
-            currentColumn = this.dataset.column;
-
-            const currentValue = this.dataset.value || this.textContent.trim();
-            console.log('Valor actual:', currentValue);
-            const modal = document.getElementById('editCellModal');
-            console.log('Modal encontrado:', !!modal);
-            if (modal) {
-                modal.style.display = 'flex';
-                modal.style.opacity = '1';
-                modal.style.visibility = 'visible';
-                document.getElementById('editCellInput').value = currentValue;
-                document.getElementById('editCellInput').focus();
-                document.getElementById('editCellInput').select();
-            } else {
-                console.error('Modal no encontrado');
-            }
+    function attachEditableCellListeners() {
+        const editableCells = document.querySelectorAll('.editable-cell');
+        console.log('Celdas editables encontradas:', editableCells.length);
+        editableCells.forEach(cell => {
+            cell.removeEventListener('dblclick', handleCellDoubleClick);
+            cell.addEventListener('dblclick', handleCellDoubleClick);
         });
-    });
+    }
+
+    function handleCellDoubleClick() {
+        console.log('Doble clic detectado en celda');
+        currentCell = this;
+        currentRowId = this.closest('tr').dataset.id;
+        currentColumn = this.dataset.column;
+
+        const currentValue = this.dataset.value || this.textContent.trim();
+        console.log('Valor actual:', currentValue);
+        const modal = document.getElementById('editCellModal');
+        console.log('Modal encontrado:', !!modal);
+        if (modal) {
+            modal.style.display = 'flex';
+            modal.style.opacity = '1';
+            modal.style.visibility = 'visible';
+            document.getElementById('editCellInput').value = currentValue;
+            document.getElementById('editCellInput').focus();
+            document.getElementById('editCellInput').select();
+        } else {
+            console.error('Modal no encontrado');
+        }
+    }
+
+    // Inicializar event listeners
+    attachEditableCellListeners();
 
     // Guardar cambios
     document.getElementById('saveEdit').addEventListener('click', saveCellEdit);

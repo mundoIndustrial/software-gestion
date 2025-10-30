@@ -1,5 +1,5 @@
 <!-- Controls section component -->
-<div class="controls-section">
+<div class="controls-section" x-show="!showRecords">
     @include('components.date-selector')
     @include('components.action-buttons')
 </div>

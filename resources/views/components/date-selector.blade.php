@@ -1,5 +1,5 @@
 <!-- Date selector component -->
-<div class="date-selector-section">
+<div class="date-selector-section" x-show="!showRecords">
     <div class="date-input-group">
         <label>Fecha inicio</label>
         <input type="date" id="startDate" value="{{ request('start_date', now()->format('Y-m-d')) }}">
@@ -12,16 +12,19 @@
 </div>
 
 <style>
-    .date-selector-section {
-        display: flex;
-        gap: 15px;
-        align-items: flex-end;
-        margin-bottom: 20px;
-        padding: 20px;
-        background: rgba(255, 255, 255, 0.03);
-        border-radius: 12px;
-        flex-wrap: wrap;
-    }
+ .date-selector-section {
+    display: flex;
+    gap: 15px;
+    align-items: flex-end;
+    justify-content: center; /* CENTRA HORIZONTALMENTE */
+    margin: 20px auto; /* margen automático para centrar horizontalmente si es bloque */
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    flex-wrap: wrap;
+    max-width: 600px; /* opcional: limita el ancho del selector */
+}
+
 
     .date-input-group {
         display: flex;

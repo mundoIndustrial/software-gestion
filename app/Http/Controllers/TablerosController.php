@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use App\Models\RegistroPisoProduccion;
 use App\Models\RegistroPisoPolo;
+use App\Models\RegistroPisoCorte;
 
 class TablerosController extends Controller
 {
@@ -49,12 +50,33 @@ class TablerosController extends Controller
             $registro->save();
         }
 
+        $registrosCorte = RegistroPisoCorte::paginate(50);
+        $columnsCorte = Schema::getColumnListing('registro_piso_corte');
+        $columnsCorte = array_diff($columnsCorte, ['id', 'created_at', 'updated_at', 'producida']);
+
+        // Recalcular tiempo_disponible, meta y eficiencia para cada registro de corte
+        foreach ($registrosCorte as $registro) {
+            $tiempo_disponible = (3600 * $registro->porcion_tiempo * $registro->numero_operarios) -
+                               ($registro->tiempo_parada_no_programada ?? 0) -
+                               ($registro->tiempo_para_programada ?? 0);
+
+            $meta = $registro->tiempo_ciclo > 0 ? ($tiempo_disponible / $registro->tiempo_ciclo) * 0.9 : 0;
+            $eficiencia = $meta == 0 ? 0 : ($registro->cantidad / $meta);
+
+            $registro->tiempo_disponible = $tiempo_disponible;
+            $registro->meta = $meta;
+            $registro->eficiencia = $eficiencia;
+            $registro->save();
+        }
+
         if (request()->wantsJson()) {
             return response()->json([
                 'registros' => $registros->items(),
                 'columns' => array_values($columns),
                 'registrosPolos' => $registrosPolos->items(),
                 'columnsPolos' => array_values($columnsPolos),
+                'registrosCorte' => $registrosCorte->items(),
+                'columnsCorte' => array_values($columnsCorte),
                 'pagination' => [
                     'current_page' => $registros->currentPage(),
                     'last_page' => $registros->lastPage(),
@@ -66,11 +88,17 @@ class TablerosController extends Controller
                     'last_page' => $registrosPolos->lastPage(),
                     'per_page' => $registrosPolos->perPage(),
                     'total' => $registrosPolos->total()
+                ],
+                'paginationCorte' => [
+                    'current_page' => $registrosCorte->currentPage(),
+                    'last_page' => $registrosCorte->lastPage(),
+                    'per_page' => $registrosCorte->perPage(),
+                    'total' => $registrosCorte->total()
                 ]
             ]);
         }
 
-        return view('tableros', compact('registros', 'columns', 'registrosPolos', 'columnsPolos'));
+        return view('tableros', compact('registros', 'columns', 'registrosPolos', 'columnsPolos', 'registrosCorte', 'columnsCorte'));
     }
 
     public function store(Request $request)
@@ -92,12 +120,13 @@ class TablerosController extends Controller
             'registros.*.tiempo_para_programada' => 'nullable|numeric',
             'registros.*.meta' => 'nullable|numeric',
             'registros.*.eficiencia' => 'nullable|numeric',
-            'section' => 'required|string|in:produccion,polos',
+            'section' => 'required|string|in:produccion,polos,corte',
         ]);
 
         $model = match($request->section) {
             'produccion' => RegistroPisoProduccion::class,
             'polos' => RegistroPisoPolo::class,
+            'corte' => RegistroPisoCorte::class,
         };
 
         try {
@@ -149,12 +178,13 @@ class TablerosController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'section' => 'required|string|in:produccion,polos',
+            'section' => 'required|string|in:produccion,polos,corte',
         ]);
 
         $model = match($request->section) {
             'produccion' => RegistroPisoProduccion::class,
             'polos' => RegistroPisoPolo::class,
+            'corte' => RegistroPisoCorte::class,
         };
 
         $registro = $model::findOrFail($id);
@@ -220,6 +250,7 @@ class TablerosController extends Controller
         $model = match($section) {
             'produccion' => RegistroPisoProduccion::class,
             'polos' => RegistroPisoPolo::class,
+            'corte' => RegistroPisoCorte::class,
         };
 
         try {

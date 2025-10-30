@@ -16,7 +16,7 @@ return new class extends Migration
             $table->date('fecha');
             $table->string('modulo');
             $table->string('orden_produccion');
-            $table->time('hora');
+            $table->string('hora');
             $table->decimal('tiempo_ciclo', 8, 2);
             $table->decimal('porcion_tiempo', 8, 2);
             $table->integer('cantidad');
