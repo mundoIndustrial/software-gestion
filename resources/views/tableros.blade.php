@@ -44,7 +44,7 @@
             @include('components.top-controls')
             
             <!-- Seguimiento módulos (visible by default) -->
-            <div x-show="!showRecords">
+            <div x-show="!showRecords" id="seguimiento-container-produccion">
                 @include('components.seguimiento-modulos', ['section' => 'produccion', 'seguimiento' => $seguimientoProduccion])
             </div>
 
@@ -118,7 +118,7 @@
             @include('components.top-controls')
 
             <!-- Seguimiento módulos (visible by default) -->
-            <div x-show="!showRecords">
+            <div x-show="!showRecords" id="seguimiento-container-polos">
                 @include('components.seguimiento-modulos', ['section' => 'polos', 'seguimiento' => $seguimientoPolos])
             </div>
 
@@ -193,7 +193,7 @@
 
 
             <!-- Dashboard Tables Corte (visible by default) -->
-            <div x-show="!showRecords">
+            <div x-show="!showRecords" id="seguimiento-container-corte">
                 @include('components.dashboard-tables-corte')
             </div>
 
@@ -1058,20 +1058,68 @@ function getEficienciaClass(eficiencia) {
 window.updateDashboardTablesFromFilter = function(searchParams) {
     console.log('Actualizando tablas de seguimiento con filtros:', searchParams.toString());
     
+    // Detectar qué tablero está activo buscando el elemento visible
+    let currentSection = 'produccion'; // Default
+    
+    // Método 1: Buscar el tab-card con clase 'active'
+    const activeTabCard = document.querySelector('.tab-card.active');
+    if (activeTabCard) {
+        const tabText = activeTabCard.textContent.toLowerCase();
+        if (tabText.includes('produccion')) {
+            currentSection = 'produccion';
+        } else if (tabText.includes('polos')) {
+            currentSection = 'polos';
+        } else if (tabText.includes('corte')) {
+            currentSection = 'corte';
+        }
+        console.log('🎯 Tablero detectado por tab-card activo:', currentSection);
+    } else {
+        // Método 2: Buscar el contenedor visible (sin display: none)
+        const visibleTab = document.querySelector('.chart-placeholder:not([style*="display: none"])');
+        if (visibleTab) {
+            const xShow = visibleTab.getAttribute('x-show');
+            if (xShow) {
+                if (xShow.includes('produccion')) currentSection = 'produccion';
+                else if (xShow.includes('polos')) currentSection = 'polos';
+                else if (xShow.includes('corte')) currentSection = 'corte';
+            }
+        }
+        console.log('🎯 Tablero detectado por contenedor visible:', currentSection);
+    }
+    
     // Construir URL con filtros
     const url = new URL(window.location.origin + window.location.pathname);
     searchParams.forEach((value, key) => {
         url.searchParams.set(key, value);
     });
     
-    // Mostrar indicador de carga en las secciones de seguimiento
-    const seguimientoSections = document.querySelectorAll('.seguimiento-modulos, .seguimiento-horas, .seguimiento-operarios');
-    seguimientoSections.forEach(section => {
-        if (section) {
-            section.style.opacity = '0.5';
-            section.style.pointerEvents = 'none';
-        }
-    });
+    // Agregar parámetro de sección para que el backend sepa qué tablero filtrar
+    url.searchParams.set('active_section', currentSection);
+    
+    // Agregar parámetro para indicar que solo queremos el componente de seguimiento
+    url.searchParams.set('component_only', 'true');
+    
+    // Buscar el contenedor del componente de seguimiento por ID específico
+    const containerId = `seguimiento-container-${currentSection}`;
+    console.log(`🔍 Buscando contenedor con ID: ${containerId}`);
+    
+    const seguimientoContainer = document.getElementById(containerId);
+    
+    if (!seguimientoContainer) {
+        console.log(`❌ No se encontró contenedor de seguimiento para ${currentSection}`);
+        console.log('📋 Contenedores disponibles:', 
+            Array.from(document.querySelectorAll('[id^="seguimiento-container-"]')).map(el => el.id)
+        );
+        console.log('⚠️ Recargando página completa...');
+        window.location.href = url.toString();
+        return;
+    }
+    
+    console.log('✅ Contenedor de seguimiento encontrado:', seguimientoContainer);
+    
+    // Mostrar indicador de carga
+    seguimientoContainer.style.opacity = '0.5';
+    seguimientoContainer.style.pointerEvents = 'none';
     
     // Hacer petición AJAX
     fetch(url.toString(), {
@@ -1093,57 +1141,52 @@ window.updateDashboardTablesFromFilter = function(searchParams) {
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
         
-        // Actualizar cada sección de seguimiento
-        const newSeguimientoModulos = tempDiv.querySelector('.seguimiento-modulos');
-        const newSeguimientoHoras = tempDiv.querySelector('.seguimiento-horas');
-        const newSeguimientoOperarios = tempDiv.querySelector('.seguimiento-operarios');
+        // Buscar el nuevo contenedor de seguimiento en el HTML recibido por ID
+        const newContainerId = `seguimiento-container-${currentSection}`;
+        console.log(`🔍 Buscando nuevo contenedor con ID: ${newContainerId}`);
         
-        if (newSeguimientoModulos) {
-            const currentSeguimientoModulos = document.querySelector('.seguimiento-modulos');
-            if (currentSeguimientoModulos) {
-                currentSeguimientoModulos.innerHTML = newSeguimientoModulos.innerHTML;
-            }
+        const newSeguimientoContainer = tempDiv.querySelector(`#${newContainerId}`);
+        
+        if (!newSeguimientoContainer) {
+            console.log('❌ No se encontró nuevo contenedor en HTML recibido');
+            console.log('📋 IDs disponibles en HTML recibido:', 
+                Array.from(tempDiv.querySelectorAll('[id^="seguimiento-container-"]')).map(el => el.id)
+            );
         }
         
-        if (newSeguimientoHoras) {
-            const currentSeguimientoHoras = document.querySelector('.seguimiento-horas');
-            if (currentSeguimientoHoras) {
-                currentSeguimientoHoras.innerHTML = newSeguimientoHoras.innerHTML;
-            }
+        if (newSeguimientoContainer && seguimientoContainer) {
+            // Reemplazar el contenido completo del contenedor
+            console.log('🔄 Reemplazando contenido del contenedor...');
+            seguimientoContainer.innerHTML = newSeguimientoContainer.innerHTML;
+            console.log('✅ Componente de seguimiento actualizado completamente');
+            
+            // Restaurar opacidad
+            seguimientoContainer.style.opacity = '1';
+            seguimientoContainer.style.pointerEvents = 'auto';
+            
+            // Actualizar URL sin recargar
+            window.history.pushState({}, '', url.toString());
+            
+            console.log('✅ Filtro aplicado exitosamente');
+            return;
         }
         
-        if (newSeguimientoOperarios) {
-            const currentSeguimientoOperarios = document.querySelector('.seguimiento-operarios');
-            if (currentSeguimientoOperarios) {
-                currentSeguimientoOperarios.innerHTML = newSeguimientoOperarios.innerHTML;
-            }
-        }
-        
-        // Actualizar URL sin recargar
-        window.history.pushState({}, '', url.toString());
-        
-        // Restaurar opacidad
-        seguimientoSections.forEach(section => {
-            if (section) {
-                section.style.opacity = '1';
-                section.style.pointerEvents = 'auto';
-            }
-        });
-        
-        console.log('✅ Tablas de seguimiento actualizadas correctamente');
+        // Si no se encontró el nuevo contenedor, recargar la página
+        console.log('❌ No se pudo actualizar el componente, recargando página...');
+        window.location.href = url.toString();
     })
     .catch(error => {
         console.error('Error al aplicar filtros:', error);
         
         // Restaurar opacidad
-        seguimientoSections.forEach(section => {
-            if (section) {
-                section.style.opacity = '1';
-                section.style.pointerEvents = 'auto';
-            }
-        });
+        if (seguimientoContainer) {
+            seguimientoContainer.style.opacity = '1';
+            seguimientoContainer.style.pointerEvents = 'auto';
+        }
+        
+        alert('Error al aplicar filtros. Por favor, intenta de nuevo.');
     });
-};
+}
 
 // Función para actualizar tabla de seguimiento
 function updateSeguimientoTable(section, data) {

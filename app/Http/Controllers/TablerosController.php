@@ -43,10 +43,6 @@ class TablerosController extends Controller
 
         // NO recalcular en cada carga - solo cuando se crea/actualiza un registro
 
-        // Calcular datos dinámicos para las tablas de horas y operarios
-        $horasData = $this->calcularProduccionPorHoras($registrosCorte);
-        $operariosData = $this->calcularProduccionPorOperarios($registrosCorte);
-
         if (request()->wantsJson()) {
             return response()->json([
                 'registros' => $registros->items(),
@@ -96,15 +92,31 @@ class TablerosController extends Controller
         $todosRegistrosPolos = RegistroPisoPolo::all();
         $todosRegistrosCorte = RegistroPisoCorte::all();
 
-        // Filtrar registros por fecha para seguimiento
-        $registrosProduccionFiltrados = $this->filtrarRegistrosPorFecha($todosRegistrosProduccion, request());
-        $registrosPolosFiltrados = $this->filtrarRegistrosPorFecha($todosRegistrosPolos, request());
-        $registrosCorteFiltrados = $this->filtrarRegistrosPorFecha($todosRegistrosCorte, request());
+        // Filtrar registros por fecha SOLO para el tablero activo
+        $activeSection = request()->get('active_section', 'produccion');
+        
+        // Por defecto, usar todos los registros (sin filtro)
+        $registrosProduccionFiltrados = $todosRegistrosProduccion;
+        $registrosPolosFiltrados = $todosRegistrosPolos;
+        $registrosCorteFiltrados = $todosRegistrosCorte;
+        
+        // Aplicar filtro solo al tablero activo
+        if ($activeSection === 'produccion') {
+            $registrosProduccionFiltrados = $this->filtrarRegistrosPorFecha($todosRegistrosProduccion, request());
+        } elseif ($activeSection === 'polos') {
+            $registrosPolosFiltrados = $this->filtrarRegistrosPorFecha($todosRegistrosPolos, request());
+        } elseif ($activeSection === 'corte') {
+            $registrosCorteFiltrados = $this->filtrarRegistrosPorFecha($todosRegistrosCorte, request());
+        }
 
         // Calcular seguimiento de módulos con registros filtrados
         $seguimientoProduccion = $this->calcularSeguimientoModulos($registrosProduccionFiltrados);
         $seguimientoPolos = $this->calcularSeguimientoModulos($registrosPolosFiltrados);
         $seguimientoCorte = $this->calcularSeguimientoModulos($registrosCorteFiltrados);
+        
+        // Calcular datos dinámicos para las tablas de horas y operarios CON FILTROS
+        $horasData = $this->calcularProduccionPorHoras($registrosCorteFiltrados);
+        $operariosData = $this->calcularProduccionPorOperarios($registrosCorteFiltrados);
 
         // Obtener datos para selects en el formulario de corte
         $horas = Hora::all();
