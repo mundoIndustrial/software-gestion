@@ -330,73 +330,6 @@ class ModernTable {
             }
         });
 
-        // Configurar listener para localStorage events (comunicación entre pestañas)
-        const self = this;
-        window.addEventListener('storage', (event) => {
-            if (event.key === 'orders-updates') {
-                try {
-                    const data = JSON.parse(event.newValue);
-                    self.handleBroadcastMessage(data);
-                } catch (e) {
-                    console.error('Error parsing localStorage message:', e);
-                }
-            }
-        });
-
-        // Configurar listener para WebSocket broadcasts con Laravel Echo
-        if (window.Echo) {
-            console.log('🎧 Configurando listener de Laravel Echo para canal orders-updates-public');
-
-            // Agregar listeners de conexión para debugging
-            window.Echo.connector.pusher.connection.bind('connected', () => {
-                console.log('🔗 WebSocket conectado exitosamente');
-            });
-
-            window.Echo.connector.pusher.connection.bind('disconnected', () => {
-                console.log('🔌 WebSocket desconectado');
-            });
-
-            window.Echo.connector.pusher.connection.bind('error', (error) => {
-                console.error('❌ Error WebSocket:', error);
-            });
-
-            // Suscribirse al canal
-            const channel = window.Echo.channel('orders-updates-public');
-            console.log('📺 Canal suscrito:', channel);
-
-            channel.listen('order.updated', (e) => {
-                console.log('📡 ¡BROADCAST RECIBIDO! Datos:', e);
-                console.log('📡 Tipo de evento:', typeof e);
-                console.log('📡 Keys del evento:', Object.keys(e));
-                console.log('📡 orderId:', e.orderId, 'field:', e.field, 'newValue:', e.newValue);
-
-                self.handleBroadcastMessage({
-                    type: 'order_update',
-                    orderId: e.orderId,
-                    field: e.field,
-                    newValue: e.newValue,
-                    oldValue: e.oldValue,
-                    updatedFields: e.updatedFields,
-                    order: e.order,
-                    totalDiasCalculados: e.totalDiasCalculados
-                });
-            });
-
-            /*
-    // Cada 30 segundos revisa el estado del canal para verificar conexión (solo para debugging)
-    setInterval(() => {
-        console.log('🔍 Estado del canal:', {
-            subscribed: channel.subscribed,
-            pusher: window.Echo.connector.pusher.connection.state
-        });
-    }, 30000);
-*/
-
-
-        } else {
-            console.warn('⚠️ Laravel Echo no está disponible');
-        }
-
         this.setupModalEvents();
     }
 
@@ -649,22 +582,6 @@ class ModernTable {
                     }
                 }
 
-                // Enviar mensaje a otras pestañas usando localStorage
-                const timestamp = Date.now();
-                localStorage.setItem('orders-updates', JSON.stringify({
-                    type: 'cell_update',
-                    orderId: this.currentOrderId,
-                    field: this.currentColumn,
-                    newValue: newValue,
-                    oldValue: oldValue,
-                    updatedFields: data.updated_fields || {},
-                    order: data.order,
-                    totalDiasCalculados: data.totalDiasCalculados || {},
-                    timestamp: timestamp // Para evitar duplicados
-                }));
-                // Actualizar timestamp local para evitar procesar mensaje propio
-                localStorage.setItem('last-orders-update-timestamp', timestamp.toString());
-
                 this.closeCellModal();
             } else {
                 alert('Error al guardar los cambios');
@@ -711,22 +628,6 @@ class ModernTable {
             if (data.success) {
                 // Actualizar color de la fila dinámicamente
                 this.updateRowColor(orderId, newStatus);
-
-                // Enviar mensaje a otras pestañas usando localStorage
-                const timestamp = Date.now();
-                localStorage.setItem('orders-updates', JSON.stringify({
-                    type: 'status_update',
-                    orderId: orderId,
-                    field: 'estado',
-                    newValue: newStatus,
-                    oldValue: oldStatus,
-                    updatedFields: data.updated_fields || {},
-                    order: data.order,
-                    totalDiasCalculados: data.totalDiasCalculados || {},
-                    timestamp: timestamp // Para evitar duplicados
-                }));
-                // Actualizar timestamp local para evitar procesar mensaje propio
-                localStorage.setItem('last-orders-update-timestamp', timestamp.toString());
             } else {
                 console.error('Error actualizando:', data.message);
                 // Revertir cambio en caso de error
@@ -931,22 +832,6 @@ appendRowsToTable(orders, totalDiasCalculados) {
                         }
                     }
                 }
-
-                // Enviar mensaje a otras pestañas usando localStorage
-                const timestamp = Date.now();
-                localStorage.setItem('orders-updates', JSON.stringify({
-                    type: 'area_update',
-                    orderId: orderId,
-                    field: 'area',
-                    newValue: newArea,
-                    oldValue: oldArea,
-                    updatedFields: data.updated_fields || {},
-                    order: data.order,
-                    totalDiasCalculados: data.totalDiasCalculados || {},
-                    timestamp: timestamp // Para evitar duplicados
-                }));
-                // Actualizar timestamp local para evitar procesar mensaje propio
-                localStorage.setItem('last-orders-update-timestamp', timestamp.toString());
             } else {
                 console.error('Error actualizando área:', data.message);
                 // Revertir cambio en caso de error
@@ -957,76 +842,6 @@ appendRowsToTable(orders, totalDiasCalculados) {
             // Revertir cambio en caso de error
             dropdown.value = oldArea;
         }
-    }
-
-    handleBroadcastMessage(data) {
-        console.log('Recibido mensaje de localStorage:', data);
-
-        const { type, orderId, field, newValue, updatedFields, order, totalDiasCalculados, timestamp } = data;
-
-        // Evitar procesar mensajes propios (usando timestamp)
-        const lastTimestamp = parseInt(localStorage.getItem('last-orders-update-timestamp') || '0');
-        if (timestamp && timestamp <= lastTimestamp) {
-            console.log('Mensaje duplicado ignorado');
-            return;
-        }
-
-        // Actualizar timestamp para evitar duplicados
-        localStorage.setItem('last-orders-update-timestamp', timestamp.toString());
-
-        // Actualizar la fila específica
-        this.updateRowFromBroadcast(orderId, field, newValue, updatedFields, order, totalDiasCalculados);
-    }
-
-    updateRowFromBroadcast(orderId, field, newValue, updatedFields, order, totalDiasCalculados) {
-        const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
-        if (!row) {
-            console.warn(`Fila con orderId ${orderId} no encontrada`);
-            return;
-        }
-
-        // Actualizar el campo específico
-        if (field === 'estado') {
-            const estadoDropdown = row.querySelector('.estado-dropdown');
-            if (estadoDropdown) {
-                estadoDropdown.value = newValue;
-                estadoDropdown.dataset.value = newValue;
-                this.updateRowColor(orderId, newValue);
-            }
-        } else if (field === 'area') {
-            const areaDropdown = row.querySelector('.area-dropdown');
-            if (areaDropdown) {
-                areaDropdown.value = newValue;
-                areaDropdown.dataset.value = newValue;
-            }
-        } else {
-            // Para otros campos (celdas editables)
-            const cell = row.querySelector(`td[data-column="${field}"] .cell-text`);
-            if (cell) {
-                cell.textContent = newValue;
-                cell.closest('.cell-content').title = newValue;
-            }
-        }
-
-        // Actualizar campos relacionados (fechas, etc.)
-        if (updatedFields) {
-            for (const [updateField, updateValue] of Object.entries(updatedFields)) {
-                const updateCell = row.querySelector(`td[data-column="${updateField}"] .cell-text`);
-                if (updateCell) {
-                    updateCell.textContent = updateValue;
-                }
-            }
-        }
-
-        // Actualizar total_de_dias_ si viene en totalDiasCalculados
-        if (totalDiasCalculados && totalDiasCalculados[orderId] !== undefined) {
-            const totalDiasCell = row.querySelector('td[data-column="total_de_dias_"] .cell-text');
-            if (totalDiasCell) {
-                totalDiasCell.textContent = totalDiasCalculados[orderId];
-            }
-        }
-
-        console.log(`Fila ${orderId} actualizada desde localStorage: ${field} = ${newValue}`);
     }
 
     async loadPageFromUrl(href) {

@@ -24,86 +24,140 @@
         </div>
 
         <div id="results-container">
-            @if($registros->isEmpty())
+        @if($registros->isEmpty())
                 <div class="no-data">
                     <h3>No hay registros disponibles</h3>
-                    <p>No se encontraron registros de costura para mostrar.</p>
+                    <p>No se encontraron registros para mostrar.</p>
                 </div>
             @else
-                <div class="cards-container">
-                    @php
-                        $groupedRegistros = $registros->groupBy(function($item) {
-                            return $item->pedido . '-' . $item->cliente;
-                        });
-                    @endphp
-
-                    @foreach($groupedRegistros as $groupKey => $groupRegistros)
+                @if($tipo === 'corte')
+                    <div class="cards-container">
                         @php
-                            $pedidoCliente = explode('-', $groupKey);
-                            $pedido = $pedidoCliente[0];
-                            $cliente = $pedidoCliente[1];
+                            $groupedRegistros = $registros->groupBy('pedido');
                         @endphp
 
-                        <div class="pedido-card">
-                            <div class="card-header">
-                                <h3>{{ $pedido ?: '-' }} - {{ $cliente ?: '-' }}</h3>
-                                <div class="encargado-corte">
-                                    <span class="encargado-label">Encargado de Corte:</span>
-                                    <span class="encargado-value">
-                                        @php
-                                            $encargado = '-';
-                                            if ($tipo === 'bodega') {
-                                                $registro = \App\Models\TablaOriginalBodega::where('pedido', $pedido)->first();
-                                            } else {
-                                                $registro = \App\Models\TablaOriginal::where('pedido', $pedido)->first();
-                                            }
-                                            if ($registro && isset($registro->encargados_de_corte)) {
-                                                $encargado = $registro->encargados_de_corte;
-                                            }
-                                        @endphp
-                                        {{ $encargado }}
-                                    </span>
+                        @foreach($groupedRegistros as $pedido => $groupRegistros)
+                            <div class="pedido-card">
+                                <div class="card-header">
+                                    <h3>{{ $pedido ?: '-' }}</h3>
+                                </div>
+                                <div class="card-body">
+                                    <table class="card-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Prenda</th>
+                                                <th>Cortador</th>
+                                                <th>Cantidad Prendas</th>
+                                                <th>Piezas</th>
+                                                <th>Pasadas</th>
+                                                <th>Etiquetadas</th>
+                                                <th>Etiquetador</th>
+                                                <th>Fecha Entrega</th>
+                                                <th>Mes</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($groupRegistros as $registro)
+                                                <tr>
+                                                    <td class="prenda-cell cell-clickable" data-content="{{ $registro->prenda ?: '-' }}">{{ $registro->prenda ?: '-' }}</td>
+                                                    <td class="cortador-cell">{{ $registro->cortador ?: '-' }}</td>
+                                                    <td class="cantidad_prendas-cell">{{ $registro->cantidad_prendas ?: '-' }}</td>
+                                                    <td class="piezas-cell">{{ $registro->piezas ?: '-' }}</td>
+                                                    <td class="pasadas-cell">{{ $registro->pasadas ?: '-' }}</td>
+                                                    <td class="etiqueteadas-cell">{{ $registro->etiqueteadas ?: '-' }}</td>
+                                                    <td class="etiquetador-cell">{{ $registro->etiquetador ?: '-' }}</td>
+                                                    <td class="fecha_entrega-cell">
+                                                        @if($registro->fecha_entrega)
+                                                            {{ \Carbon\Carbon::parse($registro->fecha_entrega)->format('d/m/Y') }}
+                                                        @else
+                                                            -
+                                                        @endif
+                                                    </td>
+                                                    <td class="mes-cell">{{ $registro->mes ?: '-' }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
-                            <div class="card-body">
-                                <table class="card-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Prenda</th>
-                                            <th>Descripción</th>
-                                            <th>Talla</th>
-                                            <th>Cantidad</th>
-                                            <th>Costurero</th>
-                                            <th>Total Producido</th>
-                                            <th>Total Pendiente</th>
-                                            <th>Fecha Completado</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach($groupRegistros as $registro)
+                        @endforeach
+                    </div>
+                @else
+                    <div class="cards-container">
+                        @php
+                            $groupedRegistros = $registros->groupBy(function($item) {
+                                return $item->pedido . '-' . $item->cliente;
+                            });
+                        @endphp
+
+                        @foreach($groupedRegistros as $groupKey => $groupRegistros)
+                            @php
+                                $pedidoCliente = explode('-', $groupKey);
+                                $pedido = $pedidoCliente[0];
+                                $cliente = $pedidoCliente[1];
+                            @endphp
+
+                            <div class="pedido-card">
+                                <div class="card-header">
+                                    <h3>{{ $pedido ?: '-' }} - {{ $cliente ?: '-' }}</h3>
+                                    <div class="encargado-corte">
+                                        <span class="encargado-label">Encargado de Corte:</span>
+                                        <span class="encargado-value">
+                                            @php
+                                                $encargado = '-';
+                                                if ($tipo === 'bodega') {
+                                                    $registro = \App\Models\TablaOriginalBodega::where('pedido', $pedido)->first();
+                                                } else {
+                                                    $registro = \App\Models\TablaOriginal::where('pedido', $pedido)->first();
+                                                }
+                                                if ($registro && isset($registro->encargados_de_corte)) {
+                                                    $encargado = $registro->encargados_de_corte;
+                                                }
+                                            @endphp
+                                            {{ $encargado }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <table class="card-table">
+                                        <thead>
                                             <tr>
-                                                <td class="prenda-cell cell-clickable" data-content="{{ $registro->prenda ?: '-' }}">{{ $registro->prenda ?: '-' }}</td>
-                                                <td class="descripcion-cell cell-clickable" data-content="{{ $registro->descripcion ?: '-' }}">{{ $registro->descripcion ?: '-' }}</td>
-                                                <td class="talla-cell">{{ $registro->talla ?: '-' }}</td>
-                                                <td class="cantidad-cell">{{ $registro->cantidad ?: '-' }}</td>
-                                                <td class="costurero-cell cell-clickable" data-content="{{ $registro->costurero ?: '-' }}">{{ $registro->costurero ?: '-' }}</td>
-                                                <td class="total_producido_por_talla-cell">{{ $registro->total_producido_por_talla ?: '-' }}</td>
-                                                <td class="total_pendiente_por_talla-cell">{{ $registro->total_pendiente_por_talla ?: '-' }}</td>
-                                                <td class="fecha_completado-cell">
-                                                    @if($registro->fecha_completado)
-                                                        {{ \Carbon\Carbon::parse($registro->fecha_completado)->format('d/m/Y') }}
-                                                    @else
-                                                        -
-                                                    @endif
-                                                </td>
+                                                <th>Prenda</th>
+                                                <th>Descripción</th>
+                                                <th>Talla</th>
+                                                <th>Cantidad</th>
+                                                <th>Costurero</th>
+                                                <th>Total Producido</th>
+                                                <th>Total Pendiente</th>
+                                                <th>Fecha Completado</th>
                                             </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($groupRegistros as $registro)
+                                                <tr>
+                                                    <td class="prenda-cell cell-clickable" data-content="{{ $registro->prenda ?: '-' }}">{{ $registro->prenda ?: '-' }}</td>
+                                                    <td class="descripcion-cell cell-clickable" data-content="{{ $registro->descripcion ?: '-' }}">{{ $registro->descripcion ?: '-' }}</td>
+                                                    <td class="talla-cell">{{ $registro->talla ?: '-' }}</td>
+                                                    <td class="cantidad-cell">{{ $registro->cantidad ?: '-' }}</td>
+                                                    <td class="costurero-cell cell-clickable" data-content="{{ $registro->costurero ?: '-' }}">{{ $registro->costurero ?: '-' }}</td>
+                                                    <td class="total_producido_por_talla-cell">{{ $registro->total_producido_por_talla ?: '-' }}</td>
+                                                    <td class="total_pendiente_por_talla-cell">{{ $registro->total_pendiente_por_talla ?: '-' }}</td>
+                                                    <td class="fecha_completado-cell">
+                                                        @if($registro->fecha_completado)
+                                                            {{ \Carbon\Carbon::parse($registro->fecha_completado)->format('d/m/Y') }}
+                                                        @else
+                                                            -
+                                                        @endif
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                        </div>
-                    @endforeach
-                </div>
+                        @endforeach
+                    </div>
+                @endif
 
                 <div class="pagination-container">
                     <div class="pagination-info" id="pagination-info">

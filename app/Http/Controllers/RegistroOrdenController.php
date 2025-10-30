@@ -7,7 +7,6 @@ use App\Models\TablaOriginal;
 use App\Models\Festivo;
 use App\Models\News;
 use Illuminate\Support\Facades\DB;
-use App\Events\OrderUpdated;
 
 class RegistroOrdenController extends Controller
 {
@@ -386,22 +385,6 @@ class RegistroOrdenController extends Controller
 
             // Obtener la orden actualizada para retornar todos los campos
             $ordenActualizada = TablaOriginal::where('pedido', $pedido)->first();
-
-            // Broadcast the update to all connected clients
-            $field = $request->has('estado') ? 'estado' : 'area';
-            $newValue = $request->has('estado') ? $request->estado : $request->area;
-            $oldValue = $field === 'estado' ? $oldStatus : $oldArea;
-
-            broadcast(new OrderUpdated(
-                $pedido,
-                $field,
-                $newValue,
-                $oldValue,
-                $updatedFields,
-                $ordenActualizada,
-                $this->calcularTotalDiasBatch([$ordenActualizada], Festivo::pluck('fecha')->toArray()),
-                auth()->id()
-            ));
 
             return response()->json([
                 'success' => true,

@@ -9,28 +9,28 @@
         min-height: 100vh;
         display: flex;
         flex-direction: column;
-        padding: 1.5rem;
-        gap: 1rem;
+        padding: 1rem;
+        gap: 0.75rem;
     }
 
     .header-compact {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0.75rem 1.5rem;
+        padding: 0.5rem 1rem;
         background: rgba(255, 255, 255, 0.03);
-        border-radius: 12px;
+        border-radius: 8px;
         border: 1px solid rgba(255, 107, 53, 0.1);
     }
 
-    .header-compact h1 { font-size: 1.5rem; font-weight: 700; color: white; margin: 0; }
-    .header-compact .welcome { font-size: 0.9rem; color: #94a3b8; }
+    .header-compact h1 { font-size: 1.125rem; font-weight: 700; color: white; margin: 0; }
+    .header-compact .welcome { font-size: 0.7rem; color: #94a3b8; }
 
     .main-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
         grid-template-rows: 1fr auto;
-        gap: 1rem;
+        gap: 0.75rem;
         flex: 1;
         overflow: hidden;
     }
@@ -41,14 +41,14 @@
         grid-column: 1 / -1;
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 0.75rem;
+        gap: 0.5rem;
     }
 
     .kpi-card {
         background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(255, 107, 53, 0.05));
         border: 1px solid rgba(255, 107, 53, 0.2);
-        border-radius: 12px;
-        padding: 1rem;
+        border-radius: 8px;
+        padding: 0.75rem;
         text-align: center;
         transition: all 0.3s ease;
     }
@@ -60,21 +60,21 @@
     }
 
     .kpi-card h3 {
-        font-size: 0.75rem;
+        font-size: 0.6rem;
         font-weight: 600;
         color: #94a3b8;
-        margin: 0 0 0.5rem 0;
+        margin: 0 0 0.35rem 0;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
 
-    .kpi-card .value { font-size: 1.75rem; font-weight: 700; color: #FF6B35; margin: 0; }
+    .kpi-card .value { font-size: 1.3rem; font-weight: 700; color: #FF6B35; margin: 0; }
 
     .chart-card {
         background: rgba(255, 255, 255, 0.03);
         border: 1px solid rgba(255, 107, 53, 0.15);
-        border-radius: 12px;
-        padding: 1.25rem;
+        border-radius: 8px;
+        padding: 0.9rem;
         display: flex;
         flex-direction: column;
         overflow: hidden;
@@ -84,19 +84,19 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 1rem;
+        margin-bottom: 0.75rem;
         flex-shrink: 0;
     }
 
-    .chart-header h2 { font-size: 1rem; font-weight: 600; color: white; margin: 0; }
+    .chart-header h2 { font-size: 0.8rem; font-weight: 600; color: white; margin: 0; }
 
     .toggle-btn {
-        padding: 0.4rem 0.8rem;
+        padding: 0.3rem 0.6rem;
         background: #FF6B35;
         color: white;
         border: none;
-        border-radius: 6px;
-        font-size: 0.75rem;
+        border-radius: 4px;
+        font-size: 0.6rem;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s;
@@ -107,20 +107,20 @@
 
     .filters-inline {
         display: flex;
-        gap: 0.5rem;
-        margin-bottom: 0.75rem;
+        gap: 0.35rem;
+        margin-bottom: 0.5rem;
         flex-shrink: 0;
     }
 
     .filters-inline select,
     .filters-inline input {
         flex: 1;
-        padding: 0.5rem;
+        padding: 0.35rem;
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(255, 107, 53, 0.2);
-        border-radius: 6px;
+        border-radius: 4px;
         color: white;
-        font-size: 0.75rem;
+        font-size: 0.6rem;
     }
 
     .filters-inline select option { color: black; background: white; }
@@ -138,16 +138,16 @@
 
     .news-item {
         background: rgba(255, 107, 53, 0.05);
-        border-left: 3px solid #FF6B35;
-        padding: 0.75rem;
-        margin-bottom: 0.5rem;
-        border-radius: 6px;
+        border-left: 2px solid #FF6B35;
+        padding: 0.5rem;
+        margin-bottom: 0.35rem;
+        border-radius: 4px;
         transition: all 0.2s;
     }
 
     .news-item:hover { background: rgba(255, 107, 53, 0.1); transform: translateX(3px); }
-    .news-item .title { color: white; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem; }
-    .news-item .meta { display: flex; justify-content: space-between; font-size: 0.7rem; color: #94a3b8; }
+    .news-item .title { color: white; font-size: 0.65rem; font-weight: 600; margin-bottom: 0.2rem; }
+    .news-item .meta { display: flex; justify-content: space-between; font-size: 0.55rem; color: #94a3b8; }
 
     @keyframes fadeInUp {
         from { opacity: 0; transform: translateY(20px); }
@@ -400,8 +400,8 @@ class CosturaChart extends ChartBase {
                         tooltip: { ...this.getBaseOptions().plugins.tooltip, displayColors: false }
                     },
                     scales: {
-                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', font: { size: 10 } } },
-                        x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } }
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8', font: { size: 8 } } },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 8 } } }
                     }
                 }
             });
@@ -454,7 +454,7 @@ class CorteChart extends ChartBase {
                         legend: {
                             display: true,
                             position: 'bottom',
-                            labels: { color: '#94a3b8', font: { size: 10 }, padding: 10, boxWidth: 12, boxHeight: 12 }
+                            labels: { color: '#94a3b8', font: { size: 8 }, padding: 8, boxWidth: 10, boxHeight: 10 }
                         },
                         tooltip: {
                             ...this.getBaseOptions().plugins.tooltip,
