@@ -77,6 +77,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/search-maquinas', [TablerosController::class, 'searchMaquinas'])->name('search-maquinas');
     Route::get('/search-operarios', [TablerosController::class, 'searchOperarios'])->name('search-operarios');
     Route::post('/store-operario', [TablerosController::class, 'storeOperario'])->name('store-operario');
+    Route::post('/find-or-create-operario', [TablerosController::class, 'findOrCreateOperario'])->name('find-or-create-operario');
+    Route::post('/find-or-create-maquina', [TablerosController::class, 'findOrCreateMaquina'])->name('find-or-create-maquina');
+    Route::post('/find-or-create-tela', [TablerosController::class, 'findOrCreateTela'])->name('find-or-create-tela');
     Route::get('/tableros/dashboard-tables-data', [TablerosController::class, 'getDashboardTablesData'])->name('tableros.dashboard-tables-data');
 });
 

@@ -231,22 +231,28 @@
                                     @php
                                         $value = $registro->$column;
                                         $displayValue = $value;
+                                        $dataValue = $value; // Valor para data-value
+                                        
                                         if ($column === 'fecha' && $value) {
                                             $displayValue = $value->format('d-m-Y');
+                                            $dataValue = $displayValue;
                                         } elseif ($column === 'hora_id' && $registro->hora) {
                                             $displayValue = $registro->hora->hora;
                                         } elseif ($column === 'operario_id' && $registro->operario) {
                                             $displayValue = $registro->operario->name;
+                                            $dataValue = $registro->operario->name; // Usar nombre en lugar de ID
                                         } elseif ($column === 'maquina_id' && $registro->maquina) {
                                             $displayValue = $registro->maquina->nombre_maquina;
+                                            $dataValue = $registro->maquina->nombre_maquina; // Usar nombre en lugar de ID
                                         } elseif ($column === 'tela_id' && $registro->tela) {
                                             $displayValue = $registro->tela->nombre_tela;
+                                            $dataValue = $registro->tela->nombre_tela; // Usar nombre en lugar de ID
                                         } elseif ($column === 'eficiencia' && $value) {
                                             $displayValue = $value . '%';
                                         }
                                         $eficienciaClass = ($column === 'eficiencia' && $value !== null) ? getEficienciaClass($value) : '';
                                     @endphp
-                                    <td class="table-cell editable-cell {{ $eficienciaClass }}" data-column="{{ $column }}" data-value="{{ $column === 'fecha' ? $displayValue : $value }}" title="Doble clic para editar">{{ $displayValue }}</td>
+                                    <td class="table-cell editable-cell {{ $eficienciaClass }}" data-column="{{ $column }}" data-value="{{ $dataValue }}" title="Doble clic para editar">{{ $displayValue }}</td>
                                 @endforeach
                                 <td class="table-cell">
                                     <button class="delete-btn" data-id="{{ $registro->id }}" data-section="corte" title="Eliminar registro">
@@ -277,11 +283,13 @@
 <div id="editCellModal" class="modal-overlay" style="display: none;">
     <div class="modal-content" style="width: 400px;">
         <div class="modal-header">
-            <h3 class="modal-title">Editar Celda</h3>
+            <h3 class="modal-title" id="editModalTitle">Editar Celda</h3>
             <button type="button" class="close" id="closeEditModal">&times;</button>
         </div>
         <div class="modal-body">
-            <input type="text" id="editCellInput" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; color: black; background: white;">
+            <input type="text" id="editCellInput" list="autocompleteList" class="form-control" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; color: black; background: white; text-transform: uppercase;">
+            <datalist id="autocompleteList"></datalist>
+            <small id="editHint" style="color: #666; display: block; margin-top: 5px;">Escribe para buscar o crear nuevo</small>
         </div>
         <div class="modal-footer">
             <button type="button" class="btn btn-secondary" id="cancelEdit">Cancelar</button>
@@ -415,19 +423,105 @@ document.addEventListener('DOMContentLoaded', function() {
         currentColumn = this.dataset.column;
 
         const currentValue = this.dataset.value || this.textContent.trim();
-        console.log('Valor actual:', currentValue);
+        console.log('Valor actual:', currentValue, 'Columna:', currentColumn);
+        
         const modal = document.getElementById('editCellModal');
+        const input = document.getElementById('editCellInput');
+        const datalist = document.getElementById('autocompleteList');
+        const modalTitle = document.getElementById('editModalTitle');
+        const hint = document.getElementById('editHint');
+        
         console.log('Modal encontrado:', !!modal);
         if (modal) {
+            // Configurar título según la columna
+            if (currentColumn === 'operario_id') {
+                modalTitle.textContent = 'Editar Operario';
+                hint.textContent = 'Escribe el nombre del operario (se creará si no existe)';
+                setupAutocomplete('operario');
+            } else if (currentColumn === 'maquina_id') {
+                modalTitle.textContent = 'Editar Máquina';
+                hint.textContent = 'Escribe el nombre de la máquina (se creará si no existe)';
+                setupAutocomplete('maquina');
+            } else if (currentColumn === 'tela_id') {
+                modalTitle.textContent = 'Editar Tela';
+                hint.textContent = 'Escribe el nombre de la tela (se creará si no existe)';
+                setupAutocomplete('tela');
+            } else {
+                modalTitle.textContent = 'Editar Celda';
+                hint.textContent = 'Ingrese el nuevo valor';
+                datalist.innerHTML = ''; // Limpiar datalist para otras columnas
+            }
+            
             modal.style.display = 'flex';
             modal.style.opacity = '1';
             modal.style.visibility = 'visible';
-            document.getElementById('editCellInput').value = currentValue;
-            document.getElementById('editCellInput').focus();
-            document.getElementById('editCellInput').select();
+            input.value = currentValue;
+            input.focus();
+            input.select();
         } else {
             console.error('Modal no encontrado');
         }
+    }
+
+    // Variable global para el listener de autocompletado
+    let currentAutocompleteListener = null;
+
+    // Configurar autocompletado para operario, máquina o tela
+    function setupAutocomplete(type) {
+        const input = document.getElementById('editCellInput');
+        const datalist = document.getElementById('autocompleteList');
+        
+        // Limpiar datalist
+        datalist.innerHTML = '';
+        
+        // Remover listener anterior si existe
+        if (currentAutocompleteListener) {
+            input.removeEventListener('input', currentAutocompleteListener);
+        }
+        
+        // Crear nuevo listener
+        let searchTimeout;
+        currentAutocompleteListener = function(e) {
+            clearTimeout(searchTimeout);
+            const query = e.target.value.toUpperCase();
+            
+            if (query.length < 1) {
+                datalist.innerHTML = '';
+                return;
+            }
+            
+            searchTimeout = setTimeout(() => {
+                let searchUrl = '';
+                if (type === 'operario') {
+                    searchUrl = '/search-operarios';
+                } else if (type === 'maquina') {
+                    searchUrl = '/search-maquinas';
+                } else if (type === 'tela') {
+                    searchUrl = '/search-telas';
+                }
+                
+                fetch(`${searchUrl}?q=${encodeURIComponent(query)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        datalist.innerHTML = '';
+                        data.forEach(item => {
+                            const option = document.createElement('option');
+                            if (type === 'operario') {
+                                option.value = item.name;
+                            } else if (type === 'maquina') {
+                                option.value = item.nombre_maquina;
+                            } else if (type === 'tela') {
+                                option.value = item.nombre_tela;
+                            }
+                            datalist.appendChild(option);
+                        });
+                    })
+                    .catch(error => console.error('Error buscando:', error));
+            }, 300);
+        };
+        
+        // Agregar el nuevo listener
+        input.addEventListener('input', currentAutocompleteListener);
     }
 
     // Inicializar event listeners
@@ -450,9 +544,70 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    function saveCellEdit() {
-        const newValue = document.getElementById('editCellInput').value;
+    async function saveCellEdit() {
+        let newValue = document.getElementById('editCellInput').value.toUpperCase(); // Convertir a mayúsculas
         const section = currentCell.closest('table').dataset.section;
+        let displayName = newValue; // Guardar el nombre para mostrar
+
+        // Si es operario, máquina o tela, primero crear/buscar el registro
+        if (currentColumn === 'operario_id') {
+            try {
+                const response = await fetch('/find-or-create-operario', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({ name: newValue })
+                });
+                const data = await response.json();
+                displayName = data.name; // Guardar el nombre
+                newValue = data.id; // Usar el ID del operario para guardar
+                console.log('Operario encontrado/creado:', data);
+            } catch (error) {
+                console.error('Error al buscar/crear operario:', error);
+                alert('Error al procesar el operario');
+                return;
+            }
+        } else if (currentColumn === 'maquina_id') {
+            try {
+                const response = await fetch('/find-or-create-maquina', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({ nombre: newValue })
+                });
+                const data = await response.json();
+                displayName = data.nombre_maquina; // Guardar el nombre
+                newValue = data.id; // Usar el ID de la máquina para guardar
+                console.log('Máquina encontrada/creada:', data);
+            } catch (error) {
+                console.error('Error al buscar/crear máquina:', error);
+                alert('Error al procesar la máquina');
+                return;
+            }
+        } else if (currentColumn === 'tela_id') {
+            try {
+                const response = await fetch('/find-or-create-tela', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({ nombre: newValue })
+                });
+                const data = await response.json();
+                displayName = data.nombre_tela; // Guardar el nombre
+                newValue = data.id; // Usar el ID de la tela para guardar
+                console.log('Tela encontrada/creada:', data);
+            } catch (error) {
+                console.error('Error al buscar/crear tela:', error);
+                alert('Error al procesar la tela');
+                return;
+            }
+        }
 
         fetch(`/tableros/${currentRowId}`, {
             method: 'PATCH',
@@ -466,8 +621,14 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success) {
                 // Actualizar la celda en la interfaz
-                currentCell.dataset.value = newValue;
-                currentCell.textContent = formatDisplayValue(currentColumn, newValue);
+                // Para operario, máquina y tela, mostrar el nombre, no el ID
+                if (['operario_id', 'maquina_id', 'tela_id'].includes(currentColumn)) {
+                    currentCell.dataset.value = displayName;
+                    currentCell.textContent = displayName;
+                } else {
+                    currentCell.dataset.value = newValue;
+                    currentCell.textContent = formatDisplayValue(currentColumn, newValue);
+                }
 
                 // Si se editó una celda dependiente, actualizar también tiempo_disponible, meta y eficiencia
                 if (['porcion_tiempo', 'numero_operarios', 'tiempo_parada_no_programada', 'tiempo_para_programada', 'tiempo_ciclo', 'cantidad'].includes(currentColumn)) {

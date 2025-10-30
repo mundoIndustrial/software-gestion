@@ -532,6 +532,9 @@ class TablerosController extends Controller
             'modulo' => 'sometimes|string',
             'orden_produccion' => 'sometimes|string',
             'hora' => 'sometimes|string',
+            'operario_id' => 'sometimes|integer|exists:users,id',
+            'maquina_id' => 'sometimes|integer|exists:maquinas,id',
+            'tela_id' => 'sometimes|integer|exists:telas,id',
             'tiempo_ciclo' => 'sometimes|numeric',
             'porcion_tiempo' => 'sometimes|numeric|min:0|max:1',
             'cantidad' => 'sometimes|integer',
@@ -547,31 +550,75 @@ class TablerosController extends Controller
         try {
             $registro->update($validated);
 
-            // Recalcular tiempo_disponible después de la actualización
-            $tiempo_disponible = (3600 * $registro->porcion_tiempo * $registro->numero_operarios) -
-                               ($registro->tiempo_parada_no_programada ?? 0) -
-                               ($registro->tiempo_para_programada ?? 0);
+            // Solo recalcular si se actualizaron campos que afectan el cálculo
+            // NO recalcular si solo se actualizó operario_id, maquina_id o tela_id
+            $fieldsToRecalculate = ['porcion_tiempo', 'numero_operarios', 'tiempo_parada_no_programada', 'tiempo_para_programada', 'tiempo_ciclo', 'cantidad'];
+            $shouldRecalculate = false;
+            foreach ($fieldsToRecalculate as $field) {
+                if (array_key_exists($field, $validated)) {
+                    $shouldRecalculate = true;
+                    break;
+                }
+            }
 
-            // Recalcular meta después de la actualización
-            $meta = $registro->tiempo_ciclo > 0 ? ($tiempo_disponible / $registro->tiempo_ciclo) * 0.9 : 0;
+            if ($shouldRecalculate) {
+                // Recalcular según la sección
+                if ($request->section === 'corte') {
+                    // Fórmula para CORTE (sin numero_operarios)
+                    $tiempo_para_programada = ($registro->paradas_programadas === 'DESAYUNO' || $registro->paradas_programadas === 'MEDIA TARDE') ? 900 : 0;
+                    $tiempo_extendido = 0;
+                    if ($registro->tipo_extendido === 'Trazo Largo') {
+                        $tiempo_extendido = 40 * $registro->numero_capas;
+                    } elseif ($registro->tipo_extendido === 'Trazo Corto') {
+                        $tiempo_extendido = 25 * $registro->numero_capas;
+                    }
 
-            // Recalcular eficiencia después de la actualización
-            $eficiencia = $meta == 0 ? 0 : round(($registro->cantidad / $meta) * 100);
+                    $tiempo_disponible = (3600 * $registro->porcion_tiempo) -
+                                       $tiempo_para_programada -
+                                       ($registro->tiempo_parada_no_programada ?? 0) -
+                                       $tiempo_extendido -
+                                       ($registro->tiempo_trazado ?? 0);
 
-            $registro->tiempo_disponible = $tiempo_disponible;
-            $registro->meta = $meta;
-            $registro->eficiencia = $eficiencia;
-            $registro->save();
+                    $tiempo_disponible = max(0, $tiempo_disponible);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Registro actualizado correctamente.',
-                'data' => [
-                    'tiempo_disponible' => $tiempo_disponible,
-                    'meta' => $meta,
-                    'eficiencia' => $eficiencia
-                ]
-            ]);
+                    if (str_contains(strtolower($registro->actividad), 'extender') || str_contains(strtolower($registro->actividad), 'trazar')) {
+                        $meta = $registro->cantidad;
+                        $eficiencia = 100;
+                    } else {
+                        $meta = $registro->tiempo_ciclo > 0 ? $tiempo_disponible / $registro->tiempo_ciclo : 0;
+                        $eficiencia = $meta == 0 ? 0 : round(($registro->cantidad / $meta) * 100);
+                    }
+                } else {
+                    // Fórmula para PRODUCCIÓN y POLOS (con numero_operarios)
+                    $tiempo_disponible = (3600 * $registro->porcion_tiempo * $registro->numero_operarios) -
+                                       ($registro->tiempo_parada_no_programada ?? 0) -
+                                       ($registro->tiempo_para_programada ?? 0);
+
+                    $meta = $registro->tiempo_ciclo > 0 ? ($tiempo_disponible / $registro->tiempo_ciclo) * 0.9 : 0;
+                    $eficiencia = $meta == 0 ? 0 : round(($registro->cantidad / $meta) * 100);
+                }
+
+                $registro->tiempo_disponible = $tiempo_disponible;
+                $registro->meta = $meta;
+                $registro->eficiencia = $eficiencia;
+                $registro->save();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Registro actualizado correctamente.',
+                    'data' => [
+                        'tiempo_disponible' => $tiempo_disponible,
+                        'meta' => $meta,
+                        'eficiencia' => $eficiencia
+                    ]
+                ]);
+            } else {
+                // No recalcular, solo actualizar
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Registro actualizado correctamente.',
+                ]);
+            }
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -775,12 +822,13 @@ class TablerosController extends Controller
 
     public function searchTelas(Request $request)
     {
-        $query = $request->get('q', '');
-        $telas = Tela::where('nombre_tela', 'like', '%' . $query . '%')->get();
+        $query = strtoupper($request->get('q', ''));
+        $telas = Tela::where('nombre_tela', 'like', '%' . $query . '%')
+            ->select('id', 'nombre_tela')
+            ->limit(10)
+            ->get();
 
-        return response()->json([
-            'telas' => $telas
-        ]);
+        return response()->json($telas);
     }
 
     public function storeMaquina(Request $request)
@@ -809,24 +857,24 @@ class TablerosController extends Controller
 
     public function searchMaquinas(Request $request)
     {
-        $query = $request->get('q', '');
-        $maquinas = Maquina::where('nombre_maquina', 'like', '%' . $query . '%')->get();
+        $query = strtoupper($request->get('q', ''));
+        $maquinas = Maquina::where('nombre_maquina', 'like', '%' . $query . '%')
+            ->select('id', 'nombre_maquina')
+            ->limit(10)
+            ->get();
 
-        return response()->json([
-            'maquinas' => $maquinas
-        ]);
+        return response()->json($maquinas);
     }
 
     public function searchOperarios(Request $request)
     {
-        $query = $request->get('q', '');
-        $operarios = User::whereHas('role', function($queryBuilder) {
-            $queryBuilder->where('name', 'cortador');
-        })->where('name', 'like', '%' . $query . '%')->get();
+        $query = strtoupper($request->get('q', ''));
+        $operarios = User::where('name', 'like', '%' . $query . '%')
+            ->select('id', 'name')
+            ->limit(10)
+            ->get();
 
-        return response()->json([
-            'operarios' => $operarios
-        ]);
+        return response()->json($operarios);
     }
 
     public function storeOperario(Request $request)
@@ -939,6 +987,58 @@ class TablerosController extends Controller
         return response()->json([
             'horasData' => $horasData,
             'operariosData' => $operariosData
+        ]);
+    }
+
+    /**
+     * Crear o buscar operario por nombre
+     */
+    public function findOrCreateOperario(Request $request)
+    {
+        $name = strtoupper($request->input('name'));
+        
+        $operario = User::firstOrCreate(
+            ['name' => $name],
+            ['email' => strtolower(str_replace(' ', '', $name)) . '@mundoindustrial.com', 'password' => bcrypt('password123')]
+        );
+
+        return response()->json([
+            'id' => $operario->id,
+            'name' => $operario->name
+        ]);
+    }
+
+    /**
+     * Crear o buscar máquina por nombre
+     */
+    public function findOrCreateMaquina(Request $request)
+    {
+        $nombre = strtoupper($request->input('nombre'));
+        
+        $maquina = Maquina::firstOrCreate(
+            ['nombre_maquina' => $nombre]
+        );
+
+        return response()->json([
+            'id' => $maquina->id,
+            'nombre_maquina' => $maquina->nombre_maquina
+        ]);
+    }
+
+    /**
+     * Crear o buscar tela por nombre
+     */
+    public function findOrCreateTela(Request $request)
+    {
+        $nombre = strtoupper($request->input('nombre'));
+        
+        $tela = Tela::firstOrCreate(
+            ['nombre_tela' => $nombre]
+        );
+
+        return response()->json([
+            'id' => $tela->id,
+            'nombre_tela' => $tela->nombre_tela
         ]);
     }
 }
