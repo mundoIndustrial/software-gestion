@@ -8,6 +8,109 @@
     <link rel="stylesheet" href="{{ asset('css/modern-table.css') }}">
     <link rel="stylesheet" href="{{ asset('css/dropdown-styles.css') }}">
     <style>
+        /* Estilos compactos - simular zoom 75% - CONSISTENTE EN TODOS LOS NAVEGADORES */
+        .table-container {
+            transform: scale(0.75);
+            transform-origin: top left;
+            width: 133.33% !important;
+            max-width: 133.33% !important;
+            min-width: 133.33% !important;
+            margin-left: 0 !important;
+            padding-left: 0px !important;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            -moz-backface-visibility: hidden;
+            -ms-backface-visibility: hidden;
+            overflow: visible !important;
+            position: relative;
+            box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+        }
+
+        /* Forzar mismo renderizado en todos los navegadores */
+        .table-container * {
+            box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+        }
+
+        /* Ajuste responsive IDÉNTICO para todos los navegadores */
+        @media (min-width: 1920px) {
+            .table-container {
+                padding-left: 20px !important;
+            }
+        }
+
+        @media (max-width: 1600px) {
+            .table-container {
+                padding-left: 20px !important;
+            }
+        }
+
+        @media (max-width: 1400px) {
+            .table-container {
+                padding-left: 20px !important;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .table-container {
+                padding-left: 15px !important;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .table-container {
+                padding-left: 10px !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .table-container {
+                padding-left: 10px !important;
+            }
+        }
+
+        /* Normalizar tabla para TODOS los navegadores */
+        #tablaOrdenes {
+            width: 100% !important;
+            table-layout: fixed !important;
+            border-collapse: collapse !important;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
+            -moz-transform: translateZ(0);
+            -ms-transform: translateZ(0);
+        }
+
+        .modern-table-wrapper {
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
+            -moz-transform: translateZ(0);
+            -ms-transform: translateZ(0);
+            width: 100% !important;
+        }
+
+        /* Bordes uniformes para evitar grosor inconsistente con scale */
+        #tablaOrdenes tbody .table-row {
+            border-bottom: 1px solid #000000 !important;
+        }
+
+        #tablaOrdenes thead th,
+        #tablaOrdenes tbody td {
+            border-right: 1px solid #000000 !important;
+            border-left: none !important;
+            padding: 8px !important;
+            text-align: left !important;
+        }
+
+        #tablaOrdenes thead th:first-child,
+        #tablaOrdenes tbody td:first-child {
+            border-left: 1px solid #000000 !important;
+        }
+
         .table-header {
             display: flex;
             justify-content: space-between;
@@ -53,6 +156,73 @@
 
         .add-order-btn:hover {
             background-color: #218838;
+        }
+
+        /* Estilos modernos para paginación */
+        .table-pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background: #1a1d29;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .pagination-info {
+            color: #a0aec0;
+            font-size: 14px;
+        }
+
+        .pagination-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .pagination-btn {
+            min-width: 36px;
+            height: 36px;
+            border: 1px solid #2d3748;
+            background: #2d3748;
+            color: #e2e8f0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 12px;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: #4a5568;
+            border-color: #4a5568;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .pagination-btn.active {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            border-color: #ff6b35;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .pagination-btn i {
+            font-size: 14px;
+        }
+
+        .pagination-btn.page-number {
+            min-width: 36px;
         }
     </style>
 
@@ -181,15 +351,36 @@
                 </table>
             </div>
 
-            <div class="table-pagination"
-                style="position: relative; z-index: 1; background: white; padding: 20px 0; border-top: 1px solid #e2e8f0;">
+            <div class="table-pagination" id="tablePagination">
                 <div class="pagination-info">
-                    <span>Mostrando {{ $ordenes->firstItem() }}-{{ $ordenes->lastItem() }} de {{ $ordenes->total() }}
-                        registros</span>
+                    <span id="paginationInfo">Mostrando {{ $ordenes->firstItem() }}-{{ $ordenes->lastItem() }} de {{ $ordenes->total() }} registros</span>
                 </div>
-                <div class="pagination-controls">
+                <div class="pagination-controls" id="paginationControls">
                     @if($ordenes->hasPages())
-                        {{ $ordenes->appends(request()->query())->links() }}
+                        <button class="pagination-btn" data-page="1" {{ $ordenes->currentPage() == 1 ? 'disabled' : '' }}>
+                            <i class="fas fa-angle-double-left"></i>
+                        </button>
+                        <button class="pagination-btn" data-page="{{ $ordenes->currentPage() - 1 }}" {{ $ordenes->currentPage() == 1 ? 'disabled' : '' }}>
+                            <i class="fas fa-angle-left"></i>
+                        </button>
+                        
+                        @php
+                            $start = max(1, $ordenes->currentPage() - 2);
+                            $end = min($ordenes->lastPage(), $ordenes->currentPage() + 2);
+                        @endphp
+                        
+                        @for($i = $start; $i <= $end; $i++)
+                            <button class="pagination-btn page-number {{ $i == $ordenes->currentPage() ? 'active' : '' }}" data-page="{{ $i }}">
+                                {{ $i }}
+                            </button>
+                        @endfor
+                        
+                        <button class="pagination-btn" data-page="{{ $ordenes->currentPage() + 1 }}" {{ $ordenes->currentPage() == $ordenes->lastPage() ? 'disabled' : '' }}>
+                            <i class="fas fa-angle-right"></i>
+                        </button>
+                        <button class="pagination-btn" data-page="{{ $ordenes->lastPage() }}" {{ $ordenes->currentPage() == $ordenes->lastPage() ? 'disabled' : '' }}>
+                            <i class="fas fa-angle-double-right"></i>
+                        </button>
                     @endif
                 </div>
             </div>
@@ -976,6 +1167,87 @@ async function recargarTablaPedidos() {
     </div>
 
     <script src="{{ asset('js/modern-table.js') }}"></script>
+
+    <!-- AJAX Pagination Script -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const paginationControls = document.getElementById('paginationControls');
+        let isLoading = false;
+        
+        if (paginationControls) {
+            paginationControls.addEventListener('click', function(e) {
+                const btn = e.target.closest('.pagination-btn');
+                
+                if (!btn || btn.disabled || isLoading) return;
+                
+                const page = btn.dataset.page;
+                if (!page) return;
+                
+                isLoading = true;
+                
+                // Indicador de carga rápido
+                const tableBody = document.getElementById('tablaOrdenesBody');
+                tableBody.style.transition = 'opacity 0.1s';
+                tableBody.style.opacity = '0.3';
+                tableBody.style.pointerEvents = 'none';
+                
+                // Construir URL con parámetros actuales
+                const url = new URL(window.location.href);
+                url.searchParams.set('page', page);
+                
+                // Hacer petición AJAX
+                fetch(url.toString(), {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    // Parsear HTML de forma más eficiente
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    
+                    // Actualizar contenido de forma rápida
+                    const newTableBody = doc.getElementById('tablaOrdenesBody');
+                    if (newTableBody) {
+                        tableBody.innerHTML = newTableBody.innerHTML;
+                    }
+                    
+                    const newPaginationControls = doc.getElementById('paginationControls');
+                    if (newPaginationControls) {
+                        paginationControls.innerHTML = newPaginationControls.innerHTML;
+                    }
+                    
+                    const newPaginationInfo = doc.getElementById('paginationInfo');
+                    const paginationInfo = document.getElementById('paginationInfo');
+                    if (newPaginationInfo && paginationInfo) {
+                        paginationInfo.innerHTML = newPaginationInfo.innerHTML;
+                    }
+                    
+                    // Actualizar URL
+                    window.history.pushState({}, '', url.toString());
+                    
+                    // Restaurar inmediatamente
+                    tableBody.style.opacity = '1';
+                    tableBody.style.pointerEvents = 'auto';
+                    isLoading = false;
+                    
+                    // Scroll instantáneo
+                    document.querySelector('.table-container').scrollIntoView({ 
+                        behavior: 'auto', 
+                        block: 'start' 
+                    });
+                })
+                .catch(error => {
+                    console.error('Error al cargar página:', error);
+                    tableBody.style.opacity = '1';
+                    tableBody.style.pointerEvents = 'auto';
+                    isLoading = false;
+                });
+            });
+        }
+    });
+    </script>
 
     <!-- Real-time updates script for orders -->
     <script>

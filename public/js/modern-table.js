@@ -520,7 +520,69 @@ class ModernTable {
         const url = new URL(window.location);
         value ? url.searchParams.set(key, value) : url.searchParams.delete(key);
         url.searchParams.delete('page');
-        window.location.href = url.toString();
+        
+        // Aplicar filtro con AJAX sin recargar
+        this.loadTableWithAjax(url.toString());
+    }
+
+    loadTableWithAjax(url) {
+        const tableBody = document.getElementById('tablaOrdenesBody');
+        const paginationControls = document.getElementById('paginationControls');
+        const paginationInfo = document.getElementById('paginationInfo');
+        
+        // Indicador de carga
+        tableBody.style.transition = 'opacity 0.1s';
+        tableBody.style.opacity = '0.3';
+        tableBody.style.pointerEvents = 'none';
+        
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Actualizar tabla
+            const newTableBody = doc.getElementById('tablaOrdenesBody');
+            if (newTableBody) {
+                tableBody.innerHTML = newTableBody.innerHTML;
+            }
+            
+            // Actualizar paginación
+            const newPaginationControls = doc.getElementById('paginationControls');
+            if (newPaginationControls && paginationControls) {
+                paginationControls.innerHTML = newPaginationControls.innerHTML;
+            }
+            
+            const newPaginationInfo = doc.getElementById('paginationInfo');
+            if (newPaginationInfo && paginationInfo) {
+                paginationInfo.innerHTML = newPaginationInfo.innerHTML;
+            }
+            
+            // Actualizar URL sin recargar
+            window.history.pushState({}, '', url);
+            
+            // Restaurar
+            tableBody.style.opacity = '1';
+            tableBody.style.pointerEvents = 'auto';
+            
+            // Actualizar marcadores de filtros activos
+            this.markActiveFilters();
+            
+            // Scroll a la tabla
+            document.querySelector('.table-container')?.scrollIntoView({ 
+                behavior: 'auto', 
+                block: 'start' 
+            });
+        })
+        .catch(error => {
+            console.error('Error al aplicar filtro:', error);
+            tableBody.style.opacity = '1';
+            tableBody.style.pointerEvents = 'auto';
+        });
     }
 
     closeFilterModal() {
@@ -873,7 +935,15 @@ appendRowsToTable(orders, totalDiasCalculados) {
             if (key.startsWith('filter_') || key === 'search') url.searchParams.delete(key);
         });
         url.searchParams.delete('page');
-        window.location.href = url.toString();
+        
+        // Limpiar campo de búsqueda si existe
+        const searchInput = document.getElementById('buscarOrden');
+        if (searchInput) {
+            searchInput.value = '';
+        }
+        
+        // Usar AJAX en lugar de recargar
+        this.loadTableWithAjax(url.toString());
     }
 
     exportFilteredData() {
