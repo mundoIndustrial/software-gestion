@@ -111,13 +111,19 @@
                     url.searchParams.set('month', month);
                 }
                 else if (this.filterType === 'specific') {
+                    // Sincronizar con window.selectedDatesTopControls
+                    this.selectedDates = new Set(window.selectedDatesTopControls);
+                    
+                    console.log('Selected dates size:', this.selectedDates.size);
+                    console.log('Selected dates:', Array.from(this.selectedDates));
+                    
                     if (this.selectedDates.size === 0) {
                         alert('Selecciona al menos una fecha en el calendario');
                         return;
                     }
 
                     const datesArray = Array.from(this.selectedDates).sort();
-                    console.log('Specific dates:', datesArray);
+                    console.log('Specific dates to send:', datesArray);
                     url.searchParams.set('specific_dates', datesArray.join(','));
                 }
 
@@ -726,13 +732,14 @@ function toggleDate(dateStr) {
 
     renderCalendar(window.currentCalendarYear, window.currentCalendarMonth);
 
-    // Update Alpine.js selectedDates
-    const alpineComponent = document.querySelector('[x-data]');
-    if (alpineComponent && alpineComponent._x_dataStack) {
-        const data = alpineComponent._x_dataStack[alpineComponent._x_dataStack.length - 1];
-        if (data.selectedDates) {
-            data.selectedDates.clear();
-            window.selectedDatesTopControls.forEach(date => data.selectedDates.add(date));
+    // Update Alpine.js selectedDates - buscar el componente date-selector-section
+    const dateSelectorSection = document.querySelector('.date-selector-section');
+    if (dateSelectorSection && dateSelectorSection.__x) {
+        const alpineData = dateSelectorSection.__x.$data;
+        if (alpineData && alpineData.selectedDates) {
+            alpineData.selectedDates.clear();
+            window.selectedDatesTopControls.forEach(date => alpineData.selectedDates.add(date));
+            console.log('Fechas seleccionadas:', Array.from(alpineData.selectedDates));
         }
     }
 }
