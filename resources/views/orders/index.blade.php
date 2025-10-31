@@ -234,7 +234,7 @@
         window.updateUrl = '{{ $updateUrl }}';
     </script>
 
-    <script src="{{ asset('js/orders-table.js') }}"></script>
+    <script src="{{ asset('js/orders js/orders-table.js') }}"></script>
 
     <div class="order-registration-modal">
         <x-order-registration-modal :areaOptions="$areaOptions" />
@@ -276,7 +276,7 @@
         </div>
     </div>
 
-    <script src="{{ asset('js/modern-table.js') }}"></script>
+    <script src="{{ asset('js/orders js/modern-table.js') }}"></script>
 
     <!-- AJAX Pagination Script -->
     <script>
