@@ -11,10 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->foreignId('role_id')->nullable()->constrained('roles')->onDelete('set null');
-            $table->dropColumn('role'); // Remover la columna antigua
-        });
+        // Agregar role_id si no existe aún
+        if (!Schema::hasColumn('users', 'role_id')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->foreignId('role_id')->nullable()->constrained('roles')->onDelete('set null');
+            });
+        }
+
+        // Eliminar columna antigua solo si existe
+        if (Schema::hasColumn('users', 'role')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->dropColumn('role');
+            });
+        }
     }
 
     /**
@@ -22,10 +31,19 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropForeign(['role_id']);
-            $table->dropColumn('role_id');
-            $table->string('role')->default('Operador'); // Restaurar columna antigua
-        });
+        // Quitar FK y columna role_id si existe
+        if (Schema::hasColumn('users', 'role_id')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->dropForeign(['role_id']);
+                $table->dropColumn('role_id');
+            });
+        }
+
+        // Restaurar columna antigua solo si no existe
+        if (!Schema::hasColumn('users', 'role')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->string('role')->default('Operador');
+            });
+        }
     }
 };
