@@ -40,8 +40,9 @@
                 'porcion_tiempo_sum' => 0,
                 'tiempo_parada_no_programada_sum' => 0,
                 'tiempo_para_programada_sum' => 0,
-                'count' => 0,
-                'meta_sum' => 0
+                'tiempo_disponible_sum' => 0,
+                'meta_sum' => 0,
+                'count' => 0
             ];
         }
 
@@ -66,6 +67,8 @@
                         'porcion_tiempo_sum' => 0,
                         'tiempo_parada_no_programada_sum' => 0,
                         'tiempo_para_programada_sum' => 0,
+                        'tiempo_disponible_sum' => 0,
+                        'meta_sum' => 0,
                         'count' => 0
                     ];
                 }
@@ -82,8 +85,9 @@
                     'porcion_tiempo_sum' => 0,
                     'tiempo_parada_no_programada_sum' => 0,
                     'tiempo_para_programada_sum' => 0,
-                    'count' => 0,
-                    'meta_sum' => 0
+                    'tiempo_disponible_sum' => 0,
+                    'meta_sum' => 0,
+                    'count' => 0
                 ];
 
                 // Inicializar en todas las horas existentes
@@ -95,6 +99,8 @@
                         'porcion_tiempo_sum' => 0,
                         'tiempo_parada_no_programada_sum' => 0,
                         'tiempo_para_programada_sum' => 0,
+                        'tiempo_disponible_sum' => 0,
+                        'meta_sum' => 0,
                         'count' => 0
                     ];
                 }
@@ -122,7 +128,11 @@
             $tiempo_disponible_registro = (3600 * floatval($registro->porcion_tiempo) * floatval($registro->numero_operarios))
                 - floatval($registro->tiempo_parada_no_programada ?? 0)
                 - floatval($registro->tiempo_para_programada ?? 0);
+            $tiempo_disponible_registro = max(0, $tiempo_disponible_registro);
             $meta_registro = floatval($registro->tiempo_ciclo) > 0 ? ($tiempo_disponible_registro / floatval($registro->tiempo_ciclo)) * 0.9 : 0;
+            $dataPorHora[$hora]['modulos'][$modulo]['tiempo_disponible_sum'] += $tiempo_disponible_registro;
+            $dataPorHora[$hora]['modulos'][$modulo]['meta_sum'] += $meta_registro;
+            $totales['modulos'][$modulo]['tiempo_disponible_sum'] += $tiempo_disponible_registro;
             $totales['modulos'][$modulo]['meta_sum'] += $meta_registro;
         }
 
@@ -130,16 +140,7 @@
         foreach ($dataPorHora as $hora => &$data) {
             foreach ($data['modulos'] as $modulo => &$modData) {
                 if ($modData['count'] > 0) {
-                    $avg_tiempo_ciclo = $modData['tiempo_ciclo_sum'] / $modData['count'];
-                    $avg_numero_operarios = $modData['numero_operarios_sum'] / $modData['count'];
-                    $avg_porcion_tiempo = $modData['porcion_tiempo_sum'] / $modData['count'];
-                    $total_tiempo_parada_no_programada = $modData['tiempo_parada_no_programada_sum'];
-                    $total_tiempo_para_programada = $modData['tiempo_para_programada_sum'];
-
-                    $tiempo_disponible = (3600 * $avg_porcion_tiempo * $avg_numero_operarios)
-                        - $total_tiempo_parada_no_programada
-                        - $total_tiempo_para_programada;
-                    $meta = $avg_tiempo_ciclo > 0 ? ($tiempo_disponible / $avg_tiempo_ciclo) * 0.9 : 0;
+                    $meta = $modData['meta_sum'];
                     $eficiencia = $meta > 0 ? ($modData['prendas'] / $meta) : 0;
 
                     $modData['meta'] = $meta;
@@ -423,6 +424,40 @@ function updateSeguimientoTableContent(seguimientoData) {
     const modulosDisponibles = seguimientoData.modulosDisponibles || [];
     const dataPorHora = seguimientoData.dataPorHora || {};
     const totales = seguimientoData.totales || { modulos: {} };
+
+    // Recalcular META y EFICIENCIA en el front siguiendo la regla de negocio
+    // meta = ((3600 * avg(porcion_tiempo) * avg(numero_operarios)) - sum(tiempo_parada_no_programada) - sum(tiempo_para_programada)) / avg(tiempo_ciclo) * 0.9
+    // eficiencia = prendas / meta
+    try {
+        // Por hora y módulo
+        const normalizarModulo = (modData) => {
+            const prendas = parseFloat(modData.prendas ?? 0);
+            const meta = parseFloat(modData.meta ?? modData.meta_sum ?? 0);
+            const eficiencia = meta > 0 ? (prendas / meta) : 0;
+            return {
+                ...modData,
+                meta,
+                eficiencia,
+                prendas
+            };
+        };
+
+        Object.keys(dataPorHora).forEach(horaKey => {
+            const horaData = dataPorHora[horaKey] || { modulos: {} };
+            modulosDisponibles.forEach(modulo => {
+                horaData.modulos[modulo] = normalizarModulo(horaData.modulos[modulo] || {});
+            });
+            dataPorHora[horaKey] = horaData;
+        });
+
+        totales.modulos = totales.modulos || {};
+        modulosDisponibles.forEach(modulo => {
+            const modData = totales.modulos[modulo] || {};
+            totales.modulos[modulo] = normalizarModulo(modData);
+        });
+    } catch (err) {
+        console.warn('No se pudo recalcular seguimiento en front:', err);
+    }
 
     // Reconstruir la tabla
     let html = '';

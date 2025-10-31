@@ -254,67 +254,35 @@ class TablerosController extends Controller
                 'porcion_tiempo_sum' => 0,
                 'tiempo_parada_no_programada_sum' => 0,
                 'tiempo_para_programada_sum' => 0,
-                'count' => 0,
-                'meta_sum' => 0
+                'tiempo_disponible_sum' => 0,
+                'meta_sum' => 0,
+                'count' => 0
             ];
         }
 
-        // Procesar cada registro
+        // Acumular datos por hora y módulo
         foreach ($registros as $registro) {
-            // Normalizar el nombre del módulo del registro
+            $hora = $registro->hora;
             $modulo = strtoupper(trim($registro->modulo));
 
-            // Normalizar hora a formato "HORA XX"
-            $horaNum = (int) preg_replace('/\D/', '', $registro->hora);
-            $hora = 'HORA ' . str_pad($horaNum, 2, '0', STR_PAD_LEFT);
-
-            // Inicializar hora si no existe
             if (!isset($dataPorHora[$hora])) {
                 $dataPorHora[$hora] = ['modulos' => []];
-                // Pre-inicializar todos los módulos para esta hora
-                foreach ($modulosDisponibles as $mod) {
-                    $dataPorHora[$hora]['modulos'][$mod] = [
-                        'prendas' => 0,
-                        'tiempo_ciclo_sum' => 0,
-                        'numero_operarios_sum' => 0,
-                        'porcion_tiempo_sum' => 0,
-                        'tiempo_parada_no_programada_sum' => 0,
-                        'tiempo_para_programada_sum' => 0,
-                        'count' => 0
-                    ];
-                }
             }
 
-            // Verificar que el módulo exista en modulosDisponibles
-            if (!in_array($modulo, $modulosDisponibles)) {
-                // Si el módulo no existe, agregarlo dinámicamente
-                $modulosDisponibles[] = $modulo;
-                $totales['modulos'][$modulo] = [
+            if (!isset($dataPorHora[$hora]['modulos'][$modulo])) {
+                $dataPorHora[$hora]['modulos'][$modulo] = [
                     'prendas' => 0,
                     'tiempo_ciclo_sum' => 0,
                     'numero_operarios_sum' => 0,
                     'porcion_tiempo_sum' => 0,
                     'tiempo_parada_no_programada_sum' => 0,
                     'tiempo_para_programada_sum' => 0,
-                    'count' => 0,
-                    'meta_sum' => 0
+                    'tiempo_disponible_sum' => 0,
+                    'meta_sum' => 0,
+                    'count' => 0
                 ];
-
-                // Inicializar en todas las horas existentes
-                foreach ($dataPorHora as $h => &$hData) {
-                    $hData['modulos'][$modulo] = [
-                        'prendas' => 0,
-                        'tiempo_ciclo_sum' => 0,
-                        'numero_operarios_sum' => 0,
-                        'porcion_tiempo_sum' => 0,
-                        'tiempo_parada_no_programada_sum' => 0,
-                        'tiempo_para_programada_sum' => 0,
-                        'count' => 0
-                    ];
-                }
             }
 
-            // Acumular datos por hora y módulo
             $dataPorHora[$hora]['modulos'][$modulo]['prendas'] += floatval($registro->cantidad ?? 0);
             $dataPorHora[$hora]['modulos'][$modulo]['tiempo_ciclo_sum'] += floatval($registro->tiempo_ciclo ?? 0);
             $dataPorHora[$hora]['modulos'][$modulo]['numero_operarios_sum'] += floatval($registro->numero_operarios ?? 0);
@@ -336,7 +304,11 @@ class TablerosController extends Controller
             $tiempo_disponible_registro = (3600 * floatval($registro->porcion_tiempo) * floatval($registro->numero_operarios))
                 - floatval($registro->tiempo_parada_no_programada ?? 0)
                 - floatval($registro->tiempo_para_programada ?? 0);
+            $tiempo_disponible_registro = max(0, $tiempo_disponible_registro);
             $meta_registro = floatval($registro->tiempo_ciclo) > 0 ? ($tiempo_disponible_registro / floatval($registro->tiempo_ciclo)) * 0.9 : 0;
+            $dataPorHora[$hora]['modulos'][$modulo]['tiempo_disponible_sum'] += $tiempo_disponible_registro;
+            $dataPorHora[$hora]['modulos'][$modulo]['meta_sum'] += $meta_registro;
+            $totales['modulos'][$modulo]['tiempo_disponible_sum'] += $tiempo_disponible_registro;
             $totales['modulos'][$modulo]['meta_sum'] += $meta_registro;
         }
 
@@ -344,16 +316,7 @@ class TablerosController extends Controller
         foreach ($dataPorHora as $hora => &$data) {
             foreach ($data['modulos'] as $modulo => &$modData) {
                 if ($modData['count'] > 0) {
-                    $avg_tiempo_ciclo = $modData['tiempo_ciclo_sum'] / $modData['count'];
-                    $avg_numero_operarios = $modData['numero_operarios_sum'] / $modData['count'];
-                    $avg_porcion_tiempo = $modData['porcion_tiempo_sum'] / $modData['count'];
-                    $total_tiempo_parada_no_programada = $modData['tiempo_parada_no_programada_sum'];
-                    $total_tiempo_para_programada = $modData['tiempo_para_programada_sum'];
-
-                    $tiempo_disponible = (3600 * $avg_porcion_tiempo * $avg_numero_operarios)
-                        - $total_tiempo_parada_no_programada
-                        - $total_tiempo_para_programada;
-                    $meta = $avg_tiempo_ciclo > 0 ? ($tiempo_disponible / $avg_tiempo_ciclo) * 0.9 : 0;
+                    $meta = $modData['meta_sum'];
                     $eficiencia = $meta > 0 ? ($modData['prendas'] / $meta) : 0;
 
                     $modData['meta'] = $meta;
@@ -421,12 +384,27 @@ class TablerosController extends Controller
         try {
             $createdRecords = [];
             foreach ($request->registros as $registroData) {
-                $tiempo_disponible = (3600 * $registroData['porcion_tiempo'] * $registroData['numero_operarios']) -
-                                   ($registroData['tiempo_parada_no_programada'] ?? 0) -
-                                   ($registroData['tiempo_para_programada'] ?? 0);
+                $paradaProgramada = strtoupper(trim($registroData['paradas_programadas'] ?? ''));
+                $tiempo_para_programada = match ($paradaProgramada) {
+                    'DESAYUNO',
+                    'MEDIA TARDE' => 900,
+                    'NINGUNA' => 0,
+                    default => 0
+                };
 
-                $meta = ($tiempo_disponible / $registroData['tiempo_ciclo']) * 0.9;
-                $eficiencia = $meta == 0 ? 0 : round((($registroData['cantidad'] ?? 0) / $meta) * 100);
+                $porcion_tiempo = floatval($registroData['porcion_tiempo'] ?? 0);
+                $numero_operarios = floatval($registroData['numero_operarios'] ?? 0);
+                $tiempo_parada_no_programada = floatval($registroData['tiempo_parada_no_programada'] ?? 0);
+                $tiempo_ciclo = floatval($registroData['tiempo_ciclo'] ?? 0);
+                $cantidad = floatval($registroData['cantidad'] ?? 0);
+
+                $tiempo_disponible = (3600 * $porcion_tiempo * $numero_operarios)
+                                    - $tiempo_parada_no_programada
+                                    - $tiempo_para_programada;
+                $tiempo_disponible = max(0, $tiempo_disponible);
+
+                $meta = $tiempo_ciclo > 0 ? ($tiempo_disponible / $tiempo_ciclo) * 0.9 : 0;
+                $eficiencia = $meta > 0 ? ($cantidad / $meta) : 0;
 
                 $record = $model::create([
                     'fecha' => $registroData['fecha'],
@@ -441,7 +419,7 @@ class TablerosController extends Controller
                     'paradas_no_programadas' => $registroData['paradas_no_programadas'] ?? null,
                     'tiempo_parada_no_programada' => $registroData['tiempo_parada_no_programada'] ?? null,
                     'numero_operarios' => $registroData['numero_operarios'],
-                    'tiempo_para_programada' => $registroData['tiempo_para_programada'] ?? 0.00,
+                    'tiempo_para_programada' => $tiempo_para_programada,
                     'tiempo_disponible' => $tiempo_disponible,
                     'meta' => $meta,
                     'eficiencia' => $eficiencia,

@@ -559,6 +559,16 @@ document.addEventListener('DOMContentLoaded', function() {
         let newValue = document.getElementById('editCellInput').value.toUpperCase(); // Convertir a mayúsculas
         const section = currentCell.closest('table').dataset.section;
         let displayName = newValue; // Guardar el nombre para mostrar
+        // Datos a enviar (permitir agregar campos adicionales cuando se requiera)
+        const payload = { [currentColumn]: newValue, section: section };
+
+        // Mapear PARADAS PROGRAMADAS -> TIEMPO PARA PROGRAMADA (segundos)
+        function mapParadaToSeconds(valor) {
+            const v = (valor || '').toString().trim().toUpperCase();
+            if (v === 'DESAYUNO' || v === 'MEDIA TARDE') return 900;
+            if (v === 'NINGUNA') return 0;
+            return 0; // Default
+        }
 
         // Si es operario, máquina o tela, primero crear/buscar el registro
         if (currentColumn === 'operario_id') {
@@ -620,13 +630,20 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
+        // Si se edita PARADAS PROGRAMADAS, establecer TIEMPO PARA PROGRAMADA automáticamente
+        if (currentColumn === 'paradas_programadas') {
+            const tppSeconds = mapParadaToSeconds(newValue);
+            // Incluir en el payload para que backend pueda recalcular con este dato
+            payload['tiempo_para_programada'] = tppSeconds;
+        }
+
         fetch(`/tableros/${currentRowId}`, {
             method: 'PATCH',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
             },
-            body: JSON.stringify({ [currentColumn]: newValue, section: section })
+            body: JSON.stringify(payload)
         })
         .then(response => response.json())
         .then(data => {
@@ -642,12 +659,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 // Si se editó una celda dependiente, actualizar también tiempo_disponible, meta y eficiencia
-                if (['porcion_tiempo', 'numero_operarios', 'tiempo_parada_no_programada', 'tiempo_para_programada', 'tiempo_ciclo', 'cantidad'].includes(currentColumn)) {
+                if (['porcion_tiempo', 'numero_operarios', 'tiempo_parada_no_programada', 'tiempo_para_programada', 'tiempo_ciclo', 'cantidad', 'paradas_programadas'].includes(currentColumn)) {
                     console.log('Actualizando celdas calculadas:', data.data);
                     console.log('data.data existe:', !!data.data);
                     console.log('data.data.tiempo_disponible:', data.data?.tiempo_disponible);
                     console.log('data.data.meta:', data.data?.meta);
                     console.log('data.data.eficiencia:', data.data?.eficiencia);
+
+                    // Si cambiamos paradas_programadas y el backend no devuelve tpp, actualizarlo localmente también
+                    if (currentColumn === 'paradas_programadas') {
+                        const tppCell = currentCell.closest('tr').querySelector('[data-column="tiempo_para_programada"]');
+                        if (tppCell) {
+                            const tppSeconds = mapParadaToSeconds(newValue);
+                            tppCell.dataset.value = tppSeconds;
+                            tppCell.textContent = formatDisplayValue('tiempo_para_programada', tppSeconds);
+                        }
+                    }
 
                     const tiempoDisponibleCell = currentCell.closest('tr').querySelector('[data-column="tiempo_disponible"]');
                     console.log('tiempoDisponibleCell encontrado:', !!tiempoDisponibleCell);
@@ -677,6 +704,13 @@ document.addEventListener('DOMContentLoaded', function() {
                             eficienciaCell.classList.add(newClass);
                         }
                         console.log('Eficiencia actualizada:', data.data.eficiencia);
+                    }
+
+                    // Recalcular en el front como respaldo inmediato con los valores visibles
+                    try {
+                        recalculateRowDerivedValues(currentCell.closest('tr'));
+                    } catch (e) {
+                        console.warn('Recalculo local fallido:', e);
                     }
                 }
 
@@ -864,6 +898,65 @@ function handleCellDoubleClick() {
 }
 </script>
 
+<script>
+// Recalcular en el front: tiempo_disponible, meta y eficiencia por fila
+function recalculateRowDerivedValues(row) {
+    if (!row) return;
+
+    function getNumeric(cellSelector) {
+        const cell = row.querySelector(cellSelector);
+        if (!cell) return 0;
+        const raw = cell.dataset.value ?? cell.textContent;
+        const cleaned = (raw || '').toString().replace('%', '').replace(',', '.');
+        const num = parseFloat(cleaned);
+        return isNaN(num) ? 0 : num;
+    }
+
+    // Lectura de valores base
+    const porcionTiempo = getNumeric('[data-column="porcion_tiempo"]');
+    const numeroOperarios = getNumeric('[data-column="numero_operarios"]');
+    const tnp = getNumeric('[data-column="tiempo_parada_no_programada"]');
+    let tpp = getNumeric('[data-column="tiempo_para_programada"]');
+
+    // Si hay texto en paradas_programadas, mapearlo a segundos
+    const paradasCell = row.querySelector('[data-column="paradas_programadas"]');
+    if (paradasCell) {
+        const val = (paradasCell.dataset.value || paradasCell.textContent || '').toString().toUpperCase();
+        const mapped = (val === 'DESAYUNO' || val === 'MEDIA TARDE') ? 900 : (val === 'NINGUNA' ? 0 : null);
+        if (mapped !== null) tpp = mapped;
+    }
+
+    const tiempoCiclo = getNumeric('[data-column="tiempo_ciclo"]');
+    const cantidad = getNumeric('[data-column="cantidad"]');
+
+    // Cálculos
+    const tiempoDisponible = (3600 * porcionTiempo * numeroOperarios) - tnp - tpp;
+    const meta = tiempoCiclo > 0 ? (tiempoDisponible / tiempoCiclo) * 0.9 : 0;
+    const eficiencia = meta > 0 ? (cantidad / meta) : 0; // ratio 0..n
+
+    // Escribir en celdas
+    const tdCell = row.querySelector('[data-column="tiempo_disponible"]');
+    if (tdCell) {
+        tdCell.dataset.value = tiempoDisponible;
+        tdCell.textContent = formatDisplayValue('tiempo_disponible', tiempoDisponible.toFixed(2));
+    }
+
+    const metaCell = row.querySelector('[data-column="meta"]');
+    if (metaCell) {
+        metaCell.dataset.value = meta;
+        metaCell.textContent = formatDisplayValue('meta', meta.toFixed(2));
+    }
+
+    const efCell = row.querySelector('[data-column="eficiencia"]');
+    if (efCell) {
+        efCell.dataset.value = eficiencia;
+        efCell.textContent = formatDisplayValue('eficiencia', eficiencia);
+        efCell.className = efCell.className.replace(/eficiencia-\w+/g, '');
+        const cls = getEficienciaClass(eficiencia);
+        if (cls) efCell.classList.add(cls);
+    }
+}
+</script>
 <!-- Real-time updates script -->
 <script>
 // Initialize real-time listeners for all tableros
