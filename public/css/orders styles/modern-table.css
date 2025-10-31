@@ -1,0 +1,924 @@
+/* Estilos para el dropdown de estado en la tabla moderna */
+.table-cell .estado-dropdown {
+background-color: transparent;
+border: 1px solid #ccc;
+border-radius: 15px;
+font-size: inherit;
+color: white !important;
+padding: 5px 10px;
+cursor: pointer;
+transition: all 0.3s ease;
+outline: none;
+-webkit-appearance: none;
+-moz-appearance: none;
+appearance: none;
+}
+
+/* Colores dinámicos para el dropdown */
+.table-cell .estado-dropdown[data-value="Entregado"] {
+background-color: #007bff !important;
+border-color: #007bff !important;
+}
+.table-cell .estado-dropdown[data-value="En Ejecución"] {
+background-color: #28a745 !important;
+border-color: #28a745 !important;
+}
+.table-cell .estado-dropdown[data-value="No iniciado"] {
+background-color: #343a40 !important;
+border-color: #343a40 !important;
+}
+.table-cell .estado-dropdown[data-value="Anulada"] {
+background-color: #8b4513 !important;
+border-color: #8b4513 !important;
+}
+
+/* Opciones del dropdown */
+.estado-dropdown option {
+border-radius: 15px;
+padding: 8px 12px;
+margin: 2px 0;
+font-weight: 500;
+}
+
+.estado-dropdown option[value="Entregado"] {
+background-color: #007bff !important;
+color: white !important;
+}
+.estado-dropdown option[value="En Ejecución"] {
+background-color: #28a745 !important;
+color: white !important;
+}
+.estado-dropdown option[value="No iniciado"] {
+background-color: #343a40 !important;
+color: white !important;
+}
+.estado-dropdown option[value="Anulada"] {
+background-color: #8b4513 !important;
+color: white !important;
+}
+
+.estado-dropdown:focus,
+.estado-dropdown:active,
+.estado-dropdown:hover {
+outline: none !important;
+}
+
+/* === Ajustes clave para tabla moderna con redimensionamiento === */
+#tablaOrdenes {
+table-layout: fixed !important;
+width: 100% !important;
+min-width: 3000px;
+border-collapse: collapse;
+}
+
+#tablaOrdenes thead th,
+#tablaOrdenes tbody td {
+min-width: 120px !important;
+width: var(--col-width, 150px) !important;
+max-width: none !important;
+transition: width 0.2s ease;
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
+}
+
+/* Fila moderna */
+#tablaOrdenes tbody .table-row {
+border-bottom: 2px solid #000000 !important;
+padding: 12px 8px !important;
+transition: background-color 0.3s ease, box-shadow 0.3s ease, border-radius 0.3s ease, transform 0.3s ease !important;
+position: relative;
+border-radius: 0 !important;
+}
+
+#tablaOrdenes tbody .table-row .table-cell {
+border-radius: 0 !important;
+}
+
+#tablaOrdenes tbody .table-row:hover {
+background-color: #f8f9fa !important;
+box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+border-radius: 12px !important;
+margin: 0 4px !important;
+transform: translateY(-1px) !important;
+z-index: 1 !important;
+}
+
+#tablaOrdenes tbody .table-row:hover .table-cell {
+border-radius: 0 !important;
+}
+
+/* === Formato condicional por estado / días === */
+#tablaOrdenes tbody .table-row.row-delivered {
+background-color: #95ceff !important;
+color: #212529 !important;
+}
+#tablaOrdenes tbody .table-row.row-delivered:hover {
+background-color: #a3d4ff !important;
+}
+#tablaOrdenes tbody .table-row.row-warning {
+background-color: #fff3cd !important;
+color: #212529 !important;
+}
+#tablaOrdenes tbody .table-row.row-warning:hover {
+background-color: #ffeaa7 !important;
+}
+#tablaOrdenes tbody .table-row.row-danger-light {
+background-color: #f8d7da !important;
+color: #212529 !important;
+}
+#tablaOrdenes tbody .table-row.row-danger-light:hover {
+background-color: #f1aeb5 !important;
+}
+/* === Filas oscuras: texto claro === */
+#tablaOrdenes tbody .table-row.row-secondary {
+background-color: #777777 !important;
+color: #f8f9fa !important;
+}
+#tablaOrdenes tbody .table-row.row-secondary:hover {
+background-color: #495057 !important;
+}
+#tablaOrdenes tbody .table-row.row-anulada {
+background-color: #c55601d7 !important;
+color: #f8f9fa !important;
+}
+#tablaOrdenes tbody .table-row.row-anulada:hover {
+background-color: #a0522d !important;
+}
+
+/* Color de texto general */
+.cell-text {
+color: #000;
+
+}
+
+/* Color blanco solo para filas sin colores condicionales */
+#tablaOrdenes tbody .table-row:not(.row-delivered):not(.row-warning):not(.row-danger-light):not(.row-secondary):not(.row-anulada) .cell-text {
+color: #fff;
+}
+
+/* Colores de texto adaptativos en filas oscuras */
+#tablaOrdenes tbody .table-row.row-secondary .cell-text,
+#tablaOrdenes tbody .table-row.row-anulada .cell-text {
+color: #f8f9fa !important;
+}
+
+/* Hover: mantiene contraste */
+#tablaOrdenes tbody .table-row:hover .cell-text,
+#tablaOrdenes tbody .table-row.row-delivered:hover .cell-text,
+#tablaOrdenes tbody .table-row.row-warning:hover .cell-text,
+#tablaOrdenes tbody .table-row.row-danger-light:hover .cell-text {
+color: #212529 !important;
+}
+
+#tablaOrdenes tbody .table-row.row-secondary:hover .cell-text,
+#tablaOrdenes tbody .table-row.row-anulada:hover .cell-text {
+color: #ffffff !important;
+}
+
+/* === Modal oscuro === */
+#cellModal.cell-modal {
+background-color: rgba(0, 0, 0, 0.8);
+color: white;
+}
+
+#cellModal .cell-modal-content {
+background-color: #333;
+color: white;
+border-radius: 8px;
+max-width: 700px;
+width: 90%;
+margin: 0 auto;
+}
+
+#cellModal .cell-modal-header {
+background-color: #444;
+color: white;
+border-bottom: 1px solid #555;
+padding: 15px;
+border-radius: 8px 8px 0 0;
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+
+#cellModal .cell-modal-body {
+padding: 15px;
+background-color: #333;
+}
+
+#cellModal .cell-edit-input {
+background-color: #444;
+color: white;
+border: 1px solid #666;
+border-radius: 4px;
+font-family: inherit;
+font-size: 14px;
+width: 100%;
+text-align: left;
+resize: vertical;
+min-height: 200px;
+white-space: pre-wrap;
+word-wrap: break-word;
+}
+
+#cellModal .cell-edit-input:focus {
+outline: none;
+border-color: #888;
+box-shadow: 0 0 5px rgba(136, 136, 136, 0.5);
+}
+
+#cellModal .cell-modal-footer {
+background-color: #444;
+border-top: 1px solid #555;
+padding: 15px;
+border-radius: 0 0 8px 8px;
+display: flex;
+justify-content: flex-end;
+gap: 10px;
+}
+
+#cellModal .cell-modal-footer .btn {
+border: none;
+padding: 8px 16px;
+border-radius: 4px;
+cursor: pointer;
+font-size: 14px;
+color: white;
+}
+
+#cellModal .cell-modal-footer .btn-primary {
+background-color: #007bff;
+}
+
+#cellModal .cell-modal-footer .btn-secondary {
+background-color: #6c757d;
+}
+
+#modalOverlay {
+background-color: rgba(0, 0, 0, 0.8);
+}
+
+/* === Header layout === */
+.table-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 20px;
+padding: 0 10px;
+flex-wrap: wrap;
+}
+
+.search-container {
+flex: 1;
+max-width: 400px;
+margin: 0 10px;
+min-width: 200px;
+}
+
+.table-actions {
+display: flex;
+gap: 10px;
+align-items: center;
+flex-shrink: 0;
+}
+
+.table-actions button {
+margin: 0;
+font-size: 12px;
+white-space: nowrap;
+}
+
+/* === Responsive === */
+@media (max-width: 768px) {
+.table-header {
+flex-direction: column;
+gap: 10px;
+align-items: stretch;
+}
+
+
+.search-container {
+    max-width: none;
+    margin: 0;
+    order: 3;
+}
+
+.table-actions {
+    order: 4;
+    justify-content: center;
+}
+
+
+}
+
+/* === Redimensionamiento de columnas === */
+.column-resizer {
+position: absolute;
+right: 0;
+top: 0;
+bottom: 0;
+width: 8px;
+cursor: col-resize !important;
+background-color: transparent;
+z-index: 100;
+opacity: 0;
+transition: opacity 0.2s ease, background-color 0.2s ease;
+border-right: 2px solid transparent;
+}
+
+.table-header-cell:hover .column-resizer {
+opacity: 1;
+background-color: rgba(0, 123, 255, 0.2);
+}
+
+.column-resizer:hover {
+background-color: rgba(0, 123, 255, 0.4) !important;
+opacity: 1 !important;
+border-right-color: rgba(0, 123, 255, 0.6);
+}
+
+.column-resizer.dragging {
+background-color: rgba(0, 123, 255, 0.8) !important;
+opacity: 1 !important;
+border-right-color: rgba(0, 123, 255, 1);
+}
+
+/* === Header de columnas con espacio para el resizer === */
+.table-header-cell {
+position: relative !important;
+padding-right: 10px !important;
+min-width: 50px !important;
+width: auto !important;
+}
+
+.header-content {
+padding-right: 8px;
+position: relative;
+z-index: 1;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+}
+
+/* === Estilos principales de orders/index.blade.php === */
+
+/* Estilos compactos - simular zoom 75% - CONSISTENTE EN TODOS LOS NAVEGADORES */
+.table-container {
+    transform: scale(0.75);
+    transform-origin: top left;
+    width: 142% !important;
+    max-width: 142% !important;
+    min-width: 142% !important;
+    margin-left: 0 !important;
+    padding-left: 0px !important;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    -moz-backface-visibility: hidden;
+    -ms-backface-visibility: hidden;
+    overflow: visible !important;
+    position: relative;
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+}
+
+/* Forzar mismo renderizado en todos los navegadores */
+.table-container * {
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+}
+
+/* Ajuste responsive IDÉNTICO para todos los navegadores */
+@media (min-width: 1920px) {
+    .table-container {
+        padding-left: 20px !important;
+    }
+}
+
+@media (max-width: 1600px) {
+    .table-container {
+        padding-left: 20px !important;
+    }
+}
+
+@media (max-width: 1400px) {
+    .table-container {
+        padding-left: 20px !important;
+    }
+}
+
+@media (max-width: 1200px) {
+    .table-container {
+        padding-left: 15px !important;
+    }
+}
+
+@media (max-width: 992px) {
+    .table-container {
+        padding-left: 10px !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .table-container {
+        padding-left: 10px !important;
+    }
+}
+
+/* Normalizar tabla para TODOS los navegadores */
+#tablaOrdenes {
+    width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    -moz-transform: translateZ(0);
+    -ms-transform: translateZ(0);
+}
+
+.modern-table-wrapper {
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    -moz-transform: translateZ(0);
+    -ms-transform: translateZ(0);
+    width: 100% !important;
+}
+
+/* Bordes uniformes para evitar grosor inconsistente con scale */
+#tablaOrdenes tbody .table-row {
+    border-bottom: 1px solid #000000 !important;
+}
+
+#tablaOrdenes thead th,
+#tablaOrdenes tbody td {
+    border-right: 1px solid #000000 !important;
+    border-left: none !important;
+    padding: 8px !important;
+    text-align: left !important;
+}
+
+#tablaOrdenes thead th:first-child,
+#tablaOrdenes tbody td:first-child {
+    border-left: 1px solid #000000 !important;
+}
+
+/* Header de tabla */
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: var(--table-width, 100%);
+    max-width: var(--table-width, 100%);
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.table-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.clear-filters-btn,
+.add-order-btn {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.clear-filters-btn {
+    background-color: #6c757d;
+    color: white;
+}
+
+.clear-filters-btn:hover {
+    background-color: #5a6268;
+}
+
+.add-order-btn {
+    background-color: #28a745;
+    color: white;
+    font-weight: bold;
+}
+
+.add-order-btn:hover {
+    background-color: #218838;
+}
+
+/* Estilos modernos para paginación */
+.table-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: #1a1d29;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+.pagination-info {
+    color: #a0aec0;
+    font-size: 14px;
+}
+
+.pagination-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.pagination-btn {
+    min-width: 36px;
+    height: 36px;
+    border: 1px solid #2d3748;
+    background: #2d3748;
+    color: #e2e8f0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: #4a5568;
+    border-color: #4a5568;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.pagination-btn.active {
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    border-color: #ff6b35;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.pagination-btn i {
+    font-size: 14px;
+}
+
+.pagination-btn.page-number {
+    min-width: 36px;
+}
+
+/* === Modal de filtros === */
+#filterModal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+#filterModal .modal-content {
+    background-color: #2d3748;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 600px;
+    color: white;
+}
+
+#filterModal .modal-header {
+    background: #1a202c;
+    padding: 20px;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#filterModal .modal-title {
+    margin: 0;
+    font-size: 18px;
+}
+
+#filterModal .modal-close {
+    background: none;
+    border: none;
+    color: #a0aec0;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+}
+
+#filterModal .modal-body {
+    padding: 20px;
+}
+
+#filterModal .filter-list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #4a5568;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
+#filterModal .modal-footer {
+    padding: 20px;
+    border-top: 1px solid #4a5568;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    border-radius: 0 0 8px 8px;
+}
+
+#filterModal .btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+#filterModal .btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+#filterModal .btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+/* === Modal de vista completa de celda === */
+#cellModal.cell-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+#cellModal .cell-modal-content {
+    background-color: #2d3748;
+    margin: 5% auto;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 700px;
+    color: white;
+}
+
+#cellModal .cell-modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #4a5568;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#cellModal .cell-modal-title {
+    margin: 0;
+    font-size: 18px;
+}
+
+#cellModal .modal-close {
+    background: none;
+    border: none;
+    color: #a0aec0;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+#cellModal .cell-modal-body {
+    padding: 20px;
+}
+
+#cellModal .cell-edit-input {
+    width: 100%;
+    min-height: 200px;
+    background: #1a202c;
+    border: 1px solid #4a5568;
+    border-radius: 4px;
+    color: white;
+    font-family: inherit;
+    resize: vertical;
+    padding: 10px;
+}
+
+#cellModal .cell-modal-footer {
+    padding: 20px;
+    border-top: 1px solid #4a5568;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+#cellModal .cell-modal-footer .btn {
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    color: white;
+}
+
+#cellModal .cell-modal-footer .btn-primary {
+    background-color: #007bff;
+}
+
+#cellModal .cell-modal-footer .btn-secondary {
+    background-color: #6c757d;
+}
+
+#modalOverlay {
+    display: none;
+    position: fixed;
+    z-index: 999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+/* === Estilos simplificados para modal de eliminación === */
+.delete-confirmation-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.delete-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+
+.delete-modal-content {
+    position: relative;
+    z-index: 2;
+    background: #2d3748;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    max-width: 400px;
+    width: 90%;
+    overflow: hidden;
+}
+
+.delete-modal-header {
+    background: #e53e3e;
+    padding: 16px 20px;
+    text-align: center;
+}
+
+.delete-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 12px;
+}
+
+.delete-header-icon {
+    width: 24px;
+    height: 24px;
+    color: white;
+}
+
+.delete-modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: white;
+    margin: 0;
+}
+
+.delete-modal-body {
+    padding: 20px;
+}
+
+.delete-modal-message {
+    font-size: 14px;
+    color: #e2e8f0;
+    line-height: 1.5;
+    margin: 0;
+    text-align: center;
+}
+
+.delete-modal-message strong {
+    color: #fbb6ce;
+}
+
+.delete-modal-footer {
+    padding: 16px 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.delete-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.delete-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.delete-btn-secondary {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.delete-btn-secondary:hover {
+    background: #cbd5e0;
+}
+
+.delete-btn-danger {
+    background: #e53e3e;
+    color: white;
+}
+
+.delete-btn-danger:hover {
+    background: #c53030;
+}
+
+/* Notificación simplificada */
+.delete-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    max-width: 350px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 1300;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.delete-notification-success {
+    background: #48bb78;
+    color: white;
+}
+
+.delete-notification-error {
+    background: #f56565;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    .delete-modal-content {
+        margin: 20px;
+        width: calc(100% - 40px);
+    }
+
+    .delete-modal-footer {
+        flex-direction: column;
+    }
+
+    .delete-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
