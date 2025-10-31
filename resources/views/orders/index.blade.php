@@ -12,9 +12,9 @@
         .table-container {
             transform: scale(0.75);
             transform-origin: top left;
-            width: 133.33% !important;
-            max-width: 133.33% !important;
-            min-width: 133.33% !important;
+            width: 142% !important;
+            max-width: 142% !important;
+            min-width: 142% !important;
             margin-left: 0 !important;
             padding-left: 0px !important;
             backface-visibility: hidden;

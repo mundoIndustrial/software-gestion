@@ -5,7 +5,7 @@ class ModernTable {
         this.storage = {
             rowHeight: parseInt(this.getStorage('table_rowHeight')) || 50,
             columnWidths: JSON.parse(this.getStorage('table_columnWidths')) || {},
-            tableWidth: parseInt(this.getStorage('table_tableWidth')) || 1000,
+            tableWidth: this.getStorage('table_tableWidth') ? parseInt(this.getStorage('table_tableWidth')) : null,
             tableHeight: parseInt(this.getStorage('table_tableHeight')) || null,
             tablePosition: JSON.parse(this.getStorage('table_tablePosition')) || null,
             headerPosition: JSON.parse(this.getStorage('table_headerPosition')) || null,
