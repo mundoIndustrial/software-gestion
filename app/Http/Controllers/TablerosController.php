@@ -15,6 +15,27 @@ use App\Models\TiempoCiclo;
 
 class TablerosController extends Controller
 {
+    public function fullscreen(Request $request)
+    {
+        $section = $request->get('section', 'produccion');
+        
+        // Obtener todos los registros según la sección
+        $registros = match($section) {
+            'produccion' => RegistroPisoProduccion::all(),
+            'polos' => RegistroPisoPolo::all(),
+            'corte' => RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela'])->get(),
+            default => RegistroPisoProduccion::all(),
+        };
+        
+        // Filtrar registros por fecha si hay filtros
+        $registrosFiltrados = $this->filtrarRegistrosPorFecha($registros, $request);
+        
+        // Calcular seguimiento de módulos
+        $seguimiento = $this->calcularSeguimientoModulos($registrosFiltrados);
+        
+        return view('tableros-fullscreen', compact('seguimiento', 'section'));
+    }
+
     public function index()
     {
         // TABLAS PRINCIPALES: SIN FILTRO DE FECHA (mostrar todos los registros)
@@ -497,9 +518,22 @@ class TablerosController extends Controller
         try {
             $registro->update($validated);
 
-            // Solo recalcular si se actualizaron campos que afectan el cálculo
-            // NO recalcular si solo se actualizó operario_id, maquina_id o tela_id
-            $fieldsToRecalculate = ['porcion_tiempo', 'numero_operarios', 'tiempo_parada_no_programada', 'tiempo_para_programada', 'tiempo_ciclo', 'cantidad'];
+            // Recalcular siempre que se actualice cualquier campo que afecte los cálculos
+            // Esto incluye: tiempo_ciclo, porcion_tiempo, numero_operarios, paradas, cantidad, etc.
+            $fieldsToRecalculate = [
+                'porcion_tiempo', 
+                'numero_operarios', 
+                'tiempo_parada_no_programada', 
+                'tiempo_para_programada', 
+                'tiempo_ciclo', 
+                'cantidad',
+                'paradas_programadas',
+                'paradas_no_programadas',
+                'tipo_extendido',
+                'numero_capas',
+                'tiempo_trazado'
+            ];
+            
             $shouldRecalculate = false;
             foreach ($fieldsToRecalculate as $field) {
                 if (array_key_exists($field, $validated)) {
@@ -563,6 +597,16 @@ class TablerosController extends Controller
                 $registro->meta = $meta;
                 $registro->eficiencia = $eficiencia;
                 $registro->save();
+
+                // Broadcast event for real-time updates
+                if ($request->section === 'produccion') {
+                    broadcast(new \App\Events\ProduccionRecordCreated($registro));
+                } elseif ($request->section === 'polos') {
+                    broadcast(new \App\Events\PoloRecordCreated($registro));
+                } elseif ($request->section === 'corte') {
+                    $registro->load(['hora', 'operario']);
+                    broadcast(new \App\Events\CorteRecordCreated($registro));
+                }
 
                 return response()->json([
                     'success' => true,

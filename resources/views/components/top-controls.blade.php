@@ -25,6 +25,13 @@
                 <line x1="8" y1="12" x2="16" y2="12"/>
             </svg>
         </button>
+
+        <!-- Vista completa -->
+        <button class="icon-btn" @click="openFullscreenView()" x-show="!showRecords" title="Vista completa">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+            </svg>
+        </button>
     </div>
 
     <!-- Selector de fechas (DERECHA) -->
@@ -847,6 +854,47 @@ function updateDashboardTables(horasData, operariosData) {
 
         operariosTableBody.innerHTML = html;
     }
+}
+
+// Función para abrir vista completa
+function openFullscreenView() {
+    // Intentar obtener la sección activa de diferentes formas
+    let activeTab = 'produccion'; // default
+    
+    // Método 1: Desde Alpine.js
+    try {
+        const alpineEl = document.querySelector('[x-data*="tablerosApp"]');
+        if (alpineEl && alpineEl.__x && alpineEl.__x.$data) {
+            activeTab = alpineEl.__x.$data.activeTab || activeTab;
+        }
+    } catch (e) {
+        console.log('No se pudo obtener activeTab desde Alpine:', e);
+    }
+    
+    // Método 2: Desde URL params si existe
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('active_section')) {
+        activeTab = urlParams.get('active_section');
+    }
+    
+    // Método 3: Desde tab activo visible
+    const activeTabElement = document.querySelector('.tab-card.active');
+    if (activeTabElement) {
+        const tabText = activeTabElement.textContent.toLowerCase();
+        if (tabText.includes('polo')) activeTab = 'polos';
+        else if (tabText.includes('corte')) activeTab = 'corte';
+        else if (tabText.includes('produccion')) activeTab = 'produccion';
+    }
+    
+    console.log('Abriendo vista completa para sección:', activeTab);
+    
+    // Construir URL con parámetros actuales
+    const currentParams = new URLSearchParams(window.location.search);
+    currentParams.set('section', activeTab);
+    
+    // Cargar en la misma ventana
+    const url = `/tableros/fullscreen?${currentParams.toString()}`;
+    window.location.href = url;
 }
 
 // Inicialización al cargar la página
