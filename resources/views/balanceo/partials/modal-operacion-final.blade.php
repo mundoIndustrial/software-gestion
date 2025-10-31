@@ -1,5 +1,5 @@
 <div x-show="showAddModal" x-cloak style="position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px);" @click.self="showAddModal = false">
-    <div class="modern-modal-container" style="max-width: 850px; width: 70%; margin: auto;">
+    <div class="modern-modal-container" style="max-width: 900px; width: 75%;">
         <div class="modal-header">
             <div class="header-content">
                 <div class="icon-wrapper">
@@ -11,7 +11,7 @@
             </div>
         </div>
 
-        <div>
+        <form @submit.prevent="saveOperacion()">
             <div class="form-content">
                 <div class="section-card">
                     <h3 class="section-title">Datos de la Operación</h3>
@@ -114,89 +114,31 @@
                     </div>
                 </div>
 
-                <!-- Botones del formulario -->
+                <!-- Botones -->
                 <div class="form-actions">
-                    <button type="button" @click="resetForm()" class="btn btn-secondary">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        Limpiar
-                    </button>
-                    <button type="button" @click="addOperacionToList()" class="btn btn-primary">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path d="M12 4v16m8-8H4" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                        Agregar a la Lista
-                    </button>
-                </div>
-
-                <!-- Lista de Operaciones Pendientes -->
-                <div x-show="pendingOperaciones.length > 0" class="section-card" style="margin-top: 20px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                        <h3 class="section-title" style="margin: 0;">
-                            Operaciones Pendientes (<span x-text="pendingOperaciones.length"></span>)
-                        </h3>
-                        <button type="button" @click="clearPendingList()" class="btn-clear-list">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 16px; height: 16px;">
-                                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                            Limpiar Lista
-                        </button>
-                    </div>
-                    
-                    <div style="overflow-x: auto;">
-                        <table class="pending-table">
-                            <thead>
-                                <tr>
-                                    <th>Letra</th>
-                                    <th>SAM</th>
-                                    <th>Operación</th>
-                                    <th>Precedencia</th>
-                                    <th>Máquina</th>
-                                    <th>Sección</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <template x-for="(op, index) in pendingOperaciones" :key="index">
-                                    <tr>
-                                        <td x-text="op.letra"></td>
-                                        <td x-text="op.sam"></td>
-                                        <td x-text="op.operacion" style="max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></td>
-                                        <td x-text="op.precedencia || '-'"></td>
-                                        <td x-text="op.maquina || '-'"></td>
-                                        <td x-text="op.seccion"></td>
-                                        <td>
-                                            <button type="button" @click="removePendingOperacion(index)" class="btn-remove">
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                                    <path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round"/>
-                                                </svg>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Botones Finales -->
-                <div class="form-actions" style="margin-top: 24px;">
                     <button type="button" @click="showAddModal = false" class="btn btn-secondary">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round"/>
                         </svg>
                         Cancelar
                     </button>
-                    <button type="button" @click="saveAllOperaciones()" class="btn btn-primary" x-show="pendingOperaciones.length > 0">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path d="M5 13l4 4L19 7" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                        Guardar Todas (<span x-text="pendingOperaciones.length"></span>)
-                    </button>
+                    <div style="display: flex; gap: 12px;">
+                        <button type="button" @click="saveOperacion(true)" class="btn btn-secondary-alt">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M12 4v16m8-8H4" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            Guardar y Agregar Otra
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M5 13l4 4L19 7" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                            Guardar y Cerrar
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
+        </form>
     </div>
 </div>
 
@@ -371,77 +313,6 @@
     background: rgba(255, 157, 88, 0.2);
 }
 
-/* Tabla de operaciones pendientes */
-.pending-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 14px;
-}
-
-.pending-table thead {
-    background: #f7fafc;
-}
-
-.pending-table th {
-    padding: 12px;
-    text-align: left;
-    font-weight: 600;
-    color: #2d3748;
-    border-bottom: 2px solid #e2e8f0;
-}
-
-.pending-table td {
-    padding: 12px;
-    border-bottom: 1px solid #e2e8f0;
-    color: #4a5568;
-}
-
-.pending-table tbody tr:hover {
-    background: #f7fafc;
-}
-
-.btn-remove {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 6px;
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.btn-remove svg {
-    width: 16px;
-    height: 16px;
-    color: #ef4444;
-    stroke-width: 2;
-}
-
-.btn-remove:hover {
-    background: rgba(239, 68, 68, 0.2);
-}
-
-.btn-clear-list {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-size: 13px;
-    font-weight: 500;
-    color: #ef4444;
-}
-
-.btn-clear-list:hover {
-    background: rgba(239, 68, 68, 0.2);
-}
-
 @media (max-width: 768px) {
     .form-grid {
         grid-template-columns: 1fr;
@@ -453,15 +324,6 @@
     
     .modal-header {
         padding: 20px;
-    }
-    
-    .pending-table {
-        font-size: 12px;
-    }
-    
-    .pending-table th,
-    .pending-table td {
-        padding: 8px;
     }
 }
 </style>
