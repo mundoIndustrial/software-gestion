@@ -16,6 +16,11 @@
 <link rel="stylesheet" href="{{ asset('css/tableros.css') }}">
 <link rel="stylesheet" href="{{ asset('css/modern-table.css') }}">
 <script src="{{ asset('js/tableros.js') }}"></script>
+<style>
+    .tableros-container {
+        zoom: 0.76;
+    }
+</style>
 @include('components.tableros-form-modal')
 @include('components.form_modal_piso_corte')
 <div class="tableros-container" x-data="tablerosApp()">

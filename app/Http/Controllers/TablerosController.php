@@ -36,6 +36,21 @@ class TablerosController extends Controller
         return view('tableros-fullscreen', compact('seguimiento', 'section'));
     }
 
+    public function corteFullscreen(Request $request)
+    {
+        // Obtener todos los registros de corte
+        $registrosCorte = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela'])->get();
+        
+        // Filtrar registros por fecha si hay filtros
+        $registrosCorteFiltrados = $this->filtrarRegistrosPorFecha($registrosCorte, $request);
+        
+        // Calcular datos dinámicos para las tablas
+        $horasData = $this->calcularProduccionPorHoras($registrosCorteFiltrados);
+        $operariosData = $this->calcularProduccionPorOperarios($registrosCorteFiltrados);
+        
+        return view('tableros-corte-fullscreen', compact('horasData', 'operariosData'));
+    }
+
     public function index()
     {
         // TABLAS PRINCIPALES: SIN FILTRO DE FECHA (mostrar todos los registros)

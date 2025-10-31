@@ -890,10 +890,17 @@ function openFullscreenView() {
     
     // Construir URL con parámetros actuales
     const currentParams = new URLSearchParams(window.location.search);
-    currentParams.set('section', activeTab);
+    
+    // Usar ruta diferente para corte (tiene 2 tablas) vs producción/polos (seguimiento de módulos)
+    let url;
+    if (activeTab === 'corte') {
+        url = `/tableros/corte-fullscreen?${currentParams.toString()}`;
+    } else {
+        currentParams.set('section', activeTab);
+        url = `/tableros/fullscreen?${currentParams.toString()}`;
+    }
     
     // Cargar en la misma ventana
-    const url = `/tableros/fullscreen?${currentParams.toString()}`;
     window.location.href = url;
 }
 

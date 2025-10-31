@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seguimiento de Módulos - Vista Completa</title>
+    <title>Dashboard Corte - Vista Completa</title>
     <style>
         * {
             margin: 0;
@@ -16,22 +16,22 @@
             background: #f5f5f5;
             color: #333;
             padding: 20px;
-            zoom: 0.78;
+            zoom: 0.76;
         }
 
         .fullscreen-container {
-            max-width: 1600px;
+            max-width: 1500px;
             margin: 0 auto;
             background: white;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             overflow: hidden;
         }
 
         .header {
             background: linear-gradient(135deg, #2c3e50, #34495e);
             color: white;
-            padding: 20px 30px;
+            padding: 20px 28px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -39,7 +39,7 @@
         }
 
         .header h1 {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 600;
             letter-spacing: 0.5px;
         }
@@ -56,15 +56,15 @@
             background: #e74c3c;
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 8px 20px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             transition: all 0.3s;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .close-btn:hover {
@@ -74,22 +74,23 @@
         }
 
         .filter-section {
-            background: white;
-            padding: 20px 30px;
-            border-bottom: 1px solid #e0e0e0;
+            background: #f8f9fa;
+            padding: 18px 28px;
+            border-bottom: 1px solid #e9ecef;
             display: flex;
-            gap: 15px;
+            gap: 10px;
             align-items: center;
             flex-wrap: wrap;
         }
 
         .filter-select, .filter-input {
             background: white;
-            border: 1px solid #d1d5db;
+            border: 1px solid #dee2e6;
             border-radius: 6px;
             padding: 8px 12px;
-            color: #2c3e50;
+            color: #495057;
             font-size: 13px;
+            transition: all 0.2s;
         }
 
         .filter-select:focus, .filter-input:focus {
@@ -116,9 +117,9 @@
         }
 
         .btn-clear-filter {
-            background: #6b7280;
-            color: white;
-            border: none;
+            background: white;
+            color: #6c757d;
+            border: 1px solid #dee2e6;
             padding: 8px 16px;
             border-radius: 6px;
             cursor: pointer;
@@ -128,19 +129,44 @@
         }
 
         .btn-clear-filter:hover {
-            background: #4b5563;
+            border-color: #6c757d;
+            background: #f8f9fa;
+            transform: translateY(-1px);
         }
 
-        .table-container {
-            padding: 30px;
-            overflow-x: auto;
+        .tables-container {
+            padding: 24px;
+            display: flex;
+            gap: 16px;
+            justify-content: space-between;
+        }
+
+        .table-section {
+            background: white;
+            border-radius: 8px;
+            padding: 0;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            border: 1px solid #e9ecef;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .table-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: white;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            margin: 0;
+            padding: 12px 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .data-table {
             width: 100%;
             border-collapse: collapse;
             background: white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         .data-table thead {
@@ -149,28 +175,21 @@
         }
 
         .data-table th {
-            padding: 14px 12px;
+            padding: 10px 12px;
             text-align: center;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            border: 1px solid #e0e0e0;
-            color: #fff;
-        }
-
-        .data-table th.module-header {
-            background: linear-gradient(135deg, #3498db, #2980b9);
-            font-size: 14px;
-            padding: 16px 12px;
+            border-bottom: 2px solid #dee2e6;
         }
 
         .data-table td {
-            padding: 12px;
-            text-align: center;
-            border: 1px solid #e0e0e0;
-            font-size: 13px;
-            color: #2c3e50;
+            padding: 10px 12px;
+            text-align: right;
+            border-bottom: 1px solid #f1f3f5;
+            font-size: 12px;
+            color: #495057;
         }
 
         .data-table tbody tr:nth-child(even) {
@@ -178,225 +197,72 @@
         }
 
         .data-table tbody tr:hover {
-            background: #e8f4f8;
+            background: #e9ecef;
             transition: background 0.2s;
         }
 
-        .hora-cell {
+        .name-cell {
             font-weight: 600;
-            background: #ecf0f1;
-            color: #2c3e50;
             text-align: left;
-            padding-left: 20px;
+            padding-left: 12px;
+            color: #212529 !important;
         }
 
         .total-row {
             background: linear-gradient(135deg, #34495e, #2c3e50) !important;
             font-weight: 700;
-            font-size: 14px;
+            font-size: 12px;
         }
 
         .total-row td {
-            border-color: #2c3e50 !important;
+            border: none !important;
             color: white !important;
-            padding: 16px 12px;
-        }
-        
-        .total-row .hora-cell {
-            color: white !important;
-            background: #2c3e50 !important;
+            padding: 12px;
+            font-weight: 700;
         }
 
-        /* Eficiencia colors - applied directly to td */
+        .total-row .name-cell {
+            background: transparent !important;
+            color: white !important;
+        }
+
+        /* Eficiencia colors */
+        .eficiencia-cell {
+            font-weight: 600;
+        }
+
         .eficiencia-blue {
             background: #3498db !important;
             color: white !important;
-            font-weight: 600;
         }
 
         .eficiencia-green {
             background: #27ae60 !important;
             color: white !important;
-            font-weight: 600;
         }
 
         .eficiencia-orange {
             background: #f39c12 !important;
             color: white !important;
-            font-weight: 600;
         }
 
         .eficiencia-red {
             background: #e74c3c !important;
             color: white !important;
-            font-weight: 600;
         }
 
         .eficiencia-gray {
             background: #95a5a6 !important;
             color: white !important;
-            font-weight: 600;
-        }
-
-        .legend {
-            display: flex;
-            justify-content: center;
-            gap: 30px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-top: 1px solid #e0e0e0;
-            flex-wrap: wrap;
-        }
-
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 13px;
-            color: #2c3e50;
-        }
-
-        .legend-color {
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        /* Responsive Design */
-        @media (max-width: 1400px) {
-            body {
-                zoom: 0.7;
-            }
-            
-            .fullscreen-container {
-                max-width: 100%;
-            }
         }
 
         @media (max-width: 1200px) {
-            body {
-                zoom: 0.65;
-                padding: 15px;
-            }
-
-            .header {
+            .tables-container {
                 flex-direction: column;
-                gap: 15px;
-                text-align: center;
             }
-
-            .header h1 {
-                font-size: 20px;
-            }
-
-            .filter-section {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 10px;
-            }
-
-            .filter-select, .filter-input {
+            
+            .table-section {
                 width: 100%;
-            }
-
-            #rangeInputs {
-                flex-direction: column;
-                gap: 10px;
-            }
-        }
-
-        @media (max-width: 992px) {
-            body {
-                zoom: 0.6;
-                padding: 10px;
-            }
-
-            .table-container {
-                padding: 15px;
-            }
-
-            .data-table th,
-            .data-table td {
-                padding: 8px 6px;
-                font-size: 11px;
-            }
-
-            .header h1 {
-                font-size: 18px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            body {
-                zoom: 0.5;
-                padding: 10px;
-            }
-
-            .header {
-                padding: 15px 20px;
-            }
-
-            .header h1 {
-                font-size: 16px;
-            }
-
-            .header-info {
-                flex-direction: column;
-                gap: 5px;
-                font-size: 12px;
-            }
-
-            .close-btn {
-                padding: 8px 16px;
-                font-size: 12px;
-            }
-
-            .filter-section {
-                padding: 15px 20px;
-            }
-
-            .table-container {
-                padding: 10px;
-                overflow-x: auto;
-            }
-
-            .data-table {
-                min-width: 800px;
-            }
-
-            .legend {
-                flex-direction: column;
-                gap: 10px;
-            }
-        }
-
-        @media (max-width: 576px) {
-            body {
-                zoom: 0.45;
-                padding: 5px;
-            }
-
-            .fullscreen-container {
-                border-radius: 4px;
-            }
-
-            .header {
-                padding: 10px 15px;
-            }
-
-            .header h1 {
-                font-size: 14px;
-            }
-
-            .filter-section {
-                padding: 10px 15px;
-            }
-
-            .btn-filter,
-            .btn-clear-filter {
-                padding: 6px 12px;
-                font-size: 11px;
             }
         }
 
@@ -415,11 +281,6 @@
             .filter-section {
                 display: none;
             }
-            
-            .data-table th,
-            .data-table td {
-                border: 1px solid #333 !important;
-            }
         }
     </style>
 </head>
@@ -427,7 +288,7 @@
     <div class="fullscreen-container">
         <div class="header">
             <div>
-                <h1>📊 Seguimiento de Módulos - {{ ucfirst($section) }}</h1>
+                <h1>📊 Dashboard Corte - Vista Completa</h1>
                 <div class="header-info">
                     @if(request('filter_type'))
                         <span>
@@ -437,8 +298,6 @@
                                 📅 {{ \Carbon\Carbon::parse(request('specific_date'))->format('d/m/Y') }}
                             @elseif(request('filter_type') === 'month')
                                 📅 {{ \Carbon\Carbon::parse(request('month') . '-01')->format('m/Y') }}
-                            @elseif(request('filter_type') === 'specific')
-                                📅 Fechas específicas
                             @endif
                         </span>
                     @else
@@ -480,100 +339,115 @@
             <button class="btn-clear-filter" onclick="clearFilter()">Limpiar</button>
         </div>
 
-        <div class="table-container">
-            @php
-                $modulosDisponibles = $seguimiento['modulosDisponibles'];
-                $dataPorHora = $seguimiento['dataPorHora'];
-                $totales = $seguimiento['totales'];
-            @endphp
-
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th rowspan="2" style="min-width: 100px;">HORA</th>
-                        @foreach($modulosDisponibles as $index => $modulo)
-                            <th colspan="3" class="module-header">{{ $modulo }}</th>
-                        @endforeach
-                    </tr>
-                    <tr>
-                        @foreach($modulosDisponibles as $modulo)
-                            <th>Prendas</th>
+        <div class="tables-container">
+            <!-- Tabla de Producción por Horas -->
+            <div class="table-section">
+                <h2 class="table-title">📅 Producción por Horas</h2>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Hora</th>
+                            <th>Cantidad</th>
                             <th>Meta</th>
                             <th>Eficiencia</th>
-                        @endforeach
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @php
-                        $horasOrdenadas = array_keys($dataPorHora);
-                        sort($horasOrdenadas);
-                        $horasOrdenadas = array_slice($horasOrdenadas, 0, 12);
-                    @endphp
-                    @foreach($horasOrdenadas as $horaKey)
-                        @php
-                            $horaData = $dataPorHora[$horaKey] ?? ['modulos' => []];
-                        @endphp
-                        <tr>
-                            <td class="hora-cell">{{ $horaKey }}</td>
-                            @foreach($modulosDisponibles as $modulo)
-                                @php
-                                    $modData = $horaData['modulos'][$modulo] ?? ['meta'=>0,'eficiencia'=>0,'prendas'=>0];
-                                    $eficiencia = $modData['eficiencia'];
-                                    $eficienciaClass = $modData['prendas'] > 0
-                                        ? (($eficiencia > 1.00) ? 'eficiencia-blue'
-                                        : (($eficiencia >= 0.80) ? 'eficiencia-green'
-                                        : (($eficiencia >= 0.70) ? 'eficiencia-orange' : 'eficiencia-red')))
-                                        : 'eficiencia-gray';
-                                @endphp
-                                <td>{{ number_format($modData['prendas'], 0) }}</td>
-                                <td>{{ number_format($modData['meta'], 2) }}</td>
-                                <td class="{{ $eficienciaClass }}">
-                                    {{ $modData['prendas'] > 0 ? round($modData['eficiencia'] * 100) . '%' : '0%' }}
-                                </td>
-                            @endforeach
                         </tr>
-                    @endforeach
-
-                    <tr class="total-row">
-                        <td class="hora-cell">SUMA TOTAL</td>
-                        @foreach($modulosDisponibles as $modulo)
+                    </thead>
+                    <tbody>
+                        @php
+                            $totalCantidadHoras = 0;
+                            $totalMetaHoras = 0;
+                        @endphp
+                        @foreach($horasData as $row)
                             @php
-                                $modTotal = $totales['modulos'][$modulo] ?? ['meta'=>0,'eficiencia'=>0,'prendas'=>0];
-                                $eficiencia = $modTotal['eficiencia'];
-                                $eficienciaClass = $modTotal['prendas'] > 0
-                                    ? (($eficiencia > 1.00) ? 'eficiencia-blue'
-                                    : (($eficiencia >= 0.80) ? 'eficiencia-green'
-                                    : (($eficiencia >= 0.70) ? 'eficiencia-orange' : 'eficiencia-red')))
-                                    : 'eficiencia-gray';
+                                $totalCantidadHoras += $row['cantidad'];
+                                $totalMetaHoras += $row['meta'];
+                                $eficiencia = $row['eficiencia'];
+                                $eficienciaClass = $eficiencia < 70 ? 'eficiencia-red' 
+                                    : ($eficiencia >= 70 && $eficiencia < 80 ? 'eficiencia-orange' 
+                                    : ($eficiencia >= 80 && $eficiencia < 100 ? 'eficiencia-green' 
+                                    : ($eficiencia >= 100 ? 'eficiencia-blue' : 'eficiencia-gray')));
                             @endphp
-                            <td>{{ number_format($modTotal['prendas'], 0) }}</td>
-                            <td>{{ number_format($modTotal['meta'], 2) }}</td>
-                            <td class="{{ $eficienciaClass }}">
-                                {{ $modTotal['prendas'] > 0 ? round($modTotal['eficiencia'] * 100) . '%' : '0%' }}
-                            </td>
+                            <tr>
+                                <td class="name-cell">{{ $row['hora'] }}</td>
+                                <td>{{ number_format($row['cantidad'], 0) }}</td>
+                                <td>{{ number_format($row['meta'], 0) }}</td>
+                                <td class="eficiencia-cell {{ $eficienciaClass }}">
+                                    {{ $row['eficiencia'] > 0 ? number_format($row['eficiencia'], 1) . '%' : '-' }}
+                                </td>
+                            </tr>
                         @endforeach
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+                        <tr class="total-row">
+                            <td class="name-cell">Suma total</td>
+                            <td>{{ number_format($totalCantidadHoras, 0) }}</td>
+                            <td>{{ number_format($totalMetaHoras, 0) }}</td>
+                            @php
+                                $eficienciaTotal = $totalMetaHoras > 0 ? ($totalCantidadHoras / $totalMetaHoras) * 100 : 0;
+                                $eficienciaClass = $eficienciaTotal < 70 ? 'eficiencia-red' 
+                                    : ($eficienciaTotal >= 70 && $eficienciaTotal < 80 ? 'eficiencia-orange' 
+                                    : ($eficienciaTotal >= 80 && $eficienciaTotal < 100 ? 'eficiencia-green' 
+                                    : ($eficienciaTotal >= 100 ? 'eficiencia-blue' : 'eficiencia-gray')));
+                            @endphp
+                            <td class="eficiencia-cell {{ $eficienciaClass }}">
+                                {{ number_format($eficienciaTotal, 1) }}%
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
-        <div class="legend">
-            <div class="legend-item">
-                <div class="legend-color eficiencia-blue"></div>
-                <span>≥ 100% Eficiencia</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color eficiencia-green"></div>
-                <span>80-99% Eficiencia</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color eficiencia-orange"></div>
-                <span>70-79% Eficiencia</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color eficiencia-red"></div>
-                <span>&lt; 70% Eficiencia</span>
+            <!-- Tabla de Producción por Operarios -->
+            <div class="table-section">
+                <h2 class="table-title">👷 Producción por Operarios</h2>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Operario</th>
+                            <th>Cantidad</th>
+                            <th>Meta</th>
+                            <th>Eficiencia</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @php
+                            $totalCantidadOperarios = 0;
+                            $totalMetaOperarios = 0;
+                        @endphp
+                        @foreach($operariosData as $row)
+                            @php
+                                $totalCantidadOperarios += $row['cantidad'];
+                                $totalMetaOperarios += $row['meta'];
+                                $eficiencia = $row['eficiencia'];
+                                $eficienciaClass = $eficiencia < 70 ? 'eficiencia-red' 
+                                    : ($eficiencia >= 70 && $eficiencia < 80 ? 'eficiencia-orange' 
+                                    : ($eficiencia >= 80 && $eficiencia < 100 ? 'eficiencia-green' 
+                                    : ($eficiencia >= 100 ? 'eficiencia-blue' : 'eficiencia-gray')));
+                            @endphp
+                            <tr>
+                                <td class="name-cell">{{ $row['operario'] }}</td>
+                                <td>{{ number_format($row['cantidad'], 0) }}</td>
+                                <td>{{ number_format($row['meta'], 0) }}</td>
+                                <td class="eficiencia-cell {{ $eficienciaClass }}">
+                                    {{ $row['eficiencia'] > 0 ? number_format($row['eficiencia'], 1) . '%' : '-' }}
+                                </td>
+                            </tr>
+                        @endforeach
+                        <tr class="total-row">
+                            <td class="name-cell">Suma total</td>
+                            <td>{{ number_format($totalCantidadOperarios, 0) }}</td>
+                            <td>{{ number_format($totalMetaOperarios, 0) }}</td>
+                            @php
+                                $eficienciaTotal = $totalMetaOperarios > 0 ? ($totalCantidadOperarios / $totalMetaOperarios) * 100 : 0;
+                                $eficienciaClass = $eficienciaTotal < 70 ? 'eficiencia-red' 
+                                    : ($eficienciaTotal >= 70 && $eficienciaTotal < 80 ? 'eficiencia-orange' 
+                                    : ($eficienciaTotal >= 80 && $eficienciaTotal < 100 ? 'eficiencia-green' 
+                                    : ($eficienciaTotal >= 100 ? 'eficiencia-blue' : 'eficiencia-gray')));
+                            @endphp
+                            <td class="eficiencia-cell {{ $eficienciaClass }}">
+                                {{ number_format($eficienciaTotal, 1) }}%
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
