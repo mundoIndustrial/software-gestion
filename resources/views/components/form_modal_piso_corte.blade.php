@@ -652,6 +652,8 @@
                 this.createKey = config.createKey;
                 this.onSelect = config.onSelect || (() => {});
                 
+                console.log('AutocompleteBase inicializado para:', config.inputId, 'con callback:', typeof this.onSelect);
+                
                 this.httpService = new HttpService();
                 this.suggestionsManager = new SuggestionsManager(this.suggestionsElement);
                 
@@ -713,9 +715,12 @@
             }
 
             selectItem(item) {
+                console.log('Seleccionando item:', item);
                 this.inputElement.value = item[this.displayKey];
                 this.hiddenElement.value = item.id;
+                console.log('Hidden input ID actualizado a:', item.id);
                 this.suggestionsManager.hide();
+                console.log('Ejecutando callback onSelect...');
                 this.onSelect(item);
             }
 
@@ -785,13 +790,22 @@
                 this.tiempoCicloElement = document.querySelector(tiempoCicloSelector);
                 this.route = route;
                 this.httpService = new HttpService();
+                
+                console.log('TiempoCicloManager inicializado:');
+                console.log('  - Tela element:', this.telaIdElement);
+                console.log('  - Maquina element:', this.maquinaIdElement);
+                console.log('  - TiempoCiclo element:', this.tiempoCicloElement);
+                console.log('  - Route:', this.route);
             }
 
             async update() {
                 const telaId = this.telaIdElement.value;
                 const maquinaId = this.maquinaIdElement.value;
 
+                console.log('Actualizando tiempo de ciclo - Tela ID:', telaId, 'Máquina ID:', maquinaId);
+
                 if (!telaId || !maquinaId) {
+                    console.log('Falta tela o máquina, no se puede buscar tiempo de ciclo');
                     return;
                 }
 
@@ -800,14 +814,37 @@
                         `${this.route}?tela_id=${telaId}&maquina_id=${maquinaId}`
                     );
 
+                    console.log('Respuesta del servidor:', data);
+
                     if (data.success) {
+                        console.log('Intentando actualizar campo. Elemento:', this.tiempoCicloElement);
+                        console.log('Valor actual del campo:', this.tiempoCicloElement?.value);
+                        console.log('Nuevo valor a asignar:', data.tiempo_ciclo);
+                        
                         this.tiempoCicloElement.value = data.tiempo_ciclo;
+                        this.tiempoCicloElement.style.backgroundColor = '#d4edda';
+                        
+                        console.log('Valor del campo después de asignar:', this.tiempoCicloElement.value);
+                        console.log('Tiempo de ciclo encontrado:', data.tiempo_ciclo);
+                        
+                        setTimeout(() => {
+                            this.tiempoCicloElement.style.backgroundColor = '';
+                        }, 2000);
                     } else {
                         this.tiempoCicloElement.value = '';
+                        this.tiempoCicloElement.style.backgroundColor = '#fff3cd';
+                        console.log('No se encontró tiempo de ciclo para esta combinación');
+                        setTimeout(() => {
+                            this.tiempoCicloElement.style.backgroundColor = '';
+                        }, 2000);
                     }
                 } catch (error) {
                     console.error('Error al obtener tiempo de ciclo:', error);
                     this.tiempoCicloElement.value = '';
+                    this.tiempoCicloElement.style.backgroundColor = '#f8d7da';
+                    setTimeout(() => {
+                        this.tiempoCicloElement.style.backgroundColor = '';
+                    }, 2000);
                 }
             }
         }
@@ -961,7 +998,22 @@
         // ========================================
         // INICIALIZACIÓN (Dependency Injection)
         // ========================================
-        document.addEventListener('DOMContentLoaded', () => {
+        let isInitialized = false;
+        
+        function initializeCorteForm() {
+            if (isInitialized) return;
+            
+            console.log('Inicializando formulario de corte...');
+            
+            // Verificar que los elementos existen
+            if (!document.getElementById('tela_autocomplete')) {
+                console.error('Elementos del formulario no encontrados, reintentando...');
+                setTimeout(initializeCorteForm, 100);
+                return;
+            }
+            
+            isInitialized = true;
+            
             // Inicializar inputs en mayúsculas
             new UppercaseInputManager('.uppercase-input');
 
@@ -969,12 +1021,15 @@
             const tiempoCicloManager = new TiempoCicloManager(
                 'tela_id',
                 'maquina_id',
-                'input[name="tiempo_ciclo"]',
+                '#registroCorteForm input[name="tiempo_ciclo"]',
                 '{{ route("get-tiempo-ciclo") }}'
             );
 
             // Inicializar autocompletes con callback para tiempo de ciclo
-            const onSelectCallback = () => tiempoCicloManager.update();
+            const onSelectCallback = () => {
+                console.log('Callback ejecutado, llamando a tiempoCicloManager.update()');
+                tiempoCicloManager.update();
+            };
 
             new TelaAutocomplete({
                 inputId: 'tela_autocomplete',
@@ -1026,6 +1081,19 @@
 
             // Gestor de formulario
             new FormManager('registroCorteForm', '{{ route("piso-corte.store") }}');
+            
+            console.log('Formulario de corte inicializado correctamente');
+        }
+        
+        // Inicializar cuando el DOM esté listo
+        document.addEventListener('DOMContentLoaded', initializeCorteForm);
+        
+        // También inicializar cuando se abra el modal
+        window.addEventListener('open-modal', (e) => {
+            if (e.detail === 'piso-corte-form') {
+                console.log('Modal de corte abierto, inicializando...');
+                setTimeout(initializeCorteForm, 100);
+            }
         });
     </script>
 </x-modal>

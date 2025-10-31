@@ -23,9 +23,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolesSeeder::class,
             HorasSeeder::class,
-            MaquinasSeeder::class,
-            TelasSeeder::class,
-            TiempoCiclosSeeder::class,
+            MaquinasTelasSeeder::class, // Seeder consolidado para máquinas, telas y tiempos de ciclo
         ]);
     }
 }

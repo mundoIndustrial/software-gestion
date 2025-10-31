@@ -533,5 +533,52 @@
             toggleFilterInputs();
         });
     </script>
+
+    @vite(['resources/js/app.js'])
+    
+    <script>
+    // Esperar a que Echo esté disponible
+    function initializeCorteFullscreenRealtime() {
+        console.log('=== CORTE FULLSCREEN - Inicializando tiempo real ===');
+        
+        if (!window.Echo) {
+            console.log('Echo no disponible, reintentando...');
+            setTimeout(initializeCorteFullscreenRealtime, 500);
+            return;
+        }
+
+        console.log('✅ Echo disponible, suscribiendo al canal de corte...');
+
+        // Canal de Corte
+        window.Echo.channel('corte').listen('CorteRecordCreated', (e) => {
+            console.log('🎉 Evento CorteRecordCreated recibido en fullscreen', e);
+            
+            // Si es eliminación, solo eliminar la fila
+            if (e.registro && e.registro.deleted) {
+                console.log('🗑️ Eliminando registro ID:', e.registro.id);
+                const row = document.querySelector(`tr[data-id="${e.registro.id}"]`);
+                if (row) {
+                    row.style.transition = 'opacity 0.3s ease';
+                    row.style.opacity = '0';
+                    setTimeout(() => row.remove(), 300);
+                }
+            } else {
+                // Para crear/actualizar, recargar la página
+                location.reload();
+            }
+        });
+
+        console.log('✅ Listener configurado en fullscreen de corte');
+    }
+
+    // Inicializar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(initializeCorteFullscreenRealtime, 1000);
+        });
+    } else {
+        setTimeout(initializeCorteFullscreenRealtime, 1000);
+    }
+    </script>
 </body>
 </html>

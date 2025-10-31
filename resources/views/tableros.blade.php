@@ -785,11 +785,81 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    let isDeleting = false; // Flag para prevenir múltiples eliminaciones
+
     function confirmDeleteRegistro() {
+        // Prevenir múltiples clics
+        if (isDeleting) {
+            console.log('⏳ Ya hay una eliminación en proceso...');
+            return;
+        }
+
         const modal = document.getElementById('deleteConfirmModal');
         const id = modal.dataset.deleteId;
         const section = modal.dataset.deleteSection;
 
+        // Deshabilitar el botón de eliminar
+        const confirmBtn = document.getElementById('confirmDelete');
+        if (confirmBtn) {
+            confirmBtn.disabled = true;
+            confirmBtn.textContent = 'Eliminando...';
+        }
+
+        isDeleting = true;
+
+        // Eliminar la fila INMEDIATAMENTE (optimista)
+        const row = document.querySelector(`tr[data-id="${id}"]`);
+        if (row) {
+            row.style.transition = 'opacity 0.3s ease';
+            row.style.opacity = '0';
+            setTimeout(() => {
+                row.remove();
+                
+                // Verificar si la página quedó vacía (solo si no estamos ya redirigiendo)
+                if (!window.isRedirecting) {
+                    const table = document.querySelector(`table[data-section="${section}"]`);
+                    if (table) {
+                        const tbody = table.querySelector('tbody');
+                        const remainingRows = tbody ? tbody.querySelectorAll('tr[data-id]').length : 0;
+                        
+                        console.log(`Filas restantes en la página: ${remainingRows}`);
+                        
+                        // Si no quedan filas, ir a la página anterior
+                        if (remainingRows === 0) {
+                            const urlParams = new URLSearchParams(window.location.search);
+                            const currentPage = parseInt(urlParams.get('page')) || 1;
+                            
+                            if (currentPage > 1) {
+                                console.log(`Página vacía, redirigiendo a página ${currentPage - 1}`);
+                                window.isRedirecting = true;
+                                
+                                // Esperar un poco antes de redirigir para evitar bucles
+                                setTimeout(() => {
+                                    urlParams.set('page', currentPage - 1);
+                                    window.location.search = urlParams.toString();
+                                }, 500);
+                            }
+                        }
+                    }
+                }
+            }, 300);
+        }
+        
+        // Cerrar el modal INMEDIATAMENTE
+        closeDeleteModal();
+        
+        // Resetear el modal para el próximo uso
+        setTimeout(() => {
+            document.getElementById('deleteModalTitle').textContent = 'Confirmar Eliminación';
+            document.getElementById('deleteModalBody').innerHTML = '<p>¿Estás seguro de que quieres eliminar este registro?</p>';
+            document.getElementById('deleteModalFooter').style.display = 'flex';
+            if (confirmBtn) {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Eliminar';
+            }
+        }, 500);
+
+        // Hacer la petición en segundo plano
         fetch(`/tableros/${id}?section=${section}`, {
             method: 'DELETE',
             headers: {
@@ -799,22 +869,35 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Eliminar la fila de la tabla
-                const row = document.querySelector(`tr[data-id="${id}"]`);
-                if (row) {
-                    row.remove();
+                console.log('✅ Registro eliminado del servidor:', id);
+                
+                // Si es sección de corte, recargar el dashboard
+                if (section === 'corte' && typeof recargarDashboardCorte === 'function') {
+                    recargarDashboardCorte();
                 }
-                // Mostrar mensaje de éxito en el modal
-                document.getElementById('deleteModalTitle').textContent = 'Eliminación Exitosa';
-                document.getElementById('deleteModalBody').innerHTML = '<div style="text-align: center; color: orange; display: flex; align-items: center; justify-content: center;"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg><span style="font-size: 14px; margin-left: 10px;">Registro eliminado correctamente.</span></div>';
-                document.getElementById('deleteModalFooter').style.display = 'none';
+                
+                // Emitir evento personalizado para que otras ventanas actualicen
+                window.dispatchEvent(new CustomEvent('registro-eliminado', { 
+                    detail: { id, section } 
+                }));
             } else {
-                alert('Error al eliminar: ' + data.message);
+                console.error('Error al eliminar:', data.message);
+                // Si falla, recargar la página para restaurar el estado correcto
+                setTimeout(() => location.reload(), 1000);
             }
         })
         .catch(error => {
             console.error('Error:', error);
             alert('Error al eliminar el registro');
+            // Re-habilitar el botón si hay error
+            if (confirmBtn) {
+                confirmBtn.disabled = false;
+                confirmBtn.textContent = 'Eliminar';
+            }
+        })
+        .finally(() => {
+            // Resetear el flag inmediatamente
+            isDeleting = false;
         });
     }
 
@@ -987,7 +1070,19 @@ function initializeRealtimeListeners() {
     });
     produccionChannel.listen('ProduccionRecordCreated', (e) => {
         console.log('🎉 Evento ProduccionRecordCreated recibido!', e);
-        agregarRegistroTiempoReal(e.registro, 'produccion');
+        
+        // Si es un evento de eliminación
+        if (e.registro && e.registro.deleted) {
+            console.log('🗑️ Eliminando registro ID:', e.registro.id);
+            const row = document.querySelector(`tr[data-id="${e.registro.id}"]`);
+            if (row) {
+                row.style.transition = 'opacity 0.3s ease';
+                row.style.opacity = '0';
+                setTimeout(() => row.remove(), 300);
+            }
+        } else {
+            agregarRegistroTiempoReal(e.registro, 'produccion');
+        }
     });
 
     // Canal de Polo
@@ -1000,7 +1095,19 @@ function initializeRealtimeListeners() {
     });
     poloChannel.listen('PoloRecordCreated', (e) => {
         console.log('🎉 Evento PoloRecordCreated recibido!', e);
-        agregarRegistroTiempoReal(e.registro, 'polos');
+        
+        // Si es un evento de eliminación
+        if (e.registro && e.registro.deleted) {
+            console.log('🗑️ Eliminando registro ID:', e.registro.id);
+            const row = document.querySelector(`tr[data-id="${e.registro.id}"]`);
+            if (row) {
+                row.style.transition = 'opacity 0.3s ease';
+                row.style.opacity = '0';
+                setTimeout(() => row.remove(), 300);
+            }
+        } else {
+            agregarRegistroTiempoReal(e.registro, 'polos');
+        }
     });
 
     // Canal de Corte
@@ -1013,7 +1120,20 @@ function initializeRealtimeListeners() {
     });
     corteChannel.listen('CorteRecordCreated', (e) => {
         console.log('🎉 Evento CorteRecordCreated recibido!', e);
-        agregarRegistroTiempoReal(e.registro, 'corte');
+        
+        // Si es un evento de eliminación
+        if (e.registro && e.registro.deleted) {
+            console.log('🗑️ Eliminando registro ID:', e.registro.id);
+            const row = document.querySelector(`tr[data-id="${e.registro.id}"]`);
+            if (row) {
+                row.style.transition = 'opacity 0.3s ease';
+                row.style.opacity = '0';
+                setTimeout(() => row.remove(), 300);
+            }
+        } else {
+            // Es un evento de creación o actualización
+            agregarRegistroTiempoReal(e.registro, 'corte');
+        }
     });
 
     console.log('✅ Todos los listeners configurados');
@@ -1062,8 +1182,20 @@ function agregarRegistroTiempoReal(registro, section) {
         let value = registro[column];
         let displayValue = value;
         
-        // Formatear valores especiales
-        if (column === 'fecha' && value) {
+        // Manejar relaciones (objetos)
+        if (column === 'hora' && registro.hora) {
+            value = registro.hora.id;
+            displayValue = registro.hora.hora;
+        } else if (column === 'operario' && registro.operario) {
+            value = registro.operario.id;
+            displayValue = registro.operario.name;
+        } else if (column === 'maquina' && registro.maquina) {
+            value = registro.maquina.id;
+            displayValue = registro.maquina.nombre_maquina;
+        } else if (column === 'tela' && registro.tela) {
+            value = registro.tela.id;
+            displayValue = registro.tela.nombre_tela;
+        } else if (column === 'fecha' && value) {
             displayValue = new Date(value).toLocaleDateString('es-ES');
         } else if (column === 'eficiencia' && value !== null) {
             displayValue = Math.round(value * 100 * 10) / 10 + '%';
@@ -1071,7 +1203,7 @@ function agregarRegistroTiempoReal(registro, section) {
         }
         
         td.setAttribute('data-value', value);
-        td.textContent = displayValue;
+        td.textContent = displayValue || '';
         row.appendChild(td);
     });
 
@@ -1110,7 +1242,20 @@ function actualizarFilaExistente(row, registro, section) {
             let value = registro[column];
             let displayValue = value;
             
-            if (column === 'fecha' && value) {
+            // Manejar relaciones (objetos)
+            if (column === 'hora' && registro.hora) {
+                value = registro.hora.id;
+                displayValue = registro.hora.hora;
+            } else if (column === 'operario' && registro.operario) {
+                value = registro.operario.id;
+                displayValue = registro.operario.name;
+            } else if (column === 'maquina' && registro.maquina) {
+                value = registro.maquina.id;
+                displayValue = registro.maquina.nombre_maquina;
+            } else if (column === 'tela' && registro.tela) {
+                value = registro.tela.id;
+                displayValue = registro.tela.nombre_tela;
+            } else if (column === 'fecha' && value) {
                 displayValue = new Date(value).toLocaleDateString('es-ES');
             } else if (column === 'eficiencia' && value !== null) {
                 displayValue = Math.round(value * 100 * 10) / 10 + '%';
@@ -1118,7 +1263,7 @@ function actualizarFilaExistente(row, registro, section) {
             }
             
             cells[index].setAttribute('data-value', value);
-            cells[index].textContent = displayValue;
+            cells[index].textContent = displayValue || '';
         }
     });
     

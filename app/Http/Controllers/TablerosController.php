@@ -619,7 +619,7 @@ class TablerosController extends Controller
                 } elseif ($request->section === 'polos') {
                     broadcast(new \App\Events\PoloRecordCreated($registro));
                 } elseif ($request->section === 'corte') {
-                    $registro->load(['hora', 'operario']);
+                    $registro->load(['hora', 'operario', 'maquina', 'tela']);
                     broadcast(new \App\Events\CorteRecordCreated($registro));
                 }
 
@@ -633,7 +633,16 @@ class TablerosController extends Controller
                     ]
                 ]);
             } else {
-                // No recalcular, solo actualizar
+                // No recalcular, solo actualizar y emitir evento
+                if ($request->section === 'produccion') {
+                    broadcast(new \App\Events\ProduccionRecordCreated($registro));
+                } elseif ($request->section === 'polos') {
+                    broadcast(new \App\Events\PoloRecordCreated($registro));
+                } elseif ($request->section === 'corte') {
+                    $registro->load(['hora', 'operario', 'maquina', 'tela']);
+                    broadcast(new \App\Events\CorteRecordCreated($registro));
+                }
+                
                 return response()->json([
                     'success' => true,
                     'message' => 'Registro actualizado correctamente.',
@@ -659,14 +668,52 @@ class TablerosController extends Controller
         };
 
         try {
-            $registro = $model::findOrFail($id);
+            $registro = $model::find($id);
+            
+            // Si el registro no existe, ya fue eliminado
+            if (!$registro) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'El registro ya fue eliminado.',
+                    'id' => $id,
+                    'already_deleted' => true
+                ]);
+            }
+            
+            // Guardar el ID antes de eliminar
+            $registroId = $registro->id;
+            
             $registro->delete();
+
+            // Emitir evento de eliminación via WebSocket
+            try {
+                if ($section === 'produccion') {
+                    broadcast(new \App\Events\ProduccionRecordCreated((object)['id' => $registroId, 'deleted' => true]));
+                } elseif ($section === 'polos') {
+                    broadcast(new \App\Events\PoloRecordCreated((object)['id' => $registroId, 'deleted' => true]));
+                } elseif ($section === 'corte') {
+                    broadcast(new \App\Events\CorteRecordCreated((object)['id' => $registroId, 'deleted' => true]));
+                }
+            } catch (\Exception $broadcastError) {
+                \Log::warning('Error al emitir evento de eliminación', [
+                    'error' => $broadcastError->getMessage(),
+                    'id' => $registroId,
+                    'section' => $section
+                ]);
+            }
 
             return response()->json([
                 'success' => true,
                 'message' => 'Registro eliminado correctamente.',
+                'id' => $registroId
             ]);
         } catch (\Exception $e) {
+            \Log::error('Error al eliminar registro', [
+                'error' => $e->getMessage(),
+                'id' => $id,
+                'section' => $section
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Error al eliminar el registro: ' . $e->getMessage()
@@ -720,10 +767,14 @@ class TablerosController extends Controller
 
             // Calculate tiempo_extendido based on tipo_extendido and numero_capas
             $tiempo_extendido = 0;
-            if ($request->tipo_extendido === 'Trazo Largo') {
+            $tipo_extendido_lower = strtolower($request->tipo_extendido);
+            
+            if (str_contains($tipo_extendido_lower, 'largo')) {
                 $tiempo_extendido = 40 * $request->numero_capas;
-            } elseif ($request->tipo_extendido === 'Trazo Corto') {
+            } elseif (str_contains($tipo_extendido_lower, 'corto')) {
                 $tiempo_extendido = 25 * $request->numero_capas;
+            } else {
+                $tiempo_extendido = 0;
             }
 
             // Calculate tiempo_disponible: (3600 * porcion_tiempo) - (tiempo_para_programada + tiempo_parada_no_programada + tiempo_extendido + tiempo_trazado)
@@ -738,14 +789,14 @@ class TablerosController extends Controller
 
             // Calculate meta and eficiencia based on activity (case insensitive)
             if (str_contains(strtolower($request->actividad), 'extender') || str_contains(strtolower($request->actividad), 'trazar')) {
-                // For activities containing "extender" or "trazar", meta is the cantidad_producida, eficiencia is 100%
+                // For activities containing "extender" or "trazar", meta is the cantidad_producida, eficiencia is 1 (100%)
                 $meta = $request->cantidad_producida;
-                $eficiencia = 100;
+                $eficiencia = 1;
             } else {
                 // Calculate meta: tiempo_disponible / tiempo_ciclo
                 $meta = $request->tiempo_ciclo > 0 ? $tiempo_disponible / $request->tiempo_ciclo : 0;
-                // Calculate eficiencia: cantidad_producida / meta
-                $eficiencia = $meta == 0 ? 0 : round(($request->cantidad_producida / $meta) * 100);
+                // Calculate eficiencia: cantidad_producida / meta (SIN multiplicar por 100)
+                $eficiencia = $meta == 0 ? 0 : $request->cantidad_producida / $meta;
             }
 
             $registro = RegistroPisoCorte::create([
@@ -774,7 +825,7 @@ class TablerosController extends Controller
             ]);
 
             // Load relations for broadcasting
-            $registro->load(['hora', 'operario']);
+            $registro->load(['hora', 'operario', 'maquina', 'tela']);
 
             // Broadcast the new record to ALL clients (including other windows)
             broadcast(new \App\Events\CorteRecordCreated($registro));
@@ -848,7 +899,7 @@ class TablerosController extends Controller
             ->limit(10)
             ->get();
 
-        return response()->json($telas);
+        return response()->json(['telas' => $telas]);
     }
 
     public function storeMaquina(Request $request)
@@ -883,7 +934,7 @@ class TablerosController extends Controller
             ->limit(10)
             ->get();
 
-        return response()->json($maquinas);
+        return response()->json(['maquinas' => $maquinas]);
     }
 
     public function searchOperarios(Request $request)
@@ -894,7 +945,7 @@ class TablerosController extends Controller
             ->limit(10)
             ->get();
 
-        return response()->json($operarios);
+        return response()->json(['operarios' => $operarios]);
     }
 
     public function storeOperario(Request $request)
@@ -922,6 +973,23 @@ class TablerosController extends Controller
                 'message' => 'Error al crear el operario: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function getDashboardCorteData(Request $request)
+    {
+        $fecha = $request->input('fecha', now()->toDateString());
+        
+        $registrosCorte = RegistroPisoCorte::whereDate('fecha', $fecha)
+            ->with(['hora', 'operario'])
+            ->get();
+        
+        $horasData = $this->calcularProduccionPorHoras($registrosCorte);
+        $operariosData = $this->calcularProduccionPorOperarios($registrosCorte);
+        
+        return response()->json([
+            'horas' => $horasData,
+            'operarios' => $operariosData
+        ]);
     }
 
     private function calcularProduccionPorHoras($registrosCorte)

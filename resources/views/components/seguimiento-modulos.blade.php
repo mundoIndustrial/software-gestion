@@ -486,7 +486,26 @@ function updateSeguimientoTableContent(seguimientoData) {
         html += `<tr class="seguimiento-tr"><td class="seguimiento-td seguimiento-hora-cell">${horaKey}</td>`;
         modulosDisponibles.forEach(modulo => {
             const modData = horaData.modulos[modulo] || { prendas: 0, meta: 0, eficiencia: 0 };
-            const eficienciaClass = getEficienciaClass(modData.eficiencia);
+            
+            // Determinar clase de eficiencia
+            let eficienciaClass = 'seguimiento-gray';
+            if (modData.prendas > 0 && modData.eficiencia) {
+                const eficienciaNum = parseFloat(modData.eficiencia);
+                
+                // Aplicar lógica directamente
+                if (eficienciaNum >= 1.00) {
+                    eficienciaClass = 'seguimiento-blue';
+                } else if (eficienciaNum >= 0.80) {
+                    eficienciaClass = 'seguimiento-green';
+                } else if (eficienciaNum >= 0.70) {
+                    eficienciaClass = 'seguimiento-orange';
+                } else {
+                    eficienciaClass = 'seguimiento-red';
+                }
+                
+                console.log(`Hora ${horaKey}, Módulo ${modulo}: eficiencia=${modData.eficiencia} (${eficienciaNum}), clase=${eficienciaClass}`);
+            }
+            
             html += `<td class="seguimiento-td">${number_format(modData.prendas, 0)}</td>`;
             html += `<td class="seguimiento-td">${number_format(modData.meta, 2)}</td>`;
             html += `<td class="seguimiento-td seguimiento-efficiency-cell ${eficienciaClass}">${formatEfficiency(modData.eficiencia)}</td>`;
@@ -498,7 +517,26 @@ function updateSeguimientoTableContent(seguimientoData) {
     html += '<tr class="seguimiento-total-row"><td class="seguimiento-td seguimiento-hora-cell">Suma total</td>';
     modulosDisponibles.forEach(modulo => {
         const modTotal = totales.modulos[modulo] || { prendas: 0, meta: 0, eficiencia: 0 };
-        const eficienciaClass = getEficienciaClass(modTotal.eficiencia);
+        
+        // Determinar clase de eficiencia para totales
+        let eficienciaClass = 'seguimiento-gray';
+        if (modTotal.prendas > 0 && modTotal.eficiencia) {
+            const eficienciaNum = parseFloat(modTotal.eficiencia);
+            
+            // Aplicar lógica directamente
+            if (eficienciaNum >= 1.00) {
+                eficienciaClass = 'seguimiento-blue';
+            } else if (eficienciaNum >= 0.80) {
+                eficienciaClass = 'seguimiento-green';
+            } else if (eficienciaNum >= 0.70) {
+                eficienciaClass = 'seguimiento-orange';
+            } else {
+                eficienciaClass = 'seguimiento-red';
+            }
+            
+            console.log(`Total ${modulo}: eficiencia=${modTotal.eficiencia} (${eficienciaNum}), clase=${eficienciaClass}`);
+        }
+        
         html += `<td class="seguimiento-td">${number_format(modTotal.prendas, 0)}</td>`;
         html += `<td class="seguimiento-td">${number_format(modTotal.meta, 2)}</td>`;
         html += `<td class="seguimiento-td seguimiento-efficiency-cell ${eficienciaClass}">${formatEfficiency(modTotal.eficiencia)}</td>`;
@@ -531,11 +569,126 @@ function formatEfficiency(value) {
     return `${formatted}%`;
 }
 
-// Función para determinar la clase de eficiencia
-function getEficienciaClass(eficiencia) {
-    if (eficiencia > 1.00) return 'seguimiento-blue';
-    if (eficiencia >= 0.80) return 'seguimiento-green';
-    if (eficiencia >= 0.70) return 'seguimiento-orange';
+// Función para determinar la clase de eficiencia (global)
+window.getEficienciaClass = function(eficiencia) {
+    const eficienciaNum = parseFloat(eficiencia);
+    
+    // Si es 0, NaN o undefined, mostrar gris
+    if (!eficienciaNum || isNaN(eficienciaNum)) return 'seguimiento-gray';
+    
+    // La eficiencia viene como decimal (1.0 = 100%, 0.8 = 80%, etc.)
+    if (eficienciaNum >= 1.00) return 'seguimiento-blue';
+    if (eficienciaNum >= 0.80) return 'seguimiento-green';
+    if (eficienciaNum >= 0.70) return 'seguimiento-orange';
     return 'seguimiento-red';
+};
+
+// ============================================
+// TIEMPO REAL - Actualización automática
+// ============================================
+function initializeSeguimientoRealtime() {
+    console.log('=== SEGUIMIENTO - Inicializando tiempo real ===');
+    
+    if (!window.Echo) {
+        console.log('Echo no disponible, reintentando...');
+        setTimeout(initializeSeguimientoRealtime, 500);
+        return;
+    }
+
+    console.log('✅ Echo disponible, suscribiendo a canales...');
+
+    // Determinar qué canal escuchar según la sección actual
+    const currentSection = getCurrentSection();
+    
+    // Evitar suscripciones duplicadas
+    if (window.seguimientoChannelSubscribed) {
+        console.log('⚠️ Ya hay una suscripción activa, omitiendo...');
+        return;
+    }
+    
+    window.seguimientoChannelSubscribed = true;
+    
+    if (currentSection === 'produccion') {
+        window.Echo.channel('produccion').listen('ProduccionRecordCreated', (e) => {
+            console.log('🎉 Evento ProduccionRecordCreated recibido en seguimiento');
+            recargarSeguimiento();
+        });
+    } else if (currentSection === 'polos') {
+        window.Echo.channel('polo').listen('PoloRecordCreated', (e) => {
+            console.log('🎉 Evento PoloRecordCreated recibido en seguimiento');
+            recargarSeguimiento();
+        });
+    } else if (currentSection === 'corte') {
+        window.Echo.channel('corte').listen('CorteRecordCreated', (e) => {
+            console.log('🎉 Evento CorteRecordCreated recibido en seguimiento');
+            if (typeof recargarDashboardCorte === 'function') {
+                recargarDashboardCorte();
+            }
+        });
+    }
+
+    console.log(`✅ Listener configurado para sección: ${currentSection}`);
+}
+
+// Función para recargar los datos de seguimiento
+function recargarSeguimiento() {
+    console.log('Recargando datos de seguimiento...');
+    
+    // Obtener los parámetros actuales de la URL
+    const params = new URLSearchParams(window.location.search);
+    const currentSection = getCurrentSection();
+    
+    const seguimientoUrl = new URL('/tableros/get-seguimiento-data', window.location.origin);
+    seguimientoUrl.search = params.toString();
+    seguimientoUrl.searchParams.set('section', currentSection);
+    
+    fetch(seguimientoUrl, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Datos de seguimiento recibidos:', data);
+        
+        // Los datos pueden venir en data.seguimiento o directamente en data
+        const seguimientoData = data.seguimiento || data;
+        
+        if (seguimientoData && seguimientoData.modulosDisponibles) {
+            console.log('✅ Actualizando tabla de seguimiento...');
+            console.log('Módulos:', seguimientoData.modulosDisponibles);
+            console.log('Totales:', seguimientoData.totales);
+            
+            // Actualizar las variables globales
+            window.seguimientoData = seguimientoData;
+            
+            // Redibujar la tabla usando la función existente
+            updateSeguimientoTableContent(seguimientoData);
+            
+            console.log('✅ Tabla de seguimiento actualizada');
+        } else {
+            console.error('❌ No se recibieron datos de seguimiento válidos');
+            console.error('Estructura recibida:', data);
+        }
+    })
+    .catch(error => {
+        console.error('Error al recargar seguimiento:', error);
+    });
+}
+
+// Variable global para evitar inicialización múltiple
+if (!window.seguimientoRealtimeInitialized) {
+    window.seguimientoRealtimeInitialized = true;
+    
+    // Inicializar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(initializeSeguimientoRealtime, 1000);
+        });
+    } else {
+        setTimeout(initializeSeguimientoRealtime, 1000);
+    }
 }
 </script>

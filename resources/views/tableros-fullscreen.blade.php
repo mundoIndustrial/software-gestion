@@ -659,5 +659,71 @@
             toggleFilterInputs();
         });
     </script>
+
+    @vite(['resources/js/app.js'])
+    
+    <script>
+    // Esperar a que Echo esté disponible
+    function initializeFullscreenRealtime() {
+        console.log('=== FULLSCREEN - Inicializando tiempo real ===');
+        
+        if (!window.Echo) {
+            console.log('Echo no disponible, reintentando...');
+            setTimeout(initializeFullscreenRealtime, 500);
+            return;
+        }
+
+        console.log('✅ Echo disponible, suscribiendo a canales...');
+
+        // Canal de Producción
+        window.Echo.channel('produccion').listen('ProduccionRecordCreated', (e) => {
+            console.log('🎉 Evento ProduccionRecordCreated recibido en fullscreen', e);
+            
+            // Si es eliminación, solo eliminar la fila
+            if (e.registro && e.registro.deleted) {
+                console.log('🗑️ Eliminando registro ID:', e.registro.id);
+                const row = document.querySelector(`tr[data-id="${e.registro.id}"]`);
+                if (row) {
+                    row.style.transition = 'opacity 0.3s ease';
+                    row.style.opacity = '0';
+                    setTimeout(() => row.remove(), 300);
+                }
+            } else {
+                // Para crear/actualizar, recargar la página
+                location.reload();
+            }
+        });
+
+        // Canal de Polos
+        window.Echo.channel('polo').listen('PoloRecordCreated', (e) => {
+            console.log('🎉 Evento PoloRecordCreated recibido en fullscreen', e);
+            
+            // Si es eliminación, solo eliminar la fila
+            if (e.registro && e.registro.deleted) {
+                console.log('🗑️ Eliminando registro ID:', e.registro.id);
+                const row = document.querySelector(`tr[data-id="${e.registro.id}"]`);
+                if (row) {
+                    row.style.transition = 'opacity 0.3s ease';
+                    row.style.opacity = '0';
+                    setTimeout(() => row.remove(), 300);
+                }
+            } else {
+                // Para crear/actualizar, recargar la página
+                location.reload();
+            }
+        });
+
+        console.log('✅ Listeners configurados en fullscreen');
+    }
+
+    // Inicializar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(initializeFullscreenRealtime, 1000);
+        });
+    } else {
+        setTimeout(initializeFullscreenRealtime, 1000);
+    }
+    </script>
 </body>
 </html>
