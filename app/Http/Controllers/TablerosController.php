@@ -283,29 +283,58 @@ class TablerosController extends Controller
                 ];
             }
 
-            $dataPorHora[$hora]['modulos'][$modulo]['prendas'] += floatval($registro->cantidad ?? 0);
-            $dataPorHora[$hora]['modulos'][$modulo]['tiempo_ciclo_sum'] += floatval($registro->tiempo_ciclo ?? 0);
-            $dataPorHora[$hora]['modulos'][$modulo]['numero_operarios_sum'] += floatval($registro->numero_operarios ?? 0);
-            $dataPorHora[$hora]['modulos'][$modulo]['porcion_tiempo_sum'] += floatval($registro->porcion_tiempo ?? 0);
-            $dataPorHora[$hora]['modulos'][$modulo]['tiempo_parada_no_programada_sum'] += floatval($registro->tiempo_parada_no_programada ?? 0);
-            $dataPorHora[$hora]['modulos'][$modulo]['tiempo_para_programada_sum'] += floatval($registro->tiempo_para_programada ?? 0);
+            $cantidad = floatval($registro->cantidad ?? 0);
+            $tiempo_ciclo = floatval($registro->tiempo_ciclo ?? 0);
+            $numero_operarios = floatval($registro->numero_operarios ?? 0);
+            $porcion_tiempo = floatval($registro->porcion_tiempo ?? 0);
+            $tiempo_parada_no_programada = floatval($registro->tiempo_parada_no_programada ?? 0);
+            $paradaProgramada = strtoupper(trim($registro->paradas_programadas ?? ''));
+            $tiempo_para_programada = $registro->tiempo_para_programada !== null
+                ? floatval($registro->tiempo_para_programada)
+                : match ($paradaProgramada) {
+                    'DESAYUNO',
+                    'MEDIA TARDE' => 900,
+                    'NINGUNA' => 0,
+                    default => 0
+                };
+
+            $tiempo_disponible_calculado = (3600 * $porcion_tiempo * $numero_operarios)
+                - $tiempo_parada_no_programada
+                - $tiempo_para_programada;
+            $tiempo_disponible_registro = $registro->tiempo_disponible !== null
+                ? floatval($registro->tiempo_disponible)
+                : $tiempo_disponible_calculado;
+            if ($tiempo_disponible_registro <= 0 && $tiempo_disponible_calculado > 0) {
+                $tiempo_disponible_registro = $tiempo_disponible_calculado;
+            }
+            $tiempo_disponible_registro = max(0, $tiempo_disponible_registro);
+
+            $meta_calculada = $tiempo_ciclo > 0 ? ($tiempo_disponible_registro / $tiempo_ciclo) * 0.9 : 0;
+            $meta_registro = $registro->meta !== null
+                ? floatval($registro->meta)
+                : $meta_calculada;
+            if ($meta_registro <= 0 && $meta_calculada > 0) {
+                $meta_registro = $meta_calculada;
+            }
+
+            $dataPorHora[$hora]['modulos'][$modulo]['prendas'] += $cantidad;
+            $dataPorHora[$hora]['modulos'][$modulo]['tiempo_ciclo_sum'] += $tiempo_ciclo;
+            $dataPorHora[$hora]['modulos'][$modulo]['numero_operarios_sum'] += $numero_operarios;
+            $dataPorHora[$hora]['modulos'][$modulo]['porcion_tiempo_sum'] += $porcion_tiempo;
+            $dataPorHora[$hora]['modulos'][$modulo]['tiempo_parada_no_programada_sum'] += $tiempo_parada_no_programada;
+            $dataPorHora[$hora]['modulos'][$modulo]['tiempo_para_programada_sum'] += $tiempo_para_programada;
             $dataPorHora[$hora]['modulos'][$modulo]['count']++;
 
             // Acumular totales generales
-            $totales['modulos'][$modulo]['prendas'] += floatval($registro->cantidad ?? 0);
-            $totales['modulos'][$modulo]['tiempo_ciclo_sum'] += floatval($registro->tiempo_ciclo ?? 0);
-            $totales['modulos'][$modulo]['numero_operarios_sum'] += floatval($registro->numero_operarios ?? 0);
-            $totales['modulos'][$modulo]['porcion_tiempo_sum'] += floatval($registro->porcion_tiempo ?? 0);
-            $totales['modulos'][$modulo]['tiempo_parada_no_programada_sum'] += floatval($registro->tiempo_parada_no_programada ?? 0);
-            $totales['modulos'][$modulo]['tiempo_para_programada_sum'] += floatval($registro->tiempo_para_programada ?? 0);
+            $totales['modulos'][$modulo]['prendas'] += $cantidad;
+            $totales['modulos'][$modulo]['tiempo_ciclo_sum'] += $tiempo_ciclo;
+            $totales['modulos'][$modulo]['numero_operarios_sum'] += $numero_operarios;
+            $totales['modulos'][$modulo]['porcion_tiempo_sum'] += $porcion_tiempo;
+            $totales['modulos'][$modulo]['tiempo_parada_no_programada_sum'] += $tiempo_parada_no_programada;
+            $totales['modulos'][$modulo]['tiempo_para_programada_sum'] += $tiempo_para_programada;
             $totales['modulos'][$modulo]['count']++;
 
             // Calcular meta por registro y sumar
-            $tiempo_disponible_registro = (3600 * floatval($registro->porcion_tiempo) * floatval($registro->numero_operarios))
-                - floatval($registro->tiempo_parada_no_programada ?? 0)
-                - floatval($registro->tiempo_para_programada ?? 0);
-            $tiempo_disponible_registro = max(0, $tiempo_disponible_registro);
-            $meta_registro = floatval($registro->tiempo_ciclo) > 0 ? ($tiempo_disponible_registro / floatval($registro->tiempo_ciclo)) * 0.9 : 0;
             $dataPorHora[$hora]['modulos'][$modulo]['tiempo_disponible_sum'] += $tiempo_disponible_registro;
             $dataPorHora[$hora]['modulos'][$modulo]['meta_sum'] += $meta_registro;
             $totales['modulos'][$modulo]['tiempo_disponible_sum'] += $tiempo_disponible_registro;

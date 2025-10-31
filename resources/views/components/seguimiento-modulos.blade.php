@@ -430,31 +430,34 @@ function updateSeguimientoTableContent(seguimientoData) {
     // eficiencia = prendas / meta
     try {
         // Por hora y módulo
-        const normalizarModulo = (modData) => {
+        const normalizarModulo = (modData = {}) => {
             const prendas = parseFloat(modData.prendas ?? 0);
             const meta = parseFloat(modData.meta ?? modData.meta_sum ?? 0);
-            const eficiencia = meta > 0 ? (prendas / meta) : 0;
+            const eficiencia = meta > 0 ? prendas / meta : 0;
+
             return {
                 ...modData,
+                prendas,
                 meta,
-                eficiencia,
-                prendas
+                eficiencia
             };
         };
 
         Object.keys(dataPorHora).forEach(horaKey => {
             const horaData = dataPorHora[horaKey] || { modulos: {} };
+            const modulosNorm = {};
             modulosDisponibles.forEach(modulo => {
-                horaData.modulos[modulo] = normalizarModulo(horaData.modulos[modulo] || {});
+                modulosNorm[modulo] = normalizarModulo(horaData.modulos?.[modulo]);
             });
-            dataPorHora[horaKey] = horaData;
+            dataPorHora[horaKey] = { ...horaData, modulos: modulosNorm };
         });
 
         totales.modulos = totales.modulos || {};
+        const totalesNorm = {};
         modulosDisponibles.forEach(modulo => {
-            const modData = totales.modulos[modulo] || {};
-            totales.modulos[modulo] = normalizarModulo(modData);
+            totalesNorm[modulo] = normalizarModulo(totales.modulos[modulo]);
         });
+        totales.modulos = totalesNorm;
     } catch (err) {
         console.warn('No se pudo recalcular seguimiento en front:', err);
     }
@@ -486,7 +489,7 @@ function updateSeguimientoTableContent(seguimientoData) {
             const eficienciaClass = getEficienciaClass(modData.eficiencia);
             html += `<td class="seguimiento-td">${number_format(modData.prendas, 0)}</td>`;
             html += `<td class="seguimiento-td">${number_format(modData.meta, 2)}</td>`;
-            html += `<td class="seguimiento-td seguimiento-efficiency-cell ${eficienciaClass}">${modData.prendas > 0 ? Math.round(modData.eficiencia * 100) + '%' : '0%'}</td>`;
+            html += `<td class="seguimiento-td seguimiento-efficiency-cell ${eficienciaClass}">${formatEfficiency(modData.eficiencia)}</td>`;
         });
         html += '</tr>';
     });
@@ -498,7 +501,7 @@ function updateSeguimientoTableContent(seguimientoData) {
         const eficienciaClass = getEficienciaClass(modTotal.eficiencia);
         html += `<td class="seguimiento-td">${number_format(modTotal.prendas, 0)}</td>`;
         html += `<td class="seguimiento-td">${number_format(modTotal.meta, 2)}</td>`;
-        html += `<td class="seguimiento-td seguimiento-efficiency-cell ${eficienciaClass}">${modTotal.prendas > 0 ? Math.round(modTotal.eficiencia * 100) + '%' : '0%'}</td>`;
+        html += `<td class="seguimiento-td seguimiento-efficiency-cell ${eficienciaClass}">${formatEfficiency(modTotal.eficiencia)}</td>`;
     });
     html += '</tr></tbody>';
 
@@ -511,6 +514,21 @@ function number_format(number, decimals) {
         minimumFractionDigits: decimals,
         maximumFractionDigits: decimals
     });
+}
+
+function formatEfficiency(value) {
+    const eficiencia = parseFloat(value ?? 0);
+    if (eficiencia <= 0) {
+        return '0%';
+    }
+
+    const porcentaje = eficiencia * 100;
+    const formatted = porcentaje.toLocaleString('es-ES', {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1
+    });
+
+    return `${formatted}%`;
 }
 
 // Función para determinar la clase de eficiencia
