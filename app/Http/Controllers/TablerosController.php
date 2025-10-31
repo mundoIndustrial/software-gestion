@@ -90,7 +90,7 @@ class TablerosController extends Controller
         // Obtener todos los registros para seguimiento
         $todosRegistrosProduccion = RegistroPisoProduccion::all();
         $todosRegistrosPolos = RegistroPisoPolo::all();
-        $todosRegistrosCorte = RegistroPisoCorte::all();
+        $todosRegistrosCorte = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela'])->get();
 
         // Filtrar registros por fecha SOLO para el tablero activo
         $activeSection = request()->get('active_section', 'produccion');
@@ -262,8 +262,10 @@ class TablerosController extends Controller
 
         // Acumular datos por hora y módulo
         foreach ($registros as $registro) {
-            $hora = $registro->hora;
-            $modulo = strtoupper(trim($registro->modulo));
+            // Handle both relationship (object) and direct field (string)
+            $hora = is_object($registro->hora) ? $registro->hora->hora : ($registro->hora ?? 'Sin hora');
+            $hora = !empty(trim($hora)) ? trim($hora) : 'Sin hora';
+            $modulo = !empty(trim($registro->modulo)) ? strtoupper(trim($registro->modulo)) : 'SIN MÓDULO';
 
             if (!isset($dataPorHora[$hora])) {
                 $dataPorHora[$hora] = ['modulos' => []];
@@ -291,6 +293,21 @@ class TablerosController extends Controller
             $dataPorHora[$hora]['modulos'][$modulo]['tiempo_para_programada_sum'] += floatval($registro->tiempo_para_programada ?? 0);
             $dataPorHora[$hora]['modulos'][$modulo]['count']++;
 
+            // Inicializar módulo en totales si no existe
+            if (!isset($totales['modulos'][$modulo])) {
+                $totales['modulos'][$modulo] = [
+                    'prendas' => 0,
+                    'tiempo_ciclo_sum' => 0,
+                    'numero_operarios_sum' => 0,
+                    'porcion_tiempo_sum' => 0,
+                    'tiempo_parada_no_programada_sum' => 0,
+                    'tiempo_para_programada_sum' => 0,
+                    'tiempo_disponible_sum' => 0,
+                    'meta_sum' => 0,
+                    'count' => 0
+                ];
+            }
+
             // Acumular totales generales
             $totales['modulos'][$modulo]['prendas'] += floatval($registro->cantidad ?? 0);
             $totales['modulos'][$modulo]['tiempo_ciclo_sum'] += floatval($registro->tiempo_ciclo ?? 0);
@@ -300,15 +317,9 @@ class TablerosController extends Controller
             $totales['modulos'][$modulo]['tiempo_para_programada_sum'] += floatval($registro->tiempo_para_programada ?? 0);
             $totales['modulos'][$modulo]['count']++;
 
-            // Calcular meta por registro y sumar
-            $tiempo_disponible_registro = (3600 * floatval($registro->porcion_tiempo) * floatval($registro->numero_operarios))
-                - floatval($registro->tiempo_parada_no_programada ?? 0)
-                - floatval($registro->tiempo_para_programada ?? 0);
-            $tiempo_disponible_registro = max(0, $tiempo_disponible_registro);
-            $meta_registro = floatval($registro->tiempo_ciclo) > 0 ? ($tiempo_disponible_registro / floatval($registro->tiempo_ciclo)) * 0.9 : 0;
-            $dataPorHora[$hora]['modulos'][$modulo]['tiempo_disponible_sum'] += $tiempo_disponible_registro;
+            // Usar la meta que ya está calculada en el registro
+            $meta_registro = floatval($registro->meta ?? 0);
             $dataPorHora[$hora]['modulos'][$modulo]['meta_sum'] += $meta_registro;
-            $totales['modulos'][$modulo]['tiempo_disponible_sum'] += $tiempo_disponible_registro;
             $totales['modulos'][$modulo]['meta_sum'] += $meta_registro;
         }
 
