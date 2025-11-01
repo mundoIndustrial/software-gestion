@@ -581,26 +581,37 @@ text-overflow: ellipsis;
     min-width: 36px;
 }
 
-/* === Modal de filtros === */
+/* === Modal de filtros - CENTRADO CORREGIDO === */
 #filterModal {
     display: none;
     position: fixed;
     z-index: 1000;
     left: 0;
     top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.3); /* Reducido de 0.8 a 0.3 */
+    backdrop-filter: blur(3px); /* Reducido el blur */
+    transform: none !important;
+}
+
+#filterModal.active {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
 }
 
 #filterModal .modal-content {
     background-color: #2d3748;
-    margin: 5% auto;
+    margin: 0;
     padding: 0;
     border-radius: 8px;
     width: 80%;
     max-width: 600px;
     color: white;
+    transform: scale(0.75);
+    transition: none;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
 
 #filterModal .modal-header {
@@ -650,45 +661,61 @@ text-overflow: ellipsis;
 #filterModal .btn {
     padding: 8px 16px;
     border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
 }
 
 #filterModal .btn-secondary {
-    background: #6c757d;
-    color: white;
+background: #6c757d;
+color: white;
 }
 
 #filterModal .btn-primary {
-    background: #007bff;
-    color: white;
+background: #007bff;
+color: white;
 }
 
-/* === Modal de vista completa de celda === */
+/* === Modal de vista completa de celda - CENTRADO CORREGIDO === */
 #cellModal.cell-modal {
     display: none;
     position: fixed;
-    z-index: 1000;
+    z-index: 10000;
     left: 0;
     top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.8);
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.3); /* Reducido de 0.8 a 0.3 */
+    backdrop-filter: blur(3px);
+    transform: none !important;
+}
+
+#cellModal.cell-modal.active {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
 #cellModal .cell-modal-content {
     background-color: #2d3748;
-    margin: 5% auto;
     border-radius: 8px;
-    width: 80%;
-    max-width: 700px;
+    width: 90%;
+    max-width: 600px;
     color: white;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    max-height: 80vh;
+    overflow-y: auto;
+    margin: 0;
+    position: relative;
+    transform: scale(0.75);
+    transition: none;
 }
 
 #cellModal .cell-modal-header {
-    padding: 20px;
-    border-bottom: 1px solid #4a5568;
+padding: 20px;
+border-bottom: 1px solid #4a5568;
+display: flex;
+justify-content: space-between;
+align-items: center;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -712,7 +739,7 @@ text-overflow: ellipsis;
 }
 
 #cellModal .cell-edit-input {
-    width: 100%;
+    width: 70%;
     min-height: 200px;
     background: #1a202c;
     border: 1px solid #4a5568;
@@ -754,22 +781,28 @@ text-overflow: ellipsis;
     z-index: 999;
     left: 0;
     top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.8);
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.3);
+    transform: none !important;
 }
 
-/* === Estilos simplificados para modal de eliminación === */
+#modalOverlay.active {
+    display: block !important;
+}
+
+/* === Estilos simplificados para modal de eliminación - CENTRADO CORREGIDO === */
 .delete-confirmation-modal {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
     z-index: 1200;
     display: flex;
     align-items: center;
     justify-content: center;
+    transform: none !important;
 }
 
 .delete-modal-overlay {

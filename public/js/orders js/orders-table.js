@@ -596,6 +596,7 @@ function handleOrdenUpdate(orden, action) {
 
 // Función para ver detalle
 async function viewDetail(pedido) {
+    console.log('viewDetail called with pedido:', pedido);
     try {
         const response = await fetch(`${window.fetchUrl}/${pedido}`);
         if (!response.ok) throw new Error('Error fetching order');

@@ -52,9 +52,11 @@ class DashboardController extends Controller
         return response()->json($recentOrders);
     }
 
-    public function getNews()
+    public function getNews(Request $request)
     {
+        $date = $request->input('date', now()->toDateString());
         $news = News::with('user')
+            ->whereDate('created_at', $date)
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get()

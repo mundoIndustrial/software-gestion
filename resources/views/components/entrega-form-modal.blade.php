@@ -275,13 +275,15 @@
     <style>
         .entrega-modal-container {
             background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
-            min-height: 600px;
-            max-height: 90vh;
+            min-height: 750px;
+            max-height: 95vh;
             overflow-y: auto;
             border-radius: 12px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
             margin: 0 auto;
             max-width: 1200px;
+            transform: scale(0.75);
+            transform-origin: top center;
         }
 
         .entrega-modal-container .modal-header {
@@ -1041,6 +1043,12 @@
                         this.showSuccessMessage = true;
                         this.successMessage = `${count} entregas realizadas correctamente`;
                         this.entregas = [];
+                        
+                        // Recargar datos en la vista principal (para el usuario actual)
+                        if (window.filtrarDatos && typeof window.filtrarDatos === 'function') {
+                            window.filtrarDatos();
+                        }
+                        
                         // Vaciar completamente el formulario después del envío exitoso
                         this.resetForm();
                         setTimeout(() => {

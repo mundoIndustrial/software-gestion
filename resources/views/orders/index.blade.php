@@ -237,11 +237,11 @@
     <script src="{{ asset('js/orders js/orders-table.js') }}"></script>
 
     <div class="order-registration-modal">
-        <x-order-registration-modal :areaOptions="$areaOptions" />
+        <x-orders-components.order-registration-modal :areaOptions="$areaOptions" />
     </div>
 
     <div class="order-detail-modal">
-        <x-order-detail-modal />
+        <x-orders-components.order-detail-modal />
     </div>
 
     <!-- Modal de confirmación moderno para eliminar orden -->
