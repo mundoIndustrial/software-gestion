@@ -1,12 +1,24 @@
 /* ===== DROPDOWN STYLES ===== */
+:root {
+    --dropdown-bg: #ffffff;
+    --dropdown-border: #d1d5db;
+    --dropdown-text: #1f2937;
+}
+
+body.dark-theme {
+    --dropdown-bg: #374151;
+    --dropdown-border: #4b5563;
+    --dropdown-text: #f9fafb;
+}
+
 /* Estado dropdown colors */
 .estado-dropdown {
-    background-color: #ffffff;
-    border: 1px solid #d1d5db;
+    background-color: var(--dropdown-bg);
+    border: 1px solid var(--dropdown-border);
     border-radius: 6px;
     padding: 0.25rem 0.5rem;
     font-size: 0.8rem;
-    color: #1f2937;
+    color: var(--dropdown-text);
     cursor: pointer;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     min-width: 120px;

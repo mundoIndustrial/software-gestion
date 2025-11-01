@@ -38,7 +38,13 @@
                                 <td style="padding: 16px 20px; border-bottom: none; color: #ffffff; border-radius: 0 0 0 8px;">TOTAL</td>
                                 <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;" id="totalCantidadHoras">{{ number_format($totalCantidadHoras) }}</td>
                                 <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;" id="totalMetaHoras">{{ number_format($totalMetaHoras) }}</td>
-                                <td style="padding: 16px 20px; border-bottom: none; border-radius: 0 0 8px 0;"></td>
+                                @php
+                                    $eficienciaTotalHoras = $totalMetaHoras > 0 ? ($totalCantidadHoras / $totalMetaHoras) * 100 : 0;
+                                    $bgColorTotalHoras = $eficienciaTotalHoras < 70 ? '#7f1d1d' : ($eficienciaTotalHoras >= 70 && $eficienciaTotalHoras < 80 ? '#92400e' : ($eficienciaTotalHoras >= 80 && $eficienciaTotalHoras < 100 ? '#166534' : ($eficienciaTotalHoras >= 100 ? '#0c4a6e' : '#374151')));
+                                @endphp
+                                <td style="padding: 0; border-bottom: none; border-radius: 0 0 8px 0; text-align: center; background: {{ $bgColorTotalHoras }}; color: #ffffff; font-weight: 600; font-size: 13px;" id="eficienciaTotalHoras">
+                                    <div style="padding: 16px 20px; width: 100%; height: 100%;">{{ number_format($eficienciaTotalHoras, 1) }}%</div>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -73,7 +79,13 @@
                                 <td style="padding: 16px 20px; border-bottom: none; color: #ffffff; border-radius: 0 0 0 8px;">TOTAL</td>
                                 <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;" id="totalCantidadOperarios">{{ number_format($totalCantidadOperarios) }}</td>
                                 <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;" id="totalMetaOperarios">{{ number_format($totalMetaOperarios) }}</td>
-                                <td style="padding: 16px 20px; border-bottom: none; border-radius: 0 0 8px 0;"></td>
+                                @php
+                                    $eficienciaTotalOperarios = $totalMetaOperarios > 0 ? ($totalCantidadOperarios / $totalMetaOperarios) * 100 : 0;
+                                    $bgColorTotalOperarios = $eficienciaTotalOperarios < 70 ? '#7f1d1d' : ($eficienciaTotalOperarios >= 70 && $eficienciaTotalOperarios < 80 ? '#92400e' : ($eficienciaTotalOperarios >= 80 && $eficienciaTotalOperarios < 100 ? '#166534' : ($eficienciaTotalOperarios >= 100 ? '#0c4a6e' : '#374151')));
+                                @endphp
+                                <td style="padding: 0; border-bottom: none; border-radius: 0 0 8px 0; text-align: center; background: {{ $bgColorTotalOperarios }}; color: #ffffff; font-weight: 600; font-size: 13px;" id="eficienciaTotalOperarios">
+                                    <div style="padding: 16px 20px; width: 100%; height: 100%;">{{ number_format($eficienciaTotalOperarios, 1) }}%</div>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -389,13 +401,24 @@ function actualizarTotalesHoras() {
         }
     }
 
+    // Calcular eficiencia total
+    const eficienciaTotal = totalMeta > 0 ? (totalCantidad / totalMeta) * 100 : 0;
+    const bgColor = getEficienciaBackgroundColor(eficienciaTotal);
+
     // Actualizar celdas de total
     const totalRow = horasTableBody.querySelector('tr:last-child');
     if (totalRow) {
         const cells = totalRow.querySelectorAll('td');
-        if (cells.length >= 3) {
+        if (cells.length >= 4) {
             cells[1].textContent = totalCantidad.toLocaleString();
             cells[2].textContent = totalMeta.toLocaleString();
+            // Actualizar eficiencia total
+            const eficienciaCell = cells[3];
+            eficienciaCell.style.background = bgColor;
+            const eficienciaDiv = eficienciaCell.querySelector('div');
+            if (eficienciaDiv) {
+                eficienciaDiv.textContent = eficienciaTotal.toFixed(1) + '%';
+            }
         }
     }
 }
@@ -417,13 +440,24 @@ function actualizarTotalesOperarios() {
         }
     }
 
+    // Calcular eficiencia total
+    const eficienciaTotal = totalMeta > 0 ? (totalCantidad / totalMeta) * 100 : 0;
+    const bgColor = getEficienciaBackgroundColor(eficienciaTotal);
+
     // Actualizar celdas de total
     const totalRow = operariosTableBody.querySelector('tr:last-child');
     if (totalRow) {
         const cells = totalRow.querySelectorAll('td');
-        if (cells.length >= 3) {
+        if (cells.length >= 4) {
             cells[1].textContent = totalCantidad.toLocaleString();
             cells[2].textContent = totalMeta.toLocaleString();
+            // Actualizar eficiencia total
+            const eficienciaCell = cells[3];
+            eficienciaCell.style.background = bgColor;
+            const eficienciaDiv = eficienciaCell.querySelector('div');
+            if (eficienciaDiv) {
+                eficienciaDiv.textContent = eficienciaTotal.toFixed(1) + '%';
+            }
         }
     }
 }

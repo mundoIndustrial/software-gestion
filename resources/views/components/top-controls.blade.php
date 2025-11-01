@@ -206,6 +206,41 @@
 </div>
 
 <style>
+/* === Variables para Top Controls === */
+:root {
+    --top-controls-bg: #ffffff;
+    --top-controls-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    --icon-btn-bg: #f3f4f6;
+    --icon-btn-border: #e5e7eb;
+    --icon-btn-hover-bg: #e5e7eb;
+    --icon-btn-text: #374151;
+    --filter-select-bg: #f9fafb;
+    --filter-select-border: #d1d5db;
+    --filter-select-text: #1f2937;
+    --calendar-bg: #ffffff;
+    --calendar-border: #e5e7eb;
+    --calendar-header-text: #1f2937;
+    --calendar-day-text: #374151;
+    --calendar-day-hover: #f3f4f6;
+}
+
+body.dark-theme {
+    --top-controls-bg: rgba(255, 255, 255, 0.03);
+    --top-controls-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    --icon-btn-bg: #374151;
+    --icon-btn-border: rgba(255, 255, 255, 0.15);
+    --icon-btn-hover-bg: #4b5563;
+    --icon-btn-text: #fff;
+    --filter-select-bg: #374151;
+    --filter-select-border: rgba(255, 255, 255, 0.15);
+    --filter-select-text: #fff;
+    --calendar-bg: #1f2937;
+    --calendar-border: rgba(255, 255, 255, 0.1);
+    --calendar-header-text: #f3f4f6;
+    --calendar-day-text: #fff;
+    --calendar-day-hover: rgba(255, 255, 255, 0.08);
+}
+
 /* === Top Controls Bar === */
 .top-controls {
     display: flex;
@@ -214,9 +249,10 @@
     gap: 1.5rem;
     margin-bottom: 1rem;
     padding: 0.8rem 1.2rem;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--top-controls-bg);
     border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--top-controls-shadow);
+    border: 1px solid var(--filter-select-border);
 }
 
 /* === Action Icons (LEFT) === */
@@ -227,11 +263,11 @@
 }
 
 .icon-btn {
-    background: #374151;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: var(--icon-btn-bg);
+    border: 1px solid var(--icon-btn-border);
     border-radius: 10px;
     padding: 0.6rem;
-    color: #fff;
+    color: var(--icon-btn-text);
     cursor: pointer;
     transition: all 0.2s;
     display: flex;
@@ -240,13 +276,13 @@
 }
 
 .icon-btn:hover {
-    background: #4b5563;
+    background: var(--icon-btn-hover-bg);
     transform: scale(1.05);
     border-color: rgba(255, 107, 53, 0.4);
 }
 
 .icon-btn svg {
-    stroke: #f0f0f0;
+    stroke: var(--icon-btn-text);
 }
 
 /* === Date Selector (RIGHT) === */
@@ -271,11 +307,11 @@
 }
 
 .filter-select {
-    background: #374151;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: var(--filter-select-bg);
+    border: 1px solid var(--filter-select-border);
     border-radius: 8px;
     padding: 0.5rem 0.8rem;
-    color: #fff;
+    color: var(--filter-select-text);
     font-size: 13px;
     cursor: pointer;
     transition: all 0.2s;
@@ -283,7 +319,7 @@
 }
 
 .filter-select:hover {
-    background: #4b5563;
+    background: var(--icon-btn-hover-bg);
     border-color: rgba(255, 107, 53, 0.3);
 }
 
@@ -297,11 +333,11 @@
 
 .date-inputs-inline input[type="date"],
 .date-inputs-inline input[type="month"] {
-    background: #374151;
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: var(--filter-select-bg);
+    border: 1px solid var(--filter-select-border);
     border-radius: 8px;
     padding: 0.5rem 0.8rem;
-    color: #fff;
+    color: var(--filter-select-text);
     font-size: 13px;
     cursor: pointer;
     transition: all 0.2s;
@@ -310,14 +346,19 @@
 }
 
 .date-inputs-inline input:hover {
-    background: #4b5563;
+    background: var(--icon-btn-hover-bg);
     border-color: rgba(255, 107, 53, 0.3);
 }
 
 /* Color scheme para inputs date en navegadores webkit */
+body.dark-theme .date-inputs-inline input[type="date"]::-webkit-calendar-picker-indicator,
+body.dark-theme .date-inputs-inline input[type="month"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+}
+
 .date-inputs-inline input[type="date"]::-webkit-calendar-picker-indicator,
 .date-inputs-inline input[type="month"]::-webkit-calendar-picker-indicator {
-    filter: invert(1);
     cursor: pointer;
 }
 
@@ -371,8 +412,8 @@
 }
 
 .calendar-wrapper {
-    background: #1f2937;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--calendar-bg);
+    border: 1px solid var(--calendar-border);
     border-radius: 14px;
     padding: 12px 16px;
     max-width: 340px;
@@ -395,13 +436,13 @@
 .calendar-widget .calendar-header span {
     font-weight: 600;
     font-size: 14px;
-    color: #f3f4f6;
+    color: var(--calendar-header-text);
 }
 
 .calendar-widget .calendar-header button {
-    background: rgba(255, 255, 255, 0.08);
-    border: none;
-    color: #fff;
+    background: var(--icon-btn-bg);
+    border: 1px solid var(--icon-btn-border);
+    color: var(--icon-btn-text);
     font-size: 16px;
     cursor: pointer;
     border-radius: 50%;
@@ -411,7 +452,7 @@
 }
 
 .calendar-widget .calendar-header button:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--icon-btn-hover-bg);
 }
 
 .calendar-widget .calendar-grid {
@@ -435,15 +476,16 @@
     cursor: pointer;
     transition: all 0.2s;
     font-size: 13px;
-    color: #fff;
+    color: var(--calendar-day-text);
 }
 
 .calendar-widget .day.other-month {
-    color: #6b7280;
+    color: #9ca3af;
+    opacity: 0.5;
 }
 
 .calendar-widget .day:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--calendar-day-hover);
 }
 
 .calendar-widget .day.selected {

@@ -1,4 +1,17 @@
 :root {
+    /* Light theme colors for tableros */
+    --bg-primary: #f8fafc;
+    --bg-secondary: #ffffff;
+    --border-color: rgba(255, 107, 53, 0.2);
+    --border-hover: rgba(255, 107, 53, 0.5);
+    --accent-color: #FF6B35;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --shadow: 0 8px 20px rgba(255, 107, 53, 0.15);
+}
+
+body.dark-theme {
+    /* Dark theme colors for tableros */
     --bg-primary: #1a1d29;
     --bg-secondary: rgba(255, 255, 255, 0.03);
     --border-color: rgba(255, 107, 53, 0.15);

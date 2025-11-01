@@ -1,3 +1,26 @@
+/* Variables para modern-table */
+:root {
+    --table-bg-hover: #f8f9fa;
+    --table-text-default: #000;
+    --table-text-light: #fff;
+    --table-border-default: #000000;
+    --modal-bg: #333;
+    --modal-header-bg: #444;
+    --modal-input-bg: #444;
+    --modal-border: #555;
+}
+
+body.dark-theme {
+    --table-bg-hover: #2d3748;
+    --table-text-default: #fff;
+    --table-text-light: #fff;
+    --table-border-default: #4a5568;
+    --modal-bg: #1f2937;
+    --modal-header-bg: #374151;
+    --modal-input-bg: #374151;
+    --modal-border: #4b5563;
+}
+
 /* Estilos para el dropdown de estado en la tabla moderna */
 .table-cell .estado-dropdown {
 background-color: transparent;
@@ -84,7 +107,7 @@ white-space: nowrap;
 
 /* Fila moderna */
 #tablaOrdenes tbody .table-row {
-border-bottom: 2px solid #000000 !important;
+border-bottom: 2px solid var(--table-border-default) !important;
 padding: 12px 8px !important;
 transition: background-color 0.3s ease, box-shadow 0.3s ease, border-radius 0.3s ease, transform 0.3s ease !important;
 position: relative;
@@ -96,7 +119,7 @@ border-radius: 0 !important;
 }
 
 #tablaOrdenes tbody .table-row:hover {
-background-color: #f8f9fa !important;
+background-color: var(--table-bg-hover) !important;
 box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 border-radius: 12px !important;
 margin: 0 4px !important;
@@ -148,13 +171,13 @@ background-color: #a0522d !important;
 
 /* Color de texto general */
 .cell-text {
-color: #000;
+color: var(--table-text-default);
 
 }
 
 /* Color blanco solo para filas sin colores condicionales */
 #tablaOrdenes tbody .table-row:not(.row-delivered):not(.row-warning):not(.row-danger-light):not(.row-secondary):not(.row-anulada) .cell-text {
-color: #fff;
+color: var(--table-text-light);
 }
 
 /* Colores de texto adaptativos en filas oscuras */
@@ -183,7 +206,7 @@ color: white;
 }
 
 #cellModal .cell-modal-content {
-background-color: #333;
+background-color: var(--modal-bg);
 color: white;
 border-radius: 8px;
 max-width: 700px;
@@ -192,9 +215,9 @@ margin: 0 auto;
 }
 
 #cellModal .cell-modal-header {
-background-color: #444;
+background-color: var(--modal-header-bg);
 color: white;
-border-bottom: 1px solid #555;
+border-bottom: 1px solid var(--modal-border);
 padding: 15px;
 border-radius: 8px 8px 0 0;
 display: flex;
@@ -204,11 +227,11 @@ align-items: center;
 
 #cellModal .cell-modal-body {
 padding: 15px;
-background-color: #333;
+background-color: var(--modal-bg);
 }
 
 #cellModal .cell-edit-input {
-background-color: #444;
+background-color: var(--modal-input-bg);
 color: white;
 border: 1px solid #666;
 border-radius: 4px;
@@ -229,8 +252,8 @@ box-shadow: 0 0 5px rgba(136, 136, 136, 0.5);
 }
 
 #cellModal .cell-modal-footer {
-background-color: #444;
-border-top: 1px solid #555;
+background-color: var(--modal-header-bg);
+border-top: 1px solid var(--modal-border);
 padding: 15px;
 border-radius: 0 0 8px 8px;
 display: flex;
