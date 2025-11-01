@@ -162,8 +162,21 @@ body:has(.table-container) { font-family: -apple-system, BlinkMacSystemFont, 'Se
 }
 
 /* ===== DARK MODE ===== */
-@media (prefers-color-scheme: dark) {
-  :root { --surface-white: #1f2937; --surface-gray: #111827; --border-light: #374151; --border-medium: #4b5563; --text-primary: #f9fafb; --text-secondary: #d1d5db; --text-light: #9ca3af; }
-  .cell-content:hover { background: rgba(249, 115, 22, 0.1); }
+body.dark-theme {
+  --surface-white: #1f2937;
+  --surface-gray: #111827;
+  --border-light: #374151;
+  --border-medium: #4b5563;
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --text-light: #9ca3af;
+}
+
+body.dark-theme .cell-content:hover {
+  background: rgba(249, 115, 22, 0.1);
+}
+
+body.dark-theme .table-row:hover {
+  background: linear-gradient(135deg, #2d3748 0%, #374151 100%);
 }
 

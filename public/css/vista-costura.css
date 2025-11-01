@@ -1,4 +1,16 @@
-/* Vista Costura - Tema Oscuro */
+/* Vista Costura - Variables de tema */
+:root {
+    --costura-text-primary: #1f2937;
+    --costura-bg-search: #f3f4f6;
+    --costura-bg-card: #ffffff;
+}
+
+body.dark-theme {
+    --costura-text-primary: white;
+    --costura-bg-search: #2d2d2d;
+    --costura-bg-card: #1f2937;
+}
+
 .costura-container {
     max-width: 100%;
     margin: 0 auto;
@@ -15,7 +27,7 @@
     margin: 0;
     font-size: 1.35rem;
     font-weight: 600;
-    color: white;
+    color: var(--costura-text-primary);
     position: relative;
     z-index: 1;
 }
@@ -46,7 +58,7 @@
     max-width: 375px;
     display: flex;
     align-items: center;
-    background: #2d2d2d;
+    background: var(--costura-bg-search);
     border-radius: 19px;
     padding: 9px 15px;
     box-shadow: 0 3px 11px rgba(0, 0, 0, 0.3);

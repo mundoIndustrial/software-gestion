@@ -68,6 +68,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/configuracion/select-database', [ConfiguracionController::class, 'selectDatabase'])->name('configuracion.selectDatabase');
     Route::post('/configuracion/migrate-users', [ConfiguracionController::class, 'migrateUsers'])->name('configuracion.migrateUsers');
     Route::get('/tableros', [TablerosController::class, 'index'])->name('tableros.index');
+    Route::get('/tableros/fullscreen', [TablerosController::class, 'fullscreen'])->name('tableros.fullscreen');
+    Route::get('/tableros/corte-fullscreen', [TablerosController::class, 'corteFullscreen'])->name('tableros.corte-fullscreen');
     Route::post('/tableros', [TablerosController::class, 'store'])->name('tableros.store');
     Route::patch('/tableros/{id}', [TablerosController::class, 'update'])->name('tableros.update');
     Route::delete('/tableros/{id}', [TablerosController::class, 'destroy'])->name('tableros.destroy');
@@ -84,6 +86,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/find-or-create-tela', [TablerosController::class, 'findOrCreateTela'])->name('find-or-create-tela');
     Route::get('/tableros/dashboard-tables-data', [TablerosController::class, 'getDashboardTablesData'])->name('tableros.dashboard-tables-data');
     Route::get('/tableros/get-seguimiento-data', [TablerosController::class, 'getSeguimientoData'])->name('tableros.get-seguimiento-data');
+    Route::get('/tableros/corte/dashboard', [TablerosController::class, 'getDashboardCorteData'])->name('tableros.corte.dashboard');
     Route::get('/vistas', [VistasController::class, 'index'])->name('vistas.index');
     Route::get('/api/vistas/search', [VistasController::class, 'search'])->name('api.vistas.search');
     

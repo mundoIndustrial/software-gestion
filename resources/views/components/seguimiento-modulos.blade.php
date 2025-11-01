@@ -40,8 +40,9 @@
                 'porcion_tiempo_sum' => 0,
                 'tiempo_parada_no_programada_sum' => 0,
                 'tiempo_para_programada_sum' => 0,
-                'count' => 0,
-                'meta_sum' => 0
+                'tiempo_disponible_sum' => 0,
+                'meta_sum' => 0,
+                'count' => 0
             ];
         }
 
@@ -66,6 +67,8 @@
                         'porcion_tiempo_sum' => 0,
                         'tiempo_parada_no_programada_sum' => 0,
                         'tiempo_para_programada_sum' => 0,
+                        'tiempo_disponible_sum' => 0,
+                        'meta_sum' => 0,
                         'count' => 0
                     ];
                 }
@@ -82,8 +85,9 @@
                     'porcion_tiempo_sum' => 0,
                     'tiempo_parada_no_programada_sum' => 0,
                     'tiempo_para_programada_sum' => 0,
-                    'count' => 0,
-                    'meta_sum' => 0
+                    'tiempo_disponible_sum' => 0,
+                    'meta_sum' => 0,
+                    'count' => 0
                 ];
 
                 // Inicializar en todas las horas existentes
@@ -95,6 +99,8 @@
                         'porcion_tiempo_sum' => 0,
                         'tiempo_parada_no_programada_sum' => 0,
                         'tiempo_para_programada_sum' => 0,
+                        'tiempo_disponible_sum' => 0,
+                        'meta_sum' => 0,
                         'count' => 0
                     ];
                 }
@@ -122,7 +128,11 @@
             $tiempo_disponible_registro = (3600 * floatval($registro->porcion_tiempo) * floatval($registro->numero_operarios))
                 - floatval($registro->tiempo_parada_no_programada ?? 0)
                 - floatval($registro->tiempo_para_programada ?? 0);
+            $tiempo_disponible_registro = max(0, $tiempo_disponible_registro);
             $meta_registro = floatval($registro->tiempo_ciclo) > 0 ? ($tiempo_disponible_registro / floatval($registro->tiempo_ciclo)) * 0.9 : 0;
+            $dataPorHora[$hora]['modulos'][$modulo]['tiempo_disponible_sum'] += $tiempo_disponible_registro;
+            $dataPorHora[$hora]['modulos'][$modulo]['meta_sum'] += $meta_registro;
+            $totales['modulos'][$modulo]['tiempo_disponible_sum'] += $tiempo_disponible_registro;
             $totales['modulos'][$modulo]['meta_sum'] += $meta_registro;
         }
 
@@ -130,16 +140,7 @@
         foreach ($dataPorHora as $hora => &$data) {
             foreach ($data['modulos'] as $modulo => &$modData) {
                 if ($modData['count'] > 0) {
-                    $avg_tiempo_ciclo = $modData['tiempo_ciclo_sum'] / $modData['count'];
-                    $avg_numero_operarios = $modData['numero_operarios_sum'] / $modData['count'];
-                    $avg_porcion_tiempo = $modData['porcion_tiempo_sum'] / $modData['count'];
-                    $total_tiempo_parada_no_programada = $modData['tiempo_parada_no_programada_sum'];
-                    $total_tiempo_para_programada = $modData['tiempo_para_programada_sum'];
-
-                    $tiempo_disponible = (3600 * $avg_porcion_tiempo * $avg_numero_operarios)
-                        - $total_tiempo_parada_no_programada
-                        - $total_tiempo_para_programada;
-                    $meta = $avg_tiempo_ciclo > 0 ? ($tiempo_disponible / $avg_tiempo_ciclo) * 0.9 : 0;
+                    $meta = $modData['meta_sum'];
                     $eficiencia = $meta > 0 ? ($modData['prendas'] / $meta) : 0;
 
                     $modData['meta'] = $meta;
@@ -172,13 +173,54 @@
 @endphp
 
 <style>
+/* === Variables para Seguimiento === */
+:root {
+    --seg-table-bg: #ffffff;
+    --seg-table-border: #e2e8f0;
+    --seg-header-bg: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    --seg-header-text: #ffffff;
+    --seg-cell-bg: #ffffff;
+    --seg-cell-text: #1e293b;
+    --seg-cell-border: #f1f5f9;
+    --seg-hover-bg: #f8fafc;
+    --seg-total-bg: #e2e8f0;
+    --seg-total-text: #1e293b;
+    --seg-legend-bg: #f8fafc;
+    --seg-scrollbar-track: #f1f5f9;
+    --seg-scrollbar-thumb: rgba(249, 115, 22, 0.4);
+    --seg-hora-bg: #f8fafc;
+}
+
+body.dark-theme {
+    --seg-table-bg: rgba(255, 255, 255, 0.02);
+    --seg-table-border: rgba(255, 255, 255, 0.05);
+    --seg-header-bg: rgba(255, 255, 255, 0.05);
+    --seg-header-text: #e0e0e0;
+    --seg-cell-bg: transparent;
+    --seg-cell-text: #e0e0e0;
+    --seg-cell-border: rgba(255, 255, 255, 0.05);
+    --seg-hover-bg: rgba(255, 255, 255, 0.05);
+    --seg-total-bg: rgba(255, 255, 255, 0.08);
+    --seg-total-text: #fff;
+    --seg-legend-bg: rgba(255, 255, 255, 0.03);
+    --seg-scrollbar-track: rgba(255, 255, 255, 0.05);
+    --seg-scrollbar-thumb: rgba(255, 107, 53, 0.5);
+    --seg-hora-bg: transparent;
+}
+
 .records-table-container {
     width: 100%;
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: 8px;
+    background: var(--seg-table-bg);
+    border-radius: 12px;
     padding: 0;
     overflow: hidden;
     margin: 2rem 0 0 0;
+    border: 1px solid var(--seg-table-border);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+body.dark-theme .records-table-container {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
 }
 
 .table-scroll-container {
@@ -194,12 +236,12 @@
 }
 
 .table-scroll-container::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--seg-scrollbar-track);
     border-radius: 4px;
 }
 
 .table-scroll-container::-webkit-scrollbar-thumb {
-    background: rgba(255, 107, 53, 0.5);
+    background: var(--seg-scrollbar-thumb);
     border-radius: 4px;
 }
 
@@ -208,7 +250,7 @@
 }
 
 .table-scroll-container::-webkit-scrollbar-corner {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--seg-scrollbar-track);
 }
 
 /* Custom scrollbar styles to match the theme */
@@ -217,12 +259,12 @@
 }
 
 .seguimiento-table-container::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--seg-scrollbar-track);
     border-radius: 4px;
 }
 
 .seguimiento-table-container::-webkit-scrollbar-thumb {
-    background: rgba(255, 107, 53, 0.5);
+    background: var(--seg-scrollbar-thumb);
     border-radius: 4px;
 }
 
@@ -231,7 +273,7 @@
 }
 
 .seguimiento-table-container::-webkit-scrollbar-corner {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--seg-scrollbar-track);
 }
 
 .seguimiento-table { 
@@ -254,23 +296,126 @@
 }
 
 .seguimiento-table th, .seguimiento-table td { box-sizing: border-box; }
-.seguimiento-th { background: rgba(255, 255, 255, 0.05); color: #e0e0e0; padding: 16px 8px; text-align: center; font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid rgba(255,255,255,0.1); border-right:1px solid rgba(255,255,255,0.05); }
+.seguimiento-th { 
+    background: var(--seg-header-bg); 
+    color: var(--seg-header-text); 
+    padding: 16px 12px; 
+    text-align: center; 
+    font-weight: 600; 
+    font-size: 12px; 
+    text-transform: uppercase; 
+    letter-spacing: 0.8px; 
+    border-bottom: 2px solid var(--seg-table-border); 
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
 .seguimiento-th:last-child { border-right:none; }
-.seguimiento-td { padding: 14px 8px; color: #e0e0e0; font-size:14px; border-bottom:1px solid rgba(255,255,255,0.05); border-right:1px solid rgba(255,255,255,0.03); text-align:center; }
+.seguimiento-td { 
+    padding: 14px 12px; 
+    color: var(--seg-cell-text); 
+    font-size: 14px; 
+    font-weight: 500;
+    border-bottom: 1px solid var(--seg-cell-border); 
+    border-right: 1px solid var(--seg-cell-border); 
+    text-align: center; 
+    background: var(--seg-cell-bg);
+    transition: all 0.2s ease;
+}
 .seguimiento-td:last-child { border-right:none; }
-.seguimiento-tr:hover { background: rgba(255,255,255,0.05); }
-.seguimiento-hora-cell { color:#fff; font-weight:600; text-align:left; padding-left:16px; }
-.seguimiento-efficiency-cell { font-weight:600; padding:8px 6px; border-radius:6px; text-align:center; margin:0 auto; max-width:80px; }
-.seguimiento-green { background: rgba(72,187,120,0.2); color:#68d391; }
-.seguimiento-blue { background: rgba(66,153,225,0.2); color:#63b3ed; }
-.seguimiento-red { background: rgba(252,129,129,0.2); color:#fc8181; }
-.seguimiento-orange { background: rgba(237,137,54,0.2); color:#f6ad55; }
-.seguimiento-gray { background: rgba(160,174,192,0.2); color:#a0aec0; }
-.seguimiento-total-row { background: rgba(255,255,255,0.08); font-weight:700; }
-.seguimiento-total-row .seguimiento-td { color:#fff; font-size:15px; padding:18px 8px; }
-.seguimiento-legend { display:flex; justify-content:center; gap:30px; margin-top:30px; padding:20px; background: rgba(255,255,255,0.03); border-radius:12px; flex-wrap:wrap; }
-.seguimiento-legend-item { display:flex; align-items:center; gap:10px; color:#e0e0e0; font-size:13px; }
-.seguimiento-legend-color { width:20px; height:20px; border-radius:4px; }
+.seguimiento-tr:hover { 
+    background: var(--seg-hover-bg);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    transform: translateY(-1px);
+}
+.seguimiento-hora-cell { 
+    color: var(--seg-cell-text); 
+    font-weight: 700; 
+    text-align: left; 
+    padding-left: 20px;
+    background: var(--seg-hora-bg);
+    font-size: 13px;
+    letter-spacing: 0.3px;
+}
+.seguimiento-efficiency-cell { 
+    font-weight: 700; 
+    padding: 8px 10px; 
+    border-radius: 8px; 
+    text-align: center; 
+    margin: 0 auto; 
+    max-width: 85px;
+    font-size: 13px;
+    letter-spacing: 0.3px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.seguimiento-green { background: rgba(34, 197, 94, 0.25) !important; color: #15803d !important; border: 1px solid rgba(34, 197, 94, 0.5) !important; }
+.seguimiento-blue { background: rgba(59, 130, 246, 0.25) !important; color: #1e40af !important; border: 1px solid rgba(59, 130, 246, 0.5) !important; }
+.seguimiento-red { background: rgba(239, 68, 68, 0.25) !important; color: #b91c1c !important; border: 1px solid rgba(239, 68, 68, 0.5) !important; }
+.seguimiento-orange { background: rgba(249, 115, 22, 0.25) !important; color: #c2410c !important; border: 1px solid rgba(249, 115, 22, 0.5) !important; }
+.seguimiento-gray { background: rgba(107, 114, 128, 0.2) !important; color: #4b5563 !important; border: 1px solid rgba(107, 114, 128, 0.4) !important; }
+
+body.dark-theme .seguimiento-green { background: rgba(72,187,120,0.2) !important; color:#68d391 !important; border: 1px solid rgba(72,187,120,0.3) !important; }
+body.dark-theme .seguimiento-blue { background: rgba(66,153,225,0.2) !important; color:#63b3ed !important; border: 1px solid rgba(66,153,225,0.3) !important; }
+body.dark-theme .seguimiento-red { background: rgba(252,129,129,0.2) !important; color:#fc8181 !important; border: 1px solid rgba(252,129,129,0.3) !important; }
+body.dark-theme .seguimiento-orange { background: rgba(237,137,54,0.2) !important; color:#f6ad55 !important; border: 1px solid rgba(237,137,54,0.3) !important; }
+body.dark-theme .seguimiento-gray { background: rgba(160,174,192,0.2) !important; color:#a0aec0 !important; border: 1px solid rgba(160,174,192,0.3) !important; }
+
+.seguimiento-total-row { 
+    background: var(--seg-total-bg) !important; 
+    font-weight: 700;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+}
+.seguimiento-total-row .seguimiento-td { 
+    color: var(--seg-total-text) !important; 
+    font-size: 15px; 
+    padding: 20px 12px; 
+    font-weight: 700 !important;
+    letter-spacing: 0.5px;
+    background: var(--seg-total-bg) !important;
+}
+.seguimiento-total-row .seguimiento-hora-cell {
+    color: var(--seg-total-text) !important;
+    background: var(--seg-total-bg) !important;
+}
+.seguimiento-total-row .seguimiento-efficiency-cell {
+    background: inherit !important;
+    color: inherit !important;
+    border: inherit !important;
+}
+.seguimiento-legend { 
+    display: flex; 
+    justify-content: center; 
+    gap: 24px; 
+    margin-top: 24px; 
+    padding: 16px 24px; 
+    background: var(--seg-legend-bg); 
+    border-radius: 10px; 
+    flex-wrap: wrap; 
+    border: 1px solid var(--seg-table-border);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+.seguimiento-legend-item { 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+    color: var(--seg-cell-text); 
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 12px;
+    background: var(--seg-cell-bg);
+    border-radius: 6px;
+    border: 1px solid var(--seg-cell-border);
+    transition: all 0.2s ease;
+}
+.seguimiento-legend-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+.seguimiento-legend-color { 
+    width: 18px; 
+    height: 18px; 
+    border-radius: 4px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
 </style>
 
 <div class="records-table-container">
@@ -424,6 +569,43 @@ function updateSeguimientoTableContent(seguimientoData) {
     const dataPorHora = seguimientoData.dataPorHora || {};
     const totales = seguimientoData.totales || { modulos: {} };
 
+    // Recalcular META y EFICIENCIA en el front siguiendo la regla de negocio
+    // meta = ((3600 * avg(porcion_tiempo) * avg(numero_operarios)) - sum(tiempo_parada_no_programada) - sum(tiempo_para_programada)) / avg(tiempo_ciclo) * 0.9
+    // eficiencia = prendas / meta
+    try {
+        // Por hora y módulo
+        const normalizarModulo = (modData = {}) => {
+            const prendas = parseFloat(modData.prendas ?? 0);
+            const meta = parseFloat(modData.meta ?? modData.meta_sum ?? 0);
+            const eficiencia = meta > 0 ? prendas / meta : 0;
+
+            return {
+                ...modData,
+                prendas,
+                meta,
+                eficiencia
+            };
+        };
+
+        Object.keys(dataPorHora).forEach(horaKey => {
+            const horaData = dataPorHora[horaKey] || { modulos: {} };
+            const modulosNorm = {};
+            modulosDisponibles.forEach(modulo => {
+                modulosNorm[modulo] = normalizarModulo(horaData.modulos?.[modulo]);
+            });
+            dataPorHora[horaKey] = { ...horaData, modulos: modulosNorm };
+        });
+
+        totales.modulos = totales.modulos || {};
+        const totalesNorm = {};
+        modulosDisponibles.forEach(modulo => {
+            totalesNorm[modulo] = normalizarModulo(totales.modulos[modulo]);
+        });
+        totales.modulos = totalesNorm;
+    } catch (err) {
+        console.warn('No se pudo recalcular seguimiento en front:', err);
+    }
+
     // Reconstruir la tabla
     let html = '';
 
@@ -448,10 +630,29 @@ function updateSeguimientoTableContent(seguimientoData) {
         html += `<tr class="seguimiento-tr"><td class="seguimiento-td seguimiento-hora-cell">${horaKey}</td>`;
         modulosDisponibles.forEach(modulo => {
             const modData = horaData.modulos[modulo] || { prendas: 0, meta: 0, eficiencia: 0 };
-            const eficienciaClass = getEficienciaClass(modData.eficiencia);
+            
+            // Determinar clase de eficiencia
+            let eficienciaClass = 'seguimiento-gray';
+            if (modData.prendas > 0 && modData.eficiencia) {
+                const eficienciaNum = parseFloat(modData.eficiencia);
+                
+                // Aplicar lógica directamente
+                if (eficienciaNum >= 1.00) {
+                    eficienciaClass = 'seguimiento-blue';
+                } else if (eficienciaNum >= 0.80) {
+                    eficienciaClass = 'seguimiento-green';
+                } else if (eficienciaNum >= 0.70) {
+                    eficienciaClass = 'seguimiento-orange';
+                } else {
+                    eficienciaClass = 'seguimiento-red';
+                }
+                
+                console.log(`Hora ${horaKey}, Módulo ${modulo}: eficiencia=${modData.eficiencia} (${eficienciaNum}), clase=${eficienciaClass}`);
+            }
+            
             html += `<td class="seguimiento-td">${number_format(modData.prendas, 0)}</td>`;
             html += `<td class="seguimiento-td">${number_format(modData.meta, 2)}</td>`;
-            html += `<td class="seguimiento-td seguimiento-efficiency-cell ${eficienciaClass}">${modData.prendas > 0 ? Math.round(modData.eficiencia * 100) + '%' : '0%'}</td>`;
+            html += `<td class="seguimiento-td seguimiento-efficiency-cell ${eficienciaClass}">${formatEfficiency(modData.eficiencia)}</td>`;
         });
         html += '</tr>';
     });
@@ -460,10 +661,29 @@ function updateSeguimientoTableContent(seguimientoData) {
     html += '<tr class="seguimiento-total-row"><td class="seguimiento-td seguimiento-hora-cell">Suma total</td>';
     modulosDisponibles.forEach(modulo => {
         const modTotal = totales.modulos[modulo] || { prendas: 0, meta: 0, eficiencia: 0 };
-        const eficienciaClass = getEficienciaClass(modTotal.eficiencia);
+        
+        // Determinar clase de eficiencia para totales
+        let eficienciaClass = 'seguimiento-gray';
+        if (modTotal.prendas > 0 && modTotal.eficiencia) {
+            const eficienciaNum = parseFloat(modTotal.eficiencia);
+            
+            // Aplicar lógica directamente
+            if (eficienciaNum >= 1.00) {
+                eficienciaClass = 'seguimiento-blue';
+            } else if (eficienciaNum >= 0.80) {
+                eficienciaClass = 'seguimiento-green';
+            } else if (eficienciaNum >= 0.70) {
+                eficienciaClass = 'seguimiento-orange';
+            } else {
+                eficienciaClass = 'seguimiento-red';
+            }
+            
+            console.log(`Total ${modulo}: eficiencia=${modTotal.eficiencia} (${eficienciaNum}), clase=${eficienciaClass}`);
+        }
+        
         html += `<td class="seguimiento-td">${number_format(modTotal.prendas, 0)}</td>`;
         html += `<td class="seguimiento-td">${number_format(modTotal.meta, 2)}</td>`;
-        html += `<td class="seguimiento-td seguimiento-efficiency-cell ${eficienciaClass}">${modTotal.prendas > 0 ? Math.round(modTotal.eficiencia * 100) + '%' : '0%'}</td>`;
+        html += `<td class="seguimiento-td seguimiento-efficiency-cell ${eficienciaClass}">${formatEfficiency(modTotal.eficiencia)}</td>`;
     });
     html += '</tr></tbody>';
 
@@ -478,11 +698,141 @@ function number_format(number, decimals) {
     });
 }
 
-// Función para determinar la clase de eficiencia
-function getEficienciaClass(eficiencia) {
-    if (eficiencia > 1.00) return 'seguimiento-blue';
-    if (eficiencia >= 0.80) return 'seguimiento-green';
-    if (eficiencia >= 0.70) return 'seguimiento-orange';
+function formatEfficiency(value) {
+    const eficiencia = parseFloat(value ?? 0);
+    if (eficiencia <= 0) {
+        return '0%';
+    }
+
+    const porcentaje = eficiencia * 100;
+    const formatted = porcentaje.toLocaleString('es-ES', {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1
+    });
+
+    return `${formatted}%`;
+}
+
+// Función para determinar la clase de eficiencia (global)
+window.getEficienciaClass = function(eficiencia) {
+    const eficienciaNum = parseFloat(eficiencia);
+    
+    // Si es 0, NaN o undefined, mostrar gris
+    if (!eficienciaNum || isNaN(eficienciaNum)) return 'seguimiento-gray';
+    
+    // La eficiencia viene como decimal (1.0 = 100%, 0.8 = 80%, etc.)
+    if (eficienciaNum >= 1.00) return 'seguimiento-blue';
+    if (eficienciaNum >= 0.80) return 'seguimiento-green';
+    if (eficienciaNum >= 0.70) return 'seguimiento-orange';
     return 'seguimiento-red';
+};
+
+// ============================================
+// TIEMPO REAL - Actualización automática
+// ============================================
+function initializeSeguimientoRealtime() {
+    console.log('=== SEGUIMIENTO - Inicializando tiempo real ===');
+    
+    if (!window.Echo) {
+        console.log('Echo no disponible, reintentando...');
+        setTimeout(initializeSeguimientoRealtime, 500);
+        return;
+    }
+
+    console.log('✅ Echo disponible, suscribiendo a canales...');
+
+    // Determinar qué canal escuchar según la sección actual
+    const currentSection = getCurrentSection();
+    
+    // Evitar suscripciones duplicadas
+    if (window.seguimientoChannelSubscribed) {
+        console.log('⚠️ Ya hay una suscripción activa, omitiendo...');
+        return;
+    }
+    
+    window.seguimientoChannelSubscribed = true;
+    
+    if (currentSection === 'produccion') {
+        window.Echo.channel('produccion').listen('ProduccionRecordCreated', (e) => {
+            console.log('🎉 Evento ProduccionRecordCreated recibido en seguimiento');
+            recargarSeguimiento();
+        });
+    } else if (currentSection === 'polos') {
+        window.Echo.channel('polo').listen('PoloRecordCreated', (e) => {
+            console.log('🎉 Evento PoloRecordCreated recibido en seguimiento');
+            recargarSeguimiento();
+        });
+    } else if (currentSection === 'corte') {
+        window.Echo.channel('corte').listen('CorteRecordCreated', (e) => {
+            console.log('🎉 Evento CorteRecordCreated recibido en seguimiento');
+            if (typeof recargarDashboardCorte === 'function') {
+                recargarDashboardCorte();
+            }
+        });
+    }
+
+    console.log(`✅ Listener configurado para sección: ${currentSection}`);
+}
+
+// Función para recargar los datos de seguimiento
+function recargarSeguimiento() {
+    console.log('Recargando datos de seguimiento...');
+    
+    // Obtener los parámetros actuales de la URL
+    const params = new URLSearchParams(window.location.search);
+    const currentSection = getCurrentSection();
+    
+    const seguimientoUrl = new URL('/tableros/get-seguimiento-data', window.location.origin);
+    seguimientoUrl.search = params.toString();
+    seguimientoUrl.searchParams.set('section', currentSection);
+    
+    fetch(seguimientoUrl, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Datos de seguimiento recibidos:', data);
+        
+        // Los datos pueden venir en data.seguimiento o directamente en data
+        const seguimientoData = data.seguimiento || data;
+        
+        if (seguimientoData && seguimientoData.modulosDisponibles) {
+            console.log('✅ Actualizando tabla de seguimiento...');
+            console.log('Módulos:', seguimientoData.modulosDisponibles);
+            console.log('Totales:', seguimientoData.totales);
+            
+            // Actualizar las variables globales
+            window.seguimientoData = seguimientoData;
+            
+            // Redibujar la tabla usando la función existente
+            updateSeguimientoTableContent(seguimientoData);
+            
+            console.log('✅ Tabla de seguimiento actualizada');
+        } else {
+            console.error('❌ No se recibieron datos de seguimiento válidos');
+            console.error('Estructura recibida:', data);
+        }
+    })
+    .catch(error => {
+        console.error('Error al recargar seguimiento:', error);
+    });
+}
+
+// Variable global para evitar inicialización múltiple
+if (!window.seguimientoRealtimeInitialized) {
+    window.seguimientoRealtimeInitialized = true;
+    
+    // Inicializar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(initializeSeguimientoRealtime, 1000);
+        });
+    } else {
+        setTimeout(initializeSeguimientoRealtime, 1000);
+    }
 }
 </script>

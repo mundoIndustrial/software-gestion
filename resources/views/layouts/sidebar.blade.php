@@ -190,5 +190,16 @@
     </ul>
   </div>
 
-
+  <!-- Footer con toggle de tema -->
+  <div class="sidebar-footer">
+    <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema">
+      <div class="theme-label">
+        <span class="material-symbols-rounded" aria-hidden="true">light_mode</span>
+        <span class="theme-text">Modo Claro</span>
+      </div>
+      <div class="theme-toggle-track">
+        <div class="theme-toggle-indicator"></div>
+      </div>
+    </button>
+  </div>
 </aside>

@@ -15,6 +15,42 @@ use App\Models\TiempoCiclo;
 
 class TablerosController extends Controller
 {
+    public function fullscreen(Request $request)
+    {
+        $section = $request->get('section', 'produccion');
+        
+        // Obtener todos los registros según la sección
+        $registros = match($section) {
+            'produccion' => RegistroPisoProduccion::all(),
+            'polos' => RegistroPisoPolo::all(),
+            'corte' => RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela'])->get(),
+            default => RegistroPisoProduccion::all(),
+        };
+        
+        // Filtrar registros por fecha si hay filtros
+        $registrosFiltrados = $this->filtrarRegistrosPorFecha($registros, $request);
+        
+        // Calcular seguimiento de módulos
+        $seguimiento = $this->calcularSeguimientoModulos($registrosFiltrados);
+        
+        return view('tableros-fullscreen', compact('seguimiento', 'section'));
+    }
+
+    public function corteFullscreen(Request $request)
+    {
+        // Obtener todos los registros de corte
+        $registrosCorte = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela'])->get();
+        
+        // Filtrar registros por fecha si hay filtros
+        $registrosCorteFiltrados = $this->filtrarRegistrosPorFecha($registrosCorte, $request);
+        
+        // Calcular datos dinámicos para las tablas
+        $horasData = $this->calcularProduccionPorHoras($registrosCorteFiltrados);
+        $operariosData = $this->calcularProduccionPorOperarios($registrosCorteFiltrados);
+        
+        return view('tableros-corte-fullscreen', compact('horasData', 'operariosData'));
+    }
+
     public function index()
     {
         // TABLAS PRINCIPALES: SIN FILTRO DE FECHA (mostrar todos los registros)
@@ -90,7 +126,7 @@ class TablerosController extends Controller
         // Obtener todos los registros para seguimiento
         $todosRegistrosProduccion = RegistroPisoProduccion::all();
         $todosRegistrosPolos = RegistroPisoPolo::all();
-        $todosRegistrosCorte = RegistroPisoCorte::all();
+        $todosRegistrosCorte = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela'])->get();
 
         // Filtrar registros por fecha SOLO para el tablero activo
         $activeSection = request()->get('active_section', 'produccion');
@@ -254,67 +290,37 @@ class TablerosController extends Controller
                 'porcion_tiempo_sum' => 0,
                 'tiempo_parada_no_programada_sum' => 0,
                 'tiempo_para_programada_sum' => 0,
-                'count' => 0,
-                'meta_sum' => 0
+                'tiempo_disponible_sum' => 0,
+                'meta_sum' => 0,
+                'count' => 0
             ];
         }
 
-        // Procesar cada registro
+        // Acumular datos por hora y módulo
         foreach ($registros as $registro) {
-            // Normalizar el nombre del módulo del registro
-            $modulo = strtoupper(trim($registro->modulo));
+            // Handle both relationship (object) and direct field (string)
+            $hora = is_object($registro->hora) ? $registro->hora->hora : ($registro->hora ?? 'Sin hora');
+            $hora = !empty(trim($hora)) ? trim($hora) : 'Sin hora';
+            $modulo = !empty(trim($registro->modulo)) ? strtoupper(trim($registro->modulo)) : 'SIN MÓDULO';
 
-            // Normalizar hora a formato "HORA XX"
-            $horaNum = (int) preg_replace('/\D/', '', $registro->hora);
-            $hora = 'HORA ' . str_pad($horaNum, 2, '0', STR_PAD_LEFT);
-
-            // Inicializar hora si no existe
             if (!isset($dataPorHora[$hora])) {
                 $dataPorHora[$hora] = ['modulos' => []];
-                // Pre-inicializar todos los módulos para esta hora
-                foreach ($modulosDisponibles as $mod) {
-                    $dataPorHora[$hora]['modulos'][$mod] = [
-                        'prendas' => 0,
-                        'tiempo_ciclo_sum' => 0,
-                        'numero_operarios_sum' => 0,
-                        'porcion_tiempo_sum' => 0,
-                        'tiempo_parada_no_programada_sum' => 0,
-                        'tiempo_para_programada_sum' => 0,
-                        'count' => 0
-                    ];
-                }
             }
 
-            // Verificar que el módulo exista en modulosDisponibles
-            if (!in_array($modulo, $modulosDisponibles)) {
-                // Si el módulo no existe, agregarlo dinámicamente
-                $modulosDisponibles[] = $modulo;
-                $totales['modulos'][$modulo] = [
+            if (!isset($dataPorHora[$hora]['modulos'][$modulo])) {
+                $dataPorHora[$hora]['modulos'][$modulo] = [
                     'prendas' => 0,
                     'tiempo_ciclo_sum' => 0,
                     'numero_operarios_sum' => 0,
                     'porcion_tiempo_sum' => 0,
                     'tiempo_parada_no_programada_sum' => 0,
                     'tiempo_para_programada_sum' => 0,
-                    'count' => 0,
-                    'meta_sum' => 0
+                    'tiempo_disponible_sum' => 0,
+                    'meta_sum' => 0,
+                    'count' => 0
                 ];
-
-                // Inicializar en todas las horas existentes
-                foreach ($dataPorHora as $h => &$hData) {
-                    $hData['modulos'][$modulo] = [
-                        'prendas' => 0,
-                        'tiempo_ciclo_sum' => 0,
-                        'numero_operarios_sum' => 0,
-                        'porcion_tiempo_sum' => 0,
-                        'tiempo_parada_no_programada_sum' => 0,
-                        'tiempo_para_programada_sum' => 0,
-                        'count' => 0
-                    ];
-                }
             }
 
-            // Acumular datos por hora y módulo
             $dataPorHora[$hora]['modulos'][$modulo]['prendas'] += floatval($registro->cantidad ?? 0);
             $dataPorHora[$hora]['modulos'][$modulo]['tiempo_ciclo_sum'] += floatval($registro->tiempo_ciclo ?? 0);
             $dataPorHora[$hora]['modulos'][$modulo]['numero_operarios_sum'] += floatval($registro->numero_operarios ?? 0);
@@ -322,6 +328,21 @@ class TablerosController extends Controller
             $dataPorHora[$hora]['modulos'][$modulo]['tiempo_parada_no_programada_sum'] += floatval($registro->tiempo_parada_no_programada ?? 0);
             $dataPorHora[$hora]['modulos'][$modulo]['tiempo_para_programada_sum'] += floatval($registro->tiempo_para_programada ?? 0);
             $dataPorHora[$hora]['modulos'][$modulo]['count']++;
+
+            // Inicializar módulo en totales si no existe
+            if (!isset($totales['modulos'][$modulo])) {
+                $totales['modulos'][$modulo] = [
+                    'prendas' => 0,
+                    'tiempo_ciclo_sum' => 0,
+                    'numero_operarios_sum' => 0,
+                    'porcion_tiempo_sum' => 0,
+                    'tiempo_parada_no_programada_sum' => 0,
+                    'tiempo_para_programada_sum' => 0,
+                    'tiempo_disponible_sum' => 0,
+                    'meta_sum' => 0,
+                    'count' => 0
+                ];
+            }
 
             // Acumular totales generales
             $totales['modulos'][$modulo]['prendas'] += floatval($registro->cantidad ?? 0);
@@ -332,11 +353,9 @@ class TablerosController extends Controller
             $totales['modulos'][$modulo]['tiempo_para_programada_sum'] += floatval($registro->tiempo_para_programada ?? 0);
             $totales['modulos'][$modulo]['count']++;
 
-            // Calcular meta por registro y sumar
-            $tiempo_disponible_registro = (3600 * floatval($registro->porcion_tiempo) * floatval($registro->numero_operarios))
-                - floatval($registro->tiempo_parada_no_programada ?? 0)
-                - floatval($registro->tiempo_para_programada ?? 0);
-            $meta_registro = floatval($registro->tiempo_ciclo) > 0 ? ($tiempo_disponible_registro / floatval($registro->tiempo_ciclo)) * 0.9 : 0;
+            // Usar la meta que ya está calculada en el registro
+            $meta_registro = floatval($registro->meta ?? 0);
+            $dataPorHora[$hora]['modulos'][$modulo]['meta_sum'] += $meta_registro;
             $totales['modulos'][$modulo]['meta_sum'] += $meta_registro;
         }
 
@@ -344,16 +363,7 @@ class TablerosController extends Controller
         foreach ($dataPorHora as $hora => &$data) {
             foreach ($data['modulos'] as $modulo => &$modData) {
                 if ($modData['count'] > 0) {
-                    $avg_tiempo_ciclo = $modData['tiempo_ciclo_sum'] / $modData['count'];
-                    $avg_numero_operarios = $modData['numero_operarios_sum'] / $modData['count'];
-                    $avg_porcion_tiempo = $modData['porcion_tiempo_sum'] / $modData['count'];
-                    $total_tiempo_parada_no_programada = $modData['tiempo_parada_no_programada_sum'];
-                    $total_tiempo_para_programada = $modData['tiempo_para_programada_sum'];
-
-                    $tiempo_disponible = (3600 * $avg_porcion_tiempo * $avg_numero_operarios)
-                        - $total_tiempo_parada_no_programada
-                        - $total_tiempo_para_programada;
-                    $meta = $avg_tiempo_ciclo > 0 ? ($tiempo_disponible / $avg_tiempo_ciclo) * 0.9 : 0;
+                    $meta = $modData['meta_sum'];
                     $eficiencia = $meta > 0 ? ($modData['prendas'] / $meta) : 0;
 
                     $modData['meta'] = $meta;
@@ -421,12 +431,27 @@ class TablerosController extends Controller
         try {
             $createdRecords = [];
             foreach ($request->registros as $registroData) {
-                $tiempo_disponible = (3600 * $registroData['porcion_tiempo'] * $registroData['numero_operarios']) -
-                                   ($registroData['tiempo_parada_no_programada'] ?? 0) -
-                                   ($registroData['tiempo_para_programada'] ?? 0);
+                $paradaProgramada = strtoupper(trim($registroData['paradas_programadas'] ?? ''));
+                $tiempo_para_programada = match ($paradaProgramada) {
+                    'DESAYUNO',
+                    'MEDIA TARDE' => 900,
+                    'NINGUNA' => 0,
+                    default => 0
+                };
 
-                $meta = ($tiempo_disponible / $registroData['tiempo_ciclo']) * 0.9;
-                $eficiencia = $meta == 0 ? 0 : round((($registroData['cantidad'] ?? 0) / $meta) * 100);
+                $porcion_tiempo = floatval($registroData['porcion_tiempo'] ?? 0);
+                $numero_operarios = floatval($registroData['numero_operarios'] ?? 0);
+                $tiempo_parada_no_programada = floatval($registroData['tiempo_parada_no_programada'] ?? 0);
+                $tiempo_ciclo = floatval($registroData['tiempo_ciclo'] ?? 0);
+                $cantidad = floatval($registroData['cantidad'] ?? 0);
+
+                $tiempo_disponible = (3600 * $porcion_tiempo * $numero_operarios)
+                                    - $tiempo_parada_no_programada
+                                    - $tiempo_para_programada;
+                $tiempo_disponible = max(0, $tiempo_disponible);
+
+                $meta = $tiempo_ciclo > 0 ? ($tiempo_disponible / $tiempo_ciclo) * 0.9 : 0;
+                $eficiencia = $meta > 0 ? ($cantidad / $meta) : 0;
 
                 $record = $model::create([
                     'fecha' => $registroData['fecha'],
@@ -441,7 +466,7 @@ class TablerosController extends Controller
                     'paradas_no_programadas' => $registroData['paradas_no_programadas'] ?? null,
                     'tiempo_parada_no_programada' => $registroData['tiempo_parada_no_programada'] ?? null,
                     'numero_operarios' => $registroData['numero_operarios'],
-                    'tiempo_para_programada' => $registroData['tiempo_para_programada'] ?? 0.00,
+                    'tiempo_para_programada' => $tiempo_para_programada,
                     'tiempo_disponible' => $tiempo_disponible,
                     'meta' => $meta,
                     'eficiencia' => $eficiencia,
@@ -508,9 +533,22 @@ class TablerosController extends Controller
         try {
             $registro->update($validated);
 
-            // Solo recalcular si se actualizaron campos que afectan el cálculo
-            // NO recalcular si solo se actualizó operario_id, maquina_id o tela_id
-            $fieldsToRecalculate = ['porcion_tiempo', 'numero_operarios', 'tiempo_parada_no_programada', 'tiempo_para_programada', 'tiempo_ciclo', 'cantidad'];
+            // Recalcular siempre que se actualice cualquier campo que afecte los cálculos
+            // Esto incluye: tiempo_ciclo, porcion_tiempo, numero_operarios, paradas, cantidad, etc.
+            $fieldsToRecalculate = [
+                'porcion_tiempo', 
+                'numero_operarios', 
+                'tiempo_parada_no_programada', 
+                'tiempo_para_programada', 
+                'tiempo_ciclo', 
+                'cantidad',
+                'paradas_programadas',
+                'paradas_no_programadas',
+                'tipo_extendido',
+                'numero_capas',
+                'tiempo_trazado'
+            ];
+            
             $shouldRecalculate = false;
             foreach ($fieldsToRecalculate as $field) {
                 if (array_key_exists($field, $validated)) {
@@ -575,6 +613,16 @@ class TablerosController extends Controller
                 $registro->eficiencia = $eficiencia;
                 $registro->save();
 
+                // Broadcast event for real-time updates
+                if ($request->section === 'produccion') {
+                    broadcast(new \App\Events\ProduccionRecordCreated($registro));
+                } elseif ($request->section === 'polos') {
+                    broadcast(new \App\Events\PoloRecordCreated($registro));
+                } elseif ($request->section === 'corte') {
+                    $registro->load(['hora', 'operario', 'maquina', 'tela']);
+                    broadcast(new \App\Events\CorteRecordCreated($registro));
+                }
+
                 return response()->json([
                     'success' => true,
                     'message' => 'Registro actualizado correctamente.',
@@ -585,7 +633,16 @@ class TablerosController extends Controller
                     ]
                 ]);
             } else {
-                // No recalcular, solo actualizar
+                // No recalcular, solo actualizar y emitir evento
+                if ($request->section === 'produccion') {
+                    broadcast(new \App\Events\ProduccionRecordCreated($registro));
+                } elseif ($request->section === 'polos') {
+                    broadcast(new \App\Events\PoloRecordCreated($registro));
+                } elseif ($request->section === 'corte') {
+                    $registro->load(['hora', 'operario', 'maquina', 'tela']);
+                    broadcast(new \App\Events\CorteRecordCreated($registro));
+                }
+                
                 return response()->json([
                     'success' => true,
                     'message' => 'Registro actualizado correctamente.',
@@ -611,14 +668,52 @@ class TablerosController extends Controller
         };
 
         try {
-            $registro = $model::findOrFail($id);
+            $registro = $model::find($id);
+            
+            // Si el registro no existe, ya fue eliminado
+            if (!$registro) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'El registro ya fue eliminado.',
+                    'id' => $id,
+                    'already_deleted' => true
+                ]);
+            }
+            
+            // Guardar el ID antes de eliminar
+            $registroId = $registro->id;
+            
             $registro->delete();
+
+            // Emitir evento de eliminación via WebSocket
+            try {
+                if ($section === 'produccion') {
+                    broadcast(new \App\Events\ProduccionRecordCreated((object)['id' => $registroId, 'deleted' => true]));
+                } elseif ($section === 'polos') {
+                    broadcast(new \App\Events\PoloRecordCreated((object)['id' => $registroId, 'deleted' => true]));
+                } elseif ($section === 'corte') {
+                    broadcast(new \App\Events\CorteRecordCreated((object)['id' => $registroId, 'deleted' => true]));
+                }
+            } catch (\Exception $broadcastError) {
+                \Log::warning('Error al emitir evento de eliminación', [
+                    'error' => $broadcastError->getMessage(),
+                    'id' => $registroId,
+                    'section' => $section
+                ]);
+            }
 
             return response()->json([
                 'success' => true,
                 'message' => 'Registro eliminado correctamente.',
+                'id' => $registroId
             ]);
         } catch (\Exception $e) {
+            \Log::error('Error al eliminar registro', [
+                'error' => $e->getMessage(),
+                'id' => $id,
+                'section' => $section
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Error al eliminar el registro: ' . $e->getMessage()
@@ -672,10 +767,14 @@ class TablerosController extends Controller
 
             // Calculate tiempo_extendido based on tipo_extendido and numero_capas
             $tiempo_extendido = 0;
-            if ($request->tipo_extendido === 'Trazo Largo') {
+            $tipo_extendido_lower = strtolower($request->tipo_extendido);
+            
+            if (str_contains($tipo_extendido_lower, 'largo')) {
                 $tiempo_extendido = 40 * $request->numero_capas;
-            } elseif ($request->tipo_extendido === 'Trazo Corto') {
+            } elseif (str_contains($tipo_extendido_lower, 'corto')) {
                 $tiempo_extendido = 25 * $request->numero_capas;
+            } else {
+                $tiempo_extendido = 0;
             }
 
             // Calculate tiempo_disponible: (3600 * porcion_tiempo) - (tiempo_para_programada + tiempo_parada_no_programada + tiempo_extendido + tiempo_trazado)
@@ -690,14 +789,14 @@ class TablerosController extends Controller
 
             // Calculate meta and eficiencia based on activity (case insensitive)
             if (str_contains(strtolower($request->actividad), 'extender') || str_contains(strtolower($request->actividad), 'trazar')) {
-                // For activities containing "extender" or "trazar", meta is the cantidad_producida, eficiencia is 100%
+                // For activities containing "extender" or "trazar", meta is the cantidad_producida, eficiencia is 1 (100%)
                 $meta = $request->cantidad_producida;
-                $eficiencia = 100;
+                $eficiencia = 1;
             } else {
                 // Calculate meta: tiempo_disponible / tiempo_ciclo
                 $meta = $request->tiempo_ciclo > 0 ? $tiempo_disponible / $request->tiempo_ciclo : 0;
-                // Calculate eficiencia: cantidad_producida / meta
-                $eficiencia = $meta == 0 ? 0 : round(($request->cantidad_producida / $meta) * 100);
+                // Calculate eficiencia: cantidad_producida / meta (SIN multiplicar por 100)
+                $eficiencia = $meta == 0 ? 0 : $request->cantidad_producida / $meta;
             }
 
             $registro = RegistroPisoCorte::create([
@@ -726,7 +825,7 @@ class TablerosController extends Controller
             ]);
 
             // Load relations for broadcasting
-            $registro->load(['hora', 'operario']);
+            $registro->load(['hora', 'operario', 'maquina', 'tela']);
 
             // Broadcast the new record to ALL clients (including other windows)
             broadcast(new \App\Events\CorteRecordCreated($registro));
@@ -800,7 +899,7 @@ class TablerosController extends Controller
             ->limit(10)
             ->get();
 
-        return response()->json($telas);
+        return response()->json(['telas' => $telas]);
     }
 
     public function storeMaquina(Request $request)
@@ -835,7 +934,7 @@ class TablerosController extends Controller
             ->limit(10)
             ->get();
 
-        return response()->json($maquinas);
+        return response()->json(['maquinas' => $maquinas]);
     }
 
     public function searchOperarios(Request $request)
@@ -846,7 +945,7 @@ class TablerosController extends Controller
             ->limit(10)
             ->get();
 
-        return response()->json($operarios);
+        return response()->json(['operarios' => $operarios]);
     }
 
     public function storeOperario(Request $request)
@@ -874,6 +973,23 @@ class TablerosController extends Controller
                 'message' => 'Error al crear el operario: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function getDashboardCorteData(Request $request)
+    {
+        $fecha = $request->input('fecha', now()->toDateString());
+        
+        $registrosCorte = RegistroPisoCorte::whereDate('fecha', $fecha)
+            ->with(['hora', 'operario'])
+            ->get();
+        
+        $horasData = $this->calcularProduccionPorHoras($registrosCorte);
+        $operariosData = $this->calcularProduccionPorOperarios($registrosCorte);
+        
+        return response()->json([
+            'horas' => $horasData,
+            'operarios' => $operariosData
+        ]);
     }
 
     private function calcularProduccionPorHoras($registrosCorte)

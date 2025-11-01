@@ -34,6 +34,7 @@ class RegistroPisoCorte extends Model
         'eficiencia',
         'tipo_extendido',
         'numero_capas',
+        'tiempo_extendido',
         'trazado',
         'tiempo_trazado',
     ];
@@ -73,13 +74,7 @@ class RegistroPisoCorte extends Model
         return $this->belongsTo(Tela::class);
     }
 
-    // Get tiempo_ciclo from pivot table
-    public function getTiempoCicloAttribute()
-    {
-        $tiempoCiclo = TiempoCiclo::where('tela_id', $this->tela_id)
-            ->where('maquina_id', $this->maquina_id)
-            ->first();
-
-        return $tiempoCiclo ? $tiempoCiclo->tiempo_ciclo : null;
-    }
+    // REMOVED: This accessor was interfering with the tiempo_ciclo field
+    // The tiempo_ciclo is now stored directly in the registro_piso_corte table
+    // and should not be overridden by the pivot table value
 }

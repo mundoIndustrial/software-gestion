@@ -38,7 +38,13 @@
                                 <td style="padding: 16px 20px; border-bottom: none; color: #ffffff; border-radius: 0 0 0 8px;">TOTAL</td>
                                 <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;" id="totalCantidadHoras">{{ number_format($totalCantidadHoras) }}</td>
                                 <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;" id="totalMetaHoras">{{ number_format($totalMetaHoras) }}</td>
-                                <td style="padding: 16px 20px; border-bottom: none; border-radius: 0 0 8px 0;"></td>
+                                @php
+                                    $eficienciaTotalHoras = $totalMetaHoras > 0 ? ($totalCantidadHoras / $totalMetaHoras) * 100 : 0;
+                                    $bgColorTotalHoras = $eficienciaTotalHoras < 70 ? '#7f1d1d' : ($eficienciaTotalHoras >= 70 && $eficienciaTotalHoras < 80 ? '#92400e' : ($eficienciaTotalHoras >= 80 && $eficienciaTotalHoras < 100 ? '#166534' : ($eficienciaTotalHoras >= 100 ? '#0c4a6e' : '#374151')));
+                                @endphp
+                                <td style="padding: 0; border-bottom: none; border-radius: 0 0 8px 0; text-align: center; background: {{ $bgColorTotalHoras }}; color: #ffffff; font-weight: 600; font-size: 13px;" id="eficienciaTotalHoras">
+                                    <div style="padding: 16px 20px; width: 100%; height: 100%;">{{ number_format($eficienciaTotalHoras, 1) }}%</div>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -73,7 +79,13 @@
                                 <td style="padding: 16px 20px; border-bottom: none; color: #ffffff; border-radius: 0 0 0 8px;">TOTAL</td>
                                 <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;" id="totalCantidadOperarios">{{ number_format($totalCantidadOperarios) }}</td>
                                 <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;" id="totalMetaOperarios">{{ number_format($totalMetaOperarios) }}</td>
-                                <td style="padding: 16px 20px; border-bottom: none; border-radius: 0 0 8px 0;"></td>
+                                @php
+                                    $eficienciaTotalOperarios = $totalMetaOperarios > 0 ? ($totalCantidadOperarios / $totalMetaOperarios) * 100 : 0;
+                                    $bgColorTotalOperarios = $eficienciaTotalOperarios < 70 ? '#7f1d1d' : ($eficienciaTotalOperarios >= 70 && $eficienciaTotalOperarios < 80 ? '#92400e' : ($eficienciaTotalOperarios >= 80 && $eficienciaTotalOperarios < 100 ? '#166534' : ($eficienciaTotalOperarios >= 100 ? '#0c4a6e' : '#374151')));
+                                @endphp
+                                <td style="padding: 0; border-bottom: none; border-radius: 0 0 8px 0; text-align: center; background: {{ $bgColorTotalOperarios }}; color: #ffffff; font-weight: 600; font-size: 13px;" id="eficienciaTotalOperarios">
+                                    <div style="padding: 16px 20px; width: 100%; height: 100%;">{{ number_format($eficienciaTotalOperarios, 1) }}%</div>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -84,20 +96,91 @@
 </div>
 
 <script>
-// Función para actualizar las tablas del dashboard en tiempo real
-window.actualizarTablaCorte = function(registro) {
-    console.log('Actualizando tabla de corte con registro:', registro);
+// Función para recargar las tablas del dashboard
+function recargarDashboardCorte() {
+    // Obtener la fecha actual del filtro (si existe)
+    const fechaInput = document.querySelector('input[name="fecha"]');
+    const fecha = fechaInput ? fechaInput.value : new Date().toISOString().split('T')[0];
+    
+    // Hacer petición AJAX para obtener datos actualizados
+    fetch(`/tableros/corte/dashboard?fecha=${fecha}`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Datos del dashboard recibidos:', data);
+        
+        // Actualizar tabla de horas
+        if (data.horas) {
+            actualizarTablaHorasCompleta(data.horas);
+        }
+        
+        // Actualizar tabla de operarios
+        if (data.operarios) {
+            actualizarTablaOperariosCompleta(data.operarios);
+        }
+    })
+    .catch(error => {
+        console.error('Error al recargar dashboard:', error);
+    });
+}
 
-    // Actualizar tabla de horas
-    if (registro.hora && registro.cantidad_producida) {
-        actualizarTablaHoras(registro);
-    }
+// Función para actualizar la tabla de horas completa
+function actualizarTablaHorasCompleta(horas) {
+    const tbody = document.getElementById('horasTableBody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    horas.forEach(hora => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${hora.hora}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${hora.cantidad}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${Math.round(hora.meta * 100) / 100}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getEficienciaClass(hora.eficiencia)}">
+                    ${hora.eficiencia}%
+                </span>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
 
-    // Actualizar tabla de operarios
-    if (registro.operario && registro.cantidad_producida) {
-        actualizarTablaOperarios(registro);
-    }
-};
+// Función para actualizar la tabla de operarios completa
+function actualizarTablaOperariosCompleta(operarios) {
+    const tbody = document.getElementById('operariosTableBody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    operarios.forEach(operario => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${operario.operario}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${operario.cantidad}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${Math.round(operario.meta * 100) / 100}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getEficienciaClass(operario.eficiencia)}">
+                    ${operario.eficiencia}%
+                </span>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function getEficienciaClass(eficiencia) {
+    const eficienciaNum = parseFloat(eficiencia);
+    if (eficienciaNum >= 100) return 'bg-green-100 text-green-800';
+    if (eficienciaNum >= 80) return 'bg-yellow-100 text-yellow-800';
+    return 'bg-red-100 text-red-800';
+}
 
 // Listen for real-time updates with detailed debugging
 // Esperar a que Echo esté disponible (se inicializa en bootstrap.js)
@@ -123,17 +206,9 @@ function initializeCorteChannel() {
             console.log('Datos del evento:', e);
             console.log('Registro:', e.registro);
             
-            // Prepare registro data for actualizarTablaCorte
-            const registro = {
-                hora: { hora: e.registro.hora.hora },
-                cantidad_producida: e.registro.cantidad,
-                operario: { name: e.registro.operario.name },
-                meta_hora: e.registro.meta,
-                meta_operario: e.registro.meta
-            };
-            
-            console.log('Datos preparados para actualizar:', registro);
-            window.actualizarTablaCorte(registro);
+            // Recargar las tablas del dashboard (tanto para crear/actualizar como para eliminar)
+            console.log('Recargando tablas del dashboard...');
+            recargarDashboardCorte();
         });
         
         // Listener para TODOS los eventos (debugging)
@@ -156,6 +231,14 @@ if (document.readyState === 'loading') {
 } else {
     setTimeout(initializeCorteChannel, 100);
 }
+
+// Escuchar evento de eliminación para recargar el dashboard
+window.addEventListener('registro-eliminado', (e) => {
+    if (e.detail.section === 'corte') {
+        console.log('Registro eliminado, recargando dashboard...');
+        recargarDashboardCorte();
+    }
+});
 
 function actualizarTablaHoras(registro) {
     const horasTableBody = document.getElementById('horasTableBody');
@@ -318,13 +401,24 @@ function actualizarTotalesHoras() {
         }
     }
 
+    // Calcular eficiencia total
+    const eficienciaTotal = totalMeta > 0 ? (totalCantidad / totalMeta) * 100 : 0;
+    const bgColor = getEficienciaBackgroundColor(eficienciaTotal);
+
     // Actualizar celdas de total
     const totalRow = horasTableBody.querySelector('tr:last-child');
     if (totalRow) {
         const cells = totalRow.querySelectorAll('td');
-        if (cells.length >= 3) {
+        if (cells.length >= 4) {
             cells[1].textContent = totalCantidad.toLocaleString();
             cells[2].textContent = totalMeta.toLocaleString();
+            // Actualizar eficiencia total
+            const eficienciaCell = cells[3];
+            eficienciaCell.style.background = bgColor;
+            const eficienciaDiv = eficienciaCell.querySelector('div');
+            if (eficienciaDiv) {
+                eficienciaDiv.textContent = eficienciaTotal.toFixed(1) + '%';
+            }
         }
     }
 }
@@ -346,13 +440,24 @@ function actualizarTotalesOperarios() {
         }
     }
 
+    // Calcular eficiencia total
+    const eficienciaTotal = totalMeta > 0 ? (totalCantidad / totalMeta) * 100 : 0;
+    const bgColor = getEficienciaBackgroundColor(eficienciaTotal);
+
     // Actualizar celdas de total
     const totalRow = operariosTableBody.querySelector('tr:last-child');
     if (totalRow) {
         const cells = totalRow.querySelectorAll('td');
-        if (cells.length >= 3) {
+        if (cells.length >= 4) {
             cells[1].textContent = totalCantidad.toLocaleString();
             cells[2].textContent = totalMeta.toLocaleString();
+            // Actualizar eficiencia total
+            const eficienciaCell = cells[3];
+            eficienciaCell.style.background = bgColor;
+            const eficienciaDiv = eficienciaCell.querySelector('div');
+            if (eficienciaDiv) {
+                eficienciaDiv.textContent = eficienciaTotal.toFixed(1) + '%';
+            }
         }
     }
 }

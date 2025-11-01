@@ -1,7 +1,15 @@
-<div style="background: rgba(255, 255, 255, 0.03); padding: 24px; border-radius: 12px; border: 1px solid rgba(255, 157, 88, 0.15);">
-    <h2 style="margin: 0 0 20px 0; font-size: 18px; color: white; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
-        Métricas Globales de Producción
-    </h2>
+<div style="background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%); padding: 32px; border-radius: 20px; border: 1px solid rgba(255, 157, 88, 0.2); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);">
+    <!-- Header -->
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 28px;">
+        <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #ff9d58 0%, #ff7b3d 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(255, 157, 88, 0.3);">
+            <svg style="width: 28px; height: 28px; color: white;" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
+        <h2 style="margin: 0; font-size: 24px; color: white; font-weight: 700;">
+            Métricas Globales de Producción
+        </h2>
+    </div>
 
     <div style="background: rgba(255, 255, 255, 0.05); border-radius: 8px; padding: 20px; border: 1px solid rgba(255, 157, 88, 0.1);">
         <table style="width: 100%; border-collapse: collapse;">

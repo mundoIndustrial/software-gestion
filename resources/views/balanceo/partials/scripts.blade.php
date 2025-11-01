@@ -21,6 +21,7 @@ function balanceoApp(balanceoId) {
         },
         showAddModal: false,
         editingOperacion: null,
+        pendingOperaciones: [],
         formData: {
             letra: '',
             operacion: '',
@@ -100,7 +101,7 @@ function balanceoApp(balanceoId) {
             this.editingOperacion = null;
         },
 
-        async saveOperacion() {
+        async saveOperacion(keepOpen = false) {
             try {
                 const url = this.editingOperacion 
                     ? `/balanceo/operacion/${this.editingOperacion}`
@@ -127,8 +128,20 @@ function balanceoApp(balanceoId) {
                     }
                     
                     this.updateMetricas(data.balanceo);
-                    this.showAddModal = false;
-                    this.resetForm();
+                    
+                    // Si keepOpen es true, solo resetear el formulario pero mantener el modal abierto
+                    if (keepOpen && !this.editingOperacion) {
+                        this.resetForm();
+                        // Mostrar mensaje de éxito temporal
+                        const successMsg = document.createElement('div');
+                        successMsg.textContent = '✓ Operación guardada correctamente';
+                        successMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; z-index: 10000; box-shadow: 0 4px 6px rgba(0,0,0,0.3);';
+                        document.body.appendChild(successMsg);
+                        setTimeout(() => successMsg.remove(), 2000);
+                    } else {
+                        this.showAddModal = false;
+                        this.resetForm();
+                    }
                 }
             } catch (error) {
                 console.error('Error saving operation:', error);
@@ -153,6 +166,100 @@ function balanceoApp(balanceoId) {
                 }
             } catch (error) {
                 console.error('Error deleting operation:', error);
+            }
+        },
+
+        // Agregar operación a la lista pendiente
+        addOperacionToList() {
+            // Validar campos requeridos
+            if (!this.formData.letra || !this.formData.sam || !this.formData.operacion || !this.formData.seccion) {
+                alert('Por favor completa los campos requeridos: Letra, SAM, Operación y Sección');
+                return;
+            }
+
+            // Agregar a la lista pendiente
+            this.pendingOperaciones.push({
+                letra: this.formData.letra,
+                operacion: this.formData.operacion,
+                precedencia: this.formData.precedencia,
+                maquina: this.formData.maquina,
+                sam: parseFloat(this.formData.sam),
+                operario: this.formData.operario,
+                op: this.formData.op,
+                seccion: this.formData.seccion,
+                operario_a: this.formData.operario_a,
+                orden: this.operaciones.length + this.pendingOperaciones.length
+            });
+
+            // Limpiar formulario
+            this.resetForm();
+        },
+
+        // Eliminar operación de la lista pendiente
+        removePendingOperacion(index) {
+            this.pendingOperaciones.splice(index, 1);
+        },
+
+        // Limpiar toda la lista pendiente
+        clearPendingList() {
+            if (confirm('¿Estás seguro de limpiar toda la lista de operaciones pendientes?')) {
+                this.pendingOperaciones = [];
+            }
+        },
+
+        // Guardar todas las operaciones pendientes
+        async saveAllOperaciones() {
+            if (this.pendingOperaciones.length === 0) {
+                alert('No hay operaciones pendientes para guardar');
+                return;
+            }
+
+            try {
+                let savedCount = 0;
+                let failedCount = 0;
+
+                for (const operacion of this.pendingOperaciones) {
+                    try {
+                        const response = await fetch(`/balanceo/${this.balanceoId}/operacion`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify(operacion)
+                        });
+
+                        const data = await response.json();
+                        if (data.success) {
+                            this.operaciones.push(data.operacion);
+                            this.updateMetricas(data.balanceo);
+                            savedCount++;
+                        } else {
+                            failedCount++;
+                        }
+                    } catch (error) {
+                        console.error('Error saving operation:', error);
+                        failedCount++;
+                    }
+                }
+
+                // Mostrar mensaje de resultado
+                if (savedCount > 0) {
+                    const successMsg = document.createElement('div');
+                    successMsg.textContent = `✓ ${savedCount} operación(es) guardada(s) correctamente${failedCount > 0 ? `. ${failedCount} fallaron.` : ''}`;
+                    successMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; z-index: 10000; box-shadow: 0 4px 6px rgba(0,0,0,0.3);';
+                    document.body.appendChild(successMsg);
+                    setTimeout(() => successMsg.remove(), 3000);
+                }
+
+                // Limpiar lista y cerrar modal
+                this.pendingOperaciones = [];
+                this.showAddModal = false;
+                this.resetForm();
+
+            } catch (error) {
+                console.error('Error saving operations:', error);
+                alert('Error al guardar las operaciones');
             }
         }
     }
