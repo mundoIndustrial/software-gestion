@@ -104,6 +104,10 @@
         flex-shrink: 0;
     }
 
+    .notifications-section .chart-header h2 {
+        margin: 0;
+    }
+
     .chart-header h2 { font-size: 0.8rem; font-weight: 600; color: white; margin: 0; }
 
     .toggle-btn {
@@ -140,31 +144,103 @@
         font-size: 0.6rem;
     }
 
+    .filter-date {
+        max-width: 120px;
+        flex: none;
+        padding: 0.35rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 107, 53, 0.2);
+        border-radius: 4px;
+        color: white;
+        font-size: 0.6rem;
+    }
+
     .filters-inline select option { color: black; background: white; }
 
     .news-compact {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 0.75rem;
         max-height: 100%;
         overflow-y: auto;
         scrollbar-width: thin;
         scrollbar-color: #FF6B35 rgba(255, 255, 255, 0.05);
+        padding: 0.25rem;
     }
 
     .news-compact::-webkit-scrollbar { width: 4px; }
     .news-compact::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); border-radius: 2px; }
     .news-compact::-webkit-scrollbar-thumb { background: #FF6B35; border-radius: 2px; }
 
-    .news-item {
-        background: #111827;
-        border-left: 3px solid #FF6B35;
-        padding: 0.5rem;
-        margin-bottom: 0.35rem;
-        border-radius: 6px;
-        transition: all 0.2s;
+    .notifications-section .chart-header h2::before {
+        content: '🔔';
+        margin-right: 0.5rem;
+        font-size: 0.9rem;
     }
 
-    .news-item:hover { background: #1f2937; transform: translateX(5px); box-shadow: 0 4px 12px rgba(255, 107, 53, 0.2); border-left-color: #ff8555; }
-    .news-item .title { color: white; font-size: 0.65rem; font-weight: 600; margin-bottom: 0.2rem; }
-    .news-item .meta { display: flex; justify-content: space-between; font-size: 0.55rem; color: #94a3b8; }
+    .news-item {
+        background: #111827;
+        border: 1px solid rgba(255, 107, 53, 0.1);
+        border-radius: 12px;
+        padding: 1rem;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .news-item::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #FF6B35, #ff8555);
+    }
+
+    .news-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(255, 107, 53, 0.15);
+        border-color: rgba(255, 107, 53, 0.3);
+    }
+
+    .news-item .title {
+        color: white;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        line-height: 1.4;
+        flex: 1;
+    }
+
+    .news-item .meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.6rem;
+        color: #94a3b8;
+        margin-top: auto;
+    }
+
+    .news-item .meta span::before {
+        margin-right: 0.25rem;
+    }
+
+    .news-item .meta span:first-child::before {
+        content: '👤';
+    }
+
+    .news-item .meta span:last-child::before {
+        content: '🕒';
+    }
+
+    .news-item[data-type="entrega"]::before { background: linear-gradient(90deg, #10b981, #34d399); }
+    .news-item[data-type="orden"]::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+    .news-item[data-type="pedido"]::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
 
     @keyframes fadeInUp {
         from { opacity: 0; transform: translateY(20px); }
@@ -223,6 +299,7 @@
         <div class="chart-card animate-in notifications-section">
             <div class="chart-header">
                 <h2>Notificaciones</h2>
+                <input type="date" id="news-date-filter" class="filter-date" />
             </div>
             <div class="news-compact" id="news-feed"></div>
         </div>
@@ -576,10 +653,11 @@ const DataLoader = {
             (data.orders_by_status.find(s => s.estado === 'No iniciado')?.count || 0);
     },
 
-    async loadNews() {
-        const data = await fetch('/dashboard/news').then(r => r.json());
+    async loadNews(date = new Date().toISOString().split('T')[0]) {
+        const params = new URLSearchParams({ date });
+        const data = await fetch(`/dashboard/news?${params}`).then(r => r.json());
         document.getElementById('news-feed').innerHTML = data.slice(0, 10).map(item => `
-            <div class="news-item">
+            <div class="news-item" data-type="${item.event_type}">
                 <div class="title">${item.description}</div>
                 <div class="meta">
                     <span>${item.user}</span>
@@ -595,7 +673,13 @@ document.addEventListener('DOMContentLoaded', () => {
     new CosturaChart();
     new CorteChart();
     DataLoader.loadKPIs();
-    DataLoader.loadNews();
+    
+    // News filter
+    const newsDateFilter = document.getElementById('news-date-filter');
+    newsDateFilter.value = new Date().toISOString().split('T')[0];
+    newsDateFilter.addEventListener('change', () => DataLoader.loadNews(newsDateFilter.value));
+    
+    DataLoader.loadNews(newsDateFilter.value);
 });
 </script>
 @endsection

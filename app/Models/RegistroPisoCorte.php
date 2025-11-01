@@ -15,7 +15,11 @@ class RegistroPisoCorte extends Model
         'fecha',
         'modulo',
         'orden_produccion',
-        'hora',
+        'hora_id',
+        'operario_id',
+        'actividad',
+        'maquina_id',
+        'tela_id',
         'tiempo_ciclo',
         'porcion_tiempo',
         'cantidad',
@@ -28,6 +32,10 @@ class RegistroPisoCorte extends Model
         'tiempo_disponible',
         'meta',
         'eficiencia',
+        'tipo_extendido',
+        'numero_capas',
+        'trazado',
+        'tiempo_trazado',
     ];
 
     protected $casts = [
@@ -43,4 +51,35 @@ class RegistroPisoCorte extends Model
         'meta' => 'decimal:2',
         'eficiencia' => 'decimal:2',
     ];
+
+    // Relationships
+    public function hora()
+    {
+        return $this->belongsTo(Hora::class);
+    }
+
+    public function operario()
+    {
+        return $this->belongsTo(User::class, 'operario_id');
+    }
+
+    public function maquina()
+    {
+        return $this->belongsTo(Maquina::class);
+    }
+
+    public function tela()
+    {
+        return $this->belongsTo(Tela::class);
+    }
+
+    // Get tiempo_ciclo from pivot table
+    public function getTiempoCicloAttribute()
+    {
+        $tiempoCiclo = TiempoCiclo::where('tela_id', $this->tela_id)
+            ->where('maquina_id', $this->maquina_id)
+            ->first();
+
+        return $tiempoCiclo ? $tiempoCiclo->tiempo_ciclo : null;
+    }
 }

@@ -1,0 +1,7 @@
+npm run dev
+php artisan reverb:start
+php artisan serve
+
+
+php artisan migrate
+php artisan db:seed

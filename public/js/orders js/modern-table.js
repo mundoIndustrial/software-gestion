@@ -1,11 +1,12 @@
 class ModernTable {
     constructor() {
+        console.log('ModernTable: Constructor called');
         this.headers = [];
         this.baseRoute = this.getBaseRoute();
         this.storage = {
             rowHeight: parseInt(this.getStorage('table_rowHeight')) || 50,
             columnWidths: JSON.parse(this.getStorage('table_columnWidths')) || {},
-            tableWidth: parseInt(this.getStorage('table_tableWidth')) || 1000,
+            tableWidth: this.getStorage('table_tableWidth') ? parseInt(this.getStorage('table_tableWidth')) : null,
             tableHeight: parseInt(this.getStorage('table_tableHeight')) || null,
             tablePosition: JSON.parse(this.getStorage('table_tablePosition')) || null,
             headerPosition: JSON.parse(this.getStorage('table_headerPosition')) || null,
@@ -286,6 +287,7 @@ class ModernTable {
     }
 
     setupEventListeners() {
+        console.log('ModernTable: setupEventListeners called');
         document.getElementById('buscarOrden')?.addEventListener('keydown', e => {
             if (e.key === 'Enter') {
                 this.performAjaxSearch(e.target.value);
@@ -301,6 +303,7 @@ class ModernTable {
             // Buscar el botón de filtro, ya sea que se haga clic en el botón o en el icono dentro
             const filterBtn = e.target.closest('.filter-btn');
             if (filterBtn) {
+                console.log('Filter button clicked:', filterBtn.dataset.column, filterBtn.dataset.columnName);
                 e.preventDefault();
                 e.stopPropagation();
                 this.openFilterModal(parseInt(filterBtn.dataset.column), filterBtn.dataset.columnName);
@@ -316,6 +319,7 @@ class ModernTable {
         document.addEventListener('dblclick', e => {
             const cell = e.target.closest('.cell-content');
             if (cell && !cell.querySelector('select')) {
+                console.log('Double click detected on cell');
                 const cellText = cell.querySelector('.cell-text');
                 if (cellText) {
                     const td = cell.closest('td');
@@ -445,6 +449,7 @@ class ModernTable {
     }
 
     async openFilterModal(columnIndex, columnName) {
+        console.log('openFilterModal called with columnIndex:', columnIndex, 'columnName:', columnName);
         this.currentColumn = columnIndex;
         this.currentColumnName = columnName;
         const modal = document.getElementById('filterModal');
@@ -520,7 +525,69 @@ class ModernTable {
         const url = new URL(window.location);
         value ? url.searchParams.set(key, value) : url.searchParams.delete(key);
         url.searchParams.delete('page');
-        window.location.href = url.toString();
+        
+        // Aplicar filtro con AJAX sin recargar
+        this.loadTableWithAjax(url.toString());
+    }
+
+    loadTableWithAjax(url) {
+        const tableBody = document.getElementById('tablaOrdenesBody');
+        const paginationControls = document.getElementById('paginationControls');
+        const paginationInfo = document.getElementById('paginationInfo');
+        
+        // Indicador de carga
+        tableBody.style.transition = 'opacity 0.1s';
+        tableBody.style.opacity = '0.3';
+        tableBody.style.pointerEvents = 'none';
+        
+        fetch(url, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // Actualizar tabla
+            const newTableBody = doc.getElementById('tablaOrdenesBody');
+            if (newTableBody) {
+                tableBody.innerHTML = newTableBody.innerHTML;
+            }
+            
+            // Actualizar paginación
+            const newPaginationControls = doc.getElementById('paginationControls');
+            if (newPaginationControls && paginationControls) {
+                paginationControls.innerHTML = newPaginationControls.innerHTML;
+            }
+            
+            const newPaginationInfo = doc.getElementById('paginationInfo');
+            if (newPaginationInfo && paginationInfo) {
+                paginationInfo.innerHTML = newPaginationInfo.innerHTML;
+            }
+            
+            // Actualizar URL sin recargar
+            window.history.pushState({}, '', url);
+            
+            // Restaurar
+            tableBody.style.opacity = '1';
+            tableBody.style.pointerEvents = 'auto';
+            
+            // Actualizar marcadores de filtros activos
+            this.markActiveFilters();
+            
+            // Scroll a la tabla
+            document.querySelector('.table-container')?.scrollIntoView({ 
+                behavior: 'auto', 
+                block: 'start' 
+            });
+        })
+        .catch(error => {
+            console.error('Error al aplicar filtro:', error);
+            tableBody.style.opacity = '1';
+            tableBody.style.pointerEvents = 'auto';
+        });
     }
 
     closeFilterModal() {
@@ -534,12 +601,16 @@ class ModernTable {
     }
 
     openCellModal(content, orderId, column) {
+        console.log('openCellModal called with content:', content, 'orderId:', orderId, 'column:', column);
         this.currentOrderId = orderId;
         this.currentColumn = column;
         const input = document.getElementById('cellEditInput');
-        input.value = content.split('\n').map(line => line.trimStart()).join('\n');
-        input.focus();
-        input.select();
+        console.log('cellEditInput element:', input);
+        if (input) {
+            input.value = content.split('\n').map(line => line.trimStart()).join('\n');
+            input.focus();
+            input.select();
+        }
 
         const save = () => this.saveCellEdit();
         const cancel = () => this.closeCellModal();
@@ -548,12 +619,24 @@ class ModernTable {
             else if (e.key === 'Escape') cancel();
         };
 
-        document.getElementById('saveCellEdit').onclick = save;
-        document.getElementById('cancelCellEdit').onclick = cancel;
-        input.onkeydown = keyHandler;
+        const saveBtn = document.getElementById('saveCellEdit');
+        const cancelBtn = document.getElementById('cancelCellEdit');
+        console.log('saveBtn:', saveBtn, 'cancelBtn:', cancelBtn);
+        if (saveBtn) saveBtn.onclick = save;
+        if (cancelBtn) cancelBtn.onclick = cancel;
+        if (input) input.onkeydown = keyHandler;
 
-        document.getElementById('modalOverlay').classList.add('active');
-        document.getElementById('cellModal').classList.add('active');
+        const overlay = document.getElementById('modalOverlay');
+        const modal = document.getElementById('cellModal');
+        console.log('modalOverlay:', overlay, 'cellModal:', modal);
+        if (overlay) {
+            overlay.classList.add('active');
+            console.log('Added active class to modalOverlay');
+        }
+        if (modal) {
+            modal.classList.add('active');
+            console.log('Added active class to cellModal');
+        }
     }
 
     async saveCellEdit() {
@@ -873,7 +956,15 @@ appendRowsToTable(orders, totalDiasCalculados) {
             if (key.startsWith('filter_') || key === 'search') url.searchParams.delete(key);
         });
         url.searchParams.delete('page');
-        window.location.href = url.toString();
+        
+        // Limpiar campo de búsqueda si existe
+        const searchInput = document.getElementById('buscarOrden');
+        if (searchInput) {
+            searchInput.value = '';
+        }
+        
+        // Usar AJAX en lugar de recargar
+        this.loadTableWithAjax(url.toString());
     }
 
     exportFilteredData() {
@@ -1041,7 +1132,9 @@ appendRowsToTable(orders, totalDiasCalculados) {
 
 // Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('ModernTable: DOMContentLoaded fired, checking for tablaOrdenes...');
     if (document.getElementById('tablaOrdenes')) {
+        console.log('ModernTable: tablaOrdenes found, initializing...');
         const modernTable = new ModernTable();
         window.modernTable = modernTable;
 

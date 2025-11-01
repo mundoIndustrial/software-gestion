@@ -8,6 +8,7 @@ use App\Models\EntregaPedidoCorte;
 use App\Models\EntregaBodegaCostura;
 use App\Models\EntregaBodegaCorte;
 use App\Models\News;
+use App\Events\EntregaRegistrada;
 use Carbon\Carbon;
 
 class EntregaController extends Controller
@@ -233,7 +234,10 @@ class EntregaController extends Controller
                         $entrega['descripcion'] = $descripcion;
                     }
 
-                    $config['costura']::create($entrega);
+                    $nuevaEntrega = $config['costura']::create($entrega);
+
+                    // Broadcast event
+                    broadcast(new EntregaRegistrada($tipo, 'costura', $nuevaEntrega, $entrega['fecha_entrega']));
 
                     // Log news
                     News::create([
@@ -361,7 +365,10 @@ class EntregaController extends Controller
                         $entrega['mes'] = null;
                     }
 
-                    $config['corte']::create($entrega);
+                    $nuevaEntrega = $config['corte']::create($entrega);
+
+                    // Broadcast event
+                    broadcast(new EntregaRegistrada($tipo, 'corte', $nuevaEntrega, $entrega['fecha_entrega']));
 
                     // Log news
                     News::create([

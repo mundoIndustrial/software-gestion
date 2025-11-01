@@ -1,0 +1,23 @@
+/* ===== DROPDOWN STYLES ===== */
+.area-dropdown {
+    background-color: #fefce8;
+    border: 1px solid #eab308;
+    border-radius: 6px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    color: #92400e;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 120px;
+}
+
+.area-dropdown:focus {
+    outline: none;
+    border-color: #eab308;
+    box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.1);
+}
+
+.area-dropdown option {
+    background-color: #ffffff;
+    color: #1f2937;
+}

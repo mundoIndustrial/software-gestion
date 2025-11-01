@@ -7,67 +7,41 @@ use Illuminate\Support\Facades\Schema;
 use App\Models\RegistroPisoProduccion;
 use App\Models\RegistroPisoPolo;
 use App\Models\RegistroPisoCorte;
+use App\Models\User;
+use App\Models\Hora;
+use App\Models\Maquina;
+use App\Models\Tela;
+use App\Models\TiempoCiclo;
 
 class TablerosController extends Controller
 {
     public function index()
     {
-        $registros = RegistroPisoProduccion::paginate(50);
+        // TABLAS PRINCIPALES: SIN FILTRO DE FECHA (mostrar todos los registros)
+        $queryProduccion = RegistroPisoProduccion::query();
+        // Paginación: 50 registros por página
+        $registros = $queryProduccion->paginate(50);
         $columns = Schema::getColumnListing('registro_piso_produccion');
         $columns = array_diff($columns, ['id', 'created_at', 'updated_at', 'producida']);
 
-        // Recalcular tiempo_disponible, meta y eficiencia para cada registro
-        foreach ($registros as $registro) {
-            $tiempo_disponible = (3600 * $registro->porcion_tiempo * $registro->numero_operarios) -
-                               ($registro->tiempo_parada_no_programada ?? 0) -
-                               ($registro->tiempo_para_programada ?? 0);
+        // NO recalcular en cada carga - solo cuando se crea/actualiza un registro
+        // Los cálculos se hacen en el método store() y update()
 
-            $meta = $registro->tiempo_ciclo > 0 ? ($tiempo_disponible / $registro->tiempo_ciclo) * 0.9 : 0;
-            $eficiencia = $meta == 0 ? 0 : ($registro->cantidad / $meta);
-
-            $registro->tiempo_disponible = $tiempo_disponible;
-            $registro->meta = $meta;
-            $registro->eficiencia = $eficiencia;
-            $registro->save();
-        }
-
-        $registrosPolos = RegistroPisoPolo::paginate(50);
+        $queryPolos = RegistroPisoPolo::query();
+        // Paginación: 50 registros por página
+        $registrosPolos = $queryPolos->paginate(50);
         $columnsPolos = Schema::getColumnListing('registro_piso_polo');
         $columnsPolos = array_diff($columnsPolos, ['id', 'created_at', 'updated_at', 'producida']);
 
-        // Recalcular tiempo_disponible, meta y eficiencia para cada registro de polos
-        foreach ($registrosPolos as $registro) {
-            $tiempo_disponible = (3600 * $registro->porcion_tiempo * $registro->numero_operarios) -
-                               ($registro->tiempo_parada_no_programada ?? 0) -
-                               ($registro->tiempo_para_programada ?? 0);
+        // NO recalcular en cada carga - solo cuando se crea/actualiza un registro
 
-            $meta = $registro->tiempo_ciclo > 0 ? ($tiempo_disponible / $registro->tiempo_ciclo) * 0.9 : 0;
-            $eficiencia = $meta == 0 ? 0 : ($registro->cantidad / $meta);
-
-            $registro->tiempo_disponible = $tiempo_disponible;
-            $registro->meta = $meta;
-            $registro->eficiencia = $eficiencia;
-            $registro->save();
-        }
-
-        $registrosCorte = RegistroPisoCorte::paginate(50);
+        $queryCorte = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela']);
+        // Paginación: 50 registros por página
+        $registrosCorte = $queryCorte->paginate(50);
         $columnsCorte = Schema::getColumnListing('registro_piso_corte');
         $columnsCorte = array_diff($columnsCorte, ['id', 'created_at', 'updated_at', 'producida']);
 
-        // Recalcular tiempo_disponible, meta y eficiencia para cada registro de corte
-        foreach ($registrosCorte as $registro) {
-            $tiempo_disponible = (3600 * $registro->porcion_tiempo * $registro->numero_operarios) -
-                               ($registro->tiempo_parada_no_programada ?? 0) -
-                               ($registro->tiempo_para_programada ?? 0);
-
-            $meta = $registro->tiempo_ciclo > 0 ? ($tiempo_disponible / $registro->tiempo_ciclo) * 0.9 : 0;
-            $eficiencia = $meta == 0 ? 0 : ($registro->cantidad / $meta);
-
-            $registro->tiempo_disponible = $tiempo_disponible;
-            $registro->meta = $meta;
-            $registro->eficiencia = $eficiencia;
-            $registro->save();
-        }
+        // NO recalcular en cada carga - solo cuando se crea/actualiza un registro
 
         if (request()->wantsJson()) {
             return response()->json([
@@ -75,7 +49,22 @@ class TablerosController extends Controller
                 'columns' => array_values($columns),
                 'registrosPolos' => $registrosPolos->items(),
                 'columnsPolos' => array_values($columnsPolos),
-                'registrosCorte' => $registrosCorte->items(),
+                'registrosCorte' => $registrosCorte->map(function($registro) {
+                    $registroArray = $registro->toArray();
+                    if ($registro->hora) {
+                        $registroArray['hora_display'] = $registro->hora->hora;
+                    }
+                    if ($registro->operario) {
+                        $registroArray['operario_display'] = $registro->operario->name;
+                    }
+                    if ($registro->maquina) {
+                        $registroArray['maquina_display'] = $registro->maquina->nombre_maquina;
+                    }
+                    if ($registro->tela) {
+                        $registroArray['tela_display'] = $registro->tela->nombre_tela;
+                    }
+                    return $registroArray;
+                })->toArray(),
                 'columnsCorte' => array_values($columnsCorte),
                 'pagination' => [
                     'current_page' => $registros->currentPage(),
@@ -98,7 +87,307 @@ class TablerosController extends Controller
             ]);
         }
 
-        return view('tableros', compact('registros', 'columns', 'registrosPolos', 'columnsPolos', 'registrosCorte', 'columnsCorte'));
+        // Obtener todos los registros para seguimiento
+        $todosRegistrosProduccion = RegistroPisoProduccion::all();
+        $todosRegistrosPolos = RegistroPisoPolo::all();
+        $todosRegistrosCorte = RegistroPisoCorte::all();
+
+        // Filtrar registros por fecha SOLO para el tablero activo
+        $activeSection = request()->get('active_section', 'produccion');
+        
+        // Por defecto, usar todos los registros (sin filtro)
+        $registrosProduccionFiltrados = $todosRegistrosProduccion;
+        $registrosPolosFiltrados = $todosRegistrosPolos;
+        $registrosCorteFiltrados = $todosRegistrosCorte;
+        
+        // Aplicar filtro solo al tablero activo
+        if ($activeSection === 'produccion') {
+            $registrosProduccionFiltrados = $this->filtrarRegistrosPorFecha($todosRegistrosProduccion, request());
+        } elseif ($activeSection === 'polos') {
+            $registrosPolosFiltrados = $this->filtrarRegistrosPorFecha($todosRegistrosPolos, request());
+        } elseif ($activeSection === 'corte') {
+            $registrosCorteFiltrados = $this->filtrarRegistrosPorFecha($todosRegistrosCorte, request());
+        }
+
+        // Calcular seguimiento de módulos con registros filtrados
+        $seguimientoProduccion = $this->calcularSeguimientoModulos($registrosProduccionFiltrados);
+        $seguimientoPolos = $this->calcularSeguimientoModulos($registrosPolosFiltrados);
+        $seguimientoCorte = $this->calcularSeguimientoModulos($registrosCorteFiltrados);
+        
+        // Calcular datos dinámicos para las tablas de horas y operarios CON FILTROS
+        $horasData = $this->calcularProduccionPorHoras($registrosCorteFiltrados);
+        $operariosData = $this->calcularProduccionPorOperarios($registrosCorteFiltrados);
+
+        // Obtener datos para selects en el formulario de corte
+        $horas = Hora::all();
+        $operarios = User::whereHas('role', function($query) {
+            $query->where('name', 'cortador');
+        })->get();
+        $maquinas = Maquina::all();
+        $telas = Tela::all();
+
+        return view('tableros', compact('registros', 'columns', 'registrosPolos', 'columnsPolos', 'registrosCorte', 'columnsCorte', 'seguimientoProduccion', 'seguimientoPolos', 'seguimientoCorte', 'horas', 'operarios', 'maquinas', 'telas', 'horasData', 'operariosData'));
+    }
+
+    private function aplicarFiltroFecha($query, $request)
+    {
+        $filterType = $request->get('filter_type');
+
+        if (!$filterType || $filterType === 'range') {
+            $startDate = $request->get('start_date');
+            $endDate = $request->get('end_date');
+
+            if ($startDate && $endDate) {
+                $query->whereDate('fecha', '>=', $startDate)
+                      ->whereDate('fecha', '<=', $endDate);
+            }
+        } elseif ($filterType === 'day') {
+            $specificDate = $request->get('specific_date');
+            if ($specificDate) {
+                $query->whereDate('fecha', $specificDate);
+            }
+        } elseif ($filterType === 'month') {
+            $month = $request->get('month');
+            if ($month) {
+                // Formato esperado: YYYY-MM
+                $year = substr($month, 0, 4);
+                $monthNum = substr($month, 5, 2);
+                $startOfMonth = "{$year}-{$monthNum}-01";
+                $endOfMonth = date('Y-m-t', strtotime($startOfMonth));
+                $query->whereDate('fecha', '>=', $startOfMonth)
+                      ->whereDate('fecha', '<=', $endOfMonth);
+            }
+        } elseif ($filterType === 'specific') {
+            $specificDates = $request->get('specific_dates');
+            if ($specificDates) {
+                $dates = explode(',', $specificDates);
+                $query->whereIn('fecha', $dates);
+            }
+        }
+    }
+
+    private function filtrarRegistrosPorFecha($registros, $request)
+    {
+        $filterType = $request->get('filter_type');
+
+        if (!$filterType || $filterType === 'range') {
+            $startDate = $request->get('start_date');
+            $endDate = $request->get('end_date');
+
+            if ($startDate && $endDate) {
+                return $registros->filter(function($registro) use ($startDate, $endDate) {
+                    $fecha = $registro->fecha->format('Y-m-d');
+                    return $fecha >= $startDate && $fecha <= $endDate;
+                });
+            }
+        } elseif ($filterType === 'day') {
+            $specificDate = $request->get('specific_date');
+            if ($specificDate) {
+                return $registros->filter(function($registro) use ($specificDate) {
+                    return $registro->fecha->format('Y-m-d') == $specificDate;
+                });
+            }
+        } elseif ($filterType === 'month') {
+            $month = $request->get('month');
+            if ($month) {
+                // Formato esperado: YYYY-MM
+                $year = substr($month, 0, 4);
+                $monthNum = substr($month, 5, 2);
+                $startOfMonth = "{$year}-{$monthNum}-01";
+                $endOfMonth = date('Y-m-t', strtotime($startOfMonth));
+                return $registros->filter(function($registro) use ($startOfMonth, $endOfMonth) {
+                    $fecha = $registro->fecha->format('Y-m-d');
+                    return $fecha >= $startOfMonth && $fecha <= $endOfMonth;
+                });
+            }
+        } elseif ($filterType === 'specific') {
+            $specificDates = $request->get('specific_dates');
+            if ($specificDates) {
+                $dates = explode(',', $specificDates);
+                return $registros->filter(function($registro) use ($dates) {
+                    return in_array($registro->fecha->format('Y-m-d'), $dates);
+                });
+            }
+        }
+
+        // Si no hay filtro válido, devolver todos los registros
+        return $registros;
+    }
+
+    private function calcularSeguimientoModulos($registros)
+    {
+        // Obtener módulos únicos de los registros y ordenarlos
+        $modulosDisponibles = $registros->pluck('modulo')->unique()->values()->toArray();
+
+        // Normalizar los nombres de módulos (trim espacios, uppercase consistente)
+        $modulosDisponibles = array_map(function($mod) {
+            return strtoupper(trim($mod));
+        }, $modulosDisponibles);
+
+        // Remover duplicados después de normalizar
+        $modulosDisponibles = array_unique($modulosDisponibles);
+
+        // Filtrar módulos vacíos
+        $modulosDisponibles = array_filter($modulosDisponibles, function($mod) {
+            return !empty(trim($mod));
+        });
+        $modulosDisponibles = array_values($modulosDisponibles); // reindex
+
+        // Ordenar los módulos
+        sort($modulosDisponibles);
+
+        // Si no hay módulos dinámicos, usar los módulos por defecto
+        if (empty($modulosDisponibles)) {
+            $modulosDisponibles = ['MÓDULO 1', 'MÓDULO 2', 'MÓDULO 3'];
+        }
+
+        // Inicializar estructuras de datos
+        $dataPorHora = [];
+        $totales = ['modulos' => []];
+
+        // INICIALIZAR todos los módulos en totales
+        foreach ($modulosDisponibles as $modulo) {
+            $totales['modulos'][$modulo] = [
+                'prendas' => 0,
+                'tiempo_ciclo_sum' => 0,
+                'numero_operarios_sum' => 0,
+                'porcion_tiempo_sum' => 0,
+                'tiempo_parada_no_programada_sum' => 0,
+                'tiempo_para_programada_sum' => 0,
+                'count' => 0,
+                'meta_sum' => 0
+            ];
+        }
+
+        // Procesar cada registro
+        foreach ($registros as $registro) {
+            // Normalizar el nombre del módulo del registro
+            $modulo = strtoupper(trim($registro->modulo));
+
+            // Normalizar hora a formato "HORA XX"
+            $horaNum = (int) preg_replace('/\D/', '', $registro->hora);
+            $hora = 'HORA ' . str_pad($horaNum, 2, '0', STR_PAD_LEFT);
+
+            // Inicializar hora si no existe
+            if (!isset($dataPorHora[$hora])) {
+                $dataPorHora[$hora] = ['modulos' => []];
+                // Pre-inicializar todos los módulos para esta hora
+                foreach ($modulosDisponibles as $mod) {
+                    $dataPorHora[$hora]['modulos'][$mod] = [
+                        'prendas' => 0,
+                        'tiempo_ciclo_sum' => 0,
+                        'numero_operarios_sum' => 0,
+                        'porcion_tiempo_sum' => 0,
+                        'tiempo_parada_no_programada_sum' => 0,
+                        'tiempo_para_programada_sum' => 0,
+                        'count' => 0
+                    ];
+                }
+            }
+
+            // Verificar que el módulo exista en modulosDisponibles
+            if (!in_array($modulo, $modulosDisponibles)) {
+                // Si el módulo no existe, agregarlo dinámicamente
+                $modulosDisponibles[] = $modulo;
+                $totales['modulos'][$modulo] = [
+                    'prendas' => 0,
+                    'tiempo_ciclo_sum' => 0,
+                    'numero_operarios_sum' => 0,
+                    'porcion_tiempo_sum' => 0,
+                    'tiempo_parada_no_programada_sum' => 0,
+                    'tiempo_para_programada_sum' => 0,
+                    'count' => 0,
+                    'meta_sum' => 0
+                ];
+
+                // Inicializar en todas las horas existentes
+                foreach ($dataPorHora as $h => &$hData) {
+                    $hData['modulos'][$modulo] = [
+                        'prendas' => 0,
+                        'tiempo_ciclo_sum' => 0,
+                        'numero_operarios_sum' => 0,
+                        'porcion_tiempo_sum' => 0,
+                        'tiempo_parada_no_programada_sum' => 0,
+                        'tiempo_para_programada_sum' => 0,
+                        'count' => 0
+                    ];
+                }
+            }
+
+            // Acumular datos por hora y módulo
+            $dataPorHora[$hora]['modulos'][$modulo]['prendas'] += floatval($registro->cantidad ?? 0);
+            $dataPorHora[$hora]['modulos'][$modulo]['tiempo_ciclo_sum'] += floatval($registro->tiempo_ciclo ?? 0);
+            $dataPorHora[$hora]['modulos'][$modulo]['numero_operarios_sum'] += floatval($registro->numero_operarios ?? 0);
+            $dataPorHora[$hora]['modulos'][$modulo]['porcion_tiempo_sum'] += floatval($registro->porcion_tiempo ?? 0);
+            $dataPorHora[$hora]['modulos'][$modulo]['tiempo_parada_no_programada_sum'] += floatval($registro->tiempo_parada_no_programada ?? 0);
+            $dataPorHora[$hora]['modulos'][$modulo]['tiempo_para_programada_sum'] += floatval($registro->tiempo_para_programada ?? 0);
+            $dataPorHora[$hora]['modulos'][$modulo]['count']++;
+
+            // Acumular totales generales
+            $totales['modulos'][$modulo]['prendas'] += floatval($registro->cantidad ?? 0);
+            $totales['modulos'][$modulo]['tiempo_ciclo_sum'] += floatval($registro->tiempo_ciclo ?? 0);
+            $totales['modulos'][$modulo]['numero_operarios_sum'] += floatval($registro->numero_operarios ?? 0);
+            $totales['modulos'][$modulo]['porcion_tiempo_sum'] += floatval($registro->porcion_tiempo ?? 0);
+            $totales['modulos'][$modulo]['tiempo_parada_no_programada_sum'] += floatval($registro->tiempo_parada_no_programada ?? 0);
+            $totales['modulos'][$modulo]['tiempo_para_programada_sum'] += floatval($registro->tiempo_para_programada ?? 0);
+            $totales['modulos'][$modulo]['count']++;
+
+            // Calcular meta por registro y sumar
+            $tiempo_disponible_registro = (3600 * floatval($registro->porcion_tiempo) * floatval($registro->numero_operarios))
+                - floatval($registro->tiempo_parada_no_programada ?? 0)
+                - floatval($registro->tiempo_para_programada ?? 0);
+            $meta_registro = floatval($registro->tiempo_ciclo) > 0 ? ($tiempo_disponible_registro / floatval($registro->tiempo_ciclo)) * 0.9 : 0;
+            $totales['modulos'][$modulo]['meta_sum'] += $meta_registro;
+        }
+
+        // Calcular meta y eficiencia por hora
+        foreach ($dataPorHora as $hora => &$data) {
+            foreach ($data['modulos'] as $modulo => &$modData) {
+                if ($modData['count'] > 0) {
+                    $avg_tiempo_ciclo = $modData['tiempo_ciclo_sum'] / $modData['count'];
+                    $avg_numero_operarios = $modData['numero_operarios_sum'] / $modData['count'];
+                    $avg_porcion_tiempo = $modData['porcion_tiempo_sum'] / $modData['count'];
+                    $total_tiempo_parada_no_programada = $modData['tiempo_parada_no_programada_sum'];
+                    $total_tiempo_para_programada = $modData['tiempo_para_programada_sum'];
+
+                    $tiempo_disponible = (3600 * $avg_porcion_tiempo * $avg_numero_operarios)
+                        - $total_tiempo_parada_no_programada
+                        - $total_tiempo_para_programada;
+                    $meta = $avg_tiempo_ciclo > 0 ? ($tiempo_disponible / $avg_tiempo_ciclo) * 0.9 : 0;
+                    $eficiencia = $meta > 0 ? ($modData['prendas'] / $meta) : 0;
+
+                    $modData['meta'] = $meta;
+                    $modData['eficiencia'] = $eficiencia;
+                } else {
+                    $modData['meta'] = 0;
+                    $modData['eficiencia'] = 0;
+                }
+            }
+        }
+
+        // Calcular totales finales
+        foreach ($totales['modulos'] as $modulo => &$modData) {
+            if ($modData['count'] > 0) {
+                $total_prendas = $modData['prendas'];
+                $total_meta = $modData['meta_sum'];
+                $eficiencia = $total_meta > 0 ? ($total_prendas / $total_meta) : 0;
+
+                $modData['meta'] = $total_meta;
+                $modData['eficiencia'] = $eficiencia;
+            } else {
+                $modData['meta'] = 0;
+                $modData['eficiencia'] = 0;
+            }
+        }
+
+        // Re-ordenar módulos alfabéticamente para consistencia en la visualización
+        ksort($modulosDisponibles);
+
+        return [
+            'modulosDisponibles' => $modulosDisponibles,
+            'dataPorHora' => $dataPorHora,
+            'totales' => $totales
+        ];
     }
 
     public function store(Request $request)
@@ -137,7 +426,7 @@ class TablerosController extends Controller
                                    ($registroData['tiempo_para_programada'] ?? 0);
 
                 $meta = ($tiempo_disponible / $registroData['tiempo_ciclo']) * 0.9;
-                $eficiencia = $meta == 0 ? 0 : (($registroData['cantidad'] ?? 0) / $meta);
+                $eficiencia = $meta == 0 ? 0 : round((($registroData['cantidad'] ?? 0) / $meta) * 100);
 
                 $record = $model::create([
                     'fecha' => $registroData['fecha'],
@@ -159,6 +448,13 @@ class TablerosController extends Controller
                 ]);
 
                 $createdRecords[] = $record;
+                
+                // Broadcast event for real-time updates
+                if ($request->section === 'produccion') {
+                    broadcast(new \App\Events\ProduccionRecordCreated($record));
+                } elseif ($request->section === 'polos') {
+                    broadcast(new \App\Events\PoloRecordCreated($record));
+                }
             }
 
             return response()->json([
@@ -194,6 +490,9 @@ class TablerosController extends Controller
             'modulo' => 'sometimes|string',
             'orden_produccion' => 'sometimes|string',
             'hora' => 'sometimes|string',
+            'operario_id' => 'sometimes|integer|exists:users,id',
+            'maquina_id' => 'sometimes|integer|exists:maquinas,id',
+            'tela_id' => 'sometimes|integer|exists:telas,id',
             'tiempo_ciclo' => 'sometimes|numeric',
             'porcion_tiempo' => 'sometimes|numeric|min:0|max:1',
             'cantidad' => 'sometimes|integer',
@@ -209,31 +508,89 @@ class TablerosController extends Controller
         try {
             $registro->update($validated);
 
-            // Recalcular tiempo_disponible después de la actualización
-            $tiempo_disponible = (3600 * $registro->porcion_tiempo * $registro->numero_operarios) -
-                               ($registro->tiempo_parada_no_programada ?? 0) -
-                               ($registro->tiempo_para_programada ?? 0);
+            // Solo recalcular si se actualizaron campos que afectan el cálculo
+            // NO recalcular si solo se actualizó operario_id, maquina_id o tela_id
+            $fieldsToRecalculate = ['porcion_tiempo', 'numero_operarios', 'tiempo_parada_no_programada', 'tiempo_para_programada', 'tiempo_ciclo', 'cantidad'];
+            $shouldRecalculate = false;
+            foreach ($fieldsToRecalculate as $field) {
+                if (array_key_exists($field, $validated)) {
+                    $shouldRecalculate = true;
+                    break;
+                }
+            }
 
-            // Recalcular meta después de la actualización
-            $meta = $registro->tiempo_ciclo > 0 ? ($tiempo_disponible / $registro->tiempo_ciclo) * 0.9 : 0;
+            if ($shouldRecalculate) {
+                // Recalcular según la sección
+                if ($request->section === 'corte') {
+                    // Fórmula para CORTE (sin numero_operarios)
+                    $tiempo_para_programada = match($registro->paradas_programadas) {
+                        'DESAYUNO' => 900,
+                        'MEDIA TARDE' => 900,
+                        'NINGUNA' => 0,
+                        default => 0
+                    };
 
-            // Recalcular eficiencia después de la actualización
-            $eficiencia = $meta == 0 ? 0 : ($registro->cantidad / $meta);
+                    $tiempo_extendido = match($registro->tipo_extendido) {
+                        'Trazo Largo' => 40 * ($registro->numero_capas ?? 0),
+                        'Trazo Corto' => 25 * ($registro->numero_capas ?? 0),
+                        'Ninguno' => 0,
+                        default => 0
+                    };
 
-            $registro->tiempo_disponible = $tiempo_disponible;
-            $registro->meta = $meta;
-            $registro->eficiencia = $eficiencia;
-            $registro->save();
+                    $tiempo_disponible = (3600 * $registro->porcion_tiempo) -
+                                       ($tiempo_para_programada +
+                                       ($registro->tiempo_parada_no_programada ?? 0) +
+                                       $tiempo_extendido +
+                                       ($registro->tiempo_trazado ?? 0));
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Registro actualizado correctamente.',
-                'data' => [
-                    'tiempo_disponible' => $tiempo_disponible,
-                    'meta' => $meta,
-                    'eficiencia' => $eficiencia
-                ]
-            ]);
+                    $tiempo_disponible = max(0, $tiempo_disponible);
+
+                    // Meta: tiempo_disponible / tiempo_ciclo (SIN multiplicar por 0.9)
+                    $meta = $registro->tiempo_ciclo > 0 ? $tiempo_disponible / $registro->tiempo_ciclo : 0;
+                    
+                    // Eficiencia: cantidad / meta (SIN multiplicar por 100)
+                    $eficiencia = $meta > 0 ? ($registro->cantidad / $meta) : 0;
+                } else {
+                    // Fórmula para PRODUCCIÓN y POLOS (con numero_operarios)
+                    $tiempo_para_programada = match($registro->paradas_programadas) {
+                        'DESAYUNO' => 900,
+                        'MEDIA TARDE' => 900,
+                        'NINGUNA' => 0,
+                        default => 0
+                    };
+
+                    $tiempo_disponible = (3600 * $registro->porcion_tiempo * $registro->numero_operarios) -
+                                       ($registro->tiempo_parada_no_programada ?? 0) -
+                                       $tiempo_para_programada;
+
+                    // Meta: (tiempo_disponible / tiempo_ciclo) * 0.9
+                    $meta = $registro->tiempo_ciclo > 0 ? ($tiempo_disponible / $registro->tiempo_ciclo) * 0.9 : 0;
+                    
+                    // Eficiencia: cantidad / meta (SIN multiplicar por 100)
+                    $eficiencia = $meta > 0 ? ($registro->cantidad / $meta) : 0;
+                }
+
+                $registro->tiempo_disponible = $tiempo_disponible;
+                $registro->meta = $meta;
+                $registro->eficiencia = $eficiencia;
+                $registro->save();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Registro actualizado correctamente.',
+                    'data' => [
+                        'tiempo_disponible' => $tiempo_disponible,
+                        'meta' => $meta,
+                        'eficiencia' => $eficiencia
+                    ]
+                ]);
+            } else {
+                // No recalcular, solo actualizar
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Registro actualizado correctamente.',
+                ]);
+            }
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -267,5 +624,412 @@ class TablerosController extends Controller
                 'message' => 'Error al eliminar el registro: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function storeCorte(Request $request)
+    {
+        $request->validate([
+            'fecha' => 'required|date',
+            'orden_produccion' => 'required|string',
+            'tela_id' => 'required|exists:telas,id',
+            'hora_id' => 'required|exists:horas,id',
+            'operario_id' => 'required|exists:users,id',
+            'actividad' => 'required|string',
+            'maquina_id' => 'required|exists:maquinas,id',
+            'tiempo_ciclo' => 'required|numeric',
+            'porcion_tiempo' => 'required|numeric|min:0|max:1',
+            'cantidad_producida' => 'required|integer',
+            'paradas_programadas' => 'required|string',
+            'paradas_no_programadas' => 'nullable|string',
+            'tiempo_parada_no_programada' => 'nullable|numeric',
+            'tipo_extendido' => 'required|string',
+            'numero_capas' => 'required|integer',
+            'trazado' => 'required|string',
+            'tiempo_trazado' => 'nullable|numeric',
+        ]);
+
+        try {
+            // Check if tiempo_ciclo exists for this tela and maquina, if not, create it
+            $tiempoCiclo = TiempoCiclo::where('tela_id', $request->tela_id)
+                ->where('maquina_id', $request->maquina_id)
+                ->first();
+
+            if (!$tiempoCiclo) {
+                TiempoCiclo::create([
+                    'tela_id' => $request->tela_id,
+                    'maquina_id' => $request->maquina_id,
+                    'tiempo_ciclo' => $request->tiempo_ciclo,
+                ]);
+            }
+
+            // Calculate tiempo_para_programada based on paradas_programadas
+            $tiempo_para_programada = 0;
+            if ($request->paradas_programadas === 'DESAYUNO' || $request->paradas_programadas === 'MEDIA TARDE') {
+                $tiempo_para_programada = 900; // 15 minutes in seconds
+            } elseif ($request->paradas_programadas === 'NINGUNA') {
+                $tiempo_para_programada = 0;
+            }
+
+            // Calculate tiempo_extendido based on tipo_extendido and numero_capas
+            $tiempo_extendido = 0;
+            if ($request->tipo_extendido === 'Trazo Largo') {
+                $tiempo_extendido = 40 * $request->numero_capas;
+            } elseif ($request->tipo_extendido === 'Trazo Corto') {
+                $tiempo_extendido = 25 * $request->numero_capas;
+            }
+
+            // Calculate tiempo_disponible: (3600 * porcion_tiempo) - (tiempo_para_programada + tiempo_parada_no_programada + tiempo_extendido + tiempo_trazado)
+            $tiempo_disponible = (3600 * $request->porcion_tiempo) -
+                               $tiempo_para_programada -
+                               ($request->tiempo_parada_no_programada ?? 0) -
+                               $tiempo_extendido -
+                               ($request->tiempo_trazado ?? 0);
+
+            // Ensure tiempo_disponible is not negative
+            $tiempo_disponible = max(0, $tiempo_disponible);
+
+            // Calculate meta and eficiencia based on activity (case insensitive)
+            if (str_contains(strtolower($request->actividad), 'extender') || str_contains(strtolower($request->actividad), 'trazar')) {
+                // For activities containing "extender" or "trazar", meta is the cantidad_producida, eficiencia is 100%
+                $meta = $request->cantidad_producida;
+                $eficiencia = 100;
+            } else {
+                // Calculate meta: tiempo_disponible / tiempo_ciclo
+                $meta = $request->tiempo_ciclo > 0 ? $tiempo_disponible / $request->tiempo_ciclo : 0;
+                // Calculate eficiencia: cantidad_producida / meta
+                $eficiencia = $meta == 0 ? 0 : round(($request->cantidad_producida / $meta) * 100);
+            }
+
+            $registro = RegistroPisoCorte::create([
+                'fecha' => $request->fecha,
+                'orden_produccion' => $request->orden_produccion,
+                'hora_id' => $request->hora_id,
+                'operario_id' => $request->operario_id,
+                'maquina_id' => $request->maquina_id,
+                'porcion_tiempo' => $request->porcion_tiempo,
+                'cantidad' => $request->cantidad_producida,
+                'tiempo_ciclo' => $request->tiempo_ciclo,
+                'paradas_programadas' => $request->paradas_programadas,
+                'tiempo_para_programada' => $tiempo_para_programada,
+                'paradas_no_programadas' => $request->paradas_no_programadas,
+                'tiempo_parada_no_programada' => $request->tiempo_parada_no_programada ?? null,
+                'tipo_extendido' => $request->tipo_extendido,
+                'numero_capas' => $request->numero_capas,
+                'tiempo_extendido' => $tiempo_extendido,
+                'trazado' => $request->trazado,
+                'tiempo_trazado' => $request->tiempo_trazado,
+                'actividad' => $request->actividad,
+                'tela_id' => $request->tela_id,
+                'tiempo_disponible' => $tiempo_disponible,
+                'meta' => $meta,
+                'eficiencia' => $eficiencia,
+            ]);
+
+            // Load relations for broadcasting
+            $registro->load(['hora', 'operario']);
+
+            // Broadcast the new record to ALL clients (including other windows)
+            broadcast(new \App\Events\CorteRecordCreated($registro));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Registro de piso de corte guardado correctamente.',
+                'registro' => $registro
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar el registro: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getTiempoCiclo(Request $request)
+    {
+        $request->validate([
+            'tela_id' => 'required|exists:telas,id',
+            'maquina_id' => 'required|exists:maquinas,id',
+        ]);
+
+        $tiempoCiclo = TiempoCiclo::where('tela_id', $request->tela_id)
+            ->where('maquina_id', $request->maquina_id)
+            ->first();
+
+        if ($tiempoCiclo) {
+            return response()->json([
+                'success' => true,
+                'tiempo_ciclo' => $tiempoCiclo->tiempo_ciclo
+            ]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se encontró tiempo de ciclo para esta combinación de tela y máquina.'
+            ]);
+        }
+    }
+
+    public function storeTela(Request $request)
+    {
+        $request->validate([
+            'nombre_tela' => 'required|string|unique:telas,nombre_tela',
+        ]);
+
+        try {
+            $tela = Tela::create([
+                'nombre_tela' => $request->nombre_tela,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tela creada correctamente.',
+                'tela' => $tela
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear la tela: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function searchTelas(Request $request)
+    {
+        $query = strtoupper($request->get('q', ''));
+        $telas = Tela::where('nombre_tela', 'like', '%' . $query . '%')
+            ->select('id', 'nombre_tela')
+            ->limit(10)
+            ->get();
+
+        return response()->json($telas);
+    }
+
+    public function storeMaquina(Request $request)
+    {
+        $request->validate([
+            'nombre_maquina' => 'required|string|unique:maquinas,nombre_maquina',
+        ]);
+
+        try {
+            $maquina = Maquina::create([
+                'nombre_maquina' => $request->nombre_maquina,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Máquina creada correctamente.',
+                'maquina' => $maquina
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear la máquina: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function searchMaquinas(Request $request)
+    {
+        $query = strtoupper($request->get('q', ''));
+        $maquinas = Maquina::where('nombre_maquina', 'like', '%' . $query . '%')
+            ->select('id', 'nombre_maquina')
+            ->limit(10)
+            ->get();
+
+        return response()->json($maquinas);
+    }
+
+    public function searchOperarios(Request $request)
+    {
+        $query = strtoupper($request->get('q', ''));
+        $operarios = User::where('name', 'like', '%' . $query . '%')
+            ->select('id', 'name')
+            ->limit(10)
+            ->get();
+
+        return response()->json($operarios);
+    }
+
+    public function storeOperario(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|unique:users,name',
+        ]);
+
+        try {
+            $operario = User::create([
+                'name' => strtoupper($request->name),
+                'email' => strtolower(str_replace(' ', '.', $request->name)) . '@example.com', // Generate email
+                'password' => bcrypt('password'), // Default password
+                'role_id' => 3, // Cortador role id is 3
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Operario creado correctamente.',
+                'operario' => $operario
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear el operario: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    private function calcularProduccionPorHoras($registrosCorte)
+    {
+        $horasData = [];
+
+        foreach ($registrosCorte as $registro) {
+            $hora = $registro->hora ? $registro->hora->hora : 'SIN HORA';
+            if (!isset($horasData[$hora])) {
+                $horasData[$hora] = [
+                    'hora' => $hora,
+                    'cantidad' => 0,
+                    'meta' => 0,
+                    'eficiencia' => 0
+                ];
+            }
+            $horasData[$hora]['cantidad'] += $registro->cantidad ?? 0;
+            $horasData[$hora]['meta'] += $registro->meta ?? 0;
+        }
+
+        // Calcular eficiencia para cada hora
+        foreach ($horasData as &$horaData) {
+            if ($horaData['meta'] > 0) {
+                $horaData['eficiencia'] = round(($horaData['cantidad'] / $horaData['meta']) * 100, 1);
+            } else {
+                $horaData['eficiencia'] = 0;
+            }
+        }
+
+        // Ordenar por hora (asumiendo formato HORA XX)
+        uasort($horasData, function($a, $b) {
+            $numA = (int) preg_replace('/\D/', '', $a['hora']);
+            $numB = (int) preg_replace('/\D/', '', $b['hora']);
+            return $numA <=> $numB;
+        });
+
+        return array_values($horasData);
+    }
+
+    private function calcularProduccionPorOperarios($registrosCorte)
+    {
+        $operariosData = [];
+
+        foreach ($registrosCorte as $registro) {
+            $operario = $registro->operario ? $registro->operario->name : 'SIN OPERARIO';
+            if (!isset($operariosData[$operario])) {
+                $operariosData[$operario] = [
+                    'operario' => $operario,
+                    'cantidad' => 0,
+                    'meta' => 0,
+                    'eficiencia' => 0
+                ];
+            }
+            $operariosData[$operario]['cantidad'] += $registro->cantidad ?? 0;
+            $operariosData[$operario]['meta'] += $registro->meta ?? 0;
+        }
+
+        // Calcular eficiencia para cada operario
+        foreach ($operariosData as &$operarioData) {
+            if ($operarioData['meta'] > 0) {
+                $operarioData['eficiencia'] = round(($operarioData['cantidad'] / $operarioData['meta']) * 100, 1);
+            } else {
+                $operarioData['eficiencia'] = 0;
+            }
+        }
+
+        // Ordenar alfabéticamente por operario
+        ksort($operariosData);
+
+        return array_values($operariosData);
+    }
+
+    public function getDashboardTablesData(Request $request)
+    {
+        $queryCorte = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela']);
+        $this->aplicarFiltroFecha($queryCorte, $request);
+        $registrosCorte = $queryCorte->get();
+
+        // Calcular datos dinámicos para las tablas de horas y operarios
+        $horasData = $this->calcularProduccionPorHoras($registrosCorte);
+        $operariosData = $this->calcularProduccionPorOperarios($registrosCorte);
+
+        return response()->json([
+            'horasData' => $horasData,
+            'operariosData' => $operariosData
+        ]);
+    }
+
+    public function getSeguimientoData(Request $request)
+    {
+        $section = $request->get('section', 'produccion');
+
+        $model = match($section) {
+            'produccion' => RegistroPisoProduccion::class,
+            'polos' => RegistroPisoPolo::class,
+            'corte' => RegistroPisoCorte::class,
+        };
+
+        $query = $model::query();
+        $this->aplicarFiltroFecha($query, $request);
+        $registrosFiltrados = $query->get();
+
+        $seguimiento = $this->calcularSeguimientoModulos($registrosFiltrados);
+
+        return response()->json($seguimiento);
+    }
+
+    /**
+     * Crear o buscar operario por nombre
+     */
+    public function findOrCreateOperario(Request $request)
+    {
+        $name = strtoupper($request->input('name'));
+        
+        $operario = User::firstOrCreate(
+            ['name' => $name],
+            ['email' => strtolower(str_replace(' ', '', $name)) . '@mundoindustrial.com', 'password' => bcrypt('password123')]
+        );
+
+        return response()->json([
+            'id' => $operario->id,
+            'name' => $operario->name
+        ]);
+    }
+
+    /**
+     * Crear o buscar máquina por nombre
+     */
+    public function findOrCreateMaquina(Request $request)
+    {
+        $nombre = strtoupper($request->input('nombre'));
+        
+        $maquina = Maquina::firstOrCreate(
+            ['nombre_maquina' => $nombre]
+        );
+
+        return response()->json([
+            'id' => $maquina->id,
+            'nombre_maquina' => $maquina->nombre_maquina
+        ]);
+    }
+
+    /**
+     * Crear o buscar tela por nombre
+     */
+    public function findOrCreateTela(Request $request)
+    {
+        $nombre = strtoupper($request->input('nombre'));
+        
+        $tela = Tela::firstOrCreate(
+            ['nombre_tela' => $nombre]
+        );
+
+        return response()->json([
+            'id' => $tela->id,
+            'nombre_tela' => $tela->nombre_tela
+        ]);
     }
 }

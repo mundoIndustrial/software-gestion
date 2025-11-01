@@ -264,6 +264,10 @@ class RegistroOrdenController extends Controller
                 'metadata' => ['cliente' => $request->cliente, 'estado' => $estado, 'area' => $area]
             ]);
 
+            // Broadcast event for real-time updates
+            $ordenCreada = TablaOriginal::where('pedido', $request->pedido)->first();
+            broadcast(new \App\Events\OrdenUpdated($ordenCreada, 'created'));
+
             return response()->json(['success' => true, 'message' => 'Orden registrada correctamente']);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -383,6 +387,14 @@ class RegistroOrdenController extends Controller
                 }
             }
 
+            // Broadcast event for real-time updates
+            $orden->refresh(); // Reload to get updated data
+            broadcast(new \App\Events\OrdenUpdated($orden, 'updated'));
+
+            // Broadcast event for real-time updates
+            $orden->refresh(); // Reload to get updated data
+            broadcast(new \App\Events\OrdenUpdated($orden, 'updated'));
+
             // Obtener la orden actualizada para retornar todos los campos
             $ordenActualizada = TablaOriginal::where('pedido', $pedido)->first();
 
@@ -430,6 +442,9 @@ class RegistroOrdenController extends Controller
                 'pedido' => $pedido,
                 'metadata' => ['action' => 'deleted']
             ]);
+
+            // Broadcast event for real-time updates
+            broadcast(new \App\Events\OrdenUpdated(['pedido' => $pedido], 'deleted'));
 
             return response()->json(['success' => true, 'message' => 'Orden eliminada correctamente']);
         } catch (\Exception $e) {

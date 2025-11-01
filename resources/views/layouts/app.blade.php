@@ -16,7 +16,7 @@
       <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" rel="stylesheet">
       <link rel="stylesheet" href="{{ asset('css/sidebar.css') }}">
       @vite(['resources/css/app.css', 'resources/js/app.js'])
-      <link rel="stylesheet" href="{{ asset('css/registros.css') }}">
+      <link rel="stylesheet" href="{{ asset('css/orders styles/registros.css') }}">
 
       <!-- Alpine.js -->
       <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>

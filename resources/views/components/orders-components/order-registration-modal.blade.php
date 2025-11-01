@@ -957,7 +957,9 @@
                             setTimeout(() => this.showSuccessMessage = false, 5000);
                             this.clearForm();
 
-                            if (typeof recargarTablaPedidos === 'function' && document.getElementById('tablaOrdenesBody')) {
+                            if (typeof reloadCurrentPage === 'function' && document.getElementById('tablaOrdenesBody')) {
+                                reloadCurrentPage();
+                            } else if (typeof recargarTablaPedidos === 'function' && document.getElementById('tablaOrdenesBody')) {
                                 recargarTablaPedidos();
                             }
                         } else if (response.status === 422 && result.message?.includes('consecutivo')) {
