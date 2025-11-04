@@ -81,9 +81,9 @@
     justify-content: center;
 }
 
-/* Dark theme - fondo oscuro para imagen */
+/* Dark theme - la imagen SIEMPRE con fondo blanco para que se vea bien */
 html[data-theme="dark"] .prenda-card__image {
-    background: #1e293b;
+    background: #ffffff;
 }
 
 .prenda-card__image img {

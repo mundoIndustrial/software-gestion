@@ -211,7 +211,7 @@ body.dark-theme {
 .records-table-container {
     width: 100%;
     background: var(--seg-table-bg);
-    border-radius: 12px;
+    border-radius: 16px;
     padding: 0;
     overflow: hidden;
     margin: 2rem 0 0 0;
@@ -309,6 +309,15 @@ body.dark-theme .records-table-container {
     border-right: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
+
+/* Redondear esquinas superiores del header */
+.seguimiento-table thead tr:first-child th:first-child {
+    border-top-left-radius: 16px;
+}
+
+.seguimiento-table thead tr:first-child th:last-child {
+    border-top-right-radius: 16px;
+}
 .seguimiento-th:last-child { border-right:none; }
 .seguimiento-td { 
     padding: 14px 12px; 
@@ -339,7 +348,7 @@ body.dark-theme .records-table-container {
 .seguimiento-efficiency-cell { 
     font-weight: 700; 
     padding: 8px 10px; 
-    border-radius: 8px; 
+    border-radius: 10px; 
     text-align: center; 
     margin: 0 auto; 
     max-width: 85px;
@@ -372,6 +381,15 @@ body.dark-theme .seguimiento-gray { background: rgba(160,174,192,0.2) !important
     letter-spacing: 0.5px;
     background: var(--seg-total-bg) !important;
 }
+
+/* Redondear esquinas inferiores de la fila total */
+.seguimiento-total-row td:first-child {
+    border-bottom-left-radius: 16px;
+}
+
+.seguimiento-total-row td:last-child {
+    border-bottom-right-radius: 16px;
+}
 .seguimiento-total-row .seguimiento-hora-cell {
     color: var(--seg-total-text) !important;
     background: var(--seg-total-bg) !important;
@@ -388,7 +406,7 @@ body.dark-theme .seguimiento-gray { background: rgba(160,174,192,0.2) !important
     margin-top: 24px; 
     padding: 16px 24px; 
     background: var(--seg-legend-bg); 
-    border-radius: 10px; 
+    border-radius: 12px; 
     flex-wrap: wrap; 
     border: 1px solid var(--seg-table-border);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -402,7 +420,7 @@ body.dark-theme .seguimiento-gray { background: rgba(160,174,192,0.2) !important
     font-weight: 500;
     padding: 6px 12px;
     background: var(--seg-cell-bg);
-    border-radius: 6px;
+    border-radius: 8px;
     border: 1px solid var(--seg-cell-border);
     transition: all 0.2s ease;
 }
@@ -413,7 +431,7 @@ body.dark-theme .seguimiento-gray { background: rgba(160,174,192,0.2) !important
 .seguimiento-legend-color { 
     width: 18px; 
     height: 18px; 
-    border-radius: 4px;
+    border-radius: 6px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 </style>

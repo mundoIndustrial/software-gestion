@@ -21,9 +21,9 @@
     .skeleton{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);background-size:200% 100%;animation:loading 1.5s infinite}
     @keyframes loading{0%{background-position:200% 0}100%{background-position:-200% 0}}
     
-    /* Dark theme */
+    /* Dark theme - tarjeta oscura pero imagen BLANCA */
     html[data-theme="dark"] .prenda-card{background:#1e293b;border-color:#334155}
-    html[data-theme="dark"] .prenda-card__image{background:#1e293b}
+    html[data-theme="dark"] .prenda-card__image{background:#ffffff}
 </style>
 
 <div class="tableros-container">
