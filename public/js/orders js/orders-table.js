@@ -193,11 +193,30 @@ function handleAreaChange() {
     updateOrderArea(this.dataset.id, this.value);
 }
 
+// OPTIMIZACIÓN: Debounce map para evitar múltiples requests simultáneos
+const updateStatusDebounce = new Map();
+
 // Función para actualizar estado en la base de datos
 function updateOrderStatus(orderId, newStatus) {
     const dropdown = document.querySelector(`.estado-dropdown[data-id="${orderId}"]`);
     const oldStatus = dropdown ? dropdown.dataset.value : '';
+    
+    // OPTIMIZACIÓN: Debounce de 300ms para evitar requests duplicados
+    const debounceKey = `status-${orderId}`;
+    if (updateStatusDebounce.has(debounceKey)) {
+        clearTimeout(updateStatusDebounce.get(debounceKey));
+    }
+    
+    const timeoutId = setTimeout(() => {
+        updateStatusDebounce.delete(debounceKey);
+        executeStatusUpdate(orderId, newStatus, oldStatus, dropdown);
+    }, 300);
+    
+    updateStatusDebounce.set(debounceKey, timeoutId);
+}
 
+// Función auxiliar para ejecutar la actualización
+function executeStatusUpdate(orderId, newStatus, oldStatus, dropdown) {
     fetch(`${window.updateUrl}/${orderId}`, {
         method: 'PATCH',
         headers: {
@@ -241,11 +260,30 @@ function updateOrderStatus(orderId, newStatus) {
         });
 }
 
+// OPTIMIZACIÓN: Debounce map para área
+const updateAreaDebounce = new Map();
+
 // Función para actualizar area en la base de datos
 function updateOrderArea(orderId, newArea) {
     const dropdown = document.querySelector(`.area-dropdown[data-id="${orderId}"]`);
     const oldArea = dropdown ? dropdown.dataset.value : '';
+    
+    // OPTIMIZACIÓN: Debounce de 300ms para evitar requests duplicados
+    const debounceKey = `area-${orderId}`;
+    if (updateAreaDebounce.has(debounceKey)) {
+        clearTimeout(updateAreaDebounce.get(debounceKey));
+    }
+    
+    const timeoutId = setTimeout(() => {
+        updateAreaDebounce.delete(debounceKey);
+        executeAreaUpdate(orderId, newArea, oldArea, dropdown);
+    }, 300);
+    
+    updateAreaDebounce.set(debounceKey, timeoutId);
+}
 
+// Función auxiliar para ejecutar la actualización de área
+function executeAreaUpdate(orderId, newArea, oldArea, dropdown) {
     fetch(`${window.updateUrl}/${orderId}`, {
         method: 'PATCH',
         headers: {
@@ -330,39 +368,14 @@ function updateRowColor(orderId, newStatus) {
     }
 }
 
-// Ejecutar en diferentes momentos para asegurar que funcione
+// OPTIMIZACIÓN: Inicializar solo una vez al cargar el DOM
 document.addEventListener('DOMContentLoaded', function () {
     initializeStatusDropdowns();
     initializeAreaDropdowns();
 });
-window.addEventListener('load', function () {
-    initializeStatusDropdowns();
-    initializeAreaDropdowns();
-});
 
-// Observer para detectar cambios dinámicos en la tabla
-if (typeof MutationObserver !== 'undefined') {
-    const observer = new MutationObserver(function (mutations) {
-        mutations.forEach(function (mutation) {
-            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                // Reinicializar si se agregan nuevos elementos
-                setTimeout(function () {
-                    initializeStatusDropdowns();
-                    initializeAreaDropdowns();
-                }, 100);
-            }
-        });
-    });
-
-    // Observar cambios en la tabla
-    const tableContainer = document.querySelector('#tablaOrdenes');
-    if (tableContainer) {
-        observer.observe(tableContainer, {
-            childList: true,
-            subtree: true
-        });
-    }
-}
+// OPTIMIZACIÓN: MutationObserver ELIMINADO - causaba reinicializaciones innecesarias
+// Los dropdowns se inicializan automáticamente cuando se recarga la tabla
 
 // Listener para mensajes de localStorage (comunicación entre pestañas/ventanas)
 window.addEventListener('storage', function(event) {
@@ -828,43 +841,8 @@ function openOrderRegistration() {
     window.dispatchEvent(new CustomEvent('open-modal', { detail: 'order-registration' }));
 }
 
-// Ejecutar también después de que se cargue modern-table.jst
-setTimeout(function () {
-    initializeStatusDropdowns();
-    initializeAreaDropdowns();
-}, 500);
-
-// === Real-time updates script for orders ===
-function initializeOrdenesRealtimeListeners() {
-    console.log('=== ÓRDENES - Inicializando Echo para tiempo real ===');
-    console.log('window.Echo disponible:', !!window.Echo);
-
-    if (!window.Echo) {
-        console.error('❌ Echo NO está disponible. Reintentando en 500ms...');
-        setTimeout(initializeOrdenesRealtimeListeners, 500);
-        return;
-    }
-
-    console.log('✅ Echo disponible. Suscribiendo al canal "ordenes"...');
-
-    // Canal de Órdenes
-    const ordenesChannel = window.Echo.channel('ordenes');
-
-    ordenesChannel.subscribed(() => {
-        console.log('✅ Suscrito al canal "ordenes"');
-    });
-
-    ordenesChannel.error((error) => {
-        console.error('❌ Error en canal "ordenes":', error);
-    });
-
-    ordenesChannel.listen('OrdenUpdated', (e) => {
-        console.log('🎉 Evento OrdenUpdated recibido!', e);
-        handleOrdenUpdate(e.orden, e.action);
-    });
-
-    console.log('✅ Listener de órdenes configurado');
-}
+// OPTIMIZACIÓN: Eliminada inicialización duplicada con setTimeout
+// Los dropdowns ya se inicializan en DOMContentLoaded
 
 
 
@@ -1108,11 +1086,5 @@ function actualizarOrdenEnTabla(orden) {
     }
 }
 
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(initializeOrdenesRealtimeListeners, 100);
-    });
-} else {
-    setTimeout(initializeOrdenesRealtimeListeners, 100);
-}
+// OPTIMIZACIÓN: Echo listeners ya se inicializan en index.blade.php (líneas 362-404)
+// Eliminada duplicación para evitar múltiples suscripciones al mismo canal
