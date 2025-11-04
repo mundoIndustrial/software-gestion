@@ -126,7 +126,6 @@
             <a href="{{ route('vistas.index', ['tipo' => 'corte']) }}"
                class="menu-link"
                aria-label="Ver corte">
-              <span class="material-symbols-rounded" aria-hidden="true">content_cut</span>
               <span class="menu-label">Corte</span>
             </a>
           </li>
@@ -134,7 +133,6 @@
             <a href="{{ route('vistas.index') }}"
                class="menu-link"
                aria-label="Ver producción">
-              <span class="material-symbols-rounded" aria-hidden="true">build</span>
               <span class="menu-label">Costura</span>
             </a>
           </li>
@@ -142,7 +140,6 @@
             <a href="{{ route('vistas.index', ['tipo' => 'corte', 'origen' => 'bodega']) }}"
                class="menu-link"
                aria-label="Ver corte bodega">
-              <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
               <span class="menu-label">Corte Bodega</span>
             </a>
           </li>
@@ -150,7 +147,6 @@
             <a href="{{ route('vistas.index', ['tipo' => 'bodega']) }}"
                class="menu-link"
                aria-label="Ver producción bodega">
-              <span class="material-symbols-rounded" aria-hidden="true">factory</span>
               <span class="menu-label">Costura Bodega</span>
             </a>
           </li>

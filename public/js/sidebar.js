@@ -7,34 +7,26 @@ const logo = document.querySelector(".header-logo");
 
 // Theme management
 const getStoredTheme = () => localStorage.getItem("theme");
-const setStoredTheme = (theme) => localStorage.setItem("theme", theme);
+const setStoredTheme = (theme) => {
+  localStorage.setItem("theme", theme);
+  // Guardar también en cookie para que el servidor pueda leerlo
+  document.cookie = `theme=${theme}; path=/; max-age=31536000`; // 1 año
+};
 
 const applyTheme = (theme) => {
-  if (logo) {
-    // Agregar clase para fade out
-    logo.classList.add("changing");
-    
-    // Esperar a que termine el fade out antes de cambiar la imagen
-    setTimeout(() => {
-      if (theme === "dark") {
-        document.body.classList.add("dark-theme");
-        logo.src = logo.dataset.logoDark;
-      } else {
-        document.body.classList.remove("dark-theme");
-        logo.src = logo.dataset.logoLight;
-      }
-      
-      // Remover clase para fade in
-      setTimeout(() => {
-        logo.classList.remove("changing");
-      }, 30);
-    }, 250);
+  if (theme === "dark") {
+    document.documentElement.classList.add("dark-theme");
+    document.documentElement.setAttribute("data-theme", "dark");
+    document.body.classList.add("dark-theme");
+    if (logo) {
+      logo.src = logo.dataset.logoDark;
+    }
   } else {
-    // Si no hay logo, solo cambiar el tema
-    if (theme === "dark") {
-      document.body.classList.add("dark-theme");
-    } else {
-      document.body.classList.remove("dark-theme");
+    document.documentElement.classList.remove("dark-theme");
+    document.documentElement.removeAttribute("data-theme");
+    document.body.classList.remove("dark-theme");
+    if (logo) {
+      logo.src = logo.dataset.logoLight;
     }
   }
   
@@ -56,6 +48,10 @@ const updateThemeButton = (theme) => {
 
 // Initialize theme from localStorage or default to light
 const initialTheme = getStoredTheme() || "light";
+// Asegurar que la cookie esté sincronizada con localStorage
+if (initialTheme) {
+  setStoredTheme(initialTheme);
+}
 applyTheme(initialTheme);
 
 // Theme toggle event

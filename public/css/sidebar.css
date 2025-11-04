@@ -99,11 +99,6 @@ body {
   max-height: 45px;
   display: block;
   object-fit: contain;
-  transition: opacity 0.25s ease-in-out;
-}
-
-.sidebar-header .header-logo.changing {
-  opacity: 0;
 }
 
 .sidebar.collapsed .header-logo {
