@@ -30,14 +30,14 @@ class Balanceo extends Model
     protected $casts = [
         'total_operarios' => 'integer',
         'turnos' => 'integer',
-        'horas_por_turno' => 'decimal:2',
-        'tiempo_disponible_horas' => 'decimal:2',
-        'tiempo_disponible_segundos' => 'decimal:2',
-        'sam_total' => 'decimal:2',
+        'horas_por_turno' => 'double',
+        'tiempo_disponible_horas' => 'double',
+        'tiempo_disponible_segundos' => 'double',
+        'sam_total' => 'double',
         'meta_teorica' => 'integer',
-        'meta_real' => 'integer',
-        'tiempo_cuello_botella' => 'decimal:2',
-        'sam_real' => 'decimal:2',
+        'meta_real' => 'double',
+        'tiempo_cuello_botella' => 'double',
+        'sam_real' => 'double',
         'meta_sugerida_85' => 'integer',
         'activo' => 'boolean',
     ];
@@ -76,8 +76,8 @@ class Balanceo extends Model
         if ($this->sam_total > 0) {
             $this->meta_teorica = floor($this->tiempo_disponible_segundos / $this->sam_total);
             
-            // Meta real al 90% de la meta teórica
-            $this->meta_real = floor($this->meta_teorica * 0.90);
+            // Meta real al 90% de la meta teórica (SIN floor para mantener decimales)
+            $this->meta_real = $this->meta_teorica * 0.90;
         }
 
         // Encontrar cuello de botella (operación con mayor SAM)
@@ -90,10 +90,15 @@ class Balanceo extends Model
             $this->sam_real = $cuelloBotella->sam * $this->total_operarios;
             
             // Meta Real (cuello de botella) = T. Disponible Segundos / SAM Real
-            $metaRealCuelloBotella = floor($this->tiempo_disponible_segundos / $this->sam_real);
-            
-            // Meta sugerida al 85% del cuello de botella
-            $this->meta_sugerida_85 = floor($metaRealCuelloBotella * 0.85);
+            // Evitar división por cero
+            if ($this->sam_real > 0) {
+                $metaRealCuelloBotella = floor($this->tiempo_disponible_segundos / $this->sam_real);
+                
+                // Meta sugerida al 85% del cuello de botella
+                $this->meta_sugerida_85 = floor($metaRealCuelloBotella * 0.85);
+            } else {
+                $this->meta_sugerida_85 = null;
+            }
         }
 
         $this->save();

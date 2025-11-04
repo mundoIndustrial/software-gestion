@@ -19,15 +19,13 @@
                    onmouseout="this.style.background='rgba(255, 157, 88, 0.1)'; this.style.transform='scale(1)'">
                     <span class="material-symbols-rounded" style="font-size: 20px;">edit</span>
                 </a>
-                @if(isset($balanceo) && $balanceo)
-                <button @click="deleteBalanceo({{ $balanceo->id }})" 
-                   title="Eliminar Balanceo"
+                <button onclick="deletePrenda({{ $prenda->id }})" 
+                   title="Eliminar Prenda"
                    style="color: var(--color-text-primary); text-decoration: none; display: flex; align-items: center; transition: all 0.2s; padding: 8px; border-radius: 8px; background: rgba(245, 87, 108, 0.1); border: none; cursor: pointer;" 
                    onmouseover="this.style.background='rgba(245, 87, 108, 0.2)'; this.style.transform='scale(1.1)'" 
                    onmouseout="this.style.background='rgba(245, 87, 108, 0.1)'; this.style.transform='scale(1)'">
                     <span class="material-symbols-rounded" style="font-size: 20px;">delete</span>
                 </button>
-                @endif
             </div>
             
             @if($prenda->referencia)

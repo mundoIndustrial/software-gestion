@@ -11,11 +11,25 @@ use Illuminate\Support\Facades\Storage;
 class BalanceoController extends Controller
 {
     /**
-     * Display the balanceo index page with all prendas.
+     * Display the balanceo index page with paginated prendas.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $prendas = Prenda::with('balanceoActivo')->where('activo', true)->get();
+        $query = Prenda::with('balanceoActivo')->where('activo', true);
+        
+        // Aplicar búsqueda si existe
+        if ($request->has('search') && $request->search != '') {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('nombre', 'like', '%' . $search . '%')
+                  ->orWhere('referencia', 'like', '%' . $search . '%')
+                  ->orWhere('tipo', 'like', '%' . $search . '%');
+            });
+        }
+        
+        // Paginación (12 prendas por página)
+        $prendas = $query->orderBy('created_at', 'desc')->paginate(12)->withQueryString();
+        
         return view('balanceo.index', compact('prendas'));
     }
 
@@ -244,6 +258,38 @@ class BalanceoController extends Controller
             'success' => true,
             'message' => 'Balanceo eliminado exitosamente',
             'prenda_id' => $prendaId,
+        ]);
+    }
+
+    /**
+     * Delete a prenda and its associated balanceo and operations.
+     */
+    public function destroyPrenda($id)
+    {
+        $prenda = Prenda::findOrFail($id);
+        
+        // Obtener el balanceo asociado si existe
+        $balanceo = $prenda->balanceoActivo;
+        
+        if ($balanceo) {
+            // Eliminar todas las operaciones asociadas al balanceo
+            $balanceo->operaciones()->delete();
+            
+            // Eliminar el balanceo
+            $balanceo->delete();
+        }
+        
+        // Eliminar la imagen si existe
+        if ($prenda->imagen && file_exists(public_path($prenda->imagen))) {
+            unlink(public_path($prenda->imagen));
+        }
+        
+        // Eliminar la prenda
+        $prenda->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Prenda eliminada exitosamente',
         ]);
     }
 

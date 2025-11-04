@@ -18,7 +18,7 @@ return new class extends Migration
             $table->text('operacion'); // Descripción de la operación
             $table->string('precedencia')->nullable(); // Operación precedente
             $table->string('maquina')->nullable(); // FL, PL, 2 AG 1/4, CRR, PRET, PRES
-            $table->decimal('sam', 10, 2); // Tiempo estándar en segundos
+            $table->double('sam'); // Tiempo estándar en segundos
             $table->string('operario')->nullable(); // Nombre del operario
             $table->string('op')->nullable(); // op1, op2, op3, etc.
             $table->enum('seccion', ['DEL', 'TRAS', 'ENS', 'OTRO'])->default('OTRO'); // Delantero, Trasero, Ensamble

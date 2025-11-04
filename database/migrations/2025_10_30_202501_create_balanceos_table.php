@@ -17,15 +17,15 @@ return new class extends Migration
             $table->string('version')->default('1.0'); // Versión del balanceo
             $table->integer('total_operarios')->default(0);
             $table->integer('turnos')->default(1);
-            $table->decimal('horas_por_turno', 5, 2)->default(8.00);
-            $table->decimal('tiempo_disponible_horas', 8, 2)->nullable();
-            $table->decimal('tiempo_disponible_segundos', 10, 2)->nullable();
-            $table->decimal('sam_total', 10, 2)->default(0);
+            $table->double('horas_por_turno')->default(8.00);
+            $table->double('tiempo_disponible_horas')->nullable();
+            $table->double('tiempo_disponible_segundos')->nullable();
+            $table->double('sam_total')->default(0);
             $table->integer('meta_teorica')->nullable();
-            $table->integer('meta_real')->nullable();
+            $table->double('meta_real')->nullable();
             $table->string('operario_cuello_botella')->nullable();
-            $table->decimal('tiempo_cuello_botella', 10, 2)->nullable();
-            $table->decimal('sam_real', 10, 2)->nullable();
+            $table->double('tiempo_cuello_botella')->nullable();
+            $table->double('sam_real')->nullable();
             $table->integer('meta_sugerida_85')->nullable();
             $table->boolean('activo')->default(true);
             $table->timestamps();

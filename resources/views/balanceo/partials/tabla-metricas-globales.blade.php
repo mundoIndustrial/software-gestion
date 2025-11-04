@@ -1,4 +1,4 @@
-<div style="background: var(--color-bg-sidebar); padding: 32px; border-radius: 20px; border: 1px solid var(--color-border-hr); box-shadow: 0 1px 3px var(--color-shadow);" x-data="{ mostrarCuelloBotella: false }">
+<div style="background: var(--color-bg-sidebar); padding: 32px; border-radius: 20px; border: 1px solid var(--color-border-hr); box-shadow: 0 1px 3px var(--color-shadow);" x-data="{ mostrarCuelloBotella: false, redondearValores: false }">
     <!-- Header -->
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px;">
         <div style="display: flex; align-items: center; gap: 12px;">
@@ -12,15 +12,27 @@
             </h2>
         </div>
         
-        <!-- Botón para alternar vista -->
-        <button @click="mostrarCuelloBotella = !mostrarCuelloBotella" 
-                :title="mostrarCuelloBotella ? 'Ocultar análisis de cuello de botella' : 'Mostrar análisis de cuello de botella'"
-                style="background: rgba(255, 157, 88, 0.1); border: 1px solid rgba(255, 157, 88, 0.3); padding: 10px 16px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; color: var(--color-text-primary);"
-                onmouseover="this.style.background='rgba(255, 157, 88, 0.2)'; this.style.borderColor='rgba(255, 157, 88, 0.5)'"
-                onmouseout="this.style.background='rgba(255, 157, 88, 0.1)'; this.style.borderColor='rgba(255, 157, 88, 0.3)'">
-            <span class="material-symbols-rounded" style="font-size: 20px; color: #ff9d58;">analytics</span>
-            <span x-text="mostrarCuelloBotella ? 'Vista Simple' : 'Cuello de Botella'" style="font-size: 13px; font-weight: 600;"></span>
-        </button>
+        <div style="display: flex; gap: 8px;">
+            <!-- Botón para redondear valores -->
+            <button @click="redondearValores = !redondearValores" 
+                    :title="redondearValores ? 'Mostrar valores exactos' : 'Redondear valores'"
+                    :style="'background: ' + (redondearValores ? 'rgba(67, 233, 123, 0.15)' : 'rgba(255, 157, 88, 0.1)') + '; border: 1px solid ' + (redondearValores ? 'rgba(67, 233, 123, 0.4)' : 'rgba(255, 157, 88, 0.3)') + '; padding: 10px 16px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; color: var(--color-text-primary);'"
+                    onmouseover="this.style.transform='scale(1.05)'"
+                    onmouseout="this.style.transform='scale(1)'">
+                <span class="material-symbols-rounded" :style="'font-size: 20px; color: ' + (redondearValores ? '#43e97b' : '#ff9d58')">calculate</span>
+                <span x-text="redondearValores ? 'Redondeado' : 'Exacto'" style="font-size: 13px; font-weight: 600;"></span>
+            </button>
+            
+            <!-- Botón para alternar vista -->
+            <button @click="mostrarCuelloBotella = !mostrarCuelloBotella" 
+                    :title="mostrarCuelloBotella ? 'Ocultar análisis de cuello de botella' : 'Mostrar análisis de cuello de botella'"
+                    style="background: rgba(255, 157, 88, 0.1); border: 1px solid rgba(255, 157, 88, 0.3); padding: 10px 16px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; color: var(--color-text-primary);"
+                    onmouseover="this.style.background='rgba(255, 157, 88, 0.2)'; this.style.borderColor='rgba(255, 157, 88, 0.5)'"
+                    onmouseout="this.style.background='rgba(255, 157, 88, 0.1)'; this.style.borderColor='rgba(255, 157, 88, 0.3)'">
+                <span class="material-symbols-rounded" style="font-size: 20px; color: #ff9d58;">analytics</span>
+                <span x-text="mostrarCuelloBotella ? 'Vista Simple' : 'Cuello de Botella'" style="font-size: 13px; font-weight: 600;"></span>
+            </button>
+        </div>
     </div>
 
     <!-- Vista Simple (por defecto) -->
@@ -76,7 +88,8 @@
                 <!-- Meta Real destacada (90% de meta teórica) -->
                 <tr>
                     <td style="padding: 10px 0; color: var(--color-text-placeholder); font-size: 13px; font-weight: 500;">Meta Real (90%)</td>
-                    <td style="padding: 10px 0; text-align: right; font-weight: 700; color: #ff9d58; font-size: 18px;" x-text="metricas.meta_real || 'N/A'"></td>
+                    <td style="padding: 10px 0; text-align: right; font-weight: 700; color: #ff9d58; font-size: 18px;" 
+                        x-text="metricas.meta_real ? (redondearValores ? Math.round(parseFloat(metricas.meta_real)) : parseFloat(metricas.meta_real).toFixed(2)) : 'N/A'"></td>
                 </tr>
             </tbody>
         </table>
@@ -103,7 +116,8 @@
                 
                 <tr style="border-bottom: 1px solid rgba(255, 157, 88, 0.15);">
                     <td style="padding: 10px 0; color: var(--color-text-placeholder); font-size: 13px; font-weight: 500;">Meta Real (cuello de botella)</td>
-                    <td style="padding: 10px 0; text-align: right; font-weight: 700; color: #ff9d58; font-size: 18px;" x-text="metricas.meta_real || 'N/A'"></td>
+                    <td style="padding: 10px 0; text-align: right; font-weight: 700; color: #ff9d58; font-size: 18px;" 
+                        x-text="metricas.meta_real ? (redondearValores ? Math.round(parseFloat(metricas.meta_real)) : parseFloat(metricas.meta_real).toFixed(2)) : 'N/A'"></td>
                 </tr>
                 
                 <!-- Meta Sugerida destacada -->
@@ -117,7 +131,8 @@
 
     <div style="margin-top: 16px; padding: 12px; background: rgba(255, 157, 88, 0.05); border-radius: 6px; border-left: 3px solid #ff9d58;">
         <p style="margin: 0; color: var(--color-text-placeholder); font-size: 12px; line-height: 1.6;">
-            <strong style="color: #ff9d58;">Nota:</strong> Los campos editables actualizan automáticamente todas las métricas calculadas.
+            <strong style="color: #ff9d58;">Nota:</strong> Los campos editables actualizan automáticamente todas las métricas calculadas. 
+            <span x-show="redondearValores" style="color: #43e97b; font-weight: 600;">• Valores redondeados activos</span>
         </p>
     </div>
 </div>

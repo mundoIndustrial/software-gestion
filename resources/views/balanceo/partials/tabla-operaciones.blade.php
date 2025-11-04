@@ -93,17 +93,139 @@
                 <tbody>
                     <template x-for="operacion in operaciones" :key="operacion.id">
                         <tr style="border-bottom: 1px solid var(--color-border-hr); transition: background 0.2s;" onmouseover="this.style.background='rgba(255, 157, 88, 0.05)'" onmouseout="this.style.background='transparent'">
-                            <td style="padding: 10px; font-weight: 600; color: #ff9d58; text-align: center; font-size: 14px; white-space: nowrap;" x-text="operacion.letra"></td>
-                            <td style="padding: 10px 14px; color: var(--color-text-primary); font-size: 13px; white-space: nowrap;" x-text="operacion.operacion"></td>
-                            <td style="padding: 10px; color: var(--color-text-placeholder); text-align: center; font-size: 13px; white-space: nowrap;" x-text="operacion.precedencia || '-'"></td>
-                            <td style="padding: 10px; color: var(--color-text-placeholder); font-size: 13px; white-space: nowrap;" x-text="operacion.maquina || '-'"></td>
-                            <td style="padding: 10px; font-weight: 600; color: #f5576c; text-align: center; font-size: 14px; white-space: nowrap;" x-text="parseFloat(operacion.sam).toFixed(2)"></td>
-                            <td style="padding: 10px; color: var(--color-text-placeholder); text-align: center; font-size: 13px; white-space: nowrap;" x-text="operacion.operario || '-'"></td>
-                            <td style="padding: 10px; color: var(--color-text-placeholder); text-align: center; font-size: 13px; white-space: nowrap;" x-text="operacion.op || '-'"></td>
-                            <td style="padding: 10px; text-align: center; white-space: nowrap;">
-                                <span :style="'background: ' + getSectionColor(operacion.seccion) + '; color: white; padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; display: inline-block;'" x-text="operacion.seccion"></span>
+                            <!-- Letra - Editable -->
+                            <td style="padding: 10px; font-weight: 600; color: #ff9d58; text-align: center; font-size: 14px; white-space: nowrap; cursor: pointer;" 
+                                @click="startEditingCell(operacion, 'letra', $event)"
+                                :title="'Click para editar'">
+                                <span x-show="editingCell !== `${operacion.id}-letra`" x-text="operacion.letra"></span>
+                                <input x-show="editingCell === `${operacion.id}-letra`" 
+                                       type="text" 
+                                       :value="operacion.letra"
+                                       @blur="saveCell(operacion, 'letra', $event.target.value)"
+                                       @keydown.enter="saveCell(operacion, 'letra', $event.target.value)"
+                                       @keydown.escape="cancelEdit()"
+                                       x-ref="editInput"
+                                       style="width: 100%; padding: 4px; border: 2px solid #ff9d58; border-radius: 4px; text-align: center; font-weight: 600; color: #ff9d58; background: rgba(255, 157, 88, 0.1);">
                             </td>
-                            <td style="padding: 10px; color: var(--color-text-placeholder); text-align: center; font-size: 13px; white-space: nowrap;" x-text="operacion.operario_a || '-'"></td>
+                            
+                            <!-- Operación - Editable -->
+                            <td style="padding: 10px 14px; color: var(--color-text-primary); font-size: 13px; white-space: nowrap; cursor: pointer;" 
+                                @click="startEditingCell(operacion, 'operacion', $event)"
+                                :title="'Click para editar'">
+                                <span x-show="editingCell !== `${operacion.id}-operacion`" x-text="operacion.operacion"></span>
+                                <input x-show="editingCell === `${operacion.id}-operacion`" 
+                                       type="text" 
+                                       :value="operacion.operacion"
+                                       @blur="saveCell(operacion, 'operacion', $event.target.value)"
+                                       @keydown.enter="saveCell(operacion, 'operacion', $event.target.value)"
+                                       @keydown.escape="cancelEdit()"
+                                       style="width: 100%; padding: 4px; border: 2px solid #ff9d58; border-radius: 4px; color: var(--color-text-primary); background: rgba(255, 157, 88, 0.1);">
+                            </td>
+                            
+                            <!-- Precedencia - Editable -->
+                            <td style="padding: 10px; color: var(--color-text-placeholder); text-align: center; font-size: 13px; white-space: nowrap; cursor: pointer;" 
+                                @click="startEditingCell(operacion, 'precedencia', $event)"
+                                :title="'Click para editar'">
+                                <span x-show="editingCell !== `${operacion.id}-precedencia`" x-text="operacion.precedencia || '-'"></span>
+                                <input x-show="editingCell === `${operacion.id}-precedencia`" 
+                                       type="text" 
+                                       :value="operacion.precedencia"
+                                       @blur="saveCell(operacion, 'precedencia', $event.target.value)"
+                                       @keydown.enter="saveCell(operacion, 'precedencia', $event.target.value)"
+                                       @keydown.escape="cancelEdit()"
+                                       style="width: 100%; padding: 4px; border: 2px solid #ff9d58; border-radius: 4px; text-align: center; color: var(--color-text-placeholder); background: rgba(255, 157, 88, 0.1);">
+                            </td>
+                            
+                            <!-- Máquina - Editable -->
+                            <td style="padding: 10px; color: var(--color-text-placeholder); font-size: 13px; white-space: nowrap; cursor: pointer;" 
+                                @click="startEditingCell(operacion, 'maquina', $event)"
+                                :title="'Click para editar'">
+                                <span x-show="editingCell !== `${operacion.id}-maquina`" x-text="operacion.maquina || '-'"></span>
+                                <input x-show="editingCell === `${operacion.id}-maquina`" 
+                                       type="text" 
+                                       :value="operacion.maquina"
+                                       @blur="saveCell(operacion, 'maquina', $event.target.value)"
+                                       @keydown.enter="saveCell(operacion, 'maquina', $event.target.value)"
+                                       @keydown.escape="cancelEdit()"
+                                       style="width: 100%; padding: 4px; border: 2px solid #ff9d58; border-radius: 4px; color: var(--color-text-placeholder); background: rgba(255, 157, 88, 0.1);">
+                            </td>
+                            
+                            <!-- SAM - Editable -->
+                            <td style="padding: 10px; font-weight: 600; color: #f5576c; text-align: center; font-size: 14px; white-space: nowrap; cursor: pointer;" 
+                                @click="startEditingCell(operacion, 'sam', $event)"
+                                :title="'Click para editar'">
+                                <span x-show="editingCell !== `${operacion.id}-sam`" x-text="parseFloat(operacion.sam).toFixed(2)"></span>
+                                <input x-show="editingCell === `${operacion.id}-sam`" 
+                                       type="number" 
+                                       step="0.01"
+                                       :value="operacion.sam"
+                                       @blur="saveCell(operacion, 'sam', $event.target.value)"
+                                       @keydown.enter="saveCell(operacion, 'sam', $event.target.value)"
+                                       @keydown.escape="cancelEdit()"
+                                       style="width: 100%; padding: 4px; border: 2px solid #f5576c; border-radius: 4px; text-align: center; font-weight: 600; color: #f5576c; background: rgba(245, 87, 108, 0.1);">
+                            </td>
+                            
+                            <!-- Operario - Editable -->
+                            <td style="padding: 10px; color: var(--color-text-placeholder); text-align: center; font-size: 13px; white-space: nowrap; cursor: pointer;" 
+                                @click="startEditingCell(operacion, 'operario', $event)"
+                                :title="'Click para editar'">
+                                <span x-show="editingCell !== `${operacion.id}-operario`" x-text="operacion.operario || '-'"></span>
+                                <input x-show="editingCell === `${operacion.id}-operario`" 
+                                       type="text" 
+                                       :value="operacion.operario"
+                                       @blur="saveCell(operacion, 'operario', $event.target.value)"
+                                       @keydown.enter="saveCell(operacion, 'operario', $event.target.value)"
+                                       @keydown.escape="cancelEdit()"
+                                       style="width: 100%; padding: 4px; border: 2px solid #ff9d58; border-radius: 4px; text-align: center; color: var(--color-text-placeholder); background: rgba(255, 157, 88, 0.1);">
+                            </td>
+                            
+                            <!-- OP - Editable -->
+                            <td style="padding: 10px; color: var(--color-text-placeholder); text-align: center; font-size: 13px; white-space: nowrap; cursor: pointer;" 
+                                @click="startEditingCell(operacion, 'op', $event)"
+                                :title="'Click para editar'">
+                                <span x-show="editingCell !== `${operacion.id}-op`" x-text="operacion.op || '-'"></span>
+                                <input x-show="editingCell === `${operacion.id}-op`" 
+                                       type="text" 
+                                       :value="operacion.op"
+                                       @blur="saveCell(operacion, 'op', $event.target.value)"
+                                       @keydown.enter="saveCell(operacion, 'op', $event.target.value)"
+                                       @keydown.escape="cancelEdit()"
+                                       style="width: 100%; padding: 4px; border: 2px solid #ff9d58; border-radius: 4px; text-align: center; color: var(--color-text-placeholder); background: rgba(255, 157, 88, 0.1);">
+                            </td>
+                            
+                            <!-- Sección - Editable con select -->
+                            <td style="padding: 10px; text-align: center; white-space: nowrap; cursor: pointer;" 
+                                @click="startEditingCell(operacion, 'seccion', $event)"
+                                :title="'Click para editar'">
+                                <span x-show="editingCell !== `${operacion.id}-seccion`" 
+                                      :style="'background: ' + getSectionColor(operacion.seccion) + '; color: white; padding: 3px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; display: inline-block;'" 
+                                      x-text="operacion.seccion"></span>
+                                <select x-show="editingCell === `${operacion.id}-seccion`" 
+                                        :value="operacion.seccion"
+                                        @change="saveCell(operacion, 'seccion', $event.target.value)"
+                                        @blur="cancelEdit()"
+                                        @keydown.escape="cancelEdit()"
+                                        style="width: 100%; padding: 4px; border: 2px solid #ff9d58; border-radius: 4px; background: rgba(255, 157, 88, 0.1);">
+                                    <option value="DEL">DEL</option>
+                                    <option value="TRAS">TRAS</option>
+                                    <option value="ENS">ENS</option>
+                                    <option value="OTRO">OTRO</option>
+                                </select>
+                            </td>
+                            
+                            <!-- Operario A - Editable -->
+                            <td style="padding: 10px; color: var(--color-text-placeholder); text-align: center; font-size: 13px; white-space: nowrap; cursor: pointer;" 
+                                @click="startEditingCell(operacion, 'operario_a', $event)"
+                                :title="'Click para editar'">
+                                <span x-show="editingCell !== `${operacion.id}-operario_a`" x-text="operacion.operario_a || '-'"></span>
+                                <input x-show="editingCell === `${operacion.id}-operario_a`" 
+                                       type="text" 
+                                       :value="operacion.operario_a"
+                                       @blur="saveCell(operacion, 'operario_a', $event.target.value)"
+                                       @keydown.enter="saveCell(operacion, 'operario_a', $event.target.value)"
+                                       @keydown.escape="cancelEdit()"
+                                       style="width: 100%; padding: 4px; border: 2px solid #ff9d58; border-radius: 4px; text-align: center; color: var(--color-text-placeholder); background: rgba(255, 157, 88, 0.1);">
+                            </td>
                             <td style="padding: 10px; text-align: center; user-select: none;">
                                 <div style="display: flex; gap: 4px; justify-content: center;">
                                     <button @click="editOperacion(operacion)" 
@@ -132,7 +254,7 @@
                                 Total SAM:
                             </td>
                             <td style="padding: 12px 10px; font-weight: 700; color: #ff9d58; font-size: 16px; text-align: center;" 
-                                x-text="operaciones.reduce((sum, op) => sum + parseFloat(op.sam || 0), 0).toFixed(2) + 's'">
+                                x-text="operaciones.reduce((sum, op) => sum + parseFloat(op.sam || 0), 0).toFixed(1) + 's'">
                             </td>
                             <td colspan="5" style="padding: 12px;"></td>
                         </tr>
