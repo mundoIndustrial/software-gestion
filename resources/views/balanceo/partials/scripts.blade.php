@@ -169,6 +169,36 @@ function balanceoApp(balanceoId) {
             }
         },
 
+        async deleteBalanceo(id) {
+            if (!confirm('¿Estás seguro de eliminar este balanceo? Se eliminarán todas las operaciones asociadas.')) return;
+            
+            try {
+                const response = await fetch(`/balanceo/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    // Mostrar mensaje de éxito
+                    const successMsg = document.createElement('div');
+                    successMsg.textContent = '✓ Balanceo eliminado correctamente';
+                    successMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; z-index: 10000; box-shadow: 0 4px 6px rgba(0,0,0,0.3);';
+                    document.body.appendChild(successMsg);
+                    
+                    // Redirigir después de 1 segundo
+                    setTimeout(() => {
+                        window.location.href = `/balanceo/prenda/${data.prenda_id}`;
+                    }, 1000);
+                }
+            } catch (error) {
+                console.error('Error deleting balanceo:', error);
+                alert('Error al eliminar el balanceo');
+            }
+        },
+
         // Agregar operación a la lista pendiente
         addOperacionToList() {
             // Validar campos requeridos

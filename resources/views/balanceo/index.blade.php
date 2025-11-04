@@ -12,7 +12,7 @@
                     <span class="material-symbols-rounded" style="vertical-align: middle; margin-right: 10px;">schedule</span>
                     Balanceo de Líneas
                 </h1>
-                <p class="page-subtitle" style="color: #94a3b8; font-size: 16px; margin-top: 10px;">
+                <p class="page-subtitle" style="font-size: 16px; margin-top: 10px;">
                     Gestión de prendas y balanceo de operaciones
                 </p>
             </div>
@@ -27,13 +27,13 @@
         <!-- Buscador -->
         <div style="padding: 18px 0;">
             <div style="position: relative;">
-                <span class="material-symbols-rounded" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 22px;">search</span>
+                <span class="material-symbols-rounded" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--color-text-placeholder); font-size: 22px;">search</span>
                 <input type="text" 
                        x-model="searchQuery"
                        placeholder="Buscar por nombre, referencia o tipo de prenda..."
-                       style="width: 100%; padding: 12px 16px 12px 48px; border: 1px solid rgba(255, 157, 88, 0.2); border-radius: 8px; font-size: 15px; transition: all 0.3s ease; background: rgba(255, 255, 255, 0.05); color: white;"
+                       style="width: 100%; padding: 12px 16px 12px 48px; border: 1px solid var(--color-border-hr); border-radius: 8px; font-size: 15px; transition: all 0.3s ease; background: var(--color-bg-sidebar); color: var(--color-text-primary);"
                        onfocus="this.style.borderColor='rgba(255, 157, 88, 0.4)'; this.style.boxShadow='0 0 0 3px rgba(255, 157, 88, 0.1)'"
-                       onblur="this.style.borderColor='rgba(255, 157, 88, 0.2)'; this.style.boxShadow='none'">
+                       onblur="this.style.borderColor='var(--color-border-hr)'; this.style.boxShadow='none'">
             </div>
         </div>
     </div>
@@ -54,7 +54,7 @@
                      '{{ strtolower($prenda->referencia ?? '') }}'.includes(searchQuery.toLowerCase()) || 
                      '{{ strtolower($prenda->tipo) }}'.includes(searchQuery.toLowerCase())"
              x-transition
-             style="background: rgba(255, 255, 255, 0.03); border-radius: 12px; overflow: hidden; border: 1px solid rgba(255, 157, 88, 0.15); transition: transform 0.3s ease, border-color 0.3s ease; cursor: pointer;"
+             style="background: var(--color-bg-sidebar); border-radius: 12px; overflow: hidden; border: 1px solid var(--color-border-hr); transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; cursor: pointer; box-shadow: 0 1px 3px var(--color-shadow);"
              onclick="window.location='{{ route('balanceo.show', $prenda->id) }}'">
             
             <!-- Imagen de la prenda -->
@@ -77,53 +77,53 @@
 
             <!-- Contenido de la tarjeta -->
             <div style="padding: 20px;">
-                <h3 style="margin: 0 0 8px 0; font-size: 20px; color: white;">{{ $prenda->nombre }}</h3>
+                <h3 style="margin: 0 0 8px 0; font-size: 20px; color: var(--color-text-primary); font-weight: 700;">{{ $prenda->nombre }}</h3>
                 
                 @if($prenda->referencia)
-                <p style="margin: 0 0 12px 0; color: #94a3b8; font-size: 14px;">
-                    <strong>Ref:</strong> {{ $prenda->referencia }}
+                <p style="margin: 0 0 12px 0; color: var(--color-text-placeholder); font-size: 14px;">
+                    <strong style="color: var(--color-text-primary); opacity: 0.8;">Ref:</strong> {{ $prenda->referencia }}
                 </p>
                 @endif
 
                 @if($prenda->descripcion)
-                <p style="margin: 0 0 16px 0; color: #94a3b8; font-size: 14px; line-height: 1.5;">
+                <p style="margin: 0 0 16px 0; color: var(--color-text-placeholder); font-size: 14px; line-height: 1.5;">
                     {{ Str::limit($prenda->descripcion, 100) }}
                 </p>
                 @endif
 
                 <!-- Información del balanceo -->
                 @if($prenda->balanceoActivo)
-                <div style="border-top: 1px solid rgba(255, 157, 88, 0.15); padding-top: 16px; margin-top: 16px;">
+                <div style="border-top: 1px solid var(--color-border-hr); padding-top: 16px; margin-top: 16px;">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px;">
                         <div>
-                            <p style="margin: 0; color: #94a3b8; font-size: 11px; text-transform: uppercase;">Operaciones</p>
-                            <p style="margin: 4px 0 0 0; font-weight: 600; color: #ff9d58;">
+                            <p style="margin: 0; color: var(--color-text-placeholder); font-size: 11px; text-transform: uppercase; font-weight: 600;">Operaciones</p>
+                            <p style="margin: 4px 0 0 0; font-weight: 700; color: #ff9d58; font-size: 18px;">
                                 {{ $prenda->balanceoActivo->operaciones->count() }}
                             </p>
                         </div>
                         <div>
-                            <p style="margin: 0; color: #94a3b8; font-size: 11px; text-transform: uppercase;">SAM Total</p>
-                            <p style="margin: 4px 0 0 0; font-weight: 600; color: #ff9d58;">
+                            <p style="margin: 0; color: var(--color-text-placeholder); font-size: 11px; text-transform: uppercase; font-weight: 600;">SAM Total</p>
+                            <p style="margin: 4px 0 0 0; font-weight: 700; color: #ff9d58; font-size: 18px;">
                                 {{ number_format($prenda->balanceoActivo->sam_total, 2) }}s
                             </p>
                         </div>
                         <div>
-                            <p style="margin: 0; color: #94a3b8; font-size: 11px; text-transform: uppercase;">Operarios</p>
-                            <p style="margin: 4px 0 0 0; font-weight: 600; color: #ff9d58;">
+                            <p style="margin: 0; color: var(--color-text-placeholder); font-size: 11px; text-transform: uppercase; font-weight: 600;">Operarios</p>
+                            <p style="margin: 4px 0 0 0; font-weight: 700; color: #ff9d58; font-size: 18px;">
                                 {{ $prenda->balanceoActivo->total_operarios }}
                             </p>
                         </div>
                         <div>
-                            <p style="margin: 0; color: #94a3b8; font-size: 11px; text-transform: uppercase;">Meta Real</p>
-                            <p style="margin: 4px 0 0 0; font-weight: 600; color: #ff9d58;">
+                            <p style="margin: 0; color: var(--color-text-placeholder); font-size: 11px; text-transform: uppercase; font-weight: 600;">Meta Real</p>
+                            <p style="margin: 4px 0 0 0; font-weight: 700; color: #ff9d58; font-size: 18px;">
                                 {{ $prenda->balanceoActivo->meta_real ?? 'N/A' }}
                             </p>
                         </div>
                     </div>
                 </div>
                 @else
-                <div style="border-top: 1px solid rgba(255, 157, 88, 0.15); padding-top: 16px; margin-top: 16px; text-align: center;">
-                    <p style="margin: 0; color: #94a3b8; font-size: 13px;">Sin balanceo configurado</p>
+                <div style="border-top: 1px solid var(--color-border-hr); padding-top: 16px; margin-top: 16px; text-align: center;">
+                    <p style="margin: 0; color: var(--color-text-placeholder); font-size: 13px;">Sin balanceo configurado</p>
                 </div>
                 @endif
 
@@ -135,12 +135,12 @@
             </div>
         </div>
         @empty
-        <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; background: rgba(255, 255, 255, 0.03); border-radius: 12px; border: 1px solid rgba(255, 157, 88, 0.15);">
-            <span class="material-symbols-rounded" style="font-size: 64px; color: #94a3b8; display: block; margin-bottom: 16px;">checkroom</span>
-            <h3 style="color: white; margin-bottom: 8px;">No hay prendas registradas</h3>
-            <p style="color: #94a3b8; margin-bottom: 24px;">Comienza creando tu primera prenda para gestionar su balanceo</p>
+        <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; background: var(--color-bg-sidebar); border-radius: 12px; border: 1px solid var(--color-border-hr); box-shadow: 0 1px 3px var(--color-shadow);">
+            <span class="material-symbols-rounded" style="font-size: 64px; color: var(--color-text-placeholder); opacity: 0.5; display: block; margin-bottom: 16px;">checkroom</span>
+            <h3 style="color: var(--color-text-primary); margin-bottom: 8px; font-weight: 700;">No hay prendas registradas</h3>
+            <p style="color: var(--color-text-placeholder); margin-bottom: 24px;">Comienza creando tu primera prenda para gestionar su balanceo</p>
             <a href="{{ route('balanceo.prenda.create') }}" 
-               style="background: #ff9d58; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-weight: 500;">
+               style="background: #ff9d58; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-weight: 500; box-shadow: 0 2px 4px rgba(255, 157, 88, 0.3);">
                 <span class="material-symbols-rounded">add</span>
                 Nueva Prenda
             </a>
@@ -152,11 +152,12 @@
 <style>
 .prenda-card:hover {
     transform: translateY(-5px);
-    border-color: rgba(255, 157, 88, 0.4);
+    border-color: #ff9d58 !important;
+    box-shadow: 0 8px 16px rgba(255, 157, 88, 0.25) !important;
 }
 
 .page-subtitle {
-    color: #666;
+    color: var(--color-text-placeholder);
     font-size: 16px;
     margin-top: 10px;
 }

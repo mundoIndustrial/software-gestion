@@ -227,6 +227,27 @@ class BalanceoController extends Controller
     }
 
     /**
+     * Delete a balanceo.
+     */
+    public function destroyBalanceo($id)
+    {
+        $balanceo = Balanceo::findOrFail($id);
+        $prendaId = $balanceo->prenda_id;
+        
+        // Eliminar todas las operaciones asociadas
+        $balanceo->operaciones()->delete();
+        
+        // Eliminar el balanceo
+        $balanceo->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Balanceo eliminado exitosamente',
+            'prenda_id' => $prendaId,
+        ]);
+    }
+
+    /**
      * Get balanceo data as JSON.
      */
     public function getBalanceoData($id)

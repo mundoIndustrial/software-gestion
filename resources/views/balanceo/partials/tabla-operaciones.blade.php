@@ -1,6 +1,6 @@
-<div style="background: rgba(255, 255, 255, 0.03); padding: 24px; border-radius: 12px; margin-bottom: 24px; border: 1px solid rgba(255, 157, 88, 0.15);">
+<div style="background: var(--color-bg-sidebar); padding: 24px; border-radius: 12px; margin-bottom: 24px; border: 1px solid var(--color-border-hr); box-shadow: 0 1px 3px var(--color-shadow);">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="margin: 0; font-size: 18px; color: white; display: flex; align-items: center; gap: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+        <h2 style="margin: 0; font-size: 18px; color: var(--color-text-primary); display: flex; align-items: center; gap: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
             <span class="material-symbols-rounded" style="color: #ff9d58; font-size: 24px;">list_alt</span>
             Operaciones del Balanceo
         </h2>
@@ -13,7 +13,7 @@
         </button>
     </div>
 
-    <div style="background: rgba(255, 255, 255, 0.05); border-radius: 10px; overflow: hidden; border: 1px solid rgba(255, 157, 88, 0.1);">
+    <div style="background: var(--color-bg-primary); border-radius: 10px; overflow: hidden; border: 1px solid var(--color-border-hr);">
         <div class="table-scroll-container">
             <table class="modern-table" style="width: 100%; border-collapse: collapse;">
                 <thead>
@@ -32,18 +32,18 @@
                 </thead>
                 <tbody>
                     <template x-for="operacion in operaciones" :key="operacion.id">
-                        <tr style="border-bottom: 1px solid rgba(255, 157, 88, 0.1); transition: background 0.2s;" onmouseover="this.style.background='rgba(255, 157, 88, 0.05)'" onmouseout="this.style.background='transparent'">
+                        <tr style="border-bottom: 1px solid var(--color-border-hr); transition: background 0.2s;" onmouseover="this.style.background='rgba(255, 157, 88, 0.05)'" onmouseout="this.style.background='transparent'">
                             <td style="padding: 14px; font-weight: 600; color: #ff9d58;" x-text="operacion.letra"></td>
-                            <td style="padding: 14px; color: white;" x-text="operacion.operacion"></td>
-                            <td style="padding: 14px; color: #94a3b8;" x-text="operacion.precedencia || '-'"></td>
-                            <td style="padding: 14px; color: #666;" x-text="operacion.maquina || '-'"></td>
+                            <td style="padding: 14px; color: var(--color-text-primary);" x-text="operacion.operacion"></td>
+                            <td style="padding: 14px; color: var(--color-text-placeholder);" x-text="operacion.precedencia || '-'"></td>
+                            <td style="padding: 14px; color: var(--color-text-placeholder);" x-text="operacion.maquina || '-'"></td>
                             <td style="padding: 14px; font-weight: 600; color: #f5576c;" x-text="parseFloat(operacion.sam).toFixed(2)"></td>
-                            <td style="padding: 14px; color: #94a3b8;" x-text="operacion.operario || '-'"></td>
-                            <td style="padding: 14px; color: #666;" x-text="operacion.op || '-'"></td>
+                            <td style="padding: 14px; color: var(--color-text-placeholder);" x-text="operacion.operario || '-'"></td>
+                            <td style="padding: 14px; color: var(--color-text-placeholder);" x-text="operacion.op || '-'"></td>
                             <td style="padding: 14px;">
                                 <span :style="'background: ' + getSectionColor(operacion.seccion) + '; color: white; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;'" x-text="operacion.seccion"></span>
                             </td>
-                            <td style="padding: 14px; color: #555;" x-text="operacion.operario_a || '-'"></td>
+                            <td style="padding: 14px; color: var(--color-text-placeholder);" x-text="operacion.operario_a || '-'"></td>
                             <td style="padding: 14px; text-align: center;">
                                 <button @click="editOperacion(operacion)" style="background: #ff9d58; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; margin-right: 6px; transition: background 0.2s;" onmouseover="this.style.background='#e88a47'" onmouseout="this.style.background='#ff9d58'">
                                     <span class="material-symbols-rounded" style="font-size: 18px;">edit</span>
@@ -57,8 +57,8 @@
                     <template x-if="operaciones.length === 0">
                         <tr>
                             <td colspan="10" style="text-align: center; padding: 40px; background: rgba(255, 157, 88, 0.05);">
-                                <span class="material-symbols-rounded" style="font-size: 48px; display: block; margin-bottom: 10px; opacity: 0.3; color: #94a3b8;">inbox</span>
-                                <p style="color: #94a3b8; font-size: 14px; margin: 0;">No hay operaciones registradas</p>
+                                <span class="material-symbols-rounded" style="font-size: 48px; display: block; margin-bottom: 10px; opacity: 0.3; color: var(--color-text-placeholder);">inbox</span>
+                                <p style="color: var(--color-text-placeholder); font-size: 14px; margin: 0;">No hay operaciones registradas</p>
                             </td>
                         </tr>
                     </template>
