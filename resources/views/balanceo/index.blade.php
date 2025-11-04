@@ -1,35 +1,30 @@
 @extends('layouts.app')
 
 @push('styles')
-<!-- Preload SOLO el CSS crítico de balanceo -->
+<!-- Optimizaciones SOLO para módulo balanceo -->
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link rel="preload" href="{{ asset('css/balanceo.css') }}" as="style">
 @endpush
 
 @section('content')
-<!-- CSS crítico de balanceo cargado inmediatamente -->
+<!-- CSS de balanceo -->
 <link rel="stylesheet" href="{{ asset('css/balanceo.css') }}">
+<link rel="stylesheet" href="{{ asset('css/tableros.css') }}">
+<link rel="stylesheet" href="{{ asset('css/orders styles/modern-table.css') }}">
 
-<!-- CSS no crítico con lazy loading agresivo -->
-<script>
-(function(){
-    // Cargar tableros.css solo cuando sea necesario
-    if(window.requestIdleCallback){
-        requestIdleCallback(function(){
-            var link=document.createElement('link');
-            link.rel='stylesheet';
-            link.href='{{ asset('css/tableros.css') }}';
-            document.head.appendChild(link);
-        });
-    }else{
-        setTimeout(function(){
-            var link=document.createElement('link');
-            link.rel='stylesheet';
-            link.href='{{ asset('css/tableros.css') }}';
-            document.head.appendChild(link);
-        },1);
-    }
-})();
-</script>
+<!-- CSS Crítico Inline SOLO para balanceo -->
+<style>
+    /* Estilos críticos para primera pintura de balanceo */
+    .prendas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px}
+    .prenda-card{background:#fff;border-radius:12px;border:1px solid #e5e7eb;cursor:pointer;overflow:hidden;transition:all .3s}
+    .prenda-card__image{height:180px;background:#ffffff;position:relative;display:flex;align-items:center;justify-content:center}
+    .skeleton{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);background-size:200% 100%;animation:loading 1.5s infinite}
+    @keyframes loading{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    
+    /* Dark theme */
+    html[data-theme="dark"] .prenda-card{background:#1e293b;border-color:#334155}
+    html[data-theme="dark"] .prenda-card__image{background:#1e293b}
+</style>
 
 <div class="tableros-container">
     <div class="page-header" style="margin-bottom: 30px;">
@@ -89,8 +84,7 @@
             <!-- Imagen de la prenda -->
             <div class="prenda-card__image">
                 @if($prenda->imagen)
-                <img data-src="{{ asset($prenda->imagen) }}" 
-                     src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 180'%3E%3Crect fill='%23f0f0f0' width='300' height='180'/%3E%3C/svg%3E"
+                <img src="{{ asset($prenda->imagen) }}" 
                      alt="{{ $prenda->nombre }}"
                      loading="lazy"
                      decoding="async"
@@ -324,67 +318,27 @@
 }
 </style>
 
-<!-- Intersection Observer para lazy loading de imágenes -->
+<!-- Optimizaciones SOLO para módulo balanceo -->
 <script>
+// Lazy loading nativo de imágenes ya está habilitado con loading="lazy"
+// Fade in suave de cards (opcional - solo para balanceo)
 document.addEventListener('DOMContentLoaded', function() {
-    // Lazy loading de imágenes con Intersection Observer
-    if ('IntersectionObserver' in window) {
-        const imageObserver = new IntersectionObserver((entries, observer) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const img = entry.target;
-                    const src = img.getAttribute('data-src');
-                    if (src) {
-                        img.src = src;
-                        img.classList.add('loaded');
-                        imageObserver.unobserve(img);
-                    }
-                }
-            });
-        }, {
-            rootMargin: '50px 0px',
-            threshold: 0.01
-        });
-
-        // Observar todas las imágenes lazy
-        document.querySelectorAll('img.lazy-image').forEach(img => {
-            imageObserver.observe(img);
-        });
-    } else {
-        // Fallback para navegadores sin IntersectionObserver
-        document.querySelectorAll('img.lazy-image').forEach(img => {
-            const src = img.getAttribute('data-src');
-            if (src) img.src = src;
-        });
-    }
-
-    // Fade in de cards cuando entran en viewport
     if ('IntersectionObserver' in window) {
         const cardObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    entry.target.style.opacity = '0';
-                    entry.target.style.transform = 'translateY(20px)';
-                    entry.target.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-                    
-                    setTimeout(() => {
-                        entry.target.style.opacity = '1';
-                        entry.target.style.transform = 'translateY(0)';
-                    }, 50);
-                    
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
                     cardObserver.unobserve(entry.target);
                 }
             });
-        }, {
-            rootMargin: '0px',
-            threshold: 0.1
-        });
+        }, { rootMargin: '50px', threshold: 0.1 });
 
         document.querySelectorAll('.prenda-card').forEach((card, index) => {
             card.style.opacity = '0';
-            setTimeout(() => {
-                cardObserver.observe(card);
-            }, index * 50);
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+            setTimeout(() => cardObserver.observe(card), index * 30);
         });
     }
 });

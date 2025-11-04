@@ -29,34 +29,24 @@
           })();
       </script>
       
-      <!-- CSS Crítico Inline -->
-      @include('partials.critical-css')
+      <!-- Estilo crítico inline para prevenir flash -->
+      <style>
+          html[data-theme="dark"] body {
+              background-color: #0f172a !important;
+              color: #F1F5F9 !important;
+          }
+      </style>
 
-      <!-- Preconnect a dominios externos (DNS prefetch) -->
-      <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link rel="preconnect" href="https://unpkg.com" crossorigin>
-      <link rel="dns-prefetch" href="https://fonts.googleapis.com">
-      <link rel="dns-prefetch" href="https://unpkg.com">
-      
-      <!-- Preload critical CSS -->
-      <link rel="preload" href="{{ asset('css/sidebar.css') }}" as="style">
-      
-      <!-- Load critical CSS immediately -->
+      <!-- Fuentes y estilos -->
+      <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" rel="stylesheet">
       <link rel="stylesheet" href="{{ asset('css/sidebar.css') }}">
-      
-      <!-- Lazy load non-critical CSS -->
-      <link rel="preload" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-      <noscript><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded&display=swap" rel="stylesheet"></noscript>
-      
-      <!-- Vite assets with preload -->
       @vite(['resources/css/app.css', 'resources/js/app.js'])
+      <link rel="stylesheet" href="{{ asset('css/orders styles/registros.css') }}">
       
       <!-- Page-specific styles -->
       @stack('styles')
 
-      <!-- Alpine.js - defer and preload -->
-      <link rel="preload" href="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" as="script">
+      <!-- Alpine.js -->
       <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
   </head>
   <body class="{{ isset($_COOKIE['theme']) && $_COOKIE['theme'] === 'dark' ? 'dark-theme' : '' }}">
@@ -86,10 +76,6 @@
           </main>
       </div>
 
-      <!-- Lazy loading de estilos -->
-      <script defer src="{{ asset('js/lazy-styles.js') }}"></script>
-      
-      <!-- Script principal -->
-      <script defer src="{{ asset('js/sidebar.js') }}"></script>
+      <script src="{{ asset('js/sidebar.js') }}"></script>
   </body>
 </html>

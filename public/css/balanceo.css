@@ -73,12 +73,17 @@
 /* Card Image */
 .prenda-card__image {
     height: 180px;
-    background: white;
+    background: #ffffff;
     position: relative;
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/* Dark theme - fondo oscuro para imagen */
+html[data-theme="dark"] .prenda-card__image {
+    background: #1e293b;
 }
 
 .prenda-card__image img {
