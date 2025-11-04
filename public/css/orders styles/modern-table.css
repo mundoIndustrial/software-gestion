@@ -104,6 +104,12 @@ transform: translateY(-1px) !important;
 z-index: 1 !important;
 }
 
+/* Hover en modo oscuro - fondo blanco para todas las filas */
+body.dark-theme #tablaOrdenes tbody .table-row:hover {
+background-color: #f8f9fa !important;
+box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
 #tablaOrdenes tbody .table-row:hover .table-cell {
 border-radius: 0 !important;
 }
@@ -116,12 +122,18 @@ color: #212529 !important;
 #tablaOrdenes tbody .table-row.row-delivered:hover {
 background-color: #a3d4ff !important;
 }
+body.dark-theme #tablaOrdenes tbody .table-row.row-delivered:hover {
+background-color: #f8f9fa !important;
+}
 #tablaOrdenes tbody .table-row.row-warning {
 background-color: #fff3cd !important;
 color: #212529 !important;
 }
 #tablaOrdenes tbody .table-row.row-warning:hover {
 background-color: #ffeaa7 !important;
+}
+body.dark-theme #tablaOrdenes tbody .table-row.row-warning:hover {
+background-color: #f8f9fa !important;
 }
 #tablaOrdenes tbody .table-row.row-danger-light {
 background-color: #f8d7da !important;
@@ -130,20 +142,29 @@ color: #212529 !important;
 #tablaOrdenes tbody .table-row.row-danger-light:hover {
 background-color: #f1aeb5 !important;
 }
+body.dark-theme #tablaOrdenes tbody .table-row.row-danger-light:hover {
+background-color: #f8f9fa !important;
+}
 /* === Filas oscuras: texto claro === */
 #tablaOrdenes tbody .table-row.row-secondary {
 background-color: #777777 !important;
 color: #f8f9fa !important;
 }
 #tablaOrdenes tbody .table-row.row-secondary:hover {
-background-color: #495057 !important;
+background-color: #8a8a8a !important;
+}
+body.dark-theme #tablaOrdenes tbody .table-row.row-secondary:hover {
+background-color: #f8f9fa !important;
 }
 #tablaOrdenes tbody .table-row.row-anulada {
 background-color: #c55601d7 !important;
 color: #f8f9fa !important;
 }
 #tablaOrdenes tbody .table-row.row-anulada:hover {
-background-color: #a0522d !important;
+background-color: #d2691e !important;
+}
+body.dark-theme #tablaOrdenes tbody .table-row.row-anulada:hover {
+background-color: #f8f9fa !important;
 }
 
 /* Color de texto general */
@@ -157,13 +178,18 @@ color: #000;
 color: #fff;
 }
 
+/* Color negro para filas sin colores en modo claro */
+body:not(.dark-theme) #tablaOrdenes tbody .table-row:not(.row-delivered):not(.row-warning):not(.row-danger-light):not(.row-secondary):not(.row-anulada) .cell-text {
+color: #2c3e50;
+}
+
 /* Colores de texto adaptativos en filas oscuras */
 #tablaOrdenes tbody .table-row.row-secondary .cell-text,
 #tablaOrdenes tbody .table-row.row-anulada .cell-text {
 color: #f8f9fa !important;
 }
 
-/* Hover: mantiene contraste */
+/* Hover en modo claro: mantiene contraste */
 #tablaOrdenes tbody .table-row:hover .cell-text,
 #tablaOrdenes tbody .table-row.row-delivered:hover .cell-text,
 #tablaOrdenes tbody .table-row.row-warning:hover .cell-text,
@@ -174,6 +200,16 @@ color: #212529 !important;
 #tablaOrdenes tbody .table-row.row-secondary:hover .cell-text,
 #tablaOrdenes tbody .table-row.row-anulada:hover .cell-text {
 color: #ffffff !important;
+}
+
+/* Hover en modo oscuro: fondo blanco y texto negro para TODAS las filas */
+body.dark-theme #tablaOrdenes tbody .table-row:hover .cell-text,
+body.dark-theme #tablaOrdenes tbody .table-row.row-delivered:hover .cell-text,
+body.dark-theme #tablaOrdenes tbody .table-row.row-warning:hover .cell-text,
+body.dark-theme #tablaOrdenes tbody .table-row.row-danger-light:hover .cell-text,
+body.dark-theme #tablaOrdenes tbody .table-row.row-secondary:hover .cell-text,
+body.dark-theme #tablaOrdenes tbody .table-row.row-anulada:hover .cell-text {
+color: #212529 !important;
 }
 
 /* === Modal oscuro === */
@@ -477,6 +513,14 @@ text-overflow: ellipsis;
     padding: 10px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: #1a1d29;
+}
+
+/* Table header en modo claro */
+body:not(.dark-theme) .table-header {
+    background: linear-gradient(135deg, #ecf0f1 0%, #d5d8dc 100%);
+    border: 2px solid #95a5a6;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
 }
 
 .table-actions {
@@ -525,9 +569,22 @@ text-overflow: ellipsis;
     margin-top: 20px;
 }
 
+/* Paginación en modo claro */
+body:not(.dark-theme) .table-pagination {
+    background: linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%);
+    border: 1px solid #7f8c8d;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 .pagination-info {
     color: #a0aec0;
     font-size: 14px;
+}
+
+/* Pagination info en modo claro */
+body:not(.dark-theme) .pagination-info {
+    color: #2c3e50;
+    font-weight: 600;
 }
 
 .pagination-controls {
@@ -553,11 +610,27 @@ text-overflow: ellipsis;
     padding: 0 12px;
 }
 
+/* Pagination buttons en modo claro */
+body:not(.dark-theme) .pagination-btn {
+    background: #ecf0f1;
+    border-color: #95a5a6;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
 .pagination-btn:hover:not(:disabled) {
     background: #4a5568;
     border-color: #4a5568;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Pagination buttons hover en modo claro */
+body:not(.dark-theme) .pagination-btn:hover:not(:disabled) {
+    background: #d5d8dc;
+    border-color: #7f8c8d;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+    transform: translateY(-3px);
 }
 
 .pagination-btn.active {
@@ -614,6 +687,14 @@ text-overflow: ellipsis;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
 
+/* Modal content en modo claro */
+body:not(.dark-theme) #filterModal .modal-content {
+    background-color: #ffffff;
+    color: #2c3e50;
+    border: 2px solid #95a5a6;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
+}
+
 #filterModal .modal-header {
     background: #1a202c;
     padding: 20px;
@@ -621,6 +702,12 @@ text-overflow: ellipsis;
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+/* Modal header en modo claro */
+body:not(.dark-theme) #filterModal .modal-header {
+    background: linear-gradient(135deg, #ecf0f1 0%, #d5d8dc 100%);
+    border-bottom: 2px solid #95a5a6;
 }
 
 #filterModal .modal-title {
@@ -637,6 +724,17 @@ text-overflow: ellipsis;
     padding: 0;
 }
 
+/* Modal close en modo claro */
+body:not(.dark-theme) #filterModal .modal-close {
+    color: #2c3e50;
+    transition: all 0.2s ease;
+}
+
+body:not(.dark-theme) #filterModal .modal-close:hover {
+    color: #f97316;
+    transform: scale(1.1);
+}
+
 #filterModal .modal-body {
     padding: 20px;
 }
@@ -649,6 +747,12 @@ text-overflow: ellipsis;
     margin-top: 10px;
 }
 
+/* Filter list en modo claro */
+body:not(.dark-theme) #filterModal .filter-list {
+    border: 2px solid #bdc3c7;
+    background: #f8f9fa;
+}
+
 #filterModal .modal-footer {
     padding: 20px;
     border-top: 1px solid #4a5568;
@@ -656,6 +760,12 @@ text-overflow: ellipsis;
     justify-content: flex-end;
     gap: 10px;
     border-radius: 0 0 8px 8px;
+}
+
+/* Modal footer en modo claro */
+body:not(.dark-theme) #filterModal .modal-footer {
+    background: linear-gradient(135deg, #d5d8dc 0%, #ecf0f1 100%);
+    border-top: 2px solid #95a5a6;
 }
 
 #filterModal .btn {
@@ -710,15 +820,26 @@ color: white;
     transition: none;
 }
 
+/* Cell modal content en modo claro */
+body:not(.dark-theme) #cellModal .cell-modal-content {
+    background-color: #ffffff;
+    color: #2c3e50;
+    border: 2px solid #95a5a6;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2);
+}
+
 #cellModal .cell-modal-header {
 padding: 20px;
 border-bottom: 1px solid #4a5568;
 display: flex;
 justify-content: space-between;
 align-items: center;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+}
+
+/* Cell modal header en modo claro */
+body:not(.dark-theme) #cellModal .cell-modal-header {
+    background: linear-gradient(135deg, #ecf0f1 0%, #d5d8dc 100%);
+    border-bottom: 2px solid #95a5a6;
 }
 
 #cellModal .cell-modal-title {
@@ -732,6 +853,17 @@ align-items: center;
     color: #a0aec0;
     font-size: 24px;
     cursor: pointer;
+}
+
+/* Cell modal close en modo claro */
+body:not(.dark-theme) #cellModal .modal-close {
+    color: #2c3e50;
+    transition: all 0.2s ease;
+}
+
+body:not(.dark-theme) #cellModal .modal-close:hover {
+    color: #f97316;
+    transform: scale(1.1);
 }
 
 #cellModal .cell-modal-body {
@@ -750,12 +882,31 @@ align-items: center;
     padding: 10px;
 }
 
+/* Cell edit input en modo claro */
+body:not(.dark-theme) #cellModal .cell-edit-input {
+    background: #ffffff;
+    border: 2px solid #95a5a6;
+    color: #2c3e50;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+body:not(.dark-theme) #cellModal .cell-edit-input:focus {
+    border-color: #f97316;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15), 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
 #cellModal .cell-modal-footer {
     padding: 20px;
     border-top: 1px solid #4a5568;
     display: flex;
     justify-content: flex-end;
     gap: 10px;
+}
+
+/* Cell modal footer en modo claro */
+body:not(.dark-theme) #cellModal .cell-modal-footer {
+    background: linear-gradient(135deg, #d5d8dc 0%, #ecf0f1 100%);
+    border-top: 2px solid #95a5a6;
 }
 
 #cellModal .cell-modal-footer .btn {
