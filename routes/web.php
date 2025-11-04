@@ -11,6 +11,7 @@ use App\Http\Controllers\EntregaController;
 use App\Http\Controllers\TablerosController;
 use App\Http\Controllers\VistasController;
 use App\Http\Controllers\BalanceoController;
+use App\Http\Controllers\ImageController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -105,6 +106,19 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/balanceo/operacion/{id}', [BalanceoController::class, 'updateOperacion'])->name('balanceo.operacion.update');
     Route::delete('/balanceo/operacion/{id}', [BalanceoController::class, 'destroyOperacion'])->name('balanceo.operacion.destroy');
     Route::get('/balanceo/{id}/data', [BalanceoController::class, 'getBalanceoData'])->name('balanceo.data');
+    Route::post('/balanceo/{id}/toggle-estado', [BalanceoController::class, 'toggleEstadoCompleto'])->name('balanceo.toggle-estado');
+    
+    // Rutas de Firebase Storage - Imágenes
+    Route::get('/images/test', function () {
+        return view('images.test');
+    })->name('images.test');
+    Route::post('/images/upload', [ImageController::class, 'upload'])->name('images.upload');
+    Route::post('/images/upload-multiple', [ImageController::class, 'uploadMultiple'])->name('images.upload-multiple');
+    Route::post('/images/upload-base64', [ImageController::class, 'uploadBase64'])->name('images.upload-base64');
+    Route::delete('/images/delete', [ImageController::class, 'delete'])->name('images.delete');
+    Route::get('/images/list', [ImageController::class, 'list'])->name('images.list');
+    Route::get('/images/exists', [ImageController::class, 'exists'])->name('images.exists');
+    Route::get('/images/bucket-info', [ImageController::class, 'bucketInfo'])->name('images.bucket-info');
 });
 
 require __DIR__.'/auth.php';

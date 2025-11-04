@@ -47,17 +47,17 @@
         </div>
 
         <!-- Buscador -->
-        <form method="GET" action="{{ route('balanceo.index') }}" style="padding: 18px 0;">
+        <form method="GET" action="{{ route('balanceo.index') }}" id="searchForm" style="padding: 18px 0;">
             <div style="position: relative;">
                 <span class="material-symbols-rounded" style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--color-text-placeholder); font-size: 22px;">search</span>
                 <input type="text" 
+                       id="searchInput"
                        name="search"
                        value="{{ request('search') }}"
                        placeholder="Buscar por nombre, referencia o tipo de prenda..."
                        style="width: 100%; padding: 12px 16px 12px 48px; border: 1px solid var(--color-border-hr); border-radius: 8px; font-size: 15px; transition: all 0.3s ease; background: var(--color-bg-sidebar); color: var(--color-text-primary);"
                        onfocus="this.style.borderColor='rgba(255, 157, 88, 0.4)'; this.style.boxShadow='0 0 0 3px rgba(255, 157, 88, 0.1)'"
-                       onblur="this.style.borderColor='var(--color-border-hr)'; this.style.boxShadow='none'"
-                       onchange="this.form.submit()">
+                       onblur="this.style.borderColor='var(--color-border-hr)'; this.style.boxShadow='none'">
                 @if(request('search'))
                 <button type="button" 
                         onclick="window.location='{{ route('balanceo.index') }}'"
@@ -79,7 +79,24 @@
     <!-- Grid de prendas -->
     <div class="prendas-grid">
         @forelse($prendas as $prenda)
-        <div class="prenda-card" onclick="window.location='{{ route('balanceo.show', $prenda->id) }}'">
+        @php
+            // Mostrar indicador rojo SOLO si el usuario hizo click en "INCOMPLETO"
+            // null = no marcado (sin indicador)
+            // true = completo (sin indicador)
+            // false = incompleto marcado manualmente (CON indicador rojo)
+            $balanceoIncompleto = $prenda->balanceoActivo && 
+                                  $prenda->balanceoActivo->estado_completo === false;
+        @endphp
+        <div class="prenda-card {{ $balanceoIncompleto ? 'prenda-card--incompleto' : '' }}" 
+             onclick="window.location='{{ route('balanceo.show', $prenda->id) }}'">
+            
+            <!-- Indicador de balanceo incompleto -->
+            @if($balanceoIncompleto)
+            <div class="prenda-card__alert">
+                <span class="material-symbols-rounded">warning</span>
+                <span>Balanceo Incompleto</span>
+            </div>
+            @endif
             
             <!-- Imagen de la prenda -->
             <div class="prenda-card__image">
@@ -194,6 +211,49 @@
     transform: translateY(-5px);
     border-color: #ff9d58 !important;
     box-shadow: 0 8px 16px rgba(255, 157, 88, 0.25) !important;
+}
+
+/* Tarjeta con balanceo incompleto */
+.prenda-card--incompleto {
+    border: 2px solid #ef4444 !important;
+    background: linear-gradient(to bottom, rgba(239, 68, 68, 0.05), transparent) !important;
+}
+
+.prenda-card--incompleto:hover {
+    border-color: #dc2626 !important;
+    box-shadow: 0 8px 16px rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Alerta de balanceo incompleto */
+.prenda-card__alert {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+    animation: pulse-alert 2s infinite;
+}
+
+.prenda-card__alert .material-symbols-rounded {
+    font-size: 16px;
+}
+
+@keyframes pulse-alert {
+    0%, 100% {
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+    }
+    50% {
+        box-shadow: 0 2px 12px rgba(239, 68, 68, 0.6);
+    }
 }
 
 .page-subtitle {
@@ -339,6 +399,23 @@ document.addEventListener('DOMContentLoaded', function() {
             card.style.transform = 'translateY(20px)';
             card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
             setTimeout(() => cardObserver.observe(card), index * 30);
+        });
+    }
+
+    // Búsqueda automática con debounce
+    const searchInput = document.getElementById('searchInput');
+    const searchForm = document.getElementById('searchForm');
+    let searchTimeout;
+
+    if (searchInput && searchForm) {
+        searchInput.addEventListener('input', function() {
+            // Limpiar timeout anterior
+            clearTimeout(searchTimeout);
+            
+            // Esperar 500ms después de que el usuario deje de escribir
+            searchTimeout = setTimeout(function() {
+                searchForm.submit();
+            }, 500);
         });
     }
 });

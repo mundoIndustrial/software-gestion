@@ -11,17 +11,36 @@ use Illuminate\Support\Facades\DB;
 
 class ImportarBalanceosExcel extends Command
 {
-    protected $signature = 'balanceo:importar-excel {archivo} {--dry-run : Simular sin guardar en BD}';
+    protected $signature = 'balanceo:importar-excel {archivo} {--dry-run : Simular sin guardar en BD} {--limpiar : Eliminar todos los balanceos antes de importar}';
     protected $description = 'Importar balanceos desde archivo Excel';
 
     public function handle()
     {
         $archivo = $this->argument('archivo');
         $dryRun = $this->option('dry-run');
+        $limpiar = $this->option('limpiar');
 
         if (!file_exists($archivo)) {
             $this->error("❌ El archivo no existe: {$archivo}");
             return 1;
+        }
+
+        // Limpiar tablas si se solicitó
+        if ($limpiar && !$dryRun) {
+            $this->warn("⚠️  ADVERTENCIA: Se eliminarán TODOS los balanceos, operaciones y prendas existentes.");
+            
+            if (!$this->confirm('¿Estás seguro de continuar?', false)) {
+                $this->info('Operación cancelada.');
+                return 0;
+            }
+            
+            $this->info("🗑️  Limpiando tablas...");
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+            DB::table('operaciones_balanceo')->truncate();
+            DB::table('balanceos')->truncate();
+            DB::table('prendas')->truncate();
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+            $this->info("✓ Tablas limpiadas");
         }
 
         $this->info("📂 Leyendo archivo: {$archivo}");
@@ -178,17 +197,30 @@ class ImportarBalanceosExcel extends Command
             }
 
             $operacion = trim($row[$colOperacion] ?? '');
-            $sam = $row[$colSam] ?? 0;
+            $samRaw = $row[$colSam] ?? 0;
 
             // Saltar filas vacías o totales
-            if (empty($operacion) || stripos($operacion, 'total') !== false) {
+            if (empty($operacion) || stripos($operacion, 'total') !== false || stripos($operacion, 'meta') !== false) {
+                continue;
+            }
+            
+            // Saltar si el SAM es sospechosamente alto (probablemente es un total)
+            // Un SAM individual raramente supera los 200 segundos
+            if (is_numeric($samRaw) && $samRaw > 500) {
+                $this->warn("   ⚠️  Saltando fila con SAM sospechoso: {$samRaw} (probablemente es un total)");
                 continue;
             }
 
             // Limpiar SAM (remover caracteres no numéricos excepto punto y coma)
-            $sam = preg_replace('/[^0-9.,]/', '', $sam);
-            $sam = str_replace(',', '.', $sam);
-            $sam = (float) $sam;
+            // Si ya es numérico (viene de Excel), usarlo directamente con toda su precisión
+            if (is_numeric($samRaw)) {
+                $sam = (float) $samRaw;
+            } else {
+                // Si es string, limpiar y convertir
+                $samRaw = preg_replace('/[^0-9.,]/', '', $samRaw);
+                $samRaw = str_replace(',', '.', $samRaw);
+                $sam = (float) $samRaw;
+            }
 
             // Permitir SAM = 0 (no saltar operaciones con tiempo 0)
             // Solo saltar si SAM es negativo (error de datos)

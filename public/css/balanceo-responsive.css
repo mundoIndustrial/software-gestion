@@ -1,0 +1,453 @@
+/* ============================================
+   BALANCEO RESPONSIVO - MOBILE FIRST
+   ============================================ */
+
+/* Contenedor principal */
+.balanceo-container {
+    padding: 16px;
+}
+
+@media (min-width: 768px) {
+    .balanceo-container {
+        padding: 24px;
+    }
+}
+
+/* Header responsivo */
+.balanceo-header {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+@media (min-width: 768px) {
+    .balanceo-header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+}
+
+.balanceo-header-title {
+    font-size: 18px;
+    margin: 0;
+}
+
+@media (min-width: 768px) {
+    .balanceo-header-title {
+        font-size: 24px;
+    }
+}
+
+/* Botones del header */
+.balanceo-header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.balanceo-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+    .balanceo-btn {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+}
+
+/* Tabla de operaciones - Mobile */
+.balanceo-table-container {
+    background: var(--color-bg-sidebar);
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    border: 1px solid var(--color-border-hr);
+    box-shadow: 0 1px 3px var(--color-shadow);
+}
+
+@media (min-width: 768px) {
+    .balanceo-table-container {
+        padding: 24px;
+    }
+}
+
+/* Scroll horizontal para tabla en mobile */
+.table-scroll-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -16px;
+    padding: 0 16px;
+}
+
+@media (min-width: 768px) {
+    .table-scroll-container {
+        margin: 0;
+        padding: 0;
+    }
+}
+
+/* Tabla */
+.balanceo-table {
+    min-width: 800px; /* Ancho mínimo para scroll horizontal */
+    width: 100%;
+}
+
+@media (min-width: 1200px) {
+    .balanceo-table {
+        min-width: 100%;
+    }
+}
+
+/* Headers de tabla */
+.balanceo-table th {
+    padding: 8px 6px;
+    font-size: 10px;
+}
+
+@media (min-width: 768px) {
+    .balanceo-table th {
+        padding: 12px 10px;
+        font-size: 12px;
+    }
+}
+
+/* Celdas de tabla */
+.balanceo-table td {
+    padding: 8px 6px;
+    font-size: 12px;
+}
+
+@media (min-width: 768px) {
+    .balanceo-table td {
+        padding: 10px;
+        font-size: 13px;
+    }
+}
+
+/* Botones de acción en tabla */
+.balanceo-table-actions {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+}
+
+.balanceo-table-actions button {
+    padding: 4px 6px;
+}
+
+@media (min-width: 768px) {
+    .balanceo-table-actions button {
+        padding: 6px 8px;
+    }
+}
+
+/* Métricas globales - Mobile First */
+.metricas-container {
+    background: var(--color-bg-sidebar);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid var(--color-border-hr);
+    box-shadow: 0 1px 3px var(--color-shadow);
+}
+
+@media (min-width: 768px) {
+    .metricas-container {
+        padding: 32px;
+        border-radius: 20px;
+    }
+}
+
+/* Header de métricas */
+.metricas-header {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+@media (min-width: 768px) {
+    .metricas-header {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 28px;
+    }
+}
+
+.metricas-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.metricas-icon {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+    .metricas-icon {
+        width: 48px;
+        height: 48px;
+    }
+}
+
+.metricas-title {
+    font-size: 18px;
+    margin: 0;
+}
+
+@media (min-width: 768px) {
+    .metricas-title {
+        font-size: 24px;
+    }
+}
+
+/* Tabla de métricas */
+.metricas-table-wrapper {
+    background: var(--color-bg-primary);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid var(--color-border-hr);
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+    .metricas-table-wrapper {
+        padding: 20px;
+        max-width: 600px;
+    }
+}
+
+.metricas-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.metricas-table td {
+    padding: 8px 0;
+    font-size: 12px;
+}
+
+@media (min-width: 768px) {
+    .metricas-table td {
+        padding: 10px 0;
+        font-size: 13px;
+    }
+}
+
+/* Inputs en métricas */
+.metricas-input {
+    width: 60px;
+    padding: 4px 8px;
+    font-size: 13px;
+}
+
+@media (min-width: 768px) {
+    .metricas-input {
+        width: 70px;
+        padding: 6px 10px;
+        font-size: 15px;
+    }
+}
+
+/* Valores destacados */
+.metricas-value-highlight {
+    font-size: 16px;
+}
+
+@media (min-width: 768px) {
+    .metricas-value-highlight {
+        font-size: 18px;
+    }
+}
+
+/* Cards de métricas (alternativa a tabla) */
+.metricas-cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+}
+
+@media (min-width: 640px) {
+    .metricas-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .metricas-cards {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.metrica-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+@media (min-width: 768px) {
+    .metrica-card {
+        padding: 20px;
+    }
+}
+
+.metrica-card-label {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+@media (min-width: 768px) {
+    .metrica-card-label {
+        font-size: 13px;
+    }
+}
+
+.metrica-card-value {
+    margin: 6px 0 0 0;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+@media (min-width: 768px) {
+    .metrica-card-value {
+        margin: 8px 0 0 0;
+        font-size: 32px;
+    }
+}
+
+/* Modal responsivo */
+.balanceo-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 16px;
+}
+
+.balanceo-modal-content {
+    background: var(--color-bg-sidebar);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+@media (min-width: 768px) {
+    .balanceo-modal-content {
+        border-radius: 16px;
+    }
+}
+
+/* Botón flotante para agregar (mobile) */
+.fab-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #ff9d58;
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(255, 157, 88, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 40;
+    transition: all 0.3s;
+}
+
+.fab-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(255, 157, 88, 0.5);
+}
+
+@media (min-width: 768px) {
+    .fab-button {
+        display: none; /* Ocultar en desktop, usar botón normal */
+    }
+}
+
+/* Ocultar botón normal en mobile */
+.desktop-add-button {
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .desktop-add-button {
+        display: flex;
+    }
+}
+
+/* Indicador de scroll */
+.scroll-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    background: rgba(255, 157, 88, 0.1);
+    border-radius: 6px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    color: #ff9d58;
+}
+
+@media (min-width: 1200px) {
+    .scroll-indicator {
+        display: none;
+    }
+}
+
+/* Ajustes para inputs editables en mobile */
+.balanceo-table input[type="text"],
+.balanceo-table input[type="number"],
+.balanceo-table select {
+    font-size: 14px; /* Evitar zoom en iOS */
+    min-height: 32px; /* Touch-friendly */
+}
+
+/* Mejoras de accesibilidad táctil */
+@media (max-width: 767px) {
+    .balanceo-table button,
+    .balanceo-btn {
+        min-height: 44px; /* Tamaño mínimo táctil recomendado */
+        min-width: 44px;
+    }
+}
+
+/* Mostrar/Ocultar en mobile */
+.hide-mobile {
+    display: inline;
+}
+
+.show-mobile {
+    display: none;
+}
+
+@media (max-width: 767px) {
+    .hide-mobile {
+        display: none;
+    }
+    
+    .show-mobile {
+        display: inline;
+    }
+}

@@ -33,11 +33,11 @@ SAM Total = Σ (SAM de cada operación)
 
 ### 4. **Meta Teórica**
 ```
-Meta Teórica = FLOOR(T. Disponible Segundos / SAM Total)
+Meta Teórica = ROUND(T. Disponible Segundos / SAM Total)
 ```
 **Ejemplo:**
 ```
-FLOOR(270,000 / 757.1) = 357 unidades
+ROUND(270,000 / 757.1) = 357 unidades
 ```
 
 ### 5. **Meta Real (90%)**
@@ -119,7 +119,7 @@ public function calcularMetricas()
 
     // 4 y 5. Meta Teórica y Meta Real
     if ($this->sam_total > 0) {
-        $this->meta_teorica = floor($this->tiempo_disponible_segundos / $this->sam_total);
+        $this->meta_teorica = round($this->tiempo_disponible_segundos / $this->sam_total);
         $this->meta_real = $this->meta_teorica * 0.90; // Con decimales
     }
 

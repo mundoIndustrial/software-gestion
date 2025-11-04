@@ -66,13 +66,18 @@ class BalanceoController extends Controller
             'descripcion' => 'nullable|string',
             'referencia' => 'nullable|string|unique:prendas,referencia',
             'tipo' => 'required|in:camisa,pantalon,polo,chaqueta,vestido,otro',
-            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
         ]);
 
+        // Subir imagen localmente
         if ($request->hasFile('imagen')) {
             $imagen = $request->file('imagen');
-            $nombreImagen = time() . '_' . $imagen->getClientOriginalName();
+            $nombreImagen = time() . '_' . uniqid() . '.' . $imagen->getClientOriginalExtension();
+            
+            // Guardar en public/images/prendas
             $imagen->move(public_path('images/prendas'), $nombreImagen);
+            
+            // Guardar ruta relativa en DB
             $validated['imagen'] = 'images/prendas/' . $nombreImagen;
         }
 
@@ -102,7 +107,7 @@ class BalanceoController extends Controller
             'descripcion' => 'nullable|string',
             'referencia' => 'nullable|string|unique:prendas,referencia,' . $id,
             'tipo' => 'required|in:camisa,pantalon,polo,chaqueta,vestido,otro',
-            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
         ]);
 
         if ($request->hasFile('imagen')) {
@@ -112,8 +117,12 @@ class BalanceoController extends Controller
             }
             
             $imagen = $request->file('imagen');
-            $nombreImagen = time() . '_' . $imagen->getClientOriginalName();
+            $nombreImagen = time() . '_' . uniqid() . '.' . $imagen->getClientOriginalExtension();
+            
+            // Guardar en public/images/prendas
             $imagen->move(public_path('images/prendas'), $nombreImagen);
+            
+            // Guardar ruta relativa en DB
             $validated['imagen'] = 'images/prendas/' . $nombreImagen;
         }
 
@@ -180,16 +189,16 @@ class BalanceoController extends Controller
     public function storeOperacion(Request $request, $balanceoId)
     {
         $validated = $request->validate([
-            'letra' => 'required|string|max:10',
-            'operacion' => 'required|string',
+            'letra' => 'nullable|string|max:10',
+            'operacion' => 'nullable|string',
             'precedencia' => 'nullable|string|max:10',
             'maquina' => 'nullable|string|max:50',
-            'sam' => 'required|numeric|min:0',
+            'sam' => 'nullable|numeric|min:0',
             'operario' => 'nullable|string|max:255',
             'op' => 'nullable|string|max:50',
-            'seccion' => 'required|in:DEL,TRAS,ENS,OTRO',
+            'seccion' => 'nullable|in:DEL,TRAS,ENS,OTRO',
             'operario_a' => 'nullable|string|max:255',
-            'orden' => 'required|integer|min:0',
+            'orden' => 'nullable|integer|min:0',
         ]);
 
         $validated['balanceo_id'] = $balanceoId;
@@ -294,7 +303,7 @@ class BalanceoController extends Controller
             $balanceo->delete();
         }
         
-        // Eliminar la imagen si existe
+        // Eliminar la imagen local si existe
         if ($prenda->imagen && file_exists(public_path($prenda->imagen))) {
             unlink(public_path($prenda->imagen));
         }
@@ -316,4 +325,42 @@ class BalanceoController extends Controller
         $balanceo = Balanceo::with('operaciones')->findOrFail($id);
         return response()->json($balanceo);
     }
+
+    /**
+     * Toggle estado completo del balanceo.
+     * Ciclo: null (sin marcar) → true (completo) → false (incompleto) → null
+     */
+    public function toggleEstadoCompleto(Request $request, $id)
+    {
+        $balanceo = Balanceo::findOrFail($id);
+        
+        // Recibir el nuevo estado desde el frontend
+        $nuevoEstado = $request->input('estado');
+        
+        // Convertir string a boolean o null
+        if ($nuevoEstado === 'null' || $nuevoEstado === null) {
+            $balanceo->estado_completo = null;
+        } else {
+            $balanceo->estado_completo = filter_var($nuevoEstado, FILTER_VALIDATE_BOOLEAN);
+        }
+        
+        $balanceo->save();
+
+        // Mensaje según el estado
+        $mensaje = 'Estado actualizado';
+        if ($balanceo->estado_completo === true) {
+            $mensaje = 'Balanceo marcado como completo';
+        } elseif ($balanceo->estado_completo === false) {
+            $mensaje = 'Balanceo marcado como incompleto';
+        } else {
+            $mensaje = 'Estado desmarcado';
+        }
+
+        return response()->json([
+            'success' => true,
+            'estado_completo' => $balanceo->estado_completo,
+            'message' => $mensaje,
+        ]);
+    }
+
 }
