@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\TablaOriginal;
-use App\Models\Festivo;
 use App\Models\News;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use App\Services\FestivosColombiaService;
 
 class RegistroOrdenController extends Controller
 {
@@ -84,10 +84,13 @@ class RegistroOrdenController extends Controller
             }
         }
 
-        // Optimización: Cachear festivos por 24 horas
-        $festivos = Cache::remember('festivos_array', 86400, function () {
-            return Festivo::pluck('fecha')->toArray();
-        });
+
+        $currentYear = now()->year;
+        $nextYear = now()->addYear()->year;
+        $festivos = array_merge(
+            FestivosColombiaService::obtenerFestivos($currentYear),
+            FestivosColombiaService::obtenerFestivos($nextYear)
+        );
         
         // Optimización: Reducir paginación de 50 a 25 para mejor performance
         $ordenes = $query->paginate(25);
@@ -557,9 +560,9 @@ class RegistroOrdenController extends Controller
 
         $businessDays = $totalDays - $weekends - $holidaysInRange;
 
-        // Ajustes finos para inicio/fin en fines de semana o festivos
-        if ($inicio->isWeekend() || in_array($inicio->toDateString(), $festivos)) $businessDays--;
-        if ($fin->isWeekend() || in_array($fin->toDateString(), $festivos)) $businessDays--;
+        // BUG FIX: Eliminados ajustes que causaban doble resta de fines de semana
+        // Los fines de semana ya están contados en $weekends
+        // Los festivos ya están contados en $holidaysInRange
 
         return max(0, $businessDays);
     }
@@ -593,7 +596,10 @@ class RegistroOrdenController extends Controller
     private function invalidarCacheDias($pedido): void
     {
         $hoy = now()->format('Y-m-d');
-        $festivos = Cache::get('festivos_array', []);
+        
+        // Obtener festivos del servicio automático (no de BD)
+        $currentYear = now()->year;
+        $festivos = FestivosColombiaService::obtenerFestivos($currentYear);
         $festivosCacheKey = md5(serialize($festivos));
         
         // Invalidar para todos los posibles estados
