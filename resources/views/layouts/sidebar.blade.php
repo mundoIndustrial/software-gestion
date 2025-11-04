@@ -11,9 +11,11 @@
 <!-- Sidebar principal -->
 <aside class="sidebar collapsed" id="sidebar">
   <div class="sidebar-header">
-    <img src="https://prueba.mundoindustrial.co/wp-content/uploads/2024/07/logo-mundo-industrial-white.png"
+    <img src="{{ asset('images/logo2.png') }}"
          alt="Logo Mundo Industrial"
-         class="header-logo" />
+         class="header-logo"
+         data-logo-light="{{ asset('images/logo2.png') }}"
+         data-logo-dark="https://prueba.mundoindustrial.co/wp-content/uploads/2024/07/logo-mundo-industrial-white.png" />
     <button class="sidebar-toggle" aria-label="Colapsar menú">
       <span class="material-symbols-rounded">chevron_left</span>
     </button>
@@ -133,7 +135,7 @@
                class="menu-link"
                aria-label="Ver producción">
               <span class="material-symbols-rounded" aria-hidden="true">build</span>
-              <span class="menu-label">Producción</span>
+              <span class="menu-label">Costura</span>
             </a>
           </li>
           <li class="submenu-item">
@@ -149,7 +151,7 @@
                class="menu-link"
                aria-label="Ver producción bodega">
               <span class="material-symbols-rounded" aria-hidden="true">factory</span>
-              <span class="menu-label">Producción Bodega</span>
+              <span class="menu-label">Costura Bodega</span>
             </a>
           </li>
         </ul>

@@ -3,17 +3,41 @@ const sidebar = document.querySelector(".sidebar");
 const searchForm = document.querySelector(".search-form");
 const menuLinks = document.querySelectorAll(".menu-link");
 const themeToggle = document.getElementById("themeToggle");
+const logo = document.querySelector(".header-logo");
 
 // Theme management
 const getStoredTheme = () => localStorage.getItem("theme");
 const setStoredTheme = (theme) => localStorage.setItem("theme", theme);
 
 const applyTheme = (theme) => {
-  if (theme === "dark") {
-    document.body.classList.add("dark-theme");
+  if (logo) {
+    // Agregar clase para fade out
+    logo.classList.add("changing");
+    
+    // Esperar a que termine el fade out antes de cambiar la imagen
+    setTimeout(() => {
+      if (theme === "dark") {
+        document.body.classList.add("dark-theme");
+        logo.src = logo.dataset.logoDark;
+      } else {
+        document.body.classList.remove("dark-theme");
+        logo.src = logo.dataset.logoLight;
+      }
+      
+      // Remover clase para fade in
+      setTimeout(() => {
+        logo.classList.remove("changing");
+      }, 30);
+    }, 250);
   } else {
-    document.body.classList.remove("dark-theme");
+    // Si no hay logo, solo cambiar el tema
+    if (theme === "dark") {
+      document.body.classList.add("dark-theme");
+    } else {
+      document.body.classList.remove("dark-theme");
+    }
   }
+  
   updateThemeButton(theme);
 };
 
@@ -30,8 +54,8 @@ const updateThemeButton = (theme) => {
   }
 };
 
-// Initialize theme from localStorage or default to dark
-const initialTheme = getStoredTheme() || "dark";
+// Initialize theme from localStorage or default to light
+const initialTheme = getStoredTheme() || "light";
 applyTheme(initialTheme);
 
 // Theme toggle event

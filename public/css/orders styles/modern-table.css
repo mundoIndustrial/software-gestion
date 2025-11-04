@@ -612,7 +612,7 @@ body:not(.dark-theme) .pagination-info {
 
 /* Pagination buttons en modo claro */
 body:not(.dark-theme) .pagination-btn {
-    background: #ecf0f1;
+    background: #c3c5c5;
     border-color: #95a5a6;
     color: #2c3e50;
     font-weight: 600;

@@ -9,18 +9,18 @@
 }
 
 :root {
-  /* Light theme colors - Sidebar mantiene colores oscuros */
-  --color-text-primary: #F1F5F9;
-  --color-text-placeholder: #A6B7D2;
-  --color-bg-primary: #ecf0f1;
-  --color-bg-secondary: #3D4859;
-  --color-bg-sidebar: #1f2937;
-  --color-border-hr: #3B475C;
+  /* Light theme colors */
+  --color-text-primary: #1f2937;
+  --color-text-placeholder: #6b7280;
+  --color-bg-primary: #f3f4f6;
+  --color-bg-secondary: #e5e7eb;
+  --color-bg-sidebar: #ffffff;
+  --color-border-hr: #e5e7eb;
   --color-hover-primary: #ff9d58;
-  --color-hover-secondary: #48566a;
-  --color-shadow: rgba(0, 0, 0, 0.3);
+  --color-hover-secondary: #f3f4f6;
+  --color-shadow: rgba(0, 0, 0, 0.1);
   
-  /* Sidebar widths for different breakpoints */
+  /* Sidebar widths */
   --sidebar-width-desktop: 200px;
   --sidebar-width-tablet: 180px;
   --sidebar-width-collapsed: 70px;
@@ -99,7 +99,11 @@ body {
   max-height: 45px;
   display: block;
   object-fit: contain;
-  transition: all 0.4s ease;
+  transition: opacity 0.25s ease-in-out;
+}
+
+.sidebar-header .header-logo.changing {
+  opacity: 0;
 }
 
 .sidebar.collapsed .header-logo {
@@ -352,7 +356,8 @@ body {
 }
 
 .submenu-item .menu-link:hover {
-  background: var(--color-hover-secondary);
+  background: var(--color-hover-primary);
+  color: #fff;
 }
 
 .submenu-toggle {
