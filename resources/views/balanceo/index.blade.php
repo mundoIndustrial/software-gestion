@@ -1,8 +1,35 @@
 @extends('layouts.app')
 
+@push('styles')
+<!-- Preload SOLO el CSS crítico de balanceo -->
+<link rel="preload" href="{{ asset('css/balanceo.css') }}" as="style">
+@endpush
+
 @section('content')
-<link rel="stylesheet" href="{{ asset('css/tableros.css') }}">
-<link rel="stylesheet" href="{{ asset('css/modern-table.css') }}">
+<!-- CSS crítico de balanceo cargado inmediatamente -->
+<link rel="stylesheet" href="{{ asset('css/balanceo.css') }}">
+
+<!-- CSS no crítico con lazy loading agresivo -->
+<script>
+(function(){
+    // Cargar tableros.css solo cuando sea necesario
+    if(window.requestIdleCallback){
+        requestIdleCallback(function(){
+            var link=document.createElement('link');
+            link.rel='stylesheet';
+            link.href='{{ asset('css/tableros.css') }}';
+            document.head.appendChild(link);
+        });
+    }else{
+        setTimeout(function(){
+            var link=document.createElement('link');
+            link.rel='stylesheet';
+            link.href='{{ asset('css/tableros.css') }}';
+            document.head.appendChild(link);
+        },1);
+    }
+})();
+</script>
 
 <div class="tableros-container">
     <div class="page-header" style="margin-bottom: 30px;">
@@ -55,96 +82,96 @@
     @endif
 
     <!-- Grid de prendas -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px;">
+    <div class="prendas-grid">
         @forelse($prendas as $prenda)
-        <div class="prenda-card" 
-             style="background: var(--color-bg-sidebar); border-radius: 12px; overflow: hidden; border: 1px solid var(--color-border-hr); transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; cursor: pointer; box-shadow: 0 1px 3px var(--color-shadow);"
-             onclick="window.location='{{ route('balanceo.show', $prenda->id) }}'">
+        <div class="prenda-card" onclick="window.location='{{ route('balanceo.show', $prenda->id) }}'">
             
             <!-- Imagen de la prenda -->
-            <div style="height: 180px; background: white; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+            <div class="prenda-card__image">
                 @if($prenda->imagen)
-                <img src="{{ asset($prenda->imagen) }}" 
+                <img data-src="{{ asset($prenda->imagen) }}" 
+                     src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 180'%3E%3Crect fill='%23f0f0f0' width='300' height='180'/%3E%3C/svg%3E"
                      alt="{{ $prenda->nombre }}"
-                     style="width: 100%; height: 100%; object-fit: contain;">
+                     loading="lazy"
+                     decoding="async"
+                     width="300"
+                     height="180"
+                     class="lazy-image">
                 @else
-                <div style="display: flex; align-items: center; justify-content: center; height: 100%;">
-                    <span class="material-symbols-rounded" style="font-size: 80px; color: #ccc;">checkroom</span>
+                <div class="prenda-card__image-placeholder">
+                    <span class="material-symbols-rounded icon-placeholder">checkroom</span>
                 </div>
                 @endif
                 
                 <!-- Badge del tipo -->
-                <div style="position: absolute; top: 12px; right: 12px; background: #ff9d58; color: white; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; text-transform: uppercase;">
+                <div class="prenda-card__badge">
                     {{ $prenda->tipo }}
                 </div>
             </div>
 
             <!-- Contenido de la tarjeta -->
-            <div style="padding: 20px;">
-                <h3 style="margin: 0 0 8px 0; font-size: 20px; color: var(--color-text-primary); font-weight: 700;">{{ $prenda->nombre }}</h3>
+            <div class="prenda-card__content">
+                <h3 class="prenda-card__title">{{ $prenda->nombre }}</h3>
                 
                 @if($prenda->referencia)
-                <p style="margin: 0 0 12px 0; color: var(--color-text-placeholder); font-size: 14px;">
-                    <strong style="color: var(--color-text-primary); opacity: 0.8;">Ref:</strong> {{ $prenda->referencia }}
+                <p class="prenda-card__reference">
+                    <strong>Ref:</strong> {{ $prenda->referencia }}
                 </p>
                 @endif
 
                 @if($prenda->descripcion)
-                <p style="margin: 0 0 16px 0; color: var(--color-text-placeholder); font-size: 14px; line-height: 1.5;">
+                <p class="prenda-card__description">
                     {{ Str::limit($prenda->descripcion, 100) }}
                 </p>
                 @endif
 
                 <!-- Información del balanceo -->
                 @if($prenda->balanceoActivo)
-                <div style="border-top: 1px solid var(--color-border-hr); padding-top: 16px; margin-top: 16px;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px;">
-                        <div>
-                            <p style="margin: 0; color: var(--color-text-placeholder); font-size: 11px; text-transform: uppercase; font-weight: 600;">Operaciones</p>
-                            <p style="margin: 4px 0 0 0; font-weight: 700; color: #ff9d58; font-size: 18px;">
-                                {{ $prenda->balanceoActivo->operaciones->count() }}
-                            </p>
-                        </div>
-                        <div>
-                            <p style="margin: 0; color: var(--color-text-placeholder); font-size: 11px; text-transform: uppercase; font-weight: 600;">SAM Total</p>
-                            <p style="margin: 4px 0 0 0; font-weight: 700; color: #ff9d58; font-size: 18px;">
-                                {{ number_format($prenda->balanceoActivo->sam_total, 1) }}s
-                            </p>
-                        </div>
-                        <div>
-                            <p style="margin: 0; color: var(--color-text-placeholder); font-size: 11px; text-transform: uppercase; font-weight: 600;">Operarios</p>
-                            <p style="margin: 4px 0 0 0; font-weight: 700; color: #ff9d58; font-size: 18px;">
-                                {{ $prenda->balanceoActivo->total_operarios }}
-                            </p>
-                        </div>
-                        <div>
-                            <p style="margin: 0; color: var(--color-text-placeholder); font-size: 11px; text-transform: uppercase; font-weight: 600;">Meta Real</p>
-                            <p style="margin: 4px 0 0 0; font-weight: 700; color: #ff9d58; font-size: 18px;">
-                                {{ $prenda->balanceoActivo->meta_real ?? 'N/A' }}
-                            </p>
-                        </div>
+                <div class="prenda-card__metrics">
+                    <div>
+                        <p class="metric-label">Operaciones</p>
+                        <p class="metric-value">
+                            {{ $prenda->balanceoActivo->operaciones_count }}
+                        </p>
+                    </div>
+                    <div>
+                        <p class="metric-label">SAM Total</p>
+                        <p class="metric-value">
+                            {{ number_format($prenda->balanceoActivo->sam_total, 1) }}s
+                        </p>
+                    </div>
+                    <div>
+                        <p class="metric-label">Operarios</p>
+                        <p class="metric-value">
+                            {{ $prenda->balanceoActivo->total_operarios }}
+                        </p>
+                    </div>
+                    <div>
+                        <p class="metric-label">Meta Real</p>
+                        <p class="metric-value">
+                            {{ $prenda->balanceoActivo->meta_real ?? 'N/A' }}
+                        </p>
                     </div>
                 </div>
                 @else
-                <div style="border-top: 1px solid var(--color-border-hr); padding-top: 16px; margin-top: 16px; text-align: center;">
-                    <p style="margin: 0; color: var(--color-text-placeholder); font-size: 13px;">Sin balanceo configurado</p>
+                <div class="prenda-card__no-balanceo">
+                    <p>Sin balanceo configurado</p>
                 </div>
                 @endif
 
                 <!-- Botón de acción -->
-                <button style="width: 100%; margin-top: 16px; background: #ff9d58; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s;" onmouseover="this.style.background='#e88a47'" onmouseout="this.style.background='#ff9d58'">
-                    <span class="material-symbols-rounded" style="font-size: 18px;">visibility</span>
+                <button class="prenda-card__button">
+                    <span class="material-symbols-rounded">visibility</span>
                     Ver Balanceo
                 </button>
             </div>
         </div>
         @empty
-        <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px; background: var(--color-bg-sidebar); border-radius: 12px; border: 1px solid var(--color-border-hr); box-shadow: 0 1px 3px var(--color-shadow);">
-            <span class="material-symbols-rounded" style="font-size: 64px; color: var(--color-text-placeholder); opacity: 0.5; display: block; margin-bottom: 16px;">checkroom</span>
-            <h3 style="color: var(--color-text-primary); margin-bottom: 8px; font-weight: 700;">No hay prendas registradas</h3>
-            <p style="color: var(--color-text-placeholder); margin-bottom: 24px;">Comienza creando tu primera prenda para gestionar su balanceo</p>
-            <a href="{{ route('balanceo.prenda.create') }}" 
-               style="background: #ff9d58; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-weight: 500; box-shadow: 0 2px 4px rgba(255, 157, 88, 0.3);">
+        <div class="empty-state">
+            <span class="material-symbols-rounded empty-state__icon">checkroom</span>
+            <h3 class="empty-state__title">No hay prendas registradas</h3>
+            <p class="empty-state__description">Comienza creando tu primera prenda para gestionar su balanceo</p>
+            <a href="{{ route('balanceo.prenda.create') }}" class="empty-state__button">
                 <span class="material-symbols-rounded">add</span>
                 Nueva Prenda
             </a>
@@ -296,5 +323,71 @@
     }
 }
 </style>
+
+<!-- Intersection Observer para lazy loading de imágenes -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Lazy loading de imágenes con Intersection Observer
+    if ('IntersectionObserver' in window) {
+        const imageObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    const src = img.getAttribute('data-src');
+                    if (src) {
+                        img.src = src;
+                        img.classList.add('loaded');
+                        imageObserver.unobserve(img);
+                    }
+                }
+            });
+        }, {
+            rootMargin: '50px 0px',
+            threshold: 0.01
+        });
+
+        // Observar todas las imágenes lazy
+        document.querySelectorAll('img.lazy-image').forEach(img => {
+            imageObserver.observe(img);
+        });
+    } else {
+        // Fallback para navegadores sin IntersectionObserver
+        document.querySelectorAll('img.lazy-image').forEach(img => {
+            const src = img.getAttribute('data-src');
+            if (src) img.src = src;
+        });
+    }
+
+    // Fade in de cards cuando entran en viewport
+    if ('IntersectionObserver' in window) {
+        const cardObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '0';
+                    entry.target.style.transform = 'translateY(20px)';
+                    entry.target.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                    
+                    setTimeout(() => {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }, 50);
+                    
+                    cardObserver.unobserve(entry.target);
+                }
+            });
+        }, {
+            rootMargin: '0px',
+            threshold: 0.1
+        });
+
+        document.querySelectorAll('.prenda-card').forEach((card, index) => {
+            card.style.opacity = '0';
+            setTimeout(() => {
+                cardObserver.observe(card);
+            }, index * 50);
+        });
+    }
+});
+</script>
 
 @endsection

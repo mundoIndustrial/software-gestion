@@ -14,7 +14,7 @@
     }
 @endphp
 <link rel="stylesheet" href="{{ asset('css/tableros.css') }}">
-<link rel="stylesheet" href="{{ asset('css/modern-table.css') }}">
+<link rel="stylesheet" href="{{ asset('css/orders styles/modern-table.css') }}">
 <script src="{{ asset('js/tableros.js') }}"></script>
 <style>
     .tableros-container {
