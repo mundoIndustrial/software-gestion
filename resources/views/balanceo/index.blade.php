@@ -17,9 +17,13 @@
     /* Estilos críticos para primera pintura de balanceo */
     .prendas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px}
     .prenda-card{background:#fff;border-radius:12px;border:1px solid #e5e7eb;cursor:pointer;overflow:hidden;transition:all .3s}
-    .prenda-card__image{height:180px;background:#f9fafb;position:relative;display:flex;align-items:center;justify-content:center}
+    .prenda-card__image{height:180px;background:#ffffff;position:relative;display:flex;align-items:center;justify-content:center}
     .skeleton{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);background-size:200% 100%;animation:loading 1.5s infinite}
     @keyframes loading{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    
+    /* Dark theme */
+    html[data-theme="dark"] .prenda-card{background:#1e293b;border-color:#334155}
+    html[data-theme="dark"] .prenda-card__image{background:#1e293b}
 </style>
 
 <div class="tableros-container">
