@@ -12,10 +12,25 @@ class BalanceoController extends Controller
 {
     /**
      * Display the balanceo index page with paginated prendas.
+     * Optimized with eager loading and caching to reduce N+1 queries.
      */
     public function index(Request $request)
     {
-        $query = Prenda::with('balanceoActivo')->where('activo', true);
+        // Optimized query with eager loading and selective columns
+        $query = Prenda::with([
+            'balanceoActivo' => function($query) {
+                $query->select([
+                    'id', 
+                    'prenda_id', 
+                    'sam_total', 
+                    'meta_real', 
+                    'total_operarios',
+                    'activo'
+                ])->withCount('operaciones');
+            }
+        ])
+        ->where('activo', true)
+        ->select(['id', 'nombre', 'referencia', 'tipo', 'descripcion', 'imagen', 'created_at']);
         
         // Aplicar búsqueda si existe
         if ($request->has('search') && $request->search != '') {
