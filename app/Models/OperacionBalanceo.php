@@ -26,7 +26,7 @@ class OperacionBalanceo extends Model
     ];
 
     protected $casts = [
-        'sam' => 'decimal:2',
+        'sam' => 'double',
         'orden' => 'integer',
     ];
 

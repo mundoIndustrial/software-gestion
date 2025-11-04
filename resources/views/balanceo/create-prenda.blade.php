@@ -64,6 +64,7 @@
                                     <option value="">Seleccione un tipo</option>
                                     <option value="camisa" {{ old('tipo') == 'camisa' ? 'selected' : '' }}>Camisa</option>
                                     <option value="pantalon" {{ old('tipo') == 'pantalon' ? 'selected' : '' }}>Pantalón</option>
+                                    <option value="jean" {{ old('tipo') == 'jean' ? 'selected' : '' }}>Jean</option>
                                     <option value="polo" {{ old('tipo') == 'polo' ? 'selected' : '' }}>Polo</option>
                                     <option value="chaqueta" {{ old('tipo') == 'chaqueta' ? 'selected' : '' }}>Chaqueta</option>
                                     <option value="vestido" {{ old('tipo') == 'vestido' ? 'selected' : '' }}>Vestido</option>

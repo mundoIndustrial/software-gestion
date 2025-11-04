@@ -1,0 +1,37 @@
+Prenda,JEANS CABALLERO EJEMPLO
+Descripción,JEAN CLÁSICO CABALLERO DE EJEMPLO
+Referencia,REF-JEANCAB-EJEMPLO
+Tipo,jean
+Operarios,10
+Turnos,1
+Horas,8.0
+
+Letra,Operación,SAM,Máquina,Operario,Sección
+A,Filetear aletilla,4.3,FL,LEONARDO,DEL
+B,Filetear aletillon,8.9,FL,LEONARDO,DEL
+C,Montar cierre a aletilla,6.5,PL,EDINSON,DEL
+D,Montar cierre a aletillon colocando marquilla,9.0,PL,EDINSON,DEL
+E,Embonar relojera,6.2,2A,LUIS,DEL
+F,Montar relojera a vista,15.6,2A,GUZMAN,DEL
+G,Embonar parche x2,8.9,2A,LUIS,TRAS
+H,Filetear vista x2,5.5,FL,LEONARDO,DEL
+I,Montar vista a telabolsillo x2,18.9,PL,FELIPE,DEL
+J,Cerrar telabolsillo x2,9.4,FL,LEONARDO,DEL
+K,Pisar telabolsillo x2,14.5,PL,DIEGO,DEL
+L,Parchar x2,82.4,2A,ALEXIS,TRAS
+M,Hacer figura de parche x2,8.9,2A,LUIS,TRAS
+N,Preparar revoque x2,40.3,PL,FELIPE,DEL
+O,Pisar revoque x2,37.0,2A,LUIS,DEL
+P,Montar cierre a pantalón pisando,18.4,PL,EDINSON,DEL
+Q,Encuadrilar x2,26.8,PL,DIEGO,DEL
+R,Hacer J,24.8,2A,GUZMAN,DEL
+S,Encajar,48.1,2A,GUZMAN,ENS
+T,Cerrar entrepierna,23.4,FL,LEONARDO,ENS
+U,Pegar cotilla x2,16.5,CERR,ANDERSON,ENS
+V,Cerrar cola,20.6,CERR,ANDERSON,ENS
+W,Hacer bota x2,37.9,PL,YAIR,ENS
+X,Cerrar costados x2,38.4,CERR,ANDERSON,ENS
+Y,Montar pretina poniendo pasadores,25.0,PRE,ALEXANDRA,ENS
+AA,Hacer pasadores,12.2,COLL,YAIR,ENS
+AB,Unir pretinas,17.4,PL,ALEXANDRA,ENS
+AC,Hacer punta x2,42.5,PL,ALEXANDRA,ENS

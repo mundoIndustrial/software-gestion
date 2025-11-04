@@ -3,6 +3,7 @@ function balanceoApp(balanceoId) {
     return {
         balanceoId: balanceoId,
         operaciones: @json($balanceo ? $balanceo->operaciones : []),
+        editingCell: null,
         parametros: {
             total_operarios: {{ $balanceo->total_operarios ?? 0 }},
             turnos: {{ $balanceo->turnos ?? 1 }},
@@ -43,6 +44,104 @@ function balanceoApp(balanceoId) {
                 'OTRO': '#999'
             };
             return colors[seccion] || '#999';
+        },
+
+        copyColumn(columnName) {
+            const values = this.operaciones.map(op => {
+                const value = op[columnName];
+                return value !== null && value !== undefined ? value : '-';
+            });
+            
+            const text = values.join('\n');
+            
+            navigator.clipboard.writeText(text).then(() => {
+                // Mostrar mensaje de éxito
+                const successMsg = document.createElement('div');
+                successMsg.textContent = `✓ Columna "${columnName}" copiada`;
+                successMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; z-index: 10000; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-size: 14px;';
+                document.body.appendChild(successMsg);
+                
+                setTimeout(() => {
+                    successMsg.remove();
+                }, 2000);
+            }).catch(err => {
+                console.error('Error al copiar:', err);
+                alert('No se pudo copiar la columna');
+            });
+        },
+
+        startEditingCell(operacion, field, event) {
+            event.stopPropagation();
+            this.editingCell = `${operacion.id}-${field}`;
+            
+            // Focus en el input después de que se muestre
+            this.$nextTick(() => {
+                const input = event.target.querySelector('input, select');
+                if (input) {
+                    input.focus();
+                    if (input.tagName === 'INPUT' && input.type === 'text') {
+                        input.select();
+                    }
+                }
+            });
+        },
+
+        cancelEdit() {
+            this.editingCell = null;
+        },
+
+        async saveCell(operacion, field, newValue) {
+            // Si el valor no cambió, solo cancelar
+            if (operacion[field] == newValue) {
+                this.cancelEdit();
+                return;
+            }
+
+            try {
+                const response = await fetch(`/balanceo/operacion/${operacion.id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        [field]: newValue || null
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Actualizar el valor en el array local
+                    operacion[field] = newValue;
+                    
+                    // Si se editó el SAM, actualizar métricas
+                    if (field === 'sam') {
+                        this.updateMetricas(data.balanceo);
+                    }
+                    
+                    // Mostrar feedback visual
+                    this.showSuccessMessage('✓ Guardado');
+                } else {
+                    alert('Error al guardar: ' + (data.message || 'Error desconocido'));
+                }
+            } catch (error) {
+                console.error('Error saving cell:', error);
+                alert('Error al guardar el cambio');
+            } finally {
+                this.cancelEdit();
+            }
+        },
+
+        showSuccessMessage(message) {
+            const successMsg = document.createElement('div');
+            successMsg.textContent = message;
+            successMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 8px 16px; border-radius: 6px; z-index: 10000; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: 13px;';
+            document.body.appendChild(successMsg);
+            
+            setTimeout(() => {
+                successMsg.remove();
+            }, 1500);
         },
 
         async updateParametros() {
@@ -169,6 +268,36 @@ function balanceoApp(balanceoId) {
             }
         },
 
+        async deleteBalanceo(id) {
+            if (!confirm('¿Estás seguro de eliminar este balanceo? Se eliminarán todas las operaciones asociadas.')) return;
+            
+            try {
+                const response = await fetch(`/balanceo/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    // Mostrar mensaje de éxito
+                    const successMsg = document.createElement('div');
+                    successMsg.textContent = '✓ Balanceo eliminado correctamente';
+                    successMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; z-index: 10000; box-shadow: 0 4px 6px rgba(0,0,0,0.3);';
+                    document.body.appendChild(successMsg);
+                    
+                    // Redirigir después de 1 segundo
+                    setTimeout(() => {
+                        window.location.href = `/balanceo/prenda/${data.prenda_id}`;
+                    }, 1000);
+                }
+            } catch (error) {
+                console.error('Error deleting balanceo:', error);
+                alert('Error al eliminar el balanceo');
+            }
+        },
+
         // Agregar operación a la lista pendiente
         addOperacionToList() {
             // Validar campos requeridos
@@ -262,6 +391,43 @@ function balanceoApp(balanceoId) {
                 alert('Error al guardar las operaciones');
             }
         }
+    }
+}
+
+// Función para eliminar prenda
+async function deletePrenda(prendaId) {
+    if (!confirm('¿Estás seguro de que deseas eliminar esta prenda? Esta acción eliminará también su balanceo y todas las operaciones asociadas.')) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/balanceo/prenda/${prendaId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+            // Mostrar mensaje de éxito
+            const successMsg = document.createElement('div');
+            successMsg.textContent = '✓ Prenda eliminada correctamente';
+            successMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; z-index: 10000; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-size: 14px;';
+            document.body.appendChild(successMsg);
+            
+            // Redirigir al index después de 1 segundo
+            setTimeout(() => {
+                window.location.href = '/balanceo';
+            }, 1000);
+        } else {
+            alert(data.message || 'Error al eliminar la prenda');
+        }
+    } catch (error) {
+        console.error('Error deleting prenda:', error);
+        alert('Error al eliminar la prenda');
     }
 }
 </script>
