@@ -45,6 +45,30 @@ function balanceoApp(balanceoId) {
             return colors[seccion] || '#999';
         },
 
+        copyColumn(columnName) {
+            const values = this.operaciones.map(op => {
+                const value = op[columnName];
+                return value !== null && value !== undefined ? value : '-';
+            });
+            
+            const text = values.join('\n');
+            
+            navigator.clipboard.writeText(text).then(() => {
+                // Mostrar mensaje de éxito
+                const successMsg = document.createElement('div');
+                successMsg.textContent = `✓ Columna "${columnName}" copiada`;
+                successMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 24px; border-radius: 8px; z-index: 10000; box-shadow: 0 4px 6px rgba(0,0,0,0.3); font-size: 14px;';
+                document.body.appendChild(successMsg);
+                
+                setTimeout(() => {
+                    successMsg.remove();
+                }, 2000);
+            }).catch(err => {
+                console.error('Error al copiar:', err);
+                alert('No se pudo copiar la columna');
+            });
+        },
+
         async updateParametros() {
             try {
                 const response = await fetch(`/balanceo/${this.balanceoId}`, {

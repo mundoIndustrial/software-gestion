@@ -63,16 +63,21 @@ class Balanceo extends Model
      */
     public function calcularMetricas()
     {
-        // Calcular SAM total
+        // Calcular SAM total (suma de todos los SAM de las operaciones)
         $this->sam_total = $this->operaciones()->sum('sam');
 
-        // Calcular tiempo disponible
-        $this->tiempo_disponible_horas = $this->total_operarios * $this->turnos * $this->horas_por_turno;
+        // Calcular tiempo disponible en horas: Horas/turno * Turnos * Total operarios
+        $this->tiempo_disponible_horas = $this->horas_por_turno * $this->turnos * $this->total_operarios;
+        
+        // Calcular tiempo disponible en segundos: T. Disponible Horas * 3600
         $this->tiempo_disponible_segundos = $this->tiempo_disponible_horas * 3600;
 
-        // Calcular meta teórica
+        // Calcular meta teórica: T. Disponible Segundos / SAM
         if ($this->sam_total > 0) {
             $this->meta_teorica = floor($this->tiempo_disponible_segundos / $this->sam_total);
+            
+            // Meta real al 90% de la meta teórica
+            $this->meta_real = floor($this->meta_teorica * 0.90);
         }
 
         // Encontrar cuello de botella (operación con mayor SAM)
@@ -80,13 +85,15 @@ class Balanceo extends Model
         if ($cuelloBotella) {
             $this->operario_cuello_botella = $cuelloBotella->operario;
             $this->tiempo_cuello_botella = $cuelloBotella->sam;
-            $this->sam_real = $cuelloBotella->sam;
             
-            // Calcular meta real basada en el cuello de botella
-            $this->meta_real = floor($this->tiempo_disponible_segundos / $this->sam_real);
+            // SAM Real = Tiempo cuello de botella * Total operarios
+            $this->sam_real = $cuelloBotella->sam * $this->total_operarios;
             
-            // Meta sugerida al 85%
-            $this->meta_sugerida_85 = floor($this->meta_real * 0.85);
+            // Meta Real (cuello de botella) = T. Disponible Segundos / SAM Real
+            $metaRealCuelloBotella = floor($this->tiempo_disponible_segundos / $this->sam_real);
+            
+            // Meta sugerida al 85% del cuello de botella
+            $this->meta_sugerida_85 = floor($metaRealCuelloBotella * 0.85);
         }
 
         $this->save();
