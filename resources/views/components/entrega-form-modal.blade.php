@@ -76,19 +76,9 @@
                     <h3 class="section-title">Tipo de Entrega</h3>
                     <div class="tipo-selector">
                         <button type="button" id="btnCostura" class="tipo-btn active" data-tipo="costura">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path
-                                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                                    stroke-width="2" stroke-linecap="round" />
-                            </svg>
                             Costura
                         </button>
                         <button type="button" id="btnCorte" class="tipo-btn" data-tipo="corte">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                <path
-                                    d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.586a1 1 0 01.707.293l.707.707A1 1 0 0012.414 11H13m-3 3.5a.5.5 0 11-1 0 .5.5 0 011 0z"
-                                    stroke-width="2" stroke-linecap="round" />
-                            </svg>
                             Corte
                         </button>
                     </div>
@@ -170,11 +160,8 @@
                         </div>
                     </div>
 
-                    <button type="button" id="addEntregaBtn" class="btn-primary btn-add-entrega" disabled
+                    <button type="button" id="addEntregaBtn" class="btn-primary btn-add-centered" disabled
                         @click="addEntrega()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" class="icon-add-entrega">
-                            <path d="M12 4v16m8-8H4" stroke-width="2" stroke-linecap="round" />
-                        </svg>
                         Añadir Entrega
                     </button>
                 </div>
@@ -256,10 +243,7 @@
                         </div>
                     </div>
 
-                    <button type="button" id="addEntregaCorteBtn" class="btn-primary" disabled @click="addEntrega()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <path d="M12 4v16m8-8H4" stroke-width="2" stroke-linecap="round" />
-                        </svg>
+                    <button type="button" id="addEntregaCorteBtn" class="btn-primary btn-add-centered" disabled @click="addEntrega()">
                         Añadir Entrega
                     </button>
                 </div>
@@ -506,19 +490,13 @@
             transition: all 0.3s ease;
         }
 
-        .entrega-modal-container .btn-add-entrega {
-            padding: 4px 10px;
-            font-size: 14px;
+        .entrega-modal-container .btn-add-centered {
+            margin-top: 24px;
             display: flex;
             align-items: center;
-            gap: 6px;
-            border-radius: 8px;
-            max-width: 160px;
-        }
-
-        .entrega-modal-container .icon-add-entrega {
-            width: 18px;
-            height: 18px;
+            justify-content: center;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .entrega-modal-container .btn-primary:hover:not(:disabled) {
@@ -871,7 +849,6 @@
                     }
                 },
 
-<<<<<<< HEAD
                 async fetchGarments() {
                     if (!this.form.pedido) return;
 

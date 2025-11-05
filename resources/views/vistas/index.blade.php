@@ -9,10 +9,7 @@
 
     <div class="costura-container">
         <div class="costura-header">
-            <h1>
-                <i class="{{ $icon }}"></i>
-                {{ $title }}
-            </h1>
+            <h1>{{ $title }}</h1>
         </div>
 
         <!-- Barra de búsqueda -->
