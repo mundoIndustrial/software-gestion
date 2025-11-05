@@ -75,31 +75,44 @@ body.dark-theme {
 .search-bar {
     position: relative;
     width: 100%;
-    max-width: 375px;
+    max-width: 450px;
     display: flex;
     align-items: center;
     background: var(--costura-bg-search);
-    border-radius: 19px;
-    padding: 9px 15px;
+    border-radius: 25px;
+    padding: 0;
     box-shadow: 0 3px 11px var(--costura-shadow);
     border: 1.5px solid var(--costura-border);
+    transition: all 0.3s ease;
+}
+
+.search-bar:focus-within {
+    border-color: #ff6b35;
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.2);
 }
 
 .search-icon {
+    position: absolute;
+    left: 16px;
     color: var(--costura-text-secondary);
-    margin-right: 7.5px;
-    font-size: 0.825rem;
+    font-size: 1rem;
+    pointer-events: none;
+    z-index: 2;
 }
 
 #searchInput {
     flex: 1;
+    width: 100%;
     background: transparent;
     border: none;
     outline: none;
     color: var(--costura-text-primary);
-    font-size: 0.75rem;
-    padding: 0;
+    font-size: 0.9rem;
+    padding: 12px 50px 12px 45px;
     font-family: "Poppins", sans-serif;
+    line-height: normal;
+    font-weight: 500;
+    border-radius: 25px;
 }
 
 #searchInput::placeholder {
@@ -107,19 +120,34 @@ body.dark-theme {
 }
 
 .clear-search-btn {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
     background: none;
     border: none;
     color: var(--costura-text-secondary);
     cursor: pointer;
-    padding: 5px;
+    padding: 6px;
     border-radius: 50%;
     transition: all 0.3s ease;
-    margin-left: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    font-size: 0.85rem;
+    z-index: 3;
 }
 
 .clear-search-btn:hover {
-    background: var(--costura-border);
-    color: var(--costura-text-primary);
+    background: rgba(255, 107, 53, 0.15);
+    color: #ff6b35;
+    transform: translateY(-50%) scale(1.15);
+}
+
+.clear-search-btn:active {
+    transform: translateY(-50%) scale(0.95);
 }
 
 /* Contenedor de tarjetas */

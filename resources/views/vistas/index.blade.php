@@ -16,7 +16,7 @@
         <div class="search-container">
             <div class="search-bar">
                 <i class="fas fa-search search-icon"></i>
-                <input type="text" id="searchInput" placeholder="Buscar por número de pedido..." value="{{ $query }}" autocomplete="off">
+                <input type="text" id="searchInput" placeholder="Buscar por pedido o cliente..." value="{{ $query }}" autocomplete="off">
                 <button type="button" id="clearSearch" class="clear-search-btn" style="display: {{ $query ? 'block' : 'none' }};">
                     <i class="fas fa-times"></i>
                 </button>
