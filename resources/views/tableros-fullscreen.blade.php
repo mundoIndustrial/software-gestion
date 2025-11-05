@@ -675,22 +675,32 @@
 
         console.log('✅ Echo disponible, suscribiendo a canales...');
 
+        // Determinar la sección actual desde la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentSection = urlParams.get('section') || '{{ $section }}';
+        
+        console.log('Sección actual en fullscreen:', currentSection);
+
         // Canal de Producción
         window.Echo.channel('produccion').listen('ProduccionRecordCreated', (e) => {
             console.log('🎉 Evento ProduccionRecordCreated recibido en fullscreen', e);
             
-            // Si es eliminación, solo eliminar la fila
-            if (e.registro && e.registro.deleted) {
-                console.log('🗑️ Eliminando registro ID:', e.registro.id);
-                const row = document.querySelector(`tr[data-id="${e.registro.id}"]`);
-                if (row) {
-                    row.style.transition = 'opacity 0.3s ease';
-                    row.style.opacity = '0';
-                    setTimeout(() => row.remove(), 300);
+            // Solo recargar si estamos en la sección de producción
+            if (currentSection === 'produccion') {
+                // Si es eliminación, solo eliminar la fila
+                if (e.registro && e.registro.deleted) {
+                    console.log('🗑️ Eliminando registro ID:', e.registro.id);
+                    const row = document.querySelector(`tr[data-id="${e.registro.id}"]`);
+                    if (row) {
+                        row.style.transition = 'opacity 0.3s ease';
+                        row.style.opacity = '0';
+                        setTimeout(() => row.remove(), 300);
+                    }
+                } else {
+                    // Para crear/actualizar, recargar la página
+                    console.log('🔄 Recargando vista fullscreen de Producción...');
+                    location.reload();
                 }
-            } else {
-                // Para crear/actualizar, recargar la página
-                location.reload();
             }
         });
 
@@ -698,22 +708,49 @@
         window.Echo.channel('polo').listen('PoloRecordCreated', (e) => {
             console.log('🎉 Evento PoloRecordCreated recibido en fullscreen', e);
             
-            // Si es eliminación, solo eliminar la fila
-            if (e.registro && e.registro.deleted) {
-                console.log('🗑️ Eliminando registro ID:', e.registro.id);
-                const row = document.querySelector(`tr[data-id="${e.registro.id}"]`);
-                if (row) {
-                    row.style.transition = 'opacity 0.3s ease';
-                    row.style.opacity = '0';
-                    setTimeout(() => row.remove(), 300);
+            // Solo recargar si estamos en la sección de polos
+            if (currentSection === 'polos') {
+                // Si es eliminación, solo eliminar la fila
+                if (e.registro && e.registro.deleted) {
+                    console.log('🗑️ Eliminando registro ID:', e.registro.id);
+                    const row = document.querySelector(`tr[data-id="${e.registro.id}"]`);
+                    if (row) {
+                        row.style.transition = 'opacity 0.3s ease';
+                        row.style.opacity = '0';
+                        setTimeout(() => row.remove(), 300);
+                    }
+                } else {
+                    // Para crear/actualizar, recargar la página
+                    console.log('🔄 Recargando vista fullscreen de Polos...');
+                    location.reload();
                 }
-            } else {
-                // Para crear/actualizar, recargar la página
-                location.reload();
             }
         });
 
-        console.log('✅ Listeners configurados en fullscreen');
+        // Canal de Corte
+        window.Echo.channel('corte').listen('CorteRecordCreated', (e) => {
+            console.log('🎉 Evento CorteRecordCreated recibido en fullscreen', e);
+            
+            // Solo recargar si estamos en la sección de corte
+            if (currentSection === 'corte') {
+                // Si es eliminación, solo eliminar la fila
+                if (e.registro && e.registro.deleted) {
+                    console.log('🗑️ Eliminando registro ID:', e.registro.id);
+                    const row = document.querySelector(`tr[data-id="${e.registro.id}"]`);
+                    if (row) {
+                        row.style.transition = 'opacity 0.3s ease';
+                        row.style.opacity = '0';
+                        setTimeout(() => row.remove(), 300);
+                    }
+                } else {
+                    // Para crear/actualizar, recargar la página
+                    console.log('🔄 Recargando vista fullscreen de Corte...');
+                    location.reload();
+                }
+            }
+        });
+
+        console.log('✅ Listeners configurados en fullscreen para todas las secciones');
     }
 
     // Inicializar cuando el DOM esté listo

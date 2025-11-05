@@ -20,7 +20,6 @@ return new class extends Migration
             $table->double('tiempo_ciclo');
             $table->double('porcion_tiempo');
             $table->integer('cantidad');
-            $table->integer('producida');
             $table->string('paradas_programadas');
             $table->string('paradas_no_programadas')->nullable();
             $table->double('tiempo_parada_no_programada')->nullable();

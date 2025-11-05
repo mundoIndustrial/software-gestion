@@ -436,7 +436,12 @@ body.dark-theme .seguimiento-gray { background: rgba(160,174,192,0.2) !important
 }
 </style>
 
-<div class="records-table-container">
+<div class="records-table-container" id="seguimiento-{{ $section }}">
+    <script>
+        console.log('=== SEGUIMIENTO RENDERIZADO: {{ $section }} ===');
+        console.log('Módulos disponibles:', @json($modulosDisponibles));
+        console.log('Total de horas:', @json(count($dataPorHora)));
+    </script>
     <div class="table-scroll-container">
         <table class="seguimiento-table {{ count($modulosDisponibles) <= 2 ? 'seguimiento-table-small' : '' }}">
             <thead>
@@ -758,9 +763,6 @@ function initializeSeguimientoRealtime() {
     }
 
     console.log('✅ Echo disponible, suscribiendo a canales...');
-
-    // Determinar qué canal escuchar según la sección actual
-    const currentSection = getCurrentSection();
     
     // Evitar suscripciones duplicadas
     if (window.seguimientoChannelSubscribed) {
@@ -770,26 +772,46 @@ function initializeSeguimientoRealtime() {
     
     window.seguimientoChannelSubscribed = true;
     
-    if (currentSection === 'produccion') {
-        window.Echo.channel('produccion').listen('ProduccionRecordCreated', (e) => {
-            console.log('🎉 Evento ProduccionRecordCreated recibido en seguimiento');
+    // Suscribirse a todos los canales relevantes
+    // Canal de Producción
+    window.Echo.channel('produccion').listen('ProduccionRecordCreated', (e) => {
+        console.log('🎉 Evento ProduccionRecordCreated recibido en seguimiento');
+        // Verificar la sección actual en el momento del evento
+        const currentSection = getCurrentSection();
+        console.log('📍 Sección actual:', currentSection);
+        if (currentSection === 'produccion') {
+            console.log('🔄 Recargando seguimiento de Producción...');
             recargarSeguimiento();
-        });
-    } else if (currentSection === 'polos') {
-        window.Echo.channel('polo').listen('PoloRecordCreated', (e) => {
-            console.log('🎉 Evento PoloRecordCreated recibido en seguimiento');
+        }
+    });
+    
+    // Canal de Polos
+    window.Echo.channel('polo').listen('PoloRecordCreated', (e) => {
+        console.log('🎉 Evento PoloRecordCreated recibido en seguimiento');
+        // Verificar la sección actual en el momento del evento
+        const currentSection = getCurrentSection();
+        console.log('📍 Sección actual:', currentSection);
+        if (currentSection === 'polos') {
+            console.log('🔄 Recargando seguimiento de Polos...');
             recargarSeguimiento();
-        });
-    } else if (currentSection === 'corte') {
-        window.Echo.channel('corte').listen('CorteRecordCreated', (e) => {
-            console.log('🎉 Evento CorteRecordCreated recibido en seguimiento');
+        }
+    });
+    
+    // Canal de Corte
+    window.Echo.channel('corte').listen('CorteRecordCreated', (e) => {
+        console.log('🎉 Evento CorteRecordCreated recibido en seguimiento');
+        // Verificar la sección actual en el momento del evento
+        const currentSection = getCurrentSection();
+        console.log('📍 Sección actual:', currentSection);
+        if (currentSection === 'corte') {
+            console.log('🔄 Recargando dashboard de Corte...');
             if (typeof recargarDashboardCorte === 'function') {
                 recargarDashboardCorte();
             }
-        });
-    }
+        }
+    });
 
-    console.log(`✅ Listener configurado para sección: ${currentSection}`);
+    console.log('✅ Listeners configurados para todas las secciones');
 }
 
 // Función para recargar los datos de seguimiento

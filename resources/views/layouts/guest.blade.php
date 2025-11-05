@@ -9,10 +9,10 @@
         <title>{{ config('app.name', 'Mundo Industrial') }}</title>
 
         <!-- Favicon optimizado -->
-        <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any" type="image/x-icon">
-        <link rel="icon" href="{{ asset('favicon_16x16.png') }}" sizes="16x16" type="image/png">
-        <link rel="icon" href="{{ asset('favicon_32x32.png') }}" sizes="32x32" type="image/png">
-        <link rel="apple-touch-icon" href="{{ asset('favicon_180x180.png') }}">
+        <link rel="icon" href="{{ asset('favicon.ico') }}?v={{ time() }}" sizes="any" type="image/x-icon">
+        <link rel="icon" href="{{ asset('favicon_16x16.png') }}?v={{ time() }}" sizes="16x16" type="image/png">
+        <link rel="icon" href="{{ asset('favicon_32x32.png') }}?v={{ time() }}" sizes="32x32" type="image/png">
+        <link rel="apple-touch-icon" href="{{ asset('favicon_180x180.png') }}?v={{ time() }}">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">

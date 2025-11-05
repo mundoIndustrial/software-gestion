@@ -16,6 +16,8 @@ class BalanceoController extends Controller
      */
     public function index(Request $request)
     {
+        $startTime = microtime(true);
+        
         // Optimized query with eager loading and selective columns
         $query = Prenda::with([
             'balanceoActivo' => function($query) {
@@ -44,6 +46,31 @@ class BalanceoController extends Controller
         
         // Paginación (12 prendas por página)
         $prendas = $query->orderBy('created_at', 'desc')->paginate(12)->withQueryString();
+        
+        // Si es petición AJAX, devolver JSON con HTML de las tarjetas
+        if ($request->ajax() || $request->wantsJson()) {
+            $endTime = microtime(true);
+            $duration = ($endTime - $startTime) * 1000;
+            
+            // Renderizar HTML de las tarjetas de prendas
+            $cardsHtml = view('balanceo.partials.prenda-cards', compact('prendas'))->render();
+            
+            return response()->json([
+                'cards_html' => $cardsHtml,
+                'pagination' => [
+                    'current_page' => $prendas->currentPage(),
+                    'last_page' => $prendas->lastPage(),
+                    'per_page' => $prendas->perPage(),
+                    'total' => $prendas->total(),
+                    'first_item' => $prendas->firstItem(),
+                    'last_item' => $prendas->lastItem(),
+                    'links_html' => $prendas->appends(request()->query())->links('vendor.pagination.custom')->render()
+                ],
+                'debug' => [
+                    'server_time_ms' => round($duration, 2)
+                ]
+            ]);
+        }
         
         return view('balanceo.index', compact('prendas'));
     }

@@ -12,6 +12,9 @@ use App\Models\Hora;
 use App\Models\Maquina;
 use App\Models\Tela;
 use App\Models\TiempoCiclo;
+use App\Events\ProduccionRecordCreated;
+use App\Events\PoloRecordCreated;
+use App\Events\CorteRecordCreated;
 
 class TablerosController extends Controller
 {
@@ -53,31 +56,32 @@ class TablerosController extends Controller
 
     public function index()
     {
+        // Optimización: Si es AJAX con parámetro 'section', solo cargar esa sección
+        $section = request()->get('section');
+        $isAjax = request()->ajax() || request()->wantsJson();
+        
+        // Si es AJAX y especifica una sección, devolver solo esa tabla
+        if ($isAjax && $section) {
+            return $this->loadSection($section);
+        }
+        
         // TABLAS PRINCIPALES: SIN FILTRO DE FECHA (mostrar todos los registros)
-        $queryProduccion = RegistroPisoProduccion::query()->orderBy('id', 'asc');
+        // Orden descendente: registros más recientes primero
+        $queryProduccion = RegistroPisoProduccion::query()->orderBy('id', 'desc');
         // Paginación: 50 registros por página
         $registros = $queryProduccion->paginate(50);
         $columns = Schema::getColumnListing('registro_piso_produccion');
         $columns = array_diff($columns, ['id', 'created_at', 'updated_at', 'producida']);
 
-        // NO recalcular en cada carga - solo cuando se crea/actualiza un registro
-        // Los cálculos se hacen en el método store() y update()
-
-        $queryPolos = RegistroPisoPolo::query()->orderBy('id', 'asc');
-        // Paginación: 50 registros por página
+        $queryPolos = RegistroPisoPolo::query()->orderBy('id', 'desc');
         $registrosPolos = $queryPolos->paginate(50);
         $columnsPolos = Schema::getColumnListing('registro_piso_polo');
         $columnsPolos = array_diff($columnsPolos, ['id', 'created_at', 'updated_at', 'producida']);
 
-        // NO recalcular en cada carga - solo cuando se crea/actualiza un registro
-
-        $queryCorte = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela'])->orderBy('id', 'asc');
-        // Paginación: 50 registros por página
+        $queryCorte = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela'])->orderBy('id', 'desc');
         $registrosCorte = $queryCorte->paginate(50);
         $columnsCorte = Schema::getColumnListing('registro_piso_corte');
         $columnsCorte = array_diff($columnsCorte, ['id', 'created_at', 'updated_at', 'producida']);
-
-        // NO recalcular en cada carga - solo cuando se crea/actualiza un registro
 
         if (request()->wantsJson()) {
             return response()->json([
@@ -106,19 +110,28 @@ class TablerosController extends Controller
                     'current_page' => $registros->currentPage(),
                     'last_page' => $registros->lastPage(),
                     'per_page' => $registros->perPage(),
-                    'total' => $registros->total()
+                    'total' => $registros->total(),
+                    'first_item' => $registros->firstItem(),
+                    'last_item' => $registros->lastItem(),
+                    'links_html' => $registros->appends(request()->query())->links('vendor.pagination.custom')->render()
                 ],
                 'paginationPolos' => [
                     'current_page' => $registrosPolos->currentPage(),
                     'last_page' => $registrosPolos->lastPage(),
                     'per_page' => $registrosPolos->perPage(),
-                    'total' => $registrosPolos->total()
+                    'total' => $registrosPolos->total(),
+                    'first_item' => $registrosPolos->firstItem(),
+                    'last_item' => $registrosPolos->lastItem(),
+                    'links_html' => $registrosPolos->appends(request()->query())->links('vendor.pagination.custom')->render()
                 ],
                 'paginationCorte' => [
                     'current_page' => $registrosCorte->currentPage(),
                     'last_page' => $registrosCorte->lastPage(),
                     'per_page' => $registrosCorte->perPage(),
-                    'total' => $registrosCorte->total()
+                    'total' => $registrosCorte->total(),
+                    'first_item' => $registrosCorte->firstItem(),
+                    'last_item' => $registrosCorte->lastItem(),
+                    'links_html' => $registrosCorte->appends(request()->query())->links('vendor.pagination.custom')->render()
                 ]
             ]);
         }
@@ -411,7 +424,6 @@ class TablerosController extends Controller
             'registros.*.tiempo_ciclo' => 'required|numeric',
             'registros.*.porcion_tiempo' => 'required|numeric|min:0|max:1',
             'registros.*.cantidad' => 'nullable|integer',
-            'registros.*.producida' => 'nullable|integer',
             'registros.*.paradas_programadas' => 'required|string',
             'registros.*.paradas_no_programadas' => 'nullable|string',
             'registros.*.tiempo_parada_no_programada' => 'nullable|numeric',
@@ -461,7 +473,6 @@ class TablerosController extends Controller
                     'tiempo_ciclo' => $registroData['tiempo_ciclo'],
                     'porcion_tiempo' => $registroData['porcion_tiempo'],
                     'cantidad' => $registroData['cantidad'] ?? 0,
-                    'producida' => $registroData['producida'] ?? 0,
                     'paradas_programadas' => $registroData['paradas_programadas'],
                     'paradas_no_programadas' => $registroData['paradas_no_programadas'] ?? null,
                     'tiempo_parada_no_programada' => $registroData['tiempo_parada_no_programada'] ?? null,
@@ -477,9 +488,9 @@ class TablerosController extends Controller
                 // Broadcast event for real-time updates (non-blocking)
                 try {
                     if ($request->section === 'produccion') {
-                        broadcast(new \App\Events\ProduccionRecordCreated($record));
+                        broadcast(new ProduccionRecordCreated($record));
                     } elseif ($request->section === 'polos') {
-                        broadcast(new \App\Events\PoloRecordCreated($record));
+                        broadcast(new PoloRecordCreated($record));
                     }
                 } catch (\Exception $broadcastError) {
                     \Log::warning('Error al emitir evento de creación', [
@@ -623,12 +634,12 @@ class TablerosController extends Controller
                 // Broadcast event for real-time updates (non-blocking)
                 try {
                     if ($request->section === 'produccion') {
-                        broadcast(new \App\Events\ProduccionRecordCreated($registro));
+                        broadcast(new ProduccionRecordCreated($registro));
                     } elseif ($request->section === 'polos') {
-                        broadcast(new \App\Events\PoloRecordCreated($registro));
+                        broadcast(new PoloRecordCreated($registro));
                     } elseif ($request->section === 'corte') {
                         $registro->load(['hora', 'operario', 'maquina', 'tela']);
-                        broadcast(new \App\Events\CorteRecordCreated($registro));
+                        broadcast(new CorteRecordCreated($registro));
                     }
                 } catch (\Exception $broadcastError) {
                     \Log::warning('Error al emitir evento de actualización', [
@@ -650,12 +661,12 @@ class TablerosController extends Controller
                 // No recalcular, solo actualizar y emitir evento (non-blocking)
                 try {
                     if ($request->section === 'produccion') {
-                        broadcast(new \App\Events\ProduccionRecordCreated($registro));
+                        broadcast(new ProduccionRecordCreated($registro));
                     } elseif ($request->section === 'polos') {
-                        broadcast(new \App\Events\PoloRecordCreated($registro));
+                        broadcast(new PoloRecordCreated($registro));
                     } elseif ($request->section === 'corte') {
                         $registro->load(['hora', 'operario', 'maquina', 'tela']);
-                        broadcast(new \App\Events\CorteRecordCreated($registro));
+                        broadcast(new CorteRecordCreated($registro));
                     }
                 } catch (\Exception $broadcastError) {
                     \Log::warning('Error al emitir evento de actualización', [
@@ -709,16 +720,15 @@ class TablerosController extends Controller
             // Emitir evento de eliminación via WebSocket
             try {
                 if ($section === 'produccion') {
-                    broadcast(new \App\Events\ProduccionRecordCreated((object)['id' => $registroId, 'deleted' => true]));
+                    broadcast(new ProduccionRecordCreated((object)['id' => $registroId, 'deleted' => true]));
                 } elseif ($section === 'polos') {
-                    broadcast(new \App\Events\PoloRecordCreated((object)['id' => $registroId, 'deleted' => true]));
+                    broadcast(new PoloRecordCreated((object)['id' => $registroId, 'deleted' => true]));
                 } elseif ($section === 'corte') {
-                    broadcast(new \App\Events\CorteRecordCreated((object)['id' => $registroId, 'deleted' => true]));
+                    broadcast(new CorteRecordCreated((object)['id' => $registroId, 'deleted' => true]));
                 }
             } catch (\Exception $broadcastError) {
                 \Log::warning('Error al emitir evento de eliminación', [
                     'error' => $broadcastError->getMessage(),
-                    'id' => $registroId,
                     'section' => $section
                 ]);
             }
@@ -850,7 +860,7 @@ class TablerosController extends Controller
 
             // Broadcast the new record to ALL clients (non-blocking)
             try {
-                broadcast(new \App\Events\CorteRecordCreated($registro));
+                broadcast(new CorteRecordCreated($registro));
             } catch (\Exception $broadcastError) {
                 \Log::warning('Error al emitir evento de corte', [
                     'error' => $broadcastError->getMessage()
@@ -1024,7 +1034,15 @@ class TablerosController extends Controller
         $horasData = [];
 
         foreach ($registrosCorte as $registro) {
-            $hora = $registro->hora ? $registro->hora->hora : 'SIN HORA';
+            $horaOriginal = $registro->hora ? $registro->hora->hora : 'SIN HORA';
+            
+            // Formatear la hora como "HORA 1", "HORA 2", etc.
+            if ($horaOriginal !== 'SIN HORA' && is_numeric($horaOriginal)) {
+                $hora = 'HORA ' . $horaOriginal;
+            } else {
+                $hora = $horaOriginal;
+            }
+            
             if (!isset($horasData[$hora])) {
                 $horasData[$hora] = [
                     'hora' => $hora,
@@ -1157,6 +1175,99 @@ class TablerosController extends Controller
             'id' => $maquina->id,
             'nombre_maquina' => $maquina->nombre_maquina
         ]);
+    }
+
+    /**
+     * Cargar solo una sección específica (OPTIMIZACIÓN AJAX)
+     */
+    private function loadSection($section)
+    {
+        $startTime = microtime(true);
+        
+        if ($section === 'produccion') {
+            $registros = RegistroPisoProduccion::query()->orderBy('id', 'desc')->paginate(50);
+            $columns = Schema::getColumnListing('registro_piso_produccion');
+            $columns = array_diff($columns, ['id', 'created_at', 'updated_at', 'producida']);
+            
+            // Renderizar HTML de la tabla
+            $tableHtml = view('partials.table-body-produccion', compact('registros', 'columns'))->render();
+            
+            $endTime = microtime(true);
+            $duration = ($endTime - $startTime) * 1000;
+            
+            return response()->json([
+                'table_html' => $tableHtml,
+                'pagination' => [
+                    'current_page' => $registros->currentPage(),
+                    'last_page' => $registros->lastPage(),
+                    'per_page' => $registros->perPage(),
+                    'total' => $registros->total(),
+                    'first_item' => $registros->firstItem(),
+                    'last_item' => $registros->lastItem(),
+                    'links_html' => $registros->appends(request()->query())->links('vendor.pagination.custom')->render()
+                ],
+                'debug' => [
+                    'server_time_ms' => round($duration, 2),
+                    'section' => $section
+                ]
+            ]);
+        } elseif ($section === 'polos') {
+            $registros = RegistroPisoPolo::query()->orderBy('id', 'desc')->paginate(50);
+            $columns = Schema::getColumnListing('registro_piso_polo');
+            $columns = array_diff($columns, ['id', 'created_at', 'updated_at', 'producida']);
+            
+            // Renderizar HTML de la tabla
+            $tableHtml = view('partials.table-body-polos', compact('registros', 'columns'))->render();
+            
+            $endTime = microtime(true);
+            $duration = ($endTime - $startTime) * 1000;
+            
+            return response()->json([
+                'table_html' => $tableHtml,
+                'pagination' => [
+                    'current_page' => $registros->currentPage(),
+                    'last_page' => $registros->lastPage(),
+                    'per_page' => $registros->perPage(),
+                    'total' => $registros->total(),
+                    'first_item' => $registros->firstItem(),
+                    'last_item' => $registros->lastItem(),
+                    'links_html' => $registros->appends(request()->query())->links('vendor.pagination.custom')->render()
+                ],
+                'debug' => [
+                    'server_time_ms' => round($duration, 2),
+                    'section' => $section
+                ]
+            ]);
+        } elseif ($section === 'corte') {
+            $registros = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela'])->orderBy('id', 'desc')->paginate(50);
+            $columns = Schema::getColumnListing('registro_piso_corte');
+            $columns = array_diff($columns, ['id', 'created_at', 'updated_at', 'producida']);
+            
+            // Renderizar HTML de la tabla
+            $tableHtml = view('partials.table-body-corte', compact('registros', 'columns'))->render();
+            
+            $endTime = microtime(true);
+            $duration = ($endTime - $startTime) * 1000;
+            
+            return response()->json([
+                'table_html' => $tableHtml,
+                'pagination' => [
+                    'current_page' => $registros->currentPage(),
+                    'last_page' => $registros->lastPage(),
+                    'per_page' => $registros->perPage(),
+                    'total' => $registros->total(),
+                    'first_item' => $registros->firstItem(),
+                    'last_item' => $registros->lastItem(),
+                    'links_html' => $registros->appends(request()->query())->links('vendor.pagination.custom')->render()
+                ],
+                'debug' => [
+                    'server_time_ms' => round($duration, 2),
+                    'section' => $section
+                ]
+            ]);
+        }
+        
+        return response()->json(['error' => 'Invalid section'], 400);
     }
 
     /**

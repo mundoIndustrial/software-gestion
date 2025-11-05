@@ -1,21 +1,28 @@
 function tablerosApp() {
+    console.log('🚀 Inicializando tablerosApp...');
     return {
         activeTab: 'produccion',
         showRecords: false,
 
         setActiveTab(tab) {
+            console.log('📑 Cambiando tab a:', tab, '- Reseteando showRecords a false');
             this.activeTab = tab;
             this.showRecords = false; // Reset when changing tabs
         },
 
         toggleRecords() {
+            console.log('🔄 Toggle Records - Antes:', this.showRecords);
             this.showRecords = !this.showRecords;
+            console.log('🔄 Toggle Records - Después:', this.showRecords);
             if (this.showRecords) {
                 // Initialize filters when showing records
                 const currentTab = this.activeTab;
+                console.log('📊 Mostrando registros para tab:', currentTab);
                 setTimeout(() => {
                     initializeTableFilters(currentTab);
                 }, 100);
+            } else {
+                console.log('📈 Mostrando seguimiento/dashboard');
             }
         },
 

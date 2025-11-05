@@ -19,12 +19,12 @@ class RegistroPisoPolo extends Model
         'tiempo_ciclo',
         'porcion_tiempo',
         'cantidad',
-        'producida',
         'paradas_programadas',
         'paradas_no_programadas',
         'tiempo_parada_no_programada',
         'numero_operarios',
         'tiempo_para_programada',
+        'tiempo_disponible',
         'meta',
         'eficiencia',
     ];
