@@ -243,23 +243,26 @@ body.dark-theme {
 
 /* === Top Controls Bar === */
 .top-controls {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: auto 1fr;
     align-items: center;
-    gap: 1.5rem;
+    gap: 2rem;
     margin-bottom: 1rem;
     padding: 0.8rem 1.2rem;
     background: var(--top-controls-bg);
     border-radius: 12px;
     box-shadow: var(--top-controls-shadow);
     border: 1px solid var(--filter-select-border);
+    width: 100%;
+    box-sizing: border-box;
 }
 
 /* === Action Icons (LEFT) === */
 .action-icons {
     display: flex;
-    gap: 0.8rem;
+    gap: 1rem;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .icon-btn {
@@ -290,15 +293,16 @@ body.dark-theme {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    flex: 1;
+    justify-self: end;
     gap: 1rem;
 }
 
 .filters-row {
     display: flex;
     align-items: center;
-    gap: 0.8rem;
-    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 1rem;
+    flex-wrap: nowrap;
 }
 
 .filter-type-group {
@@ -315,7 +319,7 @@ body.dark-theme {
     font-size: 13px;
     cursor: pointer;
     transition: all 0.2s;
-    min-width: 140px;
+    min-width: 160px;
 }
 
 .filter-select:hover {
@@ -326,7 +330,7 @@ body.dark-theme {
 /* === Date Inputs === */
 .date-inputs-inline {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.8rem;
     align-items: center;
     flex-wrap: wrap;
 }
@@ -341,8 +345,8 @@ body.dark-theme {
     font-size: 13px;
     cursor: pointer;
     transition: all 0.2s;
-    min-width: 120px;
-    flex: 1;
+    min-width: 140px;
+    width: auto;
 }
 
 .date-inputs-inline input:hover {
@@ -375,6 +379,7 @@ body.dark-theme .date-inputs-inline input[type="month"]::-webkit-calendar-picker
     transition: all 0.2s;
     white-space: nowrap;
     flex-shrink: 0;
+    margin-left: 0.5rem;
 }
 
 .btn-apply:hover {
@@ -496,14 +501,25 @@ body.dark-theme .date-inputs-inline input[type="month"]::-webkit-calendar-picker
 }
 
 /* === Responsive === */
+@media (min-width: 1201px) {
+    .top-controls {
+        display: grid;
+        grid-template-columns: auto 1fr;
+    }
+    
+    .filters-row {
+        flex-wrap: nowrap;
+    }
+}
+
 @media (max-width: 1400px) {
     .filters-row {
         flex-wrap: wrap;
-        gap: 0.6rem;
+        gap: 0.8rem;
     }
     
     .filter-select {
-        min-width: 130px;
+        min-width: 140px;
         font-size: 12px;
     }
     
@@ -534,6 +550,7 @@ body.dark-theme .date-inputs-inline input[type="month"]::-webkit-calendar-picker
 
 @media (max-width: 1200px) {
     .top-controls {
+        display: flex;
         flex-wrap: wrap;
         gap: 1rem;
     }
@@ -546,6 +563,7 @@ body.dark-theme .date-inputs-inline input[type="month"]::-webkit-calendar-picker
     .filters-row {
         width: 100%;
         justify-content: flex-start;
+        flex-wrap: wrap;
     }
 }
 

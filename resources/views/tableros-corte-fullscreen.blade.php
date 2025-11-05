@@ -226,34 +226,24 @@
             color: white !important;
         }
 
-        /* Eficiencia colors */
+        /* Eficiencia colors - Paleta neutra del sistema */
         .eficiencia-cell {
             font-weight: 600;
         }
 
         .eficiencia-blue {
-            background: #3498db !important;
-            color: white !important;
+            background: #3b82f6 !important;
+            color: #ffffff !important;
         }
 
-        .eficiencia-green {
-            background: #27ae60 !important;
-            color: white !important;
-        }
-
-        .eficiencia-orange {
-            background: #f39c12 !important;
-            color: white !important;
+        .eficiencia-yellow {
+            background: #eab308 !important;
+            color: #000000 !important;
         }
 
         .eficiencia-red {
-            background: #e74c3c !important;
-            color: white !important;
-        }
-
-        .eficiencia-gray {
-            background: #95a5a6 !important;
-            color: white !important;
+            background: #ef4444 !important;
+            color: #ffffff !important;
         }
 
         @media (max-width: 1200px) {
@@ -362,10 +352,9 @@
                                 $totalCantidadHoras += $row['cantidad'];
                                 $totalMetaHoras += $row['meta'];
                                 $eficiencia = $row['eficiencia'];
-                                $eficienciaClass = $eficiencia < 70 ? 'eficiencia-red' 
-                                    : ($eficiencia >= 70 && $eficiencia < 80 ? 'eficiencia-orange' 
-                                    : ($eficiencia >= 80 && $eficiencia < 100 ? 'eficiencia-green' 
-                                    : ($eficiencia >= 100 ? 'eficiencia-blue' : 'eficiencia-gray')));
+                                $eficienciaClass = $eficiencia >= 80 ? 'eficiencia-blue' 
+                                    : ($eficiencia >= 70 ? 'eficiencia-yellow' 
+                                    : 'eficiencia-red');
                             @endphp
                             <tr>
                                 <td class="name-cell">{{ $row['hora'] }}</td>
@@ -382,10 +371,9 @@
                             <td>{{ number_format($totalMetaHoras, 0) }}</td>
                             @php
                                 $eficienciaTotal = $totalMetaHoras > 0 ? ($totalCantidadHoras / $totalMetaHoras) * 100 : 0;
-                                $eficienciaClass = $eficienciaTotal < 70 ? 'eficiencia-red' 
-                                    : ($eficienciaTotal >= 70 && $eficienciaTotal < 80 ? 'eficiencia-orange' 
-                                    : ($eficienciaTotal >= 80 && $eficienciaTotal < 100 ? 'eficiencia-green' 
-                                    : ($eficienciaTotal >= 100 ? 'eficiencia-blue' : 'eficiencia-gray')));
+                                $eficienciaClass = $eficienciaTotal >= 80 ? 'eficiencia-blue' 
+                                    : ($eficienciaTotal >= 70 ? 'eficiencia-yellow' 
+                                    : 'eficiencia-red');
                             @endphp
                             <td class="eficiencia-cell {{ $eficienciaClass }}">
                                 {{ number_format($eficienciaTotal, 1) }}%
@@ -417,10 +405,9 @@
                                 $totalCantidadOperarios += $row['cantidad'];
                                 $totalMetaOperarios += $row['meta'];
                                 $eficiencia = $row['eficiencia'];
-                                $eficienciaClass = $eficiencia < 70 ? 'eficiencia-red' 
-                                    : ($eficiencia >= 70 && $eficiencia < 80 ? 'eficiencia-orange' 
-                                    : ($eficiencia >= 80 && $eficiencia < 100 ? 'eficiencia-green' 
-                                    : ($eficiencia >= 100 ? 'eficiencia-blue' : 'eficiencia-gray')));
+                                $eficienciaClass = $eficiencia >= 80 ? 'eficiencia-blue' 
+                                    : ($eficiencia >= 70 ? 'eficiencia-yellow' 
+                                    : 'eficiencia-red');
                             @endphp
                             <tr>
                                 <td class="name-cell">{{ $row['operario'] }}</td>
@@ -437,10 +424,9 @@
                             <td>{{ number_format($totalMetaOperarios, 0) }}</td>
                             @php
                                 $eficienciaTotal = $totalMetaOperarios > 0 ? ($totalCantidadOperarios / $totalMetaOperarios) * 100 : 0;
-                                $eficienciaClass = $eficienciaTotal < 70 ? 'eficiencia-red' 
-                                    : ($eficienciaTotal >= 70 && $eficienciaTotal < 80 ? 'eficiencia-orange' 
-                                    : ($eficienciaTotal >= 80 && $eficienciaTotal < 100 ? 'eficiencia-green' 
-                                    : ($eficienciaTotal >= 100 ? 'eficiencia-blue' : 'eficiencia-gray')));
+                                $eficienciaClass = $eficienciaTotal >= 80 ? 'eficiencia-blue' 
+                                    : ($eficienciaTotal >= 70 ? 'eficiencia-yellow' 
+                                    : 'eficiencia-red');
                             @endphp
                             <td class="eficiencia-cell {{ $eficienciaClass }}">
                                 {{ number_format($eficienciaTotal, 1) }}%

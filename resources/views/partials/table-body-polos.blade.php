@@ -1,0 +1,37 @@
+@php
+    // Función para determinar la clase de eficiencia
+    function getEficienciaClass($eficiencia) {
+        if ($eficiencia === null) return '';
+        $eficiencia = floatval($eficiencia);
+        if ($eficiencia < 0.7) return 'eficiencia-red';
+        if ($eficiencia >= 0.7 && $eficiencia < 0.8) return 'eficiencia-yellow';
+        if ($eficiencia >= 0.8 && $eficiencia < 1.0) return 'eficiencia-green';
+        if ($eficiencia >= 1.0) return 'eficiencia-blue';
+        return '';
+    }
+@endphp
+
+@foreach($registros as $registro)
+<tr class="table-row" data-id="{{ $registro->id }}">
+    @foreach($columns as $column)
+        @php
+            $value = $registro->$column;
+            $displayValue = $value;
+            if ($column === 'fecha' && $value) {
+                $displayValue = $value->format('d-m-Y');
+            } elseif ($column === 'hora' && $value) {
+                $displayValue = $value;
+            } elseif ($column === 'eficiencia' && $value !== null) {
+                $displayValue = round($value * 100, 1) . '%';
+            }
+            $eficienciaClass = ($column === 'eficiencia' && $value !== null) ? getEficienciaClass($value) : '';
+        @endphp
+        <td class="table-cell editable-cell {{ $eficienciaClass }}" data-column="{{ $column }}" data-value="{{ $column === 'fecha' ? $displayValue : $value }}" title="Doble clic para editar">{{ $displayValue }}</td>
+    @endforeach
+    <td class="table-cell">
+        <button class="delete-btn" data-id="{{ $registro->id }}" data-section="polos" title="Eliminar registro">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-icon lucide-trash"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
+    </td>
+</tr>
+@endforeach

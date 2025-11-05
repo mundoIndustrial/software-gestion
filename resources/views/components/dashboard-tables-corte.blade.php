@@ -7,14 +7,41 @@
     $totalMetaOperarios = array_sum(array_column($operariosData, 'meta'));
 @endphp
 
+<style>
+/* Variables para tema claro/oscuro en dashboard-corte */
+:root {
+    --corte-container-bg: rgba(255, 255, 255, 0.03);
+    --corte-container-border: rgba(255, 107, 53, 0.15);
+    --corte-table-bg: rgba(26,29,41,0.8);
+    --corte-table-border: rgba(255,107,53,0.1);
+    --corte-table-title: #ffffff;
+    --corte-table-row-bg: rgba(255,255,255,0.02);
+    --corte-table-row-border: rgba(255,255,255,0.05);
+    --corte-table-text: #ffffff;
+    --corte-table-text-secondary: #94a3b8;
+}
+
+body:not(.dark-theme) {
+    --corte-container-bg: #ffffff;
+    --corte-container-border: #e5e7eb;
+    --corte-table-bg: #ffffff;
+    --corte-table-border: #e5e7eb;
+    --corte-table-title: #1f2937;
+    --corte-table-row-bg: #f9fafb;
+    --corte-table-row-border: #e5e7eb;
+    --corte-table-text: #1f2937;
+    --corte-table-text-secondary: #6b7280;
+}
+</style>
+
 <div class="records-table-container">
     <div class="table-scroll-container">
-        <div style="display: flex; gap: 24px; padding: 24px; background: rgba(255, 255, 255, 0.03); border-radius: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.3); border: 1px solid rgba(255, 107, 53, 0.15);" id="dashboard-tables-corte">
+        <div style="display: flex; gap: 24px; padding: 24px; background: var(--corte-container-bg); border-radius: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); border: 1px solid var(--corte-container-border);" id="dashboard-tables-corte">
             <!-- Tabla de Horas -->
-            <div style="flex: 1; background: rgba(26,29,41,0.8); border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); border: 1px solid rgba(255,107,53,0.1);">
-                <h3 style="color: #ffffff; font-size: 20px; font-weight: 700; margin-bottom: 20px; text-align: center;">Producción por Horas</h3>
+            <div style="flex: 1; background: var(--corte-table-bg); border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--corte-table-border);">
+                <h3 style="color: var(--corte-table-title); font-size: 20px; font-weight: 700; margin-bottom: 20px; text-align: center;">Producción por Horas</h3>
                 <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                    <table style="width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
                         <thead>
                             <tr style="background: linear-gradient(135deg, #374151, #4b5563);">
                                 <th style="padding: 16px 20px; font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.8px; border-bottom: 2px solid rgba(255,255,255,0.1); text-align: left; color: #ffffff; border-radius: 8px 0 0 0;">HORA</th>
@@ -25,24 +52,25 @@
                         </thead>
                         <tbody id="horasTableBody">
                             @foreach($horasData as $row)
-                            <tr style="background: rgba(255,255,255,0.02); transition: background-color 0.2s ease;">
-                                <td style="padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #ffffff; font-weight: 500;">{{ $row['hora'] }}</td>
-                                <td style="padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; color: #94a3b8; font-weight: 500;">{{ number_format($row['cantidad']) }}</td>
-                                <td style="padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; color: #94a3b8; font-weight: 500;">{{ number_format($row['meta']) }}</td>
-                                <td style="padding: 0; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; background: {{ $row['eficiencia'] < 70 ? '#7f1d1d' : ($row['eficiencia'] >= 70 && $row['eficiencia'] < 80 ? '#92400e' : ($row['eficiencia'] >= 80 && $row['eficiencia'] < 100 ? '#166534' : ($row['eficiencia'] >= 100 ? '#0c4a6e' : '#374151'))) }}; color: #ffffff; font-weight: 600; font-size: 13px;">
+                            <tr style="background: var(--corte-table-row-bg); transition: background-color 0.2s ease;">
+                                <td style="padding: 14px 20px; border-bottom: 1px solid var(--corte-table-row-border); color: var(--corte-table-text); font-weight: 500;">{{ $row['hora'] }}</td>
+                                <td style="padding: 14px 20px; border-bottom: 1px solid var(--corte-table-row-border); text-align: center; color: var(--corte-table-text-secondary); font-weight: 500;">{{ number_format($row['cantidad']) }}</td>
+                                <td style="padding: 14px 20px; border-bottom: 1px solid var(--corte-table-row-border); text-align: center; color: var(--corte-table-text-secondary); font-weight: 500;">{{ number_format($row['meta']) }}</td>
+                                <td style="padding: 0; border-bottom: 1px solid var(--corte-table-row-border); text-align: center; background: {{ $row['eficiencia'] >= 80 ? '#3b82f6' : ($row['eficiencia'] >= 70 ? '#eab308' : '#ef4444') }}; color: {{ $row['eficiencia'] >= 70 && $row['eficiencia'] < 80 ? '#000000' : '#ffffff' }}; font-weight: 600; font-size: 13px;">
                                     <div style="padding: 14px 20px; width: 100%; height: 100%;">{{ $row['eficiencia'] > 0 ? number_format($row['eficiencia'], 1) . '%' : '-' }}</div>
                                 </td>
                             </tr>
                             @endforeach
-                            <tr style="background: linear-gradient(135deg, #1f2937, #374151); font-weight: 600; border-radius: 0 0 8px 8px;">
+                            <tr style="background: linear-gradient(135deg, #374151, #4b5563); font-weight: 600; border-radius: 0 0 8px 8px;">
                                 <td style="padding: 16px 20px; border-bottom: none; color: #ffffff; border-radius: 0 0 0 8px;">TOTAL</td>
                                 <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;" id="totalCantidadHoras">{{ number_format($totalCantidadHoras) }}</td>
                                 <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;" id="totalMetaHoras">{{ number_format($totalMetaHoras) }}</td>
                                 @php
                                     $eficienciaTotalHoras = $totalMetaHoras > 0 ? ($totalCantidadHoras / $totalMetaHoras) * 100 : 0;
-                                    $bgColorTotalHoras = $eficienciaTotalHoras < 70 ? '#7f1d1d' : ($eficienciaTotalHoras >= 70 && $eficienciaTotalHoras < 80 ? '#92400e' : ($eficienciaTotalHoras >= 80 && $eficienciaTotalHoras < 100 ? '#166534' : ($eficienciaTotalHoras >= 100 ? '#0c4a6e' : '#374151')));
+                                    $bgColorTotalHoras = $eficienciaTotalHoras >= 80 ? '#3b82f6' : ($eficienciaTotalHoras >= 70 ? '#eab308' : '#ef4444');
+                                    $textColorTotalHoras = ($eficienciaTotalHoras >= 70 && $eficienciaTotalHoras < 80) ? '#000000' : '#ffffff';
                                 @endphp
-                                <td style="padding: 0; border-bottom: none; border-radius: 0 0 8px 0; text-align: center; background: {{ $bgColorTotalHoras }}; color: #ffffff; font-weight: 600; font-size: 13px;" id="eficienciaTotalHoras">
+                                <td style="padding: 0; border-bottom: none; border-radius: 0 0 8px 0; text-align: center; background: {{ $bgColorTotalHoras }}; color: {{ $textColorTotalHoras }}; font-weight: 600; font-size: 13px;" id="eficienciaTotalHoras">
                                     <div style="padding: 16px 20px; width: 100%; height: 100%;">{{ number_format($eficienciaTotalHoras, 1) }}%</div>
                                 </td>
                             </tr>
@@ -52,10 +80,10 @@
             </div>
 
             <!-- Tabla de Operarios -->
-            <div style="flex: 1; background: rgba(26,29,41,0.8); border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); border: 1px solid rgba(255,107,53,0.1);">
-                <h3 style="color: #ffffff; font-size: 20px; font-weight: 700; margin-bottom: 20px; text-align: center;">Producción por Operarios</h3>
+            <div style="flex: 1; background: var(--corte-table-bg); border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid var(--corte-table-border);">
+                <h3 style="color: var(--corte-table-title); font-size: 20px; font-weight: 700; margin-bottom: 20px; text-align: center;">Producción por Operarios</h3>
                 <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                    <table style="width: 100%; border-collapse: separate; border-spacing: 0; font-size: 14px; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
                         <thead>
                             <tr style="background: linear-gradient(135deg, #374151, #4b5563);">
                                 <th style="padding: 16px 20px; font-weight: 600; text-transform: uppercase; font-size: 12px; letter-spacing: 0.8px; border-bottom: 2px solid rgba(255,255,255,0.1); text-align: left; color: #ffffff; border-radius: 8px 0 0 0;">OPERARIO</th>
@@ -66,24 +94,25 @@
                         </thead>
                         <tbody id="operariosTableBody">
                             @foreach($operariosData as $row)
-                            <tr style="background: rgba(255,255,255,0.02); transition: background-color 0.2s ease;">
-                                <td style="padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #ffffff; font-weight: 500;">{{ $row['operario'] }}</td>
-                                <td style="padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; color: #94a3b8; font-weight: 500;">{{ number_format($row['cantidad']) }}</td>
-                                <td style="padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; color: #94a3b8; font-weight: 500;">{{ number_format($row['meta']) }}</td>
-                                <td style="padding: 0; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; background: {{ $row['eficiencia'] < 70 ? '#7f1d1d' : ($row['eficiencia'] >= 70 && $row['eficiencia'] < 80 ? '#92400e' : ($row['eficiencia'] >= 80 && $row['eficiencia'] < 100 ? '#166534' : ($row['eficiencia'] >= 100 ? '#0c4a6e' : '#374151'))) }}; color: #ffffff; font-weight: 600; font-size: 13px;">
+                            <tr style="background: var(--corte-table-row-bg); transition: background-color 0.2s ease;">
+                                <td style="padding: 14px 20px; border-bottom: 1px solid var(--corte-table-row-border); color: var(--corte-table-text); font-weight: 500;">{{ $row['operario'] }}</td>
+                                <td style="padding: 14px 20px; border-bottom: 1px solid var(--corte-table-row-border); text-align: center; color: var(--corte-table-text-secondary); font-weight: 500;">{{ number_format($row['cantidad']) }}</td>
+                                <td style="padding: 14px 20px; border-bottom: 1px solid var(--corte-table-row-border); text-align: center; color: var(--corte-table-text-secondary); font-weight: 500;">{{ number_format($row['meta']) }}</td>
+                                <td style="padding: 0; border-bottom: 1px solid var(--corte-table-row-border); text-align: center; background: {{ $row['eficiencia'] >= 80 ? '#3b82f6' : ($row['eficiencia'] >= 70 ? '#eab308' : '#ef4444') }}; color: {{ $row['eficiencia'] >= 70 && $row['eficiencia'] < 80 ? '#000000' : '#ffffff' }}; font-weight: 600; font-size: 13px;">
                                     <div style="padding: 14px 20px; width: 100%; height: 100%;">{{ $row['eficiencia'] > 0 ? number_format($row['eficiencia'], 1) . '%' : '-' }}</div>
                                 </td>
                             </tr>
                             @endforeach
-                            <tr style="background: linear-gradient(135deg, #1f2937, #374151); font-weight: 600; border-radius: 0 0 8px 8px;">
+                            <tr style="background: linear-gradient(135deg, #374151, #4b5563); font-weight: 600; border-radius: 0 0 8px 8px;">
                                 <td style="padding: 16px 20px; border-bottom: none; color: #ffffff; border-radius: 0 0 0 8px;">TOTAL</td>
                                 <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;" id="totalCantidadOperarios">{{ number_format($totalCantidadOperarios) }}</td>
                                 <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;" id="totalMetaOperarios">{{ number_format($totalMetaOperarios) }}</td>
                                 @php
                                     $eficienciaTotalOperarios = $totalMetaOperarios > 0 ? ($totalCantidadOperarios / $totalMetaOperarios) * 100 : 0;
-                                    $bgColorTotalOperarios = $eficienciaTotalOperarios < 70 ? '#7f1d1d' : ($eficienciaTotalOperarios >= 70 && $eficienciaTotalOperarios < 80 ? '#92400e' : ($eficienciaTotalOperarios >= 80 && $eficienciaTotalOperarios < 100 ? '#166534' : ($eficienciaTotalOperarios >= 100 ? '#0c4a6e' : '#374151')));
+                                    $bgColorTotalOperarios = $eficienciaTotalOperarios >= 80 ? '#3b82f6' : ($eficienciaTotalOperarios >= 70 ? '#eab308' : '#ef4444');
+                                    $textColorTotalOperarios = ($eficienciaTotalOperarios >= 70 && $eficienciaTotalOperarios < 80) ? '#000000' : '#ffffff';
                                 @endphp
-                                <td style="padding: 0; border-bottom: none; border-radius: 0 0 8px 0; text-align: center; background: {{ $bgColorTotalOperarios }}; color: #ffffff; font-weight: 600; font-size: 13px;" id="eficienciaTotalOperarios">
+                                <td style="padding: 0; border-bottom: none; border-radius: 0 0 8px 0; text-align: center; background: {{ $bgColorTotalOperarios }}; color: {{ $textColorTotalOperarios }}; font-weight: 600; font-size: 13px;" id="eficienciaTotalOperarios">
                                     <div style="padding: 16px 20px; width: 100%; height: 100%;">{{ number_format($eficienciaTotalOperarios, 1) }}%</div>
                                 </td>
                             </tr>
@@ -244,7 +273,12 @@ function actualizarTablaHoras(registro) {
     const horasTableBody = document.getElementById('horasTableBody');
     if (!horasTableBody) return;
 
-    const horaKey = registro.hora.hora;
+    const horaOriginal = registro.hora.hora;
+    // Formatear la hora como "HORA 1", "HORA 2", etc.
+    const horaKey = (horaOriginal !== 'SIN HORA' && !isNaN(horaOriginal)) 
+        ? 'HORA ' + horaOriginal 
+        : horaOriginal;
+    
     let horaRow = null;
     let totalCantidad = 0;
     let totalMeta = 0;
@@ -279,9 +313,11 @@ function actualizarTablaHoras(registro) {
             // Actualizar celda de eficiencia
             eficienciaCell.querySelector('div').textContent = eficiencia > 0 ? eficiencia.toFixed(1) + '%' : '-';
 
-            // Actualizar color de fondo según eficiencia
+            // Actualizar color de fondo y texto según eficiencia
             const bgColor = getEficienciaBackgroundColor(eficiencia);
+            const textColor = getEficienciaTextColor(eficiencia);
             eficienciaCell.style.background = bgColor;
+            eficienciaCell.style.color = textColor;
         }
     } else {
         // Crear nueva fila para esta hora
@@ -290,12 +326,13 @@ function actualizarTablaHoras(registro) {
 
         const eficiencia = registro.meta_hora > 0 ? (registro.cantidad_producida / registro.meta_hora) * 100 : 0;
         const bgColor = getEficienciaBackgroundColor(eficiencia);
+        const textColor = getEficienciaTextColor(eficiencia);
 
         newRow.innerHTML = `
             <td style="padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #ffffff; font-weight: 500;">${horaKey}</td>
             <td style="padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; color: #94a3b8; font-weight: 500;">${parseInt(registro.cantidad_producida).toLocaleString()}</td>
             <td style="padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; color: #94a3b8; font-weight: 500;">${registro.meta_hora ? parseInt(registro.meta_hora).toLocaleString() : '0'}</td>
-            <td style="padding: 0; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; background: ${bgColor}; color: #ffffff; font-weight: 600; font-size: 13px;">
+            <td style="padding: 0; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; background: ${bgColor}; color: ${textColor}; font-weight: 600; font-size: 13px;">
                 <div style="padding: 14px 20px; width: 100%; height: 100%;">${eficiencia > 0 ? eficiencia.toFixed(1) + '%' : '-'}</div>
             </td>
         `;
@@ -350,9 +387,11 @@ function actualizarTablaOperarios(registro) {
             // Actualizar celda de eficiencia
             eficienciaCell.querySelector('div').textContent = eficiencia > 0 ? eficiencia.toFixed(1) + '%' : '-';
 
-            // Actualizar color de fondo según eficiencia
+            // Actualizar color de fondo y texto según eficiencia
             const bgColor = getEficienciaBackgroundColor(eficiencia);
+            const textColor = getEficienciaTextColor(eficiencia);
             eficienciaCell.style.background = bgColor;
+            eficienciaCell.style.color = textColor;
         }
     } else {
         // Crear nueva fila para este operario
@@ -361,12 +400,13 @@ function actualizarTablaOperarios(registro) {
 
         const eficiencia = registro.meta_operario > 0 ? (registro.cantidad_producida / registro.meta_operario) * 100 : 0;
         const bgColor = getEficienciaBackgroundColor(eficiencia);
+        const textColor = getEficienciaTextColor(eficiencia);
 
         newRow.innerHTML = `
             <td style="padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #ffffff; font-weight: 500;">${operarioKey}</td>
             <td style="padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; color: #94a3b8; font-weight: 500;">${parseInt(registro.cantidad_producida).toLocaleString()}</td>
             <td style="padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; color: #94a3b8; font-weight: 500;">${registro.meta_operario ? parseInt(registro.meta_operario).toLocaleString() : '0'}</td>
-            <td style="padding: 0; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; background: ${bgColor}; color: #ffffff; font-weight: 600; font-size: 13px;">
+            <td style="padding: 0; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; background: ${bgColor}; color: ${textColor}; font-weight: 600; font-size: 13px;">
                 <div style="padding: 14px 20px; width: 100%; height: 100%;">${eficiencia > 0 ? eficiencia.toFixed(1) + '%' : '-'}</div>
             </td>
         `;
@@ -404,6 +444,7 @@ function actualizarTotalesHoras() {
     // Calcular eficiencia total
     const eficienciaTotal = totalMeta > 0 ? (totalCantidad / totalMeta) * 100 : 0;
     const bgColor = getEficienciaBackgroundColor(eficienciaTotal);
+    const textColor = getEficienciaTextColor(eficienciaTotal);
 
     // Actualizar celdas de total
     const totalRow = horasTableBody.querySelector('tr:last-child');
@@ -415,6 +456,7 @@ function actualizarTotalesHoras() {
             // Actualizar eficiencia total
             const eficienciaCell = cells[3];
             eficienciaCell.style.background = bgColor;
+            eficienciaCell.style.color = textColor;
             const eficienciaDiv = eficienciaCell.querySelector('div');
             if (eficienciaDiv) {
                 eficienciaDiv.textContent = eficienciaTotal.toFixed(1) + '%';
@@ -443,6 +485,7 @@ function actualizarTotalesOperarios() {
     // Calcular eficiencia total
     const eficienciaTotal = totalMeta > 0 ? (totalCantidad / totalMeta) * 100 : 0;
     const bgColor = getEficienciaBackgroundColor(eficienciaTotal);
+    const textColor = getEficienciaTextColor(eficienciaTotal);
 
     // Actualizar celdas de total
     const totalRow = operariosTableBody.querySelector('tr:last-child');
@@ -454,6 +497,7 @@ function actualizarTotalesOperarios() {
             // Actualizar eficiencia total
             const eficienciaCell = cells[3];
             eficienciaCell.style.background = bgColor;
+            eficienciaCell.style.color = textColor;
             const eficienciaDiv = eficienciaCell.querySelector('div');
             if (eficienciaDiv) {
                 eficienciaDiv.textContent = eficienciaTotal.toFixed(1) + '%';
@@ -463,10 +507,13 @@ function actualizarTotalesOperarios() {
 }
 
 function getEficienciaBackgroundColor(eficiencia) {
-    if (eficiencia < 70) return '#7f1d1d';
-    if (eficiencia >= 70 && eficiencia < 80) return '#92400e';
-    if (eficiencia >= 80 && eficiencia < 100) return '#166534';
-    if (eficiencia >= 100) return '#0c4a6e';
-    return '#374151';
+    if (eficiencia >= 80) return '#3b82f6';
+    if (eficiencia >= 70) return '#eab308';
+    return '#ef4444';
+}
+
+function getEficienciaTextColor(eficiencia) {
+    if (eficiencia >= 70 && eficiencia < 80) return '#000000';
+    return '#ffffff';
 }
 </script>

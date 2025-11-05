@@ -57,6 +57,13 @@ body {
     box-shadow: 0 4px 6px var(--dashboard-shadow);
 }
 
+/* Header Compact - Tema Claro */
+body:not(.dark-theme) .header-compact {
+    background: linear-gradient(135deg, #374151, #4b5563);
+    border: 1px solid #d1d5db;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 .header-compact h1 {
     font-size: 1.125rem;
     font-weight: 700;
@@ -67,6 +74,10 @@ body {
 .header-compact .welcome {
     font-size: 0.7rem;
     color: var(--dashboard-text-secondary);
+}
+
+body:not(.dark-theme) .header-compact .welcome {
+    color: #e5e7eb;
 }
 
 /* Main Grid */

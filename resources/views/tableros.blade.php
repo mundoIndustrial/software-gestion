@@ -13,6 +13,8 @@
         return '';
     }
 @endphp
+<!-- Font Awesome para iconos de paginación -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 <link rel="stylesheet" href="{{ asset('css/tableros.css') }}">
 <link rel="stylesheet" href="{{ asset('css/orders styles/modern-table.css') }}">
 <script src="{{ asset('js/tableros.js') }}"></script>
@@ -104,31 +106,59 @@
                 </div>
 
                 <!-- Paginación -->
-                <div class="table-pagination" data-section="produccion">
+                <div class="table-pagination" data-section="produccion" id="pagination-produccion">
                     <div class="progress-bar">
                         <div class="progress-fill" style="width: {{ ($registros->currentPage() / $registros->lastPage()) * 100 }}%"></div>
                     </div>
                     <div class="pagination-info">
-                        <span>Mostrando {{ $registros->firstItem() }}-{{ $registros->lastItem() }} de {{ $registros->total() }} registros</span>
+                        <span id="paginationInfo-produccion">Mostrando {{ $registros->firstItem() }}-{{ $registros->lastItem() }} de {{ $registros->total() }} registros</span>
                     </div>
-                    <div class="pagination-controls">
-                        {{ $registros->appends(request()->query())->links('vendor.pagination.custom') }}
+                    <div class="pagination-controls" id="paginationControls-produccion">
+                        @if($registros->hasPages())
+                            <button class="pagination-btn" data-page="1" {{ $registros->currentPage() == 1 ? 'disabled' : '' }}>
+                                <i class="fas fa-angle-double-left"></i>
+                            </button>
+                            <button class="pagination-btn" data-page="{{ $registros->currentPage() - 1 }}" {{ $registros->currentPage() == 1 ? 'disabled' : '' }}>
+                                <i class="fas fa-angle-left"></i>
+                            </button>
+                            
+                            @php
+                                $start = max(1, $registros->currentPage() - 2);
+                                $end = min($registros->lastPage(), $registros->currentPage() + 2);
+                            @endphp
+                            
+                            @for($i = $start; $i <= $end; $i++)
+                                <button class="pagination-btn page-number {{ $i == $registros->currentPage() ? 'active' : '' }}" data-page="{{ $i }}">
+                                    {{ $i }}
+                                </button>
+                            @endfor
+                            
+                            <button class="pagination-btn" data-page="{{ $registros->currentPage() + 1 }}" {{ $registros->currentPage() == $registros->lastPage() ? 'disabled' : '' }}>
+                                <i class="fas fa-angle-right"></i>
+                            </button>
+                            <button class="pagination-btn" data-page="{{ $registros->lastPage() }}" {{ $registros->currentPage() == $registros->lastPage() ? 'disabled' : '' }}>
+                                <i class="fas fa-angle-double-right"></i>
+                            </button>
+                        @endif
                     </div>
                 </div>
             </div>
         </div>
 
-        <div x-show="activeTab === 'polos'" class="chart-placeholder">
+        <div x-show="activeTab === 'polos'" class="chart-placeholder" x-init="console.log('🔍 POLOS TAB - activeTab:', activeTab, 'showRecords:', showRecords)">
             <!-- Barra de opciones unificada -->
             @include('components.top-controls')
 
             <!-- Seguimiento módulos (visible by default) -->
-            <div x-show="!showRecords" id="seguimiento-container-polos">
+            <div x-show="!showRecords" id="seguimiento-container-polos" x-init="console.log('📊 Seguimiento Polos - showRecords:', showRecords, 'Visible:', !showRecords)">
+                <script>
+                    console.log('🔍 Datos de seguimientoPolos:', @json($seguimientoPolos));
+                </script>
                 @include('components.seguimiento-modulos', ['section' => 'polos', 'seguimiento' => $seguimientoPolos])
             </div>
 
             <!-- Tabla de registros (hidden by default) -->
-            <div x-show="showRecords" class="records-table-container">
+            <div x-show="showRecords" class="records-table-container" x-init="console.log('📋 Tabla Polos - showRecords:', showRecords, 'Visible:', showRecords)">
                 <div class="table-scroll-container">
                     <table class="modern-table" data-section="polos">
                         <thead class="table-head">
@@ -178,15 +208,40 @@
                 </div>
 
                 <!-- Paginación -->
-                <div class="table-pagination" data-section="polos">
+                <div class="table-pagination" data-section="polos" id="pagination-polos">
                     <div class="progress-bar">
                         <div class="progress-fill" style="width: {{ ($registrosPolos->currentPage() / $registrosPolos->lastPage()) * 100 }}%"></div>
                     </div>
                     <div class="pagination-info">
-                        <span>Mostrando {{ $registrosPolos->firstItem() }}-{{ $registrosPolos->lastItem() }} de {{ $registrosPolos->total() }} registros</span>
+                        <span id="paginationInfo-polos">Mostrando {{ $registrosPolos->firstItem() }}-{{ $registrosPolos->lastItem() }} de {{ $registrosPolos->total() }} registros</span>
                     </div>
-                    <div class="pagination-controls">
-                        {{ $registrosPolos->appends(request()->query())->links('vendor.pagination.custom') }}
+                    <div class="pagination-controls" id="paginationControls-polos">
+                        @if($registrosPolos->hasPages())
+                            <button class="pagination-btn" data-page="1" {{ $registrosPolos->currentPage() == 1 ? 'disabled' : '' }}>
+                                <i class="fas fa-angle-double-left"></i>
+                            </button>
+                            <button class="pagination-btn" data-page="{{ $registrosPolos->currentPage() - 1 }}" {{ $registrosPolos->currentPage() == 1 ? 'disabled' : '' }}>
+                                <i class="fas fa-angle-left"></i>
+                            </button>
+                            
+                            @php
+                                $start = max(1, $registrosPolos->currentPage() - 2);
+                                $end = min($registrosPolos->lastPage(), $registrosPolos->currentPage() + 2);
+                            @endphp
+                            
+                            @for($i = $start; $i <= $end; $i++)
+                                <button class="pagination-btn page-number {{ $i == $registrosPolos->currentPage() ? 'active' : '' }}" data-page="{{ $i }}">
+                                    {{ $i }}
+                                </button>
+                            @endfor
+                            
+                            <button class="pagination-btn" data-page="{{ $registrosPolos->currentPage() + 1 }}" {{ $registrosPolos->currentPage() == $registrosPolos->lastPage() ? 'disabled' : '' }}>
+                                <i class="fas fa-angle-right"></i>
+                            </button>
+                            <button class="pagination-btn" data-page="{{ $registrosPolos->lastPage() }}" {{ $registrosPolos->currentPage() == $registrosPolos->lastPage() ? 'disabled' : '' }}>
+                                <i class="fas fa-angle-double-right"></i>
+                            </button>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -277,15 +332,40 @@
                 </div>
 
                 <!-- Paginación -->
-                <div class="table-pagination" data-section="corte">
+                <div class="table-pagination" data-section="corte" id="pagination-corte">
                     <div class="progress-bar">
                         <div class="progress-fill" style="width: {{ ($registrosCorte->currentPage() / $registrosCorte->lastPage()) * 100 }}%"></div>
                     </div>
                     <div class="pagination-info">
-                        <span>Mostrando {{ $registrosCorte->firstItem() }}-{{ $registrosCorte->lastItem() }} de {{ $registrosCorte->total() }} registros</span>
+                        <span id="paginationInfo-corte">Mostrando {{ $registrosCorte->firstItem() }}-{{ $registrosCorte->lastItem() }} de {{ $registrosCorte->total() }} registros</span>
                     </div>
-                    <div class="pagination-controls">
-                        {{ $registrosCorte->appends(request()->query())->links('vendor.pagination.custom') }}
+                    <div class="pagination-controls" id="paginationControls-corte">
+                        @if($registrosCorte->hasPages())
+                            <button class="pagination-btn" data-page="1" {{ $registrosCorte->currentPage() == 1 ? 'disabled' : '' }}>
+                                <i class="fas fa-angle-double-left"></i>
+                            </button>
+                            <button class="pagination-btn" data-page="{{ $registrosCorte->currentPage() - 1 }}" {{ $registrosCorte->currentPage() == 1 ? 'disabled' : '' }}>
+                                <i class="fas fa-angle-left"></i>
+                            </button>
+                            
+                            @php
+                                $start = max(1, $registrosCorte->currentPage() - 2);
+                                $end = min($registrosCorte->lastPage(), $registrosCorte->currentPage() + 2);
+                            @endphp
+                            
+                            @for($i = $start; $i <= $end; $i++)
+                                <button class="pagination-btn page-number {{ $i == $registrosCorte->currentPage() ? 'active' : '' }}" data-page="{{ $i }}">
+                                    {{ $i }}
+                                </button>
+                            @endfor
+                            
+                            <button class="pagination-btn" data-page="{{ $registrosCorte->currentPage() + 1 }}" {{ $registrosCorte->currentPage() == $registrosCorte->lastPage() ? 'disabled' : '' }}>
+                                <i class="fas fa-angle-right"></i>
+                            </button>
+                            <button class="pagination-btn" data-page="{{ $registrosCorte->lastPage() }}" {{ $registrosCorte->currentPage() == $registrosCorte->lastPage() ? 'disabled' : '' }}>
+                                <i class="fas fa-angle-double-right"></i>
+                            </button>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -1459,11 +1539,9 @@ function updateSeguimientoTable(section, data) {
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         setTimeout(initializeRealtimeListeners, 100);
-        initializePaginationAjax();
     });
 } else {
     setTimeout(initializeRealtimeListeners, 100);
-    initializePaginationAjax();
 }
 
 // Paginación AJAX sin recargar la página
@@ -1474,7 +1552,7 @@ function initializePaginationAjax() {
         console.log('👆 Click detectado en:', e.target);
         
         // Buscar si el click fue en un enlace o botón de paginación
-        const paginationLink = e.target.closest('.pagination a, .pagination button:not([disabled])');
+        const paginationLink = e.target.closest('.pagination-link, .pagination-btn:not([disabled])');
         
         if (paginationLink) {
             console.log('🎯 Click en elemento de paginación:', paginationLink);
@@ -1493,8 +1571,13 @@ function initializePaginationAjax() {
             
             let page = null;
             
+            // Primero intentar obtener de data-page
+            if (paginationLink.dataset.page) {
+                page = paginationLink.dataset.page;
+                console.log('📊 Página obtenida del data-page:', page);
+            }
             // Si es un enlace, obtener la página de la URL
-            if (paginationLink.tagName === 'A' && paginationLink.href) {
+            else if (paginationLink.tagName === 'A' && paginationLink.href) {
                 const url = new URL(paginationLink.href);
                 page = url.searchParams.get('page');
                 console.log('🔗 Página obtenida del enlace:', page);
@@ -1743,30 +1826,22 @@ function updatePaginationLinks(pagination, section) {
     const paginationContainer = document.querySelector(`[data-section="${section}"]`);
     if (!paginationContainer || !pagination) return;
     
-    const paginationNav = paginationContainer.querySelector('.pagination');
-    if (!paginationNav) return;
-    
     console.log(`🔄 Actualizando paginación para ${section}, página actual: ${pagination.current_page}`);
     
-    // PASO 1: Quitar clase 'active' de TODOS los elementos
-    paginationNav.querySelectorAll('button, a').forEach(element => {
-        element.classList.remove('active');
-        console.log(`Removiendo 'active' de: ${element.textContent.trim()}`);
-    });
+    // Actualizar el HTML de los enlaces de paginación directamente desde el servidor
+    const paginationControls = paginationContainer.querySelector('.pagination-controls');
+    if (paginationControls && pagination.links_html) {
+        paginationControls.innerHTML = pagination.links_html;
+        console.log(`✅ Enlaces de paginación actualizados desde el servidor`);
+    }
     
-    // PASO 2: Buscar el elemento que corresponde a la página actual y marcarlo como activo
-    paginationNav.querySelectorAll('button, a').forEach(element => {
-        const pageText = element.textContent.trim();
-        const pageNumber = parseInt(pageText);
-        
-        // Si es un número y coincide con la página actual
-        if (!isNaN(pageNumber) && pageNumber === pagination.current_page) {
-            element.classList.add('active');
-            console.log(`✅ Marcando como activo: página ${pageNumber}`);
-        }
-    });
+    // Actualizar la información de paginación
+    const paginationInfo = paginationContainer.querySelector('.pagination-info span');
+    if (paginationInfo && pagination.first_item && pagination.last_item) {
+        paginationInfo.textContent = `Mostrando ${pagination.first_item}-${pagination.last_item} de ${pagination.total} registros`;
+    }
     
-    // PASO 3: Actualizar barra de progreso
+    // Actualizar barra de progreso
     const progressFill = paginationContainer.querySelector('.progress-fill');
     if (progressFill && pagination.last_page > 0) {
         const progressPercent = (pagination.current_page / pagination.last_page) * 100;
@@ -1887,4 +1962,7 @@ function updatePaginationInfo(pagination, section) {
     }
 }
 </script>
+
+<!-- Paginación AJAX simple -->
+<script src="{{ asset('js/tableros-pagination.js') }}"></script>
 @endsection

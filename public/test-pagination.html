@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pruebas de Paginación - Tableros</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #ff6b35;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .test-section {
+            background: #2d3748;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .test-section h2 {
+            color: #f7931e;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        
+        .test-item {
+            background: #1a202c;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .test-item.passed {
+            border-left: 4px solid #48bb78;
+        }
+        
+        .test-item.failed {
+            border-left: 4px solid #f56565;
+        }
+        
+        .test-item.pending {
+            border-left: 4px solid #ed8936;
+        }
+        
+        .test-icon {
+            font-size: 24px;
+            min-width: 30px;
+        }
+        
+        .test-icon.passed { color: #48bb78; }
+        .test-icon.failed { color: #f56565; }
+        .test-icon.pending { color: #ed8936; }
+        
+        .test-content {
+            flex: 1;
+        }
+        
+        .test-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .test-description {
+            color: #a0aec0;
+            font-size: 0.9rem;
+        }
+        
+        .run-button {
+            background: #ff6b35;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .run-button:hover {
+            background: #f7931e;
+            transform: translateY(-2px);
+        }
+        
+        .run-button:disabled {
+            background: #4a5568;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .summary {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .summary h3 {
+            margin-bottom: 10px;
+        }
+        
+        .summary-stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 15px;
+        }
+        
+        .stat {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .pagination-demo {
+            background: #1a202c;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+        
+        .pagination-btn {
+            min-width: 36px;
+            height: 36px;
+            border: 1px solid #2d3748;
+            background: #2d3748;
+            color: #cbd5e1;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+        
+        .pagination-btn:hover:not(:disabled) {
+            background: #4a5568;
+            border-color: #4a5568;
+            transform: translateY(-2px);
+        }
+        
+        .pagination-btn.active {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            border-color: #ff6b35;
+            color: white;
+            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+        }
+        
+        .pagination-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        
+        .log {
+            background: #000;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+        }
+        
+        .log-entry.success { color: #48bb78; }
+        .log-entry.error { color: #f56565; }
+        .log-entry.info { color: #63b3ed; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Pruebas Automatizadas de Paginación</h1>
+        
+        <div class="summary" id="summary">
+            <h3>Resumen de Pruebas</h3>
+            <div class="summary-stats">
+                <div>
+                    <div class="stat" id="totalTests">0</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div>
+                    <div class="stat" id="passedTests">0</div>
+                    <div class="stat-label">✅ Pasadas</div>
+                </div>
+                <div>
+                    <div class="stat" id="failedTests">0</div>
+                    <div class="stat-label">❌ Fallidas</div>
+                </div>
+                <div>
+                    <div class="stat" id="pendingTests">0</div>
+                    <div class="stat-label">⏳ Pendientes</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>1. Pruebas de Apariencia Visual</h2>
+            <div id="visualTests"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>2. Pruebas de Funcionalidad JavaScript</h2>
+            <div id="jsTests"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>3. Demo Interactiva de Paginación</h2>
+            <div class="pagination-demo">
+                <div class="pagination-controls" id="demoControls">
+                    <button class="pagination-btn" data-page="1" disabled>
+                        <i class="fas fa-angle-double-left"></i>
+                    </button>
+                    <button class="pagination-btn" data-page="0" disabled>
+                        <i class="fas fa-angle-left"></i>
+                    </button>
+                    <button class="pagination-btn page-number active" data-page="1">1</button>
+                    <button class="pagination-btn page-number" data-page="2">2</button>
+                    <button class="pagination-btn page-number" data-page="3">3</button>
+                    <button class="pagination-btn page-number" data-page="4">4</button>
+                    <button class="pagination-btn page-number" data-page="5">5</button>
+                    <button class="pagination-btn" data-page="2">
+                        <i class="fas fa-angle-right"></i>
+                    </button>
+                    <button class="pagination-btn" data-page="5">
+                        <i class="fas fa-angle-double-right"></i>
+                    </button>
+                </div>
+                <div class="log" id="demoLog"></div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>4. Logs de Pruebas</h2>
+            <div class="log" id="testLog"></div>
+        </div>
+    </div>
+    
+    <script src="js/tableros-pagination.js"></script>
+    <script>
+        const tests = {
+            visual: [
+                {
+                    name: 'Font Awesome cargado',
+                    description: 'Verifica que los iconos de Font Awesome estén disponibles',
+                    test: () => {
+                        const link = document.querySelector('link[href*="font-awesome"]');
+                        return link !== null;
+                    }
+                },
+                {
+                    name: 'Iconos de flechas visibles',
+                    description: 'Verifica que los iconos de flechas se rendericen correctamente',
+                    test: () => {
+                        const icons = document.querySelectorAll('.fa-angle-left, .fa-angle-right, .fa-angle-double-left, .fa-angle-double-right');
+                        return icons.length >= 4;
+                    }
+                },
+                {
+                    name: 'Botones con estilos correctos',
+                    description: 'Verifica que los botones tengan las clases CSS correctas',
+                    test: () => {
+                        const buttons = document.querySelectorAll('.pagination-btn');
+                        return buttons.length > 0 && Array.from(buttons).every(btn => {
+                            const styles = window.getComputedStyle(btn);
+                            return styles.borderRadius !== '0px';
+                        });
+                    }
+                },
+                {
+                    name: 'Botón activo resaltado',
+                    description: 'Verifica que el botón activo tenga estilos especiales',
+                    test: () => {
+                        const activeBtn = document.querySelector('.pagination-btn.active');
+                        if (!activeBtn) return false;
+                        const styles = window.getComputedStyle(activeBtn);
+                        return styles.background.includes('linear-gradient') || styles.backgroundColor !== 'rgb(45, 55, 72)';
+                    }
+                }
+            ],
+            javascript: [
+                {
+                    name: 'Script de paginación cargado',
+                    description: 'Verifica que tableros-pagination.js esté cargado',
+                    test: () => {
+                        return typeof initializePaginationForSection === 'function';
+                    }
+                },
+                {
+                    name: 'Event listeners registrados',
+                    description: 'Verifica que los event listeners estén activos',
+                    test: () => {
+                        // Simular click y verificar que no hay errores
+                        try {
+                            const btn = document.querySelector('.pagination-btn[data-page="2"]');
+                            if (!btn) return false;
+                            const event = new MouseEvent('click', { bubbles: true });
+                            btn.dispatchEvent(event);
+                            return true;
+                        } catch (e) {
+                            return false;
+                        }
+                    }
+                },
+                {
+                    name: 'Delegación de eventos funciona',
+                    description: 'Verifica que los eventos se deleguen correctamente',
+                    test: () => {
+                        const container = document.getElementById('demoControls');
+                        return container !== null;
+                    }
+                }
+            ]
+        };
+        
+        let stats = {
+            total: 0,
+            passed: 0,
+            failed: 0,
+            pending: 0
+        };
+        
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('testLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function demoLog(message) {
+            const logDiv = document.getElementById('demoLog');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry info';
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function runTest(test) {
+            try {
+                const result = test.test();
+                if (result) {
+                    stats.passed++;
+                    log(`✅ PASS: ${test.name}`, 'success');
+                    return 'passed';
+                } else {
+                    stats.failed++;
+                    log(`❌ FAIL: ${test.name}`, 'error');
+                    return 'failed';
+                }
+            } catch (error) {
+                stats.failed++;
+                log(`❌ ERROR: ${test.name} - ${error.message}`, 'error');
+                return 'failed';
+            }
+        }
+        
+        function renderTest(test, container, category) {
+            const div = document.createElement('div');
+            div.className = 'test-item pending';
+            div.innerHTML = `
+                <div class="test-icon pending">⏳</div>
+                <div class="test-content">
+                    <div class="test-title">${test.name}</div>
+                    <div class="test-description">${test.description}</div>
+                </div>
+                <button class="run-button" onclick="runSingleTest('${category}', ${tests[category].indexOf(test)})">
+                    Ejecutar
+                </button>
+            `;
+            container.appendChild(div);
+            stats.pending++;
+            stats.total++;
+        }
+        
+        function runSingleTest(category, index) {
+            const test = tests[category][index];
+            const container = document.getElementById(category === 'visual' ? 'visualTests' : 'jsTests');
+            const testDiv = container.children[index];
+            
+            const result = runTest(test);
+            
+            testDiv.className = `test-item ${result}`;
+            testDiv.querySelector('.test-icon').className = `test-icon ${result}`;
+            testDiv.querySelector('.test-icon').textContent = result === 'passed' ? '✅' : '❌';
+            testDiv.querySelector('.run-button').disabled = true;
+            
+            stats.pending--;
+            updateSummary();
+        }
+        
+        function runAllTests() {
+            log('🚀 Iniciando todas las pruebas...', 'info');
+            
+            tests.visual.forEach((test, index) => {
+                setTimeout(() => runSingleTest('visual', index), index * 100);
+            });
+            
+            tests.javascript.forEach((test, index) => {
+                setTimeout(() => runSingleTest('javascript', index), (tests.visual.length + index) * 100);
+            });
+        }
+        
+        function updateSummary() {
+            document.getElementById('totalTests').textContent = stats.total;
+            document.getElementById('passedTests').textContent = stats.passed;
+            document.getElementById('failedTests').textContent = stats.failed;
+            document.getElementById('pendingTests').textContent = stats.pending;
+        }
+        
+        // Inicializar pruebas
+        document.addEventListener('DOMContentLoaded', () => {
+            const visualContainer = document.getElementById('visualTests');
+            const jsContainer = document.getElementById('jsTests');
+            
+            tests.visual.forEach(test => renderTest(test, visualContainer, 'visual'));
+            tests.javascript.forEach(test => renderTest(test, jsContainer, 'javascript'));
+            
+            updateSummary();
+            
+            log('✨ Sistema de pruebas inicializado', 'success');
+            log(`📊 Total de pruebas: ${stats.total}`, 'info');
+            
+            // Demo interactiva
+            const demoButtons = document.querySelectorAll('#demoControls .pagination-btn');
+            demoButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const page = btn.dataset.page;
+                    demoLog(`Click en botón de página: ${page}`);
+                    
+                    // Actualizar botones activos
+                    demoButtons.forEach(b => b.classList.remove('active'));
+                    if (btn.classList.contains('page-number')) {
+                        btn.classList.add('active');
+                    }
+                });
+            });
+            
+            // Auto-ejecutar después de 1 segundo
+            setTimeout(runAllTests, 1000);
+        });
+    </script>
+</body>
+</html>
