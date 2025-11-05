@@ -1,6 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+        integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="{{ asset('css/vista-costura.css') }}">
 
     <div class="costura-container">
@@ -159,17 +163,39 @@
                     </div>
                 @endif
 
-                <div class="pagination-container">
-                    <div class="pagination-info" id="pagination-info">
-                        Mostrando {{ $registros->firstItem() }}-{{ $registros->lastItem() }} de {{ $registros->total() }} registros
+                <div class="table-pagination" id="tablePagination">
+                    <div class="pagination-info">
+                        <span id="paginationInfo">Mostrando {{ $registros->firstItem() }}-{{ $registros->lastItem() }} de {{ $registros->total() }} registros</span>
+                    </div>
+                    <div class="pagination-controls" id="paginationControls">
+                        @if($registros->hasPages())
+                            <button class="pagination-btn" data-page="1" {{ $registros->currentPage() == 1 ? 'disabled' : '' }}>
+                                <i class="fas fa-angle-double-left"></i>
+                            </button>
+                            <button class="pagination-btn" data-page="{{ $registros->currentPage() - 1 }}" {{ $registros->currentPage() == 1 ? 'disabled' : '' }}>
+                                <i class="fas fa-angle-left"></i>
+                            </button>
+                            
+                            @php
+                                $start = max(1, $registros->currentPage() - 2);
+                                $end = min($registros->lastPage(), $registros->currentPage() + 2);
+                            @endphp
+                            
+                            @for($i = $start; $i <= $end; $i++)
+                                <button class="pagination-btn page-number {{ $i == $registros->currentPage() ? 'active' : '' }}" data-page="{{ $i }}">
+                                    {{ $i }}
+                                </button>
+                            @endfor
+                            
+                            <button class="pagination-btn" data-page="{{ $registros->currentPage() + 1 }}" {{ $registros->currentPage() == $registros->lastPage() ? 'disabled' : '' }}>
+                                <i class="fas fa-angle-right"></i>
+                            </button>
+                            <button class="pagination-btn" data-page="{{ $registros->lastPage() }}" {{ $registros->currentPage() == $registros->lastPage() ? 'disabled' : '' }}>
+                                <i class="fas fa-angle-double-right"></i>
+                            </button>
+                        @endif
                     </div>
                 </div>
-
-                @if($registros->hasPages())
-                    <div id="pagination-container" style="display: flex; justify-content: center; margin-top: 20px;">
-                        {{ $registros->appends(request()->query())->links() }}
-                    </div>
-                @endif
             @endif
         </div>
     </div>
@@ -183,22 +209,38 @@
     <script>
         const tipoVista = '{{ $tipo }}';
         const origenVista = new URLSearchParams(window.location.search).get('origen') || 'pedido';
+        let isLoadingPagination = false;
 
         document.addEventListener('DOMContentLoaded', function() {
             const searchInput = document.getElementById('searchInput');
             const clearSearch = document.getElementById('clearSearch');
 
+            // Event listener para búsqueda en tiempo real
+            let searchTimeout;
+            searchInput.addEventListener('input', function() {
+                const query = this.value;
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    performAjaxSearch(query);
+                }, 300);
 
+                clearSearch.style.display = query ? 'block' : 'none';
+            });
 
-            // Función para búsqueda AJAX en tiempo real
+            // Event listener para limpiar búsqueda
+            clearSearch.addEventListener('click', function() {
+                searchInput.value = '';
+                clearSearch.style.display = 'none';
+                performAjaxSearch('');
+            });
+
+            // Función para búsqueda AJAX
             function performAjaxSearch(query) {
                 const resultsContainer = document.getElementById('results-container');
-                const paginationInfo = document.getElementById('pagination-info');
+                const paginationInfo = document.getElementById('paginationInfo');
 
-                // Mostrar indicador de carga
                 resultsContainer.innerHTML = '<div class="no-data"><h3>Buscando...</h3></div>';
 
-                // Construir URL con parámetros
                 let url = '/api/vistas/search?q=' + encodeURIComponent(query) + '&tipo=' + encodeURIComponent(tipoVista) + '&origen=' + encodeURIComponent(origenVista);
 
                 fetch(url, {
@@ -213,13 +255,11 @@
                 .then(data => {
                     resultsContainer.innerHTML = data.html;
 
-                    // Actualizar información de paginación
                     if (paginationInfo) {
                         paginationInfo.textContent = data.info;
                     }
 
-                    // Actualizar paginación si existe
-                    const paginationContainer = document.getElementById('pagination-container');
+                    const paginationContainer = document.getElementById('paginationControls');
                     if (paginationContainer && data.pagination) {
                         paginationContainer.innerHTML = data.pagination;
                     }
@@ -229,25 +269,91 @@
                     resultsContainer.innerHTML = '<div class="no-data"><h3>Error en la búsqueda</h3><p>Por favor, intenta de nuevo.</p></div>';
                 });
             }
+        });
 
-            // Event listener para búsqueda en tiempo real
-            let searchTimeout;
-            searchInput.addEventListener('input', function() {
-                const query = this.value;
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    performAjaxSearch(query);
-                }, 300); // Esperar 300ms después de que el usuario deje de escribir
-
-                // Mostrar/ocultar botón de limpiar
-                clearSearch.style.display = query ? 'block' : 'none';
-            });
-
-            // Event listener para limpiar búsqueda
-            clearSearch.addEventListener('click', function() {
-                searchInput.value = '';
-                clearSearch.style.display = 'none';
-                performAjaxSearch('');
+        // AJAX Pagination - Event delegation en document.body (siempre funciona)
+        document.body.addEventListener('click', function(e) {
+            // Verificar si el click fue en un botón de paginación
+            const btn = e.target.closest('.pagination-btn');
+            
+            // Si no es un botón de paginación o está en la búsqueda, salir
+            if (!btn) return;
+            
+            // Verificar que sea de paginationControls
+            const paginationControls = document.getElementById('paginationControls');
+            if (!paginationControls || !paginationControls.contains(btn)) return;
+            
+            // Prevenir si está deshabilitado o cargando
+            if (btn.disabled || isLoadingPagination) {
+                e.preventDefault();
+                return;
+            }
+            
+            const page = btn.dataset.page;
+            if (!page) return;
+            
+            e.preventDefault();
+            isLoadingPagination = true;
+            
+            // Indicador de carga rápido
+            const resultsContainer = document.getElementById('results-container');
+            resultsContainer.style.transition = 'opacity 0.1s';
+            resultsContainer.style.opacity = '0.3';
+            resultsContainer.style.pointerEvents = 'none';
+            
+            // Construir URL con parámetros actuales
+            const url = new URL(window.location.href);
+            url.searchParams.set('page', page);
+            
+            // Hacer petición AJAX
+            fetch(url.toString(), {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                // Parsear HTML de forma más eficiente
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Actualizar contenido de forma rápida
+                const newResultsContainer = doc.getElementById('results-container');
+                if (newResultsContainer) {
+                    resultsContainer.innerHTML = newResultsContainer.innerHTML;
+                }
+                
+                const newPaginationControls = doc.getElementById('paginationControls');
+                const currentPaginationControls = document.getElementById('paginationControls');
+                if (newPaginationControls && currentPaginationControls) {
+                    currentPaginationControls.innerHTML = newPaginationControls.innerHTML;
+                }
+                
+                const newPaginationInfo = doc.getElementById('paginationInfo');
+                const paginationInfo = document.getElementById('paginationInfo');
+                if (newPaginationInfo && paginationInfo) {
+                    paginationInfo.innerHTML = newPaginationInfo.innerHTML;
+                }
+                
+                // Actualizar URL
+                window.history.pushState({}, '', url.toString());
+                
+                // Restaurar inmediatamente
+                resultsContainer.style.opacity = '1';
+                resultsContainer.style.pointerEvents = 'auto';
+                isLoadingPagination = false;
+                
+                // Scroll instantáneo
+                document.querySelector('.costura-container').scrollIntoView({ 
+                    behavior: 'auto', 
+                    block: 'start' 
+                });
+            })
+            .catch(error => {
+                console.error('Error al cargar página:', error);
+                resultsContainer.style.opacity = '1';
+                resultsContainer.style.pointerEvents = 'auto';
+                isLoadingPagination = false;
             });
         });
     </script>
