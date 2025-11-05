@@ -25,6 +25,7 @@ class Balanceo extends Model
         'sam_real',
         'meta_sugerida_85',
         'activo',
+        'estado_completo',
     ];
 
     protected $casts = [
@@ -40,6 +41,7 @@ class Balanceo extends Model
         'sam_real' => 'double',
         'meta_sugerida_85' => 'integer',
         'activo' => 'boolean',
+        'estado_completo' => 'boolean',
     ];
 
     /**
@@ -64,7 +66,8 @@ class Balanceo extends Model
     public function calcularMetricas()
     {
         // Calcular SAM total (suma de todos los SAM de las operaciones)
-        $this->sam_total = $this->operaciones()->sum('sam');
+        // Redondear a 1 decimal para evitar errores de precisión de punto flotante
+        $this->sam_total = round($this->operaciones()->sum('sam'), 1);
 
         // Calcular tiempo disponible en horas: Horas/turno * Turnos * Total operarios
         $this->tiempo_disponible_horas = $this->horas_por_turno * $this->turnos * $this->total_operarios;
@@ -74,7 +77,7 @@ class Balanceo extends Model
 
         // Calcular meta teórica: T. Disponible Segundos / SAM
         if ($this->sam_total > 0) {
-            $this->meta_teorica = floor($this->tiempo_disponible_segundos / $this->sam_total);
+            $this->meta_teorica = round($this->tiempo_disponible_segundos / $this->sam_total);
             
             // Meta real al 90% de la meta teórica (SIN floor para mantener decimales)
             $this->meta_real = $this->meta_teorica * 0.90;

@@ -32,8 +32,8 @@
     </div>
 
     <div style="background: var(--color-bg-primary); border-radius: 10px; overflow: hidden; border: 1px solid var(--color-border-hr);">
-        <div class="table-scroll-container" style="overflow-x: auto;">
-            <table class="modern-table balanceo-table" style="border-collapse: separate; border-spacing: 0; width: auto; min-width: 100%; user-select: text;">
+        <div class="table-scroll-container">
+            <table class="modern-table balanceo-table" style="border-collapse: separate; border-spacing: 0; user-select: text;">
                 <thead>
                     <tr style="background: #ff9d58; color: white;">
                         <th style="padding: 12px 10px; text-align: center; font-weight: 600; font-size: 12px; text-transform: uppercase; width: 60px; white-space: nowrap; user-select: text;">
@@ -154,13 +154,12 @@
                             <td style="padding: 10px; font-weight: 600; color: #f5576c; text-align: center; font-size: 14px; white-space: nowrap; cursor: pointer;" 
                                 @click="startEditingCell(operacion, 'sam', $event)"
                                 :title="'Click para editar'">
-                                <span x-show="editingCell !== `${operacion.id}-sam`" x-text="parseFloat(operacion.sam).toFixed(2)"></span>
+                                <span x-show="editingCell !== `${operacion.id}-sam`" x-text="parseFloat(operacion.sam).toFixed(1)"></span>
                                 <input x-show="editingCell === `${operacion.id}-sam`" 
-                                       type="number" 
-                                       step="0.01"
-                                       :value="operacion.sam"
-                                       @blur="saveCell(operacion, 'sam', $event.target.value)"
-                                       @keydown.enter="saveCell(operacion, 'sam', $event.target.value)"
+                                       type="text" 
+                                       :value="parseFloat(operacion.sam).toFixed(1)"
+                                       @blur="saveCellSAM(operacion, $event.target.value)"
+                                       @keydown.enter="saveCellSAM(operacion, $event.target.value)"
                                        @keydown.escape="cancelEdit()"
                                        style="width: 100%; padding: 4px; border: 2px solid #f5576c; border-radius: 4px; text-align: center; font-weight: 600; color: #f5576c; background: rgba(245, 87, 108, 0.1);">
                             </td>
@@ -273,3 +272,4 @@
         </div>
     </div>
 </div>
+

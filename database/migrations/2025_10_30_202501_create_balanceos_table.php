@@ -28,7 +28,12 @@ return new class extends Migration
             $table->double('sam_real')->nullable();
             $table->integer('meta_sugerida_85')->nullable();
             $table->boolean('activo')->default(true);
+            $table->boolean('estado_completo')->nullable()->default(null);
             $table->timestamps();
+            
+            // Índices
+            $table->index(['prenda_id', 'activo'], 'idx_balanceos_prenda_activo');
+            $table->index('activo', 'idx_balanceos_activo');
         });
     }
 

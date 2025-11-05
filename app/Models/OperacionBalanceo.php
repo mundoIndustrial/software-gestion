@@ -31,6 +31,22 @@ class OperacionBalanceo extends Model
     ];
 
     /**
+     * Valores por defecto para campos opcionales
+     */
+    protected $attributes = [
+        'letra' => '',
+        'operacion' => '',
+        'precedencia' => null,
+        'maquina' => null,
+        'sam' => 0,
+        'operario' => null,
+        'op' => null,
+        'seccion' => 'DEL',
+        'operario_a' => null,
+        'orden' => 0,
+    ];
+
+    /**
      * Relación con balanceo
      */
     public function balanceo()

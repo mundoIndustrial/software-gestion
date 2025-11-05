@@ -12,6 +12,17 @@
                 <span style="background: #ff9d58; color: white; padding: 6px 14px; border-radius: 20px; font-size: 12px; text-transform: uppercase; font-weight: 600; box-shadow: 0 2px 4px rgba(255, 157, 88, 0.3);">
                     {{ $prenda->tipo }}
                 </span>
+                
+                <!-- Botón de estado completo/incompleto -->
+                <button @click="toggleEstadoCompleto()" 
+                   :title="balanceo.estado_completo === true ? 'Marcar como incompleto' : (balanceo.estado_completo === false ? 'Desmarcar' : 'Marcar estado')"
+                   :style="'color: white; display: flex; align-items: center; gap: 6px; transition: all 0.2s; padding: 8px 14px; border-radius: 20px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; text-transform: uppercase; box-shadow: 0 2px 4px ' + (balanceo.estado_completo === true ? 'rgba(67, 233, 123, 0.3)' : (balanceo.estado_completo === false ? 'rgba(239, 68, 68, 0.3)' : 'rgba(156, 163, 175, 0.3)')) + '; background: ' + (balanceo.estado_completo === true ? 'linear-gradient(135deg, #43e97b 0%, #38d16a 100%)' : (balanceo.estado_completo === false ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)'))"
+                   onmouseover="this.style.transform='scale(1.05)'"
+                   onmouseout="this.style.transform='scale(1)'">
+                    <span class="material-symbols-rounded" style="font-size: 16px;" x-text="balanceo.estado_completo === true ? 'check_circle' : (balanceo.estado_completo === false ? 'cancel' : 'radio_button_unchecked')"></span>
+                    <span x-text="balanceo.estado_completo === true ? 'Completo' : (balanceo.estado_completo === false ? 'Incompleto' : 'Sin Marcar')"></span>
+                </button>
+                
                 <a href="{{ route('balanceo.prenda.edit', $prenda->id) }}" 
                    title="Editar Prenda"
                    style="color: var(--color-text-primary); text-decoration: none; display: flex; align-items: center; transition: all 0.2s; padding: 8px; border-radius: 8px; background: rgba(255, 157, 88, 0.1);" 

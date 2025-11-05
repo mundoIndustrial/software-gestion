@@ -16,19 +16,19 @@ return new class extends Migration
             $table->date('fecha');
             $table->string('modulo');
             $table->string('orden_produccion');
-            $table->string('hora');
-            $table->decimal('tiempo_ciclo', 8, 2);
-            $table->decimal('porcion_tiempo', 8, 2);
+            $table->string('hora', 50);
+            $table->double('tiempo_ciclo');
+            $table->double('porcion_tiempo');
             $table->integer('cantidad');
             $table->integer('producida');
             $table->string('paradas_programadas');
             $table->string('paradas_no_programadas')->nullable();
-            $table->decimal('tiempo_parada_no_programada', 8, 2)->nullable();
+            $table->double('tiempo_parada_no_programada')->nullable();
             $table->integer('numero_operarios');
-            $table->decimal('tiempo_para_programada', 8, 2);
-            $table->decimal('tiempo_disponible', 8, 2)->nullable()->default(0.00);
-            $table->decimal('meta', 8, 2);
-            $table->decimal('eficiencia', 5, 2);
+            $table->double('tiempo_para_programada');
+            $table->double('tiempo_disponible')->nullable()->default(0.00);
+            $table->double('meta');
+            $table->double('eficiencia');
             $table->timestamps();
         });
     }

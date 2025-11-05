@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('tela_id')->constrained('telas')->onDelete('cascade');
             $table->foreignId('maquina_id')->constrained('maquinas')->onDelete('cascade');
-            $table->decimal('tiempo_ciclo', 8, 2);
+            $table->double('tiempo_ciclo');
             $table->timestamps();
             $table->unique(['tela_id', 'maquina_id']); // Ensure one tiempo_ciclo per tela-maquina pair
         });

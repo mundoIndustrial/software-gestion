@@ -3,8 +3,9 @@
 @section('content')
 <link rel="stylesheet" href="{{ asset('css/tableros.css') }}">
 <link rel="stylesheet" href="{{ asset('css/orders styles/modern-table.css') }}">
+<link rel="stylesheet" href="{{ asset('css/balanceo-responsive.css') }}">
 
-<div class="tableros-container" x-data="balanceoApp({{ $balanceo ? $balanceo->id : 'null' }})">
+<div class="tableros-container balanceo-container" x-data="balanceoApp({{ $balanceo ? $balanceo->id : 'null' }})">
     @include('balanceo.partials.header', ['prenda' => $prenda])
     
     @if(!$balanceo)

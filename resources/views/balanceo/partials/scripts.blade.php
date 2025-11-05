@@ -4,6 +4,9 @@ function balanceoApp(balanceoId) {
         balanceoId: balanceoId,
         operaciones: @json($balanceo ? $balanceo->operaciones : []),
         editingCell: null,
+        balanceo: {
+            estado_completo: {{ $balanceo->estado_completo === null ? 'null' : ($balanceo->estado_completo ? 'true' : 'false') }}
+        },
         parametros: {
             total_operarios: {{ $balanceo->total_operarios ?? 0 }},
             turnos: {{ $balanceo->turnos ?? 1 }},
@@ -88,6 +91,63 @@ function balanceoApp(balanceoId) {
 
         cancelEdit() {
             this.editingCell = null;
+        },
+
+        async saveCellSAM(operacion, newValue) {
+            // Limpiar y validar el valor
+            let cleanValue = newValue.toString().trim().replace(',', '.');
+            
+            // Convertir a número
+            let numValue = parseFloat(cleanValue);
+            
+            // Validar que sea un número válido
+            if (isNaN(numValue) || numValue < 0) {
+                alert('Por favor ingresa un valor numérico válido');
+                this.cancelEdit();
+                return;
+            }
+            
+            // Redondear a 1 decimal para consistencia
+            numValue = Math.round(numValue * 10) / 10;
+            
+            // Si el valor no cambió, solo cancelar
+            if (parseFloat(operacion.sam) === numValue) {
+                this.cancelEdit();
+                return;
+            }
+
+            try {
+                const response = await fetch(`/balanceo/operacion/${operacion.id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        sam: numValue
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Actualizar el valor en el array local
+                    operacion.sam = numValue;
+                    
+                    // Actualizar métricas
+                    this.updateMetricas(data.balanceo);
+                    
+                    // Mostrar feedback visual
+                    this.showSuccessMessage('✓ SAM actualizado');
+                } else {
+                    alert('Error al guardar: ' + (data.message || 'Error desconocido'));
+                }
+            } catch (error) {
+                console.error('Error saving SAM:', error);
+                alert('Error al guardar el cambio');
+            } finally {
+                this.cancelEdit();
+            }
         },
 
         async saveCell(operacion, field, newValue) {
@@ -389,6 +449,43 @@ function balanceoApp(balanceoId) {
             } catch (error) {
                 console.error('Error saving operations:', error);
                 alert('Error al guardar las operaciones');
+            }
+        },
+
+        // Cambiar estado completo/incompleto
+        // Ciclo: null (sin marcar) → true (completo) → false (incompleto) → null
+        async toggleEstadoCompleto() {
+            try {
+                // Determinar el siguiente estado
+                let nuevoEstado;
+                if (this.balanceo.estado_completo === null) {
+                    nuevoEstado = true; // null → completo
+                } else if (this.balanceo.estado_completo === true) {
+                    nuevoEstado = false; // completo → incompleto
+                } else {
+                    nuevoEstado = null; // incompleto → sin marcar
+                }
+
+                const response = await fetch(`/balanceo/${this.balanceoId}/toggle-estado`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({ estado: nuevoEstado })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.balanceo.estado_completo = data.estado_completo;
+                    this.showSuccessMessage(data.message);
+                } else {
+                    alert('Error al cambiar el estado');
+                }
+            } catch (error) {
+                console.error('Error toggling estado:', error);
+                alert('Error al cambiar el estado');
             }
         }
     }

@@ -11,8 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('balanceos', function (Blueprint $table) {
-            $table->double('meta_real')->nullable()->change();
+        Schema::table('prendas', function (Blueprint $table) {
+            // Cambiar el campo imagen de string a text para almacenar URLs largas de Firebase
+            $table->text('imagen')->nullable()->change();
         });
     }
 
@@ -21,8 +22,9 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('balanceos', function (Blueprint $table) {
-            $table->integer('meta_real')->nullable()->change();
+        Schema::table('prendas', function (Blueprint $table) {
+            // Revertir a string
+            $table->string('imagen')->nullable()->change();
         });
     }
 };

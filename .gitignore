@@ -22,6 +22,10 @@ storage/debugbar/*
 /public/hot
 /public/storage
 
+# --- Imágenes subidas por usuarios ---
+/public/images/prendas/*
+!/public/images/prendas/.gitkeep
+
 # --- IDEs y editores ---
 /.vscode
 /.idea

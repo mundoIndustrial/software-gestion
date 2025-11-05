@@ -402,8 +402,8 @@ document.addEventListener('DOMContentLoaded', function() {
             deleteTd.appendChild(deleteBtn);
             tr.appendChild(deleteTd);
 
-            // Agregar al principio de la tabla
-            tbody.insertBefore(tr, tbody.firstChild);
+            // Agregar al final de la tabla (orden ascendente por ID)
+            tbody.appendChild(tr);
         });
 
         // Actualizar información de paginación (aproximada)
@@ -1219,8 +1219,25 @@ function agregarRegistroTiempoReal(registro, section) {
     deleteTd.appendChild(deleteBtn);
     row.appendChild(deleteTd);
 
-    // Agregar fila al inicio de la tabla (más reciente primero)
-    tbody.insertBefore(row, tbody.firstChild);
+    // Insertar fila en la posición correcta según el ID (orden ascendente)
+    const rows = Array.from(tbody.querySelectorAll('tr[data-id]'));
+    let inserted = false;
+    
+    for (let i = 0; i < rows.length; i++) {
+        const existingId = parseInt(rows[i].getAttribute('data-id'));
+        const newId = parseInt(registro.id);
+        
+        if (newId < existingId) {
+            tbody.insertBefore(row, rows[i]);
+            inserted = true;
+            break;
+        }
+    }
+    
+    // Si no se insertó antes de ninguna fila, agregar al final
+    if (!inserted) {
+        tbody.appendChild(row);
+    }
     
     // Animación de entrada
     row.style.backgroundColor = 'rgba(34, 197, 94, 0.2)';

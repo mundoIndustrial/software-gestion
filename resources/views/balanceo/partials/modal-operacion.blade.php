@@ -22,9 +22,9 @@
                                 <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                     <path d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" stroke-width="2" stroke-linecap="round"/>
                                 </svg>
-                                Letra *
+                                Letra
                             </label>
-                            <input type="text" x-model="formData.letra" required class="form-input" />
+                            <input type="text" x-model="formData.letra" class="form-input" />
                         </div>
 
                         <!-- SAM -->
@@ -34,9 +34,9 @@
                                     <circle cx="12" cy="12" r="10" stroke-width="2"/>
                                     <path d="M12 6v6l4 2" stroke-width="2" stroke-linecap="round"/>
                                 </svg>
-                                SAM (segundos) *
+                                SAM (segundos)
                             </label>
-                            <input type="number" step="0.01" x-model="formData.sam" required class="form-input" />
+                            <input type="number" step="0.01" x-model="formData.sam" class="form-input" />
                         </div>
 
                         <!-- Operación -->
@@ -45,9 +45,9 @@
                                 <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                     <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke-width="2" stroke-linecap="round"/>
                                 </svg>
-                                Operación *
+                                Operación
                             </label>
-                            <textarea x-model="formData.operacion" required rows="2" class="form-input" style="resize: vertical;"></textarea>
+                            <textarea x-model="formData.operacion" rows="2" class="form-input" style="resize: vertical;"></textarea>
                         </div>
 
                         <!-- Precedencia -->
@@ -102,9 +102,9 @@
                                 <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                     <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
-                                Sección *
+                                Sección
                             </label>
-                            <select x-model="formData.seccion" required class="form-select">
+                            <select x-model="formData.seccion" class="form-select">
                                 <option value="DEL">Delantero (DEL)</option>
                                 <option value="TRAS">Trasero (TRAS)</option>
                                 <option value="ENS">Ensamble (ENS)</option>

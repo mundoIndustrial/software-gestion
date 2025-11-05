@@ -54,7 +54,7 @@ class TablerosController extends Controller
     public function index()
     {
         // TABLAS PRINCIPALES: SIN FILTRO DE FECHA (mostrar todos los registros)
-        $queryProduccion = RegistroPisoProduccion::query();
+        $queryProduccion = RegistroPisoProduccion::query()->orderBy('id', 'asc');
         // Paginación: 50 registros por página
         $registros = $queryProduccion->paginate(50);
         $columns = Schema::getColumnListing('registro_piso_produccion');
@@ -63,7 +63,7 @@ class TablerosController extends Controller
         // NO recalcular en cada carga - solo cuando se crea/actualiza un registro
         // Los cálculos se hacen en el método store() y update()
 
-        $queryPolos = RegistroPisoPolo::query();
+        $queryPolos = RegistroPisoPolo::query()->orderBy('id', 'asc');
         // Paginación: 50 registros por página
         $registrosPolos = $queryPolos->paginate(50);
         $columnsPolos = Schema::getColumnListing('registro_piso_polo');
@@ -71,7 +71,7 @@ class TablerosController extends Controller
 
         // NO recalcular en cada carga - solo cuando se crea/actualiza un registro
 
-        $queryCorte = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela']);
+        $queryCorte = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela'])->orderBy('id', 'asc');
         // Paginación: 50 registros por página
         $registrosCorte = $queryCorte->paginate(50);
         $columnsCorte = Schema::getColumnListing('registro_piso_corte');
@@ -474,11 +474,18 @@ class TablerosController extends Controller
 
                 $createdRecords[] = $record;
                 
-                // Broadcast event for real-time updates
-                if ($request->section === 'produccion') {
-                    broadcast(new \App\Events\ProduccionRecordCreated($record));
-                } elseif ($request->section === 'polos') {
-                    broadcast(new \App\Events\PoloRecordCreated($record));
+                // Broadcast event for real-time updates (non-blocking)
+                try {
+                    if ($request->section === 'produccion') {
+                        broadcast(new \App\Events\ProduccionRecordCreated($record));
+                    } elseif ($request->section === 'polos') {
+                        broadcast(new \App\Events\PoloRecordCreated($record));
+                    }
+                } catch (\Exception $broadcastError) {
+                    \Log::warning('Error al emitir evento de creación', [
+                        'error' => $broadcastError->getMessage(),
+                        'section' => $request->section
+                    ]);
                 }
             }
 
@@ -613,14 +620,21 @@ class TablerosController extends Controller
                 $registro->eficiencia = $eficiencia;
                 $registro->save();
 
-                // Broadcast event for real-time updates
-                if ($request->section === 'produccion') {
-                    broadcast(new \App\Events\ProduccionRecordCreated($registro));
-                } elseif ($request->section === 'polos') {
-                    broadcast(new \App\Events\PoloRecordCreated($registro));
-                } elseif ($request->section === 'corte') {
-                    $registro->load(['hora', 'operario', 'maquina', 'tela']);
-                    broadcast(new \App\Events\CorteRecordCreated($registro));
+                // Broadcast event for real-time updates (non-blocking)
+                try {
+                    if ($request->section === 'produccion') {
+                        broadcast(new \App\Events\ProduccionRecordCreated($registro));
+                    } elseif ($request->section === 'polos') {
+                        broadcast(new \App\Events\PoloRecordCreated($registro));
+                    } elseif ($request->section === 'corte') {
+                        $registro->load(['hora', 'operario', 'maquina', 'tela']);
+                        broadcast(new \App\Events\CorteRecordCreated($registro));
+                    }
+                } catch (\Exception $broadcastError) {
+                    \Log::warning('Error al emitir evento de actualización', [
+                        'error' => $broadcastError->getMessage(),
+                        'section' => $request->section
+                    ]);
                 }
 
                 return response()->json([
@@ -633,14 +647,21 @@ class TablerosController extends Controller
                     ]
                 ]);
             } else {
-                // No recalcular, solo actualizar y emitir evento
-                if ($request->section === 'produccion') {
-                    broadcast(new \App\Events\ProduccionRecordCreated($registro));
-                } elseif ($request->section === 'polos') {
-                    broadcast(new \App\Events\PoloRecordCreated($registro));
-                } elseif ($request->section === 'corte') {
-                    $registro->load(['hora', 'operario', 'maquina', 'tela']);
-                    broadcast(new \App\Events\CorteRecordCreated($registro));
+                // No recalcular, solo actualizar y emitir evento (non-blocking)
+                try {
+                    if ($request->section === 'produccion') {
+                        broadcast(new \App\Events\ProduccionRecordCreated($registro));
+                    } elseif ($request->section === 'polos') {
+                        broadcast(new \App\Events\PoloRecordCreated($registro));
+                    } elseif ($request->section === 'corte') {
+                        $registro->load(['hora', 'operario', 'maquina', 'tela']);
+                        broadcast(new \App\Events\CorteRecordCreated($registro));
+                    }
+                } catch (\Exception $broadcastError) {
+                    \Log::warning('Error al emitir evento de actualización', [
+                        'error' => $broadcastError->getMessage(),
+                        'section' => $request->section
+                    ]);
                 }
                 
                 return response()->json([
@@ -827,8 +848,14 @@ class TablerosController extends Controller
             // Load relations for broadcasting
             $registro->load(['hora', 'operario', 'maquina', 'tela']);
 
-            // Broadcast the new record to ALL clients (including other windows)
-            broadcast(new \App\Events\CorteRecordCreated($registro));
+            // Broadcast the new record to ALL clients (non-blocking)
+            try {
+                broadcast(new \App\Events\CorteRecordCreated($registro));
+            } catch (\Exception $broadcastError) {
+                \Log::warning('Error al emitir evento de corte', [
+                    'error' => $broadcastError->getMessage()
+                ]);
+            }
 
             return response()->json([
                 'success' => true,
