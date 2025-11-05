@@ -1,5 +1,28 @@
 /* ===== DASHBOARD STYLES ===== */
 
+/* CSS Variables for Light/Dark Mode */
+:root {
+    /* Light mode colors */
+    --dashboard-bg-primary: #f3f4f6;
+    --dashboard-bg-card: #dddddd;
+    --dashboard-border: #b4b4b4;
+    --dashboard-text-primary: #1f2937;
+    --dashboard-text-secondary: #6b7280;
+    --dashboard-shadow: rgba(0, 0, 0, 0.1);
+    --dashboard-hover-bg: #cacaca;
+}
+
+body.dark-theme {
+    /* Dark mode colors */
+    --dashboard-bg-primary: #111827;
+    --dashboard-bg-card: #1f2937;
+    --dashboard-border: #374151;
+    --dashboard-text-primary: #F1F5F9;
+    --dashboard-text-secondary: #94a3b8;
+    --dashboard-shadow: rgba(0, 0, 0, 0.3);
+    --dashboard-hover-bg: #252f3f;
+}
+
 /* General Styles */
 .filter-select option {
     color: black !important;
@@ -7,7 +30,7 @@
 }
 
 body {
-    background: #111827;
+    background: var(--dashboard-bg-primary);
     overflow-x: hidden;
     margin: 0;
     padding: 0;
@@ -28,22 +51,22 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 0.5rem 1rem;
-    background: #1f2937;
+    background: var(--dashboard-bg-card);
     border-radius: 12px;
-    border: 1px solid #374151;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--dashboard-border);
+    box-shadow: 0 4px 6px var(--dashboard-shadow);
 }
 
 .header-compact h1 {
     font-size: 1.125rem;
     font-weight: 700;
-    color: white;
+    color: var(--dashboard-text-primary);
     margin: 0;
 }
 
 .header-compact .welcome {
     font-size: 0.7rem;
-    color: #94a3b8;
+    color: var(--dashboard-text-secondary);
 }
 
 /* Main Grid */
@@ -70,15 +93,15 @@ body {
 
 /* KPI Card */
 .kpi-card {
-    background: #1f2937;
-    border: 1px solid #374151;
+    background: var(--dashboard-bg-card);
+    border: 1px solid var(--dashboard-border);
     border-radius: 12px;
     padding: 0.75rem;
     text-align: center;
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px var(--dashboard-shadow);
 }
 
 .kpi-card::before {
@@ -95,13 +118,13 @@ body {
     transform: translateY(-3px);
     border-color: #FF6B35;
     box-shadow: 0 8px 20px rgba(255, 107, 53, 0.3);
-    background: #252f3f;
+    background: var(--dashboard-hover-bg);
 }
 
 .kpi-card h3 {
     font-size: 0.6rem;
     font-weight: 600;
-    color: #94a3b8;
+    color: var(--dashboard-text-secondary);
     margin: 0 0 0.35rem 0;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -117,14 +140,14 @@ body {
 
 /* Chart Card */
 .chart-card {
-    background: #1f2937;
-    border: 1px solid #374151;
+    background: var(--dashboard-bg-card);
+    border: 1px solid var(--dashboard-border);
     border-radius: 12px;
     padding: 0.9rem;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px var(--dashboard-shadow);
 }
 
 /* Chart Header */
@@ -143,7 +166,7 @@ body {
 .chart-header h2 {
     font-size: 0.8rem;
     font-weight: 600;
-    color: white;
+    color: var(--dashboard-text-primary);
     margin: 0;
 }
 
@@ -188,8 +211,13 @@ body {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 107, 53, 0.2);
     border-radius: 4px;
-    color: white;
+    color: var(--dashboard-text-primary);
     font-size: 0.6rem;
+}
+
+body:not(.dark-theme) .filters-inline select,
+body:not(.dark-theme) .filters-inline input {
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .filter-date {
@@ -199,8 +227,12 @@ body {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 107, 53, 0.2);
     border-radius: 4px;
-    color: white;
+    color: var(--dashboard-text-primary);
     font-size: 0.6rem;
+}
+
+body:not(.dark-theme) .filter-date {
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .filters-inline select option {
@@ -242,14 +274,14 @@ body {
 
 /* News Item */
 .news-item {
-    background: #111827;
+    background: var(--dashboard-bg-primary);
     border: 1px solid rgba(255, 107, 53, 0.1);
     border-radius: 12px;
     padding: 1rem;
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px var(--dashboard-shadow);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -272,7 +304,7 @@ body {
 }
 
 .news-item .title {
-    color: white;
+    color: var(--dashboard-text-primary);
     font-size: 0.75rem;
     font-weight: 600;
     margin-bottom: 0.5rem;
@@ -285,7 +317,7 @@ body {
     justify-content: space-between;
     align-items: center;
     font-size: 0.6rem;
-    color: #94a3b8;
+    color: var(--dashboard-text-secondary);
     margin-top: auto;
 }
 

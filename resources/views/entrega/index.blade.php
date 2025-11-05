@@ -18,8 +18,8 @@
         <div class="ep-card mb-8">
             <div class="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div>
-                    <h3 class="text-xl font-semibold text-white mb-2">Filtrar por Fecha</h3>
-                    <p class="text-gray-400 text-sm">Selecciona la fecha para ver las entregas correspondientes</p>
+                    <h3 class="card-title">Filtrar por Fecha</h3>
+                    <p class="stat-label">Selecciona la fecha para ver las entregas correspondientes</p>
                 </div>
                 <div class="flex items-center gap-4">
                     <input type="date" id="fechaFilter" class="filter-input" value="{{ $fecha }}">

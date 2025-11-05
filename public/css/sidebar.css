@@ -13,11 +13,11 @@
   --color-text-primary: #1f2937;
   --color-text-placeholder: #6b7280;
   --color-bg-primary: #f3f4f6;
-  --color-bg-secondary: #e5e7eb;
-  --color-bg-sidebar: #ffffff;
-  --color-border-hr: #e5e7eb;
+  --color-bg-secondary: #c9c8c8;
+  --color-bg-sidebar: #dddddd;
+  --color-border-hr: #b4b4b4;
   --color-hover-primary: #ff9d58;
-  --color-hover-secondary: #f3f4f6;
+  --color-hover-secondary: #cacaca;
   --color-shadow: rgba(0, 0, 0, 0.1);
   
   /* Sidebar widths */
