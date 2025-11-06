@@ -1,0 +1,15 @@
+# ============================================
+# COPIA ESTAS LÍNEAS AL FINAL DE TU ARCHIVO .env
+# ============================================
+
+# Configuración de Google Drive para Backups
+GOOGLE_DRIVE_SERVICE_ACCOUNT_FILE=storage/app/google/service-account-credentials.json
+GOOGLE_DRIVE_FOLDER_ID=106fZ_fbQ45BA-EGy632i5KAx3qxEHsZ6
+
+# ============================================
+# INSTRUCCIONES:
+# 1. Abre el archivo .env (en la raíz del proyecto)
+# 2. Ve al final del archivo
+# 3. Copia y pega las dos líneas de arriba
+# 4. Guarda el archivo
+# ============================================

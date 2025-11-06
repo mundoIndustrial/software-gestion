@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "mundoindustrial-backups",
+  "private_key_id": "d98b14a4bd34f5f9789f760d345c685ce864142f",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCTEsHV+57BzNnc\nxaRZ1hZpk0p8KvT3VDDAmts8DHoBH9Q2fwLCIMVE2buOlzvMNP+633LFqx4QJ6xe\nYzActR3OS3k2sFu2TTZOk3MzMTC5OJWH1e8RsEXW5YlbLyNyjxL+jqbCz3X/MF/o\n2phuYjbxFohE3RXbZ7beHdyjt6OS1rAUz3wVQwWqv+k9oZ2Sg53mVDO2Z9nwYm3/\n/jiqdEgdsl/bo/DDSL2S8Eg3IrAygzixYSvd0qCtnAWaKPrPtVRDiLdzUe43+WhY\nAjL1Psvk4gdYIMRVyDKTQKS1w23aTBKMcwgkD2XEcQOJZCK5WdVAoR0FkiJ7RKD+\na+seVKk5AgMBAAECggEAR89Nw2xDHL8n1MrPr2l/sfbP1Iao6yY5U6GIz+4LmAbx\nd9ZWA3E6wJ5LHJktAk0SXC0D/g3J9PtaBxAJCstIDVT+jzxW21Eh5gXKpsEq2BUP\nta44N3vI7d9PTK1ccm/3R0FhnRbstzfobGpnKOZdiyOET5NfO6yNNjCAbZOZk3Tw\nFvvFSb0QyWrMkM2xTtT033Bpz6ExYYUzJXDPkCpmqtsMIhGL+IC8qEVo5YNwPJlb\nqirZAWN2KtzT5vBvMQVCdeC62JEpCnTZC7+ddKYtg34+PZd8GmR+vaIUKnqpkPh0\n7hqEbU/pN6UuJoCReHG0eZem7DPjqxl/y7S+d6hh3QKBgQDIsKyoPQb81DQw1AI8\nhjAdJOawMXgSKkXK40I3MYIxlKR+MZmGY4T5xX2/dGluOU2/G+jySDgg3oWfEpOO\nfl1BdzvnJzhQH9vGJXWELif0k1gQ3ILTpCIzuOxcyoa+8nZzrSkQpwtWar3IW8Db\nb27cYIpl72li8y8yyxq5YM8V0wKBgQC7mz4tnpDdbs9Slq2L8PihZsRENoSmIIrD\nZWi1BbHAWLwotqjeP9JxrAF9Rdxv0pZAeVAJzhTf58SwFfYhDDnstS+RJBMj9yfW\nf5IW2dAPw03uWx9ERgY2pUPXjxViuN9wDN7rTinnqB2KRXLkp0+2Q0x/Kn1DizXh\nXMc0YI9hQwKBgA0mNknXpcuPA9RnL7ZTfHeMYWkN9LYL+wKuHTqMjeE9wgFasppx\njtbmr7SJphbIvmVVKNAnFzZgHhUsHGrrsKSHcW9VzITDcZzr+2UruQZ3WP/R0uiX\nCn6lESeLRYThUg2GPPiQWVfSKpkkGeDGzla2JJtFMnx/PopvcFLRGwBtAoGACzUD\n6t+9Ea1L70gXB/QWNjYYZWbIV9A72d5V+fJkIvRqERiQT+6KGMZItH4W5As1dJaK\npHtOHe4PfuFg+apsT2qnc8ku54gdNiAazwil+DsXjbSd0otIVb1bpyXiBiq7Fkt+\niZn6wN73HMp3SZeBGIc+q54TK5TGXDcZo1RdXFcCgYBrmZEx3OwiQ45FStLM7Ig8\nFD3Brw1mXT5YNacgXMrZRDmBi59avoUw7S9wbjVkvSdYR30BTUa8hSrC+q1Vi5Ch\nzNotG+UUzfYi4mB5VMcCBE9mpjygFQ4dbXM0N/SGgHAwrZ9tj1TSHdEVZDHHhcTu\nGdxzznUI+njKNC6lRk5wdg==\n-----END PRIVATE KEY-----\n",
+  "client_email": "backup-service@mundoindustrial-backups.iam.gserviceaccount.com",
+  "client_id": "112023227628274441951",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/backup-service%40mundoindustrial-backups.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

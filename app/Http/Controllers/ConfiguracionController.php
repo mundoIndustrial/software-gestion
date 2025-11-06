@@ -202,4 +202,302 @@ class ConfiguracionController extends Controller
             ], 500);
         }
     }
+
+    public function downloadBackup()
+    {
+        try {
+            $database = env('DB_DATABASE');
+            
+            // Crear directorio temporal si no existe
+            $tempPath = storage_path('app/temp');
+            if (!file_exists($tempPath)) {
+                mkdir($tempPath, 0755, true);
+            }
+            
+            // Nombre del archivo con fecha y hora
+            $filename = 'backup_' . $database . '_' . date('Y-m-d_H-i-s') . '.sql';
+            $filepath = $tempPath . DIRECTORY_SEPARATOR . $filename;
+            
+            // Abrir archivo para escritura
+            $handle = fopen($filepath, 'w+');
+            if (!$handle) {
+                throw new \Exception('No se pudo crear el archivo de backup');
+            }
+            
+            // Escribir encabezado del SQL
+            fwrite($handle, "-- Backup de la base de datos: {$database}\n");
+            fwrite($handle, "-- Fecha: " . date('Y-m-d H:i:s') . "\n");
+            fwrite($handle, "-- Generado por Mundo Industrial\n\n");
+            fwrite($handle, "SET FOREIGN_KEY_CHECKS=0;\n");
+            fwrite($handle, "SET SQL_MODE = \"NO_AUTO_VALUE_ON_ZERO\";\n");
+            fwrite($handle, "SET time_zone = \"+00:00\";\n\n");
+            
+            // Obtener todas las tablas
+            $tables = DB::select('SHOW TABLES');
+            $tableKey = 'Tables_in_' . $database;
+            
+            foreach ($tables as $table) {
+                $tableName = $table->$tableKey;
+                
+                // Obtener estructura de la tabla
+                fwrite($handle, "\n-- Estructura de tabla para `{$tableName}`\n");
+                fwrite($handle, "DROP TABLE IF EXISTS `{$tableName}`;\n");
+                
+                $createTable = DB::select("SHOW CREATE TABLE `{$tableName}`");
+                fwrite($handle, $createTable[0]->{'Create Table'} . ";\n\n");
+                
+                // Obtener datos de la tabla
+                $rows = DB::table($tableName)->get();
+                
+                if ($rows->count() > 0) {
+                    fwrite($handle, "-- Volcado de datos para la tabla `{$tableName}`\n");
+                    
+                    foreach ($rows as $row) {
+                        $row = (array) $row;
+                        $columns = array_keys($row);
+                        $values = array_values($row);
+                        
+                        // Escapar valores
+                        $escapedValues = array_map(function($value) {
+                            if (is_null($value)) {
+                                return 'NULL';
+                            }
+                            return "'" . addslashes($value) . "'";
+                        }, $values);
+                        
+                        $insert = "INSERT INTO `{$tableName}` (`" . implode('`, `', $columns) . "`) VALUES (" . implode(', ', $escapedValues) . ");\n";
+                        fwrite($handle, $insert);
+                    }
+                    
+                    fwrite($handle, "\n");
+                }
+            }
+            
+            fwrite($handle, "SET FOREIGN_KEY_CHECKS=1;\n");
+            fclose($handle);
+            
+            // Descargar el archivo
+            return response()->download($filepath, $filename)->deleteFileAfterSend(true);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function uploadToGoogleDrive()
+    {
+        try {
+            // Obtener o renovar el access token
+            $accessToken = $this->getValidAccessToken();
+            $folderId = env('GOOGLE_DRIVE_FOLDER_ID');
+
+            if (!$accessToken || !$folderId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Google Drive no está configurado. Necesitas configurar el Refresh Token. Revisa GOOGLE_DRIVE_OAUTH_SETUP.md'
+                ], 400);
+            }
+
+            $database = env('DB_DATABASE');
+            
+            // Crear backup temporal
+            $tempPath = storage_path('app/temp');
+            if (!file_exists($tempPath)) {
+                mkdir($tempPath, 0755, true);
+            }
+            
+            $filename = 'backup_' . $database . '_' . date('Y-m-d_H-i-s') . '.sql';
+            $filepath = $tempPath . DIRECTORY_SEPARATOR . $filename;
+            
+            // Generar el backup
+            $handle = fopen($filepath, 'w+');
+            if (!$handle) {
+                throw new \Exception('No se pudo crear el archivo de backup');
+            }
+            
+            // Escribir encabezado del SQL
+            fwrite($handle, "-- Backup de la base de datos: {$database}\n");
+            fwrite($handle, "-- Fecha: " . date('Y-m-d H:i:s') . "\n");
+            fwrite($handle, "-- Generado por Mundo Industrial\n\n");
+            fwrite($handle, "SET FOREIGN_KEY_CHECKS=0;\n");
+            fwrite($handle, "SET SQL_MODE = \"NO_AUTO_VALUE_ON_ZERO\";\n");
+            fwrite($handle, "SET time_zone = \"+00:00\";\n\n");
+            
+            // Obtener todas las tablas
+            $tables = DB::select('SHOW TABLES');
+            $tableKey = 'Tables_in_' . $database;
+            
+            foreach ($tables as $table) {
+                $tableName = $table->$tableKey;
+                
+                fwrite($handle, "\n-- Estructura de tabla para `{$tableName}`\n");
+                fwrite($handle, "DROP TABLE IF EXISTS `{$tableName}`;\n");
+                
+                $createTable = DB::select("SHOW CREATE TABLE `{$tableName}`");
+                fwrite($handle, $createTable[0]->{'Create Table'} . ";\n\n");
+                
+                $rows = DB::table($tableName)->get();
+                
+                if ($rows->count() > 0) {
+                    fwrite($handle, "-- Volcado de datos para la tabla `{$tableName}`\n");
+                    
+                    foreach ($rows as $row) {
+                        $row = (array) $row;
+                        $columns = array_keys($row);
+                        $values = array_values($row);
+                        
+                        $escapedValues = array_map(function($value) {
+                            if (is_null($value)) {
+                                return 'NULL';
+                            }
+                            return "'" . addslashes($value) . "'";
+                        }, $values);
+                        
+                        $insert = "INSERT INTO `{$tableName}` (`" . implode('`, `', $columns) . "`) VALUES (" . implode(', ', $escapedValues) . ");\n";
+                        fwrite($handle, $insert);
+                    }
+                    
+                    fwrite($handle, "\n");
+                }
+            }
+            
+            fwrite($handle, "SET FOREIGN_KEY_CHECKS=1;\n");
+            fclose($handle);
+            
+            // Subir archivo a Google Drive usando el Access Token
+            $fileContent = file_get_contents($filepath);
+            $fileSize = filesize($filepath);
+            
+            $metadata = [
+                'name' => $filename,
+                'parents' => [$folderId]
+            ];
+            
+            $boundary = uniqid();
+            $delimiter = "\r\n--" . $boundary . "\r\n";
+            $closeDelimiter = "\r\n--" . $boundary . "--";
+            
+            $multipartBody = $delimiter;
+            $multipartBody .= "Content-Type: application/json; charset=UTF-8\r\n\r\n";
+            $multipartBody .= json_encode($metadata);
+            $multipartBody .= $delimiter;
+            $multipartBody .= "Content-Type: application/sql\r\n\r\n";
+            $multipartBody .= $fileContent;
+            $multipartBody .= $closeDelimiter;
+            
+            $ch = curl_init('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, [
+                'Authorization: Bearer ' . $accessToken,
+                'Content-Type: multipart/related; boundary=' . $boundary,
+                'Content-Length: ' . strlen($multipartBody)
+            ]);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $multipartBody);
+            
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            
+            // Eliminar archivo temporal
+            unlink($filepath);
+            
+            if ($httpCode === 200) {
+                $responseData = json_decode($response, true);
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Backup subido exitosamente a Google Drive',
+                    'filename' => $filename,
+                    'size' => round($fileSize / 1024 / 1024, 2) . ' MB',
+                    'drive_file_id' => $responseData['id'] ?? null
+                ]);
+            } else {
+                throw new \Exception('Error al subir a Google Drive: ' . $response);
+            }
+            
+        } catch (\Exception $e) {
+            // Eliminar archivo temporal si existe
+            if (isset($filepath) && file_exists($filepath)) {
+                unlink($filepath);
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    private function getValidAccessToken()
+    {
+        $accessToken = env('GOOGLE_DRIVE_ACCESS_TOKEN');
+        $refreshToken = env('GOOGLE_DRIVE_REFRESH_TOKEN');
+        $clientId = env('GOOGLE_DRIVE_CLIENT_ID', '407408718192.apps.googleusercontent.com');
+        $clientSecret = env('GOOGLE_DRIVE_CLIENT_SECRET', 'xxxxxxxxxxxxxxxxx');
+        
+        // Si no hay refresh token, usar el access token actual
+        if (!$refreshToken) {
+            return $accessToken;
+        }
+        
+        // Intentar renovar el token
+        try {
+            $ch = curl_init('https://oauth2.googleapis.com/token');
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
+                'client_id' => $clientId,
+                'client_secret' => $clientSecret,
+                'refresh_token' => $refreshToken,
+                'grant_type' => 'refresh_token'
+            ]));
+            
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+            
+            if ($httpCode === 200) {
+                $data = json_decode($response, true);
+                $newAccessToken = $data['access_token'] ?? null;
+                
+                if ($newAccessToken) {
+                    // Actualizar el .env con el nuevo token
+                    $this->updateEnvFile('GOOGLE_DRIVE_ACCESS_TOKEN', $newAccessToken);
+                    
+                    // Limpiar caché de configuración
+                    \Artisan::call('config:clear');
+                    
+                    return $newAccessToken;
+                }
+            }
+            
+            // Si falla la renovación, usar el token actual
+            return $accessToken;
+            
+        } catch (\Exception $e) {
+            // Si hay error, usar el token actual
+            return $accessToken;
+        }
+    }
+    
+    private function updateEnvFile($key, $value)
+    {
+        $envPath = base_path('.env');
+        $envContent = file_get_contents($envPath);
+        
+        // Buscar y reemplazar la línea
+        $pattern = "/^{$key}=.*/m";
+        if (preg_match($pattern, $envContent)) {
+            $envContent = preg_replace($pattern, "{$key}={$value}", $envContent);
+        } else {
+            $envContent .= "\n{$key}={$value}";
+        }
+        
+        file_put_contents($envPath, $envContent);
+    }
+
 }
