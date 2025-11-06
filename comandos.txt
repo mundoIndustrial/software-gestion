@@ -5,3 +5,6 @@ php artisan serve
 
 php artisan migrate
 php artisan db:seed
+echo yes | php artisan importar:solo-balanceos --limpiar
+echo yes | php artisan importar:solo-polos --limpiar
+echo yes | php artisan importar:solo-produccion --limpiar
