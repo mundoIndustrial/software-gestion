@@ -1,11 +1,11 @@
 {{-- Botón primera página --}}
 <button class="pagination-btn" data-page="1" {{ $paginator->currentPage() == 1 ? 'disabled' : '' }}>
-    <i class="fas fa-angle-double-left"></i>
+    <span class="material-symbols-rounded" style="font-size: 20px;">keyboard_double_arrow_left</span>
 </button>
 
 {{-- Botón página anterior --}}
 <button class="pagination-btn" data-page="{{ $paginator->currentPage() - 1 }}" {{ $paginator->currentPage() == 1 ? 'disabled' : '' }}>
-    <i class="fas fa-angle-left"></i>
+    <span class="material-symbols-rounded" style="font-size: 20px;">chevron_left</span>
 </button>
 
 {{-- Números de página --}}
@@ -22,10 +22,10 @@
 
 {{-- Botón página siguiente --}}
 <button class="pagination-btn" data-page="{{ $paginator->currentPage() + 1 }}" {{ $paginator->currentPage() == $paginator->lastPage() ? 'disabled' : '' }}>
-    <i class="fas fa-angle-right"></i>
+    <span class="material-symbols-rounded" style="font-size: 20px;">chevron_right</span>
 </button>
 
 {{-- Botón última página --}}
 <button class="pagination-btn" data-page="{{ $paginator->lastPage() }}" {{ $paginator->currentPage() == $paginator->lastPage() ? 'disabled' : '' }}>
-    <i class="fas fa-angle-double-right"></i>
+    <span class="material-symbols-rounded" style="font-size: 20px;">keyboard_double_arrow_right</span>
 </button>

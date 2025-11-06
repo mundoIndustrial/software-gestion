@@ -67,19 +67,22 @@ class TablerosController extends Controller
         
         // TABLAS PRINCIPALES: SIN FILTRO DE FECHA (mostrar todos los registros)
         // Orden descendente: registros más recientes primero
-        $queryProduccion = RegistroPisoProduccion::query()->orderBy('id', 'desc');
+        $queryProduccion = RegistroPisoProduccion::query();
+        $this->aplicarFiltrosDinamicos($queryProduccion, request(), 'produccion');
         // Paginación: 50 registros por página
-        $registros = $queryProduccion->paginate(50);
+        $registros = $queryProduccion->orderBy('id', 'desc')->paginate(50);
         $columns = Schema::getColumnListing('registro_piso_produccion');
         $columns = array_diff($columns, ['id', 'created_at', 'updated_at', 'producida']);
 
-        $queryPolos = RegistroPisoPolo::query()->orderBy('id', 'desc');
-        $registrosPolos = $queryPolos->paginate(50);
+        $queryPolos = RegistroPisoPolo::query();
+        $this->aplicarFiltrosDinamicos($queryPolos, request(), 'polos');
+        $registrosPolos = $queryPolos->orderBy('id', 'desc')->paginate(50);
         $columnsPolos = Schema::getColumnListing('registro_piso_polo');
         $columnsPolos = array_diff($columnsPolos, ['id', 'created_at', 'updated_at', 'producida']);
 
-        $queryCorte = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela'])->orderBy('id', 'desc');
-        $registrosCorte = $queryCorte->paginate(50);
+        $queryCorte = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela']);
+        $this->aplicarFiltrosDinamicos($queryCorte, request(), 'corte');
+        $registrosCorte = $queryCorte->orderBy('id', 'desc')->paginate(50);
         $columnsCorte = Schema::getColumnListing('registro_piso_corte');
         $columnsCorte = array_diff($columnsCorte, ['id', 'created_at', 'updated_at', 'producida']);
 
@@ -211,6 +214,75 @@ class TablerosController extends Controller
             if ($specificDates) {
                 $dates = explode(',', $specificDates);
                 $query->whereIn('fecha', $dates);
+            }
+        }
+    }
+
+    /**
+     * Aplicar filtros dinámicos por columna
+     */
+    private function aplicarFiltrosDinamicos($query, $request, $section)
+    {
+        // Obtener filtros del request (formato JSON)
+        $filters = $request->get('filters');
+        
+        if (!$filters) {
+            return;
+        }
+
+        // Si es string JSON, decodificar
+        if (is_string($filters)) {
+            $filters = json_decode($filters, true);
+        }
+
+        if (!is_array($filters) || empty($filters)) {
+            return;
+        }
+
+        // Aplicar cada filtro
+        foreach ($filters as $column => $values) {
+            if (empty($values) || !is_array($values)) {
+                continue;
+            }
+
+            // Manejar columnas especiales según la sección
+            if ($section === 'corte') {
+                // Para corte, manejar relaciones usando los nombres de las columnas con _id
+                if ($column === 'hora_id') {
+                    $query->whereHas('hora', function($q) use ($values) {
+                        $q->whereIn('hora', $values);
+                    });
+                } elseif ($column === 'operario_id') {
+                    $query->whereHas('operario', function($q) use ($values) {
+                        $q->whereIn('name', $values);
+                    });
+                } elseif ($column === 'maquina_id') {
+                    $query->whereHas('maquina', function($q) use ($values) {
+                        $q->whereIn('nombre_maquina', $values);
+                    });
+                } elseif ($column === 'tela_id') {
+                    $query->whereHas('tela', function($q) use ($values) {
+                        $q->whereIn('nombre_tela', $values);
+                    });
+                } else {
+                    // Columnas normales
+                    $query->whereIn($column, $values);
+                }
+            } else {
+                // Para producción y polos, todas son columnas directas
+                // Manejar fecha con formato especial
+                if ($column === 'fecha') {
+                    // Convertir fechas del formato dd-mm-yyyy a yyyy-mm-dd
+                    $formattedDates = array_map(function($date) {
+                        if (preg_match('/^(\d{2})-(\d{2})-(\d{4})$/', $date, $matches)) {
+                            return "{$matches[3]}-{$matches[2]}-{$matches[1]}";
+                        }
+                        return $date;
+                    }, $values);
+                    $query->whereIn($column, $formattedDates);
+                } else {
+                    $query->whereIn($column, $values);
+                }
             }
         }
     }
@@ -457,6 +529,16 @@ class TablerosController extends Controller
                 $tiempo_ciclo = floatval($registroData['tiempo_ciclo'] ?? 0);
                 $cantidad = floatval($registroData['cantidad'] ?? 0);
 
+                // Log para debugging
+                \Log::info('Calculando meta y eficiencia', [
+                    'porcion_tiempo' => $porcion_tiempo,
+                    'numero_operarios' => $numero_operarios,
+                    'tiempo_parada_no_programada' => $tiempo_parada_no_programada,
+                    'tiempo_ciclo' => $tiempo_ciclo,
+                    'cantidad' => $cantidad,
+                    'tiempo_para_programada' => $tiempo_para_programada
+                ]);
+
                 $tiempo_disponible = (3600 * $porcion_tiempo * $numero_operarios)
                                     - $tiempo_parada_no_programada
                                     - $tiempo_para_programada;
@@ -464,6 +546,12 @@ class TablerosController extends Controller
 
                 $meta = $tiempo_ciclo > 0 ? ($tiempo_disponible / $tiempo_ciclo) * 0.9 : 0;
                 $eficiencia = $meta > 0 ? ($cantidad / $meta) : 0;
+
+                \Log::info('Resultado de cálculos', [
+                    'tiempo_disponible' => $tiempo_disponible,
+                    'meta' => $meta,
+                    'eficiencia' => $eficiencia
+                ]);
 
                 $record = $model::create([
                     'fecha' => $registroData['fecha'],
@@ -1185,7 +1273,9 @@ class TablerosController extends Controller
         $startTime = microtime(true);
         
         if ($section === 'produccion') {
-            $registros = RegistroPisoProduccion::query()->orderBy('id', 'desc')->paginate(50);
+            $query = RegistroPisoProduccion::query();
+            $this->aplicarFiltrosDinamicos($query, request(), 'produccion');
+            $registros = $query->orderBy('id', 'desc')->paginate(50);
             $columns = Schema::getColumnListing('registro_piso_produccion');
             $columns = array_diff($columns, ['id', 'created_at', 'updated_at', 'producida']);
             
@@ -1212,7 +1302,9 @@ class TablerosController extends Controller
                 ]
             ]);
         } elseif ($section === 'polos') {
-            $registros = RegistroPisoPolo::query()->orderBy('id', 'desc')->paginate(50);
+            $query = RegistroPisoPolo::query();
+            $this->aplicarFiltrosDinamicos($query, request(), 'polos');
+            $registros = $query->orderBy('id', 'desc')->paginate(50);
             $columns = Schema::getColumnListing('registro_piso_polo');
             $columns = array_diff($columns, ['id', 'created_at', 'updated_at', 'producida']);
             
@@ -1239,7 +1331,9 @@ class TablerosController extends Controller
                 ]
             ]);
         } elseif ($section === 'corte') {
-            $registros = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela'])->orderBy('id', 'desc')->paginate(50);
+            $query = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela']);
+            $this->aplicarFiltrosDinamicos($query, request(), 'corte');
+            $registros = $query->orderBy('id', 'desc')->paginate(50);
             $columns = Schema::getColumnListing('registro_piso_corte');
             $columns = array_diff($columns, ['id', 'created_at', 'updated_at', 'producida']);
             
@@ -1285,5 +1379,90 @@ class TablerosController extends Controller
             'id' => $tela->id,
             'nombre_tela' => $tela->nombre_tela
         ]);
+    }
+
+    /**
+     * Obtener valores únicos de una columna para los filtros
+     */
+    public function getUniqueValues(Request $request)
+    {
+        $section = $request->get('section');
+        $column = $request->get('column');
+
+        $model = match($section) {
+            'produccion' => RegistroPisoProduccion::class,
+            'polos' => RegistroPisoPolo::class,
+            'corte' => RegistroPisoCorte::class,
+            default => null
+        };
+
+        if (!$model) {
+            return response()->json(['error' => 'Invalid section'], 400);
+        }
+
+        $values = [];
+
+        // Manejar columnas especiales para corte (relaciones)
+        if ($section === 'corte') {
+            if ($column === 'hora_id') {
+                // Para hora_id, obtener los valores de la tabla horas
+                $values = Hora::distinct()->pluck('hora')->sort()->values()->toArray();
+            } elseif ($column === 'operario_id') {
+                // Para operario_id, obtener los nombres de los operarios
+                $values = User::whereHas('registrosPisoCorte')
+                    ->distinct()
+                    ->pluck('name')
+                    ->sort()
+                    ->values()
+                    ->toArray();
+            } elseif ($column === 'maquina_id') {
+                // Para maquina_id, obtener los nombres de las máquinas
+                $values = Maquina::whereHas('registrosPisoCorte')
+                    ->distinct()
+                    ->pluck('nombre_maquina')
+                    ->sort()
+                    ->values()
+                    ->toArray();
+            } elseif ($column === 'tela_id') {
+                // Para tela_id, obtener los nombres de las telas
+                $values = Tela::whereHas('registrosPisoCorte')
+                    ->distinct()
+                    ->pluck('nombre_tela')
+                    ->sort()
+                    ->values()
+                    ->toArray();
+            } else {
+                // Columnas normales
+                $values = $model::distinct()
+                    ->pluck($column)
+                    ->filter()
+                    ->sort()
+                    ->values()
+                    ->toArray();
+            }
+        } else {
+            // Para producción y polos
+            if ($column === 'fecha') {
+                // Para fechas, obtener y formatear
+                $values = $model::distinct()
+                    ->pluck($column)
+                    ->filter()
+                    ->map(function($date) {
+                        return \Carbon\Carbon::parse($date)->format('d-m-Y');
+                    })
+                    ->sort()
+                    ->values()
+                    ->toArray();
+            } else {
+                $values = $model::distinct()
+                    ->pluck($column)
+                    ->filter()
+                    ->sort()
+                    ->values()
+                    ->toArray();
+            }
+        }
+
+        return response()->json(['values' => $values]);
     }
 }

@@ -100,8 +100,29 @@ function showFilterDropdown(column, section) {
     dropdown.setAttribute('data-column', column);
     dropdown.setAttribute('data-section', section);
 
-    // Get unique values for this column
-    const uniqueValues = collectUniqueValues(column, section);
+    // Get unique values for this column from backend
+    fetchUniqueValues(column, section).then(uniqueValues => {
+        buildDropdownContent(dropdown, column, section, uniqueValues, headerCell, icon);
+    }).catch(error => {
+        console.error('Error fetching unique values:', error);
+        // Fallback to local values
+        const uniqueValues = collectUniqueValues(column, section);
+        buildDropdownContent(dropdown, column, section, uniqueValues, headerCell, icon);
+    });
+}
+
+function fetchUniqueValues(column, section) {
+    return fetch(`/tableros/unique-values?section=${section}&column=${column}`, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => data.values || []);
+}
+
+function buildDropdownContent(dropdown, column, section, uniqueValues, headerCell, icon) {
 
     // Header
     const headerText = headerCell.querySelector('.header-content').firstChild.textContent.trim();
@@ -183,27 +204,12 @@ function showFilterDropdown(column, section) {
     });
 
     applyBtn.addEventListener('click', () => {
-        // Only apply filters if there are checked values, otherwise show all rows
-        const checkedBoxes = dropdown.querySelectorAll('input[type="checkbox"]:checked');
-        if (checkedBoxes.length > 0) {
-            applyFilters(section);
-        } else {
-            // Show all rows if no filters are selected
-            const table = document.querySelector(`table[data-section="${section}"]`);
-            const tbody = table.querySelector('tbody');
-            const rows = tbody.querySelectorAll('tr');
-            rows.forEach(row => row.style.display = '');
-            updatePaginationInfo(section, rows.length, rows.length);
-        }
+        // Collect all active filters and send to backend
+        applyFiltersBackend(section);
         dropdown.classList.remove('show');
     });
 
-    // Apply on checkbox change
-    checkboxes.forEach(cb => {
-        cb.addEventListener('change', () => {
-            applyFilters(section);
-        });
-    });
+    // Don't apply on checkbox change, only on button click
 }
 
 function collectUniqueValues(column, section) {
@@ -222,41 +228,95 @@ function collectUniqueValues(column, section) {
     return Array.from(values).sort();
 }
 
-function applyFilters(section) {
-    const table = document.querySelector(`table[data-section="${section}"]`);
-    const tbody = table.querySelector('tbody');
-    const rows = tbody.querySelectorAll('tr');
-    let visibleCount = 0;
-
-    rows.forEach(row => {
-        let showRow = true;
-
-        // Check each column filter - now search in document.body since dropdowns are positioned there
-        document.querySelectorAll(`.filter-dropdown[data-section="${section}"]`).forEach(dropdown => {
-            const column = dropdown.dataset.column;
-            const checkedValues = Array.from(dropdown.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
-
-            if (checkedValues.length === 0) return; // No filter applied
-
-            const cell = row.querySelector(`td[data-column="${column}"]`);
-            if (!cell) return;
-
-            let cellValue = cell.dataset.value || cell.textContent.trim();
-            if (cell.dataset.value) {
-                cellValue = cell.dataset.value;
-            }
-
-            if (!checkedValues.includes(cellValue)) {
-                showRow = false;
-            }
-        });
-
-        row.style.display = showRow ? '' : 'none';
-        if (showRow) visibleCount++;
+function applyFiltersBackend(section) {
+    // Collect all active filters from all dropdowns for this section
+    const filters = {};
+    document.querySelectorAll(`.filter-dropdown[data-section="${section}"]`).forEach(dropdown => {
+        const column = dropdown.dataset.column;
+        const checkedValues = Array.from(dropdown.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
+        
+        if (checkedValues.length > 0) {
+            filters[column] = checkedValues;
+        }
     });
 
-    // Update pagination info
-    updatePaginationInfo(section, visibleCount, rows.length);
+    // Build URL with filters
+    const url = new URL(window.location.href);
+    url.searchParams.set('section', section);
+    url.searchParams.set('page', '1'); // Reset to page 1 when filtering
+    
+    // Send filters as JSON
+    if (Object.keys(filters).length > 0) {
+        url.searchParams.set('filters', JSON.stringify(filters));
+    } else {
+        url.searchParams.delete('filters');
+    }
+
+    // Show loading state
+    const tableBody = document.querySelector(`table[data-section="${section}"] tbody`);
+    if (tableBody) {
+        tableBody.style.opacity = '0.3';
+        tableBody.style.pointerEvents = 'none';
+    }
+
+    // Fetch filtered data
+    fetch(url.toString(), {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error || !data.pagination) {
+            throw new Error(data.error || 'Respuesta inválida del servidor');
+        }
+        
+        // Update table with new data
+        if (data.table_html && tableBody) {
+            tableBody.innerHTML = data.table_html;
+        }
+        
+        // Update pagination controls
+        const paginationControls = document.getElementById(`paginationControls-${section}`);
+        if (data.pagination && data.pagination.links_html && paginationControls) {
+            paginationControls.innerHTML = data.pagination.links_html;
+        }
+        
+        // Update pagination info
+        const paginationInfo = document.getElementById(`paginationInfo-${section}`);
+        if (data.pagination && paginationInfo) {
+            paginationInfo.textContent = `Mostrando ${data.pagination.first_item || 0}-${data.pagination.last_item || 0} de ${data.pagination.total} registros`;
+        }
+        
+        // Update progress bar
+        const progressFill = document.querySelector(`#pagination-${section} .progress-fill`);
+        if (data.pagination && progressFill) {
+            const progressPercent = data.pagination.last_page > 0 ? (data.pagination.current_page / data.pagination.last_page) * 100 : 0;
+            progressFill.style.width = progressPercent + '%';
+        }
+        
+        // Update URL
+        window.history.pushState({}, '', url.toString());
+        
+        // Restore table
+        if (tableBody) {
+            tableBody.style.opacity = '1';
+            tableBody.style.pointerEvents = 'auto';
+        }
+    })
+    .catch(error => {
+        console.error('Error applying filters:', error);
+        if (tableBody) {
+            tableBody.style.opacity = '1';
+            tableBody.style.pointerEvents = 'auto';
+        }
+    });
+}
+
+function applyFilters(section) {
+    // Legacy function - now redirects to backend version
+    applyFiltersBackend(section);
 }
 
 function updatePaginationInfo(section, visible, total) {

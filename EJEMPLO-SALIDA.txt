@@ -148,7 +148,7 @@ C:\proyecto\mundoindustrial> php artisan importar:todo-excel --dry-run
 
 ═══════════════════════════════════════════════════════════════════════════════
 
-EJEMPLO CON --limpiar (ELIMINAR DATOS EXISTENTES):
+EJEMPLO CON --limpiar (LIMPIEZA SELECTIVA):
 
 C:\proyecto\mundoindustrial> php artisan importar:todo-excel --limpiar
 
@@ -160,12 +160,28 @@ C:\proyecto\mundoindustrial> php artisan importar:todo-excel --limpiar
 ✓ PRODUCCION: CONTROL DE PISO PRODUCCION (respuestas) (1).xlsx
 ✓ BALANCEO: clasico (1).xlsx
 
-⚠️  ADVERTENCIA: Se eliminarán TODOS los registros existentes.
+⚠️  ADVERTENCIA: Se eliminarán los registros de las siguientes tablas:
+   • registro_piso_polo
+   • registro_piso_produccion
+   • operaciones_balanceo
+   • balanceos
+   • prendas
+
+ℹ️  Las demás tablas NO serán afectadas (usuarios, roles, etc.)
+
 ¿Estás seguro de continuar? (yes/no) [no]:
 > yes
 
-🗑️  Limpiando tablas...
-✓ Tablas limpiadas
+🗑️  Limpiando solo las tablas específicas...
+
+   ✓ registro_piso_polo (1,250 registros eliminados)
+   ✓ registro_piso_produccion (3,480 registros eliminados)
+   ✓ operaciones_balanceo (243 registros eliminados)
+   ✓ balanceos (5 registros eliminados)
+   ✓ prendas (5 registros eliminados)
+
+✅ Tablas limpiadas exitosamente
+ℹ️  Las demás tablas permanecen intactas
 
 ═══════════════════════════════════════════════════════════
 📊 IMPORTANDO: REGISTRO PISO POLOS

@@ -58,7 +58,15 @@ class ImportarTodoExcel extends Command
 
         // Limpiar tablas si se solicitó
         if ($limpiar && !$dryRun) {
-            $this->warn("⚠️  ADVERTENCIA: Se eliminarán TODOS los registros existentes.");
+            $this->warn("⚠️  ADVERTENCIA: Se eliminarán los registros de las siguientes tablas:");
+            $this->line("   • registro_piso_polo");
+            $this->line("   • registro_piso_produccion");
+            $this->line("   • operaciones_balanceo");
+            $this->line("   • balanceos");
+            $this->line("   • prendas");
+            $this->newLine();
+            $this->info("ℹ️  Las demás tablas NO serán afectadas (usuarios, roles, etc.)");
+            $this->newLine();
             
             if (!$this->confirm('¿Estás seguro de continuar?', false)) {
                 $this->info('Operación cancelada.');
@@ -100,15 +108,40 @@ class ImportarTodoExcel extends Command
 
     private function limpiarTablas()
     {
-        $this->info("🗑️  Limpiando tablas...");
+        $this->info("🗑️  Limpiando solo las tablas específicas...");
+        $this->newLine();
+        
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        
+        // Limpiar tabla de polos
+        $countPolos = DB::table('registro_piso_polo')->count();
         DB::table('registro_piso_polo')->truncate();
+        $this->line("   ✓ registro_piso_polo ({$countPolos} registros eliminados)");
+        
+        // Limpiar tabla de producción
+        $countProduccion = DB::table('registro_piso_produccion')->count();
         DB::table('registro_piso_produccion')->truncate();
+        $this->line("   ✓ registro_piso_produccion ({$countProduccion} registros eliminados)");
+        
+        // Limpiar tablas de balanceos (en orden correcto por foreign keys)
+        $countOperaciones = DB::table('operaciones_balanceo')->count();
         DB::table('operaciones_balanceo')->truncate();
+        $this->line("   ✓ operaciones_balanceo ({$countOperaciones} registros eliminados)");
+        
+        $countBalanceos = DB::table('balanceos')->count();
         DB::table('balanceos')->truncate();
+        $this->line("   ✓ balanceos ({$countBalanceos} registros eliminados)");
+        
+        $countPrendas = DB::table('prendas')->count();
         DB::table('prendas')->truncate();
+        $this->line("   ✓ prendas ({$countPrendas} registros eliminados)");
+        
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
-        $this->info("✓ Tablas limpiadas\n");
+        
+        $this->newLine();
+        $this->info("✅ Tablas limpiadas exitosamente");
+        $this->info("ℹ️  Las demás tablas permanecen intactas");
+        $this->newLine();
     }
 
     private function importarPolos($archivo, $dryRun)
@@ -208,8 +241,16 @@ class ImportarTodoExcel extends Command
         $this->warn("❌ Filas descartadas: " . count($descartadas));
 
         if (!$dryRun && !empty($registros)) {
-            DB::table('registro_piso_polo')->insert($registros);
-            $this->info("💾 Registros guardados en la base de datos");
+            // Insertar en lotes de 500 registros
+            $lotes = array_chunk($registros, 500);
+            $this->info("💾 Guardando en " . count($lotes) . " lotes...");
+            
+            foreach ($lotes as $index => $lote) {
+                DB::table('registro_piso_polo')->insert($lote);
+                $this->line("   ✓ Lote " . ($index + 1) . "/" . count($lotes) . " guardado");
+            }
+            
+            $this->info("✅ Todos los registros guardados en la base de datos");
         }
 
         $this->newLine();
@@ -312,8 +353,16 @@ class ImportarTodoExcel extends Command
         $this->warn("❌ Filas descartadas: " . count($descartadas));
 
         if (!$dryRun && !empty($registros)) {
-            DB::table('registro_piso_produccion')->insert($registros);
-            $this->info("💾 Registros guardados en la base de datos");
+            // Insertar en lotes de 500 registros
+            $lotes = array_chunk($registros, 500);
+            $this->info("💾 Guardando en " . count($lotes) . " lotes...");
+            
+            foreach ($lotes as $index => $lote) {
+                DB::table('registro_piso_produccion')->insert($lote);
+                $this->line("   ✓ Lote " . ($index + 1) . "/" . count($lotes) . " guardado");
+            }
+            
+            $this->info("✅ Todos los registros guardados en la base de datos");
         }
 
         $this->newLine();
@@ -590,7 +639,7 @@ class ImportarTodoExcel extends Command
 
     private function toInt($valor)
     {
-        if ($valor === null || $valor === '') return null;
+        if ($valor === null || $valor === '') return 0;
         
         $limpio = is_numeric($valor) ? $valor : str_replace(',', '.', preg_replace('/[^0-9.,\-]/', '', $valor));
         $num = (int) $limpio;
@@ -600,7 +649,7 @@ class ImportarTodoExcel extends Command
 
     private function toDecimal($valor)
     {
-        if ($valor === null || $valor === '') return null;
+        if ($valor === null || $valor === '') return 0.0;
         
         $limpio = is_numeric($valor) ? $valor : str_replace(',', '.', preg_replace('/[^0-9.,\-]/', '', $valor));
         $num = (float) $limpio;

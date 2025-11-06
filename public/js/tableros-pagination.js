@@ -50,10 +50,16 @@
             tableBody.style.pointerEvents = 'none';
         }
         
-        // Construir URL con parámetro de sección
+        // Construir URL con parámetro de sección y preservar filtros
         const url = new URL(window.location.href);
         url.searchParams.set('page', page);
         url.searchParams.set('section', section);
+        
+        // Preservar filtros existentes si los hay
+        const existingFilters = url.searchParams.get('filters');
+        if (existingFilters) {
+            url.searchParams.set('filters', existingFilters);
+        }
         
         // Hacer petición AJAX con JSON
         fetch(url.toString(), {

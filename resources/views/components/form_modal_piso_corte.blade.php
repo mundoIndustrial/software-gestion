@@ -1,4 +1,4 @@
-<x-modal name="piso-corte-form" :show="false" maxWidth="4xl">
+<x-modal name="piso-corte-form" :show="false" maxWidth="2xl">
     <div class="piso-corte-form-modal-container">
         <div class="modal-header">
             <div class="header-content">
@@ -508,6 +508,30 @@
 
             .piso-corte-form-modal-container .modal-header {
                 padding: 20px;
+            }
+
+            .piso-corte-form-modal-container .btn {
+                padding: 10px 18px;
+                font-size: 13px;
+            }
+
+            .piso-corte-form-modal-container .btn svg {
+                width: 16px;
+                height: 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .piso-corte-form-modal-container .form-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .piso-corte-form-modal-container .btn {
+                width: 100%;
+                padding: 10px 16px;
+                font-size: 13px;
+                justify-content: center;
             }
         }
     </style>

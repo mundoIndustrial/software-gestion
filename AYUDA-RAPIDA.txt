@@ -62,7 +62,14 @@ BALANCEOS      → prendas, balanceos, operaciones_balanceo
 ⚠️  ADVERTENCIAS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-• --limpiar elimina TODOS los datos existentes
+• --limpiar elimina SOLO estas tablas:
+  - registro_piso_polo
+  - registro_piso_produccion
+  - operaciones_balanceo
+  - balanceos
+  - prendas
+  
+• Las demás tablas NO son afectadas (usuarios, roles, etc.)
 • Usa --dry-run primero para verificar
 • El proceso puede tardar varios minutos
 

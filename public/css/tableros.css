@@ -189,7 +189,7 @@ body.dark-theme {
 }
 
 .table-head {
-    background: rgba(255, 107, 53, 0.1);
+    background: linear-gradient(135deg, #475569 0%, #334155 100%);
     position: sticky;
     top: 0;
     z-index: 10;
@@ -199,12 +199,21 @@ body.dark-theme {
     padding: 1rem 0.75rem;
     text-align: left;
     font-weight: 600;
-    color: var(--text-primary);
+    color: #ffffff;
     border-bottom: 2px solid var(--border-color);
     font-size: 0.85rem;
     white-space: nowrap;
     min-width: 120px;
     position: relative;
+}
+
+/* Header en modo oscuro */
+body.dark-theme .table-head {
+    background: rgba(255, 107, 53, 0.1);
+}
+
+body.dark-theme .table-header-cell {
+    color: var(--text-primary);
 }
 
 .header-content {
@@ -217,7 +226,7 @@ body.dark-theme {
 .filter-icon {
     background: none;
     border: none;
-    color: var(--text-secondary);
+    color: #cbd5e1;
     cursor: pointer;
     padding: 2px;
     margin-left: 4px;
@@ -229,6 +238,16 @@ body.dark-theme {
 }
 
 .filter-icon:hover {
+    background: rgba(255, 107, 53, 0.2);
+    color: var(--accent-color);
+}
+
+/* Filter icon en modo oscuro */
+body.dark-theme .filter-icon {
+    color: var(--text-secondary);
+}
+
+body.dark-theme .filter-icon:hover {
     background: rgba(255, 107, 53, 0.1);
     color: var(--accent-color);
 }

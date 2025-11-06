@@ -5,23 +5,23 @@ function balanceoApp(balanceoId) {
         operaciones: @json($balanceo ? $balanceo->operaciones : []),
         editingCell: null,
         balanceo: {
-            estado_completo: {{ $balanceo->estado_completo === null ? 'null' : ($balanceo->estado_completo ? 'true' : 'false') }}
+            estado_completo: {{ $balanceo && $balanceo->estado_completo === null ? 'null' : ($balanceo && $balanceo->estado_completo ? 'true' : 'false') }}
         },
         parametros: {
-            total_operarios: {{ $balanceo->total_operarios ?? 0 }},
-            turnos: {{ $balanceo->turnos ?? 1 }},
-            horas_por_turno: {{ $balanceo->horas_por_turno ?? 8 }}
+            total_operarios: {{ $balanceo ? ($balanceo->total_operarios ?? 0) : 0 }},
+            turnos: {{ $balanceo ? ($balanceo->turnos ?? 1) : 1 }},
+            horas_por_turno: {{ $balanceo ? ($balanceo->horas_por_turno ?? 8) : 8 }}
         },
         metricas: {
-            sam_total: {{ $balanceo->sam_total ?? 0 }},
-            meta_teorica: {{ $balanceo->meta_teorica ?? 'null' }},
-            meta_real: {{ $balanceo->meta_real ?? 'null' }},
-            meta_sugerida_85: {{ $balanceo->meta_sugerida_85 ?? 'null' }},
-            tiempo_disponible_horas: {{ $balanceo->tiempo_disponible_horas ?? 0 }},
-            tiempo_disponible_segundos: {{ $balanceo->tiempo_disponible_segundos ?? 0 }},
-            operario_cuello_botella: '{{ $balanceo->operario_cuello_botella ?? '' }}',
-            tiempo_cuello_botella: {{ $balanceo->tiempo_cuello_botella ?? 'null' }},
-            sam_real: {{ $balanceo->sam_real ?? 'null' }}
+            sam_total: {{ $balanceo ? ($balanceo->sam_total ?? 0) : 0 }},
+            meta_teorica: {{ $balanceo ? ($balanceo->meta_teorica ?? 'null') : 'null' }},
+            meta_real: {{ $balanceo ? ($balanceo->meta_real ?? 'null') : 'null' }},
+            meta_sugerida_85: {{ $balanceo ? ($balanceo->meta_sugerida_85 ?? 'null') : 'null' }},
+            tiempo_disponible_horas: {{ $balanceo ? ($balanceo->tiempo_disponible_horas ?? 0) : 0 }},
+            tiempo_disponible_segundos: {{ $balanceo ? ($balanceo->tiempo_disponible_segundos ?? 0) : 0 }},
+            operario_cuello_botella: '{{ $balanceo ? ($balanceo->operario_cuello_botella ?? '') : '' }}',
+            tiempo_cuello_botella: {{ $balanceo ? ($balanceo->tiempo_cuello_botella ?? 'null') : 'null' }},
+            sam_real: {{ $balanceo ? ($balanceo->sam_real ?? 'null') : 'null' }}
         },
         showAddModal: false,
         editingOperacion: null,
@@ -455,6 +455,12 @@ function balanceoApp(balanceoId) {
         // Cambiar estado completo/incompleto
         // Ciclo: null (sin marcar) → true (completo) → false (incompleto) → null
         async toggleEstadoCompleto() {
+            // Validar que existe un balanceo
+            if (!this.balanceoId || this.balanceoId === null) {
+                alert('No hay un balanceo activo para cambiar el estado');
+                return;
+            }
+
             try {
                 // Determinar el siguiente estado
                 let nuevoEstado;

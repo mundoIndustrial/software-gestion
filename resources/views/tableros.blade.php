@@ -22,6 +22,29 @@
     .tableros-container {
         zoom: 0.76;
     }
+    
+    /* Forzar estilos del header en modo claro */
+    body:not(.dark-theme) .modern-table .table-head {
+        background: linear-gradient(135deg, #475569 0%, #334155 100%) !important;
+    }
+    
+    body:not(.dark-theme) .modern-table .table-header-cell {
+        color: #ffffff !important;
+        background: transparent !important;
+    }
+    
+    body:not(.dark-theme) .modern-table .header-content {
+        color: #ffffff !important;
+    }
+    
+    body:not(.dark-theme) .modern-table .filter-icon {
+        color: #cbd5e1 !important;
+    }
+    
+    body:not(.dark-theme) .modern-table .filter-icon:hover {
+        color: #FF6B35 !important;
+        background: rgba(255, 107, 53, 0.2) !important;
+    }
 </style>
 @include('components.tableros-form-modal')
 @include('components.form_modal_piso_corte')
@@ -88,9 +111,17 @@
                                         } elseif ($column === 'hora' && $value) {
                                             $displayValue = $value;
                                         } elseif ($column === 'eficiencia' && $value !== null) {
-                                            $displayValue = round($value * 100, 1) . '%';
+                                            // Si el valor es mayor a 1, ya está en porcentaje, solo formatearlo
+                                            // Si es menor o igual a 1, es decimal y hay que multiplicar por 100
+                                            $eficienciaValue = $value > 1 ? $value : ($value * 100);
+                                            $displayValue = number_format($eficienciaValue, 1, '.', '') . '%';
                                         }
-                                        $eficienciaClass = ($column === 'eficiencia' && $value !== null) ? getEficienciaClass($value) : '';
+                                        // Para la clase de eficiencia, normalizar el valor a decimal (0-1)
+                                        $eficienciaClass = '';
+                                        if ($column === 'eficiencia' && $value !== null) {
+                                            $normalizedValue = $value > 1 ? ($value / 100) : $value;
+                                            $eficienciaClass = getEficienciaClass($normalizedValue);
+                                        }
                                     @endphp
                                     <td class="table-cell editable-cell {{ $eficienciaClass }}" data-column="{{ $column }}" data-value="{{ $column === 'fecha' ? $displayValue : $value }}" title="Doble clic para editar">{{ $displayValue }}</td>
                                 @endforeach
@@ -190,9 +221,17 @@
                                         } elseif ($column === 'hora' && $value) {
                                             $displayValue = $value;
                                         } elseif ($column === 'eficiencia' && $value !== null) {
-                                            $displayValue = round($value * 100, 1) . '%';
+                                            // Si el valor es mayor a 1, ya está en porcentaje, solo formatearlo
+                                            // Si es menor o igual a 1, es decimal y hay que multiplicar por 100
+                                            $eficienciaValue = $value > 1 ? $value : ($value * 100);
+                                            $displayValue = number_format($eficienciaValue, 1, '.', '') . '%';
                                         }
-                                        $eficienciaClass = ($column === 'eficiencia' && $value !== null) ? getEficienciaClass($value) : '';
+                                        // Para la clase de eficiencia, normalizar el valor a decimal (0-1)
+                                        $eficienciaClass = '';
+                                        if ($column === 'eficiencia' && $value !== null) {
+                                            $normalizedValue = $value > 1 ? ($value / 100) : $value;
+                                            $eficienciaClass = getEficienciaClass($normalizedValue);
+                                        }
                                     @endphp
                                     <td class="table-cell editable-cell {{ $eficienciaClass }}" data-column="{{ $column }}" data-value="{{ $column === 'fecha' ? $displayValue : $value }}" title="Doble clic para editar">{{ $displayValue }}</td>
                                 @endforeach
@@ -304,6 +343,7 @@
                                             $dataValue = $displayValue;
                                         } elseif ($column === 'hora_id' && $registro->hora) {
                                             $displayValue = $registro->hora->hora;
+                                            $dataValue = $registro->hora->hora; // Usar valor de hora en lugar de ID
                                         } elseif ($column === 'operario_id' && $registro->operario) {
                                             $displayValue = $registro->operario->name;
                                             $dataValue = $registro->operario->name; // Usar nombre en lugar de ID
@@ -1263,9 +1303,17 @@ function agregarRegistroTiempoReal(registro, section) {
         let displayValue = value;
         
         // Manejar relaciones (objetos)
+        // En corte, hora es un objeto; en produccion/polos, es un string
         if (column === 'hora' && registro.hora) {
-            value = registro.hora.id;
-            displayValue = registro.hora.hora;
+            if (typeof registro.hora === 'object' && registro.hora.hora) {
+                // Corte: hora es un objeto
+                value = registro.hora.id;
+                displayValue = registro.hora.hora;
+            } else {
+                // Produccion/Polos: hora es un string
+                value = registro.hora;
+                displayValue = registro.hora;
+            }
         } else if (column === 'operario' && registro.operario) {
             value = registro.operario.id;
             displayValue = registro.operario.name;
@@ -1278,8 +1326,13 @@ function agregarRegistroTiempoReal(registro, section) {
         } else if (column === 'fecha' && value) {
             displayValue = new Date(value).toLocaleDateString('es-ES');
         } else if (column === 'eficiencia' && value !== null) {
-            displayValue = Math.round(value * 100 * 10) / 10 + '%';
-            td.classList.add(getEficienciaClass(value));
+            // La eficiencia viene como decimal (0.85 = 85%)
+            // Convertir a porcentaje con 1 decimal
+            const eficienciaDecimal = parseFloat(value);
+            // Si el valor es mayor a 10, probablemente ya está en porcentaje (error de datos)
+            const eficienciaPorcentaje = eficienciaDecimal > 10 ? eficienciaDecimal : eficienciaDecimal * 100;
+            displayValue = Math.round(eficienciaPorcentaje * 10) / 10 + '%';
+            td.classList.add(getEficienciaClass(eficienciaDecimal > 10 ? eficienciaDecimal / 100 : eficienciaDecimal));
         }
         
         td.setAttribute('data-value', value);
@@ -1299,7 +1352,7 @@ function agregarRegistroTiempoReal(registro, section) {
     deleteTd.appendChild(deleteBtn);
     row.appendChild(deleteTd);
 
-    // Insertar fila en la posición correcta según el ID (orden ascendente)
+    // Insertar fila en la posición correcta según el ID (orden descendente - más reciente primero)
     const rows = Array.from(tbody.querySelectorAll('tr[data-id]'));
     let inserted = false;
     
@@ -1307,7 +1360,8 @@ function agregarRegistroTiempoReal(registro, section) {
         const existingId = parseInt(rows[i].getAttribute('data-id'));
         const newId = parseInt(registro.id);
         
-        if (newId < existingId) {
+        // Orden descendente: insertar antes si el nuevo ID es MAYOR
+        if (newId > existingId) {
             tbody.insertBefore(row, rows[i]);
             inserted = true;
             break;
@@ -1340,9 +1394,17 @@ function actualizarFilaExistente(row, registro, section) {
             let displayValue = value;
             
             // Manejar relaciones (objetos)
+            // En corte, hora es un objeto; en produccion/polos, es un string
             if (column === 'hora' && registro.hora) {
-                value = registro.hora.id;
-                displayValue = registro.hora.hora;
+                if (typeof registro.hora === 'object' && registro.hora.hora) {
+                    // Corte: hora es un objeto
+                    value = registro.hora.id;
+                    displayValue = registro.hora.hora;
+                } else {
+                    // Produccion/Polos: hora es un string
+                    value = registro.hora;
+                    displayValue = registro.hora;
+                }
             } else if (column === 'operario' && registro.operario) {
                 value = registro.operario.id;
                 displayValue = registro.operario.name;
@@ -1355,8 +1417,12 @@ function actualizarFilaExistente(row, registro, section) {
             } else if (column === 'fecha' && value) {
                 displayValue = new Date(value).toLocaleDateString('es-ES');
             } else if (column === 'eficiencia' && value !== null) {
-                displayValue = Math.round(value * 100 * 10) / 10 + '%';
-                cells[index].className = 'table-cell editable-cell ' + getEficienciaClass(value);
+                // La eficiencia viene como decimal (0.85 = 85%)
+                const eficienciaDecimal = parseFloat(value);
+                // Si el valor es mayor a 10, probablemente ya está en porcentaje (error de datos)
+                const eficienciaPorcentaje = eficienciaDecimal > 10 ? eficienciaDecimal : eficienciaDecimal * 100;
+                displayValue = Math.round(eficienciaPorcentaje * 10) / 10 + '%';
+                cells[index].className = 'table-cell editable-cell ' + getEficienciaClass(eficienciaDecimal > 10 ? eficienciaDecimal / 100 : eficienciaDecimal);
             }
             
             cells[index].setAttribute('data-value', value);

@@ -159,8 +159,17 @@ Al finalizar, el script muestra un resumen con:
 
 ## ⚠️ Advertencias
 
-1. **Modo LIMPIAR**: Elimina TODOS los datos existentes antes de importar. Úsalo con precaución.
+1. **Modo LIMPIAR**: Elimina SOLO los datos de las tablas específicas:
+   - `registro_piso_polo`
+   - `registro_piso_produccion`
+   - `operaciones_balanceo`
+   - `balanceos`
+   - `prendas`
+   
+   **Las demás tablas NO son afectadas** (usuarios, roles, configuraciones, etc.)
+
 2. **Modo DRY-RUN**: Útil para verificar que los archivos se lean correctamente sin modificar la base de datos.
+
 3. **Tiempo de ejecución**: La importación puede tardar varios minutos dependiendo del tamaño de los archivos.
 
 ---

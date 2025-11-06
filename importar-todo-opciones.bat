@@ -41,7 +41,15 @@ goto fin
 
 :importar_limpiar
 echo.
-echo ⚠️  ADVERTENCIA: Se eliminarán TODOS los datos existentes
+echo ⚠️  ADVERTENCIA: Se eliminarán los datos de estas tablas:
+echo    • registro_piso_polo
+echo    • registro_piso_produccion
+echo    • operaciones_balanceo
+echo    • balanceos
+echo    • prendas
+echo.
+echo ℹ️  Las demás tablas NO serán afectadas (usuarios, roles, etc.)
+echo.
 set /p confirmar="¿Estás seguro? (S/N): "
 if /i not "%confirmar%"=="S" (
     echo Operación cancelada.
@@ -50,7 +58,7 @@ if /i not "%confirmar%"=="S" (
 )
 echo.
 echo ═══════════════════════════════════════════════════════════
-echo Importando TODO (con limpieza)...
+echo Importando TODO (con limpieza selectiva)...
 echo ═══════════════════════════════════════════════════════════
 echo.
 php artisan importar:todo-excel --limpiar
