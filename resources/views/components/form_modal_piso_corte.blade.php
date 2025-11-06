@@ -1036,11 +1036,9 @@
             }
 
             updateTable(registro) {
-                if (window.actualizarTablaCorte) {
-                    window.actualizarTablaCorte(registro);
-                } else {
-                    window.location.reload();
-                }
+                // No hacer nada - el sistema de WebSockets (Echo) actualizará automáticamente la tabla
+                // cuando el servidor emita el evento CorteRecordCreated
+                console.log('Registro guardado, esperando actualización en tiempo real via WebSocket');
             }
         }
 

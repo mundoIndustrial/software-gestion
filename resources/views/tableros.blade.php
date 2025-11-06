@@ -717,8 +717,32 @@ document.addEventListener('DOMContentLoaded', function() {
             return 0; // Default
         }
 
-        // Si es operario, máquina o tela, primero crear/buscar el registro
-        if (currentColumn === 'operario_id') {
+        // Si es hora_id, buscar o crear el ID correspondiente
+        if (currentColumn === 'hora_id') {
+            try {
+                const response = await fetch('/find-hora-id', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({ hora: newValue })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    displayName = data.hora; // Guardar el valor de la hora para mostrar
+                    newValue = data.id; // Usar el ID de la hora para guardar
+                    console.log('Hora encontrada/creada:', data);
+                } else {
+                    alert('Error al procesar la hora');
+                    return;
+                }
+            } catch (error) {
+                console.error('Error al buscar/crear hora:', error);
+                alert('Error al procesar la hora');
+                return;
+            }
+        } else if (currentColumn === 'operario_id') {
             try {
                 const response = await fetch('/find-or-create-operario', {
                     method: 'POST',
@@ -796,8 +820,8 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success) {
                 // Actualizar la celda en la interfaz
-                // Para operario, máquina y tela, mostrar el nombre, no el ID
-                if (['operario_id', 'maquina_id', 'tela_id'].includes(currentColumn)) {
+                // Para hora_id, operario, máquina y tela, mostrar el nombre/valor, no el ID
+                if (['hora_id', 'operario_id', 'maquina_id', 'tela_id'].includes(currentColumn)) {
                     currentCell.dataset.value = displayName;
                     currentCell.textContent = displayName;
                 } else {

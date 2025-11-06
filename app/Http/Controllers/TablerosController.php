@@ -685,6 +685,7 @@ class TablerosController extends Controller
             'modulo' => 'sometimes|string',
             'orden_produccion' => 'sometimes|string',
             'hora' => 'sometimes|string',
+            'hora_id' => 'sometimes|integer|exists:horas,id',
             'operario_id' => 'sometimes|integer|exists:users,id',
             'maquina_id' => 'sometimes|integer|exists:maquinas,id',
             'tela_id' => 'sometimes|integer|exists:telas,id',
@@ -1531,5 +1532,25 @@ class TablerosController extends Controller
         }
 
         return response()->json(['values' => $values]);
+    }
+
+    public function findHoraId(Request $request)
+    {
+        $request->validate([
+            'hora' => 'required|string',
+        ]);
+
+        $horaValue = $request->hora;
+        
+        // Buscar o crear la hora por su valor (ej: "1", "2", "3", etc.)
+        $hora = Hora::firstOrCreate(
+            ['hora' => $horaValue]
+        );
+
+        return response()->json([
+            'success' => true,
+            'id' => $hora->id,
+            'hora' => $hora->hora
+        ]);
     }
 }
