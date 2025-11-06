@@ -31,7 +31,13 @@ function initializeOrdenesRealtimeListeners() {
 
     ordenesChannel.listen('OrdenUpdated', (e) => {
         console.log('🎉 Evento OrdenUpdated recibido!', e);
-        handleOrdenUpdate(e.orden, e.action);
+        
+        // Llamar al método de la instancia de modernTable
+        if (window.modernTable && typeof window.modernTable.handleOrdenUpdate === 'function') {
+            window.modernTable.handleOrdenUpdate(e.orden, e.action);
+        } else {
+            console.warn('⚠️ modernTable no está disponible o no tiene el método handleOrdenUpdate');
+        }
     });
 
     console.log('✅ Listener de órdenes configurado');

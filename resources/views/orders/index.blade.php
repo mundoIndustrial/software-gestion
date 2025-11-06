@@ -18,7 +18,7 @@
             <div class="search-container">
                 <div class="search-input-wrapper">
                     <i class="fas fa-search search-icon"></i>
-                    <input type="text" id="buscarOrden" placeholder="Buscar por número de orden..." class="search-input">
+                    <input type="text" id="buscarOrden" placeholder="Buscar por pedido o cliente..." class="search-input">
                 </div>
             </div>
 
@@ -234,8 +234,6 @@
         window.updateUrl = '{{ $updateUrl }}';
     </script>
 
-    <script src="{{ asset('js/orders js/orders-table.js') }}"></script>
-
     <div class="order-registration-modal">
         <x-orders-components.order-registration-modal :areaOptions="$areaOptions" />
     </div>
@@ -277,6 +275,7 @@
     </div>
 
     <script src="{{ asset('js/orders js/modern-table.js') }}"></script>
+    <script src="{{ asset('js/orders js/orders-table.js') }}"></script>
     <script src="{{ asset('js/orders js/pagination.js') }}"></script>
     <script src="{{ asset('js/orders js/realtime-listeners.js') }}"></script>
 @endsection
