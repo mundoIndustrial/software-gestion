@@ -22,15 +22,6 @@
   </div>
 
   <div class="sidebar-content">
-    <!-- Formulario de búsqueda -->
-    <form action="#" class="search-form" role="search">
-      <span class="material-symbols-rounded" aria-hidden="true">search</span>
-      <input type="search"
-             placeholder="Buscar..."
-             aria-label="Buscar en el menú"
-             required />
-    </form>
-
     <!-- Lista del menú principal -->
     <ul class="menu-list" role="navigation" aria-label="Menú principal">
       <li class="menu-item">
@@ -81,7 +72,6 @@
             <a href="{{ route('entrega.index', ['tipo' => 'pedido']) }}"
                class="menu-link {{ request()->routeIs('entrega.index') && request()->route('tipo') === 'pedido' ? 'active' : '' }}"
                aria-label="Ver entrega pedido">
-              <span class="material-symbols-rounded" aria-hidden="true">local_shipping</span>
               <span class="menu-label">Pedidos</span>
             </a>
           </li>
@@ -89,7 +79,6 @@
             <a href="{{ route('entrega.index', ['tipo' => 'bodega']) }}"
                class="menu-link {{ request()->routeIs('entrega.index') && request()->route('tipo') === 'bodega' ? 'active' : '' }}"
                aria-label="Ver entrega bodega">
-              <span class="material-symbols-rounded" aria-hidden="true">warehouse</span>
               <span class="menu-label">Bodega</span>
             </a>
           </li>

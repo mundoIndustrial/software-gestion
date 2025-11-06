@@ -45,7 +45,11 @@ class VistasController extends Controller
             if ($tipo === 'corte') {
                 $registrosQuery->where('pedido', 'like', '%' . $query . '%');
             } else {
-                $registrosQuery->where('pedido', 'like', '%' . $query . '%');
+                // Buscar por pedido o por cliente
+                $registrosQuery->where(function($q) use ($query) {
+                    $q->where('pedido', 'like', '%' . $query . '%')
+                      ->orWhere('cliente', 'like', '%' . $query . '%');
+                });
             }
         }
 
@@ -77,7 +81,15 @@ class VistasController extends Controller
 
         // Aplicar filtro de búsqueda si hay query
         if (!empty($query)) {
-            $registrosQuery->where('pedido', 'like', '%' . $query . '%');
+            if ($tipo === 'corte') {
+                $registrosQuery->where('pedido', 'like', '%' . $query . '%');
+            } else {
+                // Buscar por pedido o por cliente
+                $registrosQuery->where(function($q) use ($query) {
+                    $q->where('pedido', 'like', '%' . $query . '%')
+                      ->orWhere('cliente', 'like', '%' . $query . '%');
+                });
+            }
         }
 
         // Aplicar filtros adicionales

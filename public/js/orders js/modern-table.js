@@ -316,6 +316,7 @@ class ModernTable {
             }
         });
 
+        // Soporte para doble click en desktop
         document.addEventListener('dblclick', e => {
             const cell = e.target.closest('.cell-content');
             if (cell && !cell.querySelector('select')) {
@@ -329,6 +330,9 @@ class ModernTable {
             }
         });
 
+        // Soporte para doble toque en tablets y móviles
+        this.setupTouchDoubleTap();
+
         document.addEventListener('keydown', e => {
             if (e.ctrlKey && e.key === 'c') {
                 const selected = document.querySelector('.table-cell.selected .cell-text');
@@ -337,6 +341,69 @@ class ModernTable {
         });
 
         this.setupModalEvents();
+        
+        // Reinicializar eventos táctiles cuando cambia la orientación
+        window.addEventListener('orientationchange', () => {
+            console.log('Orientation changed, reinitializing touch events');
+            setTimeout(() => {
+                this.setupTouchDoubleTap();
+            }, 300);
+        });
+        
+        // También manejar resize para tablets que no disparan orientationchange
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                console.log('Window resized, checking for orientation change');
+                this.setupTouchDoubleTap();
+            }, 300);
+        });
+    }
+
+    setupTouchDoubleTap() {
+        // Remover listeners anteriores si existen
+        if (this.touchHandler) {
+            document.removeEventListener('touchend', this.touchHandler);
+        }
+
+        let lastTap = 0;
+        let lastTapTarget = null;
+        const doubleTapDelay = 300; // ms entre toques
+
+        this.touchHandler = (e) => {
+            const cell = e.target.closest('.cell-content');
+            if (!cell || cell.querySelector('select')) {
+                return;
+            }
+
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTap;
+
+            // Verificar si es el mismo elemento y dentro del tiempo límite
+            if (lastTapTarget === cell && tapLength < doubleTapDelay && tapLength > 0) {
+                console.log('Double tap detected on cell');
+                e.preventDefault(); // Prevenir zoom en iOS
+                
+                const cellText = cell.querySelector('.cell-text');
+                if (cellText) {
+                    const td = cell.closest('td');
+                    const row = td.closest('tr');
+                    this.openCellModal(cellText.textContent, row.dataset.orderId, td.dataset.column);
+                }
+                
+                // Reset para evitar triple tap
+                lastTap = 0;
+                lastTapTarget = null;
+            } else {
+                // Primer tap o tap en diferente elemento
+                lastTap = currentTime;
+                lastTapTarget = cell;
+            }
+        };
+
+        document.addEventListener('touchend', this.touchHandler, { passive: false });
+        console.log('Touch double tap handler initialized');
     }
 
 

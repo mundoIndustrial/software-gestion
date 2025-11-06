@@ -21,7 +21,7 @@ return new class extends Migration
             $table->integer('etiqueteadas');
             $table->string('etiquetador', 61);
             $table->text('prenda');
-            $table->date('fecha_de_entrega');
+            $table->date('fecha_entrega');
             $table->string('mes', 65);
         });
     }
