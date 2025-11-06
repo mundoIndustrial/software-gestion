@@ -1375,10 +1375,11 @@ function actualizarFilaExistente(row, registro, section) {
 // Función auxiliar para obtener columnas según sección
 function getColumnsForSection(section) {
     // Estas columnas deben coincidir con las definidas en el controlador
+    // IMPORTANTE: El orden debe coincidir EXACTAMENTE con el orden de las columnas en la base de datos
     const columnMap = {
         'produccion': ['fecha', 'modulo', 'orden_produccion', 'hora', 'tiempo_ciclo', 'porcion_tiempo', 'cantidad', 'paradas_programadas', 'paradas_no_programadas', 'tiempo_parada_no_programada', 'numero_operarios', 'tiempo_para_programada', 'tiempo_disponible', 'meta', 'eficiencia'],
         'polos': ['fecha', 'modulo', 'orden_produccion', 'hora', 'tiempo_ciclo', 'porcion_tiempo', 'cantidad', 'paradas_programadas', 'paradas_no_programadas', 'tiempo_parada_no_programada', 'numero_operarios', 'tiempo_para_programada', 'tiempo_disponible', 'meta', 'eficiencia'],
-        'corte': ['fecha', 'orden_produccion', 'hora', 'operario', 'maquina', 'porcion_tiempo', 'cantidad', 'tiempo_ciclo', 'paradas_programadas', 'tiempo_para_programada', 'paradas_no_programadas', 'tiempo_parada_no_programada', 'tipo_extendido', 'numero_capas', 'tiempo_extendido', 'trazado', 'tiempo_trazado', 'actividad', 'tela', 'tiempo_disponible', 'meta', 'eficiencia']
+        'corte': ['fecha', 'orden_produccion', 'porcion_tiempo', 'cantidad', 'tiempo_ciclo', 'paradas_programadas', 'tiempo_para_programada', 'paradas_no_programadas', 'tiempo_parada_no_programada', 'tipo_extendido', 'numero_capas', 'tiempo_extendido', 'trazado', 'tiempo_trazado', 'actividad', 'tiempo_disponible', 'meta', 'eficiencia', 'hora', 'operario', 'maquina', 'tela']
     };
     return columnMap[section] || [];
 }
