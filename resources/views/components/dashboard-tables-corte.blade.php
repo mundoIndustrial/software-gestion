@@ -127,9 +127,48 @@ body:not(.dark-theme) {
 <script>
 // Función para recargar las tablas del dashboard
 function recargarDashboardCorte() {
-    // Obtener la fecha actual del filtro (si existe)
-    const fechaInput = document.querySelector('input[name="fecha"]');
-    const fecha = fechaInput ? fechaInput.value : new Date().toISOString().split('T')[0];
+    console.log('🔄 Recargando dashboard de Corte...');
+    
+    // Obtener los filtros activos desde la URL actual
+    const currentUrl = new URL(window.location.href);
+    const params = new URLSearchParams();
+    
+    // Capturar specific_date de la URL (tiene prioridad)
+    const specificDate = currentUrl.searchParams.get('specific_date');
+    if (specificDate) {
+        params.set('fecha', specificDate);
+        console.log('📅 Filtro desde URL (specific_date):', specificDate);
+    } else {
+        // Capturar fecha (si existe en input)
+        const fechaInput = document.querySelector('input[name="fecha"]');
+        if (fechaInput && fechaInput.value) {
+            params.set('fecha', fechaInput.value);
+            console.log('📅 Filtro fecha desde input:', fechaInput.value);
+        }
+        
+        // Capturar fecha_inicio (si existe)
+        const fechaInicioInput = document.querySelector('input[name="fecha_inicio"]');
+        if (fechaInicioInput && fechaInicioInput.value) {
+            params.set('fecha_inicio', fechaInicioInput.value);
+            console.log('📅 Filtro fecha_inicio:', fechaInicioInput.value);
+        }
+        
+        // Capturar fecha_fin (si existe)
+        const fechaFinInput = document.querySelector('input[name="fecha_fin"]');
+        if (fechaFinInput && fechaFinInput.value) {
+            params.set('fecha_fin', fechaFinInput.value);
+            console.log('📅 Filtro fecha_fin:', fechaFinInput.value);
+        }
+        
+        // Si no hay filtros, usar fecha actual
+        if (!params.has('fecha') && !params.has('fecha_inicio')) {
+            params.set('fecha', new Date().toISOString().split('T')[0]);
+            console.log('📅 Sin filtros, usando fecha actual');
+        }
+    }
+    
+    const url = `/tableros/corte/dashboard?${params.toString()}`;
+    console.log('🌐 URL de recarga:', url);
     
     // Hacer petición AJAX para obtener datos actualizados
     fetch(`/tableros/corte/dashboard?fecha=${fecha}`, {
