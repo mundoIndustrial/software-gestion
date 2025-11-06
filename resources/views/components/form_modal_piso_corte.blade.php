@@ -688,6 +688,11 @@
                 this.inputElement.addEventListener('input', 
                     Utils.debounce(this.handleInput.bind(this), 300)
                 );
+                
+                // Agregar evento blur para auto-seleccionar cuando el usuario sale del campo
+                this.inputElement.addEventListener('blur', 
+                    Utils.debounce(this.handleBlur.bind(this), 200)
+                );
             }
 
             async handleInput(e) {
@@ -703,6 +708,40 @@
                     this.renderSuggestions(data, query);
                 } catch (error) {
                     Utils.handleError(error, 'Error al buscar');
+                }
+            }
+
+            async handleBlur(e) {
+                const query = e.target.value.trim();
+                
+                // Si el campo está vacío o ya tiene un ID asignado, no hacer nada
+                if (!query || this.hiddenElement.value) {
+                    return;
+                }
+                
+                // Intentar buscar una coincidencia exacta
+                try {
+                    const data = await this.search(query);
+                    const items = this.getItemsFromData(data);
+                    
+                    if (items.length > 0) {
+                        // Buscar coincidencia exacta (case insensitive)
+                        const exactMatch = items.find(item => 
+                            item[this.displayKey].toUpperCase() === query.toUpperCase()
+                        );
+                        
+                        if (exactMatch) {
+                            // Auto-seleccionar la coincidencia exacta
+                            console.log('Auto-seleccionando coincidencia exacta:', exactMatch);
+                            this.selectItem(exactMatch);
+                        } else if (items.length === 1) {
+                            // Si solo hay un resultado, auto-seleccionarlo
+                            console.log('Auto-seleccionando único resultado:', items[0]);
+                            this.selectItem(items[0]);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error al buscar en blur:', error);
                 }
             }
 
@@ -814,12 +853,57 @@
                 this.tiempoCicloElement = document.querySelector(tiempoCicloSelector);
                 this.route = route;
                 this.httpService = new HttpService();
+                this.updateDebounced = Utils.debounce(this.update.bind(this), 500);
                 
                 console.log('TiempoCicloManager inicializado:');
                 console.log('  - Tela element:', this.telaIdElement);
                 console.log('  - Maquina element:', this.maquinaIdElement);
                 console.log('  - TiempoCiclo element:', this.tiempoCicloElement);
                 console.log('  - Route:', this.route);
+                
+                // Agregar listeners para detectar cambios en los campos ocultos
+                this.setupListeners();
+            }
+
+            setupListeners() {
+                // Monitorear cambios en los campos ocultos con MutationObserver
+                const observerConfig = { attributes: true, attributeFilter: ['value'] };
+                
+                const telaObserver = new MutationObserver(() => {
+                    console.log('Cambio detectado en tela_id:', this.telaIdElement.value);
+                    this.updateDebounced();
+                });
+                
+                const maquinaObserver = new MutationObserver(() => {
+                    console.log('Cambio detectado en maquina_id:', this.maquinaIdElement.value);
+                    this.updateDebounced();
+                });
+                
+                // Observar cambios en los atributos
+                telaObserver.observe(this.telaIdElement, observerConfig);
+                maquinaObserver.observe(this.maquinaIdElement, observerConfig);
+                
+                // También escuchar eventos de input y change
+                this.telaIdElement.addEventListener('change', () => {
+                    console.log('Change event en tela_id:', this.telaIdElement.value);
+                    this.updateDebounced();
+                });
+                
+                this.maquinaIdElement.addEventListener('change', () => {
+                    console.log('Change event en maquina_id:', this.maquinaIdElement.value);
+                    this.updateDebounced();
+                });
+                
+                // Listener adicional para el input visible (por si se escribe manualmente)
+                this.telaIdElement.addEventListener('input', () => {
+                    console.log('Input event en tela_id:', this.telaIdElement.value);
+                    this.updateDebounced();
+                });
+                
+                this.maquinaIdElement.addEventListener('input', () => {
+                    console.log('Input event en maquina_id:', this.maquinaIdElement.value);
+                    this.updateDebounced();
+                });
             }
 
             async update() {

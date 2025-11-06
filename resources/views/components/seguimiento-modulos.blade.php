@@ -583,9 +583,49 @@ function getCurrentSection() {
 }
 
 // Función para actualizar el contenido de la tabla de seguimiento
-function updateSeguimientoTableContent(seguimientoData) {
-    const tableContainer = document.querySelector('.seguimiento-table');
-    if (!tableContainer) return;
+function updateSeguimientoTableContent(seguimientoData, section = null) {
+    console.log('🔍 Buscando tabla de seguimiento...');
+    
+    let tableContainer = null;
+    
+    // Si se especifica una sección, buscar en su contenedor específico
+    if (section) {
+        const containerId = `seguimiento-container-${section}`;
+        console.log(`📍 Buscando en contenedor específico: ${containerId}`);
+        
+        const container = document.getElementById(containerId);
+        if (container) {
+            tableContainer = container.querySelector('.seguimiento-table');
+            console.log(`✅ Contenedor encontrado, tabla=${!!tableContainer}`);
+        } else {
+            console.error(`❌ No se encontró el contenedor ${containerId}`);
+        }
+    }
+    
+    // Si no se encontró con la sección específica, buscar globalmente
+    if (!tableContainer) {
+        console.log('🔍 Buscando tabla globalmente con .seguimiento-table');
+        tableContainer = document.querySelector('.seguimiento-table');
+    }
+    
+    if (!tableContainer) {
+        console.error('❌ No se encontró ninguna tabla .seguimiento-table');
+        console.log('🔍 Intentando buscar en todos los contenedores...');
+        
+        // Intentar buscar en cada contenedor de sección
+        const contenedores = ['seguimiento-container-produccion', 'seguimiento-container-polos', 'seguimiento-container-corte'];
+        contenedores.forEach(id => {
+            const container = document.getElementById(id);
+            if (container) {
+                const tabla = container.querySelector('.seguimiento-table');
+                console.log(`📍 Contenedor ${id}: tabla encontrada=${!!tabla}, visible=${container.offsetParent !== null}`);
+            }
+        });
+        
+        return;
+    }
+    
+    console.log('✅ Tabla encontrada:', tableContainer);
 
     // Actualizar módulos disponibles
     const modulosDisponibles = seguimientoData.modulosDisponibles || [];
@@ -710,7 +750,9 @@ function updateSeguimientoTableContent(seguimientoData) {
     });
     html += '</tr></tbody>';
 
+    console.log('🔄 Actualizando innerHTML de la tabla...');
     tableContainer.innerHTML = html;
+    console.log('✅ Tabla actualizada con nuevo HTML');
 }
 
 // Función auxiliar para formatear números
@@ -772,46 +814,11 @@ function initializeSeguimientoRealtime() {
     
     window.seguimientoChannelSubscribed = true;
     
-    // Suscribirse a todos los canales relevantes
-    // Canal de Producción
-    window.Echo.channel('produccion').listen('ProduccionRecordCreated', (e) => {
-        console.log('🎉 Evento ProduccionRecordCreated recibido en seguimiento');
-        // Verificar la sección actual en el momento del evento
-        const currentSection = getCurrentSection();
-        console.log('📍 Sección actual:', currentSection);
-        if (currentSection === 'produccion') {
-            console.log('🔄 Recargando seguimiento de Producción...');
-            recargarSeguimiento();
-        }
-    });
+    // NOTA: Los listeners ahora están manejados por tableros.blade.php
+    // para evitar duplicación. Este componente solo expone las funciones
+    // de recarga que son llamadas desde tableros.blade.php
     
-    // Canal de Polos
-    window.Echo.channel('polo').listen('PoloRecordCreated', (e) => {
-        console.log('🎉 Evento PoloRecordCreated recibido en seguimiento');
-        // Verificar la sección actual en el momento del evento
-        const currentSection = getCurrentSection();
-        console.log('📍 Sección actual:', currentSection);
-        if (currentSection === 'polos') {
-            console.log('🔄 Recargando seguimiento de Polos...');
-            recargarSeguimiento();
-        }
-    });
-    
-    // Canal de Corte
-    window.Echo.channel('corte').listen('CorteRecordCreated', (e) => {
-        console.log('🎉 Evento CorteRecordCreated recibido en seguimiento');
-        // Verificar la sección actual en el momento del evento
-        const currentSection = getCurrentSection();
-        console.log('📍 Sección actual:', currentSection);
-        if (currentSection === 'corte') {
-            console.log('🔄 Recargando dashboard de Corte...');
-            if (typeof recargarDashboardCorte === 'function') {
-                recargarDashboardCorte();
-            }
-        }
-    });
-
-    console.log('✅ Listeners configurados para todas las secciones');
+    console.log('✅ Funciones de seguimiento disponibles (listeners manejados por tableros.blade.php)');
 }
 
 // Función para recargar los datos de seguimiento
@@ -859,6 +866,53 @@ function recargarSeguimiento() {
     })
     .catch(error => {
         console.error('Error al recargar seguimiento:', error);
+    });
+}
+
+// Función para recargar el seguimiento de una sección específica
+function recargarSeguimientoEspecifico(section) {
+    console.log(`🔄 Recargando datos de seguimiento para sección: ${section}`);
+    
+    // Obtener los parámetros actuales de la URL
+    const params = new URLSearchParams(window.location.search);
+    
+    const seguimientoUrl = new URL('/tableros/get-seguimiento-data', window.location.origin);
+    seguimientoUrl.search = params.toString();
+    seguimientoUrl.searchParams.set('section', section);
+    
+    fetch(seguimientoUrl, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log(`✅ Datos de seguimiento recibidos para ${section}:`, data);
+        
+        // Los datos pueden venir en data.seguimiento o directamente en data
+        const seguimientoData = data.seguimiento || data;
+        
+        if (seguimientoData && seguimientoData.modulosDisponibles) {
+            console.log('✅ Actualizando tabla de seguimiento...');
+            console.log('Módulos:', seguimientoData.modulosDisponibles);
+            console.log('Totales:', seguimientoData.totales);
+            
+            // Actualizar las variables globales
+            window.seguimientoData = seguimientoData;
+            
+            // Redibujar la tabla usando la función existente, pasando la sección
+            updateSeguimientoTableContent(seguimientoData, section);
+            
+            console.log(`✅ Tabla de seguimiento de ${section} actualizada`);
+        } else {
+            console.error('❌ No se recibieron datos de seguimiento válidos');
+            console.error('Estructura recibida:', data);
+        }
+    })
+    .catch(error => {
+        console.error(`❌ Error al recargar seguimiento de ${section}:`, error);
     });
 }
 

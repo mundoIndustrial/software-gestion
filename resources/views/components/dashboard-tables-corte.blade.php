@@ -171,7 +171,7 @@ function recargarDashboardCorte() {
     console.log('🌐 URL de recarga:', url);
     
     // Hacer petición AJAX para obtener datos actualizados
-    fetch(`/tableros/corte/dashboard?fecha=${fecha}`, {
+    fetch(url, {
         method: 'GET',
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
@@ -200,54 +200,113 @@ function recargarDashboardCorte() {
 // Función para actualizar la tabla de horas completa
 function actualizarTablaHorasCompleta(horas) {
     const tbody = document.getElementById('horasTableBody');
-    if (!tbody) return;
+    if (!tbody) {
+        console.warn('No se encontró el tbody de horas');
+        return;
+    }
     
+    console.log('🔄 Actualizando tabla de horas sin recargar página...');
     tbody.innerHTML = '';
     
+    // Calcular totales
+    let totalCantidad = 0;
+    let totalMeta = 0;
+    
     horas.forEach(hora => {
+        totalCantidad += hora.cantidad || 0;
+        totalMeta += hora.meta || 0;
+        
+        const eficiencia = hora.eficiencia || 0;
+        const bgColor = eficiencia >= 80 ? '#3b82f6' : (eficiencia >= 70 ? '#eab308' : '#ef4444');
+        const textColor = (eficiencia >= 70 && eficiencia < 80) ? '#000000' : '#ffffff';
+        
         const row = document.createElement('tr');
+        row.style.cssText = 'background: var(--corte-table-row-bg); transition: background-color 0.2s ease;';
         row.innerHTML = `
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${hora.hora}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${hora.cantidad}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${Math.round(hora.meta * 100) / 100}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getEficienciaClass(hora.eficiencia)}">
-                    ${hora.eficiencia}%
-                </span>
+            <td style="padding: 14px 20px; border-bottom: 1px solid var(--corte-table-row-border); color: var(--corte-table-text); font-weight: 500;">${hora.hora}</td>
+            <td style="padding: 14px 20px; border-bottom: 1px solid var(--corte-table-row-border); text-align: center; color: var(--corte-table-text-secondary); font-weight: 500;">${hora.cantidad.toLocaleString()}</td>
+            <td style="padding: 14px 20px; border-bottom: 1px solid var(--corte-table-row-border); text-align: center; color: var(--corte-table-text-secondary); font-weight: 500;">${hora.meta.toLocaleString()}</td>
+            <td style="padding: 0; border-bottom: 1px solid var(--corte-table-row-border); text-align: center; background: ${bgColor}; color: ${textColor}; font-weight: 600; font-size: 13px;">
+                <div style="padding: 14px 20px; width: 100%; height: 100%;">${eficiencia > 0 ? eficiencia.toFixed(1) + '%' : '-'}</div>
             </td>
         `;
         tbody.appendChild(row);
     });
+    
+    // Agregar fila de totales
+    const eficienciaTotal = totalMeta > 0 ? (totalCantidad / totalMeta) * 100 : 0;
+    const bgColorTotal = eficienciaTotal >= 80 ? '#3b82f6' : (eficienciaTotal >= 70 ? '#eab308' : '#ef4444');
+    const textColorTotal = (eficienciaTotal >= 70 && eficienciaTotal < 80) ? '#000000' : '#ffffff';
+    
+    const totalRow = document.createElement('tr');
+    totalRow.style.cssText = 'background: linear-gradient(135deg, #374151, #4b5563); font-weight: 600; border-radius: 0 0 8px 8px;';
+    totalRow.innerHTML = `
+        <td style="padding: 16px 20px; border-bottom: none; color: #ffffff; border-radius: 0 0 0 8px;">TOTAL</td>
+        <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;">${totalCantidad.toLocaleString()}</td>
+        <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;">${totalMeta.toLocaleString()}</td>
+        <td style="padding: 0; border-bottom: none; border-radius: 0 0 8px 0; text-align: center; background: ${bgColorTotal}; color: ${textColorTotal}; font-weight: 600; font-size: 13px;">
+            <div style="padding: 16px 20px; width: 100%; height: 100%;">${eficienciaTotal.toFixed(1)}%</div>
+        </td>
+    `;
+    tbody.appendChild(totalRow);
+    
+    console.log('✅ Tabla de horas actualizada');
 }
 
 // Función para actualizar la tabla de operarios completa
 function actualizarTablaOperariosCompleta(operarios) {
     const tbody = document.getElementById('operariosTableBody');
-    if (!tbody) return;
+    if (!tbody) {
+        console.warn('No se encontró el tbody de operarios');
+        return;
+    }
     
+    console.log('🔄 Actualizando tabla de operarios sin recargar página...');
     tbody.innerHTML = '';
     
+    // Calcular totales
+    let totalCantidad = 0;
+    let totalMeta = 0;
+    
     operarios.forEach(operario => {
+        totalCantidad += operario.cantidad || 0;
+        totalMeta += operario.meta || 0;
+        
+        const eficiencia = operario.eficiencia || 0;
+        const bgColor = eficiencia >= 80 ? '#3b82f6' : (eficiencia >= 70 ? '#eab308' : '#ef4444');
+        const textColor = (eficiencia >= 70 && eficiencia < 80) ? '#000000' : '#ffffff';
+        
         const row = document.createElement('tr');
+        row.style.cssText = 'background: var(--corte-table-row-bg); transition: background-color 0.2s ease;';
         row.innerHTML = `
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${operario.operario}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${operario.cantidad}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${Math.round(operario.meta * 100) / 100}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getEficienciaClass(operario.eficiencia)}">
-                    ${operario.eficiencia}%
-                </span>
+            <td style="padding: 14px 20px; border-bottom: 1px solid var(--corte-table-row-border); color: var(--corte-table-text); font-weight: 500;">${operario.operario}</td>
+            <td style="padding: 14px 20px; border-bottom: 1px solid var(--corte-table-row-border); text-align: center; color: var(--corte-table-text-secondary); font-weight: 500;">${operario.cantidad.toLocaleString()}</td>
+            <td style="padding: 14px 20px; border-bottom: 1px solid var(--corte-table-row-border); text-align: center; color: var(--corte-table-text-secondary); font-weight: 500;">${operario.meta.toLocaleString()}</td>
+            <td style="padding: 0; border-bottom: 1px solid var(--corte-table-row-border); text-align: center; background: ${bgColor}; color: ${textColor}; font-weight: 600; font-size: 13px;">
+                <div style="padding: 14px 20px; width: 100%; height: 100%;">${eficiencia > 0 ? eficiencia.toFixed(1) + '%' : '-'}</div>
             </td>
         `;
         tbody.appendChild(row);
     });
-}
-
-function getEficienciaClass(eficiencia) {
-    const eficienciaNum = parseFloat(eficiencia);
-    if (eficienciaNum >= 100) return 'bg-green-100 text-green-800';
-    if (eficienciaNum >= 80) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-red-100 text-red-800';
+    
+    // Agregar fila de totales
+    const eficienciaTotal = totalMeta > 0 ? (totalCantidad / totalMeta) * 100 : 0;
+    const bgColorTotal = eficienciaTotal >= 80 ? '#3b82f6' : (eficienciaTotal >= 70 ? '#eab308' : '#ef4444');
+    const textColorTotal = (eficienciaTotal >= 70 && eficienciaTotal < 80) ? '#000000' : '#ffffff';
+    
+    const totalRow = document.createElement('tr');
+    totalRow.style.cssText = 'background: linear-gradient(135deg, #374151, #4b5563); font-weight: 600; border-radius: 0 0 8px 8px;';
+    totalRow.innerHTML = `
+        <td style="padding: 16px 20px; border-bottom: none; color: #ffffff; border-radius: 0 0 0 8px;">TOTAL</td>
+        <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;">${totalCantidad.toLocaleString()}</td>
+        <td style="padding: 16px 20px; border-bottom: none; text-align: center; color: #ffffff;">${totalMeta.toLocaleString()}</td>
+        <td style="padding: 0; border-bottom: none; border-radius: 0 0 8px 0; text-align: center; background: ${bgColorTotal}; color: ${textColorTotal}; font-weight: 600; font-size: 13px;">
+            <div style="padding: 16px 20px; width: 100%; height: 100%;">${eficienciaTotal.toFixed(1)}%</div>
+        </td>
+    `;
+    tbody.appendChild(totalRow);
+    
+    console.log('✅ Tabla de operarios actualizada');
 }
 
 // Listen for real-time updates with detailed debugging
@@ -300,13 +359,8 @@ if (document.readyState === 'loading') {
     setTimeout(initializeCorteChannel, 100);
 }
 
-// Escuchar evento de eliminación para recargar el dashboard
-window.addEventListener('registro-eliminado', (e) => {
-    if (e.detail.section === 'corte') {
-        console.log('Registro eliminado, recargando dashboard...');
-        recargarDashboardCorte();
-    }
-});
+// NO necesitamos listener de 'registro-eliminado'
+// El listener del canal WebSocket ya maneja las actualizaciones
 
 function actualizarTablaHoras(registro) {
     const horasTableBody = document.getElementById('horasTableBody');

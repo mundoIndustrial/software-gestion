@@ -22,6 +22,7 @@ class RegistroPisoProduccion extends Model
         'tiempo_parada_no_programada',
         'numero_operarios',
         'tiempo_para_programada',
+        'tiempo_disponible',
         'meta',
         'eficiencia'
     ];
@@ -32,6 +33,7 @@ class RegistroPisoProduccion extends Model
         'porcion_tiempo' => 'decimal:2',
         'tiempo_parada_no_programada' => 'decimal:2',
         'tiempo_para_programada' => 'decimal:2',
+        'tiempo_disponible' => 'decimal:2',
         'meta' => 'decimal:2',
         'eficiencia' => 'decimal:2'
     ];

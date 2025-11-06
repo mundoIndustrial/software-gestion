@@ -687,20 +687,13 @@
             
             // Solo recargar si estamos en la sección de producción
             if (currentSection === 'produccion') {
-                // Si es eliminación, solo eliminar la fila
+                // Esta es una tabla agregada, siempre recargar
                 if (e.registro && e.registro.deleted) {
-                    console.log('🗑️ Eliminando registro ID:', e.registro.id);
-                    const row = document.querySelector(`tr[data-id="${e.registro.id}"]`);
-                    if (row) {
-                        row.style.transition = 'opacity 0.3s ease';
-                        row.style.opacity = '0';
-                        setTimeout(() => row.remove(), 300);
-                    }
+                    console.log('🗑️ Registro eliminado ID:', e.registro.id, '- Recargando...');
                 } else {
-                    // Para crear/actualizar, recargar la página
-                    console.log('🔄 Recargando vista fullscreen de Producción...');
-                    location.reload();
+                    console.log('🔄 Registro creado/actualizado - Recargando...');
                 }
+                location.reload();
             }
         });
 
@@ -710,20 +703,13 @@
             
             // Solo recargar si estamos en la sección de polos
             if (currentSection === 'polos') {
-                // Si es eliminación, solo eliminar la fila
+                // Esta es una tabla agregada, siempre recargar
                 if (e.registro && e.registro.deleted) {
-                    console.log('🗑️ Eliminando registro ID:', e.registro.id);
-                    const row = document.querySelector(`tr[data-id="${e.registro.id}"]`);
-                    if (row) {
-                        row.style.transition = 'opacity 0.3s ease';
-                        row.style.opacity = '0';
-                        setTimeout(() => row.remove(), 300);
-                    }
+                    console.log('🗑️ Registro eliminado ID:', e.registro.id, '- Recargando...');
                 } else {
-                    // Para crear/actualizar, recargar la página
-                    console.log('🔄 Recargando vista fullscreen de Polos...');
-                    location.reload();
+                    console.log('🔄 Registro creado/actualizado - Recargando...');
                 }
+                location.reload();
             }
         });
 
@@ -733,20 +719,13 @@
             
             // Solo recargar si estamos en la sección de corte
             if (currentSection === 'corte') {
-                // Si es eliminación, solo eliminar la fila
+                // Esta es una tabla agregada, siempre recargar
                 if (e.registro && e.registro.deleted) {
-                    console.log('🗑️ Eliminando registro ID:', e.registro.id);
-                    const row = document.querySelector(`tr[data-id="${e.registro.id}"]`);
-                    if (row) {
-                        row.style.transition = 'opacity 0.3s ease';
-                        row.style.opacity = '0';
-                        setTimeout(() => row.remove(), 300);
-                    }
+                    console.log('🗑️ Registro eliminado ID:', e.registro.id, '- Recargando...');
                 } else {
-                    // Para crear/actualizar, recargar la página
-                    console.log('🔄 Recargando vista fullscreen de Corte...');
-                    location.reload();
+                    console.log('🔄 Registro creado/actualizado - Recargando...');
                 }
+                location.reload();
             }
         });
 

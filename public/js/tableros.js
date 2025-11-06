@@ -245,8 +245,9 @@ function applyFiltersBackend(section) {
         }
     });
 
-    // Guardar filtros en localStorage para mantenerlos después de editar
-    localStorage.setItem(`tableros_filters_${section}`, JSON.stringify(filters));
+    // Guardar filtros en sessionStorage (único por ventana/pestaña)
+    // Esto evita que los filtros se compartan entre ventanas diferentes
+    sessionStorage.setItem(`tableros_filters_${section}`, JSON.stringify(filters));
 
     // Build URL with filters
     const url = new URL(window.location.href);
@@ -341,9 +342,9 @@ function updatePaginationInfo(section, visible, total) {
     }
 }
 
-// Restaurar filtros guardados desde localStorage
+// Restaurar filtros guardados desde sessionStorage (único por ventana)
 function restoreSavedFilters(section) {
-    const savedFilters = localStorage.getItem(`tableros_filters_${section}`);
+    const savedFilters = sessionStorage.getItem(`tableros_filters_${section}`);
     if (!savedFilters) return;
 
     try {
@@ -409,11 +410,11 @@ function restoreSavedFilters(section) {
         });
     } catch (error) {
         console.error('Error parsing saved filters:', error);
-        localStorage.removeItem(`tableros_filters_${section}`);
+        sessionStorage.removeItem(`tableros_filters_${section}`);
     }
 }
 
 // Limpiar filtros guardados
 function clearSavedFilters(section) {
-    localStorage.removeItem(`tableros_filters_${section}`);
+    sessionStorage.removeItem(`tableros_filters_${section}`);
 }

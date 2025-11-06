@@ -35,6 +35,7 @@ class RegistroPisoPolo extends Model
         'porcion_tiempo' => 'decimal:2',
         'tiempo_parada_no_programada' => 'decimal:2',
         'tiempo_para_programada' => 'decimal:2',
+        'tiempo_disponible' => 'decimal:2',
         'meta' => 'decimal:2',
         'eficiencia' => 'decimal:2',
     ];

@@ -1041,10 +1041,8 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 console.log('✅ Registro eliminado del servidor:', id);
                 
-                // Si es sección de corte, recargar el dashboard
-                if (section === 'corte' && typeof recargarDashboardCorte === 'function') {
-                    recargarDashboardCorte();
-                }
+                // NO llamar a recargarDashboardCorte aquí
+                // El dashboard se actualizará automáticamente por el evento WebSocket
                 
                 // Emitir evento personalizado para que otras ventanas actualicen
                 window.dispatchEvent(new CustomEvent('registro-eliminado', { 
@@ -1192,6 +1190,13 @@ function initializeRealtimeListeners() {
         return;
     }
 
+    // Verificar si ya hay suscripciones activas (de seguimiento-modulos)
+    if (window.tablerosChannelSubscribed) {
+        console.log('⚠️ Listeners de tableros ya inicializados, omitiendo...');
+        return;
+    }
+    
+    window.tablerosChannelSubscribed = true;
     console.log('✅ Echo disponible. Suscribiendo a canales...');
 
     // Canal de Producción
@@ -1213,6 +1218,12 @@ function initializeRealtimeListeners() {
                 row.style.transition = 'opacity 0.3s ease';
                 row.style.opacity = '0';
                 setTimeout(() => row.remove(), 300);
+            }
+            
+            // También notificar al seguimiento para que se actualice
+            console.log('📊 Notificando actualización al seguimiento de producción...');
+            if (typeof recargarSeguimientoEspecifico === 'function') {
+                recargarSeguimientoEspecifico('produccion');
             }
         } else {
             agregarRegistroTiempoReal(e.registro, 'produccion');
@@ -1239,6 +1250,12 @@ function initializeRealtimeListeners() {
                 row.style.opacity = '0';
                 setTimeout(() => row.remove(), 300);
             }
+            
+            // También notificar al seguimiento para que se actualice
+            console.log('📊 Notificando actualización al seguimiento de polos...');
+            if (typeof recargarSeguimientoEspecifico === 'function') {
+                recargarSeguimientoEspecifico('polos');
+            }
         } else {
             agregarRegistroTiempoReal(e.registro, 'polos');
         }
@@ -1264,6 +1281,9 @@ function initializeRealtimeListeners() {
                 row.style.opacity = '0';
                 setTimeout(() => row.remove(), 300);
             }
+            
+            // NO llamar a recargarDashboardCorte aquí
+            // El componente dashboard-tables-corte.blade.php ya tiene su propio listener
         } else {
             // Es un evento de creación o actualización
             agregarRegistroTiempoReal(e.registro, 'corte');
@@ -1280,6 +1300,11 @@ function agregarRegistroTiempoReal(registro, section) {
     const table = document.querySelector(`table[data-section="${section}"]`);
     if (!table) {
         console.warn(`Tabla no encontrada para sección: ${section}`);
+        // Aún así, actualizar el seguimiento
+        console.log('📊 Actualizando seguimiento aunque no haya tabla visible...');
+        if (typeof recargarSeguimientoEspecifico === 'function') {
+            recargarSeguimientoEspecifico(section);
+        }
         return;
     }
 
@@ -1295,7 +1320,18 @@ function agregarRegistroTiempoReal(registro, section) {
         console.log(`Registro ${registro.id} ya existe, actualizando...`);
         // Actualizar fila existente
         actualizarFilaExistente(existingRow, registro, section);
+        // También actualizar el seguimiento
+        console.log('📊 Actualizando seguimiento después de actualizar registro...');
+        if (typeof recargarSeguimientoEspecifico === 'function') {
+            recargarSeguimientoEspecifico(section);
+        }
         return;
+    }
+    
+    // También actualizar el seguimiento cuando se agrega un nuevo registro
+    console.log('📊 Actualizando seguimiento después de agregar nuevo registro...');
+    if (typeof recargarSeguimientoEspecifico === 'function') {
+        recargarSeguimientoEspecifico(section);
     }
 
     // Crear nueva fila

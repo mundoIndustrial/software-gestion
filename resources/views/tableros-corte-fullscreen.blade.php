@@ -539,19 +539,48 @@
         window.Echo.channel('corte').listen('CorteRecordCreated', (e) => {
             console.log('🎉 Evento CorteRecordCreated recibido en fullscreen', e);
             
-            // Si es eliminación, solo eliminar la fila
+            // Para cualquier cambio, recargar solo las tablas sin recargar toda la página
             if (e.registro && e.registro.deleted) {
-                console.log('🗑️ Eliminando registro ID:', e.registro.id);
-                const row = document.querySelector(`tr[data-id="${e.registro.id}"]`);
-                if (row) {
-                    row.style.transition = 'opacity 0.3s ease';
-                    row.style.opacity = '0';
-                    setTimeout(() => row.remove(), 300);
-                }
+                console.log('🗑️ Registro eliminado, actualizando tablas...');
             } else {
-                // Para crear/actualizar, recargar la página
-                location.reload();
+                console.log('✏️ Registro creado/actualizado, actualizando tablas...');
             }
+            
+            // Recargar solo las tablas sin recargar toda la página
+            const url = new URL(window.location.href);
+            
+            fetch(url.toString(), {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'text/html'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                // Parsear el HTML recibido
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Actualizar solo las tablas de datos
+                const newHorasTable = doc.querySelector('.table-section:nth-child(1) tbody');
+                const newOperariosTable = doc.querySelector('.table-section:nth-child(2) tbody');
+                
+                const currentHorasTable = document.querySelector('.table-section:nth-child(1) tbody');
+                const currentOperariosTable = document.querySelector('.table-section:nth-child(2) tbody');
+                
+                if (newHorasTable && currentHorasTable) {
+                    currentHorasTable.innerHTML = newHorasTable.innerHTML;
+                    console.log('✅ Tabla de horas actualizada');
+                }
+                
+                if (newOperariosTable && currentOperariosTable) {
+                    currentOperariosTable.innerHTML = newOperariosTable.innerHTML;
+                    console.log('✅ Tabla de operarios actualizada');
+                }
+            })
+            .catch(error => {
+                console.error('Error al actualizar tablas:', error);
+            });
         });
 
         console.log('✅ Listener configurado en fullscreen de corte');

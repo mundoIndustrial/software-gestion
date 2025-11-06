@@ -9,6 +9,8 @@ export default defineConfig({
         hmr: {
             host: process.env.VITE_HMR_HOST || 'localhost',
         },
+        cors: true, // Habilitar CORS para desarrollo en red
+        origin: process.env.APP_URL || 'http://localhost:8000',
     },
     plugins: [
         laravel({

@@ -219,71 +219,135 @@ class TablerosController extends Controller
     }
 
     /**
+     * Obtener columnas válidas para cada sección
+     */
+    private function getValidColumnsForSection($section)
+    {
+        $validColumns = [
+            'produccion' => [
+                'fecha', 'modulo', 'orden_produccion', 'hora', 'tiempo_ciclo',
+                'porcion_tiempo', 'cantidad', 'paradas_programadas', 'paradas_no_programadas',
+                'tiempo_parada_no_programada', 'numero_operarios', 'tiempo_para_programada',
+                'meta', 'eficiencia'
+            ],
+            'polos' => [
+                'fecha', 'modulo', 'orden_produccion', 'hora', 'tiempo_ciclo',
+                'porcion_tiempo', 'cantidad', 'paradas_programadas', 'paradas_no_programadas',
+                'tiempo_parada_no_programada', 'numero_operarios', 'tiempo_para_programada',
+                'meta', 'eficiencia'
+            ],
+            'corte' => [
+                'fecha', 'modulo', 'orden_produccion', 'hora_id', 'operario_id', 'actividad',
+                'maquina_id', 'tela_id', 'tiempo_ciclo', 'porcion_tiempo', 'cantidad',
+                'paradas_programadas', 'paradas_no_programadas', 'tiempo_parada_no_programada',
+                'numero_operarios', 'tiempo_para_programada', 'meta', 'eficiencia',
+                'tipo_extendido', 'numero_capas', 'tiempo_extendido', 'trazado', 'tiempo_trazado'
+            ]
+        ];
+
+        return $validColumns[$section] ?? [];
+    }
+
+    /**
      * Aplicar filtros dinámicos por columna
      */
     private function aplicarFiltrosDinamicos($query, $request, $section)
     {
-        // Obtener filtros del request (formato JSON)
-        $filters = $request->get('filters');
-        
-        if (!$filters) {
-            return;
-        }
-
-        // Si es string JSON, decodificar
-        if (is_string($filters)) {
-            $filters = json_decode($filters, true);
-        }
-
-        if (!is_array($filters) || empty($filters)) {
-            return;
-        }
-
-        // Aplicar cada filtro
-        foreach ($filters as $column => $values) {
-            if (empty($values) || !is_array($values)) {
-                continue;
+        try {
+            // Obtener filtros del request (formato JSON)
+            $filters = $request->get('filters');
+            
+            if (!$filters) {
+                return;
             }
 
-            // Manejar columnas especiales según la sección
-            if ($section === 'corte') {
-                // Para corte, manejar relaciones usando los nombres de las columnas con _id
-                if ($column === 'hora_id') {
-                    $query->whereHas('hora', function($q) use ($values) {
-                        $q->whereIn('hora', $values);
-                    });
-                } elseif ($column === 'operario_id') {
-                    $query->whereHas('operario', function($q) use ($values) {
-                        $q->whereIn('name', $values);
-                    });
-                } elseif ($column === 'maquina_id') {
-                    $query->whereHas('maquina', function($q) use ($values) {
-                        $q->whereIn('nombre_maquina', $values);
-                    });
-                } elseif ($column === 'tela_id') {
-                    $query->whereHas('tela', function($q) use ($values) {
-                        $q->whereIn('nombre_tela', $values);
-                    });
-                } else {
-                    // Columnas normales
-                    $query->whereIn($column, $values);
-                }
-            } else {
-                // Para producción y polos, todas son columnas directas
-                // Manejar fecha con formato especial
-                if ($column === 'fecha') {
-                    // Convertir fechas del formato dd-mm-yyyy a yyyy-mm-dd
-                    $formattedDates = array_map(function($date) {
-                        if (preg_match('/^(\d{2})-(\d{2})-(\d{4})$/', $date, $matches)) {
-                            return "{$matches[3]}-{$matches[2]}-{$matches[1]}";
-                        }
-                        return $date;
-                    }, $values);
-                    $query->whereIn($column, $formattedDates);
-                } else {
-                    $query->whereIn($column, $values);
+            // Si es string JSON, decodificar
+            if (is_string($filters)) {
+                $filters = json_decode($filters, true);
+                
+                // Si la decodificación falla, retornar sin aplicar filtros
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    \Log::warning('Error al decodificar filtros JSON', [
+                        'error' => json_last_error_msg(),
+                        'filters_raw' => $filters
+                    ]);
+                    return;
                 }
             }
+
+            if (!is_array($filters) || empty($filters)) {
+                return;
+            }
+
+            // VALIDAR QUE LOS FILTROS CORRESPONDAN A LA SECCIÓN ACTUAL
+            // Esto previene que filtros de una sección se apliquen a otra
+            $validColumns = $this->getValidColumnsForSection($section);
+            $filters = array_intersect_key($filters, array_flip($validColumns));
+            
+            if (empty($filters)) {
+                return;
+            }
+
+            // Aplicar cada filtro
+            foreach ($filters as $column => $values) {
+                // Validar que $values sea un array
+                if (!is_array($values)) {
+                    // Si es un valor único, convertirlo a array
+                    $values = [$values];
+                }
+                
+                if (empty($values)) {
+                    continue;
+                }
+
+                // Manejar columnas especiales según la sección
+                if ($section === 'corte') {
+                    // Para corte, manejar relaciones usando los nombres de las columnas con _id
+                    if ($column === 'hora_id') {
+                        $query->whereIn('hora_id', $values);
+                    } elseif ($column === 'operario_id') {
+                        $query->whereIn('operario_id', $values);
+                    } elseif ($column === 'maquina_id') {
+                        $query->whereIn('maquina_id', $values);
+                    } elseif ($column === 'tela_id') {
+                        $query->whereIn('tela_id', $values);
+                    } elseif ($column === 'fecha') {
+                        // Convertir fechas del formato dd-mm-yyyy a yyyy-mm-dd
+                        $formattedDates = array_map(function($date) {
+                            if (preg_match('/^(\d{2})-(\d{2})-(\d{4})$/', $date, $matches)) {
+                                return "{$matches[3]}-{$matches[2]}-{$matches[1]}";
+                            }
+                            return $date;
+                        }, $values);
+                        $query->whereIn($column, $formattedDates);
+                    } else {
+                        // Columnas normales
+                        $query->whereIn($column, $values);
+                    }
+                } else {
+                    // Para producción y polos, todas son columnas directas
+                    // Manejar fecha con formato especial
+                    if ($column === 'fecha') {
+                        // Convertir fechas del formato dd-mm-yyyy a yyyy-mm-dd
+                        $formattedDates = array_map(function($date) {
+                            if (preg_match('/^(\d{2})-(\d{2})-(\d{4})$/', $date, $matches)) {
+                                return "{$matches[3]}-{$matches[2]}-{$matches[1]}";
+                            }
+                            return $date;
+                        }, $values);
+                        $query->whereIn($column, $formattedDates);
+                    } else {
+                        $query->whereIn($column, $values);
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error al aplicar filtros dinámicos', [
+                'error' => $e->getMessage(),
+                'section' => $section,
+                'trace' => $e->getTraceAsString()
+            ]);
+            // No lanzar excepción, simplemente continuar sin filtros
         }
     }
 
@@ -897,6 +961,7 @@ class TablerosController extends Controller
             }
 
             // Calculate tiempo_disponible: (3600 * porcion_tiempo) - (tiempo_para_programada + tiempo_parada_no_programada + tiempo_extendido + tiempo_trazado)
+            // NOTA: Para CORTE no se usa numero_operarios
             $tiempo_disponible = (3600 * $request->porcion_tiempo) -
                                $tiempo_para_programada -
                                ($request->tiempo_parada_no_programada ?? 0) -
@@ -920,11 +985,13 @@ class TablerosController extends Controller
 
             $registro = RegistroPisoCorte::create([
                 'fecha' => $request->fecha,
+                // 'modulo' NO existe en registro_piso_corte
                 'orden_produccion' => $request->orden_produccion,
                 'hora_id' => $request->hora_id,
                 'operario_id' => $request->operario_id,
                 'maquina_id' => $request->maquina_id,
                 'porcion_tiempo' => $request->porcion_tiempo,
+                // 'numero_operarios' NO existe en registro_piso_corte
                 'cantidad' => $request->cantidad_producida,
                 'tiempo_ciclo' => $request->tiempo_ciclo,
                 'paradas_programadas' => $request->paradas_programadas,
