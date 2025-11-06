@@ -42,6 +42,8 @@ class ModernTable {
         this.setupEventListeners();
         this.setupUI();
         this.markActiveFilters();
+        this.initializeStatusDropdowns();
+        this.initializeAreaDropdowns();
 
         // Apply dragging settings based on saved preferences
         // Note: Dragging is disabled by default, user must enable it manually
@@ -223,26 +225,52 @@ class ModernTable {
         if (key === 'estado' || key === 'area') {
             const select = document.createElement('select');
             select.className = `${key}-dropdown`;
-            select.dataset.id = orden.id;
-            select.dataset.value = value;
+            select.dataset.id = orden.pedido || orden.id;
+            select.dataset.value = value || '';
 
             const options = key === 'estado' 
                 ? ['Entregado', 'En Ejecución', 'No iniciado', 'Anulada']
                 : window.areaOptions || [];
 
+            // Debug temporal
+            if (key === 'estado') {
+                console.log(`Creando dropdown estado para orden ${orden.pedido}: valor="${value}"`);
+            }
+
+            // Normalizar el valor actual para comparación
+            const normalizedValue = value ? String(value).trim() : '';
+
             options.forEach(opt => {
                 const option = document.createElement('option');
-                option.value = option.textContent = opt;
-                if (value === opt) option.selected = true;
+                option.value = opt;
+                option.textContent = opt;
+                
+                // Establecer selected durante la creación de la opción
+                if (normalizedValue && opt.trim() === normalizedValue) {
+                    option.setAttribute('selected', 'selected');
+                    option.defaultSelected = true;
+                    option.selected = true;
+                    console.log(`✅ Opción "${opt}" marcada como selected`);
+                }
+                
                 select.appendChild(option);
             });
+
+            // Forzar el valor del select después de agregar todas las opciones
+            if (normalizedValue) {
+                // Usar setTimeout para asegurar que el DOM esté actualizado
+                setTimeout(() => {
+                    select.value = normalizedValue;
+                    console.log(`🔄 Select.value establecido a: "${select.value}"`);
+                }, 0);
+            }
 
             content.appendChild(select);
         } else {
             const span = document.createElement('span');
             span.className = 'cell-text';
             const displayValue = key === 'total_de_dias_'
-                ? this.virtual.totalDiasCalculados[orden.id] ?? 'N/A'
+                ? this.virtual.totalDiasCalculados[orden.pedido || orden.id] ?? 'N/A'
                 : value ?? '';
             span.textContent = this.wrapText(displayValue, 20);
             span.style.whiteSpace = 'nowrap';
@@ -288,11 +316,18 @@ class ModernTable {
 
     setupEventListeners() {
         console.log('ModernTable: setupEventListeners called');
-        document.getElementById('buscarOrden')?.addEventListener('keydown', e => {
-            if (e.key === 'Enter') {
-                this.performAjaxSearch(e.target.value);
-            }
-        });
+        
+        // Búsqueda en tiempo real con debounce
+        const searchInput = document.getElementById('buscarOrden');
+        if (searchInput) {
+            let searchTimeout;
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    this.performAjaxSearch(e.target.value);
+                }, 300); // 300ms de delay para búsqueda en tiempo real
+            });
+        }
 
         document.addEventListener('change', e => {
             if (e.target.classList.contains('estado-dropdown')) this.updateOrderStatus(e.target);
@@ -754,11 +789,28 @@ class ModernTable {
         if (!row) return;
 
         // Remover clases de color anteriores
-        row.classList.remove('status-pendiente', 'status-proceso', 'status-completado', 'status-cancelado');
+        row.classList.remove('row-delivered', 'row-anulada', 'row-warning', 'row-danger-light', 'row-secondary');
 
-        // Agregar clase de color según el estado
-        const statusClass = `status-${status.toLowerCase().replace(/\s+/g, '-')}`;
-        row.classList.add(statusClass);
+        // Obtener el total de días para este pedido
+        const totalDias = parseInt(this.virtual.totalDiasCalculados[orderId] || 0);
+        let conditionalClass = '';
+
+        // Aplicar clase según estado y días
+        if (status === 'Entregado') {
+            conditionalClass = 'row-delivered';
+        } else if (status === 'Anulada') {
+            conditionalClass = 'row-anulada';
+        } else if (totalDias > 14 && totalDias < 20) {
+            conditionalClass = 'row-warning';
+        } else if (totalDias === 20) {
+            conditionalClass = 'row-danger-light';
+        } else if (totalDias > 20) {
+            conditionalClass = 'row-secondary';
+        }
+
+        if (conditionalClass) {
+            row.classList.add(conditionalClass);
+        }
     }
 
     async updateOrderStatus(dropdown) {
@@ -776,17 +828,27 @@ class ModernTable {
                 body: JSON.stringify({ estado: newStatus })
             });
 
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Error HTTP:', response.status, errorText);
+                throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 200)}`);
+            }
+
             const data = await response.json();
             if (data.success) {
+                // Actualizar data-value del dropdown
+                dropdown.dataset.value = newStatus;
                 // Actualizar color de la fila dinámicamente
                 this.updateRowColor(orderId, newStatus);
             } else {
                 console.error('Error actualizando:', data.message);
+                alert(`Error al actualizar: ${data.message}`);
                 // Revertir cambio en caso de error
                 dropdown.value = oldStatus;
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error completo:', error);
+            alert(`Error al actualizar el estado: ${error.message}`);
             // Revertir cambio en caso de error
             dropdown.value = oldStatus;
         }
@@ -809,6 +871,7 @@ class ModernTable {
             this.updatePaginationControls(data.pagination_html);
             this.updateUrl(params.toString());
             this.initializeStatusDropdowns();
+            this.initializeAreaDropdowns();
         } catch (error) {
             console.error('Error en búsqueda:', error);
             window.location.href = `${this.baseRoute}?${params}`;
@@ -837,8 +900,27 @@ class ModernTable {
 
     orders.forEach(orden => {
         const row = document.createElement('tr');
-        row.className = 'table-row';
-        row.dataset.orderId = orden.pedido || orden.id;
+        
+        // Aplicar clases condicionales basadas en días y estado
+        const pedidoKey = orden.pedido || orden.id;
+        const totalDias = parseInt(totalDiasCalculados[pedidoKey] || 0);
+        const estado = orden.estado || '';
+        let conditionalClass = '';
+        
+        if (estado === 'Entregado') {
+            conditionalClass = 'row-delivered';
+        } else if (estado === 'Anulada') {
+            conditionalClass = 'row-anulada';
+        } else if (totalDias > 14 && totalDias < 20) {
+            conditionalClass = 'row-warning';
+        } else if (totalDias === 20) {
+            conditionalClass = 'row-danger-light';
+        } else if (totalDias > 20) {
+            conditionalClass = 'row-secondary';
+        }
+        
+        row.className = `table-row ${conditionalClass}`.trim();
+        row.dataset.orderId = pedidoKey;
 
         // PRIMERO: Crear la columna de acciones
         const accionesTd = document.createElement('td');
@@ -846,12 +928,12 @@ class ModernTable {
         const accionesDiv = document.createElement('div');
         accionesDiv.className = 'cell-content';
         accionesDiv.innerHTML = `
-            <button class="action-btn delete-btn" onclick="deleteOrder(${orden.pedido || orden.id})" 
+            <button class="action-btn delete-btn" onclick="deleteOrder(${pedidoKey})" 
                 title="Eliminar orden"
                 style="background-color:#f84c4cff ; color: white; border: none; padding: 5px 10px; margin-right: 5px; border-radius: 4px; cursor: pointer;">
                 Borrar
             </button>
-            <button class="action-btn detail-btn" onclick="viewDetail(${orden.pedido || orden.id})" 
+            <button class="action-btn detail-btn" onclick="viewDetail(${pedidoKey})" 
                 title="Ver detalle"
                 style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
                 Ver
@@ -872,6 +954,12 @@ class ModernTable {
             if (!column) continue;
             
             const val = orden[column];
+            
+            // Debug temporal para estado y área
+            if (column === 'estado' || column === 'area') {
+                console.log(`Columna ${column} para orden ${orden.pedido}: valor="${val}"`);
+            }
+            
             row.appendChild(this.createCellElement(column, val, orden));
         }
 
@@ -880,6 +968,7 @@ class ModernTable {
     
     this.setupCellTextWrapping();
     this.initializeStatusDropdowns();
+    this.initializeAreaDropdowns();
 }
 
     updatePaginationInfo(pagination) {
@@ -901,8 +990,27 @@ appendRowsToTable(orders, totalDiasCalculados) {
     
     orders.forEach(orden => {
         const row = document.createElement('tr');
-        row.className = 'table-row';
-        row.dataset.orderId = orden.pedido || orden.id;
+        
+        // Aplicar clases condicionales basadas en días y estado
+        const pedidoKey = orden.pedido || orden.id;
+        const totalDias = parseInt(totalDiasCalculados[pedidoKey] || 0);
+        const estado = orden.estado || '';
+        let conditionalClass = '';
+        
+        if (estado === 'Entregado') {
+            conditionalClass = 'row-delivered';
+        } else if (estado === 'Anulada') {
+            conditionalClass = 'row-anulada';
+        } else if (totalDias > 14 && totalDias < 20) {
+            conditionalClass = 'row-warning';
+        } else if (totalDias === 20) {
+            conditionalClass = 'row-danger-light';
+        } else if (totalDias > 20) {
+            conditionalClass = 'row-secondary';
+        }
+        
+        row.className = `table-row ${conditionalClass}`.trim();
+        row.dataset.orderId = pedidoKey;
 
         // PRIMERO: Crear la columna de acciones
         const accionesTd = document.createElement('td');
@@ -910,12 +1018,12 @@ appendRowsToTable(orders, totalDiasCalculados) {
         const accionesDiv = document.createElement('div');
         accionesDiv.className = 'cell-content';
         accionesDiv.innerHTML = `
-            <button class="action-btn delete-btn" onclick="deleteOrder(${orden.pedido || orden.id})" 
+            <button class="action-btn delete-btn" onclick="deleteOrder(${pedidoKey})" 
                 title="Eliminar orden"
                 style="background-color:#f84c4cff ; color: white; border: none; padding: 5px 10px; margin-right: 5px; border-radius: 4px; cursor: pointer;">
                 Borrar
             </button>
-            <button class="action-btn detail-btn" onclick="viewDetail(${orden.pedido || orden.id})" 
+            <button class="action-btn detail-btn" onclick="viewDetail(${pedidoKey})" 
                 title="Ver detalle"
                 style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
                 Ver
@@ -942,16 +1050,37 @@ appendRowsToTable(orders, totalDiasCalculados) {
     });
     
     this.initializeStatusDropdowns();
+    this.initializeAreaDropdowns();
 }
     initializeStatusDropdowns() {
         document.querySelectorAll('.estado-dropdown').forEach(dropdown => {
-            dropdown.addEventListener('change', e => this.updateOrderStatus(e.target));
+            // Guardar el valor actual antes de clonar
+            const currentValue = dropdown.value;
+            
+            // Remover listener anterior si existe para evitar duplicados
+            const newDropdown = dropdown.cloneNode(true);
+            dropdown.parentNode.replaceChild(newDropdown, dropdown);
+            
+            // Restaurar el valor después de reemplazar
+            newDropdown.value = currentValue;
+            
+            newDropdown.addEventListener('change', e => this.updateOrderStatus(e.target));
         });
     }
 
     initializeAreaDropdowns() {
         document.querySelectorAll('.area-dropdown').forEach(dropdown => {
-            dropdown.addEventListener('change', e => this.updateOrderArea(e.target));
+            // Guardar el valor actual antes de clonar
+            const currentValue = dropdown.value;
+            
+            // Remover listener anterior si existe para evitar duplicados
+            const newDropdown = dropdown.cloneNode(true);
+            dropdown.parentNode.replaceChild(newDropdown, dropdown);
+            
+            // Restaurar el valor después de reemplazar
+            newDropdown.value = currentValue;
+            
+            newDropdown.addEventListener('change', e => this.updateOrderArea(e.target));
         });
     }
 
@@ -970,8 +1099,16 @@ appendRowsToTable(orders, totalDiasCalculados) {
                 body: JSON.stringify({ area: newArea })
             });
 
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Error HTTP:', response.status, errorText);
+                throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 200)}`);
+            }
+
             const data = await response.json();
             if (data.success) {
+                // Actualizar data-value del dropdown
+                dropdown.dataset.value = newArea;
                 // Actualizar las celdas con las fechas actualizadas según la respuesta del servidor
                 if (data.updated_fields) {
                     const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
@@ -986,11 +1123,13 @@ appendRowsToTable(orders, totalDiasCalculados) {
                 }
             } else {
                 console.error('Error actualizando área:', data.message);
+                alert(`Error al actualizar: ${data.message}`);
                 // Revertir cambio en caso de error
                 dropdown.value = oldArea;
             }
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error completo:', error);
+            alert(`Error al actualizar el área: ${error.message}`);
             // Revertir cambio en caso de error
             dropdown.value = oldArea;
         }
@@ -1193,6 +1332,132 @@ appendRowsToTable(orders, totalDiasCalculados) {
         if (tableHeader._dragHandler) {
             tableHeader.removeEventListener('mousedown', tableHeader._dragHandler);
             delete tableHeader._dragHandler;
+        }
+    }
+
+    /**
+     * Actualizar una orden existente en la tabla (para WebSocket updates)
+     */
+    actualizarOrdenEnTabla(orden) {
+        const row = document.querySelector(`tr[data-order-id="${orden.pedido}"]`);
+        if (!row) {
+            console.log(`Orden ${orden.pedido} no encontrada en la tabla actual`);
+            return;
+        }
+
+        let hasChanges = false;
+
+        // Actualizar cada celda
+        Object.keys(orden).forEach(column => {
+            if (column === 'id' || column === 'tiempo') return;
+
+            const cell = row.querySelector(`td[data-column="${column}"]`);
+            if (!cell) return;
+
+            const value = orden[column];
+            if (value === null || value === undefined) return;
+
+            const cellContent = cell.querySelector('.cell-content');
+            if (!cellContent) return;
+
+            // Manejar dropdowns de estado y área
+            if (column === 'estado') {
+                const select = cellContent.querySelector('.estado-dropdown');
+                if (select && select.value !== value) {
+                    select.value = value;
+                    select.setAttribute('data-value', value);
+                    hasChanges = true;
+                    cell.style.backgroundColor = 'rgba(59, 130, 246, 0.3)';
+                    setTimeout(() => {
+                        cell.style.transition = 'background-color 0.3s ease';
+                        cell.style.backgroundColor = '';
+                    }, 30);
+                }
+            } else if (column === 'area') {
+                const select = cellContent.querySelector('.area-dropdown');
+                if (select && select.value !== value) {
+                    select.value = value;
+                    select.setAttribute('data-value', value);
+                    hasChanges = true;
+                    cell.style.backgroundColor = 'rgba(59, 130, 246, 0.3)';
+                    setTimeout(() => {
+                        cell.style.transition = 'background-color 0.3s ease';
+                        cell.style.backgroundColor = '';
+                    }, 30);
+                }
+            } else {
+                const span = cellContent.querySelector('.cell-text');
+                if (span && span.textContent.trim() !== String(value).trim()) {
+                    span.textContent = value;
+                    hasChanges = true;
+                    cell.style.backgroundColor = 'rgba(59, 130, 246, 0.3)';
+                    setTimeout(() => {
+                        cell.style.transition = 'background-color 0.3s ease';
+                        cell.style.backgroundColor = '';
+                    }, 30);
+                }
+            }
+        });
+
+        // Actualizar clases condicionales de la fila
+        const estado = orden.estado || '';
+        let totalDias = parseInt(orden.total_de_dias_) || 0;
+        
+        if (!totalDias) {
+            const totalDiasCell = row.querySelector('td[data-column="total_de_dias_"] .cell-text');
+            if (totalDiasCell) {
+                totalDias = parseInt(totalDiasCell.textContent) || 0;
+            }
+        }
+
+        row.classList.remove('row-delivered', 'row-anulada', 'row-warning', 'row-danger-light', 'row-secondary');
+        row.style.backgroundColor = '';
+
+        if (estado === 'Entregado') {
+            row.classList.add('row-delivered');
+        } else if (estado === 'Anulada') {
+            row.classList.add('row-anulada');
+        } else if (totalDias > 20) {
+            row.classList.add('row-secondary');
+        } else if (totalDias === 20) {
+            row.classList.add('row-danger-light');
+        } else if (totalDias > 14 && totalDias < 20) {
+            row.classList.add('row-warning');
+        }
+
+        if (hasChanges) {
+            console.log(`✅ Orden ${orden.pedido} actualizada en tiempo real`);
+        }
+    }
+
+    /**
+     * Manejar actualizaciones de órdenes desde WebSocket
+     */
+    handleOrdenUpdate(orden, action) {
+        const pedido = orden.pedido;
+        console.log(`📡 Procesando acción: ${action} para orden ${pedido}`);
+
+        if (action === 'deleted') {
+            const row = document.querySelector(`tr[data-order-id="${pedido}"]`);
+            if (row) {
+                row.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
+                setTimeout(() => {
+                    row.remove();
+                    console.log(`✅ Orden ${pedido} eliminada de la tabla`);
+                }, 500);
+            }
+            return;
+        }
+
+        if (action === 'created') {
+            // Recargar la tabla para mostrar la nueva orden
+            window.location.reload();
+            return;
+        }
+
+        if (action === 'updated') {
+            this.actualizarOrdenEnTabla(orden);
+            return;
         }
     }
 }

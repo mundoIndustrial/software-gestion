@@ -48,10 +48,13 @@ class RegistroBodegaController extends Controller
 
         $query = TablaOriginalBodega::query();
 
-        // Apply search filter - ONLY search by 'pedido'
+        // Apply search filter - search by 'pedido' or 'cliente'
         if ($request->has('search') && !empty($request->search)) {
             $searchTerm = $request->search;
-            $query->where('pedido', 'LIKE', '%' . $searchTerm . '%');
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('pedido', 'LIKE', '%' . $searchTerm . '%')
+                  ->orWhere('cliente', 'LIKE', '%' . $searchTerm . '%');
+            });
         }
 
         // Apply column filters (dynamic for all columns)

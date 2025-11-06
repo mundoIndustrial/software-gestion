@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\TablaOriginal;
 use App\Models\News;
+use App\Models\Festivo;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use App\Services\FestivosColombiaService;
@@ -50,10 +51,13 @@ class RegistroOrdenController extends Controller
 
         $query = TablaOriginal::query();
 
-        // Apply search filter - ONLY search by 'pedido'
+        // Apply search filter - search by 'pedido' or 'cliente'
         if ($request->has('search') && !empty($request->search)) {
             $searchTerm = $request->search;
-            $query->where('pedido', 'LIKE', '%' . $searchTerm . '%');
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('pedido', 'LIKE', '%' . $searchTerm . '%')
+                  ->orWhere('cliente', 'LIKE', '%' . $searchTerm . '%');
+            });
         }
 
         // Apply column filters (dynamic for all columns)
@@ -402,10 +406,6 @@ class RegistroOrdenController extends Controller
             $orden->refresh(); // Reload to get updated data
             broadcast(new \App\Events\OrdenUpdated($orden, 'updated'));
 
-            // Broadcast event for real-time updates
-            $orden->refresh(); // Reload to get updated data
-            broadcast(new \App\Events\OrdenUpdated($orden, 'updated'));
-
             // Obtener la orden actualizada para retornar todos los campos
             $ordenActualizada = TablaOriginal::where('pedido', $pedido)->first();
 
@@ -416,10 +416,18 @@ class RegistroOrdenController extends Controller
                 'totalDiasCalculados' => $this->calcularTotalDiasBatch([$ordenActualizada], Festivo::pluck('fecha')->toArray())
             ]);
         } catch (\Exception $e) {
+            // Log del error para debugging
+            \Log::error('Error al actualizar orden', [
+                'pedido' => $pedido,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             // Capturar cualquier error y devolver JSON con mensaje
             return response()->json([
                 'success' => false,
-                'message' => 'Error al actualizar la orden: ' . $e->getMessage()
+                'message' => 'Error al actualizar la orden: ' . $e->getMessage(),
+                'error_details' => config('app.debug') ? $e->getTraceAsString() : null
             ], 500);
         }
     }
