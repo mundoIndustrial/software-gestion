@@ -56,6 +56,9 @@ function initializeTableFilters(section) {
     // Remove existing filter dropdowns
     document.querySelectorAll('.filter-dropdown').forEach(dropdown => dropdown.remove());
 
+    // Restaurar filtros guardados si existen
+    restoreSavedFilters(section);
+
     // Add event listeners to filter icons
     table.querySelectorAll('.filter-icon').forEach(icon => {
         icon.addEventListener('click', (e) => {
@@ -199,6 +202,8 @@ function buildDropdownContent(dropdown, column, section, uniqueValues, headerCel
 
     clearAllBtn.addEventListener('click', () => {
         checkboxes.forEach(cb => cb.checked = false);
+        // Limpiar filtros guardados para esta sección
+        clearSavedFilters(section);
         // Reset all filters and show all rows
         applyFilters(section);
     });
@@ -240,6 +245,9 @@ function applyFiltersBackend(section) {
         }
     });
 
+    // Guardar filtros en localStorage para mantenerlos después de editar
+    localStorage.setItem(`tableros_filters_${section}`, JSON.stringify(filters));
+
     // Build URL with filters
     const url = new URL(window.location.href);
     url.searchParams.set('section', section);
@@ -275,6 +283,10 @@ function applyFiltersBackend(section) {
         // Update table with new data
         if (data.table_html && tableBody) {
             tableBody.innerHTML = data.table_html;
+            // Re-attach editable cell listeners después de actualizar la tabla
+            if (window.attachEditableCellListeners) {
+                window.attachEditableCellListeners();
+            }
         }
         
         // Update pagination controls
@@ -327,4 +339,81 @@ function updatePaginationInfo(section, visible, total) {
     if (paginationInfo) {
         paginationInfo.textContent = `Mostrando ${visible} de ${total} registros`;
     }
+}
+
+// Restaurar filtros guardados desde localStorage
+function restoreSavedFilters(section) {
+    const savedFilters = localStorage.getItem(`tableros_filters_${section}`);
+    if (!savedFilters) return;
+
+    try {
+        const filters = JSON.parse(savedFilters);
+        if (Object.keys(filters).length === 0) return;
+
+        // Construir URL con filtros guardados
+        const url = new URL(window.location.href);
+        url.searchParams.set('section', section);
+        url.searchParams.set('filters', JSON.stringify(filters));
+
+        // Aplicar filtros sin recargar la página
+        const tableBody = document.querySelector(`table[data-section="${section}"] tbody`);
+        if (tableBody) {
+            tableBody.style.opacity = '0.3';
+            tableBody.style.pointerEvents = 'none';
+        }
+
+        fetch(url.toString(), {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error || !data.pagination) {
+                throw new Error(data.error || 'Respuesta inválida del servidor');
+            }
+            
+            // Update table with filtered data
+            if (data.table_html && tableBody) {
+                tableBody.innerHTML = data.table_html;
+                // Re-attach editable cell listeners
+                if (window.attachEditableCellListeners) {
+                    window.attachEditableCellListeners();
+                }
+            }
+            
+            // Update pagination
+            const paginationControls = document.getElementById(`paginationControls-${section}`);
+            if (data.pagination && data.pagination.links_html && paginationControls) {
+                paginationControls.innerHTML = data.pagination.links_html;
+            }
+            
+            const paginationInfo = document.getElementById(`paginationInfo-${section}`);
+            if (data.pagination && paginationInfo) {
+                paginationInfo.textContent = `Mostrando ${data.pagination.first_item || 0}-${data.pagination.last_item || 0} de ${data.pagination.total} registros`;
+            }
+            
+            // Restore table
+            if (tableBody) {
+                tableBody.style.opacity = '1';
+                tableBody.style.pointerEvents = 'auto';
+            }
+        })
+        .catch(error => {
+            console.error('Error restoring filters:', error);
+            if (tableBody) {
+                tableBody.style.opacity = '1';
+                tableBody.style.pointerEvents = 'auto';
+            }
+        });
+    } catch (error) {
+        console.error('Error parsing saved filters:', error);
+        localStorage.removeItem(`tableros_filters_${section}`);
+    }
+}
+
+// Limpiar filtros guardados
+function clearSavedFilters(section) {
+    localStorage.removeItem(`tableros_filters_${section}`);
 }

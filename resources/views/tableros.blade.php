@@ -45,6 +45,29 @@
         color: #FF6B35 !important;
         background: rgba(255, 107, 53, 0.2) !important;
     }
+    
+    /* Animaciones para notificaciones */
+    @keyframes slideIn {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOut {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
 </style>
 @include('components.tableros-form-modal')
 @include('components.form_modal_piso_corte')
@@ -454,6 +477,113 @@
 let currentCell = null;
 let currentRowId = null;
 let currentColumn = null;
+let currentAutocompleteListener = null;
+
+// Función global para manejar doble click en celdas
+function handleCellDoubleClick() {
+    console.log('Doble clic detectado en celda');
+    currentCell = this;
+    currentRowId = this.closest('tr').dataset.id;
+    currentColumn = this.dataset.column;
+
+    const currentValue = this.dataset.value || this.textContent.trim();
+    console.log('Valor actual:', currentValue, 'Columna:', currentColumn);
+    
+    const modal = document.getElementById('editCellModal');
+    const input = document.getElementById('editCellInput');
+    const datalist = document.getElementById('autocompleteList');
+    const modalTitle = document.getElementById('editModalTitle');
+    const hint = document.getElementById('editHint');
+    
+    console.log('Modal encontrado:', !!modal);
+    if (modal) {
+        // Configurar título según la columna
+        if (currentColumn === 'operario_id') {
+            modalTitle.textContent = 'Editar Operario';
+            hint.textContent = 'Escribe el nombre del operario (se creará si no existe)';
+            setupAutocomplete('operario');
+        } else if (currentColumn === 'maquina_id') {
+            modalTitle.textContent = 'Editar Máquina';
+            hint.textContent = 'Escribe el nombre de la máquina (se creará si no existe)';
+            setupAutocomplete('maquina');
+        } else if (currentColumn === 'tela_id') {
+            modalTitle.textContent = 'Editar Tela';
+            hint.textContent = 'Escribe el nombre de la tela (se creará si no existe)';
+            setupAutocomplete('tela');
+        } else {
+            modalTitle.textContent = 'Editar Celda';
+            hint.textContent = 'Ingrese el nuevo valor';
+            datalist.innerHTML = ''; // Limpiar datalist para otras columnas
+        }
+        
+        modal.style.display = 'flex';
+        modal.style.opacity = '1';
+        modal.style.visibility = 'visible';
+        input.value = currentValue;
+        input.focus();
+        input.select();
+    } else {
+        console.error('Modal no encontrado');
+    }
+}
+
+// Configurar autocompletado para operario, máquina o tela
+function setupAutocomplete(type) {
+    const input = document.getElementById('editCellInput');
+    const datalist = document.getElementById('autocompleteList');
+    
+    // Limpiar datalist
+    datalist.innerHTML = '';
+    
+    // Remover listener anterior si existe
+    if (currentAutocompleteListener) {
+        input.removeEventListener('input', currentAutocompleteListener);
+    }
+    
+    // Crear nuevo listener
+    let searchTimeout;
+    currentAutocompleteListener = function(e) {
+        clearTimeout(searchTimeout);
+        const query = e.target.value.toUpperCase();
+        
+        if (query.length < 1) {
+            datalist.innerHTML = '';
+            return;
+        }
+        
+        searchTimeout = setTimeout(() => {
+            let searchUrl = '';
+            if (type === 'operario') {
+                searchUrl = '/search-operarios';
+            } else if (type === 'maquina') {
+                searchUrl = '/search-maquinas';
+            } else if (type === 'tela') {
+                searchUrl = '/search-telas';
+            }
+            
+            fetch(`${searchUrl}?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    datalist.innerHTML = '';
+                    data.forEach(item => {
+                        const option = document.createElement('option');
+                        if (type === 'operario') {
+                            option.value = item.name;
+                        } else if (type === 'maquina') {
+                            option.value = item.nombre_maquina;
+                        } else if (type === 'tela') {
+                            option.value = item.nombre_tela;
+                        }
+                        datalist.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error buscando:', error));
+        }, 300);
+    };
+    
+    // Agregar el nuevo listener
+    input.addEventListener('input', currentAutocompleteListener);
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('JavaScript cargado para edición de celdas y filtros');
@@ -550,114 +680,6 @@ document.addEventListener('DOMContentLoaded', function() {
             cell.removeEventListener('dblclick', handleCellDoubleClick);
             cell.addEventListener('dblclick', handleCellDoubleClick);
         });
-    }
-
-    function handleCellDoubleClick() {
-        console.log('Doble clic detectado en celda');
-        currentCell = this;
-        currentRowId = this.closest('tr').dataset.id;
-        currentColumn = this.dataset.column;
-
-        const currentValue = this.dataset.value || this.textContent.trim();
-        console.log('Valor actual:', currentValue, 'Columna:', currentColumn);
-        
-        const modal = document.getElementById('editCellModal');
-        const input = document.getElementById('editCellInput');
-        const datalist = document.getElementById('autocompleteList');
-        const modalTitle = document.getElementById('editModalTitle');
-        const hint = document.getElementById('editHint');
-        
-        console.log('Modal encontrado:', !!modal);
-        if (modal) {
-            // Configurar título según la columna
-            if (currentColumn === 'operario_id') {
-                modalTitle.textContent = 'Editar Operario';
-                hint.textContent = 'Escribe el nombre del operario (se creará si no existe)';
-                setupAutocomplete('operario');
-            } else if (currentColumn === 'maquina_id') {
-                modalTitle.textContent = 'Editar Máquina';
-                hint.textContent = 'Escribe el nombre de la máquina (se creará si no existe)';
-                setupAutocomplete('maquina');
-            } else if (currentColumn === 'tela_id') {
-                modalTitle.textContent = 'Editar Tela';
-                hint.textContent = 'Escribe el nombre de la tela (se creará si no existe)';
-                setupAutocomplete('tela');
-            } else {
-                modalTitle.textContent = 'Editar Celda';
-                hint.textContent = 'Ingrese el nuevo valor';
-                datalist.innerHTML = ''; // Limpiar datalist para otras columnas
-            }
-            
-            modal.style.display = 'flex';
-            modal.style.opacity = '1';
-            modal.style.visibility = 'visible';
-            input.value = currentValue;
-            input.focus();
-            input.select();
-        } else {
-            console.error('Modal no encontrado');
-        }
-    }
-
-    // Variable global para el listener de autocompletado
-    let currentAutocompleteListener = null;
-
-    // Configurar autocompletado para operario, máquina o tela
-    function setupAutocomplete(type) {
-        const input = document.getElementById('editCellInput');
-        const datalist = document.getElementById('autocompleteList');
-        
-        // Limpiar datalist
-        datalist.innerHTML = '';
-        
-        // Remover listener anterior si existe
-        if (currentAutocompleteListener) {
-            input.removeEventListener('input', currentAutocompleteListener);
-        }
-        
-        // Crear nuevo listener
-        let searchTimeout;
-        currentAutocompleteListener = function(e) {
-            clearTimeout(searchTimeout);
-            const query = e.target.value.toUpperCase();
-            
-            if (query.length < 1) {
-                datalist.innerHTML = '';
-                return;
-            }
-            
-            searchTimeout = setTimeout(() => {
-                let searchUrl = '';
-                if (type === 'operario') {
-                    searchUrl = '/search-operarios';
-                } else if (type === 'maquina') {
-                    searchUrl = '/search-maquinas';
-                } else if (type === 'tela') {
-                    searchUrl = '/search-telas';
-                }
-                
-                fetch(`${searchUrl}?q=${encodeURIComponent(query)}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        datalist.innerHTML = '';
-                        data.forEach(item => {
-                            const option = document.createElement('option');
-                            if (type === 'operario') {
-                                option.value = item.name;
-                            } else if (type === 'maquina') {
-                                option.value = item.nombre_maquina;
-                            } else if (type === 'tela') {
-                                option.value = item.nombre_tela;
-                            }
-                            datalist.appendChild(option);
-                        });
-                    })
-                    .catch(error => console.error('Error buscando:', error));
-            }, 300);
-        };
-        
-        // Agregar el nuevo listener
-        input.addEventListener('input', currentAutocompleteListener);
     }
 
     // Inicializar event listeners
@@ -840,6 +862,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
 
                 closeEditModal();
+                
+                // Mostrar notificación de éxito
+                showNotification('Cambios guardados correctamente', 'success');
             } else {
                 alert('Error al guardar: ' + data.message);
             }
@@ -848,6 +873,31 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error:', error);
             alert('Error al guardar los cambios');
         });
+    }
+    
+    function showNotification(message, type = 'success') {
+        // Crear notificación temporal
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: ${type === 'success' ? '#10b981' : '#ef4444'};
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 10000;
+            animation: slideIn 0.3s ease-out;
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        // Remover después de 3 segundos
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
     }
 
     function closeEditModal() {
@@ -1067,42 +1117,6 @@ window.attachEditableCellListeners = function() {
         cell.removeEventListener('dblclick', handleCellDoubleClick);
         cell.addEventListener('dblclick', handleCellDoubleClick);
     });
-};
-
-function handleCellDoubleClick() {
-    console.log('Doble clic detectado en celda');
-    currentCell = this;
-    currentRowId = this.closest('tr').dataset.id;
-    currentColumn = this.dataset.column;
-
-    const currentValue = this.dataset.value || this.textContent.trim();
-    console.log('Valor actual:', currentValue, 'Columna:', currentColumn);
-    
-    const modal = document.getElementById('editCellModal');
-    const input = document.getElementById('editCellInput');
-    const datalist = document.getElementById('autocompleteList');
-    const modalTitle = document.getElementById('editModalTitle');
-    const hint = document.getElementById('editHint');
-    
-    console.log('Modal encontrado:', !!modal);
-    if (modal) {
-        modal.style.display = 'flex';
-        input.value = currentValue;
-        input.focus();
-        input.select();
-        
-        modalTitle.textContent = `Editar ${currentColumn}`;
-        
-        // Configurar autocompletado si es necesario
-        if (currentColumn === 'operario_id' || currentColumn === 'maquina_id' || currentColumn === 'tela_id') {
-            hint.style.display = 'block';
-            const type = currentColumn.replace('_id', '');
-            setupAutocomplete(type);
-        } else {
-            hint.style.display = 'none';
-            datalist.innerHTML = '';
-        }
-    }
 }
 </script>
 
