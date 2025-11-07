@@ -16,11 +16,12 @@
     }
 </style>
 
-<div style="background: var(--color-bg-sidebar); padding: 24px; border-radius: 12px; margin-bottom: 24px; border: 1px solid var(--color-border-hr); box-shadow: 0 1px 3px var(--color-shadow);">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+<div class="balanceo-table-container">
+    <div class="operaciones-header">
         <h2 style="margin: 0; font-size: 18px; color: var(--color-text-primary); display: flex; align-items: center; gap: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
             <span class="material-symbols-rounded" style="color: #ff9d58; font-size: 24px;">list_alt</span>
-            Operaciones del Balanceo
+            <span class="hide-mobile">Operaciones del Balanceo</span>
+            <span class="show-mobile">Operaciones</span>
         </h2>
         <button @click="showAddModal = true" 
                 title="Nueva Operación"
@@ -39,7 +40,7 @@
                         <th style="padding: 12px 10px; text-align: center; font-weight: 600; font-size: 12px; text-transform: uppercase; width: 70px; white-space: nowrap; user-select: text;">
                             <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
                                 Letra
-                                <button @click="copyColumn('letra')" title="Copiar columna" style="background: rgba(255,255,255,0.2); border: none; padding: 2px 4px; border-radius: 3px; cursor: pointer; display: flex; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                                <button @click="copyColumn('letra')" title="Copiar columna" class="copy-column-btn" style="background: rgba(255,255,255,0.2); border: none; padding: 2px 4px; border-radius: 3px; cursor: pointer; display: flex; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
                                     <span class="material-symbols-rounded" style="font-size: 14px;">content_copy</span>
                                 </button>
                             </div>
@@ -47,7 +48,7 @@
                         <th style="padding: 12px 14px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; min-width: 200px; white-space: nowrap; user-select: text;">
                             <div style="display: flex; align-items: center; gap: 4px;">
                                 Operación
-                                <button @click="copyColumn('operacion')" title="Copiar columna" style="background: rgba(255,255,255,0.2); border: none; padding: 2px 4px; border-radius: 3px; cursor: pointer; display: flex; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                                <button @click="copyColumn('operacion')" title="Copiar columna" class="copy-column-btn" style="background: rgba(255,255,255,0.2); border: none; padding: 2px 4px; border-radius: 3px; cursor: pointer; display: flex; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
                                     <span class="material-symbols-rounded" style="font-size: 14px;">content_copy</span>
                                 </button>
                             </div>
@@ -55,7 +56,7 @@
                         <th style="padding: 12px 10px; text-align: center; font-weight: 600; font-size: 12px; text-transform: uppercase; width: 80px; white-space: nowrap; user-select: text;">
                             <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
                                 Prec.
-                                <button @click="copyColumn('precedencia')" title="Copiar columna" style="background: rgba(255,255,255,0.2); border: none; padding: 2px 4px; border-radius: 3px; cursor: pointer; display: flex; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                                <button @click="copyColumn('precedencia')" title="Copiar columna" class="copy-column-btn" style="background: rgba(255,255,255,0.2); border: none; padding: 2px 4px; border-radius: 3px; cursor: pointer; display: flex; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
                                     <span class="material-symbols-rounded" style="font-size: 14px;">content_copy</span>
                                 </button>
                             </div>
@@ -63,7 +64,7 @@
                         <th style="padding: 12px 10px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; width: 120px; white-space: nowrap; user-select: text;">
                             <div style="display: flex; align-items: center; gap: 4px;">
                                 Máquina
-                                <button @click="copyColumn('maquina')" title="Copiar columna" style="background: rgba(255,255,255,0.2); border: none; padding: 2px 4px; border-radius: 3px; cursor: pointer; display: flex; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                                <button @click="copyColumn('maquina')" title="Copiar columna" class="copy-column-btn" style="background: rgba(255,255,255,0.2); border: none; padding: 2px 4px; border-radius: 3px; cursor: pointer; display: flex; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
                                     <span class="material-symbols-rounded" style="font-size: 14px;">content_copy</span>
                                 </button>
                             </div>
@@ -71,7 +72,7 @@
                         <th style="padding: 12px 10px; text-align: center; font-weight: 600; font-size: 12px; text-transform: uppercase; width: 90px; white-space: nowrap; user-select: text;">
                             <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
                                 SAM
-                                <button @click="copyColumn('sam')" title="Copiar columna" style="background: rgba(255,255,255,0.2); border: none; padding: 2px 4px; border-radius: 3px; cursor: pointer; display: flex; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                                <button @click="copyColumn('sam')" title="Copiar columna" class="copy-column-btn" style="background: rgba(255,255,255,0.2); border: none; padding: 2px 4px; border-radius: 3px; cursor: pointer; display: flex; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
                                     <span class="material-symbols-rounded" style="font-size: 14px;">content_copy</span>
                                 </button>
                             </div>
@@ -79,7 +80,7 @@
                         <th style="padding: 12px 10px; text-align: center; font-weight: 600; font-size: 12px; text-transform: uppercase; width: 100px; white-space: nowrap; user-select: text;">
                             <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
                                 Operario
-                                <button @click="copyColumn('operario')" title="Copiar columna" style="background: rgba(255,255,255,0.2); border: none; padding: 2px 4px; border-radius: 3px; cursor: pointer; display: flex; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                                <button @click="copyColumn('operario')" title="Copiar columna" class="copy-column-btn" style="background: rgba(255,255,255,0.2); border: none; padding: 2px 4px; border-radius: 3px; cursor: pointer; display: flex; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
                                     <span class="material-symbols-rounded" style="font-size: 14px;">content_copy</span>
                                 </button>
                             </div>
@@ -214,6 +215,7 @@
                             <td style="padding: 10px; text-align: center; user-select: none;">
                                 <button @click="deleteOperacion(operacion.id)" 
                                         title="Eliminar"
+                                        class="delete-btn"
                                         style="background: #f5576c; color: white; border: none; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; margin: 0 auto;" 
                                         onmouseover="this.style.background='#e04558'" 
                                         onmouseout="this.style.background='#f5576c'">

@@ -63,7 +63,7 @@
 /* Tabla de operaciones - Mobile */
 .balanceo-table-container {
     background: var(--color-bg-sidebar);
-    padding: 16px;
+    padding: 12px;
     border-radius: 12px;
     margin-bottom: 24px;
     border: 1px solid var(--color-border-hr);
@@ -80,8 +80,9 @@
 .table-scroll-container {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    margin: 0 -16px;
-    padding: 0 16px;
+    margin: 0;
+    padding: 0;
+    border-radius: 10px;
 }
 
 @media (min-width: 768px) {
@@ -93,8 +94,10 @@
 
 /* Tabla */
 .balanceo-table {
-    min-width: 800px; /* Ancho mínimo para scroll horizontal */
+    min-width: 900px; /* Ancho mínimo para scroll horizontal */
     width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
 }
 
 @media (min-width: 1200px) {
@@ -449,5 +452,351 @@
     
     .show-mobile {
         display: inline;
+    }
+}
+
+/* Header de tabla de operaciones responsivo */
+.operaciones-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+    .operaciones-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .operaciones-header h2 {
+        font-size: 16px !important;
+    }
+    
+    .operaciones-header button {
+        width: 100%;
+        border-radius: 8px !important;
+        height: 48px !important;
+    }
+}
+
+/* Botones de copiar columna - ocultar en mobile */
+@media (max-width: 767px) {
+    .copy-column-btn {
+        display: none !important;
+    }
+}
+
+/* Ajustar tamaño de iconos en mobile */
+@media (max-width: 640px) {
+    .balanceo-table th .material-symbols-rounded {
+        font-size: 12px !important;
+    }
+    
+    .balanceo-table td .material-symbols-rounded {
+        font-size: 14px !important;
+    }
+}
+
+/* Mejorar el scroll horizontal en mobile */
+@media (max-width: 767px) {
+    .table-scroll-container {
+        /* Indicador visual de scroll */
+        position: relative;
+        box-shadow: inset -10px 0 10px -10px rgba(255, 157, 88, 0.3);
+    }
+    
+    /* Indicador de scroll más visible */
+    .balanceo-table-container::before {
+        content: '← Desliza para ver más →';
+        display: block;
+        text-align: center;
+        background: rgba(255, 157, 88, 0.15);
+        color: #ff9d58;
+        padding: 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        margin-bottom: 12px;
+        border: 1px dashed rgba(255, 157, 88, 0.3);
+    }
+}
+
+/* Inputs editables más grandes en mobile */
+@media (max-width: 767px) {
+    .balanceo-table input[type="text"],
+    .balanceo-table input[type="number"],
+    .balanceo-table select {
+        font-size: 16px !important; /* Evitar zoom en iOS */
+        min-height: 36px !important;
+        padding: 6px 8px !important;
+    }
+}
+
+/* Botón de eliminar más grande en mobile */
+@media (max-width: 767px) {
+    .balanceo-table .delete-btn {
+        padding: 8px 10px !important;
+        min-width: 44px;
+        min-height: 44px;
+    }
+}
+
+/* Ajustar columnas en tablets */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .balanceo-table {
+        min-width: 800px;
+    }
+    
+    .balanceo-table th,
+    .balanceo-table td {
+        padding: 10px 8px !important;
+        font-size: 12px !important;
+    }
+}
+
+/* Mejorar contraste en modo oscuro para inputs editables */
+html[data-theme="dark"] .balanceo-table input,
+html[data-theme="dark"] .balanceo-table select {
+    background: rgba(255, 157, 88, 0.2) !important;
+    color: var(--color-text-primary) !important;
+}
+
+/* Scroll suave en la tabla */
+.table-scroll-container {
+    scroll-behavior: smooth;
+}
+
+/* Mejorar padding del contenedor en mobile */
+@media (max-width: 640px) {
+    .balanceo-table-container {
+        padding: 8px !important;
+    }
+}
+
+/* ============================================
+   HEADER DE PRENDA RESPONSIVO
+   ============================================ */
+
+.prenda-header-container {
+    background: var(--color-bg-sidebar);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    border: 1px solid var(--color-border-hr);
+    box-shadow: 0 1px 3px var(--color-shadow);
+}
+
+@media (max-width: 640px) {
+    .prenda-header-container {
+        padding: 16px;
+    }
+}
+
+.prenda-header-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 16px;
+}
+
+@media (max-width: 768px) {
+    .prenda-header-main {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+}
+
+.prenda-header-content {
+    flex: 1;
+}
+
+.prenda-header-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+    .prenda-header-top {
+        gap: 8px;
+    }
+}
+
+.prenda-header-title {
+    margin: 0;
+    font-size: 24px;
+    color: var(--color-text-primary);
+    font-weight: 700;
+    flex: 1 1 auto;
+    min-width: 0;
+    word-break: break-word;
+}
+
+@media (max-width: 640px) {
+    .prenda-header-title {
+        font-size: 20px;
+        flex-basis: 100%;
+        order: 2;
+    }
+}
+
+.prenda-header-back-btn {
+    color: #ff9d58;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+    padding: 8px;
+    border-radius: 8px;
+    background: rgba(255, 157, 88, 0.1);
+    flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+    .prenda-header-back-btn {
+        order: 1;
+    }
+}
+
+.prenda-header-badge {
+    background: #ff9d58;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    text-transform: uppercase;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(255, 157, 88, 0.3);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+    .prenda-header-badge {
+        order: 3;
+        padding: 4px 10px;
+        font-size: 10px;
+    }
+}
+
+.prenda-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+    .prenda-header-actions {
+        order: 4;
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
+.prenda-estado-btn {
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    padding: 8px 14px;
+    border-radius: 20px;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+    .prenda-estado-btn {
+        font-size: 10px;
+        padding: 6px 10px;
+        gap: 4px;
+    }
+    
+    .prenda-estado-btn .material-symbols-rounded {
+        font-size: 14px !important;
+    }
+    
+    .prenda-estado-btn span:not(.material-symbols-rounded) {
+        display: none;
+    }
+}
+
+.prenda-action-btn {
+    color: var(--color-text-primary);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+    padding: 8px;
+    border-radius: 8px;
+    background: rgba(255, 157, 88, 0.1);
+    border: none;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+    .prenda-action-btn {
+        padding: 10px;
+        min-width: 44px;
+        min-height: 44px;
+        justify-content: center;
+    }
+}
+
+.prenda-delete-btn {
+    background: rgba(245, 87, 108, 0.1);
+}
+
+.prenda-header-image {
+    width: 120px;
+    height: 120px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(255, 157, 88, 0.3);
+    border: 2px solid rgba(255, 157, 88, 0.3);
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .prenda-header-image {
+        width: 100%;
+        height: 200px;
+        max-width: 300px;
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 640px) {
+    .prenda-header-image {
+        height: 160px;
+    }
+}
+
+.prenda-header-info {
+    margin: 0;
+    color: var(--color-text-placeholder);
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+@media (max-width: 640px) {
+    .prenda-header-info {
+        font-size: 13px;
     }
 }
