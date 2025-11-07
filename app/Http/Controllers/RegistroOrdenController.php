@@ -406,6 +406,17 @@ class RegistroOrdenController extends Controller
             $orden->refresh(); // Reload to get updated data
             broadcast(new \App\Events\OrdenUpdated($orden, 'updated'));
 
+            // Broadcast evento específico para Control de Calidad (después de refresh)
+            if (isset($updates['area']) && $updates['area'] !== $oldArea) {
+                if ($updates['area'] === 'Control-Calidad') {
+                    // Orden ENTRA a Control de Calidad
+                    broadcast(new \App\Events\ControlCalidadUpdated($orden, 'added', 'pedido'));
+                } elseif ($oldArea === 'Control-Calidad' && $updates['area'] !== 'Control-Calidad') {
+                    // Orden SALE de Control de Calidad
+                    broadcast(new \App\Events\ControlCalidadUpdated($orden, 'removed', 'pedido'));
+                }
+            }
+
             // Obtener la orden actualizada para retornar todos los campos
             $ordenActualizada = TablaOriginal::where('pedido', $pedido)->first();
 
