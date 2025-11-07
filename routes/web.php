@@ -102,6 +102,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/vistas', [VistasController::class, 'index'])->name('vistas.index');
     Route::get('/api/vistas/search', [VistasController::class, 'search'])->name('api.vistas.search');
     Route::get('/vistas/control-calidad', [VistasController::class, 'controlCalidad'])->name('vistas.control-calidad');
+    Route::get('/vistas/control-calidad-fullscreen', [VistasController::class, 'controlCalidadFullscreen'])->name('vistas.control-calidad-fullscreen');
     
     // Rutas de Balanceo
     Route::get('/balanceo', [BalanceoController::class, 'index'])->name('balanceo.index');

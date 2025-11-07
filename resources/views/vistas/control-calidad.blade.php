@@ -13,18 +13,26 @@
                 <i class="fas fa-clipboard-check"></i>
                 Control de Calidad
             </h1>
-            <div class="search-box">
-                <i class="fas fa-search"></i>
-                <input type="text" id="searchInput" placeholder="Buscar por pedido o cliente..." value="{{ $query }}">
-                <button type="button" id="clearSearch" style="display: {{ $query ? 'block' : 'none' }};">
-                    <i class="fas fa-times"></i>
+            <div class="header-actions">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Buscar por pedido o cliente..." value="{{ $query }}">
+                    <button type="button" id="clearSearch" style="display: {{ $query ? 'block' : 'none' }};">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <button class="fullscreen-btn" onclick="openFullscreen()" title="Vista en pantalla completa">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                    </svg>
                 </button>
             </div>
         </div>
 
-        <!-- Tabla de Pedidos -->
-        <div class="table-section">
-            <h2 class="section-title">Órdenes de Pedidos</h2>
+        <div class="tables-container">
+            <!-- Tabla de Pedidos -->
+            <div class="table-section">
+                <h2 class="section-title">Órdenes de Pedidos</h2>
             <div class="table-wrapper">
                 <div class="table-scroll">
                     <table class="data-table" id="tablaPedidos">
@@ -86,11 +94,11 @@
                     </table>
                 </div>
             </div>
-        </div>
+            </div>
 
-        <!-- Tabla de Bodega -->
-        <div class="table-section">
-            <h2 class="section-title">Órdenes de Bodega</h2>
+            <!-- Tabla de Bodega -->
+            <div class="table-section">
+                <h2 class="section-title">Órdenes de Bodega</h2>
             <div class="table-wrapper">
                 <div class="table-scroll">
                     <table class="data-table" id="tablaBodega">
@@ -152,8 +160,16 @@
                     </table>
                 </div>
             </div>
+            </div>
         </div>
     </div>
 
+    <script>
+        function openFullscreen() {
+            const currentParams = new URLSearchParams(window.location.search);
+            const url = `/vistas/control-calidad-fullscreen?${currentParams.toString()}`;
+            window.location.href = url;
+        }
+    </script>
     <script src="{{ asset('js/control-calidad.js') }}"></script>
 @endsection
