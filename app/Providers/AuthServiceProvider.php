@@ -27,5 +27,17 @@ class AuthServiceProvider extends ServiceProvider
         Gate::define('isAdmin', function ($user) {
             return $user->role === 'Admin';
         });
+
+        // Configurar la duración del "remember me" token
+        $this->configureRememberMeDuration();
+    }
+
+    /**
+     * Configure the duration of the "remember me" session.
+     */
+    protected function configureRememberMeDuration(): void
+    {
+        // Establecer la duración del token "remember me" desde la configuración
+        config(['session.lifetime' => config('auth.remember_duration', 43200)]);
     }
 }

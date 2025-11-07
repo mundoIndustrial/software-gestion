@@ -25,3 +25,15 @@ GOOGLE_DRIVE_ACCESS_TOKEN=tu_access_token_inicial_aqui
 # IMPORTANTE: El sistema renovará automáticamente el ACCESS_TOKEN
 # cuando expire usando el REFRESH_TOKEN. El REFRESH_TOKEN nunca expira.
 # ============================================
+
+# ============================================
+# CONFIGURACIÓN DE SESIÓN Y AUTENTICACIÓN
+# ============================================
+
+# Duración de la sesión "Recordarme" en minutos (por defecto 30 días = 43200 minutos)
+AUTH_REMEMBER_DURATION=43200
+
+# Duración de la sesión normal en minutos (por defecto 2 horas = 120 minutos)
+SESSION_LIFETIME=120
+
+# ============================================

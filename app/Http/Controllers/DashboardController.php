@@ -84,11 +84,23 @@ class DashboardController extends Controller
                     'created_at' => $item->created_at->format('d/m/Y H:i:s'),
                     'user' => $item->user ? $item->user->name : 'Sistema',
                     'pedido' => $item->pedido,
-                    'metadata' => $item->metadata
+                    'metadata' => $item->metadata,
+                    'is_read' => $item->read_at !== null,
+                    'read_at' => $item->read_at ? $item->read_at->format('d/m/Y H:i:s') : null
                 ];
             });
 
-        return response()->json($news);
+        // Obtener contadores
+        $counts = [
+            'total' => News::whereDate('created_at', $date)->count(),
+            'unread' => News::whereDate('created_at', $date)->whereNull('read_at')->count(),
+            'read' => News::whereDate('created_at', $date)->whereNotNull('read_at')->count(),
+        ];
+
+        return response()->json([
+            'news' => $news,
+            'counts' => $counts
+        ]);
     }
 
     /**
@@ -118,6 +130,23 @@ class DashboardController extends Controller
         ];
 
         return response()->json($stats);
+    }
+
+    /**
+     * Marcar todas las notificaciones como leídas
+     */
+    public function markAllAsRead(Request $request)
+    {
+        $date = $request->input('date', now()->format('Y-m-d'));
+        
+        News::whereDate('created_at', $date)
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Todas las notificaciones han sido marcadas como leídas'
+        ]);
     }
 
     /**

@@ -15,10 +15,12 @@ class News extends Model
         'user_id',
         'pedido',
         'metadata',
+        'read_at',
     ];
 
     protected $casts = [
         'metadata' => 'array',
+        'read_at' => 'datetime',
     ];
 
     /**
@@ -59,5 +61,37 @@ class News extends Model
     public function scopeRecent($query, $limit = 50)
     {
         return $query->orderBy('created_at', 'desc')->limit($limit);
+    }
+
+    /**
+     * Scope para filtrar notificaciones no leídas
+     */
+    public function scopeUnread($query)
+    {
+        return $query->whereNull('read_at');
+    }
+
+    /**
+     * Scope para filtrar notificaciones leídas
+     */
+    public function scopeRead($query)
+    {
+        return $query->whereNotNull('read_at');
+    }
+
+    /**
+     * Marcar como leída
+     */
+    public function markAsRead()
+    {
+        $this->update(['read_at' => now()]);
+    }
+
+    /**
+     * Marcar como no leída
+     */
+    public function markAsUnread()
+    {
+        $this->update(['read_at' => null]);
     }
 }

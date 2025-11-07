@@ -57,4 +57,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(RegistroPisoCorte::class, 'operario_id');
     }
+
+    /**
+     * Get the number of minutes for the "remember me" session.
+     *
+     * @return int
+     */
+    public function getRememberTokenDuration(): int
+    {
+        return config('auth.remember_duration', 43200); // 30 días por defecto
+    }
 }

@@ -353,7 +353,9 @@ const DataLoader = {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             
-            const data = await response.json();
+            const result = await response.json();
+            const data = result.news || result; // Compatibilidad con respuesta antigua
+            const counts = result.counts || { total: data.length, unread: 0, read: 0 };
             console.log('📰 Noticias recibidas:', data.length, data);
             
             const newsFeed = document.getElementById('news-feed');
@@ -363,10 +365,10 @@ const DataLoader = {
             }
             
             // Actualizar contadores
-            document.getElementById('news-count').textContent = `${data.length} ${data.length === 1 ? 'nueva' : 'nuevas'}`;
-            document.getElementById('count-all').textContent = data.length;
-            document.getElementById('count-unread').textContent = data.length; // Por ahora todas son no leídas
-            document.getElementById('count-read').textContent = '0';
+            document.getElementById('news-count').textContent = `${counts.total} ${counts.total === 1 ? 'nueva' : 'nuevas'}`;
+            document.getElementById('count-all').textContent = counts.total;
+            document.getElementById('count-unread').textContent = counts.unread;
+            document.getElementById('count-read').textContent = counts.read;
             
             if (data.length === 0) {
                 newsFeed.innerHTML = '<div style="padding: 2rem; text-align: center; color: #6b7280;">No hay notificaciones para esta fecha</div>';
@@ -463,11 +465,82 @@ const DataLoader = {
     }
 };
 
+// ===== FUNCIONES DE MODAL =====
+function showModal(title, message, type = 'info') {
+    const modal = document.createElement('div');
+    modal.className = 'notification-modal';
+    
+    const iconMap = {
+        'success': '✅',
+        'error': '❌',
+        'warning': '⚠️',
+        'info': 'ℹ️',
+        'question': '❓'
+    };
+    
+    modal.innerHTML = `
+        <div class="modal-overlay" onclick="this.parentElement.remove()"></div>
+        <div class="modal-content modal-${type}">
+            <div class="modal-header">
+                <h2><span class="modal-icon">${iconMap[type] || iconMap.info}</span> ${title}</h2>
+                <button class="modal-close" onclick="this.closest('.notification-modal').remove()">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-message">${message}</p>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-primary" onclick="this.closest('.notification-modal').remove()">
+                    Aceptar
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+function showConfirmModal(title, message, onConfirm) {
+    const modal = document.createElement('div');
+    modal.className = 'notification-modal';
+    
+    modal.innerHTML = `
+        <div class="modal-overlay" onclick="this.closest('.notification-modal').remove()"></div>
+        <div class="modal-content modal-question">
+            <div class="modal-header">
+                <h2><span class="modal-icon">❓</span> ${title}</h2>
+                <button class="modal-close" onclick="this.closest('.notification-modal').remove()">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-message">${message}</p>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-secondary" onclick="this.closest('.notification-modal').remove()">
+                    Cancelar
+                </button>
+                <button class="modal-btn modal-btn-primary" id="confirm-action">
+                    Confirmar
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    document.getElementById('confirm-action').addEventListener('click', () => {
+        modal.remove();
+        onConfirm();
+    });
+}
+
 // ===== FUNCIÓN PARA MOSTRAR DETALLES =====
 function showNotificationDetails(newsId, eventType) {
     const newsItem = window.newsData?.find(item => item.id === newsId);
     if (!newsItem || !newsItem.metadata) {
-        alert('No hay detalles disponibles para esta notificación');
+        showModal('Sin Detalles', 'No hay detalles disponibles para esta notificación', 'info');
         return;
     }
     
@@ -585,9 +658,40 @@ document.addEventListener('DOMContentLoaded', () => {
     const markAllReadBtn = document.getElementById('mark-all-read');
     if (markAllReadBtn) {
         markAllReadBtn.addEventListener('click', () => {
-            console.log('Marcar todas como leídas');
-            // Implementar lógica después
-            alert('Funcionalidad de "marcar como leídas" próximamente');
+            const newsDateFilter = document.getElementById('news-date-filter');
+            const date = newsDateFilter.value;
+            
+            showConfirmModal(
+                'Marcar como Leídas',
+                '¿Estás seguro de que deseas marcar todas las notificaciones como leídas?',
+                async () => {
+                    try {
+                        const response = await fetch('/dashboard/news/mark-all-read', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify({ date })
+                        });
+
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            // Recargar notificaciones
+                            DataLoader.loadNews(date);
+                            
+                            // Mostrar mensaje de éxito
+                            showModal('¡Éxito!', 'Todas las notificaciones han sido marcadas como leídas', 'success');
+                        } else {
+                            showModal('Error', 'No se pudieron marcar las notificaciones como leídas', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        showModal('Error', 'Ocurrió un error al procesar la solicitud', 'error');
+                    }
+                }
+            );
         });
     }
     

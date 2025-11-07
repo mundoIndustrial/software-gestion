@@ -901,6 +901,101 @@ body:not(.dark-theme) .filter-date {
     text-align: right;
 }
 
+/* Estilos para modales de alerta/confirmación */
+.modal-icon {
+    font-size: 1.5rem;
+    margin-right: 0.5rem;
+}
+
+.modal-message {
+    font-size: 1rem;
+    color: var(--dashboard-text-primary);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--dashboard-border);
+}
+
+.modal-btn {
+    padding: 0.625rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    outline: none;
+}
+
+.modal-btn-primary {
+    background: #3b82f6;
+    color: white;
+}
+
+.modal-btn-primary:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.modal-btn-secondary {
+    background: transparent;
+    color: var(--dashboard-text-secondary);
+    border: 1px solid var(--dashboard-border);
+}
+
+.modal-btn-secondary:hover {
+    background: var(--dashboard-hover-bg);
+    border-color: var(--dashboard-text-secondary);
+}
+
+/* Variantes de modal por tipo */
+.modal-success .modal-header {
+    border-bottom-color: rgba(34, 197, 94, 0.2);
+}
+
+.modal-success .modal-icon {
+    color: #22c55e;
+}
+
+.modal-error .modal-header {
+    border-bottom-color: rgba(239, 68, 68, 0.2);
+}
+
+.modal-error .modal-icon {
+    color: #ef4444;
+}
+
+.modal-warning .modal-header {
+    border-bottom-color: rgba(245, 158, 11, 0.2);
+}
+
+.modal-warning .modal-icon {
+    color: #f59e0b;
+}
+
+.modal-info .modal-header {
+    border-bottom-color: rgba(59, 130, 246, 0.2);
+}
+
+.modal-info .modal-icon {
+    color: #3b82f6;
+}
+
+.modal-question .modal-header {
+    border-bottom-color: rgba(168, 85, 247, 0.2);
+}
+
+.modal-question .modal-icon {
+    color: #a855f7;
+}
+
 /* Animations */
 @keyframes fadeInUp {
     from {
