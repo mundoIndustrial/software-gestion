@@ -33,7 +33,7 @@ body.dark-theme {
     --text-white: #ffffff;
     --border: #374151;
     --table-row-even: rgba(255,255,255,0.03);
-    --table-hover-text: #212529;
+    --table-hover-text: #ffffff;
     --scrollbar-track: rgba(255,255,255,0.05);
     --particle-opacity-start: 0.5;
     --particle-opacity-end: 1;
@@ -563,4 +563,31 @@ body:not(.dark-theme) .btn-secondary:hover {
     .stat-number {
         font-size: 2rem;
     }
+}
+
+/* Delete button styles */
+.btn-delete {
+    background: #f5576c;
+    color: white;
+    border: none;
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-delete:hover {
+    background: #e04558;
+}
+
+/* Editable cell styles */
+.editable {
+    transition: background 0.2s;
+}
+
+.editable:hover {
+    background: rgba(255, 157, 88, 0.1);
 }

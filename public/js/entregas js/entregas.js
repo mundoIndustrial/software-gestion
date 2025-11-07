@@ -1,6 +1,7 @@
 const COLORS = ['#ff9d58', '#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 let TIPO = '';
 let costuraChart, corteChart;
+let editingCell = null;
 
 // Función de inicialización que se llama desde la vista
 function initEntregas(tipo) {
@@ -17,6 +18,9 @@ function initEntregas(tipo) {
         
         // Escuchar eventos en tiempo real
         setupRealtimeListeners();
+        
+        // Setup edit cell listeners
+        setupEditListeners();
     });
 }
 
@@ -132,27 +136,45 @@ function initCharts() {
 function updateCosturaTable(data) {
     const tbody = document.getElementById('costura-tbody');
     tbody.innerHTML = data.map(item => `
-        <tr>
-            <td>${item.pedido || ''}</td>
-            <td>${item.cliente || ''}</td>
-            <td>${item.prenda || ''}</td>
-            <td><span class="table-badge">${item.cantidad_entregada || 0}</span></td>
-            <td>${item.costurero || ''}</td>
+        <tr data-id="${item.id}" data-subtipo="costura">
+            <td class="editable" data-field="pedido">${item.pedido || ''}</td>
+            <td class="editable" data-field="cliente">${item.cliente || ''}</td>
+            <td class="editable" data-field="prenda">${item.prenda || ''}</td>
+            <td class="editable" data-field="talla">${item.talla || ''}</td>
+            <td class="editable" data-field="cantidad_entregada"><span class="table-badge">${item.cantidad_entregada || 0}</span></td>
+            <td class="editable" data-field="costurero">${item.costurero || ''}</td>
+            <td>
+                <button class="btn-delete" onclick="deleteEntrega(${item.id}, 'costura')" title="Eliminar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 16px; height: 16px;">
+                        <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </td>
         </tr>
     `).join('');
+    setupEditListeners();
 }
 
 function updateCorteTable(data) {
     const tbody = document.getElementById('corte-tbody');
     tbody.innerHTML = data.map(item => `
-        <tr>
-            <td>${item.pedido || ''}</td>
-            <td>${item.cortador || ''}</td>
-            <td><span class="table-badge">${item.piezas || 0}</span></td>
+        <tr data-id="${item.id}" data-subtipo="corte">
+            <td class="editable" data-field="pedido">${item.pedido || ''}</td>
+            <td class="editable" data-field="cortador">${item.cortador || ''}</td>
+            <td class="editable" data-field="piezas"><span class="table-badge">${item.piezas || 0}</span></td>
+            <td class="editable" data-field="pasadas"><span class="table-badge">${item.pasadas || 0}</span></td>
             <td><span class="table-badge">${item.etiqueteadas || 0}</span></td>
-            <td>${item.etiquetador || ''}</td>
+            <td class="editable" data-field="etiquetador">${item.etiquetador || ''}</td>
+            <td>
+                <button class="btn-delete" onclick="deleteEntrega(${item.id}, 'corte')" title="Eliminar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 16px; height: 16px;">
+                        <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </td>
         </tr>
     `).join('');
+    setupEditListeners();
 }
 
 function updateCharts(costuraData, corteData) {
@@ -295,4 +317,169 @@ function mostrarNotificacion(data) {
         notificacion.classList.remove('show');
         setTimeout(() => notificacion.remove(), 300);
     }, 4000);
+}
+
+// Setup edit cell listeners
+function setupEditListeners() {
+    document.querySelectorAll('.editable').forEach(cell => {
+        cell.style.cursor = 'pointer';
+        cell.title = 'Click para editar';
+        
+        cell.addEventListener('click', function(e) {
+            if (editingCell) return; // Ya hay una celda en edición
+            
+            const field = this.dataset.field;
+            const row = this.closest('tr');
+            const id = row.dataset.id;
+            const subtipo = row.dataset.subtipo;
+            
+            // Get current value (remove badge if exists)
+            const badge = this.querySelector('.table-badge');
+            let currentValue = badge ? badge.textContent.trim() : this.textContent.trim();
+            
+            // Create input
+            const input = document.createElement('input');
+            input.type = (field === 'pedido' || field === 'cantidad_entregada' || field === 'piezas' || field === 'pasadas') ? 'number' : 'text';
+            input.value = currentValue;
+            input.style.cssText = 'width: 100%; padding: 4px; border: 2px solid #ff9d58; border-radius: 4px; background: rgba(255, 157, 88, 0.1);';
+            
+            // Store original content
+            const originalContent = this.innerHTML;
+            
+            // Replace content with input
+            this.innerHTML = '';
+            this.appendChild(input);
+            input.focus();
+            input.select();
+            
+            editingCell = { cell: this, originalContent, id, subtipo, field };
+            
+            // Save on blur or enter
+            input.addEventListener('blur', () => saveCell(input.value));
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    saveCell(input.value);
+                } else if (e.key === 'Escape') {
+                    cancelEdit();
+                }
+            });
+        });
+    });
+}
+
+// Save cell edit
+async function saveCell(newValue) {
+    if (!editingCell) return;
+    
+    const { cell, originalContent, id, subtipo, field } = editingCell;
+    
+    // Get current value from original content
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = originalContent;
+    const badge = tempDiv.querySelector('.table-badge');
+    const currentValue = badge ? badge.textContent.trim() : tempDiv.textContent.trim();
+    
+    // If value didn't change, just cancel
+    if (newValue == currentValue) {
+        cancelEdit();
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/entrega/${TIPO}/${subtipo}/${id}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+                [field]: newValue
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Update cell with new value
+            if (field === 'cantidad_entregada' || field === 'piezas' || field === 'pasadas') {
+                cell.innerHTML = `<span class="table-badge">${newValue}</span>`;
+            } else {
+                cell.textContent = newValue;
+            }
+            
+            // Show success message
+            showSuccessMessage('✓ Actualizado');
+            
+            // If piezas or pasadas changed in corte, update etiqueteadas
+            if (subtipo === 'corte' && (field === 'piezas' || field === 'pasadas')) {
+                const row = cell.closest('tr');
+                const piezasCell = row.querySelector('[data-field="piezas"] .table-badge');
+                const pasadasCell = row.querySelector('[data-field="pasadas"] .table-badge');
+                const etiqueteadasCell = row.querySelectorAll('.table-badge')[2]; // Third badge
+                
+                if (piezasCell && pasadasCell && etiqueteadasCell) {
+                    const piezas = parseInt(piezasCell.textContent);
+                    const pasadas = parseInt(pasadasCell.textContent);
+                    etiqueteadasCell.textContent = piezas * pasadas;
+                }
+            }
+        } else {
+            alert('Error al guardar: ' + (data.message || 'Error desconocido'));
+            cancelEdit();
+        }
+    } catch (error) {
+        console.error('Error saving cell:', error);
+        alert('Error al guardar el cambio');
+        cancelEdit();
+    }
+    
+    editingCell = null;
+}
+
+// Cancel cell edit
+function cancelEdit() {
+    if (!editingCell) return;
+    
+    const { cell, originalContent } = editingCell;
+    cell.innerHTML = originalContent;
+    editingCell = null;
+}
+
+// Delete entrega
+window.deleteEntrega = async function(id, subtipo) {
+    if (!confirm('¿Estás seguro de eliminar esta entrega?')) return;
+    
+    try {
+        const response = await fetch(`/entrega/${TIPO}/${subtipo}/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showSuccessMessage('✓ Entrega eliminada');
+            // Reload data
+            window.filtrarDatos();
+        } else {
+            alert('Error al eliminar: ' + (data.message || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error deleting entrega:', error);
+        alert('Error al eliminar la entrega');
+    }
+}
+
+// Show success message
+function showSuccessMessage(message) {
+    const successMsg = document.createElement('div');
+    successMsg.textContent = message;
+    successMsg.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 8px 16px; border-radius: 6px; z-index: 10000; box-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: 13px;';
+    document.body.appendChild(successMsg);
+    
+    setTimeout(() => {
+        successMsg.remove();
+    }, 1500);
 }

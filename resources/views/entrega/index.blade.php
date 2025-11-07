@@ -70,18 +70,28 @@
                                     <th>Pedido</th>
                                     <th>Cliente</th>
                                     <th>Prenda</th>
+                                    <th>Talla</th>
                                     <th>Cantidad</th>
                                     <th>Costurero</th>
+                                    <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="costura-tbody">
                                 @foreach($costura as $item)
-                                <tr>
-                                    <td>{{ $item->pedido }}</td>
-                                    <td>{{ $item->cliente }}</td>
-                                    <td>{{ $item->prenda }}</td>
-                                    <td><span class="table-badge">{{ $item->cantidad_entregada }}</span></td>
-                                    <td>{{ $item->costurero }}</td>
+                                <tr data-id="{{ $item->id }}" data-subtipo="costura">
+                                    <td class="editable" data-field="pedido">{{ $item->pedido }}</td>
+                                    <td class="editable" data-field="cliente">{{ $item->cliente }}</td>
+                                    <td class="editable" data-field="prenda">{{ $item->prenda }}</td>
+                                    <td class="editable" data-field="talla">{{ $item->talla }}</td>
+                                    <td class="editable" data-field="cantidad_entregada"><span class="table-badge">{{ $item->cantidad_entregada }}</span></td>
+                                    <td class="editable" data-field="costurero">{{ $item->costurero }}</td>
+                                    <td>
+                                        <button class="btn-delete" onclick="deleteEntrega({{ $item->id }}, 'costura')" title="Eliminar">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 16px; height: 16px;">
+                                                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </button>
+                                    </td>
                                 </tr>
                                 @endforeach
                             </tbody>
@@ -134,18 +144,28 @@
                                     <th>Pedido</th>
                                     <th>Cortador</th>
                                     <th>Piezas</th>
-                                    <th>etiqueteadas</th>
+                                    <th>Pasadas</th>
+                                    <th>Etiqueteadas</th>
                                     <th>Etiquetador</th>
+                                    <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="corte-tbody">
                                 @foreach($corte as $item)
-                                <tr>
-                                    <td>{{ $item->pedido }}</td>
-                                    <td>{{ $item->cortador }}</td>
-                                    <td><span class="table-badge">{{ $item->piezas }}</span></td>
+                                <tr data-id="{{ $item->id }}" data-subtipo="corte">
+                                    <td class="editable" data-field="pedido">{{ $item->pedido }}</td>
+                                    <td class="editable" data-field="cortador">{{ $item->cortador }}</td>
+                                    <td class="editable" data-field="piezas"><span class="table-badge">{{ $item->piezas }}</span></td>
+                                    <td class="editable" data-field="pasadas"><span class="table-badge">{{ $item->pasadas }}</span></td>
                                     <td><span class="table-badge">{{ $item->etiqueteadas }}</span></td>
-                                    <td>{{ $item->etiquetador }}</td>
+                                    <td class="editable" data-field="etiquetador">{{ $item->etiquetador }}</td>
+                                    <td>
+                                        <button class="btn-delete" onclick="deleteEntrega({{ $item->id }}, 'corte')" title="Eliminar">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width: 16px; height: 16px;">
+                                                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                            </svg>
+                                        </button>
+                                    </td>
                                 </tr>
                                 @endforeach
                             </tbody>
