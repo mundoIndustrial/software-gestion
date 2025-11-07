@@ -21,7 +21,6 @@ class OperacionBalanceo extends Model
         'operario',
         'op',
         'seccion',
-        'operario_a',
         'orden',
     ];
 
@@ -35,14 +34,13 @@ class OperacionBalanceo extends Model
      */
     protected $attributes = [
         'letra' => '',
-        'operacion' => '',
+        'operacion' => null,
         'precedencia' => null,
         'maquina' => null,
         'sam' => 0,
         'operario' => null,
         'op' => null,
         'seccion' => 'DEL',
-        'operario_a' => null,
         'orden' => 0,
     ];
 

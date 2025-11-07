@@ -65,6 +65,14 @@
                 </tr>
                 
                 <tr style="border-bottom: 1px solid rgba(255, 157, 88, 0.15);">
+                    <td style="padding: 10px 0; color: var(--color-text-placeholder); font-size: 13px; font-weight: 500;">% Eficiencia</td>
+                    <td style="padding: 10px 0; text-align: right;">
+                        <input type="number" step="0.01" min="0" max="100" x-model="parametros.porcentaje_eficiencia" @change="updateParametros()"
+                               style="width: 70px; padding: 6px 10px; border: 1px solid rgba(255, 157, 88, 0.3); border-radius: 6px; text-align: center; font-weight: 600; color: var(--color-text-primary); background: rgba(255, 157, 88, 0.1); font-size: 15px;">
+                    </td>
+                </tr>
+                
+                <tr style="border-bottom: 1px solid rgba(255, 157, 88, 0.15);">
                     <td style="padding: 10px 0; color: var(--color-text-placeholder); font-size: 13px; font-weight: 500;">T. Disponible en Horas</td>
                     <td style="padding: 10px 0; text-align: right; font-weight: 600; color: var(--color-text-primary); font-size: 15px;" x-text="parseFloat(metricas.tiempo_disponible_horas || 0).toFixed(2)"></td>
                 </tr>
@@ -85,9 +93,11 @@
                     <td style="padding: 10px 0; text-align: right; font-weight: 600; color: var(--color-text-primary); font-size: 15px;" x-text="metricas.meta_teorica || 'N/A'"></td>
                 </tr>
                 
-                <!-- Meta Real destacada (90% de meta teórica) -->
+                <!-- Meta Real destacada (con % dinámico) -->
                 <tr>
-                    <td style="padding: 10px 0; color: var(--color-text-placeholder); font-size: 13px; font-weight: 500;">Meta Real (90%)</td>
+                    <td style="padding: 10px 0; color: var(--color-text-placeholder); font-size: 13px; font-weight: 500;">
+                        <span x-text="'Meta Real (' + (parametros.porcentaje_eficiencia || 90) + '%)'"></span>
+                    </td>
                     <td style="padding: 10px 0; text-align: right; font-weight: 700; color: #ff9d58; font-size: 18px;" 
                         x-text="metricas.meta_real ? (redondearValores ? Math.round(parseFloat(metricas.meta_real)) : parseFloat(metricas.meta_real).toFixed(2)) : 'N/A'"></td>
                 </tr>

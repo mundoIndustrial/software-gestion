@@ -10,7 +10,8 @@ function balanceoApp(balanceoId) {
         parametros: {
             total_operarios: {{ $balanceo ? ($balanceo->total_operarios ?? 0) : 0 }},
             turnos: {{ $balanceo ? ($balanceo->turnos ?? 1) : 1 }},
-            horas_por_turno: {{ $balanceo ? ($balanceo->horas_por_turno ?? 8) : 8 }}
+            horas_por_turno: {{ $balanceo ? ($balanceo->horas_por_turno ?? 8) : 8 }},
+            porcentaje_eficiencia: {{ $balanceo ? ($balanceo->porcentaje_eficiencia ?? 90) : 90 }}
         },
         metricas: {
             sam_total: {{ $balanceo ? ($balanceo->sam_total ?? 0) : 0 }},

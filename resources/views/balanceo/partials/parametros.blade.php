@@ -26,5 +26,12 @@
                    onfocus="this.style.borderColor='rgba(255, 157, 88, 0.5)'; this.style.boxShadow='0 0 0 3px rgba(255, 157, 88, 0.1)'" 
                    onblur="this.style.borderColor='rgba(255, 157, 88, 0.3)'; this.style.boxShadow='none'">
         </div>
+        <div>
+            <label style="display: block; margin-bottom: 8px; color: #94a3b8; font-size: 13px; font-weight: 500;">% Eficiencia</label>
+            <input type="number" step="0.01" min="0" max="100" x-model="parametros.porcentaje_eficiencia" @change="updateParametros()"
+                   style="width: 100%; padding: 12px; border: 1px solid rgba(255, 157, 88, 0.3); border-radius: 6px; font-size: 14px; transition: all 0.3s; background: rgba(255, 157, 88, 0.1); color: white; font-weight: 600;"
+                   onfocus="this.style.borderColor='rgba(255, 157, 88, 0.5)'; this.style.boxShadow='0 0 0 3px rgba(255, 157, 88, 0.1)'" 
+                   onblur="this.style.borderColor='rgba(255, 157, 88, 0.3)'; this.style.boxShadow='none'">
+        </div>
     </div>
 </div>
