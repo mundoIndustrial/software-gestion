@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 use App\Models\Festivo;
+use App\Traits\Auditable;
 
 class TablaOriginal extends Model
 {
+    use Auditable;
     // Nombre exacto de la tabla en tu BD
     protected $table = 'tabla_original';
 

@@ -343,20 +343,205 @@ const DataLoader = {
             (data.orders_by_status.find(s => s.estado === 'No iniciado')?.count || 0);
     },
 
-    async loadNews(date = new Date().toISOString().split('T')[0]) {
+    async loadNews(date = new Date().toISOString().split('T')[0], filters = {}) {
+        try {
+            const params = new URLSearchParams({ date, limit: 50, ...filters });
+            console.log('📡 Cargando noticias para:', date);
+            
+            const response = await fetch(`/dashboard/news?${params}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('📰 Noticias recibidas:', data.length, data);
+            
+            const newsFeed = document.getElementById('news-feed');
+            if (!newsFeed) {
+                console.error('❌ Elemento news-feed no encontrado');
+                return;
+            }
+            
+            // Actualizar contadores
+            document.getElementById('news-count').textContent = `${data.length} ${data.length === 1 ? 'nueva' : 'nuevas'}`;
+            document.getElementById('count-all').textContent = data.length;
+            document.getElementById('count-unread').textContent = data.length; // Por ahora todas son no leídas
+            document.getElementById('count-read').textContent = '0';
+            
+            if (data.length === 0) {
+                newsFeed.innerHTML = '<div style="padding: 2rem; text-align: center; color: #6b7280;">No hay notificaciones para esta fecha</div>';
+                return;
+            }
+        
+        // Mapeo de tipos de eventos a badges y estilos
+        const eventTypeConfig = {
+            'record_created': { badge: 'NUEVO', badgeClass: 'nuevo', icon: '🆕' },
+            'record_updated': { badge: 'ACTUALIZADO', badgeClass: 'actualizado', icon: '📝' },
+            'record_deleted': { badge: 'ELIMINADO', badgeClass: 'eliminado', icon: '🗑️' },
+            'order_created': { badge: 'NUEVO', badgeClass: 'nuevo', icon: '📦' },
+            'status_changed': { badge: 'ACTUALIZADO', badgeClass: 'actualizado', icon: '🔄' },
+            'area_changed': { badge: 'ACTUALIZADO', badgeClass: 'actualizado', icon: '📍' },
+            'delivery_registered': { badge: 'NUEVO', badgeClass: 'nuevo', icon: '✅' },
+            'order_deleted': { badge: 'ELIMINADO', badgeClass: 'eliminado', icon: '❌' }
+        };
+        
+            newsFeed.innerHTML = data.map(item => {
+                const config = eventTypeConfig[item.event_type] || { badge: 'EVENTO', badgeClass: 'actualizado', icon: '📋' };
+                
+                // Botón de ver detalles si hay metadata
+                const hasDetails = item.metadata && (item.metadata.changes || item.metadata.data);
+                const detailsButton = hasDetails ? `
+                    <button class="view-details-btn" onclick="showNotificationDetails(${item.id}, '${item.event_type}')" title="Ver detalles">
+                        <span class="material-symbols-rounded">info</span>
+                    </button>
+                ` : '';
+                
+                return `
+                    <div class="news-item" data-type="${item.event_type}" data-id="${item.id}">
+                        <div class="news-status-badge ${config.badgeClass}">
+                            <span>${config.icon}</span>
+                            <span>${config.badge}</span>
+                        </div>
+                        <div class="news-content-wrapper">
+                            <div class="title">${item.description}</div>
+                            <div class="meta">
+                                <span class="user-badge">👤 ${item.user}</span>
+                                <span class="time-badge">🕐 ${item.created_at}</span>
+                                ${item.pedido ? `<span class="pedido-badge">📦 #${item.pedido}</span>` : ''}
+                                ${detailsButton}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Guardar datos en memoria para el modal
+            window.newsData = data;
+        } catch (error) {
+            console.error('❌ Error cargando noticias:', error);
+            const newsFeed = document.getElementById('news-feed');
+            if (newsFeed) {
+                newsFeed.innerHTML = '<div style="padding: 2rem; text-align: center; color: #ef4444;">Error cargando notificaciones. Ver consola.</div>';
+            }
+        }
+    },
+
+    async loadAuditStats(date = new Date().toISOString().split('T')[0]) {
         const params = new URLSearchParams({ date });
-        const data = await fetch(`/dashboard/news?${params}`).then(r => r.json());
-        document.getElementById('news-feed').innerHTML = data.slice(0, 10).map(item => `
-            <div class="news-item" data-type="${item.event_type}">
-                <div class="title">${item.description}</div>
-                <div class="meta">
-                    <span>${item.user}</span>
-                    <span>${item.created_at}</span>
+        const stats = await fetch(`/dashboard/audit-stats?${params}`).then(r => r.json());
+        
+        console.log('📊 Estadísticas de Auditoría:', stats);
+        
+        // Actualizar UI con estadísticas si existe un contenedor
+        const statsContainer = document.getElementById('audit-stats-container');
+        if (statsContainer) {
+            statsContainer.innerHTML = `
+                <div class="stat-card">
+                    <h4>Total de Eventos</h4>
+                    <p class="stat-number">${stats.total_events}</p>
                 </div>
-            </div>
-        `).join('');
+                <div class="stat-card">
+                    <h4>Por Tipo</h4>
+                    <ul class="stat-list">
+                        ${stats.by_type.map(t => `<li>${t.event_type}: ${t.count}</li>`).join('')}
+                    </ul>
+                </div>
+                <div class="stat-card">
+                    <h4>Por Tabla</h4>
+                    <ul class="stat-list">
+                        ${stats.by_table.slice(0, 5).map(t => `<li>${t.table_name || 'N/A'}: ${t.count}</li>`).join('')}
+                    </ul>
+                </div>
+                <div class="stat-card">
+                    <h4>Por Usuario</h4>
+                    <ul class="stat-list">
+                        ${stats.by_user.slice(0, 5).map(u => `<li>${u.name}: ${u.count}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
     }
 };
+
+// ===== FUNCIÓN PARA MOSTRAR DETALLES =====
+function showNotificationDetails(newsId, eventType) {
+    const newsItem = window.newsData?.find(item => item.id === newsId);
+    if (!newsItem || !newsItem.metadata) {
+        alert('No hay detalles disponibles para esta notificación');
+        return;
+    }
+    
+    const metadata = newsItem.metadata;
+    let detailsHTML = '';
+    
+    if (eventType === 'record_deleted' && metadata.data) {
+        // Mostrar datos del registro eliminado
+        detailsHTML = '<h3>📋 Datos del registro eliminado:</h3><div class="details-grid">';
+        for (const [key, value] of Object.entries(metadata.data)) {
+            const fieldName = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            detailsHTML += `
+                <div class="detail-item">
+                    <span class="detail-label">${fieldName}:</span>
+                    <span class="detail-value">${value ?? 'N/A'}</span>
+                </div>
+            `;
+        }
+        detailsHTML += '</div>';
+    } else if (eventType === 'record_updated' && metadata.changes) {
+        // Mostrar cambios realizados
+        detailsHTML = '<h3>📝 Cambios realizados:</h3><div class="details-grid">';
+        for (const [key, newValue] of Object.entries(metadata.changes)) {
+            const oldValue = metadata.original?.[key] ?? 'N/A';
+            const fieldName = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            detailsHTML += `
+                <div class="detail-item">
+                    <span class="detail-label">${fieldName}:</span>
+                    <span class="detail-change">${oldValue} → ${newValue}</span>
+                </div>
+            `;
+        }
+        detailsHTML += '</div>';
+    } else if (eventType === 'record_created' && metadata.data) {
+        // Mostrar datos del registro creado
+        detailsHTML = '<h3>✨ Datos del nuevo registro:</h3><div class="details-grid">';
+        for (const [key, value] of Object.entries(metadata.data)) {
+            const fieldName = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            detailsHTML += `
+                <div class="detail-item">
+                    <span class="detail-label">${fieldName}:</span>
+                    <span class="detail-value">${value ?? 'N/A'}</span>
+                </div>
+            `;
+        }
+        detailsHTML += '</div>';
+    }
+    
+    // Crear modal
+    const modal = document.createElement('div');
+    modal.className = 'notification-modal';
+    modal.innerHTML = `
+        <div class="modal-overlay" onclick="this.parentElement.remove()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Detalles de la Notificación</h2>
+                <button class="modal-close" onclick="this.closest('.notification-modal').remove()">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="notification-summary">
+                    <p><strong>Descripción:</strong> ${newsItem.description}</p>
+                    <p><strong>Usuario:</strong> ${newsItem.user}</p>
+                    <p><strong>Fecha:</strong> ${newsItem.created_at}</p>
+                    ${newsItem.table_name ? `<p><strong>Tabla:</strong> ${newsItem.table_name}</p>` : ''}
+                </div>
+                ${detailsHTML}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
@@ -368,6 +553,43 @@ document.addEventListener('DOMContentLoaded', () => {
     const newsDateFilter = document.getElementById('news-date-filter');
     newsDateFilter.value = new Date().toISOString().split('T')[0];
     newsDateFilter.addEventListener('change', () => DataLoader.loadNews(newsDateFilter.value));
+    
+    // Notification tabs
+    const notificationTabs = document.querySelectorAll('.notification-tab');
+    notificationTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Remove active class from all tabs
+            notificationTabs.forEach(t => t.classList.remove('active'));
+            // Add active class to clicked tab
+            tab.classList.add('active');
+            
+            // Filter notifications based on tab
+            const filter = tab.dataset.filter;
+            const newsItems = document.querySelectorAll('.news-item');
+            
+            newsItems.forEach(item => {
+                if (filter === 'all') {
+                    item.style.display = 'flex';
+                } else if (filter === 'unread') {
+                    // Por ahora mostrar todas (implementar lógica de leídas/no leídas después)
+                    item.style.display = 'flex';
+                } else if (filter === 'read') {
+                    // Por ahora ocultar todas (implementar lógica de leídas/no leídas después)
+                    item.style.display = 'none';
+                }
+            });
+        });
+    });
+    
+    // Mark all as read button
+    const markAllReadBtn = document.getElementById('mark-all-read');
+    if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', () => {
+            console.log('Marcar todas como leídas');
+            // Implementar lógica después
+            alert('Funcionalidad de "marcar como leídas" próximamente');
+        });
+    }
     
     DataLoader.loadNews(newsDateFilter.value);
 });

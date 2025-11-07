@@ -50,10 +50,36 @@
         </div>
 
         <div class="chart-card animate-in notifications-section">
-            <div class="chart-header">
-                <h2>Notificaciones</h2>
-                <input type="date" id="news-date-filter" class="filter-date" />
+            <div class="notifications-header">
+                <div class="notifications-title-section">
+                    <div class="notifications-icon">
+                        <span class="material-symbols-rounded">notifications</span>
+                    </div>
+                    <div>
+                        <h2>Notificaciones</h2>
+                        <span class="notifications-count" id="news-count">0 nuevas</span>
+                    </div>
+                </div>
+                <div class="notifications-actions">
+                    <input type="date" id="news-date-filter" class="filter-date" />
+                    <button class="mark-all-read" id="mark-all-read" title="Marcar todas como leídas">
+                        <span class="material-symbols-rounded">done_all</span>
+                    </button>
+                </div>
             </div>
+            
+            <div class="notifications-tabs">
+                <button class="notification-tab active" data-filter="all" id="tab-all">
+                    Todas <span class="tab-count" id="count-all">0</span>
+                </button>
+                <button class="notification-tab" data-filter="unread" id="tab-unread">
+                    No leídas <span class="tab-count" id="count-unread">0</span>
+                </button>
+                <button class="notification-tab" data-filter="read" id="tab-read">
+                    Leídas <span class="tab-count" id="count-read">0</span>
+                </button>
+            </div>
+            
             <div class="news-compact" id="news-feed"></div>
         </div>
     </div>

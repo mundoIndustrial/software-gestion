@@ -555,7 +555,11 @@
 
             handleError(error, message) {
                 console.error(message, error);
-                alert(`${message}: ${error.message || 'Error desconocido'}`);
+                if (typeof showErrorModal === 'function') {
+                    showErrorModal(`${message}: ${error.message || 'Error desconocido'}`);
+                } else {
+                    alert(`${message}: ${error.message || 'Error desconocido'}`);
+                }
             }
         };
 
@@ -789,15 +793,32 @@
 
             async createNewItem(nombre) {
                 try {
-                    const data = await this.httpService.post(this.createRoute, {
-                        [this.createKey]: nombre.toUpperCase()
+                    const response = await fetch(this.createRoute, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': Utils.getCsrfToken(),
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            [this.createKey]: nombre.toUpperCase()
+                        })
                     });
+
+                    const data = await response.json();
 
                     if (data.success) {
                         const createdItem = this.getCreatedItemFromData(data);
                         this.selectItem(createdItem);
                     } else {
-                        alert(`Error al crear: ${data.message || 'Error desconocido'}`);
+                        // Mostrar modal de error bonito
+                        if (typeof showErrorModal === 'function') {
+                            showErrorModal(data.message || 'Error al crear el elemento');
+                        } else {
+                            alert(data.message || 'Error al crear el elemento');
+                        }
+                        this.suggestionsManager.hide();
                     }
                 } catch (error) {
                     Utils.handleError(error, 'Error al crear el elemento');
@@ -981,19 +1002,31 @@
                 const operarioId = document.getElementById('operario_id').value;
 
                 if (!telaId) {
-                    alert('Por favor selecciona una tela válida.');
+                    if (typeof showErrorModal === 'function') {
+                        showErrorModal('Por favor selecciona una tela válida.');
+                    } else {
+                        alert('Por favor selecciona una tela válida.');
+                    }
                     document.getElementById('tela_autocomplete').focus();
                     return;
                 }
 
                 if (!maquinaId) {
-                    alert('Por favor selecciona una máquina válida.');
+                    if (typeof showErrorModal === 'function') {
+                        showErrorModal('Por favor selecciona una máquina válida.');
+                    } else {
+                        alert('Por favor selecciona una máquina válida.');
+                    }
                     document.getElementById('maquina_autocomplete').focus();
                     return;
                 }
 
                 if (!operarioId) {
-                    alert('Por favor selecciona un operario válido.');
+                    if (typeof showErrorModal === 'function') {
+                        showErrorModal('Por favor selecciona un operario válido.');
+                    } else {
+                        alert('Por favor selecciona un operario válido.');
+                    }
                     document.getElementById('operario_autocomplete').focus();
                     return;
                 }
@@ -1010,7 +1043,11 @@
                     if (response.success) {
                         this.onSuccess(response);
                     } else {
-                        alert(`Error al guardar: ${response.message || 'Error desconocido'}`);
+                        if (typeof showErrorModal === 'function') {
+                            showErrorModal(response.message || 'Error al guardar el registro');
+                        } else {
+                            alert(`Error al guardar: ${response.message || 'Error desconocido'}`);
+                        }
                     }
                 } catch (error) {
                     Utils.handleError(error, 'Error al procesar la solicitud');
@@ -1199,6 +1236,167 @@
             if (e.detail === 'piso-corte-form') {
                 console.log('Modal de corte abierto, inicializando...');
                 setTimeout(initializeCorteForm, 100);
+            }
+        });
+    </script>
+
+    <!-- Modal de Error -->
+    <div id="errorModal" class="error-modal-overlay" style="display: none;">
+        <div class="error-modal-content">
+            <div class="error-modal-header">
+                <div class="error-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="10" stroke-width="2"/>
+                        <line x1="12" y1="8" x2="12" y2="12" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <h3 class="error-title">Error</h3>
+            </div>
+            <div class="error-modal-body">
+                <p id="errorMessage" class="error-message"></p>
+            </div>
+            <div class="error-modal-footer">
+                <button type="button" class="btn-error-close" onclick="closeErrorModal()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M5 13l4 4L19 7" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Entendido
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .error-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .error-modal-content {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .error-modal-header {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            padding: 24px;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .error-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .error-icon svg {
+            width: 28px;
+            height: 28px;
+            color: white;
+        }
+
+        .error-title {
+            color: white;
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .error-modal-body {
+            padding: 32px 24px;
+        }
+
+        .error-message {
+            color: #1f2937;
+            font-size: 16px;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .error-modal-footer {
+            padding: 16px 24px 24px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn-error-close {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-error-close:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-error-close svg {
+            width: 18px;
+            height: 18px;
+        }
+    </style>
+
+    <script>
+        function showErrorModal(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorModal').style.display = 'flex';
+        }
+
+        function closeErrorModal() {
+            document.getElementById('errorModal').style.display = 'none';
+        }
+
+        // Cerrar modal al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('errorModal');
+            if (e.target === modal) {
+                closeErrorModal();
             }
         });
     </script>
