@@ -142,7 +142,7 @@
         </ul>
       </li>
 
-      @if(auth()->user()->role === 'admin')
+      @if(auth()->user()->role && auth()->user()->role->name === 'admin')
       <li class="menu-item">
         <a href="{{ route('users.index') }}"
            class="menu-link {{ request()->routeIs('users.*') ? 'active' : '' }}"
