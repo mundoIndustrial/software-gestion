@@ -327,14 +327,16 @@ class ConfiguracionController extends Controller
             \Log::info('Iniciando backup a Google Drive');
             
             // Obtener access token (renovándolo automáticamente si es necesario)
-            $accessToken = $this->getGoogleDriveAccessToken($refreshToken);
+            $tokenResult = $this->getGoogleDriveAccessToken($refreshToken);
             
-            if (!$accessToken) {
+            if (!$tokenResult['success']) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No se pudo obtener el access token de Google Drive'
+                    'message' => $tokenResult['message']
                 ], 400);
             }
+            
+            $accessToken = $tokenResult['token'];
 
             $database = env('DB_DATABASE');
             \Log::info('Generando backup de la base de datos: ' . $database);
@@ -449,6 +451,8 @@ class ConfiguracionController extends Controller
                 'Content-Length: ' . strlen($multipartBody)
             ]);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $multipartBody);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Desactivar verificación SSL
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
             curl_setopt($ch, CURLOPT_TIMEOUT, 300); // Timeout de 5 minutos para la subida
             
             \Log::info('Subiendo archivo a Google Drive...');
@@ -530,13 +534,22 @@ class ConfiguracionController extends Controller
                 $testCh = curl_init('https://www.googleapis.com/drive/v3/about?fields=user');
                 curl_setopt($testCh, CURLOPT_RETURNTRANSFER, true);
                 curl_setopt($testCh, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $currentToken]);
-                curl_exec($testCh);
+                curl_setopt($testCh, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($testCh, CURLOPT_SSL_VERIFYHOST, false);
+                curl_setopt($testCh, CURLOPT_TIMEOUT, 10);
+                curl_setopt($testCh, CURLOPT_CONNECTTIMEOUT, 10);
+                
+                $testResponse = curl_exec($testCh);
                 $testCode = curl_getinfo($testCh, CURLINFO_HTTP_CODE);
+                $testError = curl_error($testCh);
                 curl_close($testCh);
                 
-                if ($testCode === 200) {
+                // Si hay error de conexión, continuar con renovación
+                if ($testError) {
+                    \Log::warning('Error al verificar token actual: ' . $testError);
+                } elseif ($testCode === 200) {
                     \Log::info('Access token actual todavía es válido');
-                    return $currentToken;
+                    return ['success' => true, 'token' => $currentToken];
                 }
             }
             
@@ -552,10 +565,20 @@ class ConfiguracionController extends Controller
                 'refresh_token' => $refreshToken,
                 'grant_type' => 'refresh_token'
             ]));
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Desactivar verificación SSL temporalmente
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
             
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
             curl_close($ch);
+            
+            // Si hay error de cURL, retornarlo inmediatamente
+            if ($curlError) {
+                \Log::error('Error de cURL al renovar token: ' . $curlError);
+                return ['success' => false, 'message' => 'Error de conexión con Google: ' . $curlError];
+            }
             
             if ($httpCode === 200) {
                 $data = json_decode($response, true);
@@ -567,8 +590,17 @@ class ConfiguracionController extends Controller
                     \Artisan::call('config:clear');
                     
                     \Log::info('Access token renovado exitosamente');
-                    return $newAccessToken;
+                    return ['success' => true, 'token' => $newAccessToken];
                 }
+            }
+            
+            $errorData = json_decode($response, true);
+            $errorMessage = 'Error al renovar access token';
+            
+            if (isset($errorData['error'])) {
+                $errorMessage .= ': ' . ($errorData['error_description'] ?? $errorData['error']);
+            } else {
+                $errorMessage .= ' (HTTP ' . $httpCode . ')';
             }
             
             \Log::error('Error al renovar access token', [
@@ -576,11 +608,11 @@ class ConfiguracionController extends Controller
                 'response' => $response
             ]);
             
-            return null;
+            return ['success' => false, 'message' => $errorMessage];
             
         } catch (\Exception $e) {
             \Log::error('Excepción al obtener access token: ' . $e->getMessage());
-            return null;
+            return ['success' => false, 'message' => 'Error de conexión: ' . $e->getMessage()];
         }
     }
     
