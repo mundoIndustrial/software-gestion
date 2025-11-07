@@ -5,9 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 use App\Models\Festivo;
+use App\Traits\Auditable;
 
 class RegistrosPorOrden extends Model
 {
+    use Auditable;
     protected $table = 'registros_por_orden';
 
     protected $guarded = [];

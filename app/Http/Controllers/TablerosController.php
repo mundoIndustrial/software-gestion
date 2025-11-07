@@ -1078,11 +1078,23 @@ class TablerosController extends Controller
 
     public function storeTela(Request $request)
     {
-        $request->validate([
-            'nombre_tela' => 'required|string|unique:telas,nombre_tela',
-        ]);
-
         try {
+            // Verificar si ya existe la tela
+            $telaExistente = Tela::where('nombre_tela', $request->nombre_tela)->first();
+            
+            if ($telaExistente) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La tela "' . $request->nombre_tela . '" ya existe en el sistema.',
+                    'error_type' => 'duplicate',
+                    'existing_item' => $telaExistente
+                ], 422);
+            }
+
+            $request->validate([
+                'nombre_tela' => 'required|string',
+            ]);
+
             $tela = Tela::create([
                 'nombre_tela' => $request->nombre_tela,
             ]);
@@ -1113,11 +1125,23 @@ class TablerosController extends Controller
 
     public function storeMaquina(Request $request)
     {
-        $request->validate([
-            'nombre_maquina' => 'required|string|unique:maquinas,nombre_maquina',
-        ]);
-
         try {
+            // Verificar si ya existe la máquina
+            $maquinaExistente = Maquina::where('nombre_maquina', $request->nombre_maquina)->first();
+            
+            if ($maquinaExistente) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La máquina "' . $request->nombre_maquina . '" ya existe en el sistema.',
+                    'error_type' => 'duplicate',
+                    'existing_item' => $maquinaExistente
+                ], 422);
+            }
+
+            $request->validate([
+                'nombre_maquina' => 'required|string',
+            ]);
+
             $maquina = Maquina::create([
                 'nombre_maquina' => $request->nombre_maquina,
             ]);
@@ -1159,11 +1183,23 @@ class TablerosController extends Controller
 
     public function storeOperario(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|unique:users,name',
-        ]);
-
         try {
+            // Verificar si ya existe el operario
+            $operarioExistente = User::where('name', strtoupper($request->name))->first();
+            
+            if ($operarioExistente) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El operario "' . strtoupper($request->name) . '" ya existe en el sistema.',
+                    'error_type' => 'duplicate',
+                    'existing_item' => $operarioExistente
+                ], 422);
+            }
+
+            $request->validate([
+                'name' => 'required|string',
+            ]);
+
             $operario = User::create([
                 'name' => strtoupper($request->name),
                 'email' => strtolower(str_replace(' ', '.', $request->name)) . '@example.com', // Generate email

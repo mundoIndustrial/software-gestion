@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Auditable;
 
 class EntregaBodegaCorte extends Model
 {
+    use Auditable;
     protected $table = 'entrega_bodega_corte';
 
     public $timestamps = false;

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test News API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f3f4f6;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success {
+            color: #10b981;
+        }
+        .error {
+            color: #ef4444;
+        }
+        .news-item {
+            background: white;
+            border-left: 3px solid #3b82f6;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .news-header {
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .news-meta {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test de API de Notificaciones</h1>
+        <p>Esta página prueba el endpoint <code>/dashboard/news</code></p>
+        
+        <div>
+            <button onclick="testNewsAPI()">🔍 Probar API</button>
+            <button onclick="testNewsToday()">📅 Noticias de Hoy</button>
+            <button onclick="testNewsYesterday()">📅 Noticias de Ayer</button>
+            <button onclick="clearResult()">🗑️ Limpiar</button>
+        </div>
+        
+        <div id="result"></div>
+        <div id="news-display"></div>
+    </div>
+
+    <script>
+        async function testNewsAPI() {
+            const result = document.getElementById('result');
+            const newsDisplay = document.getElementById('news-display');
+            result.innerHTML = '⏳ Cargando...';
+            newsDisplay.innerHTML = '';
+            
+            try {
+                const date = new Date().toISOString().split('T')[0];
+                const url = `/dashboard/news?date=${date}&limit=50`;
+                
+                console.log('📡 Llamando a:', url);
+                result.innerHTML += `\n📡 URL: ${url}`;
+                
+                const response = await fetch(url);
+                result.innerHTML += `\n📊 Status: ${response.status} ${response.statusText}`;
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                result.innerHTML += `\n✅ Respuesta recibida: ${data.length} registros`;
+                result.innerHTML += `\n\n📋 Datos completos:\n${JSON.stringify(data, null, 2)}`;
+                
+                // Mostrar noticias de forma visual
+                if (data.length > 0) {
+                    newsDisplay.innerHTML = '<h2>📰 Notificaciones:</h2>';
+                    data.forEach(item => {
+                        const eventColors = {
+                            'record_created': '#10b981',
+                            'record_updated': '#3b82f6',
+                            'record_deleted': '#ef4444',
+                            'order_created': '#8b5cf6',
+                            'status_changed': '#f59e0b',
+                            'area_changed': '#06b6d4',
+                            'delivery_registered': '#10b981',
+                            'order_deleted': '#ef4444'
+                        };
+                        
+                        const color = eventColors[item.event_type] || '#6b7280';
+                        
+                        newsDisplay.innerHTML += `
+                            <div class="news-item" style="border-left-color: ${color}">
+                                <div class="news-header">
+                                    ${item.event_type} 
+                                    ${item.table_name ? `- ${item.table_name}` : ''}
+                                </div>
+                                <div>${item.description}</div>
+                                <div class="news-meta">
+                                    👤 ${item.user} | 
+                                    🕐 ${item.created_at}
+                                    ${item.pedido ? ` | 📦 Pedido #${item.pedido}` : ''}
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    newsDisplay.innerHTML = '<p>⚠️ No hay notificaciones para esta fecha</p>';
+                }
+                
+                result.className = 'success';
+            } catch (error) {
+                result.innerHTML += `\n\n❌ ERROR: ${error.message}`;
+                result.innerHTML += `\n\nStack: ${error.stack}`;
+                result.className = 'error';
+                console.error('Error:', error);
+            }
+        }
+        
+        async function testNewsToday() {
+            await testNewsAPI();
+        }
+        
+        async function testNewsYesterday() {
+            const result = document.getElementById('result');
+            const newsDisplay = document.getElementById('news-display');
+            result.innerHTML = '⏳ Cargando noticias de ayer...';
+            newsDisplay.innerHTML = '';
+            
+            try {
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                const date = yesterday.toISOString().split('T')[0];
+                const url = `/dashboard/news?date=${date}&limit=50`;
+                
+                console.log('📡 Llamando a:', url);
+                result.innerHTML += `\n📡 URL: ${url}`;
+                
+                const response = await fetch(url);
+                result.innerHTML += `\n📊 Status: ${response.status}`;
+                
+                const data = await response.json();
+                result.innerHTML += `\n✅ Registros de ayer: ${data.length}`;
+                result.innerHTML += `\n\n${JSON.stringify(data, null, 2)}`;
+                
+                result.className = 'success';
+            } catch (error) {
+                result.innerHTML += `\n\n❌ ERROR: ${error.message}`;
+                result.className = 'error';
+            }
+        }
+        
+        function clearResult() {
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('news-display').innerHTML = '';
+        }
+        
+        // Auto-ejecutar al cargar
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('✅ Página de prueba cargada');
+            console.log('🔗 Puedes abrir la consola del navegador para ver más detalles');
+        });
+    </script>
+</body>
+</html>
