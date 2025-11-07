@@ -139,6 +139,13 @@
               <span class="menu-label">Costura Bodega</span>
             </a>
           </li>
+          <li class="submenu-item">
+            <a href="{{ route('vistas.control-calidad') }}"
+               class="menu-link"
+               aria-label="Ver control de calidad">
+              <span class="menu-label">Control de Calidad</span>
+            </a>
+          </li>
         </ul>
       </li>
 

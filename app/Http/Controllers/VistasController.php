@@ -298,6 +298,31 @@ class VistasController extends Controller
         ]);
     }
 
+    public function controlCalidad(Request $request)
+    {
+        $query = $request->get('search', '');
+
+        // Obtener órdenes de ambas tablas que estén en Control-Calidad
+        $ordenesPedido = TablaOriginal::where('area', 'Control-Calidad')->get();
+        $ordenesBodega = TablaOriginalBodega::where('area', 'Control-Calidad')->get();
+
+        // Combinar ambas colecciones
+        $ordenes = $ordenesPedido->merge($ordenesBodega);
+
+        // Aplicar filtro de búsqueda si existe
+        if (!empty($query)) {
+            $ordenes = $ordenes->filter(function($orden) use ($query) {
+                return stripos($orden->pedido, $query) !== false || 
+                       stripos($orden->cliente, $query) !== false;
+            });
+        }
+
+        // Ordenar por fecha de creación descendente
+        $ordenes = $ordenes->sortByDesc('fecha_de_creacion_de_orden')->values();
+
+        return view('vistas.control-calidad', compact('ordenes', 'query'));
+    }
+
     private function determinarTipo(Request $request)
     {
         // Verificar si viene de un parámetro directo

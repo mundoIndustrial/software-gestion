@@ -99,6 +99,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/tableros/unique-values', [TablerosController::class, 'getUniqueValues'])->name('tableros.unique-values');
     Route::get('/vistas', [VistasController::class, 'index'])->name('vistas.index');
     Route::get('/api/vistas/search', [VistasController::class, 'search'])->name('api.vistas.search');
+    Route::get('/vistas/control-calidad', [VistasController::class, 'controlCalidad'])->name('vistas.control-calidad');
     
     // Rutas de Balanceo
     Route::get('/balanceo', [BalanceoController::class, 'index'])->name('balanceo.index');
