@@ -457,20 +457,35 @@
 
 <!-- Modal para confirmar eliminación -->
 <div id="deleteConfirmModal" class="modal-overlay" style="display: none;">
-    <div class="modal-content" style="width: 400px; background: #fff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-        <div class="modal-header" style="background: #333; color: #fff; border-bottom: 1px solid #dee2e6; padding: 15px 20px;">
+    <div class="modal-content delete-modal-wrapper">
+        <div class="modal-header delete-modal-header">
             <h3 class="modal-title" id="deleteModalTitle">Confirmar Eliminación</h3>
-            <button type="button" class="close" id="closeDeleteModal" style="background: none; border: none; font-size: 24px; color: #fff;">&times;</button>
+            <button type="button" class="close delete-modal-close" id="closeDeleteModal">&times;</button>
         </div>
-        <div class="modal-body" id="deleteModalBody" style="padding: 20px; background: #333; color: #fff;">
+        <div class="modal-body delete-modal-body" id="deleteModalBody">
             <p>¿Estás seguro de que quieres eliminar este registro?</p>
         </div>
-        <div class="modal-footer" id="deleteModalFooter" style="background: #333; border-top: 1px solid #dee2e6; padding: 15px 20px; display: flex; justify-content: flex-end; gap: 10px;">
+        <div class="modal-footer delete-modal-footer" id="deleteModalFooter">
             <button type="button" class="btn btn-secondary" id="cancelDelete">Cancelar</button>
             <button type="button" class="btn btn-danger" id="confirmDelete">Eliminar</button>
         </div>
     </div>
 </div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 9999; justify-content: center; align-items: center;">
+    <div style="text-align: center; color: white;">
+        <div class="spinner" style="border: 4px solid rgba(255, 255, 255, 0.3); border-top: 4px solid #FF6B35; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
+        <p id="loadingText" style="font-size: 16px; font-weight: 600;">Procesando...</p>
+    </div>
+</div>
+
+<style>
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
 
 <script>
 // Variables globales
@@ -478,6 +493,23 @@ let currentCell = null;
 let currentRowId = null;
 let currentColumn = null;
 let currentAutocompleteListener = null;
+
+// Funciones para mostrar/ocultar loading overlay
+function showLoading(message = 'Procesando...') {
+    const overlay = document.getElementById('loadingOverlay');
+    const text = document.getElementById('loadingText');
+    if (overlay && text) {
+        text.textContent = message;
+        overlay.style.display = 'flex';
+    }
+}
+
+function hideLoading() {
+    const overlay = document.getElementById('loadingOverlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+}
 
 // Función global para manejar doble click en celdas
 function handleCellDoubleClick() {
@@ -703,6 +735,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     async function saveCellEdit() {
+        // Mostrar loading
+        showLoading('Guardando cambios...');
+        
         let newValue = document.getElementById('editCellInput').value.toUpperCase(); // Convertir a mayúsculas
         const section = currentCell.closest('table').dataset.section;
         let displayName = newValue; // Guardar el nombre para mostrar
@@ -734,11 +769,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     newValue = data.id; // Usar el ID de la hora para guardar
                     console.log('Hora encontrada/creada:', data);
                 } else {
+                    hideLoading();
                     alert('Error al procesar la hora');
                     return;
                 }
             } catch (error) {
                 console.error('Error al buscar/crear hora:', error);
+                hideLoading();
                 alert('Error al procesar la hora');
                 return;
             }
@@ -758,6 +795,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('Operario encontrado/creado:', data);
             } catch (error) {
                 console.error('Error al buscar/crear operario:', error);
+                hideLoading();
                 alert('Error al procesar el operario');
                 return;
             }
@@ -777,6 +815,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('Máquina encontrada/creada:', data);
             } catch (error) {
                 console.error('Error al buscar/crear máquina:', error);
+                hideLoading();
                 alert('Error al procesar la máquina');
                 return;
             }
@@ -796,6 +835,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('Tela encontrada/creada:', data);
             } catch (error) {
                 console.error('Error al buscar/crear tela:', error);
+                hideLoading();
                 alert('Error al procesar la tela');
                 return;
             }
@@ -887,14 +927,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 closeEditModal();
                 
+                // Ocultar loading
+                hideLoading();
+                
                 // Mostrar notificación de éxito
                 showNotification('Cambios guardados correctamente', 'success');
             } else {
+                hideLoading();
                 alert('Error al guardar: ' + data.message);
             }
         })
         .catch(error => {
             console.error('Error:', error);
+            hideLoading();
             alert('Error al guardar los cambios');
         });
     }
@@ -992,6 +1037,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const id = modal.dataset.deleteId;
         const section = modal.dataset.deleteSection;
 
+        // Mostrar loading
+        showLoading('Eliminando registro...');
+
         // Deshabilitar el botón de eliminar
         const confirmBtn = document.getElementById('confirmDelete');
         if (confirmBtn) {
@@ -1065,6 +1113,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 console.log('✅ Registro eliminado del servidor:', id);
                 
+                // Ocultar loading
+                hideLoading();
+                
                 // NO llamar a recargarDashboardCorte aquí
                 // El dashboard se actualizará automáticamente por el evento WebSocket
                 
@@ -1074,12 +1125,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 }));
             } else {
                 console.error('Error al eliminar:', data.message);
+                hideLoading();
                 // Si falla, recargar la página para restaurar el estado correcto
                 setTimeout(() => location.reload(), 1000);
             }
         })
         .catch(error => {
             console.error('Error:', error);
+            hideLoading();
             alert('Error al eliminar el registro');
             // Re-habilitar el botón si hay error
             if (confirmBtn) {

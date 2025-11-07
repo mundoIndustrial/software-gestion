@@ -304,13 +304,29 @@ class TablerosController extends Controller
                 if ($section === 'corte') {
                     // Para corte, manejar relaciones usando los nombres de las columnas con _id
                     if ($column === 'hora_id') {
-                        $query->whereIn('hora_id', $values);
+                        // Buscar IDs de horas por sus valores
+                        $horaIds = \App\Models\Hora::whereIn('hora', $values)->pluck('id')->toArray();
+                        if (!empty($horaIds)) {
+                            $query->whereIn('hora_id', $horaIds);
+                        }
                     } elseif ($column === 'operario_id') {
-                        $query->whereIn('operario_id', $values);
+                        // Buscar IDs de operarios por sus nombres
+                        $operarioIds = \App\Models\User::whereIn('name', $values)->pluck('id')->toArray();
+                        if (!empty($operarioIds)) {
+                            $query->whereIn('operario_id', $operarioIds);
+                        }
                     } elseif ($column === 'maquina_id') {
-                        $query->whereIn('maquina_id', $values);
+                        // Buscar IDs de máquinas por sus nombres
+                        $maquinaIds = \App\Models\Maquina::whereIn('nombre_maquina', $values)->pluck('id')->toArray();
+                        if (!empty($maquinaIds)) {
+                            $query->whereIn('maquina_id', $maquinaIds);
+                        }
                     } elseif ($column === 'tela_id') {
-                        $query->whereIn('tela_id', $values);
+                        // Buscar IDs de telas por sus nombres
+                        $telaIds = \App\Models\Tela::whereIn('nombre_tela', $values)->pluck('id')->toArray();
+                        if (!empty($telaIds)) {
+                            $query->whereIn('tela_id', $telaIds);
+                        }
                     } elseif ($column === 'fecha') {
                         // Convertir fechas del formato dd-mm-yyyy a yyyy-mm-dd
                         $formattedDates = array_map(function($date) {
@@ -1496,6 +1512,17 @@ class TablerosController extends Controller
                 $values = Tela::whereHas('registrosPisoCorte')
                     ->distinct()
                     ->pluck('nombre_tela')
+                    ->sort()
+                    ->values()
+                    ->toArray();
+            } elseif ($column === 'fecha') {
+                // Para fechas, obtener y formatear
+                $values = $model::distinct()
+                    ->pluck($column)
+                    ->filter()
+                    ->map(function($date) {
+                        return \Carbon\Carbon::parse($date)->format('d-m-Y');
+                    })
                     ->sort()
                     ->values()
                     ->toArray();

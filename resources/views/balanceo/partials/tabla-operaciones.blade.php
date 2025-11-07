@@ -203,31 +203,22 @@
                                         @change="saveCell(operacion, 'seccion', $event.target.value)"
                                         @blur="cancelEdit()"
                                         @keydown.escape="cancelEdit()"
-                                        style="width: 100%; padding: 4px; border: 2px solid #ff9d58; border-radius: 4px; background: rgba(255, 157, 88, 0.1);">
-                                    <option value="DEL">DEL</option>
-                                    <option value="TRAS">TRAS</option>
-                                    <option value="ENS">ENS</option>
-                                    <option value="OTRO">OTRO</option>
+                                        style="width: 100%; padding: 4px; border: 2px solid #ff9d58; border-radius: 4px; background: rgba(255, 157, 88, 0.1); color: #2d3748; font-weight: 600;">
+                                    <option value="DEL" style="color: #2d3748;">DEL</option>
+                                    <option value="TRAS" style="color: #2d3748;">TRAS</option>
+                                    <option value="ENS" style="color: #2d3748;">ENS</option>
+                                    <option value="OTRO" style="color: #2d3748;">OTRO</option>
                                 </select>
                             </td>
                             
                             <td style="padding: 10px; text-align: center; user-select: none;">
-                                <div style="display: flex; gap: 4px; justify-content: center;">
-                                    <button @click="editOperacion(operacion)" 
-                                            title="Editar"
-                                            style="background: #ff9d58; color: white; border: none; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center;" 
-                                            onmouseover="this.style.background='#e88a47'" 
-                                            onmouseout="this.style.background='#ff9d58'">
-                                        <span class="material-symbols-rounded" style="font-size: 16px;">edit</span>
-                                    </button>
-                                    <button @click="deleteOperacion(operacion.id)" 
-                                            title="Eliminar"
-                                            style="background: #f5576c; color: white; border: none; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center;" 
-                                            onmouseover="this.style.background='#e04558'" 
-                                            onmouseout="this.style.background='#f5576c'">
-                                        <span class="material-symbols-rounded" style="font-size: 16px;">delete</span>
-                                    </button>
-                                </div>
+                                <button @click="deleteOperacion(operacion.id)" 
+                                        title="Eliminar"
+                                        style="background: #f5576c; color: white; border: none; padding: 6px 8px; border-radius: 6px; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center; margin: 0 auto;" 
+                                        onmouseover="this.style.background='#e04558'" 
+                                        onmouseout="this.style.background='#f5576c'">
+                                    <span class="material-symbols-rounded" style="font-size: 16px;">delete</span>
+                                </button>
                             </td>
                         </tr>
                     </template>

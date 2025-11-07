@@ -207,7 +207,11 @@ function balanceoApp(balanceoId) {
 
         async updateParametros() {
             try {
-                const response = await fetch(`/balanceo/${this.balanceoId}`, {
+                // Asegurarse de que balanceoId es solo el número
+                const balanceoId = typeof this.balanceoId === 'string' ? 
+                    this.balanceoId.split('/').pop() : this.balanceoId;
+                
+                const response = await fetch(`/balanceo/${balanceoId}`, {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
@@ -215,6 +219,10 @@ function balanceoApp(balanceoId) {
                     },
                     body: JSON.stringify(this.parametros)
                 });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 
                 const data = await response.json();
                 if (data.success) {

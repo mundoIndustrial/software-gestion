@@ -290,14 +290,23 @@ class ConfiguracionController extends Controller
     public function uploadToGoogleDrive()
     {
         try {
-            // Obtener o renovar el access token
-            $accessToken = $this->getValidAccessToken();
             $folderId = env('GOOGLE_DRIVE_FOLDER_ID');
+            $refreshToken = env('GOOGLE_DRIVE_REFRESH_TOKEN');
 
-            if (!$accessToken || !$folderId) {
+            if (!$refreshToken || !$folderId) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Google Drive no está configurado. Necesitas configurar el Refresh Token. Revisa GOOGLE_DRIVE_OAUTH_SETUP.md'
+                    'message' => 'Google Drive no está configurado. Verifica GOOGLE_DRIVE_REFRESH_TOKEN y GOOGLE_DRIVE_FOLDER_ID en el .env'
+                ], 400);
+            }
+            
+            // Obtener access token (renovándolo automáticamente si es necesario)
+            $accessToken = $this->getGoogleDriveAccessToken($refreshToken);
+            
+            if (!$accessToken) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pudo obtener el access token de Google Drive'
                 ], 400);
             }
 
@@ -416,7 +425,9 @@ class ConfiguracionController extends Controller
                     'drive_file_id' => $responseData['id'] ?? null
                 ]);
             } else {
-                throw new \Exception('Error al subir a Google Drive: ' . $response);
+                $errorData = json_decode($response, true);
+                $errorMessage = $errorData['error']['message'] ?? $response;
+                throw new \Exception('Error al subir a Google Drive (HTTP ' . $httpCode . '): ' . $errorMessage);
             }
             
         } catch (\Exception $e) {
@@ -432,20 +443,37 @@ class ConfiguracionController extends Controller
         }
     }
 
-    private function getValidAccessToken()
+    /**
+     * Obtener access token de Google Drive usando OAuth
+     * Renueva automáticamente el token si es necesario
+     */
+    private function getGoogleDriveAccessToken($refreshToken)
     {
-        $accessToken = env('GOOGLE_DRIVE_ACCESS_TOKEN');
-        $refreshToken = env('GOOGLE_DRIVE_REFRESH_TOKEN');
-        $clientId = env('GOOGLE_DRIVE_CLIENT_ID', '407408718192.apps.googleusercontent.com');
-        $clientSecret = env('GOOGLE_DRIVE_CLIENT_SECRET', 'xxxxxxxxxxxxxxxxx');
-        
-        // Si no hay refresh token, usar el access token actual
-        if (!$refreshToken) {
-            return $accessToken;
-        }
-        
-        // Intentar renovar el token
         try {
+            // Credenciales OAuth
+            $clientId = '377832184815-ulbdp631n4irovrer0it0gk8rfsvetfj.apps.googleusercontent.com';
+            $clientSecret = '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';
+            
+            // Intentar usar el access token actual si existe y es válido
+            $currentToken = env('GOOGLE_DRIVE_ACCESS_TOKEN');
+            if ($currentToken) {
+                // Verificar si el token actual todavía funciona
+                $testCh = curl_init('https://www.googleapis.com/drive/v3/about?fields=user');
+                curl_setopt($testCh, CURLOPT_RETURNTRANSFER, true);
+                curl_setopt($testCh, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $currentToken]);
+                curl_exec($testCh);
+                $testCode = curl_getinfo($testCh, CURLINFO_HTTP_CODE);
+                curl_close($testCh);
+                
+                if ($testCode === 200) {
+                    \Log::info('Access token actual todavía es válido');
+                    return $currentToken;
+                }
+            }
+            
+            // El token expiró o no existe, renovarlo
+            \Log::info('Renovando access token...');
+            
             $ch = curl_init('https://oauth2.googleapis.com/token');
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_POST, true);
@@ -467,20 +495,23 @@ class ConfiguracionController extends Controller
                 if ($newAccessToken) {
                     // Actualizar el .env con el nuevo token
                     $this->updateEnvFile('GOOGLE_DRIVE_ACCESS_TOKEN', $newAccessToken);
-                    
-                    // Limpiar caché de configuración
                     \Artisan::call('config:clear');
                     
+                    \Log::info('Access token renovado exitosamente');
                     return $newAccessToken;
                 }
             }
             
-            // Si falla la renovación, usar el token actual
-            return $accessToken;
+            \Log::error('Error al renovar access token', [
+                'http_code' => $httpCode,
+                'response' => $response
+            ]);
+            
+            return null;
             
         } catch (\Exception $e) {
-            // Si hay error, usar el token actual
-            return $accessToken;
+            \Log::error('Excepción al obtener access token: ' . $e->getMessage());
+            return null;
         }
     }
     

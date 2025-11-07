@@ -165,13 +165,32 @@ function buildDropdownContent(dropdown, column, section, uniqueValues, headerCel
 
     // Position dropdown
     const rect = icon.getBoundingClientRect();
-    dropdown.style.left = `${rect.left}px`;
-    dropdown.style.top = `${rect.bottom + 5}px`;
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+    
+    // Calcular posición inicial
+    let left = rect.left;
+    let top = rect.bottom + 5;
+    
+    // Ajustar si se sale del viewport horizontalmente
+    if (left + 250 > viewportWidth) {
+        left = viewportWidth - 260; // 250px width + 10px margin
+    }
+    
+    // Ajustar si se sale del viewport verticalmente
+    if (top + 400 > viewportHeight) {
+        top = rect.top - 405; // Mostrar arriba del icono
+    }
+    
+    dropdown.style.left = `${Math.max(10, left)}px`;
+    dropdown.style.top = `${Math.max(10, top)}px`;
 
     document.body.appendChild(dropdown);
 
-    // Show dropdown
-    setTimeout(() => dropdown.classList.add('show'), 10);
+    // Show dropdown with slight delay for smooth transition
+    requestAnimationFrame(() => {
+        dropdown.classList.add('show');
+    });
 
     // Event listeners
     const selectAllBtn = dropdown.querySelector('.select-all');

@@ -262,11 +262,17 @@ body.dark-theme .filter-icon:hover {
     min-width: 250px;
     max-height: 400px;
     overflow: hidden;
-    display: none;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+    will-change: transform, opacity;
 }
 
 .filter-dropdown.show {
-    display: block;
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
 }
 
 .filter-dropdown-header {
@@ -633,4 +639,89 @@ body.dark-theme .filter-icon:hover {
 .extend-trazar-row {
     background-color: rgba(59, 130, 246, 0.1) !important; /* Light blue background with transparency */
     border-left: 4px solid #3b82f6 !important; /* Blue left border */
+}
+
+/* ===== MODAL DE ELIMINACIÓN - TEMA ADAPTATIVO ===== */
+.delete-modal-wrapper {
+    width: 400px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Tema claro (por defecto) */
+body:not(.dark-theme) .delete-modal-wrapper {
+    background: #ffffff;
+}
+
+body:not(.dark-theme) .delete-modal-header {
+    background: #f8f9fa;
+    color: #2c3e50;
+    border-bottom: 1px solid #dee2e6;
+    padding: 15px 20px;
+}
+
+body:not(.dark-theme) .delete-modal-body {
+    padding: 20px;
+    background: #ffffff;
+    color: #2c3e50;
+}
+
+body:not(.dark-theme) .delete-modal-footer {
+    background: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+body:not(.dark-theme) .delete-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #2c3e50;
+    cursor: pointer;
+}
+
+body:not(.dark-theme) .delete-modal-close:hover {
+    color: #e74c3c;
+}
+
+/* Tema oscuro */
+body.dark-theme .delete-modal-wrapper {
+    background: #2c3e50;
+}
+
+body.dark-theme .delete-modal-header {
+    background: #34495e;
+    color: #ffffff;
+    border-bottom: 1px solid #4a5f7f;
+    padding: 15px 20px;
+}
+
+body.dark-theme .delete-modal-body {
+    padding: 20px;
+    background: #2c3e50;
+    color: #ffffff;
+}
+
+body.dark-theme .delete-modal-footer {
+    background: #34495e;
+    border-top: 1px solid #4a5f7f;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+body.dark-theme .delete-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+body.dark-theme .delete-modal-close:hover {
+    color: #e74c3c;
 }

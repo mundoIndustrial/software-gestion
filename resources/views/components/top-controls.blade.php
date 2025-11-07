@@ -38,13 +38,13 @@
     <div class="date-selector-section"
          x-show="!showRecords"
          x-data="{
-            filterType: '{{ request('filter_type', 'range') }}',
-            startDate: '{{ request('start_date', '') }}',
-            endDate: '{{ request('end_date', '') }}',
-            specificDate: '{{ request('specific_date', '') }}',
-            month: '{{ request('month', '') }}',
-            specificDates: '{{ request('specific_dates', '') }}',
-            selectedDates: new Set('{{ request('specific_dates', '') }}'.split(',').filter(d => d)),
+            filterType: 'range',
+            startDate: '',
+            endDate: '',
+            specificDate: '',
+            month: '',
+            specificDates: '',
+            selectedDates: new Set(),
             limpiarFiltros() {
                 // Reset all filter fields to default values
                 this.filterType = 'range';
@@ -75,10 +75,9 @@
             filtrarPorFechas() {
                 console.log('Filter type:', this.filterType);
 
-                // Construir la URL
-                const url = new URL(window.location);
-                url.search = '';
-                url.searchParams.set('filter_type', this.filterType);
+                // Construir parámetros de filtro
+                const params = new URLSearchParams();
+                params.set('filter_type', this.filterType);
 
                 if (this.filterType === 'range') {
                     const start = this.startDate;
@@ -88,34 +87,34 @@
                     console.log('End date:', end);
 
                     if (!start || !end) {
-                        alert('Selecciona ambas fechas (inicio y fin)');
+                        showFilterModal('Selecciona ambas fechas (inicio y fin)');
                         return;
                     }
 
-                    url.searchParams.set('start_date', start);
-                    url.searchParams.set('end_date', end);
+                    params.set('start_date', start);
+                    params.set('end_date', end);
                 }
                 else if (this.filterType === 'day') {
                     const day = this.specificDate;
                     console.log('Specific date:', day);
 
                     if (!day) {
-                        alert('Selecciona un día');
+                        showFilterModal('Selecciona un día específico');
                         return;
                     }
 
-                    url.searchParams.set('specific_date', day);
+                    params.set('specific_date', day);
                 }
                 else if (this.filterType === 'month') {
                     const month = this.month;
                     console.log('Month:', month);
 
                     if (!month) {
-                        alert('Selecciona un mes');
+                        showFilterModal('Selecciona un mes');
                         return;
                     }
 
-                    url.searchParams.set('month', month);
+                    params.set('month', month);
                 }
                 else if (this.filterType === 'specific') {
                     // Sincronizar con window.selectedDatesTopControls
@@ -125,31 +124,28 @@
                     console.log('Selected dates:', Array.from(this.selectedDates));
                     
                     if (this.selectedDates.size === 0) {
-                        alert('Selecciona al menos una fecha en el calendario');
+                        showFilterModal('Selecciona al menos una fecha en el calendario');
                         return;
                     }
 
                     const datesArray = Array.from(this.selectedDates).sort();
                     console.log('Specific dates to send:', datesArray);
-                    url.searchParams.set('specific_dates', datesArray.join(','));
+                    params.set('specific_dates', datesArray.join(','));
                 }
 
-                console.log('Final URL:', url.toString());
+                console.log('Filtros aplicados:', params.toString());
 
-                // Actualizar la URL sin recargar la página
-                window.history.pushState({}, '', url.toString());
-
+                // NO actualizar la URL - solo aplicar filtros sin recargar
+                // Esto hace que al recargar manualmente (F5), los filtros se limpien
+                
                 // Llamar a la función para actualizar las tablas del dashboard
                 if (typeof updateDashboardTablesFromFilter === 'function') {
-                    updateDashboardTablesFromFilter(url.searchParams);
-                } else {
-                    // Si no existe la función, recargar la página
-                    window.location.href = url.toString();
+                    updateDashboardTablesFromFilter(params);
                 }
 
                 // Actualizar tabla de seguimiento de módulos
                 if (typeof updateSeguimientoTable === 'function') {
-                    updateSeguimientoTable(url.searchParams);
+                    updateSeguimientoTable(params);
                 }
             }
          }">
@@ -686,9 +682,179 @@ body.dark-theme .date-inputs-inline input[type="month"]::-webkit-calendar-picker
         font-size: 12px;
     }
 }
+
+/* === Modal Styles === */
+.modal-overlay-filter {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 99999;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-overlay-filter.active {
+    display: flex;
+}
+
+.modal-content-filter {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+body.dark-theme .modal-content-filter {
+    background: #1f2937;
+    color: #f3f4f6;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.modal-header-filter {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.modal-icon-filter {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #f39c12, #e67e22);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.modal-icon-filter svg {
+    width: 28px;
+    height: 28px;
+    color: white;
+}
+
+.modal-title-filter {
+    font-size: 20px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+body.dark-theme .modal-title-filter {
+    color: #f3f4f6;
+}
+
+.modal-message-filter {
+    color: #555;
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 25px;
+}
+
+body.dark-theme .modal-message-filter {
+    color: #d1d5db;
+}
+
+.modal-button-filter {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    width: 100%;
+    transition: all 0.3s;
+}
+
+.modal-button-filter:hover {
+    background: linear-gradient(135deg, #2980b9, #21618c);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
 </style>
 
 <script>
+// Funciones del modal de alerta
+function showFilterModal(message) {
+    const modal = document.getElementById('filterAlertModal');
+    const messageEl = document.getElementById('filterModalMessage');
+    if (modal && messageEl) {
+        messageEl.textContent = message;
+        modal.classList.add('active');
+    }
+}
+
+function closeFilterModal() {
+    const modal = document.getElementById('filterAlertModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+}
+
+// Limpiar TODOS los filtros de la URL al cargar la página
+// Esto asegura que al recargar (F5), los filtros se limpien automáticamente
+document.addEventListener('DOMContentLoaded', function() {
+    const url = new URL(window.location);
+    let hasFilters = false;
+    
+    // Verificar si hay parámetros de filtro (de fecha o de columnas)
+    if (url.searchParams.has('filter_type') || 
+        url.searchParams.has('start_date') || 
+        url.searchParams.has('end_date') || 
+        url.searchParams.has('specific_date') || 
+        url.searchParams.has('month') || 
+        url.searchParams.has('specific_dates') ||
+        url.searchParams.has('filters')) {
+        hasFilters = true;
+    }
+    
+    // Si hay filtros, limpiarlos de la URL
+    if (hasFilters) {
+        // Limpiar filtros de fecha del selector
+        url.searchParams.delete('filter_type');
+        url.searchParams.delete('start_date');
+        url.searchParams.delete('end_date');
+        url.searchParams.delete('specific_date');
+        url.searchParams.delete('month');
+        url.searchParams.delete('specific_dates');
+        
+        // Limpiar filtros de columnas
+        url.searchParams.delete('filters');
+        
+        // Actualizar la URL sin recargar
+        window.history.replaceState({}, '', url.toString());
+        console.log('✅ Todos los filtros limpiados al recargar la página');
+        
+        // También limpiar sessionStorage de filtros de columnas
+        const section = url.searchParams.get('section') || 'produccion';
+        sessionStorage.removeItem(`tableros_filters_${section}`);
+        
+        // Recargar la página para aplicar los cambios
+        window.location.reload();
+    }
+});
+
 if (typeof window.selectedDatesTopControls === 'undefined') {
     window.selectedDatesTopControls = new Set();
 }
@@ -833,12 +999,12 @@ function updateDashboardTablesFromFilter(params) {
             updateDashboardTables(data.horasData, data.operariosData);
         } else {
             console.error('Invalid data structure received:', data);
-            alert('Error: Datos inválidos recibidos del servidor');
+            showFilterModal('Error: Datos inválidos recibidos del servidor');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error al filtrar los datos del dashboard. Por favor, recarga la página.');
+        showFilterModal('Error al filtrar los datos del dashboard. Por favor, recarga la página.');
     });
 }
 
@@ -973,3 +1139,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 </script>
+
+<!-- Modal de Alerta para Filtros -->
+<div id="filterAlertModal" class="modal-overlay-filter" onclick="if(event.target === this) closeFilterModal()">
+    <div class="modal-content-filter">
+        <div class="modal-header-filter">
+            <div class="modal-icon-filter">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+            <h3 class="modal-title-filter">Atención</h3>
+        </div>
+        <p id="filterModalMessage" class="modal-message-filter"></p>
+        <button class="modal-button-filter" onclick="closeFilterModal()">Entendido</button>
+    </div>
+</div>

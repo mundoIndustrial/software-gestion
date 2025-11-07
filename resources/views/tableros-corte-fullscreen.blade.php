@@ -256,6 +256,103 @@
             }
         }
 
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .modal-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .modal-icon svg {
+            width: 28px;
+            height: 28px;
+            color: white;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .modal-message {
+            color: #555;
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+
+        .modal-button {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            width: 100%;
+            transition: all 0.3s;
+        }
+
+        .modal-button:hover {
+            background: linear-gradient(135deg, #2980b9, #21618c);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        }
+
         @media print {
             body {
                 zoom: 1;
@@ -268,7 +365,8 @@
             }
             
             .close-btn,
-            .filter-section {
+            .filter-section,
+            .modal-overlay {
                 display: none;
             }
         }
@@ -454,6 +552,17 @@
             }
         });
 
+        // Mostrar modal de alerta
+        function showModal(message) {
+            document.getElementById('modalMessage').textContent = message;
+            document.getElementById('alertModal').classList.add('active');
+        }
+
+        // Cerrar modal
+        function closeModal() {
+            document.getElementById('alertModal').classList.remove('active');
+        }
+
         // Toggle filter inputs based on filter type
         function toggleFilterInputs() {
             const filterType = document.getElementById('filterType').value;
@@ -479,7 +588,7 @@
                 const startDate = document.getElementById('startDate').value;
                 const endDate = document.getElementById('endDate').value;
                 if (!startDate || !endDate) {
-                    alert('Por favor selecciona ambas fechas');
+                    showModal('Por favor selecciona ambas fechas para el rango');
                     return;
                 }
                 url.searchParams.set('start_date', startDate);
@@ -487,14 +596,14 @@
             } else if (filterType === 'day') {
                 const specificDate = document.getElementById('specificDate').value;
                 if (!specificDate) {
-                    alert('Por favor selecciona una fecha');
+                    showModal('Por favor selecciona una fecha específica');
                     return;
                 }
                 url.searchParams.set('specific_date', specificDate);
             } else if (filterType === 'month') {
                 const month = document.getElementById('month').value;
                 if (!month) {
-                    alert('Por favor selecciona un mes');
+                    showModal('Por favor selecciona un mes');
                     return;
                 }
                 url.searchParams.set('month', month);
@@ -595,5 +704,21 @@
         setTimeout(initializeCorteFullscreenRealtime, 1000);
     }
     </script>
+
+    <!-- Modal de Alerta -->
+    <div id="alertModal" class="modal-overlay" onclick="if(event.target === this) closeModal()">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <h3 class="modal-title">Atención</h3>
+            </div>
+            <p id="modalMessage" class="modal-message"></p>
+            <button class="modal-button" onclick="closeModal()">Entendido</button>
+        </div>
+    </div>
 </body>
 </html>
