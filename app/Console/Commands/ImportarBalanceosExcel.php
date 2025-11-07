@@ -199,15 +199,8 @@ class ImportarBalanceosExcel extends Command
             $operacion = trim($row[$colOperacion] ?? '');
             $samRaw = $row[$colSam] ?? 0;
 
-            // Saltar filas vacías o totales
-            if (empty($operacion) || stripos($operacion, 'total') !== false || stripos($operacion, 'meta') !== false) {
-                continue;
-            }
-            
-            // Saltar si el SAM es sospechosamente alto (probablemente es un total)
-            // Un SAM individual raramente supera los 200 segundos
-            if (is_numeric($samRaw) && $samRaw > 500) {
-                $this->warn("   ⚠️  Saltando fila con SAM sospechoso: {$samRaw} (probablemente es un total)");
+            // Solo saltar si contiene 'total' o 'meta' en la operación
+            if (!empty($operacion) && (stripos($operacion, 'total') !== false || stripos($operacion, 'meta') !== false)) {
                 continue;
             }
 
@@ -222,13 +215,15 @@ class ImportarBalanceosExcel extends Command
                 $sam = (float) $samRaw;
             }
 
-            // Permitir SAM = 0 (no saltar operaciones con tiempo 0)
-            // Solo saltar si SAM es negativo (error de datos)
-            if ($sam < 0) {
+            // Solo saltar si SAM es 0 o negativo (filas inválidas)
+            if ($sam <= 0) {
                 continue;
             }
 
-            $letra = $colLetra !== null && isset($row[$colLetra]) ? trim($row[$colLetra]) : $letraActual++;
+            // Manejar letra vacía: si está vacía o no existe, usar auto-incremento
+            $letraValue = $colLetra !== null && isset($row[$colLetra]) ? trim($row[$colLetra]) : '';
+            $letra = !empty($letraValue) ? $letraValue : $letraActual++;
+            
             $precedencia = $colPrecedencia !== null && isset($row[$colPrecedencia]) ? trim($row[$colPrecedencia]) : '';
             $maquina = $colMaquina !== null && isset($row[$colMaquina]) ? trim($row[$colMaquina]) : '';
             $operario = $colOperario !== null && isset($row[$colOperario]) ? trim($row[$colOperario]) : null;
@@ -247,7 +242,7 @@ class ImportarBalanceosExcel extends Command
 
             $operaciones[] = [
                 'letra' => $letra,
-                'operacion' => $operacion,
+                'operacion' => !empty($operacion) ? $operacion : null,
                 'precedencia' => $precedencia,
                 'maquina' => $maquina,
                 'sam' => $sam,
@@ -315,6 +310,7 @@ class ImportarBalanceosExcel extends Command
                 'total_operarios' => $totalOperarios,
                 'turnos' => $turnos,
                 'horas_por_turno' => $horasPorTurno,
+                'porcentaje_eficiencia' => 90.00,
                 'activo' => true,
             ]);
 

@@ -473,21 +473,22 @@ class ImportarTodoExcel extends Command
             $operacion = trim($row[$colOperacion] ?? '');
             $samRaw = $row[$colSam] ?? 0;
 
-            if (empty($operacion) || stripos($operacion, 'total') !== false || stripos($operacion, 'meta') !== false) {
-                continue;
-            }
-            
-            if (is_numeric($samRaw) && $samRaw > 500) {
+            // Solo saltar si contiene 'total' o 'meta' en la operación
+            if (!empty($operacion) && (stripos($operacion, 'total') !== false || stripos($operacion, 'meta') !== false)) {
                 continue;
             }
 
             $sam = is_numeric($samRaw) ? (float) $samRaw : (float) str_replace(',', '.', preg_replace('/[^0-9.,]/', '', $samRaw));
 
-            if ($sam < 0) {
+            // Solo saltar si SAM es 0 o negativo (filas inválidas)
+            if ($sam <= 0) {
                 continue;
             }
 
-            $letra = $colLetra !== null && isset($row[$colLetra]) ? trim($row[$colLetra]) : $letraActual++;
+            // Manejar letra vacía: si está vacía o no existe, usar auto-incremento
+            $letraValue = $colLetra !== null && isset($row[$colLetra]) ? trim($row[$colLetra]) : '';
+            $letra = !empty($letraValue) ? $letraValue : $letraActual++;
+            
             $precedencia = $colPrecedencia !== null && isset($row[$colPrecedencia]) ? trim($row[$colPrecedencia]) : '';
             $maquina = $colMaquina !== null && isset($row[$colMaquina]) ? trim($row[$colMaquina]) : '';
             $operario = $colOperario !== null && isset($row[$colOperario]) ? trim($row[$colOperario]) : null;
@@ -504,7 +505,7 @@ class ImportarTodoExcel extends Command
 
             $operaciones[] = [
                 'letra' => $letra,
-                'operacion' => $operacion,
+                'operacion' => !empty($operacion) ? $operacion : null,
                 'precedencia' => $precedencia,
                 'maquina' => $maquina,
                 'sam' => $sam,
@@ -553,6 +554,7 @@ class ImportarTodoExcel extends Command
                 'total_operarios' => 10,
                 'turnos' => 1,
                 'horas_por_turno' => 8.0,
+                'porcentaje_eficiencia' => 90.00,
                 'activo' => true,
             ]);
 

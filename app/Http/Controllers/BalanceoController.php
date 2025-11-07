@@ -92,7 +92,7 @@ class BalanceoController extends Controller
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'referencia' => 'nullable|string|unique:prendas,referencia',
-            'tipo' => 'required|in:camisa,pantalon,polo,chaqueta,vestido,otro',
+            'tipo' => 'required|in:camisa,pantalon,polo,chaqueta,vestido,jean,otro',
             'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
         ]);
 
@@ -133,7 +133,7 @@ class BalanceoController extends Controller
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'referencia' => 'nullable|string|unique:prendas,referencia,' . $id,
-            'tipo' => 'required|in:camisa,pantalon,polo,chaqueta,vestido,otro',
+            'tipo' => 'required|in:camisa,pantalon,polo,chaqueta,vestido,jean,otro',
             'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
         ]);
 
@@ -198,6 +198,7 @@ class BalanceoController extends Controller
             'total_operarios' => 'required|integer|min:1',
             'turnos' => 'required|integer|min:1',
             'horas_por_turno' => 'required|numeric|min:0.1',
+            'porcentaje_eficiencia' => 'nullable|numeric|min:0|max:100',
         ]);
 
         $balanceo = Balanceo::findOrFail($id);
@@ -224,7 +225,6 @@ class BalanceoController extends Controller
             'operario' => 'nullable|string|max:255',
             'op' => 'nullable|string|max:50',
             'seccion' => 'nullable|in:DEL,TRAS,ENS,OTRO',
-            'operario_a' => 'nullable|string|max:255',
             'orden' => 'nullable|integer|min:0',
         ]);
 
@@ -256,7 +256,6 @@ class BalanceoController extends Controller
             'operario' => 'nullable|string|max:255',
             'op' => 'nullable|string|max:50',
             'seccion' => 'sometimes|in:DEL,TRAS,ENS,OTRO',
-            'operario_a' => 'nullable|string|max:255',
             'orden' => 'sometimes|integer|min:0',
         ]);
 

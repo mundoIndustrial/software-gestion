@@ -36,7 +36,7 @@
             <table class="modern-table balanceo-table" style="border-collapse: separate; border-spacing: 0; user-select: text;">
                 <thead>
                     <tr style="background: #ff9d58; color: white;">
-                        <th style="padding: 12px 10px; text-align: center; font-weight: 600; font-size: 12px; text-transform: uppercase; width: 60px; white-space: nowrap; user-select: text;">
+                        <th style="padding: 12px 10px; text-align: center; font-weight: 600; font-size: 12px; text-transform: uppercase; width: 70px; white-space: nowrap; user-select: text;">
                             <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
                                 Letra
                                 <button @click="copyColumn('letra')" title="Copiar columna" style="background: rgba(255,255,255,0.2); border: none; padding: 2px 4px; border-radius: 3px; cursor: pointer; display: flex; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
@@ -44,7 +44,7 @@
                                 </button>
                             </div>
                         </th>
-                        <th style="padding: 12px 14px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; white-space: nowrap; user-select: text;">
+                        <th style="padding: 12px 14px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; min-width: 200px; white-space: nowrap; user-select: text;">
                             <div style="display: flex; align-items: center; gap: 4px;">
                                 Operación
                                 <button @click="copyColumn('operacion')" title="Copiar columna" style="background: rgba(255,255,255,0.2); border: none; padding: 2px 4px; border-radius: 3px; cursor: pointer; display: flex; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
@@ -52,7 +52,7 @@
                                 </button>
                             </div>
                         </th>
-                        <th style="padding: 12px 10px; text-align: center; font-weight: 600; font-size: 12px; text-transform: uppercase; width: 90px; white-space: nowrap; user-select: text;">
+                        <th style="padding: 12px 10px; text-align: center; font-weight: 600; font-size: 12px; text-transform: uppercase; width: 80px; white-space: nowrap; user-select: text;">
                             <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
                                 Prec.
                                 <button @click="copyColumn('precedencia')" title="Copiar columna" style="background: rgba(255,255,255,0.2); border: none; padding: 2px 4px; border-radius: 3px; cursor: pointer; display: flex; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
@@ -60,7 +60,7 @@
                                 </button>
                             </div>
                         </th>
-                        <th style="padding: 12px 10px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; width: 130px; white-space: nowrap; user-select: text;">
+                        <th style="padding: 12px 10px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; width: 120px; white-space: nowrap; user-select: text;">
                             <div style="display: flex; align-items: center; gap: 4px;">
                                 Máquina
                                 <button @click="copyColumn('maquina')" title="Copiar columna" style="background: rgba(255,255,255,0.2); border: none; padding: 2px 4px; border-radius: 3px; cursor: pointer; display: flex; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
@@ -68,7 +68,7 @@
                                 </button>
                             </div>
                         </th>
-                        <th style="padding: 12px 10px; text-align: center; font-weight: 600; font-size: 12px; text-transform: uppercase; width: 80px; white-space: nowrap; user-select: text;">
+                        <th style="padding: 12px 10px; text-align: center; font-weight: 600; font-size: 12px; text-transform: uppercase; width: 90px; white-space: nowrap; user-select: text;">
                             <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
                                 SAM
                                 <button @click="copyColumn('sam')" title="Copiar columna" style="background: rgba(255,255,255,0.2); border: none; padding: 2px 4px; border-radius: 3px; cursor: pointer; display: flex; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
@@ -76,7 +76,7 @@
                                 </button>
                             </div>
                         </th>
-                        <th style="padding: 12px 10px; text-align: center; font-weight: 600; font-size: 12px; text-transform: uppercase; width: 80px; white-space: nowrap; user-select: text;">
+                        <th style="padding: 12px 10px; text-align: center; font-weight: 600; font-size: 12px; text-transform: uppercase; width: 100px; white-space: nowrap; user-select: text;">
                             <div style="display: flex; align-items: center; justify-content: center; gap: 4px;">
                                 Operario
                                 <button @click="copyColumn('operario')" title="Copiar columna" style="background: rgba(255,255,255,0.2); border: none; padding: 2px 4px; border-radius: 3px; cursor: pointer; display: flex; align-items: center;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
@@ -84,10 +84,9 @@
                                 </button>
                             </div>
                         </th>
-                        <th style="padding: 12px 10px; text-align: center; font-weight: 600; font-size: 12px; text-transform: uppercase; width: 60px; white-space: nowrap; user-select: text;">OP</th>
-                        <th style="padding: 12px 10px; text-align: center; font-weight: 600; font-size: 12px; text-transform: uppercase; width: 90px; white-space: nowrap; user-select: text;">Sección</th>
-                        <th style="padding: 12px 10px; text-align: center; font-weight: 600; font-size: 12px; text-transform: uppercase; width: 90px; white-space: nowrap; user-select: text;">Op. A</th>
-                        <th style="padding: 12px 10px; text-align: center; font-weight: 600; font-size: 12px; text-transform: uppercase; width: 120px; white-space: nowrap; user-select: none;">Acciones</th>
+                        <th style="padding: 12px 10px; text-align: center; font-weight: 600; font-size: 12px; text-transform: uppercase; width: 70px; white-space: nowrap; user-select: text;">OP</th>
+                        <th style="padding: 12px 10px; text-align: center; font-weight: 600; font-size: 12px; text-transform: uppercase; width: 100px; white-space: nowrap; user-select: text;">Sección</th>
+                        <th style="padding: 12px 10px; text-align: center; font-weight: 600; font-size: 12px; text-transform: uppercase; width: 110px; white-space: nowrap; user-select: none;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -212,19 +211,6 @@
                                 </select>
                             </td>
                             
-                            <!-- Operario A - Editable -->
-                            <td style="padding: 10px; color: var(--color-text-placeholder); text-align: center; font-size: 13px; white-space: nowrap; cursor: pointer;" 
-                                @click="startEditingCell(operacion, 'operario_a', $event)"
-                                :title="'Click para editar'">
-                                <span x-show="editingCell !== `${operacion.id}-operario_a`" x-text="operacion.operario_a || '-'"></span>
-                                <input x-show="editingCell === `${operacion.id}-operario_a`" 
-                                       type="text" 
-                                       :value="operacion.operario_a"
-                                       @blur="saveCell(operacion, 'operario_a', $event.target.value)"
-                                       @keydown.enter="saveCell(operacion, 'operario_a', $event.target.value)"
-                                       @keydown.escape="cancelEdit()"
-                                       style="width: 100%; padding: 4px; border: 2px solid #ff9d58; border-radius: 4px; text-align: center; color: var(--color-text-placeholder); background: rgba(255, 157, 88, 0.1);">
-                            </td>
                             <td style="padding: 10px; text-align: center; user-select: none;">
                                 <div style="display: flex; gap: 4px; justify-content: center;">
                                     <button @click="editOperacion(operacion)" 

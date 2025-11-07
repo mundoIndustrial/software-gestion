@@ -20,6 +20,7 @@ class Balanceo extends Model
         'sam_total',
         'meta_teorica',
         'meta_real',
+        'porcentaje_eficiencia',
         'operario_cuello_botella',
         'tiempo_cuello_botella',
         'sam_real',
@@ -37,6 +38,7 @@ class Balanceo extends Model
         'sam_total' => 'double',
         'meta_teorica' => 'integer',
         'meta_real' => 'double',
+        'porcentaje_eficiencia' => 'double',
         'tiempo_cuello_botella' => 'double',
         'sam_real' => 'double',
         'meta_sugerida_85' => 'integer',
@@ -79,8 +81,9 @@ class Balanceo extends Model
         if ($this->sam_total > 0) {
             $this->meta_teorica = round($this->tiempo_disponible_segundos / $this->sam_total);
             
-            // Meta real al 90% de la meta teórica (SIN floor para mantener decimales)
-            $this->meta_real = $this->meta_teorica * 0.90;
+            // Meta real usando el porcentaje de eficiencia configurado
+            $porcentaje = $this->porcentaje_eficiencia ?? 90.00;
+            $this->meta_real = $this->meta_teorica * ($porcentaje / 100);
         }
 
         // Encontrar cuello de botella (operación con mayor SAM)

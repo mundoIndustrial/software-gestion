@@ -44,6 +44,13 @@
                            style="width: 100%; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 16px; font-weight: 600; color: #2d3748; background: #f7fafc; transition: all 0.3s;"
                            onfocus="this.style.borderColor='#ff9d58'; this.style.background='white'" onblur="this.style.borderColor='#e2e8f0'; this.style.background='#f7fafc'">
                 </div>
+                
+                <div>
+                    <label style="display: block; font-size: 13px; color: #64748b; margin-bottom: 6px; font-weight: 500;">% Eficiencia</label>
+                    <input type="number" step="0.01" min="0" max="100" x-model="parametros.porcentaje_eficiencia" @change="updateParametros()"
+                           style="width: 100%; padding: 10px 14px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 16px; font-weight: 600; color: #2d3748; background: #f7fafc; transition: all 0.3s;"
+                           onfocus="this.style.borderColor='#ff9d58'; this.style.background='white'" onblur="this.style.borderColor='#e2e8f0'; this.style.background='#f7fafc'">
+                </div>
             </div>
         </div>
 
@@ -97,7 +104,9 @@
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 24px;">
         <!-- Meta Real -->
         <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);">
-            <p style="margin: 0 0 8px 0; font-size: 13px; color: #64748b; font-weight: 500;">Meta Real</p>
+            <p style="margin: 0 0 8px 0; font-size: 13px; color: #64748b; font-weight: 500;">
+                <span x-text="'Meta Real (' + (parametros.porcentaje_eficiencia || 90) + '%)'"></span>
+            </p>
             <p style="margin: 0; font-size: 28px; font-weight: 700; color: #ff9d58;" x-text="metricas.meta_real || 'N/A'"></p>
         </div>
 

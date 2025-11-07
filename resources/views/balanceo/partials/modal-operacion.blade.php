@@ -307,6 +307,7 @@
     color: #2d3748;
     background: #f7fafc;
     transition: all 0.3s ease;
+    text-transform: uppercase;
 }
 
 .form-input:focus,

@@ -26,7 +26,7 @@
                                 Letra *
                             </label>
                             <input type="text" x-model="formData.letra" required
-                                   style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 16px; color: #2d3748; background: #f7fafc; transition: all 0.3s ease;"
+                                   style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 16px; color: #2d3748; background: #f7fafc; transition: all 0.3s ease; text-transform: uppercase;"
                                    onfocus="this.style.borderColor='#ff9d58'; this.style.background='white'; this.style.boxShadow='0 0 0 3px rgba(255, 157, 88, 0.1)'"
                                    onblur="this.style.borderColor='#e2e8f0'; this.style.background='#f7fafc'; this.style.boxShadow='none'">
                         </div>
@@ -55,7 +55,7 @@
                                 Operación *
                             </label>
                             <textarea x-model="formData.operacion" required rows="2"
-                                      style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 16px; color: #2d3748; background: #f7fafc; transition: all 0.3s ease; resize: vertical;"
+                                      style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 16px; color: #2d3748; background: #f7fafc; transition: all 0.3s ease; resize: vertical; text-transform: uppercase;"
                                       onfocus="this.style.borderColor='#ff9d58'; this.style.background='white'; this.style.boxShadow='0 0 0 3px rgba(255, 157, 88, 0.1)'"
                                       onblur="this.style.borderColor='#e2e8f0'; this.style.background='#f7fafc'; this.style.boxShadow='none'"></textarea>
                         </div>
@@ -69,7 +69,7 @@
                                 Precedencia
                             </label>
                             <input type="text" x-model="formData.precedencia"
-                                   style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 16px; color: #2d3748; background: #f7fafc; transition: all 0.3s ease;"
+                                   style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 16px; color: #2d3748; background: #f7fafc; transition: all 0.3s ease; text-transform: uppercase;"
                                    onfocus="this.style.borderColor='#ff9d58'; this.style.background='white'; this.style.boxShadow='0 0 0 3px rgba(255, 157, 88, 0.1)'"
                                    onblur="this.style.borderColor='#e2e8f0'; this.style.background='#f7fafc'; this.style.boxShadow='none'">
                         </div>
@@ -84,7 +84,7 @@
                                 Máquina
                             </label>
                             <input type="text" x-model="formData.maquina"
-                                   style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 16px; color: #2d3748; background: #f7fafc; transition: all 0.3s ease;"
+                                   style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 16px; color: #2d3748; background: #f7fafc; transition: all 0.3s ease; text-transform: uppercase;"
                                    onfocus="this.style.borderColor='#ff9d58'; this.style.background='white'; this.style.boxShadow='0 0 0 3px rgba(255, 157, 88, 0.1)'"
                                    onblur="this.style.borderColor='#e2e8f0'; this.style.background='#f7fafc'; this.style.boxShadow='none'">
                         </div>
@@ -98,7 +98,7 @@
                                 Operario
                             </label>
                             <input type="text" x-model="formData.operario"
-                                   style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 16px; color: #2d3748; background: #f7fafc; transition: all 0.3s ease;"
+                                   style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 16px; color: #2d3748; background: #f7fafc; transition: all 0.3s ease; text-transform: uppercase;"
                                    onfocus="this.style.borderColor='#ff9d58'; this.style.background='white'; this.style.boxShadow='0 0 0 3px rgba(255, 157, 88, 0.1)'"
                                    onblur="this.style.borderColor='#e2e8f0'; this.style.background='#f7fafc'; this.style.boxShadow='none'">
                         </div>
@@ -113,7 +113,7 @@
                                 OP
                             </label>
                             <input type="text" x-model="formData.op"
-                                   style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 16px; color: #2d3748; background: #f7fafc; transition: all 0.3s ease;"
+                                   style="width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 16px; color: #2d3748; background: #f7fafc; transition: all 0.3s ease; text-transform: uppercase;"
                                    onfocus="this.style.borderColor='#ff9d58'; this.style.background='white'; this.style.boxShadow='0 0 0 3px rgba(255, 157, 88, 0.1)'"
                                    onblur="this.style.borderColor='#e2e8f0'; this.style.background='#f7fafc'; this.style.boxShadow='none'">
                         </div>
