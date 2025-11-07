@@ -14,23 +14,29 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 30px;
     gap: 20px;
     flex-wrap: wrap;
 }
 
 .page-title {
     font-size: 28px;
-    font-weight: 600;
+    font-weight: 700;
     color: var(--color-text-primary, #1a1a1a);
+    margin: 0;
     display: flex;
     align-items: center;
     gap: 12px;
-    margin: 0;
 }
 
 .page-title i {
     color: #ff6b35;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
 
 /* ===== BÚSQUEDA ===== */
@@ -86,9 +92,39 @@
     color: #374151;
 }
 
+/* ===== BOTÓN FULLSCREEN ===== */
+.fullscreen-btn {
+    background: #ff6b35;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.fullscreen-btn:hover {
+    background: #e55a28;
+    transform: scale(1.05);
+}
+
+.fullscreen-btn svg {
+    stroke: white;
+}
+
+/* ===== CONTENEDOR DE TABLAS ===== */
+.tables-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
 /* ===== SECCIONES DE TABLA ===== */
 .table-section {
-    margin-bottom: 20px;
+    width: 100%;
 }
 
 .section-title {
@@ -329,13 +365,23 @@
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
-    .table-header {
+    .page-header {
         flex-direction: column;
         align-items: stretch;
     }
 
-    .search-container {
+    .header-actions {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .search-box {
         max-width: 100%;
+        width: 100%;
+    }
+
+    .fullscreen-btn {
+        width: 100%;
     }
 
     .table-title {
