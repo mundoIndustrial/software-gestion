@@ -310,6 +310,10 @@ class ConfiguracionController extends Controller
     public function uploadToGoogleDrive()
     {
         try {
+            // Aumentar límites de tiempo y memoria para evitar timeouts
+            set_time_limit(600); // 10 minutos
+            ini_set('memory_limit', '512M');
+            
             $folderId = env('GOOGLE_DRIVE_FOLDER_ID');
             $refreshToken = env('GOOGLE_DRIVE_REFRESH_TOKEN');
 
@@ -319,6 +323,8 @@ class ConfiguracionController extends Controller
                     'message' => 'Google Drive no está configurado. Verifica GOOGLE_DRIVE_REFRESH_TOKEN y GOOGLE_DRIVE_FOLDER_ID en el .env'
                 ], 400);
             }
+            
+            \Log::info('Iniciando backup a Google Drive');
             
             // Obtener access token (renovándolo automáticamente si es necesario)
             $accessToken = $this->getGoogleDriveAccessToken($refreshToken);
@@ -331,6 +337,7 @@ class ConfiguracionController extends Controller
             }
 
             $database = env('DB_DATABASE');
+            \Log::info('Generando backup de la base de datos: ' . $database);
             
             // Crear backup temporal
             $tempPath = storage_path('app/temp');
@@ -359,8 +366,14 @@ class ConfiguracionController extends Controller
             $tables = DB::select('SHOW TABLES');
             $tableKey = 'Tables_in_' . $database;
             
+            $tableCount = count($tables);
+            $currentTable = 0;
+            
             foreach ($tables as $table) {
                 $tableName = $table->$tableKey;
+                $currentTable++;
+                
+                \Log::info("Procesando tabla {$currentTable}/{$tableCount}: {$tableName}");
                 
                 fwrite($handle, "\n-- Estructura de tabla para `{$tableName}`\n");
                 fwrite($handle, "DROP TABLE IF EXISTS `{$tableName}`;\n");
@@ -368,26 +381,31 @@ class ConfiguracionController extends Controller
                 $createTable = DB::select("SHOW CREATE TABLE `{$tableName}`");
                 fwrite($handle, $createTable[0]->{'Create Table'} . ";\n\n");
                 
-                $rows = DB::table($tableName)->get();
+                // Procesar datos en chunks para evitar problemas de memoria
+                $rowCount = DB::table($tableName)->count();
                 
-                if ($rows->count() > 0) {
-                    fwrite($handle, "-- Volcado de datos para la tabla `{$tableName}`\n");
+                if ($rowCount > 0) {
+                    fwrite($handle, "-- Volcado de datos para la tabla `{$tableName}` ({$rowCount} registros)\n");
                     
-                    foreach ($rows as $row) {
-                        $row = (array) $row;
-                        $columns = array_keys($row);
-                        $values = array_values($row);
-                        
-                        $escapedValues = array_map(function($value) {
-                            if (is_null($value)) {
-                                return 'NULL';
-                            }
-                            return "'" . addslashes($value) . "'";
-                        }, $values);
-                        
-                        $insert = "INSERT INTO `{$tableName}` (`" . implode('`, `', $columns) . "`) VALUES (" . implode(', ', $escapedValues) . ");\n";
-                        fwrite($handle, $insert);
-                    }
+                    $chunkSize = 500; // Procesar 500 registros a la vez
+                    
+                    DB::table($tableName)->orderBy(DB::raw('1'))->chunk($chunkSize, function($rows) use ($handle, $tableName) {
+                        foreach ($rows as $row) {
+                            $row = (array) $row;
+                            $columns = array_keys($row);
+                            $values = array_values($row);
+                            
+                            $escapedValues = array_map(function($value) {
+                                if (is_null($value)) {
+                                    return 'NULL';
+                                }
+                                return "'" . addslashes($value) . "'";
+                            }, $values);
+                            
+                            $insert = "INSERT INTO `{$tableName}` (`" . implode('`, `', $columns) . "`) VALUES (" . implode(', ', $escapedValues) . ");\n";
+                            fwrite($handle, $insert);
+                        }
+                    });
                     
                     fwrite($handle, "\n");
                 }
@@ -396,9 +414,14 @@ class ConfiguracionController extends Controller
             fwrite($handle, "SET FOREIGN_KEY_CHECKS=1;\n");
             fclose($handle);
             
+            \Log::info('Backup SQL generado, preparando subida a Google Drive');
+            
+            // Obtener tamaño del archivo antes de leerlo
+            $fileSize = filesize($filepath);
+            \Log::info('Tamaño del archivo: ' . round($fileSize / 1024 / 1024, 2) . ' MB');
+            
             // Subir archivo a Google Drive usando el Access Token
             $fileContent = file_get_contents($filepath);
-            $fileSize = filesize($filepath);
             
             $metadata = [
                 'name' => $filename,
@@ -426,16 +449,32 @@ class ConfiguracionController extends Controller
                 'Content-Length: ' . strlen($multipartBody)
             ]);
             curl_setopt($ch, CURLOPT_POSTFIELDS, $multipartBody);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 300); // Timeout de 5 minutos para la subida
+            
+            \Log::info('Subiendo archivo a Google Drive...');
             
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
             curl_close($ch);
+            
+            if ($curlError) {
+                \Log::error('Error de cURL: ' . $curlError);
+                throw new \Exception('Error de conexión con Google Drive: ' . $curlError);
+            }
+            
+            \Log::info('Respuesta de Google Drive - HTTP Code: ' . $httpCode);
             
             // Eliminar archivo temporal
             unlink($filepath);
             
-            if ($httpCode === 200) {
+            if ($httpCode === 200 || $httpCode === 201) {
                 $responseData = json_decode($response, true);
+                
+                \Log::info('Backup subido exitosamente a Google Drive', [
+                    'file_id' => $responseData['id'] ?? null,
+                    'filename' => $filename
+                ]);
                 
                 return response()->json([
                     'success' => true,
@@ -447,10 +486,20 @@ class ConfiguracionController extends Controller
             } else {
                 $errorData = json_decode($response, true);
                 $errorMessage = $errorData['error']['message'] ?? $response;
+                
+                \Log::error('Error al subir a Google Drive', [
+                    'http_code' => $httpCode,
+                    'error' => $errorMessage
+                ]);
+                
                 throw new \Exception('Error al subir a Google Drive (HTTP ' . $httpCode . '): ' . $errorMessage);
             }
             
         } catch (\Exception $e) {
+            \Log::error('Error en uploadToGoogleDrive: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             // Eliminar archivo temporal si existe
             if (isset($filepath) && file_exists($filepath)) {
                 unlink($filepath);

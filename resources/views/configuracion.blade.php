@@ -194,7 +194,8 @@
         <div style="padding: 30px; text-align: center;">
             <div id="backupLoading" style="display: none;">
                 <div style="border: 4px solid #f3f3f3; border-top: 4px solid #f97316; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
-                <p style="margin-top: 20px; color: #374151; font-size: 16px;">Creando backup, por favor espere...</p>
+                <p style="margin-top: 20px; color: #374151; font-size: 16px;" id="backupLoadingMessage">Creando backup, por favor espere...</p>
+                <p style="margin-top: 10px; color: #6b7280; font-size: 14px;">Este proceso puede tardar varios minutos dependiendo del tamaño de la base de datos.</p>
             </div>
             <div id="backupSuccess" style="display: none;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto;">
