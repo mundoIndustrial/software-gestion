@@ -10,6 +10,11 @@ class ConfiguracionController extends Controller
 {
     public function index()
     {
+        // Solo Admin puede acceder
+        if (!auth()->user()->role || auth()->user()->role->name !== 'admin') {
+            abort(403, 'Acción no autorizada.');
+        }
+
         // Fetch the current database
         $currentDatabase = env('DB_DATABASE');
 
@@ -39,6 +44,11 @@ class ConfiguracionController extends Controller
 
     public function createDatabase(Request $request)
     {
+        // Solo Admin puede crear bases de datos
+        if (!auth()->user()->role || auth()->user()->role->name !== 'admin') {
+            abort(403, 'Acción no autorizada.');
+        }
+
         $request->validate([
             'databaseName' => 'required|string|max:255',
             'model' => 'nullable|string',
@@ -65,6 +75,11 @@ class ConfiguracionController extends Controller
 
     public function selectDatabase(Request $request)
     {
+        // Solo Admin puede cambiar la base de datos
+        if (!auth()->user()->role || auth()->user()->role->name !== 'admin') {
+            abort(403, 'Acción no autorizada.');
+        }
+
         $request->validate([
             'database' => 'required|string',
         ]);
@@ -85,6 +100,11 @@ class ConfiguracionController extends Controller
 
     public function migrateUsers(Request $request)
     {
+        // Solo Admin puede migrar usuarios
+        if (!auth()->user()->role || auth()->user()->role->name !== 'admin') {
+            abort(403, 'Acción no autorizada.');
+        }
+
         $request->validate([
             'targetDatabase' => 'required|string',
         ]);
