@@ -16,7 +16,7 @@ class ImportarSoloPolos extends Command
 
     public function handle()
     {
-        $archivo = $this->argument('archivo') ?: resource_path('CONTROL DE PISO POLOS (Respuestas) .xlsx');
+        $archivo = $this->argument('archivo') ?: resource_path('CONTROL DE PISO POLOS (Respuestas).xlsx');
         $limpiar = $this->option('limpiar');
 
         $this->info("╔════════════════════════════════════════════════════════════╗");
