@@ -182,18 +182,17 @@ body.dark-theme {
 .modern-table {
     width: 100%;
     min-width: 2000px;
-    border-collapse: separate;
-    border-spacing: 0;
+    border-collapse: collapse;
     background: rgba(255, 255, 255, 0.02);
     border-radius: 8px;
+    overflow: hidden;
 }
 
 .table-head {
     background: linear-gradient(135deg, #475569 0%, #334155 100%);
     position: sticky;
     top: 0;
-    z-index: 100;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 10;
 }
 
 .table-header-cell {
@@ -206,7 +205,6 @@ body.dark-theme {
     white-space: nowrap;
     min-width: 120px;
     position: relative;
-    background: linear-gradient(135deg, #475569 0%, #334155 100%);
 }
 
 /* Header en modo oscuro */
@@ -216,7 +214,6 @@ body.dark-theme .table-head {
 
 body.dark-theme .table-header-cell {
     color: var(--text-primary);
-    background: rgba(255, 107, 53, 0.1);
 }
 
 .header-content {
