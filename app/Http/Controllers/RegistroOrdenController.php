@@ -346,7 +346,12 @@ class RegistroOrdenController extends Controller
             $additionalValidation = [];
             foreach ($allowedColumns as $col) {
                 if ($request->has($col) && $col !== 'estado' && $col !== 'area') {
-                    $additionalValidation[$col] = 'nullable|string|max:255';
+                    // La columna descripcion puede tener hasta 1000 caracteres
+                    if ($col === 'descripcion') {
+                        $additionalValidation[$col] = 'nullable|string|max:1000';
+                    } else {
+                        $additionalValidation[$col] = 'nullable|string|max:255';
+                    }
                 }
             }
             $additionalData = $request->validate($additionalValidation);
