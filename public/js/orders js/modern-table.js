@@ -707,18 +707,45 @@ class ModernTable {
         this.currentOrderId = orderId;
         this.currentColumn = column;
         const input = document.getElementById('cellEditInput');
+        const hint = document.getElementById('cellEditHint');
         console.log('cellEditInput element:', input);
         if (input) {
             input.value = content.split('\n').map(line => line.trimStart()).join('\n');
             input.focus();
             input.select();
         }
+        
+        // Mostrar mensaje de ayuda según la columna
+        if (hint) {
+            if (column === 'descripcion') {
+                hint.textContent = 'Presiona Enter para salto de línea. Ctrl+Enter o clic en Guardar para guardar cambios.';
+            } else {
+                hint.textContent = 'Presiona Enter o clic en Guardar para guardar cambios.';
+            }
+        }
 
         const save = () => this.saveCellEdit();
         const cancel = () => this.closeCellModal();
         const keyHandler = e => {
-            if (e.key === 'Enter') { e.preventDefault(); save(); }
-            else if (e.key === 'Escape') cancel();
+            // Para la columna descripcion, permitir Enter para saltos de línea
+            // Solo guardar con Ctrl+Enter
+            if (column === 'descripcion') {
+                if (e.key === 'Enter' && e.ctrlKey) { 
+                    e.preventDefault(); 
+                    save(); 
+                } else if (e.key === 'Escape') {
+                    cancel();
+                }
+                // Enter sin Ctrl permite salto de línea (comportamiento por defecto)
+            } else {
+                // Para otras columnas, mantener comportamiento original
+                if (e.key === 'Enter') { 
+                    e.preventDefault(); 
+                    save(); 
+                } else if (e.key === 'Escape') {
+                    cancel();
+                }
+            }
         };
 
         const saveBtn = document.getElementById('saveCellEdit');

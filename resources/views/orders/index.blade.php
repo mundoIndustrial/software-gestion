@@ -216,9 +216,10 @@
             <div class="cell-modal-body">
                 <textarea id="cellEditInput" class="cell-edit-input" rows="5"
                     style="width: 100%; text-align: left; padding: 8px; border: 1px solid #ccc; border-radius: 4px; resize: vertical;"></textarea>
+                <small id="cellEditHint" style="display: block; margin-top: 8px; color: #666; font-style: italic;"></small>
             </div>
             <div class="cell-modal-footer">
-                <button id="saveCellEdit" class="btn btn-primary">Guardar (Enter)</button>
+                <button id="saveCellEdit" class="btn btn-primary">Guardar</button>
                 <button id="cancelCellEdit" class="btn btn-secondary">Cancelar</button>
             </div>
         </div>
