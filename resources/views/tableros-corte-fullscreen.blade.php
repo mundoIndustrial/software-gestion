@@ -178,7 +178,7 @@
             padding: 10px 12px;
             text-align: center;
             font-weight: 600;
-            font-size: 11px;
+            font-size: 20px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             border-bottom: 2px solid #dee2e6;
@@ -188,7 +188,7 @@
             padding: 10px 12px;
             text-align: right;
             border-bottom: 1px solid #f1f3f5;
-            font-size: 12px;
+            font-size: 20px;
             color: #495057;
         }
 
