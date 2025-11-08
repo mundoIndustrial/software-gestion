@@ -269,9 +269,10 @@
                                     <circle cx="12" cy="12" r="10" stroke-width="2"/>
                                     <path d="M12 6v6l4 2" stroke-width="2" stroke-linecap="round"/>
                                 </svg>
-                                TIEMPO DE PARADA NO PROGRAMADA
+                                TIEMPO DE PARADA NO PROGRAMADA (minutos)
                             </label>
-                            <input type="number" name="tiempo_parada_no_programada" step="0.01" class="form-input" placeholder="0.00" />
+                            <input type="number" id="tiempo_parada_minutos" step="1" min="0" class="form-input"/>
+                            <input type="hidden" name="tiempo_parada_no_programada" id="tiempo_parada_segundos" />
                         </div>
                     </div>
                 </div>
@@ -996,6 +997,15 @@
             async handleSubmit(e) {
                 e.preventDefault();
 
+                // Convertir minutos a segundos para tiempo de parada no programada
+                const tiempoParadaMinutos = document.getElementById('tiempo_parada_minutos');
+                const tiempoParadaSegundos = document.getElementById('tiempo_parada_segundos');
+                if (tiempoParadaMinutos && tiempoParadaSegundos) {
+                    const minutos = parseFloat(tiempoParadaMinutos.value) || 0;
+                    tiempoParadaSegundos.value = minutos * 60;
+                    console.log('Conversión minutos a segundos:', minutos, 'minutos =', tiempoParadaSegundos.value, 'segundos');
+                }
+
                 // Validate hidden inputs
                 const telaId = document.getElementById('tela_id').value;
                 const maquinaId = document.getElementById('maquina_id').value;
@@ -1070,6 +1080,8 @@
                 document.getElementById('tela_id').value = '';
                 document.getElementById('maquina_id').value = '';
                 document.getElementById('operario_id').value = '';
+                document.getElementById('tiempo_parada_minutos').value = '';
+                document.getElementById('tiempo_parada_segundos').value = '';
             }
 
             updateTable(registro) {
