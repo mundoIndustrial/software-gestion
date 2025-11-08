@@ -83,6 +83,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/tableros', [TablerosController::class, 'store'])->name('tableros.store');
     Route::patch('/tableros/{id}', [TablerosController::class, 'update'])->name('tableros.update');
     Route::delete('/tableros/{id}', [TablerosController::class, 'destroy'])->name('tableros.destroy');
+    Route::post('/tableros/{id}/duplicate', [TablerosController::class, 'duplicate'])->name('tableros.duplicate');
     Route::post('/piso-corte', [TablerosController::class, 'storeCorte'])->name('piso-corte.store');
     Route::get('/get-tiempo-ciclo', [TablerosController::class, 'getTiempoCiclo'])->name('get-tiempo-ciclo');
     Route::post('/store-tela', [TablerosController::class, 'storeTela'])->name('store-tela');

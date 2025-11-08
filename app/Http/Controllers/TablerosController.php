@@ -921,6 +921,77 @@ class TablerosController extends Controller
         }
     }
 
+    public function duplicate($id)
+    {
+        $request = request();
+        $section = $request->query('section');
+
+        $model = match($section) {
+            'produccion' => RegistroPisoProduccion::class,
+            'polos' => RegistroPisoPolo::class,
+            'corte' => RegistroPisoCorte::class,
+        };
+
+        try {
+            $registroOriginal = $model::findOrFail($id);
+            
+            // Para corte, cargar las relaciones necesarias
+            if ($section === 'corte') {
+                $registroOriginal->load(['hora', 'operario', 'maquina', 'tela']);
+            }
+            
+            // Crear un array con los datos del registro original
+            $datosNuevos = $registroOriginal->toArray();
+            
+            // Remover campos que no deben duplicarse
+            unset($datosNuevos['id']);
+            unset($datosNuevos['created_at']);
+            unset($datosNuevos['updated_at']);
+            
+            // Crear el nuevo registro duplicado
+            $registroDuplicado = $model::create($datosNuevos);
+            
+            // Para corte, cargar las relaciones en el registro duplicado
+            if ($section === 'corte') {
+                $registroDuplicado->load(['hora', 'operario', 'maquina', 'tela']);
+            }
+            
+            // Emitir evento de creación via WebSocket para actualización en tiempo real
+            try {
+                if ($section === 'produccion') {
+                    broadcast(new ProduccionRecordCreated($registroDuplicado));
+                } elseif ($section === 'polos') {
+                    broadcast(new PoloRecordCreated($registroDuplicado));
+                } elseif ($section === 'corte') {
+                    broadcast(new CorteRecordCreated($registroDuplicado));
+                }
+            } catch (\Exception $broadcastError) {
+                \Log::warning('Error al emitir evento de duplicación', [
+                    'error' => $broadcastError->getMessage(),
+                    'section' => $section
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Registro duplicado correctamente.',
+                'registro' => $registroDuplicado,
+                'section' => $section
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al duplicar registro', [
+                'error' => $e->getMessage(),
+                'id' => $id,
+                'section' => $section
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al duplicar el registro: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function storeCorte(Request $request)
     {
         $request->validate([
