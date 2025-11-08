@@ -73,6 +73,16 @@
         <span>Seleccionar todas</span>
     </button>
 
+    <button type="button" class="btn-hora btn-seleccionar-8horas" onclick="seleccionar8Horas()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            class="icono-boton">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 6v6l4 2" />
+        </svg>
+        <span>Seleccionar 8 horas</span>
+    </button>
+
     <button type="button" class="btn-hora btn-deseleccionar-todas" onclick="deseleccionarTodasHoras()">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -442,6 +452,18 @@
     box-shadow: 0 4px 12px rgba(255, 107, 53, 0.25);
 }
 
+/* ⏰ Botón Seleccionar 8 horas */
+.tableros-form-modal-container .btn-seleccionar-8horas {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    color: white;
+}
+
+.tableros-form-modal-container .btn-seleccionar-8horas:hover {
+    transform: translateY(-1px);
+    background: linear-gradient(135deg, #66BB6A 0%, #4CAF50 100%);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.25);
+}
+
 /* 🔸 Botón Deseleccionar */
 .tableros-form-modal-container .btn-deseleccionar-todas {
     background: linear-gradient(135deg, #f4f4f4 0%, #eaeaea 100%);
@@ -494,6 +516,18 @@
 
         .tableros-form-modal-container .btn-secondary:hover {
             background: #cbd5e0;
+        }
+
+        /* Estilos para modo oscuro */
+        body.dark-theme .tableros-form-modal-container .btn-seleccionar-8horas {
+            background: linear-gradient(135deg, #66BB6A 0%, #4CAF50 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+        }
+
+        body.dark-theme .tableros-form-modal-container .btn-seleccionar-8horas:hover {
+            background: linear-gradient(135deg, #81C784 0%, #66BB6A 100%);
+            box-shadow: 0 4px 14px rgba(76, 175, 80, 0.4);
         }
 
         @media (max-width: 768px) {
@@ -601,6 +635,15 @@
             const checkboxes = document.querySelectorAll('#horasSelector input[type="checkbox"]');
             checkboxes.forEach(checkbox => {
                 checkbox.checked = false;
+            });
+            actualizarHorasSeleccionadas();
+        }
+
+        function seleccionar8Horas() {
+            const checkboxes = document.querySelectorAll('#horasSelector input[type="checkbox"]');
+            checkboxes.forEach((checkbox, index) => {
+                // Seleccionar solo las primeras 8 horas (índices 0-7)
+                checkbox.checked = index < 8;
             });
             actualizarHorasSeleccionadas();
         }
