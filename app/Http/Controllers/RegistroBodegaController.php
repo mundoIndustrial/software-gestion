@@ -492,4 +492,102 @@ class RegistroBodegaController extends Controller
 
         return response()->json($registros);
     }
+
+    /**
+     * Actualizar el número de pedido (consecutivo) para bodega
+     */
+    public function updatePedido(Request $request)
+    {
+        try {
+            $validatedData = $request->validate([
+                'old_pedido' => 'required|integer',
+                'new_pedido' => 'required|integer|min:1',
+            ]);
+
+            $oldPedido = $validatedData['old_pedido'];
+            $newPedido = $validatedData['new_pedido'];
+
+            // Verificar que la orden antigua existe
+            $orden = TablaOriginalBodega::where('pedido', $oldPedido)->first();
+            if (!$orden) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La orden no existe'
+                ], 404);
+            }
+
+            // Verificar que el nuevo pedido no existe ya
+            $existingOrder = TablaOriginalBodega::where('pedido', $newPedido)->first();
+            if ($existingOrder) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "El número de pedido {$newPedido} ya está en uso"
+                ], 422);
+            }
+
+            DB::beginTransaction();
+
+            // Deshabilitar temporalmente las restricciones de clave foránea
+            DB::statement('SET FOREIGN_KEY_CHECKS=0');
+
+            // Actualizar en tabla_original_bodega
+            DB::table('tabla_original_bodega')
+                ->where('pedido', $oldPedido)
+                ->update(['pedido' => $newPedido]);
+
+            // Actualizar en registros_por_orden_bodega
+            DB::table('registros_por_orden_bodega')
+                ->where('pedido', $oldPedido)
+                ->update(['pedido' => $newPedido]);
+
+            // Actualizar en entregas_bodega_costura si existen
+            if (DB::getSchemaBuilder()->hasTable('entregas_bodega_costura')) {
+                DB::table('entregas_bodega_costura')
+                    ->where('pedido', $oldPedido)
+                    ->update(['pedido' => $newPedido]);
+            }
+
+            // Actualizar en entregas_bodega_corte si existen
+            if (DB::getSchemaBuilder()->hasTable('entregas_bodega_corte')) {
+                DB::table('entregas_bodega_corte')
+                    ->where('pedido', $oldPedido)
+                    ->update(['pedido' => $newPedido]);
+            }
+
+            // Rehabilitar las restricciones de clave foránea
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Número de pedido actualizado correctamente',
+                'old_pedido' => $oldPedido,
+                'new_pedido' => $newPedido
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Asegurar que las restricciones se rehabiliten incluso si hay error
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos: ' . json_encode($e->errors())
+            ], 422);
+        } catch (\Exception $e) {
+            // Asegurar que las restricciones se rehabiliten incluso si hay error
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+            DB::rollBack();
+            \Log::error('Error al actualizar pedido bodega', [
+                'old_pedido' => $request->old_pedido,
+                'new_pedido' => $request->new_pedido,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar el número de pedido: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

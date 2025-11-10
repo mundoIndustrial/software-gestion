@@ -59,6 +59,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/registros/{pedido}', [RegistroOrdenController::class, 'show'])->name('registros.show');
     Route::post('/registros', [RegistroOrdenController::class, 'store'])->name('registros.store');
     Route::post('/registros/validate-pedido', [RegistroOrdenController::class, 'validatePedido'])->name('registros.validatePedido');
+    Route::post('/registros/update-pedido', [RegistroOrdenController::class, 'updatePedido'])->name('registros.updatePedido');
     Route::patch('/registros/{pedido}', [RegistroOrdenController::class, 'update'])->name('registros.update');
     Route::delete('/registros/{pedido}', [RegistroOrdenController::class, 'destroy'])->name('registros.destroy');
     Route::post('/registros/update-status', [RegistroOrdenController::class, 'updateStatus'])->name('registros.updateStatus');
@@ -69,6 +70,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/bodega/{pedido}/entregas', [RegistroBodegaController::class, 'getEntregas'])->name('bodega.entregas');
     Route::post('/bodega', [RegistroBodegaController::class, 'store'])->name('bodega.store');
     Route::post('/bodega/validate-pedido', [RegistroBodegaController::class, 'validatePedido'])->name('bodega.validatePedido');
+    Route::post('/bodega/update-pedido', [RegistroBodegaController::class, 'updatePedido'])->name('bodega.updatePedido');
     Route::patch('/bodega/{pedido}', [RegistroBodegaController::class, 'update'])->name('bodega.update');
     Route::get('/configuracion', [ConfiguracionController::class, 'index'])->name('configuracion.index');
     Route::post('/configuracion/create-database', [ConfiguracionController::class, 'createDatabase'])->name('configuracion.createDatabase');
