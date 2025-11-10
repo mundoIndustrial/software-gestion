@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\TablaOriginal;
-use App\Models\OrdenAsesor;
 use App\Models\ProductoPedido;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -94,95 +93,65 @@ class AsesoresController extends Controller
     }
 
     /**
-     * Listar pedidos del asesor (usando OrdenAsesor con sistema de borradores)
+     * Listar pedidos del asesor
      */
     public function index(Request $request)
     {
-        $asesorId = Auth::id();
+        $asesoraNombre = Auth::user()->name;
         
-        // Determinar qué pestaña mostrar (borradores o confirmados)
-        $tipo = $request->get('tipo', 'confirmados');
-        
-        $query = OrdenAsesor::where('asesor_id', $asesorId);
+        $query = TablaOriginal::delAsesor($asesoraNombre)->with('productos');
 
-        // Filtrar por tipo (borrador o confirmado)
-        if ($tipo === 'borradores') {
-            $query->where('es_borrador', true);
-        } else {
-            $query->where('es_borrador', false);
-        }
-
-        // Filtros adicionales
+        // Filtros
         if ($request->filled('estado')) {
             $query->where('estado', $request->estado);
+        }
+
+        if ($request->filled('area')) {
+            $query->where('area', $request->area);
         }
 
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('pedido', 'LIKE', "%{$search}%")
-                  ->orWhere('numero_orden', 'LIKE', "%{$search}%")
                   ->orWhere('cliente', 'LIKE', "%{$search}%");
             });
         }
 
-        $pedidos = $query->orderBy('created_at', 'desc')->paginate(20);
-
-        // Contar borradores y confirmados
-        $cantidadBorradores = OrdenAsesor::where('asesor_id', $asesorId)
-            ->where('es_borrador', true)
-            ->count();
-            
-        $cantidadConfirmados = OrdenAsesor::where('asesor_id', $asesorId)
-            ->where('es_borrador', false)
-            ->count();
+        $pedidos = $query->orderBy('fecha_de_creacion_de_orden', 'desc')->paginate(20);
 
         // Obtener valores únicos para filtros
-        $estados = ['pendiente', 'en_proceso', 'completada', 'cancelada'];
-        
-        // Áreas disponibles
-        $areas = [
-            'Corte',
-            'Control-Calidad',
-            'Costura',
-            'Bordado',
-            'Creación Orden',
-            'Estampado',
-            'Entrega',
-            'Polos',
-            'Taller',
-            'Insumos',
-            'Lavandería',
-            'Arreglos',
-            'Despachos'
-        ];
+        $estados = TablaOriginal::select('estado')
+            ->whereNotNull('estado')
+            ->distinct()
+            ->pluck('estado');
 
-        return view('asesores.pedidos.index', compact(
-            'pedidos', 
-            'estados',
-            'areas',
-            'tipo',
-            'cantidadBorradores',
-            'cantidadConfirmados'
-        ));
+        $areas = TablaOriginal::select('area')
+            ->whereNotNull('area')
+            ->distinct()
+            ->pluck('area');
+
+        return view('asesores.pedidos.index', compact('pedidos', 'estados', 'areas'));
     }
 
     /**
-     * Mostrar formulario para crear pedido (como borrador)
+     * Mostrar formulario para crear pedido
      */
     public function create()
     {
-        // NO asignamos número de pedido aquí, se asignará al confirmar
-        
+        // Obtener el siguiente número de pedido
+        $ultimoPedido = TablaOriginal::max('pedido');
+        $siguientePedido = $ultimoPedido ? $ultimoPedido + 1 : 1;
+
         // Obtener opciones de enums
-        $estados = ['pendiente', 'en_proceso', 'completada', 'cancelada'];
+        $estados = ['No iniciado', 'En Ejecución', 'Entregado', 'Anulada'];
         $areas = [
             'Creación Orden', 'Corte', 'Costura', 'Bordado', 'Estampado',
             'Control-Calidad', 'Entrega', 'Polos', 'Taller', 'Insumos',
             'Lavandería', 'Arreglos', 'Despachos'
         ];
 
-        return view('asesores.pedidos.create', compact('estados', 'areas'));
+        return view('asesores.pedidos.create', compact('siguientePedido', 'estados', 'areas'));
     }
 
     /**
@@ -200,23 +169,10 @@ class AsesoresController extends Controller
             'area' => 'nullable|string',
             'productos' => 'required|array|min:1',
             'productos.*.nombre_producto' => 'required|string',
-            'productos.*.tela' => 'nullable|string',
-            'productos.*.tipo_manga' => 'nullable|string',
-            'productos.*.color' => 'nullable|string',
             'productos.*.descripcion' => 'nullable|string',
-            'productos.*.bordados' => 'nullable|string',
-            'productos.*.estampados' => 'nullable|string',
-            'productos.*.personalizacion_combinada' => 'nullable|string',
-            'productos.*.modelo_foto' => 'nullable|string',
             'productos.*.talla' => 'nullable|string',
-            'productos.*.genero' => 'nullable|string',
-            'productos.*.ref_hilo' => 'nullable|string',
             'productos.*.cantidad' => 'required|integer|min:1',
             'productos.*.precio_unitario' => 'nullable|numeric|min:0',
-            'productos.*.notas' => 'nullable|string',
-            'productos.*.imagen' => 'nullable|image|max:5120', // 5MB max
-            'productos.*.imagenes_personalizacion' => 'nullable|array',
-            'productos.*.imagenes_personalizacion.*' => 'nullable|image|max:5120', // 5MB max cada una
         ]);
 
         DB::beginTransaction();
@@ -239,71 +195,21 @@ class AsesoresController extends Controller
             ]);
 
             // Crear los productos del pedido
-            foreach ($request->productos as $index => $productoData) {
+            foreach ($validated['productos'] as $productoData) {
                 $subtotal = null;
                 if (isset($productoData['precio_unitario']) && isset($productoData['cantidad'])) {
                     $subtotal = $productoData['precio_unitario'] * $productoData['cantidad'];
                 }
 
-                // Manejar imagen del producto
-                $imagenPath = null;
-                if ($request->hasFile("productos.{$index}.imagen")) {
-                    $imagen = $request->file("productos.{$index}.imagen");
-                    $imagenPath = $imagen->store('productos', 'public');
-                }
-
-                $producto = ProductoPedido::create([
+                ProductoPedido::create([
                     'pedido' => $pedido->pedido,
                     'nombre_producto' => $productoData['nombre_producto'],
-                    'tela' => $productoData['tela'] ?? null,
-                    'tipo_manga' => $productoData['tipo_manga'] ?? null,
-                    'color' => $productoData['color'] ?? null,
                     'descripcion' => $productoData['descripcion'] ?? null,
-                    'bordados' => $productoData['bordados'] ?? null,
-                    'estampados' => $productoData['estampados'] ?? null,
-                    'personalizacion_combinada' => $productoData['personalizacion_combinada'] ?? null,
-                    'modelo_foto' => $productoData['modelo_foto'] ?? null,
                     'talla' => $productoData['talla'] ?? null,
-                    'genero' => $productoData['genero'] ?? null,
-                    'ref_hilo' => $productoData['ref_hilo'] ?? null,
                     'cantidad' => $productoData['cantidad'],
                     'precio_unitario' => $productoData['precio_unitario'] ?? null,
                     'subtotal' => $subtotal,
-                    'imagen' => $imagenPath,
-                    'notas' => $productoData['notas'] ?? null,
                 ]);
-
-                // Manejar múltiples imágenes adicionales si existen
-                if ($request->hasFile("productos.{$index}.imagenes_adicionales")) {
-                    foreach ($request->file("productos.{$index}.imagenes_adicionales") as $imgIndex => $imagen) {
-                        $path = $imagen->store('productos/adicionales', 'public');
-                        
-                        \App\Models\ProductoImagen::create([
-                            'producto_pedido_id' => $producto->id,
-                            'tipo' => $request->input("productos.{$index}.tipo_imagen.{$imgIndex}", 'referencia'),
-                            'imagen' => $path,
-                            'titulo' => $request->input("productos.{$index}.titulo_imagen.{$imgIndex}"),
-                            'descripcion' => $request->input("productos.{$index}.descripcion_imagen.{$imgIndex}"),
-                            'orden' => $imgIndex,
-                        ]);
-                    }
-                }
-
-                // Manejar imágenes de personalización (bordados/estampados)
-                if ($request->hasFile("productos.{$index}.imagenes_personalizacion")) {
-                    foreach ($request->file("productos.{$index}.imagenes_personalizacion") as $imgIndex => $imagen) {
-                        $path = $imagen->store('productos/personalizacion', 'public');
-                        
-                        \App\Models\ProductoImagen::create([
-                            'producto_pedido_id' => $producto->id,
-                            'tipo' => 'bordado', // Tipo específico para personalización
-                            'imagen' => $path,
-                            'titulo' => 'Referencia de Bordado/Estampado',
-                            'descripcion' => 'Imagen de referencia para personalización',
-                            'orden' => $imgIndex + 100, // Offset para diferenciar de otras imágenes
-                        ]);
-                    }
-                }
             }
 
             DB::commit();
@@ -330,7 +236,7 @@ class AsesoresController extends Controller
     {
         $asesoraNombre = Auth::user()->name;
         
-        $pedidoData = TablaOriginal::with(['productos.imagenes'])
+        $pedidoData = TablaOriginal::with('productos')
             ->where('pedido', $pedido)
             ->where('asesora', $asesoraNombre)
             ->firstOrFail();
@@ -520,101 +426,5 @@ class AsesoresController extends Controller
             'success' => true,
             'message' => 'Notificaciones marcadas como leídas'
         ]);
-    }
-
-    /**
-     * Mostrar el perfil del asesor
-     */
-    public function profile()
-    {
-        $user = Auth::user();
-        return view('asesores.profile', compact('user'));
-    }
-
-    /**
-     * Actualizar el perfil del asesor
-     */
-    public function updateProfile(Request $request)
-    {
-        $user = Auth::user();
-
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
-            'telefono' => 'nullable|string|max:20',
-            'bio' => 'nullable|string|max:500',
-            'ciudad' => 'nullable|string|max:100',
-            'departamento' => 'nullable|string|max:100',
-            'avatar' => 'nullable|image|mimes:jpeg,jpg,png,gif|max:2048',
-            'password' => 'nullable|min:8|confirmed',
-        ]);
-
-        try {
-            // Actualizar campos básicos
-            $user->name = $validated['name'];
-            $user->email = $validated['email'];
-            $user->telefono = $validated['telefono'] ?? null;
-            $user->bio = $validated['bio'] ?? null;
-            $user->ciudad = $validated['ciudad'] ?? null;
-            $user->departamento = $validated['departamento'] ?? null;
-
-            // Manejar avatar
-            if ($request->hasFile('avatar')) {
-                // Eliminar avatar anterior si existe
-                if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
-                    Storage::disk('public')->delete($user->avatar);
-                }
-
-                // Guardar nuevo avatar
-                $avatarPath = $request->file('avatar')->store('avatars', 'public');
-                $user->avatar = $avatarPath;
-            }
-
-            // Actualizar contraseña si se proporcionó
-            if ($request->filled('password')) {
-                $user->password = bcrypt($validated['password']);
-            }
-
-            $user->save();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Perfil actualizado exitosamente',
-                'avatar_url' => $user->avatar ? Storage::url($user->avatar) : null
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al actualizar el perfil: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Eliminar avatar del perfil
-     */
-    public function deleteAvatar()
-    {
-        $user = Auth::user();
-
-        try {
-            if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
-                Storage::disk('public')->delete($user->avatar);
-                $user->avatar = null;
-                $user->save();
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Avatar eliminado exitosamente'
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al eliminar el avatar: ' . $e->getMessage()
-            ], 500);
-        }
     }
 }

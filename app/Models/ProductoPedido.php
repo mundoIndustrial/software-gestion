@@ -17,11 +17,8 @@ class ProductoPedido extends Model
         'tela',
         'tipo_manga',
         'color',
-        'configuracion_telas',
         'descripcion',
         'bordados',
-        'estampados',
-        'personalizacion_combinada',
         'modelo_foto',
         'talla',
         'genero',
@@ -31,30 +28,12 @@ class ProductoPedido extends Model
         'subtotal',
         'imagen',
         'notas',
-        // Campos de configuración modular
-        'categoria_prenda',
-        'tipo_prenda',
-        'configuracion_cuello',
-        'configuracion_bolsillos',
-        'configuracion_puños',
-        'configuracion_cierre',
-        'configuracion_reflectivos',
-        'configuracion_bordados',
-        'caracteristicas_especiales',
-        'tallas_cantidades',
-        'ciclos',
-        'origen',
     ];
 
     protected $casts = [
         'cantidad' => 'integer',
         'precio_unitario' => 'decimal:2',
         'subtotal' => 'decimal:2',
-        'configuracion_telas' => 'array',
-        'configuracion_reflectivos' => 'array',
-        'configuracion_bordados' => 'array',
-        'caracteristicas_especiales' => 'array',
-        'tallas_cantidades' => 'array',
     ];
 
     /**

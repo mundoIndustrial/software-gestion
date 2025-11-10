@@ -81,14 +81,14 @@ function createOrdenesLineChart(data) {
             datasets: [{
                 label: 'Órdenes',
                 data: values,
-                borderColor: '#0066CC',
-                backgroundColor: 'rgba(0, 102, 204, 0.1)',
+                borderColor: '#FF6B35',
+                backgroundColor: 'rgba(255, 107, 53, 0.1)',
                 borderWidth: 3,
                 fill: true,
                 tension: 0.4,
                 pointRadius: 4,
                 pointHoverRadius: 6,
-                pointBackgroundColor: '#0066CC',
+                pointBackgroundColor: '#FF6B35',
                 pointBorderColor: '#fff',
                 pointBorderWidth: 2
             }]
@@ -104,7 +104,7 @@ function createOrdenesLineChart(data) {
                     backgroundColor: 'rgba(15, 23, 42, 0.95)',
                     titleColor: '#fff',
                     bodyColor: '#cbd5e1',
-                    borderColor: '#0066CC',
+                    borderColor: '#FF6B35',
                     borderWidth: 1,
                     padding: 12,
                     cornerRadius: 8,
@@ -162,8 +162,8 @@ function createAsesoresBarChart(data) {
     // Generar gradientes
     const gradients = labels.map((_, index) => {
         const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 400);
-        gradient.addColorStop(0, '#0066CC');
-        gradient.addColorStop(1, '#3b82f6');
+        gradient.addColorStop(0, '#FF6B35');
+        gradient.addColorStop(1, '#f7931e');
         return gradient;
     });
     
@@ -190,7 +190,7 @@ function createAsesoresBarChart(data) {
                     backgroundColor: 'rgba(15, 23, 42, 0.95)',
                     titleColor: '#fff',
                     bodyColor: '#cbd5e1',
-                    borderColor: '#0066CC',
+                    borderColor: '#FF6B35',
                     borderWidth: 1,
                     padding: 12,
                     cornerRadius: 8,
@@ -284,7 +284,7 @@ function createEstadosDoughnutChart(data) {
                     backgroundColor: 'rgba(15, 23, 42, 0.95)',
                     titleColor: '#fff',
                     bodyColor: '#cbd5e1',
-                    borderColor: '#0066CC',
+                    borderColor: '#FF6B35',
                     borderWidth: 1,
                     padding: 12,
                     cornerRadius: 8,
