@@ -45,25 +45,25 @@
     box-shadow: var(--shadow-lg);
 }
 
-/* Colores específicos para cada tarjeta - Naranja del Sistema */
+/* Colores específicos para cada tarjeta - ERP Profesional */
 .stat-day {
-    --gradient-start: #FF6B35;
-    --gradient-end: #f7931e;
+    --gradient-start: #0066CC;
+    --gradient-end: #3385D6;
 }
 
 .stat-month {
-    --gradient-start: #ff8555;
-    --gradient-end: #ffa075;
+    --gradient-start: #00A86B;
+    --gradient-end: #00C97D;
 }
 
 .stat-year {
-    --gradient-start: #f97316;
-    --gradient-end: #ec4899;
+    --gradient-start: #004C99;
+    --gradient-end: #0066CC;
 }
 
 .stat-pending {
-    --gradient-start: #fbbf24;
-    --gradient-end: #f59e0b;
+    --gradient-start: #F77F00;
+    --gradient-end: #FFA726;
 }
 
 .stat-icon {

@@ -146,6 +146,11 @@ Route::middleware(['auth', 'role:asesor'])->prefix('asesores')->name('asesores.'
     // Notificaciones
     Route::get('/notifications', [App\Http\Controllers\AsesoresController::class, 'getNotifications'])->name('notifications');
     Route::post('/notifications/mark-all-read', [App\Http\Controllers\AsesoresController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    
+    // Perfil
+    Route::get('/profile', [App\Http\Controllers\AsesoresController::class, 'profile'])->name('profile');
+    Route::post('/profile/update', [App\Http\Controllers\AsesoresController::class, 'updateProfile'])->name('profile.update');
+    Route::post('/profile/delete-avatar', [App\Http\Controllers\AsesoresController::class, 'deleteAvatar'])->name('profile.delete-avatar');
 });
 
 require __DIR__.'/auth.php';

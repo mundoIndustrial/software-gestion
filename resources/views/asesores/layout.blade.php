@@ -9,6 +9,7 @@
     <!-- CSS -->
     <link rel="stylesheet" href="{{ asset('css/asesores/layout.css') }}">
     <link rel="stylesheet" href="{{ asset('css/asesores/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/asesores/pedidos-erp.css') }}">
     
     <!-- Chart.js para gráficas -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -135,7 +136,7 @@
                     <button class="user-btn" id="userBtn">
                         <div class="user-avatar">
                             @if(Auth::user()->avatar)
-                                <img src="{{ Auth::user()->avatar }}" alt="{{ Auth::user()->name }}">
+                                <img src="{{ asset('storage/' . Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}">
                             @else
                                 <div class="avatar-placeholder">
                                     {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
@@ -149,11 +150,11 @@
                         <span class="material-symbols-rounded">expand_more</span>
                     </button>
                     <div class="user-menu" id="userMenu">
-                        <a href="#" class="menu-item">
+                        <a href="{{ route('asesores.profile') }}" class="menu-item">
                             <span class="material-symbols-rounded">person</span>
                             <span>Mi Perfil</span>
                         </a>
-                        <a href="#" class="menu-item">
+                        <a href="{{ route('asesores.profile') }}" class="menu-item">
                             <span class="material-symbols-rounded">settings</span>
                             <span>Configuración</span>
                         </a>

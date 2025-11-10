@@ -103,12 +103,107 @@
                             @endif
                         </div>
                         <div class="producto-body">
+                            <!-- Imagen Principal del Producto -->
+                            @if($producto->imagen)
+                                <div class="producto-imagen-principal">
+                                    <img src="{{ asset('storage/' . $producto->imagen) }}" 
+                                         alt="{{ $producto->nombre_producto }}"
+                                         class="producto-img-main">
+                                </div>
+                            @endif
+
+                            <!-- Información Detallada -->
+                            <div class="producto-info-grid">
+                                @if($producto->tela)
+                                    <div class="info-detail">
+                                        <label>Tela:</label>
+                                        <span>{{ $producto->tela }}</span>
+                                    </div>
+                                @endif
+                                @if($producto->color)
+                                    <div class="info-detail">
+                                        <label>Color:</label>
+                                        <span>{{ $producto->color }}</span>
+                                    </div>
+                                @endif
+                                @if($producto->tipo_manga)
+                                    <div class="info-detail">
+                                        <label>Manga:</label>
+                                        <span>{{ $producto->tipo_manga }}</span>
+                                    </div>
+                                @endif
+                                @if($producto->genero)
+                                    <div class="info-detail">
+                                        <label>Género:</label>
+                                        <span>{{ $producto->genero }}</span>
+                                    </div>
+                                @endif
+                                @if($producto->ref_hilo)
+                                    <div class="info-detail">
+                                        <label>Ref. Hilo:</label>
+                                        <span>{{ $producto->ref_hilo }}</span>
+                                    </div>
+                                @endif
+                            </div>
+
                             @if($producto->descripcion)
                                 <div class="producto-descripcion">
                                     <label>Descripción:</label>
                                     <p>{{ $producto->descripcion }}</p>
                                 </div>
                             @endif
+
+                            @if($producto->personalizacion_combinada)
+                                <div class="producto-descripcion">
+                                    <label>
+                                        <span class="material-symbols-rounded" style="vertical-align: middle; font-size: 1.2rem;">draw</span>
+                                        <span class="material-symbols-rounded" style="vertical-align: middle; font-size: 1.2rem;">palette</span>
+                                        Bordados y Estampados:
+                                    </label>
+                                    <p style="white-space: pre-wrap;">{{ $producto->personalizacion_combinada }}</p>
+                                </div>
+                            @else
+                                @if($producto->bordados)
+                                    <div class="producto-descripcion">
+                                        <label>
+                                            <span class="material-symbols-rounded" style="vertical-align: middle; font-size: 1.2rem;">draw</span>
+                                            Bordados/Logos:
+                                        </label>
+                                        <p>{{ $producto->bordados }}</p>
+                                    </div>
+                                @endif
+
+                                @if($producto->estampados)
+                                    <div class="producto-descripcion">
+                                        <label>
+                                            <span class="material-symbols-rounded" style="vertical-align: middle; font-size: 1.2rem;">palette</span>
+                                            Estampados:
+                                        </label>
+                                        <p>{{ $producto->estampados }}</p>
+                                    </div>
+                                @endif
+                            @endif
+
+                            <!-- Imágenes Adicionales -->
+                            @if($producto->imagenes && $producto->imagenes->count() > 0)
+                                <div class="producto-imagenes-adicionales">
+                                    <label>Imágenes Adicionales:</label>
+                                    <div class="imagenes-gallery">
+                                        @foreach($producto->imagenes as $imagen)
+                                            <div class="gallery-item">
+                                                <img src="{{ asset('storage/' . $imagen->imagen) }}" 
+                                                     alt="{{ $imagen->titulo ?? 'Imagen' }}"
+                                                     class="gallery-img"
+                                                     onclick="openImageModal(this.src)">
+                                                @if($imagen->titulo)
+                                                    <p class="gallery-caption">{{ $imagen->titulo }}</p>
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
                             <div class="producto-details">
                                 <div class="detail-item">
                                     <label>Cantidad:</label>
@@ -125,6 +220,13 @@
                                     </div>
                                 @endif
                             </div>
+
+                            @if($producto->notas)
+                                <div class="producto-notas">
+                                    <label>Notas:</label>
+                                    <p>{{ $producto->notas }}</p>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 @endforeach
@@ -147,6 +249,13 @@
         @endif
     </div>
 </div>
+
+<!-- Modal para ver imágenes en grande -->
+<div id="imageModal" class="image-modal" onclick="closeImageModal()">
+    <span class="modal-close">&times;</span>
+    <img class="modal-content" id="modalImage">
+</div>
+
 @endsection
 
 @push('styles')
@@ -155,4 +264,24 @@
 
 @push('scripts')
 <script src="{{ asset('js/asesores/pedidos-list.js') }}"></script>
+<script>
+// Modal para ver imágenes en grande
+function openImageModal(src) {
+    const modal = document.getElementById('imageModal');
+    const modalImg = document.getElementById('modalImage');
+    modal.style.display = 'flex';
+    modalImg.src = src;
+}
+
+function closeImageModal() {
+    document.getElementById('imageModal').style.display = 'none';
+}
+
+// Cerrar con ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeImageModal();
+    }
+});
+</script>
 @endpush

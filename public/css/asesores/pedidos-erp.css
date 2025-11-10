@@ -1,0 +1,552 @@
+/* ========================================
+   SISTEMA ERP PROFESIONAL - PEDIDOS
+   Diseño Moderno y Corporativo
+   ======================================== */
+
+:root {
+    --erp-primary: #0066CC;
+    --erp-primary-dark: #004C99;
+    --erp-primary-light: #3385D6;
+    --erp-accent: #00A86B;
+    --erp-text: #1A1A1A;
+    --erp-text-secondary: #666666;
+    --erp-text-muted: #999999;
+    --erp-bg: #F5F7FA;
+    --erp-card: #FFFFFF;
+    --erp-hover: #E8EDF3;
+    --erp-border: #D1D9E0;
+    --erp-border-light: #E5E9ED;
+    --erp-success: #00A86B;
+    --erp-danger: #E63946;
+    --erp-warning: #F77F00;
+    --erp-info: #0066CC;
+    --erp-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --erp-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+    --erp-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* ========================================
+   HEADER DEL FORMULARIO
+   ======================================== */
+
+.erp-form-header {
+    background: linear-gradient(135deg, var(--erp-primary) 0%, var(--erp-primary-dark) 100%);
+    color: white;
+    padding: 2rem 2.5rem;
+    border-bottom: 4px solid var(--erp-accent);
+}
+
+.erp-form-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+    letter-spacing: -0.5px;
+}
+
+.erp-form-subtitle {
+    font-size: 0.95rem;
+    opacity: 0.9;
+    font-weight: 400;
+}
+
+.erp-form-meta {
+    display: flex;
+    gap: 2rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.erp-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.erp-meta-item .material-symbols-rounded {
+    font-size: 1.2rem;
+}
+
+/* ========================================
+   PESTAÑAS DE NAVEGACIÓN
+   ======================================== */
+
+.erp-tabs {
+    background: white;
+    border-bottom: 2px solid var(--erp-border-light);
+    display: flex;
+    gap: 0;
+    padding: 0 2.5rem;
+}
+
+.erp-tab {
+    padding: 1rem 1.5rem;
+    border: none;
+    background: transparent;
+    color: var(--erp-text-secondary);
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.3s ease;
+    border-bottom: 3px solid transparent;
+}
+
+.erp-tab:hover {
+    color: var(--erp-primary);
+    background: var(--erp-hover);
+}
+
+.erp-tab.active {
+    color: var(--erp-primary);
+    border-bottom-color: var(--erp-primary);
+}
+
+.erp-tab .material-symbols-rounded {
+    vertical-align: middle;
+    margin-right: 0.5rem;
+    font-size: 1.2rem;
+}
+
+/* ========================================
+   SECCIONES COLAPSABLES
+   ======================================== */
+
+.erp-section {
+    background: white;
+    border: 1px solid var(--erp-border-light);
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    box-shadow: var(--erp-shadow-sm);
+    transition: all 0.3s ease;
+}
+
+.erp-section:hover {
+    box-shadow: var(--erp-shadow-md);
+}
+
+.erp-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    background: var(--erp-bg);
+    border-bottom: 1px solid var(--erp-border-light);
+    cursor: pointer;
+    user-select: none;
+}
+
+.erp-section-header:hover {
+    background: var(--erp-hover);
+}
+
+.erp-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--erp-text);
+}
+
+.erp-section-title .material-symbols-rounded {
+    font-size: 1.5rem;
+    color: var(--erp-primary);
+}
+
+.erp-section-badge {
+    background: var(--erp-primary);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 0.5rem;
+}
+
+.erp-section-toggle {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid var(--erp-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.erp-section-toggle .material-symbols-rounded {
+    font-size: 1.2rem;
+    color: var(--erp-text-secondary);
+    transition: transform 0.3s ease;
+}
+
+.erp-section.collapsed .erp-section-toggle .material-symbols-rounded {
+    transform: rotate(-90deg);
+}
+
+.erp-section-body {
+    padding: 1.5rem;
+    max-height: 2000px;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+.erp-section.collapsed .erp-section-body {
+    max-height: 0;
+    padding: 0 1.5rem;
+}
+
+/* ========================================
+   GRID DE FORMULARIOS
+   ======================================== */
+
+.erp-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
+}
+
+.erp-form-grid.cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.erp-form-grid.cols-3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.erp-form-grid.cols-4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.erp-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.erp-form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.erp-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--erp-text);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.erp-label.required::after {
+    content: '*';
+    color: var(--erp-danger);
+    margin-left: 0.25rem;
+}
+
+.erp-label .material-symbols-rounded {
+    font-size: 1.1rem;
+    color: var(--erp-primary);
+}
+
+.erp-input,
+.erp-select,
+.erp-textarea {
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--erp-border);
+    border-radius: 6px;
+    font-size: 0.95rem;
+    color: var(--erp-text);
+    background: white;
+    transition: all 0.2s ease;
+}
+
+.erp-input:focus,
+.erp-select:focus,
+.erp-textarea:focus {
+    outline: none;
+    border-color: var(--erp-primary);
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+.erp-input:disabled,
+.erp-select:disabled,
+.erp-textarea:disabled {
+    background: var(--erp-bg);
+    color: var(--erp-text-muted);
+    cursor: not-allowed;
+}
+
+.erp-textarea {
+    min-height: 100px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.erp-help-text {
+    font-size: 0.8rem;
+    color: var(--erp-text-muted);
+    margin-top: 0.25rem;
+}
+
+/* ========================================
+   BOTONES PROFESIONALES
+   ======================================== */
+
+.erp-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+}
+
+.erp-btn .material-symbols-rounded {
+    font-size: 1.2rem;
+}
+
+.erp-btn-primary {
+    background: var(--erp-primary);
+    color: white;
+    box-shadow: var(--erp-shadow-sm);
+}
+
+.erp-btn-primary:hover {
+    background: var(--erp-primary-dark);
+    box-shadow: var(--erp-shadow-md);
+    transform: translateY(-1px);
+}
+
+.erp-btn-success {
+    background: var(--erp-success);
+    color: white;
+}
+
+.erp-btn-success:hover {
+    background: #008C5A;
+}
+
+.erp-btn-secondary {
+    background: var(--erp-bg);
+    color: var(--erp-text);
+    border: 2px solid var(--erp-border);
+}
+
+.erp-btn-secondary:hover {
+    background: var(--erp-hover);
+}
+
+.erp-btn-danger {
+    background: var(--erp-danger);
+    color: white;
+}
+
+.erp-btn-danger:hover {
+    background: #D62839;
+}
+
+.erp-btn-lg {
+    padding: 1rem 2rem;
+    font-size: 1.05rem;
+}
+
+.erp-btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+/* ========================================
+   TARJETAS DE PRODUCTOS
+   ======================================== */
+
+.erp-product-card {
+    background: white;
+    border: 2px solid var(--erp-border-light);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.erp-product-card:hover {
+    border-color: var(--erp-primary);
+    box-shadow: var(--erp-shadow-md);
+}
+
+.erp-product-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--erp-border-light);
+}
+
+.erp-product-number {
+    background: linear-gradient(135deg, var(--erp-primary), var(--erp-primary-dark));
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    box-shadow: var(--erp-shadow-md);
+}
+
+.erp-product-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* ========================================
+   BADGES Y ETIQUETAS
+   ======================================== */
+
+.erp-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.erp-badge-primary {
+    background: rgba(0, 102, 204, 0.1);
+    color: var(--erp-primary);
+}
+
+.erp-badge-success {
+    background: rgba(0, 168, 107, 0.1);
+    color: var(--erp-success);
+}
+
+.erp-badge-warning {
+    background: rgba(247, 127, 0, 0.1);
+    color: var(--erp-warning);
+}
+
+.erp-badge-danger {
+    background: rgba(230, 57, 70, 0.1);
+    color: var(--erp-danger);
+}
+
+/* ========================================
+   RESUMEN Y TOTALES
+   ======================================== */
+
+.erp-summary {
+    background: linear-gradient(135deg, var(--erp-primary) 0%, var(--erp-primary-dark) 100%);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-top: 2rem;
+    box-shadow: var(--erp-shadow-lg);
+}
+
+.erp-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.erp-summary-item {
+    text-align: center;
+}
+
+.erp-summary-label {
+    font-size: 0.875rem;
+    opacity: 0.9;
+    margin-bottom: 0.5rem;
+}
+
+.erp-summary-value {
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+/* ========================================
+   ACCIONES DEL FORMULARIO
+   ======================================== */
+
+.erp-form-actions {
+    background: var(--erp-bg);
+    padding: 1.5rem 2.5rem;
+    border-top: 2px solid var(--erp-border-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.erp-actions-left,
+.erp-actions-right {
+    display: flex;
+    gap: 1rem;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 1024px) {
+    .erp-form-grid.cols-4 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .erp-form-grid.cols-3 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .erp-form-header,
+    .erp-section-body,
+    .erp-form-actions {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+    
+    .erp-tabs {
+        padding: 0 1.5rem;
+        overflow-x: auto;
+    }
+    
+    .erp-form-grid,
+    .erp-form-grid.cols-2,
+    .erp-form-grid.cols-3,
+    .erp-form-grid.cols-4 {
+        grid-template-columns: 1fr;
+    }
+    
+    .erp-form-actions {
+        flex-direction: column;
+    }
+    
+    .erp-actions-left,
+    .erp-actions-right {
+        width: 100%;
+        justify-content: stretch;
+    }
+    
+    .erp-btn {
+        flex: 1;
+        justify-content: center;
+    }
+}
