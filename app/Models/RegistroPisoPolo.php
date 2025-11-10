@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\Auditable;
 
 class RegistroPisoPolo extends Model
 {
-    use HasFactory;
+    use HasFactory, Auditable;
 
     protected $table = 'registro_piso_polo';
 
@@ -19,23 +20,23 @@ class RegistroPisoPolo extends Model
         'tiempo_ciclo',
         'porcion_tiempo',
         'cantidad',
-        'producida',
         'paradas_programadas',
         'paradas_no_programadas',
         'tiempo_parada_no_programada',
         'numero_operarios',
         'tiempo_para_programada',
+        'tiempo_disponible',
         'meta',
         'eficiencia',
     ];
 
     protected $casts = [
         'fecha' => 'date',
-        'hora' => 'datetime:H:i',
         'tiempo_ciclo' => 'decimal:2',
         'porcion_tiempo' => 'decimal:2',
         'tiempo_parada_no_programada' => 'decimal:2',
         'tiempo_para_programada' => 'decimal:2',
+        'tiempo_disponible' => 'decimal:2',
         'meta' => 'decimal:2',
         'eficiencia' => 'decimal:2',
     ];

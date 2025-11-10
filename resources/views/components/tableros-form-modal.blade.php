@@ -1,4 +1,4 @@
-<x-modal name="tableros-form" :show="false" maxWidth="4xl">
+<x-modal name="tableros-form" :show="false" maxWidth="2xl">
     <div class="tableros-form-modal-container">
         <div class="modal-header">
             <div class="header-content">
@@ -33,7 +33,7 @@
                         <div class="form-group">
                             <label class="form-label">
                                 <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" stroke-width="2" stroke-linecap="round"/>
+                                    <path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" stroke-width="2" stroke-linecap="round"/>
                                 </svg>
                                 Módulo *
                             </label>
@@ -64,12 +64,37 @@
                         <!-- Se generarán dinámicamente las 12 horas -->
                     </div>
                     <div class="acciones-horas">
-                        <button type="button" class="btn-seleccionar-todas" onclick="seleccionarTodasHoras()">
-                            ✅ Seleccionar todas
-                        </button>
-                        <button type="button" class="btn-deseleccionar-todas" onclick="deseleccionarTodasHoras()">
-                        </button>
-                    </div>
+    <button type="button" class="btn-hora btn-seleccionar-todas" onclick="seleccionarTodasHoras()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            class="icono-boton">
+            <path d="M5 13l4 4L19 7" />
+        </svg>
+        <span>Seleccionar todas</span>
+    </button>
+
+    <button type="button" class="btn-hora btn-seleccionar-8horas" onclick="seleccionar8Horas()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            class="icono-boton">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 6v6l4 2" />
+        </svg>
+        <span>Seleccionar 8 horas</span>
+    </button>
+
+    <button type="button" class="btn-hora btn-deseleccionar-todas" onclick="deseleccionarTodasHoras()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+            class="icono-boton">
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+            <path d="M3 6h18"/>
+            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        </svg>
+        <span>Deseleccionar</span>
+    </button>
+</div>
+
                     <div class="horas-seleccionadas" id="horasSeleccionadas" style="display: none;">
                         <strong>Horas seleccionadas:</strong>
                         <div class="lista-horas" id="listaHoras"></div>
@@ -94,8 +119,11 @@
                         <div class="form-group">
                             <label class="form-label">
                                 <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" stroke-width="2" stroke-linecap="round"/>
-                                </svg>
+    <circle cx="12" cy="12" r="10" stroke-width="2"/>
+    <line x1="10" y1="4" x2="14" y2="4" stroke-width="2" stroke-linecap="round"/>
+    <line x1="12" y1="12" x2="15" y2="9" stroke-width="2" stroke-linecap="round"/>
+</svg>
+
                                 Porción de Tiempo *
                             </label>
                             <select name="porcion_tiempo" class="form-select" required>
@@ -116,8 +144,12 @@
                         <div class="form-group">
                             <label class="form-label">
                                 <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" stroke-width="2" stroke-linecap="round"/>
-                                </svg>
+    <rect x="4" y="2" width="16" height="20" rx="2" stroke-width="2"/>
+    <line x1="8" y1="6" x2="16" y2="6" stroke-width="2" stroke-linecap="round"/>
+    <line x1="16" y1="14" x2="16" y2="18" stroke-width="2" stroke-linecap="round"/>
+    <path d="M16 10h.01M12 10h.01M8 10h.01M12 14h.01M8 14h.01M12 18h.01M8 18h.01" stroke-width="2" stroke-linecap="round"/>
+</svg>
+
                                 Cantidad Producida
                             </label>
                             <input type="number" name="cantidad" class="form-input" />
@@ -125,10 +157,13 @@
 
                         <div class="form-group">
                             <label class="form-label">
-                                <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                                    <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-width="2" stroke-linecap="round"/>
-                                </svg>
+<svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+    <path d="M14 2v4a2 2 0 0 0 2 2h4" stroke-width="2" stroke-linecap="round"/>
+    <path d="M16 22h2a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v3" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="8" cy="16" r="6" stroke-width="2"/>
+    <path d="M8 14v2.2l1.6 1" stroke-width="2" stroke-linecap="round"/>
+</svg>
+
                                 Paradas Programadas *
                             </label>
                             <select name="paradas_programadas" class="form-select" required>
@@ -141,8 +176,12 @@
                         <div class="form-group">
                             <label class="form-label">
                                 <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" stroke-width="2" stroke-linecap="round"/>
-                                </svg>
+    <path d="M14 2v4a2 2 0 0 0 2 2h4" stroke-width="2" stroke-linecap="round"/>
+    <path d="M16 22h2a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v3" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="8" cy="16" r="6" stroke-width="2"/>
+    <path d="M8 14v2.2l1.6 1" stroke-width="2" stroke-linecap="round"/>
+</svg>
+
                                 Paradas No Programadas
                             </label>
                             <input type="text" name="paradas_no_programadas" class="form-input" />
@@ -151,9 +190,12 @@
                         <div class="form-group">
                             <label class="form-label">
                                 <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <circle cx="12" cy="12" r="10" stroke-width="2"/>
-                                    <path d="M12 6v6l4 2" stroke-width="2" stroke-linecap="round"/>
-                                </svg>
+    <path d="M12 6v6l4 2" stroke-width="2" stroke-linecap="round"/>
+    <path d="M20 12v5" stroke-width="2" stroke-linecap="round"/>
+    <path d="M20 21h.01" stroke-width="2" stroke-linecap="round"/>
+    <path d="M21.25 8.2A10 10 0 1 0 16 21.16" stroke-width="2" stroke-linecap="round"/>
+</svg>
+
                                 Tiempo de Parada No Programada
                             </label>
                             <input type="number" name="tiempo_parada_no_programada" step="any" class="form-input" />
@@ -373,37 +415,69 @@
         }
 
         .tableros-form-modal-container .acciones-horas {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
+    display: flex;
+    justify-content: flex-start;
+    gap: 12px;
+    margin-top: 12px;
+}
 
-        .tableros-form-modal-container .acciones-horas button {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 500;
-        }
+.tableros-form-modal-container .btn-hora {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
 
-        .tableros-form-modal-container .btn-seleccionar-todas {
-            background: #2196f3;
-            color: white;
-        }
+.tableros-form-modal-container .btn-hora .icono-boton {
+    width: 18px;
+    height: 18px;
+}
 
-        .tableros-form-modal-container .btn-deseleccionar-todas {
-            background: #ff9800;
-            color: white;
-        }
+/* 🎯 Botón Seleccionar todas */
+.tableros-form-modal-container .btn-seleccionar-todas {
+    background: linear-gradient(135deg, #FF6B35 0%, #e55a2b 100%);
+    color: white;
+}
 
-        .tableros-form-modal-container .btn-seleccionar-todas:hover {
-            background: #1976d2;
-        }
+.tableros-form-modal-container .btn-seleccionar-todas:hover {
+    transform: translateY(-1px);
+    background: linear-gradient(135deg, #ff824f 0%, #f36c3c 100%);
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.25);
+}
 
-        .tableros-form-modal-container .btn-deseleccionar-todas:hover {
-            background: #f57c00;
-        }
+/* ⏰ Botón Seleccionar 8 horas */
+.tableros-form-modal-container .btn-seleccionar-8horas {
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+    color: white;
+}
+
+.tableros-form-modal-container .btn-seleccionar-8horas:hover {
+    transform: translateY(-1px);
+    background: linear-gradient(135deg, #66BB6A 0%, #4CAF50 100%);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.25);
+}
+
+/* 🔸 Botón Deseleccionar */
+.tableros-form-modal-container .btn-deseleccionar-todas {
+    background: linear-gradient(135deg, #f4f4f4 0%, #eaeaea 100%);
+    color: #444;
+    border: 1px solid #ddd;
+}
+
+.tableros-form-modal-container .btn-deseleccionar-todas:hover {
+    background: linear-gradient(135deg, #ffffff 0%, #f3f3f3 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+
 
         .tableros-form-modal-container .form-actions {
             display: flex;
@@ -444,6 +518,18 @@
             background: #cbd5e0;
         }
 
+        /* Estilos para modo oscuro */
+        body.dark-theme .tableros-form-modal-container .btn-seleccionar-8horas {
+            background: linear-gradient(135deg, #66BB6A 0%, #4CAF50 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+        }
+
+        body.dark-theme .tableros-form-modal-container .btn-seleccionar-8horas:hover {
+            background: linear-gradient(135deg, #81C784 0%, #66BB6A 100%);
+            box-shadow: 0 4px 14px rgba(76, 175, 80, 0.4);
+        }
+
         @media (max-width: 768px) {
             .tableros-form-modal-container .form-grid {
                 grid-template-columns: 1fr;
@@ -455,6 +541,30 @@
 
             .tableros-form-modal-container .modal-header {
                 padding: 20px;
+            }
+
+            .tableros-form-modal-container .btn {
+                padding: 10px 18px;
+                font-size: 13px;
+            }
+
+            .tableros-form-modal-container .btn svg {
+                width: 16px;
+                height: 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .tableros-form-modal-container .form-actions {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .tableros-form-modal-container .btn {
+                width: 100%;
+                padding: 10px 16px;
+                font-size: 13px;
+                justify-content: center;
             }
         }
     </style>
@@ -471,9 +581,14 @@
                 const div = document.createElement('div');
                 div.className = 'hora-checkbox';
                 div.innerHTML = `
-                    <input type="checkbox" id="hora${i}" value="${i}" onchange="actualizarHorasSeleccionadas()">
-                    <label for="hora${i}">${horaId}</label>
+                    <input type="checkbox" id="hora${i}" value="${i}">
+                    <label>${horaId}</label>
                 `;
+                div.onclick = function() {
+                    const checkbox = this.querySelector('input[type="checkbox"]');
+                    checkbox.checked = !checkbox.checked;
+                    actualizarHorasSeleccionadas();
+                };
                 selector.appendChild(div);
             }
         }
@@ -524,6 +639,15 @@
             actualizarHorasSeleccionadas();
         }
 
+        function seleccionar8Horas() {
+            const checkboxes = document.querySelectorAll('#horasSelector input[type="checkbox"]');
+            checkboxes.forEach((checkbox, index) => {
+                // Seleccionar solo las primeras 8 horas (índices 0-7)
+                checkbox.checked = index < 8;
+            });
+            actualizarHorasSeleccionadas();
+        }
+
         function closeModal() {
             window.dispatchEvent(new CustomEvent('close-modal', { detail: 'tableros-form' }));
         }
@@ -548,7 +672,7 @@
                     fecha: form.get("fecha"),
                     modulo: form.get("modulo"),
                     orden_produccion: form.get("orden_produccion"),
-                    hora: String(horaNum).padStart(2, '0') + ":00:00",
+                    hora: "HORA " + String(horaNum).padStart(2, '0'),
                     tiempo_ciclo: parseFloat(form.get("tiempo_ciclo")),
                     porcion_tiempo: parseFloat(form.get("porcion_tiempo")),
                     cantidad: form.get("cantidad") ? parseInt(form.get("cantidad")) : null,

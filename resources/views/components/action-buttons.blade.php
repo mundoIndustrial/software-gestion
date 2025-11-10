@@ -4,9 +4,9 @@
         <span x-text="showRecords ? 'Ocultar Registros' : 'Mostrar Registros'"></span>
     </button>
     <button class="show-form-btn" @click="openFormModal()">
-        Formulario
+        Registro Nuevo
     </button>
 </div>
 
 <!-- Espacio adicional -->
-<div class="spacer-section"></div>
+<div class="spacer-section" x-show="!showRecords"></div>

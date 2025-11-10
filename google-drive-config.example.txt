@@ -1,0 +1,12 @@
+# Configuración de Google Drive para Backups
+# Copia estas líneas a tu archivo .env y completa con tus valores
+
+# Ruta al archivo JSON de credenciales de Google Service Account
+GOOGLE_DRIVE_SERVICE_ACCOUNT_FILE=storage/app/google/service-account-credentials.json
+
+# ID de la carpeta de Google Drive donde se guardarán los backups
+# Lo encuentras en la URL de la carpeta: https://drive.google.com/drive/folders/ESTE_ES_EL_ID
+GOOGLE_DRIVE_FOLDER_ID=tu_folder_id_aqui
+
+# Ejemplo:
+# GOOGLE_DRIVE_FOLDER_ID=1a2b3c4d5e6f7g8h9i0j

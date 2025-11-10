@@ -1,0 +1,1093 @@
+/* ============================================
+   BALANCEO RESPONSIVO - MOBILE FIRST
+   ============================================ */
+
+/* Contenedor principal */
+.balanceo-container {
+    padding: 16px;
+}
+
+@media (min-width: 768px) {
+    .balanceo-container {
+        padding: 24px;
+    }
+}
+
+/* Header responsivo */
+.balanceo-header {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+@media (min-width: 768px) {
+    .balanceo-header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+}
+
+.balanceo-header-title {
+    font-size: 18px;
+    margin: 0;
+}
+
+@media (min-width: 768px) {
+    .balanceo-header-title {
+        font-size: 24px;
+    }
+}
+
+/* Botones del header */
+.balanceo-header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.balanceo-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+    .balanceo-btn {
+        padding: 10px 16px;
+        font-size: 13px;
+    }
+}
+
+/* Tabla de operaciones - Mobile */
+.balanceo-table-container {
+    background: var(--color-bg-sidebar);
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    border: 1px solid var(--color-border-hr);
+    box-shadow: 0 1px 3px var(--color-shadow);
+}
+
+@media (min-width: 768px) {
+    .balanceo-table-container {
+        padding: 24px;
+    }
+}
+
+/* Scroll horizontal para tabla en mobile */
+.table-scroll-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0;
+    padding: 0;
+    border-radius: 10px;
+}
+
+@media (min-width: 768px) {
+    .table-scroll-container {
+        margin: 0;
+        padding: 0;
+    }
+}
+
+/* Tabla */
+.balanceo-table {
+    min-width: 900px; /* Ancho mínimo para scroll horizontal */
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+@media (min-width: 1200px) {
+    .balanceo-table {
+        min-width: 100%;
+    }
+}
+
+/* Headers de tabla */
+.balanceo-table th {
+    padding: 8px 6px;
+    font-size: 10px;
+}
+
+@media (min-width: 768px) {
+    .balanceo-table th {
+        padding: 12px 10px;
+        font-size: 12px;
+    }
+}
+
+/* Celdas de tabla */
+.balanceo-table td {
+    padding: 8px 6px;
+    font-size: 12px;
+}
+
+@media (min-width: 768px) {
+    .balanceo-table td {
+        padding: 10px;
+        font-size: 13px;
+    }
+}
+
+/* Botones de acción en tabla */
+.balanceo-table-actions {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+}
+
+.balanceo-table-actions button {
+    padding: 4px 6px;
+}
+
+@media (min-width: 768px) {
+    .balanceo-table-actions button {
+        padding: 6px 8px;
+    }
+}
+
+/* Métricas globales - Mobile First */
+.metricas-container {
+    background: var(--color-bg-sidebar);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid var(--color-border-hr);
+    box-shadow: 0 1px 3px var(--color-shadow);
+}
+
+@media (min-width: 768px) {
+    .metricas-container {
+        padding: 32px;
+        border-radius: 20px;
+    }
+}
+
+/* Header de métricas */
+.metricas-header {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+@media (min-width: 768px) {
+    .metricas-header {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 28px;
+    }
+}
+
+.metricas-title-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.metricas-icon {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+    .metricas-icon {
+        width: 48px;
+        height: 48px;
+    }
+}
+
+.metricas-title {
+    font-size: 18px;
+    margin: 0;
+}
+
+@media (min-width: 768px) {
+    .metricas-title {
+        font-size: 24px;
+    }
+}
+
+/* Tabla de métricas */
+.metricas-table-wrapper {
+    background: var(--color-bg-primary);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid var(--color-border-hr);
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+    .metricas-table-wrapper {
+        padding: 20px;
+        max-width: 600px;
+    }
+}
+
+.metricas-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.metricas-table td {
+    padding: 8px 0;
+    font-size: 12px;
+}
+
+@media (min-width: 768px) {
+    .metricas-table td {
+        padding: 10px 0;
+        font-size: 13px;
+    }
+}
+
+/* Inputs en métricas */
+.metricas-input {
+    width: 60px;
+    padding: 4px 8px;
+    font-size: 13px;
+}
+
+@media (min-width: 768px) {
+    .metricas-input {
+        width: 70px;
+        padding: 6px 10px;
+        font-size: 15px;
+    }
+}
+
+/* Valores destacados */
+.metricas-value-highlight {
+    font-size: 16px;
+}
+
+@media (min-width: 768px) {
+    .metricas-value-highlight {
+        font-size: 18px;
+    }
+}
+
+/* Cards de métricas (alternativa a tabla) */
+.metricas-cards {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+}
+
+@media (min-width: 640px) {
+    .metricas-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .metricas-cards {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.metrica-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+@media (min-width: 768px) {
+    .metrica-card {
+        padding: 20px;
+    }
+}
+
+.metrica-card-label {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+@media (min-width: 768px) {
+    .metrica-card-label {
+        font-size: 13px;
+    }
+}
+
+.metrica-card-value {
+    margin: 6px 0 0 0;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+@media (min-width: 768px) {
+    .metrica-card-value {
+        margin: 8px 0 0 0;
+        font-size: 32px;
+    }
+}
+
+/* Modal responsivo */
+.balanceo-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 16px;
+}
+
+.balanceo-modal-content {
+    background: var(--color-bg-sidebar);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+@media (min-width: 768px) {
+    .balanceo-modal-content {
+        border-radius: 16px;
+    }
+}
+
+/* Botón flotante para agregar (mobile) */
+.fab-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #ff9d58;
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(255, 157, 88, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 40;
+    transition: all 0.3s;
+}
+
+.fab-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(255, 157, 88, 0.5);
+}
+
+@media (min-width: 768px) {
+    .fab-button {
+        display: none; /* Ocultar en desktop, usar botón normal */
+    }
+}
+
+/* Ocultar botón normal en mobile */
+.desktop-add-button {
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .desktop-add-button {
+        display: flex;
+    }
+}
+
+/* Indicador de scroll */
+.scroll-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    background: rgba(255, 157, 88, 0.1);
+    border-radius: 6px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    color: #ff9d58;
+}
+
+@media (min-width: 1200px) {
+    .scroll-indicator {
+        display: none;
+    }
+}
+
+/* Ajustes para inputs editables en mobile */
+.balanceo-table input[type="text"],
+.balanceo-table input[type="number"],
+.balanceo-table select {
+    font-size: 14px; /* Evitar zoom en iOS */
+    min-height: 32px; /* Touch-friendly */
+}
+
+/* Mejoras de accesibilidad táctil */
+@media (max-width: 767px) {
+    .balanceo-table button,
+    .balanceo-btn {
+        min-height: 44px; /* Tamaño mínimo táctil recomendado */
+        min-width: 44px;
+    }
+}
+
+/* Mostrar/Ocultar en mobile */
+.hide-mobile {
+    display: inline;
+}
+
+.show-mobile {
+    display: none;
+}
+
+@media (max-width: 767px) {
+    .hide-mobile {
+        display: none;
+    }
+    
+    .show-mobile {
+        display: inline;
+    }
+}
+
+/* Header de tabla de operaciones responsivo */
+.operaciones-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+    .operaciones-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .operaciones-header h2 {
+        font-size: 16px !important;
+    }
+    
+    .operaciones-header button {
+        width: 100%;
+        border-radius: 8px !important;
+        height: 48px !important;
+    }
+}
+
+/* Botones de copiar columna - ocultar en mobile */
+@media (max-width: 767px) {
+    .copy-column-btn {
+        display: none !important;
+    }
+}
+
+/* Ajustar tamaño de iconos en mobile */
+@media (max-width: 640px) {
+    .balanceo-table th .material-symbols-rounded {
+        font-size: 12px !important;
+    }
+    
+    .balanceo-table td .material-symbols-rounded {
+        font-size: 14px !important;
+    }
+}
+
+/* Mejorar el scroll horizontal en mobile */
+@media (max-width: 767px) {
+    .table-scroll-container {
+        /* Indicador visual de scroll */
+        position: relative;
+        box-shadow: inset -10px 0 10px -10px rgba(255, 157, 88, 0.3);
+    }
+    
+    /* Indicador de scroll más visible */
+    .balanceo-table-container::before {
+        content: '← Desliza para ver más →';
+        display: block;
+        text-align: center;
+        background: rgba(255, 157, 88, 0.15);
+        color: #ff9d58;
+        padding: 8px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        margin-bottom: 12px;
+        border: 1px dashed rgba(255, 157, 88, 0.3);
+    }
+}
+
+/* Inputs editables más grandes en mobile */
+@media (max-width: 767px) {
+    .balanceo-table input[type="text"],
+    .balanceo-table input[type="number"],
+    .balanceo-table select {
+        font-size: 16px !important; /* Evitar zoom en iOS */
+        min-height: 36px !important;
+        padding: 6px 8px !important;
+    }
+}
+
+/* Botón de eliminar más grande en mobile */
+@media (max-width: 767px) {
+    .balanceo-table .delete-btn {
+        padding: 8px 10px !important;
+        min-width: 44px;
+        min-height: 44px;
+    }
+}
+
+/* Ajustar columnas en tablets */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .balanceo-table {
+        min-width: 800px;
+    }
+    
+    .balanceo-table th,
+    .balanceo-table td {
+        padding: 10px 8px !important;
+        font-size: 12px !important;
+    }
+}
+
+/* Mejorar contraste en modo oscuro para inputs editables */
+html[data-theme="dark"] .balanceo-table input,
+html[data-theme="dark"] .balanceo-table select {
+    background: rgba(255, 157, 88, 0.2) !important;
+    color: var(--color-text-primary) !important;
+}
+
+/* Scroll suave en la tabla */
+.table-scroll-container {
+    scroll-behavior: smooth;
+}
+
+/* Mejorar padding del contenedor en mobile */
+@media (max-width: 640px) {
+    .balanceo-table-container {
+        padding: 8px !important;
+    }
+}
+
+/* ============================================
+   HEADER DE PRENDA RESPONSIVO
+   ============================================ */
+
+.prenda-header-container {
+    background: var(--color-bg-sidebar);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 24px;
+    border: 1px solid var(--color-border-hr);
+    box-shadow: 0 1px 3px var(--color-shadow);
+}
+
+@media (max-width: 640px) {
+    .prenda-header-container {
+        padding: 16px;
+    }
+}
+
+.prenda-header-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 16px;
+}
+
+@media (max-width: 768px) {
+    .prenda-header-main {
+        flex-direction: column-reverse;
+        align-items: stretch;
+    }
+}
+
+.prenda-header-content {
+    flex: 1;
+}
+
+.prenda-header-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+    .prenda-header-top {
+        gap: 8px;
+    }
+}
+
+.prenda-header-title {
+    margin: 0;
+    font-size: 24px;
+    color: var(--color-text-primary);
+    font-weight: 700;
+    flex: 1 1 auto;
+    min-width: 0;
+    word-break: break-word;
+}
+
+@media (max-width: 640px) {
+    .prenda-header-title {
+        font-size: 20px;
+        flex-basis: 100%;
+        order: 2;
+    }
+}
+
+.prenda-header-back-btn {
+    color: #ff9d58;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+    padding: 8px;
+    border-radius: 8px;
+    background: rgba(255, 157, 88, 0.1);
+    flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+    .prenda-header-back-btn {
+        order: 1;
+    }
+}
+
+.prenda-header-badge {
+    background: #ff9d58;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    text-transform: uppercase;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(255, 157, 88, 0.3);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+    .prenda-header-badge {
+        order: 3;
+        padding: 4px 10px;
+        font-size: 10px;
+    }
+}
+
+.prenda-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+    .prenda-header-actions {
+        order: 4;
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
+.prenda-estado-btn {
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    padding: 8px 14px;
+    border-radius: 20px;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+    .prenda-estado-btn {
+        font-size: 10px;
+        padding: 6px 10px;
+        gap: 4px;
+    }
+    
+    .prenda-estado-btn .material-symbols-rounded {
+        font-size: 14px !important;
+    }
+    
+    .prenda-estado-btn span:not(.material-symbols-rounded) {
+        display: none;
+    }
+}
+
+.prenda-action-btn {
+    color: var(--color-text-primary);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+    padding: 8px;
+    border-radius: 8px;
+    background: rgba(255, 157, 88, 0.1);
+    border: none;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+    .prenda-action-btn {
+        padding: 10px;
+        min-width: 44px;
+        min-height: 44px;
+        justify-content: center;
+    }
+}
+
+.prenda-delete-btn {
+    background: rgba(245, 87, 108, 0.1);
+}
+
+.prenda-header-image {
+    width: 120px;
+    height: 120px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(255, 157, 88, 0.3);
+    border: 2px solid rgba(255, 157, 88, 0.3);
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .prenda-header-image {
+        width: 100%;
+        height: 200px;
+        max-width: 300px;
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 640px) {
+    .prenda-header-image {
+        height: 160px;
+    }
+}
+
+.prenda-header-info {
+    margin: 0;
+    color: var(--color-text-placeholder);
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+@media (max-width: 640px) {
+    .prenda-header-info {
+        font-size: 13px;
+    }
+}
+
+/* ============================================
+   MÉTRICAS GLOBALES RESPONSIVO
+   ============================================ */
+
+.metricas-globales-container {
+    background: var(--color-bg-sidebar);
+    padding: 24px;
+    border-radius: 20px;
+    border: 1px solid var(--color-border-hr);
+    box-shadow: 0 1px 3px var(--color-shadow);
+}
+
+@media (max-width: 640px) {
+    .metricas-globales-container {
+        padding: 16px;
+        border-radius: 12px;
+    }
+}
+
+.metricas-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .metricas-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+.metricas-title-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+@media (max-width: 640px) {
+    .metricas-title-section {
+        gap: 8px;
+    }
+}
+
+.metricas-icon-box {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #ff9d58 0%, #ff7b3d 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(255, 157, 88, 0.3);
+    flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+    .metricas-icon-box {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .metricas-icon-box svg {
+        width: 22px !important;
+        height: 22px !important;
+    }
+}
+
+.metricas-title-text {
+    margin: 0;
+    font-size: 24px;
+    color: var(--color-text-primary);
+    font-weight: 700;
+}
+
+@media (max-width: 768px) {
+    .metricas-title-text {
+        font-size: 18px;
+    }
+}
+
+@media (max-width: 640px) {
+    .metricas-title-text {
+        font-size: 16px;
+    }
+}
+
+.metricas-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .metricas-buttons {
+        width: 100%;
+    }
+}
+
+.metricas-toggle-btn {
+    background: rgba(255, 157, 88, 0.1);
+    border: 1px solid rgba(255, 157, 88, 0.3);
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .metricas-toggle-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 12px 14px;
+    }
+}
+
+@media (max-width: 640px) {
+    .metricas-toggle-btn {
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+    
+    .metricas-toggle-btn .material-symbols-rounded {
+        font-size: 18px !important;
+    }
+    
+    .metricas-toggle-btn span:not(.material-symbols-rounded) {
+        font-size: 11px !important;
+    }
+}
+
+.metricas-table-wrapper {
+    background: var(--color-bg-primary);
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid var(--color-border-hr);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+@media (max-width: 640px) {
+    .metricas-table-wrapper {
+        padding: 12px;
+        border-radius: 6px;
+    }
+}
+
+.metricas-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.metricas-table tr {
+    border-bottom: 1px solid rgba(255, 157, 88, 0.15);
+}
+
+.metricas-table td {
+    padding: 10px 0;
+    font-size: 13px;
+}
+
+@media (max-width: 640px) {
+    .metricas-table td {
+        padding: 8px 0;
+        font-size: 12px;
+    }
+}
+
+.metricas-table-label {
+    color: var(--color-text-placeholder);
+    font-weight: 500;
+    width: 60%;
+}
+
+@media (max-width: 640px) {
+    .metricas-table-label {
+        width: 55%;
+        font-size: 11px;
+    }
+}
+
+.metricas-table-value {
+    text-align: right;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    font-size: 15px;
+    width: 40%;
+}
+
+@media (max-width: 640px) {
+    .metricas-table-value {
+        width: 45%;
+        font-size: 13px;
+    }
+}
+
+.metricas-input {
+    width: 70px;
+    padding: 6px 10px;
+    border: 1px solid rgba(255, 157, 88, 0.3);
+    border-radius: 6px;
+    text-align: center;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    background: rgba(255, 157, 88, 0.1);
+    font-size: 15px;
+}
+
+@media (max-width: 640px) {
+    .metricas-input {
+        width: 60px;
+        padding: 6px 8px;
+        font-size: 14px;
+    }
+}
+
+.metricas-highlight-row {
+    background: rgba(255, 157, 88, 0.1);
+    border-bottom: 1px solid rgba(255, 157, 88, 0.2);
+}
+
+.metricas-highlight-label {
+    padding: 12px 10px;
+    color: #ff9d58;
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+}
+
+@media (max-width: 640px) {
+    .metricas-highlight-label {
+        padding: 10px 8px;
+        font-size: 12px;
+    }
+}
+
+.metricas-highlight-value {
+    padding: 12px 10px;
+    text-align: right;
+    font-weight: 700;
+    color: #ff9d58;
+    font-size: 17px;
+}
+
+@media (max-width: 640px) {
+    .metricas-highlight-value {
+        padding: 10px 8px;
+        font-size: 15px;
+    }
+}
+
+.metricas-main-value {
+    font-weight: 700;
+    color: #ff9d58;
+    font-size: 18px;
+}
+
+@media (max-width: 640px) {
+    .metricas-main-value {
+        font-size: 16px;
+    }
+}
+
+.metricas-note {
+    margin-top: 16px;
+    padding: 12px;
+    background: rgba(255, 157, 88, 0.05);
+    border-radius: 6px;
+    border-left: 3px solid #ff9d58;
+}
+
+@media (max-width: 640px) {
+    .metricas-note {
+        margin-top: 12px;
+        padding: 10px;
+    }
+    
+    .metricas-note p {
+        font-size: 11px !important;
+    }
+}

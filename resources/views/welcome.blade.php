@@ -4,6 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Mundo Industrial</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" href="{{ asset('mundo_icon.png') }}" type="image/png">
+    <link rel="apple-touch-icon" href="{{ asset('mundo_icon.png') }}">
+    
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-900 text-white min-h-screen relative overflow-hidden font-sans">
@@ -31,27 +36,27 @@
         </div>
 
         <!-- Contenido central -->
-        <div class="relative z-10 flex flex-col items-center justify-center text-center px-6 sm:px-16 py-16 md:w-1/2">
+        <div class="relative z-10 flex flex-col items-center justify-center text-center px-6 sm:px-16 py-16 md:w-1/2 mt-24 sm:mt-32 md:mt-40">
             
             <!-- Logo separado con más margen -->
-            <div class="mb-16 sm:mb-20 animate-fadeIn">
-                <img src="{{ asset('logo.png') }}" alt="Mundo Industrial" class="h-24 sm:h-32 w-auto drop-shadow-2xl">
+            <div class="mb-8 sm:mb-10 md:mb-12 animate-fadeIn">
+                <img src="{{ asset('logo.png') }}" alt="Mundo Industrial" class="h-16 sm:h-20 md:h-24 lg:h-28 w-auto drop-shadow-2xl">
             </div>
 
             <!-- Contenido de texto -->
-            <div class="space-y-6 animate-slideIn">
-                <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white drop-shadow-2xl leading-tight">
+            <div class="space-y-4 sm:space-y-5 animate-slideIn">
+                <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-white drop-shadow-2xl leading-tight">
                     Bienvenido al <br>
                     <span class="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-500">
                         Sistema de Gestión
                     </span>
                     <br>
-                    <span class="text-3xl sm:text-4xl md:text-5xl">Mundo Industrial</span>
+                    <span class="text-xl sm:text-2xl md:text-3xl lg:text-4xl">Mundo Industrial</span>
                 </h1>
 
-                <div class="h-1 w-24 bg-gradient-to-r from-orange-400 to-orange-600 mx-auto rounded-full animate-pulse"></div>
+                <div class="h-1 w-20 bg-gradient-to-r from-orange-400 to-orange-600 mx-auto rounded-full animate-pulse"></div>
 
-                <p class="text-base sm:text-lg md:text-xl text-gray-200 drop-shadow-lg max-w-xl mx-auto leading-relaxed px-4">
+                <p class="text-sm sm:text-base md:text-lg text-gray-200 drop-shadow-lg max-w-lg mx-auto leading-relaxed px-4">
                     Somos líderes en distribución de elementos de protección personal y proveedores directos de marcas certificadas en seguridad industrial.
                 </p>
 

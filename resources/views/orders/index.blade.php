@@ -3,58 +3,10 @@
 @section('content')
     <!-- Agregar referencia a FontAwesome para iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
-        integrity="sha512-dyZt+6Q6VbUaz2+miFj7XwjlzAIXazhbug+DUFc1l1b/HFB70dNDO7xjOIKPQ4j/wZUp3NEiqPFwAckj4iigcw=="
+        integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="{{ asset('css/modern-table.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/dropdown-styles.css') }}">
-    <style>
-        .table-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: var(--table-width, 100%);
-            max-width: var(--table-width, 100%);
-            margin-bottom: 10px;
-            padding: 10px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .table-actions {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .clear-filters-btn,
-        .add-order-btn {
-            padding: 8px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.3s;
-        }
-
-        .clear-filters-btn {
-            background-color: #6c757d;
-            color: white;
-        }
-
-        .clear-filters-btn:hover {
-            background-color: #5a6268;
-        }
-
-        .add-order-btn {
-            background-color: #28a745;
-            color: white;
-            font-weight: bold;
-        }
-
-        .add-order-btn:hover {
-            background-color: #218838;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ asset('css/orders styles/modern-table.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/orders styles/dropdown-styles.css') }}">
 
     <div class="table-container">
         <div class="table-header" id="tableHeader">
@@ -66,7 +18,7 @@
             <div class="search-container">
                 <div class="search-input-wrapper">
                     <i class="fas fa-search search-icon"></i>
-                    <input type="text" id="buscarOrden" placeholder="Buscar por número de orden..." class="search-input">
+                    <input type="text" id="buscarOrden" placeholder="Buscar por pedido o cliente..." class="search-input">
                 </div>
             </div>
 
@@ -80,20 +32,18 @@
                     <thead class="table-head">
                         @if($ordenes->isNotEmpty())
                             <tr>
+                                <th class="table-header-cell acciones-column">
+                                    <div class="header-content">
+                                        <span class="header-text">Acciones</span>
+                                    </div>
+                                </th>
                                 @foreach(array_keys($ordenes->first()->getAttributes()) as $index => $columna)
                                     @if($columna !== 'id' && $columna !== 'tiempo')
-                                        @if($columna === 'estado')
-                                            <th class="table-header-cell acciones-column">
-                                                <div class="header-content">
-                                                    <span class="header-text">Acciones</span>
-                                                </div>
-                                            </th>
-                                        @endif
-                                        <th class="table-header-cell" data-column="{{ $index }}">
+                                        <th class="table-header-cell" data-column="{{ $columna }}">
                                             <div class="header-content">
                                                 <span class="header-text">{{ ucfirst(str_replace('_', ' ', $columna)) }}</span>
                                                 @if($columna !== 'acciones')
-                                                    <button class="filter-btn" data-column="{{ $index }}" data-column-name="{{ $columna }}">
+                                                    <button class="filter-btn" data-column="{{ $columna }}" data-column-name="{{ $columna }}">
                                                         <i class="fas fa-filter"></i>
                                                     </button>
                                                 @endif
@@ -130,24 +80,22 @@
                                     }
                                 @endphp
                                 <tr class="table-row {{ $conditionalClass }}" data-order-id="{{ $orden->pedido }}">
+                                    <td class="table-cell acciones-column">
+                                        <div class="cell-content">
+                                            <button class="action-btn delete-btn" onclick="deleteOrder({{ $orden->pedido }})"
+                                                title="Eliminar orden"
+                                                style="background-color:#f84c4cff ; color: white; border: none; padding: 5px 10px; margin-right: 5px; border-radius: 4px; cursor: pointer;">
+                                                Borrar
+                                            </button>
+                                            <button class="action-btn detail-btn" onclick="viewDetail({{ $orden->pedido }})"
+                                                title="Ver detalle"
+                                                style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                                                Ver
+                                            </button>
+                                        </div>
+                                    </td>
                                     @foreach($orden->getAttributes() as $key => $valor)
                                         @if($key !== 'id' && $key !== 'tiempo')
-                                            @if($key === 'estado')
-                                                <td class="table-cell acciones-column">
-                                                    <div class="cell-content">
-                                                        <button class="action-btn delete-btn" onclick="deleteOrder({{ $orden->pedido }})"
-                                                            title="Eliminar orden"
-                                                            style="background-color:#f84c4cff ; color: white; border: none; padding: 5px 10px; margin-right: 5px; border-radius: 4px; cursor: pointer;">
-                                                            Borrar
-                                                        </button>
-                                                        <button class="action-btn detail-btn" onclick="viewDetail({{ $orden->pedido }})"
-                                                            title="Ver detalle"
-                                                            style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
-                                                            Ver
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            @endif
                                             <td class="table-cell" data-column="{{ $key }}">
                                                 <div class="cell-content" title="{{ $valor }}">
                                                     @if($key === 'estado')
@@ -185,15 +133,36 @@
                 </table>
             </div>
 
-            <div class="table-pagination"
-                style="position: relative; z-index: 1; background: white; padding: 20px 0; border-top: 1px solid #e2e8f0;">
+            <div class="table-pagination" id="tablePagination">
                 <div class="pagination-info">
-                    <span>Mostrando {{ $ordenes->firstItem() }}-{{ $ordenes->lastItem() }} de {{ $ordenes->total() }}
-                        registros</span>
+                    <span id="paginationInfo">Mostrando {{ $ordenes->firstItem() }}-{{ $ordenes->lastItem() }} de {{ $ordenes->total() }} registros</span>
                 </div>
-                <div class="pagination-controls">
+                <div class="pagination-controls" id="paginationControls">
                     @if($ordenes->hasPages())
-                        {{ $ordenes->appends(request()->query())->links() }}
+                        <button class="pagination-btn" data-page="1" {{ $ordenes->currentPage() == 1 ? 'disabled' : '' }}>
+                            <i class="fas fa-angle-double-left"></i>
+                        </button>
+                        <button class="pagination-btn" data-page="{{ $ordenes->currentPage() - 1 }}" {{ $ordenes->currentPage() == 1 ? 'disabled' : '' }}>
+                            <i class="fas fa-angle-left"></i>
+                        </button>
+                        
+                        @php
+                            $start = max(1, $ordenes->currentPage() - 2);
+                            $end = min($ordenes->lastPage(), $ordenes->currentPage() + 2);
+                        @endphp
+                        
+                        @for($i = $start; $i <= $end; $i++)
+                            <button class="pagination-btn page-number {{ $i == $ordenes->currentPage() ? 'active' : '' }}" data-page="{{ $i }}">
+                                {{ $i }}
+                            </button>
+                        @endfor
+                        
+                        <button class="pagination-btn" data-page="{{ $ordenes->currentPage() + 1 }}" {{ $ordenes->currentPage() == $ordenes->lastPage() ? 'disabled' : '' }}>
+                            <i class="fas fa-angle-right"></i>
+                        </button>
+                        <button class="pagination-btn" data-page="{{ $ordenes->lastPage() }}" {{ $ordenes->currentPage() == $ordenes->lastPage() ? 'disabled' : '' }}>
+                            <i class="fas fa-angle-double-right"></i>
+                        </button>
                     @endif
                 </div>
             </div>
@@ -247,9 +216,10 @@
             <div class="cell-modal-body">
                 <textarea id="cellEditInput" class="cell-edit-input" rows="5"
                     style="width: 100%; text-align: left; padding: 8px; border: 1px solid #ccc; border-radius: 4px; resize: vertical;"></textarea>
+                <small id="cellEditHint" style="display: block; margin-top: 8px; color: #666; font-style: italic;"></small>
             </div>
             <div class="cell-modal-footer">
-                <button id="saveCellEdit" class="btn btn-primary">Guardar (Enter)</button>
+                <button id="saveCellEdit" class="btn btn-primary">Guardar</button>
                 <button id="cancelCellEdit" class="btn btn-secondary">Cancelar</button>
             </div>
         </div>
@@ -263,579 +233,50 @@
         window.modalContext = '{{ $modalContext }}';
         window.fetchUrl = '{{ $fetchUrl }}';
         window.updateUrl = '{{ $updateUrl }}';
-
-
-
-        // Función para recargar la tabla de pedidos
-        async function recargarTablaPedidos() {
-            try {
-                const response = await fetch(window.fetchUrl, {
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
-                if (!response.ok) {
-                    console.error('Error al cargar datos de pedidos:', response.statusText);
-                    return;
-                }
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    console.error('Respuesta no es JSON:', await response.text());
-                    return;
-                }
-                const data = await response.json();
-
-                // Reconstruir cuerpo de la tabla
-                const tbody = document.getElementById('tablaOrdenesBody');
-                if (!tbody) {
-                    console.error('No se encontró el elemento tbody para la tabla de pedidos');
-                    return;
-                }
-                tbody.innerHTML = '';
-
-                if (data.orders.length === 0) {
-                    tbody.innerHTML = `
-                    <tr class="table-row">
-                        <td colspan="51" class="no-results" style="text-align: center; padding: 20px; color: #6c757d;">
-                            No hay resultados que coincidan con los filtros aplicados.
-                        </td>
-                    </tr>
-                `;
-                } else {
-                    data.orders.forEach(orden => {
-                        const totalDias = data.totalDiasCalculados[orden.pedido] ?? 0;
-                        let conditionalClass = '';
-                        if (orden.estado === 'Entregado') {
-                            conditionalClass = 'row-delivered';
-                        } else if (totalDias > 14 && totalDias < 20) {
-                            conditionalClass = 'row-warning';
-                        } else if (totalDias === 20) {
-                            conditionalClass = 'row-danger-light';
-                        } else if (totalDias > 20) {
-                            conditionalClass = 'row-secondary';
-                        }
-
-                        const tr = document.createElement('tr');
-                        tr.className = `table-row ${conditionalClass}`;
-                        tr.dataset.orderId = orden.pedido;
-
-                        for (const [key, valor] of Object.entries(orden)) {
-                            if (key === 'id' || key === 'tiempo') continue;
-
-                            const td = document.createElement('td');
-                            td.className = 'table-cell';
-                            td.dataset.column = key;
-
-                            const div = document.createElement('div');
-                            div.className = 'cell-content';
-                            div.title = valor;
-
-                            if (key === 'estado') {
-                                // Add Acciones column before estado
-                                const accionesTd = document.createElement('td');
-                                accionesTd.className = 'table-cell acciones-column';
-                                accionesTd.style.display = document.querySelector('.acciones-column')?.style.display || 'none';
-                                const accionesDiv = document.createElement('div');
-                                accionesDiv.className = 'cell-content';
-                                accionesDiv.innerHTML = `
-                                <button class="action-btn delete-btn" onclick="deleteOrder(${orden.pedido})" title="Eliminar orden">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                                <button class="action-btn detail-btn" onclick="viewDetail(${orden.pedido})" title="Ver detalle">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                            `;
-                                accionesTd.appendChild(accionesDiv);
-                                tr.appendChild(accionesTd);
-
-                                const select = document.createElement('select');
-                                select.className = 'estado-dropdown';
-                                select.dataset.id = orden.pedido;
-                                select.dataset.value = valor;
-
-                                ['Entregado', 'En Ejecución', 'No iniciado', 'Anulada'].forEach(estado => {
-                                    const option = document.createElement('option');
-                                    option.value = estado;
-                                    option.textContent = estado;
-                                    if (estado === valor) option.selected = true;
-                                    select.appendChild(option);
-                                });
-                                div.appendChild(select);
-                            } else if (key === 'area') {
-                                const select = document.createElement('select');
-                                select.className = 'area-dropdown';
-                                select.dataset.id = orden.pedido;
-                                select.dataset.value = valor;
-
-                                data.areaOptions.forEach(areaOption => {
-                                    const option = document.createElement('option');
-                                    option.value = areaOption;
-                                    option.textContent = areaOption;
-                                    if (areaOption === valor) option.selected = true;
-                                    select.appendChild(option);
-                                });
-                                div.appendChild(select);
-                            } else {
-                                const span = document.createElement('span');
-                                span.className = 'cell-text';
-                                if (key === 'total_de_dias_') {
-                                    span.textContent = totalDias;
-                                } else {
-                                    span.textContent = valor;
-                                }
-                                div.appendChild(span);
-                            }
-
-                            td.appendChild(div);
-                            tr.appendChild(td);
-                        }
-
-                        tbody.appendChild(tr);
-                    });
-                }
-
-                // Actualizar paginación
-                const paginationContainer = document.getElementById('paginationContainer');
-                if (paginationContainer) {
-                    paginationContainer.innerHTML = data.pagination_html;
-                }
-
-                // Re-inicializar dropdowns y eventos
-                initializeStatusDropdowns();
-                initializeAreaDropdowns();
-
-            } catch (error) {
-                console.error('Error al recargar tabla de pedidos:', error);
-            }
-        }
-
-        function initializeStatusDropdowns() {
-            document.querySelectorAll('.estado-dropdown').forEach(dropdown => {
-                // Establecer color inicial basado en el valor seleccionado
-                dropdown.setAttribute('data-value', dropdown.value);
-
-                // Limpiar eventos anteriores para evitar duplicados
-                dropdown.removeEventListener('change', handleStatusChange);
-
-                // Cambiar color cuando se selecciona una nueva opción
-                dropdown.addEventListener('change', handleStatusChange);
-            });
-        }
-
-        function initializeAreaDropdowns() {
-            document.querySelectorAll('.area-dropdown').forEach(dropdown => {
-                // Establecer color inicial basado en el valor seleccionado
-                dropdown.setAttribute('data-value', dropdown.value);
-
-                // Limpiar eventos anteriores para evitar duplicados
-                dropdown.removeEventListener('change', handleAreaChange);
-
-                // Cambiar color cuando se selecciona una nueva opción
-                dropdown.addEventListener('change', handleAreaChange);
-            });
-        }
-
-        // Manejador de cambio de estado
-        function handleStatusChange() {
-            this.setAttribute('data-value', this.value);
-            updateOrderStatus(this.dataset.id, this.value);
-        }
-
-        // Manejador de cambio de area
-        function handleAreaChange() {
-            this.setAttribute('data-value', this.value);
-            updateOrderArea(this.dataset.id, this.value);
-        }
-
-        // Función para actualizar estado en la base de datos
-        function updateOrderStatus(orderId, newStatus) {
-            fetch(`${window.updateUrl}/${orderId}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify({ estado: newStatus })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        console.log('Estado actualizado correctamente');
-                        // Actualizar color de la fila dinámicamente
-                        updateRowColor(orderId, newStatus);
-                        // El broadcast se maneja automáticamente por el evento OrderStatusUpdated
-                    } else {
-                        console.error('Error al actualizar el estado:', data.message);
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        // Función para actualizar area en la base de datos
-        function updateOrderArea(orderId, newArea) {
-            fetch(`${window.updateUrl}/${orderId}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify({ area: newArea })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        console.log('Area actualizada correctamente');
-                        // Actualizar las celdas con las fechas actualizadas según la respuesta del servidor
-                        if (data.updated_fields) {
-                            const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
-                            if (row) {
-                                for (const [field, date] of Object.entries(data.updated_fields)) {
-                                    const cell = row.querySelector(`td[data-column="${field}"] .cell-text`);
-                                    if (cell) {
-                                        cell.textContent = date;
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        console.error('Error al actualizar el area:', data.message);
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-        }
-
-        // Función para actualizar el color de la fila basado en estado y total_dias
-        function updateRowColor(orderId, newStatus) {
-            const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
-            if (!row) return;
-
-            // Obtener total_dias de la celda correspondiente (columna 'total_de_dias_')
-            const totalDiasCell = row.querySelector('td[data-column="total_de_dias_"] .cell-text');
-            let totalDias = 0;
-            if (totalDiasCell && totalDiasCell.textContent.trim() !== 'N/A') {
-                const text = totalDiasCell.textContent.trim();
-                totalDias = parseInt(text) || 0;
-            }
-
-            let conditionalClass = '';
-            if (newStatus === 'Entregado') {
-                conditionalClass = 'row-delivered';
-            } else if (totalDias > 14 && totalDias < 20) {
-                conditionalClass = 'row-warning';
-            } else if (totalDias === 20) {
-                conditionalClass = 'row-danger-light';
-            } else if (totalDias > 20) {
-                conditionalClass = 'row-secondary';
-            }
-
-            // Remover clases anteriores y agregar la nueva
-            row.classList.remove('row-delivered', 'row-warning', 'row-danger-light', 'row-secondary');
-            if (conditionalClass) {
-                row.classList.add(conditionalClass);
-            }
-        }
-
-        // Ejecutar en diferentes momentos para asegurar que funcione
-        document.addEventListener('DOMContentLoaded', function () {
-            initializeStatusDropdowns();
-            initializeAreaDropdowns();
-        });
-        window.addEventListener('load', function () {
-            initializeStatusDropdowns();
-            initializeAreaDropdowns();
-        });
-
-        // Observer para detectar cambios dinámicos en la tabla
-        if (typeof MutationObserver !== 'undefined') {
-
-            const observer = new MutationObserver(function (mutations) {
-                mutations.forEach(function (mutation) {
-                    if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                        // Reinicializar si se agregan nuevos elementos
-                        setTimeout(function () {
-                            initializeStatusDropdowns();
-                            initializeAreaDropdowns();
-                        }, 100);
-                    }
-                });
-            });
-
-            // Observar cambios en la tabla
-            const tableContainer = document.querySelector('#tablaOrdenes');
-            if (tableContainer) {
-                observer.observe(tableContainer, {
-                    childList: true,
-                    subtree: true
-                });
-            }
-        }
-
-        // Función para eliminar orden
-        function deleteOrder(pedido) {
-            if (confirm(`¿Estás seguro de que deseas eliminar la orden ${pedido}? Esto eliminará todos los registros relacionados.`)) {
-                fetch(`${window.fetchUrl}/${pedido}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    }
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            alert('Orden eliminada correctamente');
-                            recargarTablaPedidos(); // Recargar la tabla
-                        } else {
-                            alert('Error al eliminar la orden: ' + data.message);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        alert('Error al eliminar la orden');
-                    });
-            }
-        }
-
-        // Función para ver detalle
-        async function viewDetail(pedido) {
-            try {
-                const response = await fetch(`${window.fetchUrl}/${pedido}`);
-                if (!response.ok) throw new Error('Error fetching order');
-                const order = await response.json();
-                const fechaCreacion = new Date(order.fecha_de_creacion_de_orden);
-                const day = fechaCreacion.getDate().toString().padStart(2, '0');
-                const month = fechaCreacion.toLocaleDateString('es-ES', { month: 'short' }).toUpperCase();
-                const year = fechaCreacion.getFullYear().toString().slice(-2);
-                const orderDate = document.getElementById('order-date');
-                if (orderDate) {
-                    const dayBox = orderDate.querySelector('.day-box');
-                    const monthBox = orderDate.querySelector('.month-box');
-                    const yearBox = orderDate.querySelector('.year-box');
-                    if (dayBox) dayBox.textContent = day;
-                    if (monthBox) monthBox.textContent = month;
-                    if (yearBox) yearBox.textContent = year;
-                }
-                const pedidoDiv = document.getElementById('order-pedido');
-                if (pedidoDiv) {
-                    pedidoDiv.textContent = `N° ${pedido}`;
-                }
-                const asesoraValue = document.getElementById('asesora-value');
-                if (asesoraValue) {
-                    asesoraValue.textContent = order.asesora || '';
-                }
-                const formaPagoValue = document.getElementById('forma-pago-value');
-                if (formaPagoValue) {
-                    formaPagoValue.textContent = order.forma_de_pago || '';
-                }
-                const clienteValue = document.getElementById('cliente-value');
-                if (clienteValue) {
-                    clienteValue.textContent = order.cliente || '';
-                }
-
-                const encargadoValue = document.getElementById('encargado-value');
-                if (encargadoValue) {
-                    encargadoValue.textContent = order.encargado_orden || '';
-                }
-
-                const prendasEntregadasValue = document.getElementById('prendas-entregadas-value');
-                if (prendasEntregadasValue) {
-                    const totalEntregado = order.total_entregado || 0;
-                    const totalCantidad = order.total_cantidad || 0;
-                    prendasEntregadasValue.textContent = `${totalEntregado} de ${totalCantidad}`;
-                }
-
-                const verEntregasLink = document.getElementById('ver-entregas');
-                // Remover el listener anterior si existe
-                if (verEntregasLink._verEntregasHandler) {
-                    verEntregasLink.removeEventListener('click', verEntregasLink._verEntregasHandler);
-                }
-                // Definir el nuevo handler
-                verEntregasLink._verEntregasHandler = async (e) => {
-                    e.preventDefault();
-                    if (verEntregasLink.textContent.trim() === 'VER ENTREGAS') {
-                        try {
-                            const response = await fetch(`${window.fetchUrl}/${pedido}/entregas`);
-                            const data = await response.json();
-                            const tableHtml = `
-                            <div style="max-height: 300px; overflow: auto; width: 100%;">
-                                <table style="width: 100%; min-width: 600px; border-collapse: collapse;">
-                                    <thead>
-                                        <tr style="background-color: #f2f2f2;">
-                                            <th style="border: 1px solid #ddd; padding: 8px; width: 40%; vertical-align: top;">Prenda</th>
-                                            <th style="border: 1px solid #ddd; padding: 8px; width: 12%; vertical-align: top;">Talla</th>
-                                            <th style="border: 1px solid #ddd; padding: 8px; width: 12%; vertical-align: top;">Cantidad</th>
-                                            <th style="border: 1px solid #ddd; padding: 8px; width: 18%; vertical-align: top;">Total Producido</th>
-                                            <th style="border: 1px solid #ddd; padding: 8px; width: 18%; vertical-align: top;">Total Pendiente</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        ${data.map(r => `
-                                            <tr>
-                                                <td style="border: 1px solid #ddd; padding: 8px; width: 40%; vertical-align: top; word-wrap: break-word; white-space: normal;">${r.prenda}</td>
-                                                <td style="border: 1px solid #ddd; padding: 8px; width: 12%; vertical-align: top; text-align: center;">${r.talla}</td>
-                                                <td style="border: 1px solid #ddd; padding: 8px; width: 12%; vertical-align: top; text-align: center;">${r.cantidad}</td>
-                                                <td style="border: 1px solid #ddd; padding: 8px; width: 18%; vertical-align: top; text-align: center;">${r.total_producido_por_talla || 0}</td>
-                                                <td style="border: 1px solid #ddd; padding: 8px; width: 18%; vertical-align: top; text-align: center;">${r.total_pendiente_por_talla}</td>
-                                            </tr>
-                                        `).join('')}
-                                    </tbody>
-                                </table>
-                            </div>
-                        `;
-                            descripcionText.innerHTML = tableHtml;
-                            prevArrow.style.display = 'none';
-                            nextArrow.style.display = 'none';
-                            verEntregasLink.textContent = 'LIMPIAR';
-                            verEntregasLink.style.color = 'green';
-                        } catch (error) {
-                            console.error('Error fetching entregas:', error);
-                        }
-                    } else {
-                        // Restore description
-                        if (order.descripcion) {
-                            const prendas = order.descripcion.split(/\n\s*\n/).filter(p => p.trim());
-                            let currentIndex = 0;
-                            function updateDescripcion() {
-                                if (prendas.length <= 2) {
-                                    descripcionText.textContent = prendas.join('\n\n');
-                                    prevArrow.style.display = 'none';
-                                    nextArrow.style.display = 'none';
-                                } else {
-                                    if (currentIndex === 0) {
-                                        descripcionText.textContent = prendas[0] + '\n\n' + prendas[1];
-                                    } else {
-                                        descripcionText.textContent = prendas[currentIndex + 1];
-                                    }
-                                    prevArrow.style.display = currentIndex > 0 ? 'inline' : 'none';
-                                    nextArrow.style.display = currentIndex < prendas.length - 2 ? 'inline' : 'none';
-                                }
-                            }
-                            updateDescripcion();
-                            prevArrow.addEventListener('click', () => {
-                                if (currentIndex > 0) {
-                                    currentIndex--;
-                                    updateDescripcion();
-                                }
-                            });
-                            nextArrow.addEventListener('click', () => {
-                                if (currentIndex < prendas.length - 2) {
-                                    currentIndex++;
-                                    updateDescripcion();
-                                }
-                            });
-                        } else {
-                            descripcionText.textContent = '';
-                            prevArrow.style.display = 'none';
-                            nextArrow.style.display = 'none';
-                        }
-                        verEntregasLink.textContent = 'VER ENTREGAS';
-                        verEntregasLink.style.color = 'red';
-                    }
-                };
-                // Agregar el nuevo listener
-                verEntregasLink.addEventListener('click', verEntregasLink._verEntregasHandler);
-
-                const descripcionText = document.getElementById('descripcion-text');
-                const prevArrow = document.getElementById('prev-arrow');
-                const nextArrow = document.getElementById('next-arrow');
-                if (descripcionText && order.descripcion) {
-                    const prendas = order.descripcion.split(/\n\s*\n/).filter(p => p.trim());
-                    let currentIndex = 0;
-                    function updateDescripcion() {
-                        if (prendas.length <= 2) {
-                            descripcionText.textContent = prendas.join('\n\n');
-                            prevArrow.style.display = 'none';
-                            nextArrow.style.display = 'none';
-                        } else {
-                            if (currentIndex === 0) {
-                                descripcionText.textContent = prendas[0] + '\n\n' + prendas[1];
-                            } else {
-                                descripcionText.textContent = prendas[currentIndex + 1];
-                            }
-                            prevArrow.style.display = currentIndex > 0 ? 'inline' : 'none';
-                            nextArrow.style.display = currentIndex < prendas.length - 2 ? 'inline' : 'none';
-                        }
-                    }
-                    updateDescripcion();
-                    prevArrow.addEventListener('click', () => {
-                        if (currentIndex > 0) {
-                            currentIndex--;
-                            updateDescripcion();
-                        }
-                    });
-                    nextArrow.addEventListener('click', () => {
-                        if (currentIndex < prendas.length - 2) {
-                            currentIndex++;
-                            updateDescripcion();
-                        }
-                    });
-                } else {
-                    descripcionText.textContent = '';
-                    prevArrow.style.display = 'none';
-                    nextArrow.style.display = 'none';
-                }
-
-                // Adaptar el modal según el contexto
-                const receiptTitle = document.querySelector('.receipt-title');
-                const asesoraDiv = document.getElementById('order-asesora');
-                const formaPagoDiv = document.getElementById('order-forma-pago');
-                if (window.modalContext === 'bodega') {
-                    if (receiptTitle) receiptTitle.innerHTML = 'RECIBO DE CORTE<br>PARA BODEGA';
-                    if (asesoraDiv) asesoraDiv.style.display = 'none';
-                    if (formaPagoDiv) formaPagoDiv.style.display = 'none';
-                    // Lower pedido and cliente positions
-                    const pedidoDiv = document.getElementById('order-pedido');
-                    const clienteValue = document.getElementById('cliente-value');
-                    if (pedidoDiv) pedidoDiv.style.marginTop = '38px';
-                    if (clienteValue) clienteValue.parentElement.style.marginTop = '20px';
-                } else {
-                    if (receiptTitle) receiptTitle.textContent = 'RECIBO DE COSTURA';
-                    if (asesoraDiv) asesoraDiv.style.display = 'block';
-                    if (formaPagoDiv) formaPagoDiv.style.display = 'block';
-                    // Reset positions if needed
-                    const pedidoDiv = document.getElementById('order-pedido');
-                    const clienteValue = document.getElementById('cliente-value');
-                    if (pedidoDiv) pedidoDiv.style.marginTop = '';
-                    if (clienteValue) clienteValue.parentElement.style.marginTop = '';
-                }
-
-                window.dispatchEvent(new CustomEvent('open-modal', { detail: 'order-detail' }));
-            } catch (error) {
-                console.error('Error loading order details:', error);
-                // Still open the modal, but date will be empty
-                window.dispatchEvent(new CustomEvent('open-modal', { detail: 'order-detail' }));
-            }
-        }
-
-        // Función para limpiar filtros
-        function clearFilters() {
-            // Limpiar búsqueda
-            document.getElementById('buscarOrden').value = '';
-
-            // Limpiar filtros aplicados (asumiendo que hay una variable global o manera de resetear)
-            // Aquí puedes agregar lógica para resetear filtros si es necesario
-
-            // Recargar la tabla
-            recargarTablaPedidos();
-        }
-
-        // Función para abrir modal de registro de orden
-        function openOrderRegistration() {
-            window.dispatchEvent(new CustomEvent('open-modal', { detail: 'order-registration' }));
-        }
-
-        // Ejecutar también después de que se cargue modern-table.jst
-        setTimeout(function () {
-            initializeStatusDropdowns();
-            initializeAreaDropdowns();
-        }, 500);
     </script>
+
     <div class="order-registration-modal">
-        <x-order-registration-modal :areaOptions="$areaOptions" />
+        <x-orders-components.order-registration-modal :areaOptions="$areaOptions" />
     </div>
 
     <div class="order-detail-modal">
-        <x-order-detail-modal />
+        <x-orders-components.order-detail-modal />
     </div>
 
-    <script src="{{ asset('js/modern-table.js') }}"></script>
+    <!-- Modal de confirmación moderno para eliminar orden -->
+    <div id="deleteConfirmationModal" class="delete-confirmation-modal" style="display: none;">
+        <div class="delete-modal-overlay" id="deleteModalOverlay"></div>
+        <div class="delete-modal-content">
+            <div class="delete-modal-header">
+                <div class="delete-icon-wrapper">
+                    <svg class="delete-header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <h3 class="delete-modal-title">Confirmar Eliminación</h3>
+            </div>
+            <div class="delete-modal-body">
+                <p class="delete-modal-message" id="deleteModalMessage">¿Estás seguro de que deseas eliminar la orden <strong id="deleteOrderId"></strong>? Esto eliminará todos los registros relacionados y no se puede deshacer.</p>
+            </div>
+            <div class="delete-modal-footer">
+                <button class="delete-btn delete-btn-secondary" id="deleteCancelBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Cancelar
+                </button>
+                <button class="delete-btn delete-btn-danger" id="deleteConfirmBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Eliminar Orden
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ asset('js/orders js/modern-table.js') }}"></script>
+    <script src="{{ asset('js/orders js/orders-table.js') }}"></script>
+    <script src="{{ asset('js/orders js/pagination.js') }}"></script>
+    <script src="{{ asset('js/orders js/realtime-listeners.js') }}"></script>
 @endsection

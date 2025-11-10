@@ -48,10 +48,13 @@ class RegistroBodegaController extends Controller
 
         $query = TablaOriginalBodega::query();
 
-        // Apply search filter - ONLY search by 'pedido'
+        // Apply search filter - search by 'pedido' or 'cliente'
         if ($request->has('search') && !empty($request->search)) {
             $searchTerm = $request->search;
-            $query->where('pedido', 'LIKE', '%' . $searchTerm . '%');
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('pedido', 'LIKE', '%' . $searchTerm . '%')
+                  ->orWhere('cliente', 'LIKE', '%' . $searchTerm . '%');
+            });
         }
 
         // Apply column filters (dynamic for all columns)
@@ -347,8 +350,22 @@ class RegistroBodegaController extends Controller
                 $updates[$key] = $value;
             }
 
+            $oldArea = $orden->area;
+
             if (!empty($updates)) {
                 $orden->update($updates);
+                $orden->refresh(); // Reload to get updated data
+                
+                // Broadcast evento específico para Control de Calidad
+                if (isset($updates['area']) && $updates['area'] !== $oldArea) {
+                    if ($updates['area'] === 'Control-Calidad') {
+                        // Orden ENTRA a Control de Calidad
+                        broadcast(new \App\Events\ControlCalidadUpdated($orden, 'added', 'bodega'));
+                    } elseif ($oldArea === 'Control-Calidad' && $updates['area'] !== 'Control-Calidad') {
+                        // Orden SALE de Control de Calidad
+                        broadcast(new \App\Events\ControlCalidadUpdated($orden, 'removed', 'bodega'));
+                    }
+                }
             }
 
             return response()->json(['success' => true, 'updated_fields' => $updatedFields]);

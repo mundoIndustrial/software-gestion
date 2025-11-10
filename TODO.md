@@ -1,5 +1,0 @@
-- [x] Add "Acciones" column header to both produccion and polos tables in tableros.blade.php
-- [x] Add delete button cell in each row of both tables with trash icon
-- [x] Add CSS styles for .delete-btn in tableros.css (minimalistic, red on hover, no shadow)
-- [x] Add JavaScript for delete functionality: confirm dialog, fetch DELETE request, remove row on success
-- [ ] Test the delete button works correctly

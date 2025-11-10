@@ -8,6 +8,7 @@ use App\Models\EntregaPedidoCorte;
 use App\Models\EntregaBodegaCostura;
 use App\Models\EntregaBodegaCorte;
 use App\Models\News;
+use App\Events\EntregaRegistrada;
 use Carbon\Carbon;
 
 class EntregaController extends Controller
@@ -233,7 +234,10 @@ class EntregaController extends Controller
                         $entrega['descripcion'] = $descripcion;
                     }
 
-                    $config['costura']::create($entrega);
+                    $nuevaEntrega = $config['costura']::create($entrega);
+
+                    // Broadcast event
+                    broadcast(new EntregaRegistrada($tipo, 'costura', $nuevaEntrega, $entrega['fecha_entrega']));
 
                     // Log news
                     News::create([
@@ -244,7 +248,7 @@ class EntregaController extends Controller
                         'metadata' => ['tipo' => $tipo, 'subtipo' => 'costura', 'cantidad' => $entrega['cantidad_entregada'], 'costurero' => $entrega['costurero']]
                     ]);
 
-                    // Update total_pendiente_por_talla and total_producido_por_talla
+                    // Update total_pendiente_por_talla, total_producido_por_talla, and costurero
                     if ($tipo === 'pedido') {
                         \App\Models\RegistrosPorOrden::where('pedido', $entrega['pedido'])
                             ->where('prenda', $entrega['prenda'])
@@ -255,6 +259,12 @@ class EntregaController extends Controller
                             ->where('prenda', $entrega['prenda'])
                             ->where('talla', $entrega['talla'])
                             ->increment('total_producido_por_talla', $entrega['cantidad_entregada']);
+
+                        // Update costurero in production table
+                        \App\Models\RegistrosPorOrden::where('pedido', $entrega['pedido'])
+                            ->where('prenda', $entrega['prenda'])
+                            ->where('talla', $entrega['talla'])
+                            ->update(['costurero' => $entrega['costurero']]);
                     } elseif ($tipo === 'bodega') {
                         \App\Models\RegistrosPorOrdenBodega::where('pedido', $entrega['pedido'])
                             ->where('prenda', $entrega['prenda'])
@@ -265,6 +275,12 @@ class EntregaController extends Controller
                             ->where('prenda', $entrega['prenda'])
                             ->where('talla', $entrega['talla'])
                             ->increment('total_producido_por_talla', $entrega['cantidad_entregada']);
+
+                        // Update costurero in production table
+                        \App\Models\RegistrosPorOrdenBodega::where('pedido', $entrega['pedido'])
+                            ->where('prenda', $entrega['prenda'])
+                            ->where('talla', $entrega['talla'])
+                            ->update(['costurero' => $entrega['costurero']]);
                     }
                 }
 
@@ -349,7 +365,10 @@ class EntregaController extends Controller
                         $entrega['mes'] = null;
                     }
 
-                    $config['corte']::create($entrega);
+                    $nuevaEntrega = $config['corte']::create($entrega);
+
+                    // Broadcast event
+                    broadcast(new EntregaRegistrada($tipo, 'corte', $nuevaEntrega, $entrega['fecha_entrega']));
 
                     // Log news
                     News::create([
@@ -365,6 +384,166 @@ class EntregaController extends Controller
             return response()->json(['success' => true, 'message' => 'Entregas registradas exitosamente']);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error en el servidor: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function update(Request $request)
+    {
+        try {
+            $tipo = $request->route('tipo');
+            $subtipo = $request->route('subtipo');
+            $id = $request->route('id');
+            $config = $this->getModels($tipo);
+
+            if ($subtipo === 'costura') {
+                $entrega = $config['costura']::findOrFail($id);
+                
+                // Validate only the fields that are being updated
+                $validated = $request->validate([
+                    'pedido' => 'sometimes|integer',
+                    'cliente' => 'sometimes|string',
+                    'prenda' => 'sometimes|string',
+                    'talla' => 'sometimes|string',
+                    'cantidad_entregada' => 'sometimes|integer',
+                    'fecha_entrega' => 'sometimes|date',
+                    'costurero' => 'sometimes|string',
+                ]);
+
+                // If cantidad_entregada is being updated, adjust the production records
+                if (isset($validated['cantidad_entregada']) && $validated['cantidad_entregada'] != $entrega->cantidad_entregada) {
+                    $diferencia = $validated['cantidad_entregada'] - $entrega->cantidad_entregada;
+                    
+                    if ($tipo === 'pedido') {
+                        \App\Models\RegistrosPorOrden::where('pedido', $entrega->pedido)
+                            ->where('prenda', $entrega->prenda)
+                            ->where('talla', $entrega->talla)
+                            ->decrement('total_pendiente_por_talla', $diferencia);
+                        
+                        \App\Models\RegistrosPorOrden::where('pedido', $entrega->pedido)
+                            ->where('prenda', $entrega->prenda)
+                            ->where('talla', $entrega->talla)
+                            ->increment('total_producido_por_talla', $diferencia);
+                    } elseif ($tipo === 'bodega') {
+                        \App\Models\RegistrosPorOrdenBodega::where('pedido', $entrega->pedido)
+                            ->where('prenda', $entrega->prenda)
+                            ->where('talla', $entrega->talla)
+                            ->decrement('total_pendiente_por_talla', $diferencia);
+                        
+                        \App\Models\RegistrosPorOrdenBodega::where('pedido', $entrega->pedido)
+                            ->where('prenda', $entrega->prenda)
+                            ->where('talla', $entrega->talla)
+                            ->increment('total_producido_por_talla', $diferencia);
+                    }
+                }
+
+                $entrega->update($validated);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Entrega actualizada exitosamente',
+                    'entrega' => $entrega->fresh()
+                ]);
+
+            } elseif ($subtipo === 'corte') {
+                $entrega = $config['corte']::findOrFail($id);
+                
+                $validated = $request->validate([
+                    'pedido' => 'sometimes|integer',
+                    'cortador' => 'sometimes|string',
+                    'cantidad_prendas' => 'sometimes|integer',
+                    'piezas' => 'sometimes|integer',
+                    'pasadas' => 'sometimes|integer',
+                    'etiquetador' => 'sometimes|string',
+                    'fecha_entrega' => 'sometimes|date',
+                ]);
+
+                // Recalculate etiqueteadas if piezas or pasadas changed
+                if (isset($validated['piezas']) || isset($validated['pasadas'])) {
+                    $piezas = $validated['piezas'] ?? $entrega->piezas;
+                    $pasadas = $validated['pasadas'] ?? $entrega->pasadas;
+                    $validated['etiqueteadas'] = $piezas * $pasadas;
+                }
+
+                $entrega->update($validated);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Entrega actualizada exitosamente',
+                    'entrega' => $entrega->fresh()
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error al actualizar: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function destroy(Request $request)
+    {
+        try {
+            $tipo = $request->route('tipo');
+            $subtipo = $request->route('subtipo');
+            $id = $request->route('id');
+            $config = $this->getModels($tipo);
+
+            if ($subtipo === 'costura') {
+                $entrega = $config['costura']::findOrFail($id);
+                
+                // Restore the production records
+                if ($tipo === 'pedido') {
+                    \App\Models\RegistrosPorOrden::where('pedido', $entrega->pedido)
+                        ->where('prenda', $entrega->prenda)
+                        ->where('talla', $entrega->talla)
+                        ->increment('total_pendiente_por_talla', $entrega->cantidad_entregada);
+                    
+                    \App\Models\RegistrosPorOrden::where('pedido', $entrega->pedido)
+                        ->where('prenda', $entrega->prenda)
+                        ->where('talla', $entrega->talla)
+                        ->decrement('total_producido_por_talla', $entrega->cantidad_entregada);
+                } elseif ($tipo === 'bodega') {
+                    \App\Models\RegistrosPorOrdenBodega::where('pedido', $entrega->pedido)
+                        ->where('prenda', $entrega->prenda)
+                        ->where('talla', $entrega->talla)
+                        ->increment('total_pendiente_por_talla', $entrega->cantidad_entregada);
+                    
+                    \App\Models\RegistrosPorOrdenBodega::where('pedido', $entrega->pedido)
+                        ->where('prenda', $entrega->prenda)
+                        ->where('talla', $entrega->talla)
+                        ->decrement('total_producido_por_talla', $entrega->cantidad_entregada);
+                }
+
+                $entrega->delete();
+
+                // Log news
+                News::create([
+                    'event_type' => 'delivery_deleted',
+                    'description' => "Entrega de costura eliminada: Pedido {$entrega->pedido}, Prenda {$entrega->prenda}, Cantidad {$entrega->cantidad_entregada}",
+                    'user_id' => auth()->id(),
+                    'pedido' => $entrega->pedido,
+                    'metadata' => ['tipo' => $tipo, 'subtipo' => 'costura', 'cantidad' => $entrega->cantidad_entregada]
+                ]);
+
+            } elseif ($subtipo === 'corte') {
+                $entrega = $config['corte']::findOrFail($id);
+                $entrega->delete();
+
+                // Log news
+                News::create([
+                    'event_type' => 'delivery_deleted',
+                    'description' => "Entrega de corte eliminada: Pedido {$entrega->pedido}, Piezas {$entrega->piezas}",
+                    'user_id' => auth()->id(),
+                    'pedido' => $entrega->pedido,
+                    'metadata' => ['tipo' => $tipo, 'subtipo' => 'corte', 'piezas' => $entrega->piezas]
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Entrega eliminada exitosamente'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error al eliminar: ' . $e->getMessage()], 500);
         }
     }
 }

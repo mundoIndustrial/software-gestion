@@ -52,24 +52,101 @@ class DashboardController extends Controller
         return response()->json($recentOrders);
     }
 
-    public function getNews()
+    public function getNews(Request $request)
     {
-        $news = News::with('user')
-            ->orderBy('created_at', 'desc')
-            ->limit(10)
+        $date = $request->input('date', now()->toDateString());
+        $table = $request->input('table'); // Filtro opcional por tabla
+        $eventType = $request->input('event_type'); // Filtro opcional por tipo de evento
+        $limit = $request->input('limit', 50); // Límite configurable
+        
+        $query = News::with('user')
+            ->whereDate('created_at', $date)
+            ->orderBy('created_at', 'desc');
+
+        // Aplicar filtros opcionales
+        if ($table) {
+            $query->where('table_name', $table);
+        }
+
+        if ($eventType) {
+            $query->where('event_type', $eventType);
+        }
+
+        $news = $query->limit($limit)
             ->get()
             ->map(function ($item) {
                 return [
                     'id' => $item->id,
                     'event_type' => $item->event_type,
+                    'table_name' => $item->table_name,
+                    'record_id' => $item->record_id,
                     'description' => $item->description,
-                    'created_at' => $item->created_at->format('d/m/Y H:i'),
+                    'created_at' => $item->created_at->format('d/m/Y H:i:s'),
                     'user' => $item->user ? $item->user->name : 'Sistema',
-                    'pedido' => $item->pedido
+                    'pedido' => $item->pedido,
+                    'metadata' => $item->metadata,
+                    'is_read' => $item->read_at !== null,
+                    'read_at' => $item->read_at ? $item->read_at->format('d/m/Y H:i:s') : null
                 ];
             });
 
-        return response()->json($news);
+        // Obtener contadores
+        $counts = [
+            'total' => News::whereDate('created_at', $date)->count(),
+            'unread' => News::whereDate('created_at', $date)->whereNull('read_at')->count(),
+            'read' => News::whereDate('created_at', $date)->whereNotNull('read_at')->count(),
+        ];
+
+        return response()->json([
+            'news' => $news,
+            'counts' => $counts
+        ]);
+    }
+
+    /**
+     * Obtener estadísticas de auditoría
+     */
+    public function getAuditStats(Request $request)
+    {
+        $date = $request->input('date', now()->toDateString());
+
+        $stats = [
+            'total_events' => News::whereDate('created_at', $date)->count(),
+            'by_type' => News::whereDate('created_at', $date)
+                ->select('event_type', \DB::raw('count(*) as count'))
+                ->groupBy('event_type')
+                ->get(),
+            'by_table' => News::whereDate('created_at', $date)
+                ->select('table_name', \DB::raw('count(*) as count'))
+                ->groupBy('table_name')
+                ->orderBy('count', 'desc')
+                ->get(),
+            'by_user' => News::whereDate('created_at', $date)
+                ->join('users', 'news.user_id', '=', 'users.id')
+                ->select('users.name', \DB::raw('count(*) as count'))
+                ->groupBy('users.name')
+                ->orderBy('count', 'desc')
+                ->get(),
+        ];
+
+        return response()->json($stats);
+    }
+
+    /**
+     * Marcar todas las notificaciones como leídas
+     */
+    public function markAllAsRead(Request $request)
+    {
+        $date = $request->input('date', now()->format('Y-m-d'));
+        
+        News::whereDate('created_at', $date)
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Todas las notificaciones han sido marcadas como leídas'
+        ]);
     }
 
     /**

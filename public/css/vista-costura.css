@@ -1,0 +1,587 @@
+/* Vista Costura - Variables de tema */
+:root {
+    /* Light mode colors - matching dashboard */
+    --costura-text-primary: #1f2937;
+    --costura-text-secondary: #6b7280;
+    --costura-bg-primary: #f3f4f6;
+    --costura-bg-search: #f3f4f6;
+    --costura-bg-card: #dddddd;
+    --costura-bg-card-header: linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%);
+    --costura-bg-table-header: linear-gradient(135deg, #a8a8a8 0%, #b8b8b8 100%);
+    --costura-bg-table-odd: #e8e8e8;
+    --costura-bg-table-even: #d8d8d8;
+    --costura-bg-table-hover: linear-gradient(135deg, #cacaca 0%, #d4d4d4 100%);
+    --costura-border: #b4b4b4;
+    --costura-border-light: rgba(0, 0, 0, 0.1);
+    --costura-shadow: rgba(0, 0, 0, 0.1);
+    --costura-shadow-hover: rgba(0, 0, 0, 0.15);
+    --costura-no-data-bg: #e8e8e8;
+}
+
+body.dark-theme {
+    /* Dark mode colors */
+    --costura-text-primary: white;
+    --costura-text-secondary: #cccccc;
+    --costura-bg-primary: #111827;
+    --costura-bg-search: #2d2d2d;
+    --costura-bg-card: #2d2d2d;
+    --costura-bg-card-header: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+    --costura-bg-table-header: linear-gradient(135deg, #3d3d3d 0%, #454545 100%);
+    --costura-bg-table-odd: #383838;
+    --costura-bg-table-even: #333333;
+    --costura-bg-table-hover: linear-gradient(135deg, #404040 0%, #484848 100%);
+    --costura-border: #404040;
+    --costura-border-light: rgba(255, 255, 255, 0.1);
+    --costura-shadow: rgba(0, 0, 0, 0.3);
+    --costura-shadow-hover: rgba(255, 157, 88, 0.2);
+    --costura-no-data-bg: #2d2d2d;
+}
+
+.costura-container {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 15px;
+    font-family: "Poppins", sans-serif;
+}
+.costura-header {
+    text-align: center;
+    margin-bottom: 0.75rem;
+    padding: 0.375rem;
+}
+
+.costura-header h1 {
+    margin: 0;
+    font-size: 1.35rem;
+    font-weight: 600;
+    color: var(--costura-text-primary);
+    position: relative;
+    z-index: 1;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 0.5; }
+    50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+/* Barra de búsqueda */
+.search-container {
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 7.5px;
+}
+
+.search-bar {
+    position: relative;
+    width: 100%;
+    max-width: 450px;
+    display: flex;
+    align-items: center;
+    background: var(--costura-bg-search);
+    border-radius: 25px;
+    padding: 0;
+    box-shadow: 0 3px 11px var(--costura-shadow);
+    border: 1.5px solid var(--costura-border);
+    transition: all 0.3s ease;
+}
+
+.search-bar:focus-within {
+    border-color: #ff6b35;
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.2);
+}
+
+.search-icon {
+    position: absolute;
+    left: 16px;
+    color: var(--costura-text-secondary);
+    font-size: 1rem;
+    pointer-events: none;
+    z-index: 2;
+}
+
+#searchInput {
+    flex: 1;
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--costura-text-primary);
+    font-size: 0.9rem;
+    padding: 12px 50px 12px 45px;
+    font-family: "Poppins", sans-serif;
+    line-height: normal;
+    font-weight: 500;
+    border-radius: 25px;
+}
+
+#searchInput::placeholder {
+    color: var(--costura-text-secondary);
+}
+
+.clear-search-btn {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--costura-text-secondary);
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    font-size: 0.85rem;
+    z-index: 3;
+}
+
+.clear-search-btn:hover {
+    background: rgba(255, 107, 53, 0.15);
+    color: #ff6b35;
+    transform: translateY(-50%) scale(1.15);
+}
+
+.clear-search-btn:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+/* Contenedor de tarjetas */
+.cards-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 15px;
+    max-width: 1050px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 15px;
+}
+
+/* Tarjeta de pedido */
+.pedido-card {
+    background: var(--costura-bg-card);
+    border-radius: 11px;
+    box-shadow: 0 7.5px 22.5px var(--costura-shadow);
+    border: 1.5px solid var(--costura-border);
+    overflow: hidden;
+    width: 100%;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.pedido-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #FF6B35, #ff8555, #ffa075);
+    z-index: 1;
+}
+
+.pedido-card:hover {
+    transform: translateY(-2px);
+    border-color: #FF6B35;
+    box-shadow: 0 10px 30px rgba(255, 107, 53, 0.3);
+}
+
+/* Encabezado de la tarjeta */
+.card-header {
+    background: var(--costura-bg-card-header);
+    padding: 12px 15px;
+    border-bottom: 1.5px solid var(--costura-border-light);
+    position: relative;
+}
+
+.card-header h3 {
+    margin: 0;
+    color: var(--costura-text-primary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+body.dark-theme .card-header h3 {
+    color: #ffcc80;
+}
+
+/* Encargado de corte */
+.encargado-corte {
+    position: absolute;
+    top: 12px;
+    right: 15px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.64rem;
+}
+
+.encargado-label {
+    color: var(--costura-text-secondary);
+    font-weight: 500;
+}
+
+.encargado-value {
+    color: #81c784;
+    font-weight: 600;
+    background: rgba(129, 199, 132, 0.1);
+    padding: 3px 6px;
+    border-radius: 3px;
+    border: 1px solid rgba(129, 199, 132, 0.3);
+}
+
+body:not(.dark-theme) .encargado-value {
+    color: #2e7d32;
+    background: rgba(46, 125, 50, 0.1);
+    border: 1px solid rgba(46, 125, 50, 0.3);
+}
+
+/* Cuerpo de la tarjeta */
+.card-body {
+    padding: 0;
+    max-height: 300px;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+
+/* Tabla dentro de la tarjeta */
+.card-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: transparent;
+    table-layout: auto;
+}
+
+.card-table thead {
+    background: var(--costura-bg-table-header);
+    color: var(--costura-text-primary);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.card-table th {
+    padding: 10.5px 9px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.375px;
+    border-bottom: 1.5px solid var(--costura-border-light);
+    border-right: 1px solid var(--costura-border-light);
+    position: relative;
+    white-space: nowrap;
+    min-width: 60px;
+}
+
+.card-table th:last-child {
+    border-right: none;
+}
+
+.card-table td {
+    padding: 9px 6px;
+    border-bottom: 1px solid var(--costura-border-light);
+    border-right: 1px solid var(--costura-border-light);
+    font-size: 0.6rem;
+    color: var(--costura-text-primary);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    word-wrap: break-word;
+    max-width: 112px;
+}
+
+.card-table td:last-child {
+    border-right: none;
+}
+
+.card-table tbody tr:nth-child(even) {
+    background: var(--costura-bg-table-even);
+}
+
+.card-table tbody tr:nth-child(odd) {
+    background: var(--costura-bg-table-odd);
+}
+
+.card-table tbody tr:hover {
+    background: var(--costura-bg-table-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px var(--costura-shadow-hover);
+    transition: all 0.3s ease;
+}
+
+/* Celdas específicas */
+.prenda-cell,
+.descripcion-cell,
+.talla-cell,
+.cantidad-cell,
+.costurero-cell,
+.total_producido_por_talla-cell,
+.total_pendiente_por_talla-cell,
+.fecha_completado-cell {
+    color: var(--costura-text-primary);
+}
+
+/* Estados */
+.fecha_completado-cell {
+    font-weight: 500;
+    color: #81c784;
+}
+
+body:not(.dark-theme) .fecha_completado-cell {
+    color: #2e7d32;
+}
+
+/* Sin datos */
+.no-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--costura-text-secondary);
+    background: var(--costura-no-data-bg);
+    border-radius: 15px;
+    box-shadow: 0 5px 15px var(--costura-shadow);
+    margin: 20px 0;
+    border: 1px solid var(--costura-border);
+}
+
+.no-data h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.5rem;
+    color: var(--costura-text-primary);
+}
+
+.no-data p {
+    margin: 0;
+    font-size: 1rem;
+}
+
+/* Paginación */
+.table-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0 0 11px 11px;
+    margin-top: 0;
+}
+
+.pagination-info {
+    color: #a0aec0;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.pagination-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.pagination-btn {
+    min-width: 36px;
+    height: 36px;
+    border: 1px solid #2d3748;
+    background: #1a202c;
+    color: #a0aec0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 0 12px;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: #4a5568;
+    border-color: #4a5568;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.pagination-btn.active {
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    border-color: #ff6b35;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.pagination-btn i {
+    font-size: 14px;
+}
+
+.pagination-btn.page-number {
+    min-width: 36px;
+}
+
+/* Paginación en modo claro */
+body:not(.dark-theme) .table-pagination {
+    background: linear-gradient(135deg, #bdc3c7 0%, #95a5a6 100%);
+    border: 1px solid #7f8c8d;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+body:not(.dark-theme) .pagination-info {
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+body:not(.dark-theme) .pagination-btn {
+    background: #c3c5c5;
+    border-color: #95a5a6;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+body:not(.dark-theme) .pagination-btn:hover:not(:disabled) {
+    background: #d5d8dc;
+    border-color: #7f8c8d;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+    transform: translateY(-3px);
+}
+
+
+
+
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .cards-container {
+        max-width: 100%;
+        padding: 0 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    .costura-container {
+        max-width: 100%;
+        padding: 10px;
+    }
+
+    .cards-container {
+        padding: 0 10px;
+    }
+
+    .costura-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .card-table {
+        font-size: 0.75rem;
+    }
+
+    .card-table th {
+        padding: 10px 6px;
+        font-size: 0.7rem;
+        letter-spacing: 0.3px;
+        min-width: 60px;
+    }
+
+    .card-table td {
+        padding: 10px 6px;
+        font-size: 0.75rem;
+        max-width: 120px;
+    }
+
+    .card-header h3 {
+        font-size: 1rem;
+    }
+
+    .encargado-corte {
+        position: static;
+        margin-top: 10px;
+        font-size: 0.8rem;
+    }
+
+    .pedido-cell,
+    .cliente-cell {
+        min-width: auto;
+    }
+
+    .cell-modal {
+        width: 95%;
+        padding: 20px;
+    }
+
+    .table-pagination {
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .pagination-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .costura-header {
+        padding: 15px 10px;
+    }
+
+    .costura-header h1 {
+        font-size: 1.3rem;
+    }
+
+    .cards-container {
+        padding: 0 5px;
+    }
+
+    .pedido-card {
+        border-radius: 10px;
+    }
+
+    .card-table th {
+        padding: 8px 4px;
+        font-size: 0.65rem;
+        letter-spacing: 0.2px;
+        min-width: 50px;
+    }
+
+    .card-table td {
+        padding: 8px 4px;
+        font-size: 0.7rem;
+        max-width: 100px;
+    }
+
+    .card-header {
+        padding: 12px 15px;
+    }
+
+    .card-header h3 {
+        font-size: 0.9rem;
+    }
+
+    .search-bar {
+        padding: 10px 15px;
+    }
+
+    .cell-modal {
+        width: 98%;
+        padding: 15px;
+    }
+
+    .pagination-btn,
+    .pagination-btn.page-number {
+        min-width: 32px;
+        height: 32px;
+        font-size: 0.8rem;
+    }
+}

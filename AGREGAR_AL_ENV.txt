@@ -1,0 +1,39 @@
+# ============================================
+# COPIA ESTAS LÍNEAS AL FINAL DE TU ARCHIVO .env
+# ============================================
+
+# Configuración de Google Drive para Backups Automáticos
+GOOGLE_DRIVE_FOLDER_ID=106fZ_fbQ45BA-EGy632i5KAx3qxEHsZ6
+
+# Credenciales OAuth de Google Drive (necesarias para renovación automática del token)
+GOOGLE_DRIVE_CLIENT_ID=407408718192.apps.googleusercontent.com
+GOOGLE_DRIVE_CLIENT_SECRET=tu_client_secret_aqui
+GOOGLE_DRIVE_REFRESH_TOKEN=tu_refresh_token_aqui
+GOOGLE_DRIVE_ACCESS_TOKEN=tu_access_token_inicial_aqui
+
+# ============================================
+# INSTRUCCIONES:
+# 1. Abre el archivo .env (en la raíz del proyecto)
+# 2. Ve al final del archivo
+# 3. Copia y pega las líneas de arriba
+# 4. Reemplaza los valores:
+#    - GOOGLE_DRIVE_CLIENT_SECRET: Obtén esto de Google Cloud Console
+#    - GOOGLE_DRIVE_REFRESH_TOKEN: Obtén esto del proceso de OAuth
+#    - GOOGLE_DRIVE_ACCESS_TOKEN: Se renovará automáticamente
+# 5. Guarda el archivo
+# 
+# IMPORTANTE: El sistema renovará automáticamente el ACCESS_TOKEN
+# cuando expire usando el REFRESH_TOKEN. El REFRESH_TOKEN nunca expira.
+# ============================================
+
+# ============================================
+# CONFIGURACIÓN DE SESIÓN Y AUTENTICACIÓN
+# ============================================
+
+# Duración de la sesión "Recordarme" en minutos (por defecto 30 días = 43200 minutos)
+AUTH_REMEMBER_DURATION=43200
+
+# Duración de la sesión normal en minutos (por defecto 2 horas = 120 minutos)
+SESSION_LIFETIME=120
+
+# ============================================
