@@ -21,6 +21,13 @@ class RegistroBodegaController extends Controller
 
     public function index(Request $request)
     {
+        // Definir columnas de fecha
+        $dateColumns = [
+            'fecha_de_creacion_de_orden', 'inventario', 'insumos_y_telas', 'corte',
+            'bordado', 'estampado', 'costura', 'reflectivo', 'lavanderia',
+            'arreglos', 'marras', 'control_de_calidad', 'entrega'
+        ];
+
         // Handle request for unique values for filters
         if ($request->has('get_unique_values') && $request->column) {
             $column = $request->column;
@@ -41,6 +48,24 @@ class RegistroBodegaController extends Controller
 
             if (in_array($column, $allowedColumns)) {
                 $uniqueValues = TablaOriginalBodega::distinct()->pluck($column)->filter()->values()->toArray();
+                
+                // Si es una columna de fecha, formatear los valores a d/m/Y
+                if (in_array($column, $dateColumns)) {
+                    $uniqueValues = array_map(function($value) {
+                        try {
+                            if (!empty($value)) {
+                                $date = \Carbon\Carbon::parse($value);
+                                return $date->format('d/m/Y');
+                            }
+                        } catch (\Exception $e) {
+                            // Si no se puede parsear, devolver el valor original
+                        }
+                        return $value;
+                    }, $uniqueValues);
+                    // Eliminar duplicados y reindexar
+                    $uniqueValues = array_values(array_unique($uniqueValues));
+                }
+                
                 return response()->json(['unique_values' => $uniqueValues]);
             }
             return response()->json(['error' => 'Invalid column'], 400);
@@ -80,7 +105,23 @@ class RegistroBodegaController extends Controller
                 ];
 
                 if (in_array($column, $allowedColumns)) {
-                    $query->whereIn($column, $values);
+                    // Si es una columna de fecha, convertir los valores de d/m/Y a formato de base de datos
+                    if (in_array($column, $dateColumns)) {
+                        $query->where(function($q) use ($column, $values) {
+                            foreach ($values as $dateValue) {
+                                try {
+                                    // Intentar parsear la fecha en formato d/m/Y
+                                    $date = \Carbon\Carbon::createFromFormat('d/m/Y', $dateValue);
+                                    $q->orWhereDate($column, $date->format('Y-m-d'));
+                                } catch (\Exception $e) {
+                                    // Si falla, intentar buscar el valor tal cual
+                                    $q->orWhere($column, $dateValue);
+                                }
+                            }
+                        });
+                    } else {
+                        $query->whereIn($column, $values);
+                    }
                 }
             }
         }
