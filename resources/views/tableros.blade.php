@@ -1579,6 +1579,11 @@ function agregarRegistroTiempoReal(registro, section) {
         row.style.backgroundColor = '';
     }, 100);
 
+    // Adjuntar event listeners de edición a las nuevas celdas
+    if (window.attachEditableCellListeners) {
+        window.attachEditableCellListeners();
+    }
+
     console.log(`✅ Registro ${registro.id} agregado a la tabla de ${section}`);
 }
 
@@ -1635,6 +1640,11 @@ function actualizarFilaExistente(row, registro, section) {
         row.style.transition = 'background-color 1s ease';
         row.style.backgroundColor = '';
     }, 100);
+    
+    // Adjuntar event listeners de edición a las celdas actualizadas
+    if (window.attachEditableCellListeners) {
+        window.attachEditableCellListeners();
+    }
 }
 
 // Función auxiliar para obtener columnas según sección
