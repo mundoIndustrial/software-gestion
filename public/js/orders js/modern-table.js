@@ -801,6 +801,68 @@ class ModernTable {
         const oldValue = document.querySelector('.table-cell.selected .cell-text')?.textContent || '';
 
         try {
+            // Si estamos editando el campo pedido, usar endpoint especial
+            if (this.currentColumn === 'pedido') {
+                const response = await fetch(`${this.baseRoute}/update-pedido`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({ 
+                        old_pedido: this.currentOrderId,
+                        new_pedido: newValue 
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Actualizar la fila sin recargar la página
+                    const row = document.querySelector(`tr[data-order-id="${this.currentOrderId}"]`);
+                    if (row) {
+                        // Actualizar el data-order-id de la fila
+                        row.dataset.orderId = newValue;
+                        
+                        // Actualizar el texto de la celda de pedido
+                        const selected = document.querySelector('.table-cell.selected');
+                        if (selected) {
+                            const cellText = selected.querySelector('.cell-text');
+                            if (cellText) {
+                                cellText.textContent = newValue;
+                                selected.querySelector('.cell-content').title = newValue;
+                            }
+                        }
+                        
+                        // Actualizar los botones de acción con el nuevo pedido
+                        const deleteBtn = row.querySelector('.delete-btn');
+                        const detailBtn = row.querySelector('.detail-btn');
+                        if (deleteBtn) {
+                            deleteBtn.setAttribute('onclick', `deleteOrder(${newValue})`);
+                        }
+                        if (detailBtn) {
+                            detailBtn.setAttribute('onclick', `viewDetail(${newValue})`);
+                        }
+                        
+                        // Actualizar el currentOrderId para futuras ediciones
+                        this.currentOrderId = newValue;
+                        
+                        // Efecto visual de confirmación
+                        row.style.backgroundColor = 'rgba(34, 197, 94, 0.2)';
+                        setTimeout(() => {
+                            row.style.transition = 'background-color 0.5s ease';
+                            row.style.backgroundColor = '';
+                        }, 100);
+                    }
+                    
+                    this.closeCellModal();
+                } else {
+                    alert(data.message || 'Error al actualizar el número de pedido');
+                }
+                return;
+            }
+
+            // Para otros campos, usar el endpoint normal
             const response = await fetch(`${this.baseRoute}/${this.currentOrderId}`, {
                 method: 'POST',
                 headers: {
