@@ -353,15 +353,43 @@ class ModernTable {
 
         // Soporte para doble click en desktop
         document.addEventListener('dblclick', e => {
+            console.log('🔍 Double click event triggered on:', e.target);
             const cell = e.target.closest('.cell-content');
-            if (cell && !cell.querySelector('select')) {
-                console.log('Double click detected on cell');
-                const cellText = cell.querySelector('.cell-text');
-                if (cellText) {
-                    const td = cell.closest('td');
-                    const row = td.closest('tr');
-                    this.openCellModal(cellText.textContent, row.dataset.orderId, td.dataset.column);
+            console.log('🔍 Found cell-content:', cell);
+            
+            if (cell) {
+                const hasSelect = cell.querySelector('select');
+                console.log('🔍 Cell has select dropdown:', hasSelect);
+                
+                if (!hasSelect) {
+                    console.log('✅ Double click detected on cell');
+                    const cellText = cell.querySelector('.cell-text');
+                    console.log('🔍 Found cell-text:', cellText);
+                    
+                    if (cellText) {
+                        const td = cell.closest('td');
+                        const row = td.closest('tr');
+                        console.log('🔍 Row data-order-id:', row?.dataset?.orderId);
+                        console.log('🔍 TD data-column:', td?.dataset?.column);
+                        
+                        if (row && row.dataset.orderId && td && td.dataset.column) {
+                            this.openCellModal(cellText.textContent, row.dataset.orderId, td.dataset.column);
+                        } else {
+                            console.error('❌ Missing required data attributes:', {
+                                row: row,
+                                orderId: row?.dataset?.orderId,
+                                td: td,
+                                column: td?.dataset?.column
+                            });
+                        }
+                    } else {
+                        console.warn('⚠️ No cell-text found inside cell-content');
+                    }
+                } else {
+                    console.log('⏭️ Skipping cell with select dropdown');
                 }
+            } else {
+                console.log('⏭️ Double click not on a cell-content element');
             }
         });
 

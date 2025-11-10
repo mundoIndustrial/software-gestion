@@ -26,9 +26,66 @@ class TablaOriginal extends Model
     protected $guarded = [];
 
     // Tu tabla no tiene columnas created_at / updated_at
-    public $timestamps = false;
+    public $timestamps = true;
 
     protected $festivos = [];
+
+    /**
+     * Relación con productos del pedido
+     */
+    public function productos()
+    {
+        return $this->hasMany(ProductoPedido::class, 'pedido', 'pedido');
+    }
+
+    /**
+     * Scope para filtrar por asesora
+     */
+    public function scopeDelAsesor($query, $asesora)
+    {
+        return $query->where('asesora', $asesora);
+    }
+
+    /**
+     * Scope para filtrar por estado
+     */
+    public function scopePorEstado($query, $estado)
+    {
+        return $query->where('estado', $estado);
+    }
+
+    /**
+     * Scope para filtrar por área
+     */
+    public function scopePorArea($query, $area)
+    {
+        return $query->where('area', $area);
+    }
+
+    /**
+     * Scope para pedidos del día
+     */
+    public function scopeDelDia($query)
+    {
+        return $query->whereDate('fecha_de_creacion_de_orden', today());
+    }
+
+    /**
+     * Scope para pedidos del mes
+     */
+    public function scopeDelMes($query)
+    {
+        return $query->whereMonth('fecha_de_creacion_de_orden', now()->month)
+                     ->whereYear('fecha_de_creacion_de_orden', now()->year);
+    }
+
+    /**
+     * Scope para pedidos del año
+     */
+    public function scopeDelAnio($query)
+    {
+        return $query->whereYear('fecha_de_creacion_de_orden', now()->year);
+    }
 
     public function setFestivos(array $festivos)
     {

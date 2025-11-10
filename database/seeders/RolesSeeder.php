@@ -29,5 +29,11 @@ class RolesSeeder extends Seeder
             'description' => 'Operario de piso de corte',
             'requires_credentials' => false,
         ]);
+
+        \App\Models\Role::create([
+            'name' => 'asesor',
+            'description' => 'Asesor de ventas - Gestión de órdenes',
+            'requires_credentials' => true,
+        ]);
     }
 }

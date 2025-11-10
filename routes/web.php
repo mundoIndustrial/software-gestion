@@ -123,4 +123,29 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/balanceo/{id}/toggle-estado', [BalanceoController::class, 'toggleEstadoCompleto'])->name('balanceo.toggle-estado');
 });
 
+// ========================================
+// RUTAS PARA ASESORES (MÓDULO INDEPENDIENTE)
+// ========================================
+Route::middleware(['auth', 'role:asesor'])->prefix('asesores')->name('asesores.')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [App\Http\Controllers\AsesoresController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard-data', [App\Http\Controllers\AsesoresController::class, 'getDashboardData'])->name('dashboard-data');
+    
+    // Pedidos (usando tabla_original)
+    Route::get('/pedidos', [App\Http\Controllers\AsesoresController::class, 'index'])->name('pedidos.index');
+    Route::get('/pedidos/create', [App\Http\Controllers\AsesoresController::class, 'create'])->name('pedidos.create');
+    Route::post('/pedidos', [App\Http\Controllers\AsesoresController::class, 'store'])->name('pedidos.store');
+    Route::get('/pedidos/{pedido}', [App\Http\Controllers\AsesoresController::class, 'show'])->name('pedidos.show');
+    Route::get('/pedidos/{pedido}/edit', [App\Http\Controllers\AsesoresController::class, 'edit'])->name('pedidos.edit');
+    Route::put('/pedidos/{pedido}', [App\Http\Controllers\AsesoresController::class, 'update'])->name('pedidos.update');
+    Route::delete('/pedidos/{pedido}', [App\Http\Controllers\AsesoresController::class, 'destroy'])->name('pedidos.destroy');
+    
+    // Utilidades
+    Route::get('/next-pedido', [App\Http\Controllers\AsesoresController::class, 'getNextPedido'])->name('next-pedido');
+    
+    // Notificaciones
+    Route::get('/notifications', [App\Http\Controllers\AsesoresController::class, 'getNotifications'])->name('notifications');
+    Route::post('/notifications/mark-all-read', [App\Http\Controllers\AsesoresController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+});
+
 require __DIR__.'/auth.php';

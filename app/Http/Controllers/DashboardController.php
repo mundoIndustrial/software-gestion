@@ -13,6 +13,12 @@ class DashboardController extends Controller
      */
     public function index()
     {
+        // Redirigir asesores a su dashboard específico
+        $user = auth()->user();
+        if ($user->role && $user->role->name === 'asesor') {
+            return redirect()->route('asesores.dashboard');
+        }
+        
         return view('dashboard');
     }
 
