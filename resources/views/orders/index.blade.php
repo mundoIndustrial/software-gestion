@@ -117,6 +117,14 @@
                                                         <span class="cell-text">
                                                             @if($key === 'total_de_dias_')
                                                                 {{ $totalDiasCalculados[$orden->pedido] ?? 'N/A' }}
+                                                            @elseif(in_array($key, ['fecha_de_creacion_de_orden', 'inventario', 'insumos_y_telas', 'corte', 'bordado', 'estampado', 'costura', 'reflectivo', 'lavanderia', 'arreglos', 'marras', 'control_de_calidad', 'entrega']))
+                                                                @php
+                                                                    try {
+                                                                        echo !empty($valor) ? \Carbon\Carbon::parse($valor)->format('d/m/Y') : '';
+                                                                    } catch (\Exception $e) {
+                                                                        echo $valor;
+                                                                    }
+                                                                @endphp
                                                             @else
                                                                 {{ $valor }}
                                                             @endif
