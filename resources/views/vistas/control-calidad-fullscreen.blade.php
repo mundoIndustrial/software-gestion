@@ -175,7 +175,7 @@
         .data-table td {
             padding: 8px 12px;
             color: #475569;
-            font-size: 12px;
+            font-size: 18px;
             max-width: 250px;
             overflow: hidden;
             text-overflow: ellipsis;
