@@ -269,9 +269,36 @@ class ModernTable {
         } else {
             const span = document.createElement('span');
             span.className = 'cell-text';
-            const displayValue = key === 'total_de_dias_'
-                ? this.virtual.totalDiasCalculados[orden.pedido || orden.id] ?? 'N/A'
-                : value ?? '';
+            
+            // Columnas de fecha que deben formatearse
+            const dateColumns = [
+                'fecha_de_creacion_de_orden', 'inventario', 'insumos_y_telas', 'corte',
+                'bordado', 'estampado', 'costura', 'reflectivo', 'lavanderia',
+                'arreglos', 'marras', 'control_de_calidad', 'entrega'
+            ];
+            
+            let displayValue;
+            if (key === 'total_de_dias_') {
+                displayValue = this.virtual.totalDiasCalculados[orden.pedido || orden.id] ?? 'N/A';
+            } else if (dateColumns.includes(key) && value) {
+                // Formatear fecha a d/m/Y
+                try {
+                    const date = new Date(value);
+                    if (!isNaN(date.getTime())) {
+                        const day = String(date.getDate()).padStart(2, '0');
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const year = date.getFullYear();
+                        displayValue = `${day}/${month}/${year}`;
+                    } else {
+                        displayValue = value ?? '';
+                    }
+                } catch (e) {
+                    displayValue = value ?? '';
+                }
+            } else {
+                displayValue = value ?? '';
+            }
+            
             span.textContent = this.wrapText(displayValue, 20);
             span.style.whiteSpace = 'nowrap';
             span.style.overflow = 'visible';
