@@ -679,4 +679,119 @@ class RegistroOrdenController extends Controller
             }
         }
     }
+
+    /**
+     * Actualizar el número de pedido (consecutivo)
+     */
+    public function updatePedido(Request $request)
+    {
+        try {
+            $validatedData = $request->validate([
+                'old_pedido' => 'required|integer',
+                'new_pedido' => 'required|integer|min:1',
+            ]);
+
+            $oldPedido = $validatedData['old_pedido'];
+            $newPedido = $validatedData['new_pedido'];
+
+            // Verificar que la orden antigua existe
+            $orden = TablaOriginal::where('pedido', $oldPedido)->first();
+            if (!$orden) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La orden no existe'
+                ], 404);
+            }
+
+            // Verificar que el nuevo pedido no existe ya
+            $existingOrder = TablaOriginal::where('pedido', $newPedido)->first();
+            if ($existingOrder) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "El número de pedido {$newPedido} ya está en uso"
+                ], 422);
+            }
+
+            DB::beginTransaction();
+
+            // Deshabilitar temporalmente las restricciones de clave foránea
+            DB::statement('SET FOREIGN_KEY_CHECKS=0');
+
+            // Actualizar en tabla_original primero
+            DB::table('tabla_original')
+                ->where('pedido', $oldPedido)
+                ->update(['pedido' => $newPedido]);
+
+            // Actualizar en registros_por_orden
+            DB::table('registros_por_orden')
+                ->where('pedido', $oldPedido)
+                ->update(['pedido' => $newPedido]);
+
+            // Actualizar en entregas_pedido_costura si existen
+            if (DB::getSchemaBuilder()->hasTable('entregas_pedido_costura')) {
+                DB::table('entregas_pedido_costura')
+                    ->where('pedido', $oldPedido)
+                    ->update(['pedido' => $newPedido]);
+            }
+
+            // Actualizar en entregas_pedido_corte si existen
+            if (DB::getSchemaBuilder()->hasTable('entregas_pedido_corte')) {
+                DB::table('entregas_pedido_corte')
+                    ->where('pedido', $oldPedido)
+                    ->update(['pedido' => $newPedido]);
+            }
+
+            // Rehabilitar las restricciones de clave foránea
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+
+            DB::commit();
+
+            // Invalidar caché para ambos pedidos
+            $this->invalidarCacheDias($oldPedido);
+            $this->invalidarCacheDias($newPedido);
+
+            // Log news
+            News::create([
+                'event_type' => 'pedido_updated',
+                'description' => "Número de pedido actualizado: {$oldPedido} → {$newPedido}",
+                'user_id' => auth()->id(),
+                'pedido' => $newPedido,
+                'metadata' => ['old_pedido' => $oldPedido, 'new_pedido' => $newPedido]
+            ]);
+
+            // Broadcast event for real-time updates
+            $ordenActualizada = TablaOriginal::where('pedido', $newPedido)->first();
+            broadcast(new \App\Events\OrdenUpdated($ordenActualizada, 'updated'));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Número de pedido actualizado correctamente',
+                'old_pedido' => $oldPedido,
+                'new_pedido' => $newPedido
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Asegurar que las restricciones se rehabiliten incluso si hay error
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos: ' . json_encode($e->errors())
+            ], 422);
+        } catch (\Exception $e) {
+            // Asegurar que las restricciones se rehabiliten incluso si hay error
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+            DB::rollBack();
+            \Log::error('Error al actualizar pedido', [
+                'old_pedido' => $request->old_pedido,
+                'new_pedido' => $request->new_pedido,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar el número de pedido: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
