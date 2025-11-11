@@ -1031,18 +1031,25 @@ class ModernTable {
         // PRIMERO: Crear la columna de acciones
         const accionesTd = document.createElement('td');
         accionesTd.className = 'table-cell acciones-column';
+        accionesTd.style.minWidth = '200px';
         const accionesDiv = document.createElement('div');
         accionesDiv.className = 'cell-content';
+        accionesDiv.style.cssText = 'display: flex; gap: 4px; flex-wrap: wrap;';
         accionesDiv.innerHTML = `
-            <button class="action-btn delete-btn" onclick="deleteOrder(${pedidoKey})" 
-                title="Eliminar orden"
-                style="background-color:#f84c4cff ; color: white; border: none; padding: 5px 10px; margin-right: 5px; border-radius: 4px; cursor: pointer;">
-                Borrar
+            <button class="action-btn edit-btn" onclick="openEditModal(${pedidoKey})"
+                title="Editar orden"
+                style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                Editar
             </button>
             <button class="action-btn detail-btn" onclick="viewDetail(${pedidoKey})" 
                 title="Ver detalle"
-                style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
                 Ver
+            </button>
+            <button class="action-btn delete-btn" onclick="deleteOrder(${pedidoKey})" 
+                title="Eliminar orden"
+                style="background-color:#f84c4cff ; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                Borrar
             </button>
         `;
         accionesTd.appendChild(accionesDiv);
@@ -1121,18 +1128,25 @@ appendRowsToTable(orders, totalDiasCalculados) {
         // PRIMERO: Crear la columna de acciones
         const accionesTd = document.createElement('td');
         accionesTd.className = 'table-cell acciones-column';
+        accionesTd.style.minWidth = '200px';
         const accionesDiv = document.createElement('div');
         accionesDiv.className = 'cell-content';
+        accionesDiv.style.cssText = 'display: flex; gap: 4px; flex-wrap: wrap;';
         accionesDiv.innerHTML = `
-            <button class="action-btn delete-btn" onclick="deleteOrder(${pedidoKey})" 
-                title="Eliminar orden"
-                style="background-color:#f84c4cff ; color: white; border: none; padding: 5px 10px; margin-right: 5px; border-radius: 4px; cursor: pointer;">
-                Borrar
+            <button class="action-btn edit-btn" onclick="openEditModal(${pedidoKey})"
+                title="Editar orden"
+                style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                Editar
             </button>
             <button class="action-btn detail-btn" onclick="viewDetail(${pedidoKey})" 
                 title="Ver detalle"
-                style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
                 Ver
+            </button>
+            <button class="action-btn delete-btn" onclick="deleteOrder(${pedidoKey})" 
+                title="Eliminar orden"
+                style="background-color:#f84c4cff ; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                Borrar
             </button>
         `;
         accionesTd.appendChild(accionesDiv);

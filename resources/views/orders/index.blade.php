@@ -99,17 +99,22 @@
                                     }
                                 @endphp
                                 <tr class="table-row {{ $conditionalClass }}" data-order-id="{{ $orden->pedido }}">
-                                    <td class="table-cell acciones-column">
-                                        <div class="cell-content">
-                                            <button class="action-btn delete-btn" onclick="deleteOrder({{ $orden->pedido }})"
-                                                title="Eliminar orden"
-                                                style="background-color:#f84c4cff ; color: white; border: none; padding: 5px 10px; margin-right: 5px; border-radius: 4px; cursor: pointer;">
-                                                Borrar
+                                    <td class="table-cell acciones-column" style="min-width: 200px !important;">
+                                        <div class="cell-content" style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                            <button class="action-btn edit-btn" onclick="openEditModal({{ $orden->pedido }})"
+                                                title="Editar orden"
+                                                style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                                                Editar
                                             </button>
                                             <button class="action-btn detail-btn" onclick="viewDetail({{ $orden->pedido }})"
                                                 title="Ver detalle"
-                                                style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                                                style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
                                                 Ver
+                                            </button>
+                                            <button class="action-btn delete-btn" onclick="deleteOrder({{ $orden->pedido }})"
+                                                title="Eliminar orden"
+                                                style="background-color:#f84c4cff ; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                                                Borrar
                                             </button>
                                         </div>
                                     </td>
@@ -308,6 +313,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal de Edición de Orden -->
+    @include('components.orders-components.order-edit-modal')
 
     <script src="{{ asset('js/orders js/modern-table.js') }}"></script>
     <script src="{{ asset('js/orders js/orders-table.js') }}"></script>

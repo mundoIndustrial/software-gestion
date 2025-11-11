@@ -1,0 +1,498 @@
+// order-edit-modal.js - Modal de edición de órdenes
+
+let editPrendasCount = 0;
+let currentEditOrderId = null;
+let originalPrendas = []; // Para rastrear prendas originales
+
+/**
+ * Abrir el modal de edición y cargar los datos de la orden
+ */
+async function openEditModal(pedido) {
+    try {
+        currentEditOrderId = pedido;
+        const modal = document.getElementById('orderEditModal');
+        
+        // Mostrar modal con animación
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+
+        // Cargar datos de la orden
+        await loadOrderData(pedido);
+
+    } catch (error) {
+        console.error('Error al abrir modal de edición:', error);
+        showEditNotification('Error al cargar la orden', 'error');
+    }
+}
+
+/**
+ * Cerrar el modal de edición
+ */
+function closeEditModal() {
+    const modal = document.getElementById('orderEditModal');
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+    
+    // Restaurar el botón guardar a su estado original
+    const guardarBtn = document.getElementById('edit_guardarBtn');
+    if (guardarBtn) {
+        guardarBtn.disabled = false;
+        guardarBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M5 13l4 4L19 7" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Guardar Cambios
+        `;
+    }
+    
+    // Ocultar notificación
+    hideEditNotification();
+    
+    // Limpiar el formulario
+    document.getElementById('orderEditForm').reset();
+    document.getElementById('edit_prendasContainer').innerHTML = '';
+    editPrendasCount = 0;
+    currentEditOrderId = null;
+    originalPrendas = [];
+}
+
+/**
+ * Cargar datos de la orden desde el servidor
+ */
+async function loadOrderData(pedido) {
+    try {
+        showEditNotification('Cargando datos de la orden...', 'info');
+
+        // Cargar datos de tabla_original
+        const ordenResponse = await fetch(`/registros/${pedido}`);
+        if (!ordenResponse.ok) throw new Error('Error al cargar orden');
+        
+        const ordenData = await ordenResponse.json();
+
+        // Llenar campos del formulario
+        document.getElementById('edit_pedido').value = ordenData.pedido;
+        document.getElementById('editOrderNumber').textContent = `#${ordenData.pedido}`;
+        document.getElementById('edit_estado').value = ordenData.estado || 'No iniciado';
+        document.getElementById('edit_cliente').value = ordenData.cliente || '';
+        document.getElementById('edit_fecha_creacion').value = ordenData.fecha_de_creacion_de_orden || '';
+        document.getElementById('edit_encargado').value = ordenData.encargado_orden || '';
+        document.getElementById('edit_asesora').value = ordenData.asesora || '';
+        document.getElementById('edit_forma_pago').value = ordenData.forma_de_pago || '';
+
+        // Cargar prendas desde registros_por_orden
+        await loadPrendas(pedido);
+
+        showEditNotification('Orden cargada correctamente', 'success');
+        setTimeout(() => hideEditNotification(), 2000);
+
+    } catch (error) {
+        console.error('Error al cargar datos:', error);
+        showEditNotification('Error al cargar los datos de la orden', 'error');
+    }
+}
+
+/**
+ * Cargar prendas y tallas desde registros_por_orden
+ */
+async function loadPrendas(pedido) {
+    try {
+        // Obtener registros por orden
+        const response = await fetch(`/api/registros-por-orden/${pedido}`);
+        if (!response.ok) throw new Error('Error al cargar prendas');
+        
+        const registros = await response.json();
+
+        // Agrupar por prenda
+        const prendasMap = {};
+        registros.forEach(registro => {
+            if (!prendasMap[registro.prenda]) {
+                prendasMap[registro.prenda] = {
+                    nombre: registro.prenda,
+                    descripcion: registro.descripcion || '',
+                    tallas: []
+                };
+            }
+            prendasMap[registro.prenda].tallas.push({
+                talla: registro.talla,
+                cantidad: registro.cantidad
+            });
+        });
+
+        // Convertir a array
+        const prendasArray = Object.values(prendasMap);
+        originalPrendas = JSON.parse(JSON.stringify(prendasArray)); // Copia profunda
+
+        // Renderizar prendas
+        const container = document.getElementById('edit_prendasContainer');
+        container.innerHTML = '';
+        editPrendasCount = 0;
+
+        prendasArray.forEach((prenda, index) => {
+            addEditPrendaCard(prenda, index);
+        });
+
+    } catch (error) {
+        console.error('Error al cargar prendas:', error);
+        showEditNotification('Error al cargar las prendas', 'error');
+    }
+}
+
+/**
+ * Añadir tarjeta de prenda al contenedor
+ */
+function addEditPrendaCard(prendaData = null, index = null) {
+    const container = document.getElementById('edit_prendasContainer');
+    const prendaIndex = index !== null ? index : editPrendasCount;
+    
+    const prendaCard = document.createElement('div');
+    prendaCard.className = 'prenda-card';
+    prendaCard.dataset.prendaIndex = prendaIndex;
+    prendaCard.dataset.originalName = prendaData ? prendaData.nombre : '';
+    
+    prendaCard.innerHTML = `
+        <div class="prenda-header">
+            <span class="prenda-number">Prenda ${prendaIndex + 1}</span>
+            <button type="button" class="btn-delete eliminar-prenda-btn" onclick="removeEditPrenda(${prendaIndex})">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+        <div class="prenda-content">
+            <div class="form-group">
+                <label class="form-label-small">Nombre de la prenda</label>
+                <input type="text" 
+                       name="edit_prenda[${prendaIndex}]" 
+                       class="form-input-compact" 
+                       placeholder="Ej: POLO ROJA" 
+                       value="${prendaData ? prendaData.nombre : ''}" 
+                       required />
+            </div>
+            <div class="form-group">
+                <label class="form-label-small">Descripción/Detalles</label>
+                <textarea name="edit_descripcion[${prendaIndex}]" 
+                          rows="3" 
+                          class="form-textarea" 
+                          placeholder="Ej: Pegar bolsillo en la parte frontal">${prendaData ? prendaData.descripcion : ''}</textarea>
+            </div>
+            <div class="tallas-section">
+                <label class="form-label-small">Tallas y Cantidades</label>
+                <div class="tallas-list" data-prenda-index="${prendaIndex}">
+                    ${prendaData && prendaData.tallas ? renderTallas(prendaData.tallas, prendaIndex) : ''}
+                </div>
+                <button type="button" class="btn-add-talla" onclick="addEditTalla(${prendaIndex})">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M12 4v16m8-8H4" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Añadir talla
+                </button>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(prendaCard);
+    editPrendasCount++;
+    updatePrendaNumbers();
+}
+
+/**
+ * Renderizar tallas existentes
+ */
+function renderTallas(tallas, prendaIndex) {
+    return tallas.map((talla, tallaIndex) => `
+        <div>
+            <input type="text" 
+                   name="edit_talla[${prendaIndex}][]" 
+                   value="${talla.talla}" 
+                   placeholder="Talla (ej: M)" 
+                   required />
+            <input type="number" 
+                   name="edit_cantidad[${prendaIndex}][]" 
+                   value="${talla.cantidad}" 
+                   placeholder="Cantidad" 
+                   min="1" 
+                   required />
+            <button type="button" class="eliminar-talla-btn" onclick="removeEditTalla(this)">×</button>
+        </div>
+    `).join('');
+}
+
+/**
+ * Añadir una nueva prenda vacía
+ */
+function addNewEditPrenda() {
+    addEditPrendaCard(null, editPrendasCount);
+}
+
+/**
+ * Añadir talla a una prenda
+ */
+function addEditTalla(prendaIndex) {
+    const tallasList = document.querySelector(`.tallas-list[data-prenda-index="${prendaIndex}"]`);
+    
+    const tallaDiv = document.createElement('div');
+    tallaDiv.innerHTML = `
+        <input type="text" 
+               name="edit_talla[${prendaIndex}][]" 
+               placeholder="Talla (ej: M)" 
+               required />
+        <input type="number" 
+               name="edit_cantidad[${prendaIndex}][]" 
+               placeholder="Cantidad" 
+               min="1" 
+               required />
+        <button type="button" class="eliminar-talla-btn" onclick="removeEditTalla(this)">×</button>
+    `;
+    
+    tallasList.appendChild(tallaDiv);
+}
+
+/**
+ * Eliminar talla
+ */
+function removeEditTalla(button) {
+    button.closest('div').remove();
+}
+
+/**
+ * Eliminar prenda
+ */
+function removeEditPrenda(prendaIndex) {
+    const prendaCard = document.querySelector(`.prenda-card[data-prenda-index="${prendaIndex}"]`);
+    if (prendaCard) {
+        prendaCard.remove();
+        updatePrendaNumbers();
+    }
+}
+
+/**
+ * Actualizar números de prendas
+ */
+function updatePrendaNumbers() {
+    const prendaCards = document.querySelectorAll('#edit_prendasContainer .prenda-card');
+    prendaCards.forEach((card, index) => {
+        const numberSpan = card.querySelector('.prenda-number');
+        if (numberSpan) {
+            numberSpan.textContent = `Prenda ${index + 1}`;
+        }
+        card.dataset.prendaIndex = index;
+    });
+}
+
+/**
+ * Mostrar notificación
+ */
+function showEditNotification(message, type = 'success') {
+    const notification = document.getElementById('editNotification');
+    notification.textContent = message;
+    notification.className = `notification ${type}`;
+    notification.style.display = 'block';
+}
+
+/**
+ * Ocultar notificación
+ */
+function hideEditNotification() {
+    const notification = document.getElementById('editNotification');
+    notification.style.display = 'none';
+}
+
+/**
+ * Guardar cambios de la orden
+ */
+async function saveEditOrder(event) {
+    event.preventDefault();
+    
+    try {
+        const guardarBtn = document.getElementById('edit_guardarBtn');
+        guardarBtn.disabled = true;
+        guardarBtn.innerHTML = `
+            <svg class="animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="12" cy="12" r="10" stroke-width="2" stroke-dasharray="32" stroke-linecap="round"/>
+            </svg>
+            Guardando...
+        `;
+
+        // Recopilar datos del formulario
+        const formData = collectEditFormData();
+
+        // Validar datos
+        if (!validateEditFormData(formData)) {
+            throw new Error('Por favor complete todos los campos requeridos');
+        }
+
+        showEditNotification('Guardando cambios...', 'info');
+
+        // Enviar al servidor
+        const response = await fetch(`/registros/${currentEditOrderId}/edit-full`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify(formData)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || 'Error al guardar cambios');
+        }
+
+        const result = await response.json();
+
+        showEditNotification('¡Cambios guardados correctamente!', 'success');
+        
+        // Actualizar la tabla en tiempo real sin recargar
+        if (result.orden && window.modernTable && typeof window.modernTable.actualizarOrdenEnTabla === 'function') {
+            window.modernTable.actualizarOrdenEnTabla(result.orden);
+            console.log('✅ Orden actualizada en tiempo real desde el modal');
+        }
+        
+        // Cerrar modal después de 1.5 segundos
+        setTimeout(() => {
+            closeEditModal();
+        }, 1500);
+
+    } catch (error) {
+        console.error('Error al guardar:', error);
+        showEditNotification(error.message || 'Error al guardar los cambios', 'error');
+        
+        // Restaurar botón
+        const guardarBtn = document.getElementById('edit_guardarBtn');
+        guardarBtn.disabled = false;
+        guardarBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M5 13l4 4L19 7" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            Guardar Cambios
+        `;
+    }
+}
+
+/**
+ * Recopilar datos del formulario
+ */
+function collectEditFormData() {
+    const formData = {
+        pedido: currentEditOrderId,
+        estado: document.getElementById('edit_estado').value,
+        cliente: document.getElementById('edit_cliente').value,
+        fecha_creacion: document.getElementById('edit_fecha_creacion').value,
+        encargado: document.getElementById('edit_encargado').value,
+        asesora: document.getElementById('edit_asesora').value,
+        forma_pago: document.getElementById('edit_forma_pago').value,
+        prendas: []
+    };
+
+    // Recopilar prendas
+    const prendaCards = document.querySelectorAll('#edit_prendasContainer .prenda-card');
+    prendaCards.forEach((card, index) => {
+        const prendaNombre = card.querySelector(`input[name="edit_prenda[${index}]"]`)?.value || '';
+        const prendaDescripcion = card.querySelector(`textarea[name="edit_descripcion[${index}]"]`)?.value || '';
+        const originalName = card.dataset.originalName || '';
+        
+        const tallas = [];
+        const tallaInputs = card.querySelectorAll(`input[name="edit_talla[${index}][]"]`);
+        const cantidadInputs = card.querySelectorAll(`input[name="edit_cantidad[${index}][]"]`);
+        
+        tallaInputs.forEach((tallaInput, tallaIndex) => {
+            tallas.push({
+                talla: tallaInput.value,
+                cantidad: parseInt(cantidadInputs[tallaIndex].value) || 0
+            });
+        });
+
+        if (prendaNombre && tallas.length > 0) {
+            formData.prendas.push({
+                prenda: prendaNombre,
+                descripcion: prendaDescripcion,
+                tallas: tallas,
+                originalName: originalName // Para identificar si es una prenda existente
+            });
+        }
+    });
+
+    return formData;
+}
+
+/**
+ * Validar datos del formulario
+ */
+function validateEditFormData(formData) {
+    if (!formData.cliente) {
+        showEditNotification('El campo Cliente es requerido', 'error');
+        return false;
+    }
+
+    if (!formData.fecha_creacion) {
+        showEditNotification('La Fecha de Creación es requerida', 'error');
+        return false;
+    }
+
+    if (formData.prendas.length === 0) {
+        showEditNotification('Debe agregar al menos una prenda', 'error');
+        return false;
+    }
+
+    for (let i = 0; i < formData.prendas.length; i++) {
+        const prenda = formData.prendas[i];
+        if (!prenda.prenda) {
+            showEditNotification(`La prenda ${i + 1} debe tener un nombre`, 'error');
+            return false;
+        }
+        if (prenda.tallas.length === 0) {
+            showEditNotification(`La prenda ${i + 1} debe tener al menos una talla`, 'error');
+            return false;
+        }
+    }
+
+    return true;
+}
+
+// Inicializar event listeners cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', function() {
+    // Botón añadir prenda
+    const añadirPrendaBtn = document.getElementById('edit_añadirPrendaBtn');
+    if (añadirPrendaBtn) {
+        añadirPrendaBtn.addEventListener('click', addNewEditPrenda);
+    }
+
+    // Formulario submit
+    const form = document.getElementById('orderEditForm');
+    if (form) {
+        form.addEventListener('submit', saveEditOrder);
+    }
+
+    // Cerrar al hacer clic fuera del modal
+    const modal = document.getElementById('orderEditModal');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeEditModal();
+            }
+        });
+    }
+
+    // Tecla ESC para cerrar
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('orderEditModal');
+            if (modal && modal.style.display === 'flex') {
+                closeEditModal();
+            }
+        }
+    });
+});
+
+// Añadir estilo de animación para el spinner
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    .animate-spin {
+        animation: spin 1s linear infinite;
+    }
+`;
+document.head.appendChild(style);
