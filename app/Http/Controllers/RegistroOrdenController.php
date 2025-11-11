@@ -95,7 +95,7 @@ class RegistroOrdenController extends Controller
 
                 // Whitelist de columnas permitidas para seguridad
                 $allowedColumns = [
-                    'id', 'estado', 'area', 'total_de_dias_', 'dia_de_entrega', '_pedido', 'cliente',
+                    'id', 'estado', 'area', 'total_de_dias_', 'dia_de_entrega', 'pedido', 'cliente',
                     'descripcion', 'cantidad', 'novedades', 'asesora', 'forma_de_pago',
                     'fecha_de_creacion_de_orden', 'encargado_orden', 'dias_orden', 'inventario',
                     'encargados_inventario', 'dias_inventario', 'insumos_y_telas', 'encargados_insumos',
