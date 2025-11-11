@@ -50,7 +50,19 @@ class RegistroOrdenController extends Controller
         ];
 
             if (in_array($column, $allowedColumns)) {
-                $uniqueValues = TablaOriginal::distinct()->pluck($column)->filter()->values()->toArray();
+                // Si es la columna calculada total_de_dias_, obtener todos los registros y calcular
+                if ($column === 'total_de_dias_') {
+                    $festivos = \App\Models\Festivo::pluck('fecha')->toArray();
+                    $ordenes = TablaOriginal::all();
+                    foreach ($ordenes as $orden) {
+                        $orden->setFestivos($festivos);
+                    }
+                    $uniqueValues = $ordenes->map(function($orden) {
+                        return $orden->total_de_dias;
+                    })->unique()->sort()->values()->toArray();
+                } else {
+                    $uniqueValues = TablaOriginal::distinct()->pluck($column)->filter()->values()->toArray();
+                }
                 
                 // Si es una columna de fecha, formatear los valores a d/m/Y
                 if (in_array($column, $dateColumns)) {
@@ -85,6 +97,9 @@ class RegistroOrdenController extends Controller
             });
         }
 
+        // Detectar si hay filtro de total_de_dias_ para procesarlo después
+        $filterTotalDias = null;
+        
         // Apply column filters (dynamic for all columns)
         foreach ($request->all() as $key => $value) {
             if (str_starts_with($key, 'filter_') && !empty($value)) {
@@ -108,6 +123,13 @@ class RegistroOrdenController extends Controller
                 ];
 
                 if (in_array($column, $allowedColumns)) {
+                    // Si es total_de_dias_, guardarlo para filtrar después del cálculo
+                    if ($column === 'total_de_dias_') {
+                        $filterTotalDias = array_map('intval', $values);
+                        \Log::info("Filtro recibido - Columna: {$column}, Valores raw: " . json_encode($values) . ", Valores int: " . json_encode($filterTotalDias));
+                        continue;
+                    }
+                    
                     // Si es una columna de fecha, convertir los valores de d/m/Y a formato de base de datos
                     if (in_array($column, $dateColumns)) {
                         $query->where(function($q) use ($column, $values) {
@@ -137,11 +159,54 @@ class RegistroOrdenController extends Controller
             FestivosColombiaService::obtenerFestivos($nextYear)
         );
         
-        // Optimización: Reducir paginación de 50 a 25 para mejor performance
-        $ordenes = $query->paginate(25);
+        \Log::info("Antes de verificar filtro - filterTotalDias: " . json_encode($filterTotalDias) . ", es null: " . ($filterTotalDias === null ? 'SI' : 'NO'));
+        
+        // Si hay filtro de total_de_dias_, necesitamos obtener todos los registros para calcular y filtrar
+        if ($filterTotalDias !== null) {
+            \Log::info("Iniciando filtrado por total_de_dias_ con valores: " . json_encode($filterTotalDias));
+            $todasOrdenes = $query->get();
+            \Log::info("Total órdenes obtenidas: " . $todasOrdenes->count());
+            
+            // Convertir a array para el cálculo
+            $ordenesArray = $todasOrdenes->map(function($orden) {
+                return (object) $orden->getAttributes();
+            })->toArray();
+            
+            $totalDiasCalculados = $this->calcularTotalDiasBatchConCache($ordenesArray, $festivos);
+            
+            // Filtrar por total_de_dias_
+            $ordenesFiltradas = $todasOrdenes->filter(function($orden) use ($totalDiasCalculados, $filterTotalDias) {
+                $totalDias = $totalDiasCalculados[$orden->pedido] ?? 0;
+                $match = in_array((int)$totalDias, $filterTotalDias, true);
+                
+                // Log temporal para debug (eliminar después)
+                if ($orden->pedido <= 3) {
+                    \Log::info("Filtro total_dias - Pedido: {$orden->pedido}, Total días: {$totalDias}, Filtros: " . json_encode($filterTotalDias) . ", Match: " . ($match ? 'SI' : 'NO'));
+                }
+                
+                return $match;
+            });
+            
+            // Paginar manualmente los resultados filtrados
+            $currentPage = request()->get('page', 1);
+            $perPage = 25;
+            $ordenes = new \Illuminate\Pagination\LengthAwarePaginator(
+                $ordenesFiltradas->forPage($currentPage, $perPage)->values(),
+                $ordenesFiltradas->count(),
+                $perPage,
+                $currentPage,
+                ['path' => request()->url(), 'query' => request()->query()]
+            );
+            
+            // Recalcular solo para las órdenes de la página actual
+            $totalDiasCalculados = $this->calcularTotalDiasBatchConCache($ordenes->items(), $festivos);
+        } else {
+            // Optimización: Reducir paginación de 50 a 25 para mejor performance
+            $ordenes = $query->paginate(25);
 
-        // Cálculo optimizado con caché para TODAS las órdenes visibles
-        $totalDiasCalculados = $this->calcularTotalDiasBatchConCache($ordenes->items(), $festivos);
+            // Cálculo optimizado con caché para TODAS las órdenes visibles
+            $totalDiasCalculados = $this->calcularTotalDiasBatchConCache($ordenes->items(), $festivos);
+        }
 
         // Obtener opciones del enum 'area'
         $areaOptions = $this->getEnumOptions('tabla_original', 'area');
