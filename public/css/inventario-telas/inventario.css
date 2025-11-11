@@ -1,0 +1,427 @@
+/* ========================================
+   INVENTARIO DE TELAS - ASESORES
+   ======================================== */
+
+.inventario-telas-container {
+    padding: 2rem;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+.list-header {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.btn-create {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.5rem;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-create:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-create .material-symbols-rounded {
+    font-size: 1.25rem;
+}
+
+.btn-historial {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.5rem;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-historial:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-historial .material-symbols-rounded {
+    font-size: 1.25rem;
+}
+
+.search-box {
+    position: relative;
+    flex: 1;
+    min-width: 250px;
+}
+
+.search-box i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 0.875rem 1.25rem 0.875rem 2.75rem;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.1);
+}
+
+.search-box input::placeholder {
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
+.filter-group {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.filter-select {
+    padding: 0.875rem 2.5rem 0.875rem 1.25rem;
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    font-size: 0.95rem;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%230066CC' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1.25rem;
+    min-width: 200px;
+}
+
+.filter-select:hover {
+    border-color: var(--primary-light);
+    background-color: var(--bg-hover);
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.1);
+}
+
+/* ========================================
+   TABLA DE INVENTARIO
+   ======================================== */
+
+.table-container {
+    background: var(--bg-card);
+    border-radius: 16px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    max-height: 600px;
+    display: flex;
+    flex-direction: column;
+}
+
+body.dark-theme .table-container {
+    background: #1A2332;
+}
+
+body.light-theme .table-container {
+    background: var(--bg-card);
+}
+
+.inventario-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.inventario-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #2A3544;
+    border-bottom: 2px solid var(--border-color);
+}
+
+body.dark-theme .inventario-table thead {
+    background: #2A3544;
+}
+
+body.light-theme .inventario-table thead {
+    background: var(--bg-card);
+}
+
+.inventario-table th {
+    padding: 1.25rem 1.5rem;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: transparent;
+    border-bottom: 2px solid var(--border-color);
+}
+
+body.dark-theme .inventario-table th {
+    color: #B8C5D6;
+}
+
+body.light-theme .inventario-table th {
+    color: var(--text-secondary);
+}
+
+.table-container tbody {
+    display: block;
+    overflow-y: auto;
+    max-height: 540px;
+}
+
+.table-container thead,
+.table-container tbody tr {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.inventario-table tbody tr {
+    transition: all 0.2s ease;
+}
+
+body.dark-theme .inventario-table tbody tr {
+    background-color: #1A2332;
+    border-bottom: 1px solid rgba(42, 53, 68, 0.5);
+}
+
+body.light-theme .inventario-table tbody tr {
+    background-color: transparent;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.inventario-table tbody tr:hover {
+    background-color: var(--bg-hover);
+}
+
+body.dark-theme .inventario-table tbody tr:hover {
+    background-color: #252F3F;
+}
+
+.inventario-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.inventario-table td {
+    padding: 1.25rem 1.5rem;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+/* ========================================
+   SCROLLBAR PERSONALIZADO
+   ======================================== */
+
+.table-container tbody::-webkit-scrollbar {
+    width: 8px;
+}
+
+.table-container tbody::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 4px;
+}
+
+.table-container tbody::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+.table-container tbody::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color);
+}
+
+/* ========================================
+   CELDAS Y BADGES
+   ======================================== */
+
+.nombre-tela {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.fecha-cell {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.metraje-cell {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.categoria-cell {
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: capitalize;
+}
+
+.stock-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.stock-bajo {
+    background-color: rgba(220, 38, 38, 0.1);
+    color: var(--danger-color);
+    border: 1px solid var(--danger-color);
+}
+
+.stock-medio {
+    background-color: rgba(247, 127, 0, 0.1);
+    color: var(--warning-color);
+    border: 1px solid var(--warning-color);
+}
+
+.stock-alto {
+    background-color: rgba(0, 168, 107, 0.1);
+    color: var(--success-color);
+    border: 1px solid var(--success-color);
+}
+
+/* ========================================
+   ACCIONES
+   ======================================== */
+
+.actions-cell {
+    text-align: center;
+}
+
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.btn-action:hover {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-adjust {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: white;
+}
+
+.btn-adjust:hover {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
+}
+
+.btn-action .material-symbols-rounded {
+    font-size: 1.25rem;
+}
+
+/* ========================================
+   ESTADO VACÍO
+   ======================================== */
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-secondary);
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+    color: var(--primary-color);
+}
+
+.empty-state h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.empty-state p {
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 768px) {
+    .inventario-telas-container {
+        padding: 1rem;
+    }
+
+    .list-header {
+        flex-direction: column;
+    }
+
+    .search-box {
+        width: 100%;
+    }
+
+    .filter-group {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .filter-select {
+        width: 100%;
+    }
+
+    .table-container {
+        max-height: 500px;
+    }
+
+    .table-container tbody {
+        max-height: 440px;
+    }
+}

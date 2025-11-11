@@ -72,6 +72,14 @@
                     </a>
                 </li>
                 <li class="menu-item">
+                    <a href="{{ route('asesores.inventario-telas.index') }}" 
+                       class="menu-link {{ request()->routeIs('asesores.inventario-telas.index') ? 'active' : '' }}"
+                       aria-label="Ver inventario de telas">
+                        <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
+                        <span class="menu-label">Inventario Telas</span>
+                    </a>
+                </li>
+                <li class="menu-item">
                     <form action="{{ route('logout') }}" method="POST">
                         @csrf
                         <button type="submit" 
