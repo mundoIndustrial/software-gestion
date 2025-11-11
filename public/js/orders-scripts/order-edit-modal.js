@@ -3,6 +3,7 @@
 let editPrendasCount = 0;
 let currentEditOrderId = null;
 let originalPrendas = []; // Para rastrear prendas originales
+let prendaUniqueId = 0; // ID único para cada prenda
 
 /**
  * Abrir el modal de edición y cargar los datos de la orden
@@ -54,6 +55,7 @@ function closeEditModal() {
     editPrendasCount = 0;
     currentEditOrderId = null;
     originalPrendas = [];
+    prendaUniqueId = 0;
 }
 
 /**
@@ -63,8 +65,12 @@ async function loadOrderData(pedido) {
     try {
         showEditNotification('Cargando datos de la orden...', 'info');
 
-        // Cargar datos de tabla_original
-        const ordenResponse = await fetch(`/registros/${pedido}`);
+        // Determinar el contexto (registros o bodega)
+        const context = window.modalContext || 'registros';
+        const baseUrl = context === 'bodega' ? '/bodega' : '/registros';
+
+        // Cargar datos de tabla_original o tabla_original_bodega
+        const ordenResponse = await fetch(`${baseUrl}/${pedido}`);
         if (!ordenResponse.ok) throw new Error('Error al cargar orden');
         
         const ordenData = await ordenResponse.json();
@@ -79,7 +85,7 @@ async function loadOrderData(pedido) {
         document.getElementById('edit_asesora').value = ordenData.asesora || '';
         document.getElementById('edit_forma_pago').value = ordenData.forma_de_pago || '';
 
-        // Cargar prendas desde registros_por_orden
+        // Cargar prendas desde registros_por_orden o registros_por_orden_bodega
         await loadPrendas(pedido);
 
         showEditNotification('Orden cargada correctamente', 'success');
@@ -92,12 +98,18 @@ async function loadOrderData(pedido) {
 }
 
 /**
- * Cargar prendas y tallas desde registros_por_orden
+ * Cargar prendas y tallas desde registros_por_orden o registros_por_orden_bodega
  */
 async function loadPrendas(pedido) {
     try {
+        // Determinar el contexto (registros o bodega)
+        const context = window.modalContext || 'registros';
+        const apiUrl = context === 'bodega' 
+            ? `/api/registros-por-orden-bodega/${pedido}` 
+            : `/api/registros-por-orden/${pedido}`;
+
         // Obtener registros por orden
-        const response = await fetch(`/api/registros-por-orden/${pedido}`);
+        const response = await fetch(apiUrl);
         if (!response.ok) throw new Error('Error al cargar prendas');
         
         const registros = await response.json();
@@ -142,17 +154,17 @@ async function loadPrendas(pedido) {
  */
 function addEditPrendaCard(prendaData = null, index = null) {
     const container = document.getElementById('edit_prendasContainer');
-    const prendaIndex = index !== null ? index : editPrendasCount;
+    const uniqueId = prendaUniqueId++; // ID único para esta prenda
     
     const prendaCard = document.createElement('div');
     prendaCard.className = 'prenda-card';
-    prendaCard.dataset.prendaIndex = prendaIndex;
+    prendaCard.dataset.prendaId = uniqueId; // Usar ID único en lugar de índice
     prendaCard.dataset.originalName = prendaData ? prendaData.nombre : '';
     
     prendaCard.innerHTML = `
         <div class="prenda-header">
-            <span class="prenda-number">Prenda ${prendaIndex + 1}</span>
-            <button type="button" class="btn-delete eliminar-prenda-btn" onclick="removeEditPrenda(${prendaIndex})">
+            <span class="prenda-number">Prenda ${container.children.length + 1}</span>
+            <button type="button" class="btn-delete eliminar-prenda-btn" data-prenda-id="${uniqueId}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round"/>
                 </svg>
@@ -162,25 +174,23 @@ function addEditPrendaCard(prendaData = null, index = null) {
             <div class="form-group">
                 <label class="form-label-small">Nombre de la prenda</label>
                 <input type="text" 
-                       name="edit_prenda[${prendaIndex}]" 
-                       class="form-input-compact" 
+                       class="form-input-compact prenda-nombre-input" 
                        placeholder="Ej: POLO ROJA" 
                        value="${prendaData ? prendaData.nombre : ''}" 
                        required />
             </div>
             <div class="form-group">
                 <label class="form-label-small">Descripción/Detalles</label>
-                <textarea name="edit_descripcion[${prendaIndex}]" 
+                <textarea class="form-textarea prenda-descripcion-input" 
                           rows="3" 
-                          class="form-textarea" 
                           placeholder="Ej: Pegar bolsillo en la parte frontal">${prendaData ? prendaData.descripcion : ''}</textarea>
             </div>
             <div class="tallas-section">
                 <label class="form-label-small">Tallas y Cantidades</label>
-                <div class="tallas-list" data-prenda-index="${prendaIndex}">
-                    ${prendaData && prendaData.tallas ? renderTallas(prendaData.tallas, prendaIndex) : ''}
+                <div class="tallas-list" data-prenda-id="${uniqueId}">
+                    ${prendaData && prendaData.tallas ? renderTallas(prendaData.tallas, uniqueId) : ''}
                 </div>
-                <button type="button" class="btn-add-talla" onclick="addEditTalla(${prendaIndex})">
+                <button type="button" class="btn-add-talla" data-prenda-id="${uniqueId}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path d="M12 4v16m8-8H4" stroke-width="2" stroke-linecap="round"/>
                     </svg>
@@ -191,6 +201,10 @@ function addEditPrendaCard(prendaData = null, index = null) {
     `;
     
     container.appendChild(prendaCard);
+    
+    // Agregar event listeners
+    attachPrendaEventListeners(prendaCard, uniqueId);
+    
     editPrendasCount++;
     updatePrendaNumbers();
 }
@@ -198,70 +212,142 @@ function addEditPrendaCard(prendaData = null, index = null) {
 /**
  * Renderizar tallas existentes
  */
-function renderTallas(tallas, prendaIndex) {
+function renderTallas(tallas, prendaId) {
     return tallas.map((talla, tallaIndex) => `
-        <div>
+        <div class="talla-item">
             <input type="text" 
-                   name="edit_talla[${prendaIndex}][]" 
+                   class="talla-input" 
                    value="${talla.talla}" 
                    placeholder="Talla (ej: M)" 
                    required />
             <input type="number" 
-                   name="edit_cantidad[${prendaIndex}][]" 
+                   class="cantidad-input" 
                    value="${talla.cantidad}" 
                    placeholder="Cantidad" 
                    min="1" 
                    required />
-            <button type="button" class="eliminar-talla-btn" onclick="removeEditTalla(this)">×</button>
+            <button type="button" class="eliminar-talla-btn">×</button>
         </div>
     `).join('');
+}
+
+/**
+ * Añadir event listeners a una tarjeta de prenda
+ */
+function attachPrendaEventListeners(prendaCard, prendaId) {
+    // Botón eliminar prenda
+    const deleteBtn = prendaCard.querySelector('.eliminar-prenda-btn');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            removeEditPrenda(prendaId);
+        });
+    }
+    
+    // Botón añadir talla
+    const addTallaBtn = prendaCard.querySelector('.btn-add-talla');
+    if (addTallaBtn) {
+        addTallaBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            addEditTalla(prendaId);
+        });
+    }
+    
+    // Botones eliminar talla existentes
+    attachTallaDeleteListeners(prendaCard);
+}
+
+/**
+ * Añadir event listeners a botones de eliminar talla
+ */
+function attachTallaDeleteListeners(prendaCard) {
+    const deleteTallaBtns = prendaCard.querySelectorAll('.eliminar-talla-btn');
+    deleteTallaBtns.forEach(btn => {
+        // Remover listener anterior si existe
+        btn.replaceWith(btn.cloneNode(true));
+    });
+    
+    // Agregar nuevos listeners
+    const newDeleteTallaBtns = prendaCard.querySelectorAll('.eliminar-talla-btn');
+    newDeleteTallaBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            removeEditTalla(this);
+        });
+    });
 }
 
 /**
  * Añadir una nueva prenda vacía
  */
 function addNewEditPrenda() {
-    addEditPrendaCard(null, editPrendasCount);
+    addEditPrendaCard(null, null);
 }
 
 /**
  * Añadir talla a una prenda
  */
-function addEditTalla(prendaIndex) {
-    const tallasList = document.querySelector(`.tallas-list[data-prenda-index="${prendaIndex}"]`);
+function addEditTalla(prendaId) {
+    const tallasList = document.querySelector(`.tallas-list[data-prenda-id="${prendaId}"]`);
+    if (!tallasList) {
+        console.error('No se encontró la lista de tallas para prenda ID:', prendaId);
+        return;
+    }
     
     const tallaDiv = document.createElement('div');
+    tallaDiv.className = 'talla-item';
     tallaDiv.innerHTML = `
         <input type="text" 
-               name="edit_talla[${prendaIndex}][]" 
+               class="talla-input" 
                placeholder="Talla (ej: M)" 
                required />
         <input type="number" 
-               name="edit_cantidad[${prendaIndex}][]" 
+               class="cantidad-input" 
                placeholder="Cantidad" 
                min="1" 
                required />
-        <button type="button" class="eliminar-talla-btn" onclick="removeEditTalla(this)">×</button>
+        <button type="button" class="eliminar-talla-btn">×</button>
     `;
     
     tallasList.appendChild(tallaDiv);
+    
+    // Agregar event listener al botón de eliminar
+    const deleteBtn = tallaDiv.querySelector('.eliminar-talla-btn');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            removeEditTalla(this);
+        });
+    }
 }
 
 /**
  * Eliminar talla
  */
 function removeEditTalla(button) {
-    button.closest('div').remove();
+    const tallaItem = button.closest('.talla-item');
+    if (tallaItem) {
+        tallaItem.remove();
+    }
 }
 
 /**
  * Eliminar prenda
  */
-function removeEditPrenda(prendaIndex) {
-    const prendaCard = document.querySelector(`.prenda-card[data-prenda-index="${prendaIndex}"]`);
+function removeEditPrenda(prendaId) {
+    const prendaCard = document.querySelector(`.prenda-card[data-prenda-id="${prendaId}"]`);
     if (prendaCard) {
-        prendaCard.remove();
-        updatePrendaNumbers();
+        // Animación de salida
+        prendaCard.style.opacity = '0';
+        prendaCard.style.transform = 'scale(0.95)';
+        prendaCard.style.transition = 'all 0.2s ease';
+        
+        setTimeout(() => {
+            prendaCard.remove();
+            updatePrendaNumbers();
+        }, 200);
+    } else {
+        console.error('No se encontró la prenda con ID:', prendaId);
     }
 }
 
@@ -275,7 +361,6 @@ function updatePrendaNumbers() {
         if (numberSpan) {
             numberSpan.textContent = `Prenda ${index + 1}`;
         }
-        card.dataset.prendaIndex = index;
     });
 }
 
@@ -323,8 +408,12 @@ async function saveEditOrder(event) {
 
         showEditNotification('Guardando cambios...', 'info');
 
+        // Determinar el contexto (registros o bodega)
+        const context = window.modalContext || 'registros';
+        const baseUrl = context === 'bodega' ? '/bodega' : '/registros';
+
         // Enviar al servidor
-        const response = await fetch(`/registros/${currentEditOrderId}/edit-full`, {
+        const response = await fetch(`${baseUrl}/${currentEditOrderId}/edit-full`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -384,22 +473,26 @@ function collectEditFormData() {
         prendas: []
     };
 
-    // Recopilar prendas
+    // Recopilar prendas usando las nuevas clases
     const prendaCards = document.querySelectorAll('#edit_prendasContainer .prenda-card');
-    prendaCards.forEach((card, index) => {
-        const prendaNombre = card.querySelector(`input[name="edit_prenda[${index}]"]`)?.value || '';
-        const prendaDescripcion = card.querySelector(`textarea[name="edit_descripcion[${index}]"]`)?.value || '';
+    prendaCards.forEach((card) => {
+        const prendaNombre = card.querySelector('.prenda-nombre-input')?.value || '';
+        const prendaDescripcion = card.querySelector('.prenda-descripcion-input')?.value || '';
         const originalName = card.dataset.originalName || '';
         
         const tallas = [];
-        const tallaInputs = card.querySelectorAll(`input[name="edit_talla[${index}][]"]`);
-        const cantidadInputs = card.querySelectorAll(`input[name="edit_cantidad[${index}][]"]`);
+        const tallaItems = card.querySelectorAll('.talla-item');
         
-        tallaInputs.forEach((tallaInput, tallaIndex) => {
-            tallas.push({
-                talla: tallaInput.value,
-                cantidad: parseInt(cantidadInputs[tallaIndex].value) || 0
-            });
+        tallaItems.forEach((item) => {
+            const tallaInput = item.querySelector('.talla-input');
+            const cantidadInput = item.querySelector('.cantidad-input');
+            
+            if (tallaInput && cantidadInput && tallaInput.value && cantidadInput.value) {
+                tallas.push({
+                    talla: tallaInput.value,
+                    cantidad: parseInt(cantidadInput.value) || 0
+                });
+            }
         });
 
         if (prendaNombre && tallas.length > 0) {

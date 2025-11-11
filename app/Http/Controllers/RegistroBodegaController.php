@@ -660,4 +660,172 @@ class RegistroBodegaController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Obtener registros por orden bodega para el modal de edición
+     */
+    public function getRegistrosPorOrden($pedido)
+    {
+        try {
+            $registros = DB::table('registros_por_orden_bodega')
+                ->where('pedido', $pedido)
+                ->select('prenda', 'descripcion', 'talla', 'cantidad')
+                ->get();
+
+            return response()->json($registros);
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener registros por orden bodega', [
+                'pedido' => $pedido,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener los registros'
+            ], 500);
+        }
+    }
+
+    /**
+     * Editar orden completa de bodega (tabla_original_bodega + registros_por_orden_bodega)
+     */
+    public function editFullOrder(Request $request, $pedido)
+    {
+        DB::beginTransaction();
+
+        try {
+            // Validar datos de entrada
+            $validatedData = $request->validate([
+                'pedido' => 'required|integer',
+                'estado' => 'nullable|in:No iniciado,En Ejecución,Entregado,Anulada',
+                'cliente' => 'required|string|max:255',
+                'fecha_creacion' => 'required|date',
+                'encargado' => 'nullable|string|max:255',
+                'asesora' => 'nullable|string|max:255',
+                'forma_pago' => 'nullable|string|max:255',
+                'prendas' => 'required|array|min:1',
+                'prendas.*.prenda' => 'required|string|max:255',
+                'prendas.*.descripcion' => 'nullable|string|max:1000',
+                'prendas.*.tallas' => 'required|array|min:1',
+                'prendas.*.tallas.*.talla' => 'required|string|max:50',
+                'prendas.*.tallas.*.cantidad' => 'required|integer|min:1',
+            ]);
+
+            // Verificar que la orden existe
+            $orden = TablaOriginalBodega::where('pedido', $pedido)->first();
+            if (!$orden) {
+                throw new \Exception('La orden no existe');
+            }
+
+            // Calcular cantidad total
+            $totalCantidad = 0;
+            foreach ($request->prendas as $prenda) {
+                foreach ($prenda['tallas'] as $talla) {
+                    $totalCantidad += $talla['cantidad'];
+                }
+            }
+
+            // Construir descripción completa
+            $descripcionCompleta = '';
+            foreach ($request->prendas as $index => $prenda) {
+                $descripcionCompleta .= "Prenda " . ($index + 1) . ": " . $prenda['prenda'] . "\n";
+                if (!empty($prenda['descripcion'])) {
+                    $descripcionCompleta .= "Descripción: " . $prenda['descripcion'] . "\n";
+                }
+                $tallasCantidades = [];
+                foreach ($prenda['tallas'] as $talla) {
+                    $tallasCantidades[] = $talla['talla'] . ':' . $talla['cantidad'];
+                }
+                if (count($tallasCantidades) > 0) {
+                    $descripcionCompleta .= "Tallas: " . implode(', ', $tallasCantidades) . "\n\n";
+                } else {
+                    $descripcionCompleta .= "\n";
+                }
+            }
+
+            // Actualizar tabla_original_bodega
+            $ordenData = [
+                'estado' => $request->estado ?? 'No iniciado',
+                'cliente' => $request->cliente,
+                'fecha_de_creacion_de_orden' => $request->fecha_creacion,
+                'encargado_orden' => $request->encargado,
+                'asesora' => $request->asesora,
+                'forma_de_pago' => $request->forma_pago,
+                'descripcion' => $descripcionCompleta,
+                'cantidad' => $totalCantidad,
+            ];
+
+            DB::table('tabla_original_bodega')
+                ->where('pedido', $pedido)
+                ->update($ordenData);
+
+            // Eliminar todos los registros_por_orden_bodega existentes
+            DB::table('registros_por_orden_bodega')
+                ->where('pedido', $pedido)
+                ->delete();
+
+            // Insertar nuevos registros_por_orden_bodega
+            foreach ($request->prendas as $prenda) {
+                foreach ($prenda['tallas'] as $talla) {
+                    DB::table('registros_por_orden_bodega')->insert([
+                        'pedido' => $pedido,
+                        'cliente' => $request->cliente,
+                        'prenda' => $prenda['prenda'],
+                        'descripcion' => $prenda['descripcion'] ?? '',
+                        'talla' => $talla['talla'],
+                        'cantidad' => $talla['cantidad'],
+                        'total_pendiente_por_talla' => $talla['cantidad'],
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            // Obtener la orden actualizada para retornar
+            $ordenActualizada = TablaOriginalBodega::where('pedido', $pedido)->first();
+
+            // Obtener los registros por orden actualizados
+            $registrosActualizados = DB::table('registros_por_orden_bodega')
+                ->where('pedido', $pedido)
+                ->get();
+
+            // Broadcast event for real-time updates (si existe el evento)
+            if (class_exists('\App\Events\OrdenBodegaUpdated')) {
+                broadcast(new \App\Events\OrdenBodegaUpdated($ordenActualizada, 'updated'));
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Orden de bodega actualizada correctamente',
+                'pedido' => $pedido,
+                'orden' => $ordenActualizada
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            \Log::error('Error de validación al editar orden bodega', [
+                'pedido' => $pedido,
+                'errors' => $e->errors()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error al editar orden completa bodega', [
+                'pedido' => $pedido,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar la orden: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
