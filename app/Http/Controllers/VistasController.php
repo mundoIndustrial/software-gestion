@@ -231,6 +231,9 @@ class VistasController extends Controller
                                     <div class="encargado-corte">
                                         <span class="encargado-label">Encargado de Corte:</span>
                                         <span class="encargado-value">' . htmlspecialchars($encargadoCorte) . '</span>
+                                        <button class="btn-toggle-edit" data-card-id="' . htmlspecialchars($pedido . '-' . $cliente) . '" title="Activar edición">
+                                            <i class="fas fa-edit"></i> Editar
+                                        </button>
                                     </div>
                                 </div>
                                 <div class="card-body">
@@ -253,10 +256,19 @@ class VistasController extends Controller
                         $prenda = isset($registro->prenda) && $registro->prenda && $registro->prenda !== 'undefined' ? $registro->prenda : '-';
                         $descripcion = isset($registro->descripcion) && $registro->descripcion && $registro->descripcion !== 'undefined' ? $registro->descripcion : '-';
                         $talla = isset($registro->talla) && $registro->talla && $registro->talla !== 'undefined' ? $registro->talla : '-';
-                        $cantidad = isset($registro->cantidad) && $registro->cantidad && $registro->cantidad !== 'undefined' ? $registro->cantidad : '-';
+                        
+                        // Handle numeric values - show 0 if it's 0, show value if exists, otherwise show '-'
+                        $cantidad = isset($registro->cantidad) && $registro->cantidad !== null && $registro->cantidad !== '' ? $registro->cantidad : '-';
+                        $cantidad_value = $registro->cantidad ?? '';
+                        
                         $costurero = isset($registro->costurero) && $registro->costurero && $registro->costurero !== 'undefined' ? $registro->costurero : '-';
-                        $total_producido = isset($registro->total_producido_por_talla) && $registro->total_producido_por_talla && $registro->total_producido_por_talla !== 'undefined' ? $registro->total_producido_por_talla : '-';
-                        $total_pendiente = isset($registro->total_pendiente_por_talla) && $registro->total_pendiente_por_talla && $registro->total_pendiente_por_talla !== 'undefined' ? $registro->total_pendiente_por_talla : '-';
+                        $costurero_value = $registro->costurero ?? '';
+                        
+                        $total_producido = isset($registro->total_producido_por_talla) && $registro->total_producido_por_talla !== null && $registro->total_producido_por_talla !== '' ? $registro->total_producido_por_talla : '-';
+                        $total_producido_value = $registro->total_producido_por_talla ?? '';
+                        
+                        $total_pendiente = isset($registro->total_pendiente_por_talla) && $registro->total_pendiente_por_talla !== null && $registro->total_pendiente_por_talla !== '' ? $registro->total_pendiente_por_talla : '-';
+                        $total_pendiente_value = $registro->total_pendiente_por_talla ?? '';
 
                         $fecha_completado = '-';
                         if (isset($registro->fecha_completado) && $registro->fecha_completado && $registro->fecha_completado !== 'undefined') {
@@ -267,14 +279,14 @@ class VistasController extends Controller
                             }
                         }
 
-                        $html .= '<tr>
+                        $html .= '<tr data-id="' . $registro->id . '" data-tipo="' . htmlspecialchars($tipo) . '">
                                     <td class="prenda-cell cell-clickable" data-content="' . htmlspecialchars($prenda) . '">' . htmlspecialchars($prenda) . '</td>
                                     <td class="descripcion-cell cell-clickable" data-content="' . htmlspecialchars($descripcion) . '">' . htmlspecialchars($descripcion) . '</td>
                                     <td class="talla-cell">' . htmlspecialchars($talla) . '</td>
-                                    <td class="cantidad-cell">' . htmlspecialchars($cantidad) . '</td>
-                                    <td class="costurero-cell cell-clickable" data-content="' . htmlspecialchars($costurero) . '">' . htmlspecialchars($costurero) . '</td>
-                                    <td class="total_producido_por_talla-cell">' . htmlspecialchars($total_producido) . '</td>
-                                    <td class="total_pendiente_por_talla-cell">' . htmlspecialchars($total_pendiente) . '</td>
+                                    <td class="cantidad-cell editable" data-field="cantidad" data-value="' . htmlspecialchars($cantidad_value) . '">' . htmlspecialchars($cantidad) . '</td>
+                                    <td class="costurero-cell cell-clickable editable" data-field="costurero" data-content="' . htmlspecialchars($costurero) . '" data-value="' . htmlspecialchars($costurero_value) . '">' . htmlspecialchars($costurero) . '</td>
+                                    <td class="total_producido_por_talla-cell editable" data-field="total_producido_por_talla" data-value="' . htmlspecialchars($total_producido_value) . '">' . htmlspecialchars($total_producido) . '</td>
+                                    <td class="total_pendiente_por_talla-cell editable" data-field="total_pendiente_por_talla" data-value="' . htmlspecialchars($total_pendiente_value) . '">' . htmlspecialchars($total_pendiente) . '</td>
                                     <td class="fecha_completado-cell">' . htmlspecialchars($fecha_completado) . '</td>
                                 </tr>';
                     }
@@ -348,6 +360,72 @@ class VistasController extends Controller
         $ordenes = $ordenesPedido->get()->merge($ordenesBodega->get());
 
         return view('vistas.control-calidad-fullscreen', compact('ordenes', 'query'));
+    }
+
+    public function updateCell(Request $request)
+    {
+        try {
+            $id = $request->input('id');
+            $field = $request->input('field');
+            $value = $request->input('value');
+            $tipo = $request->input('tipo');
+
+            // Validate inputs
+            if (!$id || !$field) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'ID y campo son requeridos'
+                ], 400);
+            }
+
+            // Determine which model to use based on tipo
+            if ($tipo === 'bodega') {
+                $model = RegistrosPorOrdenBodega::class;
+            } else {
+                $model = RegistrosPorOrden::class;
+            }
+
+            // Find the record
+            $registro = $model::find($id);
+            
+            if (!$registro) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Registro no encontrado'
+                ], 404);
+            }
+
+            // Validate field is allowed to be edited
+            $allowedFields = ['cantidad', 'costurero', 'total_producido_por_talla', 'total_pendiente_por_talla'];
+            if (!in_array($field, $allowedFields)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Campo no permitido para edición'
+                ], 403);
+            }
+
+            // Convert empty string to null for numeric fields
+            if (in_array($field, ['cantidad', 'total_producido_por_talla', 'total_pendiente_por_talla'])) {
+                $value = $value === '' ? null : $value;
+            }
+
+            // Update the field without triggering model events
+            $registro->$field = $value;
+            $registro->saveQuietly();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Campo actualizado correctamente',
+                'value' => $value
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error updating cell: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     private function determinarTipo(Request $request)

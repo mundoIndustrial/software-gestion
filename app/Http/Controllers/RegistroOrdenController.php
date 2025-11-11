@@ -24,6 +24,13 @@ class RegistroOrdenController extends Controller
 
     public function index(Request $request)
     {
+        // Definir columnas de fecha
+        $dateColumns = [
+            'fecha_de_creacion_de_orden', 'inventario', 'insumos_y_telas', 'corte',
+            'bordado', 'estampado', 'costura', 'reflectivo', 'lavanderia',
+            'arreglos', 'marras', 'control_de_calidad', 'entrega'
+        ];
+
         // Handle request for unique values for filters
         if ($request->has('get_unique_values') && $request->column) {
             $column = $request->column;
@@ -44,6 +51,24 @@ class RegistroOrdenController extends Controller
 
             if (in_array($column, $allowedColumns)) {
                 $uniqueValues = TablaOriginal::distinct()->pluck($column)->filter()->values()->toArray();
+                
+                // Si es una columna de fecha, formatear los valores a d/m/Y
+                if (in_array($column, $dateColumns)) {
+                    $uniqueValues = array_map(function($value) {
+                        try {
+                            if (!empty($value)) {
+                                $date = \Carbon\Carbon::parse($value);
+                                return $date->format('d/m/Y');
+                            }
+                        } catch (\Exception $e) {
+                            // Si no se puede parsear, devolver el valor original
+                        }
+                        return $value;
+                    }, $uniqueValues);
+                    // Eliminar duplicados y reindexar
+                    $uniqueValues = array_values(array_unique($uniqueValues));
+                }
+                
                 return response()->json(['unique_values' => $uniqueValues]);
             }
             return response()->json(['error' => 'Invalid column'], 400);
@@ -83,7 +108,23 @@ class RegistroOrdenController extends Controller
                 ];
 
                 if (in_array($column, $allowedColumns)) {
-                    $query->whereIn($column, $values);
+                    // Si es una columna de fecha, convertir los valores de d/m/Y a formato de base de datos
+                    if (in_array($column, $dateColumns)) {
+                        $query->where(function($q) use ($column, $values) {
+                            foreach ($values as $dateValue) {
+                                try {
+                                    // Intentar parsear la fecha en formato d/m/Y
+                                    $date = \Carbon\Carbon::createFromFormat('d/m/Y', $dateValue);
+                                    $q->orWhereDate($column, $date->format('Y-m-d'));
+                                } catch (\Exception $e) {
+                                    // Si falla, intentar buscar el valor tal cual
+                                    $q->orWhere($column, $dateValue);
+                                }
+                            }
+                        });
+                    } else {
+                        $query->whereIn($column, $values);
+                    }
                 }
             }
         }
@@ -337,6 +378,12 @@ class RegistroOrdenController extends Controller
                 'encargados_calidad', 'dias_c_c', 'entrega', 'encargados_entrega', 'despacho', 'column_52'
             ];
 
+            // Columnas que son de tipo fecha
+            $dateColumns = [
+                'fecha_de_creacion_de_orden', 'insumos_y_telas', 'corte', 'costura', 
+                'lavanderia', 'arreglos', 'control_de_calidad', 'entrega', 'despacho'
+            ];
+
             $validatedData = $request->validate([
                 'estado' => 'nullable|in:' . implode(',', $estadoOptions),
                 'area' => 'nullable|in:' . implode(',', $areaOptions),
@@ -375,9 +422,27 @@ class RegistroOrdenController extends Controller
                 $updates['dia_de_entrega'] = $validatedData['dia_de_entrega'];
             }
 
-            // Agregar otras columnas permitidas
+            // Agregar otras columnas permitidas y convertir fechas si es necesario
             foreach ($additionalData as $key => $value) {
-                $updates[$key] = $value;
+                // Si es una columna de fecha y el valor no está vacío, convertir formato
+                if (in_array($key, $dateColumns) && !empty($value)) {
+                    try {
+                        // Intentar parsear desde formato d/m/Y (11/11/2025)
+                        $date = \Carbon\Carbon::createFromFormat('d/m/Y', $value);
+                        $updates[$key] = $date->format('Y-m-d');
+                    } catch (\Exception $e) {
+                        try {
+                            // Si falla, intentar parsear como fecha genérica (puede ser Y-m-d ya)
+                            $date = \Carbon\Carbon::parse($value);
+                            $updates[$key] = $date->format('Y-m-d');
+                        } catch (\Exception $e2) {
+                            // Si todo falla, guardar el valor tal cual
+                            $updates[$key] = $value;
+                        }
+                    }
+                } else {
+                    $updates[$key] = $value;
+                }
             }
 
             $oldStatus = $orden->estado;
@@ -645,6 +710,121 @@ class RegistroOrdenController extends Controller
                 $cacheKey = "orden_dias_{$pedido}_{$estado}_{$fecha}_{$festivosCacheKey}";
                 Cache::forget($cacheKey);
             }
+        }
+    }
+
+    /**
+     * Actualizar el número de pedido (consecutivo)
+     */
+    public function updatePedido(Request $request)
+    {
+        try {
+            $validatedData = $request->validate([
+                'old_pedido' => 'required|integer',
+                'new_pedido' => 'required|integer|min:1',
+            ]);
+
+            $oldPedido = $validatedData['old_pedido'];
+            $newPedido = $validatedData['new_pedido'];
+
+            // Verificar que la orden antigua existe
+            $orden = TablaOriginal::where('pedido', $oldPedido)->first();
+            if (!$orden) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La orden no existe'
+                ], 404);
+            }
+
+            // Verificar que el nuevo pedido no existe ya
+            $existingOrder = TablaOriginal::where('pedido', $newPedido)->first();
+            if ($existingOrder) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "El número de pedido {$newPedido} ya está en uso"
+                ], 422);
+            }
+
+            DB::beginTransaction();
+
+            // Deshabilitar temporalmente las restricciones de clave foránea
+            DB::statement('SET FOREIGN_KEY_CHECKS=0');
+
+            // Actualizar en tabla_original primero
+            DB::table('tabla_original')
+                ->where('pedido', $oldPedido)
+                ->update(['pedido' => $newPedido]);
+
+            // Actualizar en registros_por_orden
+            DB::table('registros_por_orden')
+                ->where('pedido', $oldPedido)
+                ->update(['pedido' => $newPedido]);
+
+            // Actualizar en entregas_pedido_costura si existen
+            if (DB::getSchemaBuilder()->hasTable('entregas_pedido_costura')) {
+                DB::table('entregas_pedido_costura')
+                    ->where('pedido', $oldPedido)
+                    ->update(['pedido' => $newPedido]);
+            }
+
+            // Actualizar en entregas_pedido_corte si existen
+            if (DB::getSchemaBuilder()->hasTable('entregas_pedido_corte')) {
+                DB::table('entregas_pedido_corte')
+                    ->where('pedido', $oldPedido)
+                    ->update(['pedido' => $newPedido]);
+            }
+
+            // Rehabilitar las restricciones de clave foránea
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+
+            DB::commit();
+
+            // Invalidar caché para ambos pedidos
+            $this->invalidarCacheDias($oldPedido);
+            $this->invalidarCacheDias($newPedido);
+
+            // Log news
+            News::create([
+                'event_type' => 'pedido_updated',
+                'description' => "Número de pedido actualizado: {$oldPedido} → {$newPedido}",
+                'user_id' => auth()->id(),
+                'pedido' => $newPedido,
+                'metadata' => ['old_pedido' => $oldPedido, 'new_pedido' => $newPedido]
+            ]);
+
+            // Broadcast event for real-time updates
+            $ordenActualizada = TablaOriginal::where('pedido', $newPedido)->first();
+            broadcast(new \App\Events\OrdenUpdated($ordenActualizada, 'updated'));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Número de pedido actualizado correctamente',
+                'old_pedido' => $oldPedido,
+                'new_pedido' => $newPedido
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Asegurar que las restricciones se rehabiliten incluso si hay error
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos: ' . json_encode($e->errors())
+            ], 422);
+        } catch (\Exception $e) {
+            // Asegurar que las restricciones se rehabiliten incluso si hay error
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+            DB::rollBack();
+            \Log::error('Error al actualizar pedido', [
+                'old_pedido' => $request->old_pedido,
+                'new_pedido' => $request->new_pedido,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar el número de pedido: ' . $e->getMessage()
+            ], 500);
         }
     }
 }
