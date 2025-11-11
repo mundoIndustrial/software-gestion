@@ -3,6 +3,7 @@ class ModernTable {
         console.log('ModernTable: Constructor called');
         this.headers = [];
         this.baseRoute = this.getBaseRoute();
+        this.isLoadingFilter = false; // Prevenir doble clic en filtros
         this.storage = {
             rowHeight: parseInt(this.getStorage('table_rowHeight')) || 50,
             columnWidths: JSON.parse(this.getStorage('table_columnWidths')) || {},
@@ -579,6 +580,14 @@ class ModernTable {
 
     async openFilterModal(columnIndex, columnName) {
         console.log('openFilterModal called with columnIndex:', columnIndex, 'columnName:', columnName);
+        
+        // Prevenir apertura múltiple
+        if (this.isLoadingFilter) {
+            console.log('Ya se está cargando un filtro, ignorando...');
+            return;
+        }
+        
+        this.isLoadingFilter = true;
         this.currentColumn = columnIndex;
         this.currentColumnName = columnName;
         const modal = document.getElementById('filterModal');
@@ -587,6 +596,13 @@ class ModernTable {
         
         document.getElementById('filterColumnName').textContent = columnName;
         document.getElementById('filterSearch').value = '';
+        
+        // Mostrar indicador de carga
+        filterList.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;"><i class="fas fa-spinner fa-spin"></i> Cargando valores...</div>';
+        
+        // Abrir modal inmediatamente para mostrar el loading
+        overlay.classList.add('active');
+        modal.classList.add('active');
 
         try {
             const response = await fetch(`${this.baseRoute}?get_unique_values=1&column=${encodeURIComponent(columnName)}`, {
@@ -602,10 +618,9 @@ class ModernTable {
                     .filter(v => v)
             )].sort();
             this.generateFilterList(values, columnIndex);
+        } finally {
+            this.isLoadingFilter = false;
         }
-
-        overlay.classList.add('active');
-        modal.classList.add('active');
     }
 
     generateFilterList(values, columnIndex) {
@@ -615,7 +630,9 @@ class ModernTable {
 
         const filterList = document.getElementById('filterList');
         filterList.innerHTML = values.map(val => {
-            const isChecked = filteredValues.length === 0 || filteredValues.includes(val);
+            // Convertir ambos a string para comparación consistente
+            const valStr = String(val);
+            const isChecked = filteredValues.length === 0 || filteredValues.includes(valStr);
             return `
                 <div class="filter-item" data-value="${val}">
                     <input type="checkbox" id="filter_${columnIndex}_${val}" value="${val}" ${isChecked ? 'checked' : ''}>
