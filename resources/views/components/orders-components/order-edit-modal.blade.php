@@ -416,11 +416,29 @@
         border-radius: 12px;
         padding: 16px;
         transition: all 0.3s ease;
+        opacity: 1;
+        transform: scale(1);
     }
 
     .order-edit-modal .prenda-card:hover {
         border-color: #3b82f6;
         box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    }
+
+    /* Animación de entrada para nuevas prendas */
+    @keyframes slideInCard {
+        from {
+            opacity: 0;
+            transform: translateY(-10px) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .order-edit-modal .prenda-card {
+        animation: slideInCard 0.3s ease-out;
     }
 
     .order-edit-modal .prenda-header {
@@ -489,11 +507,24 @@
         margin-bottom: 12px;
     }
 
-    .order-edit-modal .tallas-list > div {
+    .order-edit-modal .tallas-list .talla-item {
         display: grid;
         grid-template-columns: 1fr 1fr auto;
         gap: 8px;
         align-items: center;
+        animation: slideInTalla 0.2s ease-out;
+    }
+
+    /* Animación de entrada para tallas */
+    @keyframes slideInTalla {
+        from {
+            opacity: 0;
+            transform: translateX(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
     }
 
     .order-edit-modal .tallas-list input {
@@ -571,19 +602,25 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #fee;
+        background: #fee2e2;
         border: 2px solid #fecaca;
         border-radius: 8px;
         color: #ef4444;
         cursor: pointer;
         transition: all 0.3s ease;
+        flex-shrink: 0;
     }
 
     .order-edit-modal .btn-delete:hover {
         background: #ef4444;
         color: white;
-        border-color: #ef4444;
-        transform: scale(1.05);
+        border-color: #dc2626;
+        transform: scale(1.1);
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    }
+
+    .order-edit-modal .btn-delete:active {
+        transform: scale(0.95);
     }
 
     .order-edit-modal .btn-delete svg {
@@ -598,7 +635,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: transparent;
+        background: #fee2e2;
         border: 2px solid #fecaca;
         border-radius: 6px;
         color: #ef4444;
@@ -606,12 +643,18 @@
         font-weight: bold;
         font-size: 18px;
         transition: all 0.2s ease;
+        flex-shrink: 0;
     }
 
     .order-edit-modal .eliminar-talla-btn:hover {
         background: #ef4444;
         color: white;
-        border-color: #ef4444;
+        border-color: #dc2626;
+        transform: scale(1.1);
+    }
+
+    .order-edit-modal .eliminar-talla-btn:active {
+        transform: scale(0.9);
     }
 
     .order-edit-modal .form-actions {
