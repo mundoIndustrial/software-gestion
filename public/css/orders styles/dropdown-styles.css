@@ -108,16 +108,27 @@ body.dark-theme .dia-entrega-dropdown option {
     color: #f9fafb;
 }
 
-/* Animación al cambiar valor */
+/* Animación al cambiar valor - más suave y no bloquea interacción */
 .dia-entrega-dropdown.updating {
-    animation: pulse-dias 0.5s ease-in-out;
+    animation: pulse-dias 0.4s ease-in-out;
+    pointer-events: auto !important; /* Asegurar que sigue siendo interactivo */
+    opacity: 0.85;
 }
 
 @keyframes pulse-dias {
     0%, 100% {
         transform: scale(1);
+        opacity: 0.85;
     }
     50% {
-        transform: scale(1.05);
+        transform: scale(1.03);
+        opacity: 1;
     }
+}
+
+/* Prevenir que el dropdown se vea deshabilitado */
+.dia-entrega-dropdown:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
 }

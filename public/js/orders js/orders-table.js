@@ -213,6 +213,8 @@ async function recargarTablaPedidos() {
         initializeStatusDropdowns();
         initializeAreaDropdowns();
         initializeDiaEntregaDropdowns();
+        
+        console.log('✅ Tabla recargada y dropdowns reinicializados');
 
     } catch (error) {
         console.error('Error al recargar tabla de pedidos:', error);
@@ -289,10 +291,27 @@ function executeStatusUpdate(orderId, newStatus, oldStatus, dropdown) {
         },
         body: JSON.stringify({ estado: newStatus })
     })
-        .then(response => response.json())
+        .then(response => {
+            // Verificar errores de servidor
+            if (response.status >= 500) {
+                console.error(`❌ Error del servidor (${response.status}). Recargando página...`);
+                showAutoReloadNotification('Error del servidor. Recargando página...', 2000);
+                setTimeout(() => window.location.reload(), 2000);
+                return Promise.reject('Server error');
+            }
+            if (response.status === 401 || response.status === 419) {
+                console.error(`❌ Sesión expirada (${response.status}). Recargando página...`);
+                showAutoReloadNotification('Sesión expirada. Recargando página...', 1000);
+                setTimeout(() => window.location.reload(), 1000);
+                return Promise.reject('Session expired');
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 console.log('Estado actualizado correctamente');
+                window.consecutiveErrors = 0; // Resetear contador
+                
                 // Actualizar color de la fila dinámicamente
                 updateRowColor(orderId, newStatus);
 
@@ -307,20 +326,26 @@ function executeStatusUpdate(orderId, newStatus, oldStatus, dropdown) {
                     updatedFields: data.updated_fields || {},
                     order: data.order,
                     totalDiasCalculados: data.totalDiasCalculados || {},
-                    timestamp: timestamp // Para evitar duplicados
+                    timestamp: timestamp
                 }));
-                // Actualizar timestamp local para evitar procesar mensaje propio
                 localStorage.setItem('last-orders-update-timestamp', timestamp.toString());
             } else {
                 console.error('Error al actualizar el estado:', data.message);
-                // Revertir cambio en caso de error
                 if (dropdown) dropdown.value = oldStatus;
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            // Revertir cambio en caso de error
-            if (dropdown) dropdown.value = oldStatus;
+            if (error !== 'Server error' && error !== 'Session expired') {
+                console.error('Error:', error);
+                if (dropdown) dropdown.value = oldStatus;
+                
+                window.consecutiveErrors = (window.consecutiveErrors || 0) + 1;
+                if (window.consecutiveErrors >= 3) {
+                    console.error('❌ 3 errores consecutivos. Recargando página...');
+                    showAutoReloadNotification('Múltiples errores. Recargando página...', 3000);
+                    setTimeout(() => window.location.reload(), 3000);
+                }
+            }
         });
 }
 
@@ -356,11 +381,28 @@ function executeAreaUpdate(orderId, newArea, oldArea, dropdown) {
         },
         body: JSON.stringify({ area: newArea })
     })
-        .then(response => response.json())
+        .then(response => {
+            // Verificar errores de servidor
+            if (response.status >= 500) {
+                console.error(`❌ Error del servidor (${response.status}). Recargando página...`);
+                showAutoReloadNotification('Error del servidor. Recargando página...', 2000);
+                setTimeout(() => window.location.reload(), 2000);
+                return Promise.reject('Server error');
+            }
+            if (response.status === 401 || response.status === 419) {
+                console.error(`❌ Sesión expirada (${response.status}). Recargando página...`);
+                showAutoReloadNotification('Sesión expirada. Recargando página...', 1000);
+                setTimeout(() => window.location.reload(), 1000);
+                return Promise.reject('Session expired');
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 console.log('Area actualizada correctamente');
-                // Actualizar las celdas con las fechas actualizadas según la respuesta del servidor
+                window.consecutiveErrors = 0; // Resetear contador
+                
+                // Actualizar las celdas con las fechas actualizadas
                 if (data.updated_fields) {
                     const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
                     if (row) {
@@ -373,7 +415,7 @@ function executeAreaUpdate(orderId, newArea, oldArea, dropdown) {
                     }
                 }
 
-                // Enviar mensaje a otras pestañas usando localStorage
+                // Enviar mensaje a otras pestañas
                 const timestamp = Date.now();
                 localStorage.setItem('orders-updates', JSON.stringify({
                     type: 'area_update',
@@ -384,20 +426,26 @@ function executeAreaUpdate(orderId, newArea, oldArea, dropdown) {
                     updatedFields: data.updated_fields || {},
                     order: data.order,
                     totalDiasCalculados: data.totalDiasCalculados || {},
-                    timestamp: timestamp // Para evitar duplicados
+                    timestamp: timestamp
                 }));
-                // Actualizar timestamp local para evitar procesar mensaje propio
                 localStorage.setItem('last-orders-update-timestamp', timestamp.toString());
             } else {
                 console.error('Error al actualizar el area:', data.message);
-                // Revertir cambio en caso de error
                 if (dropdown) dropdown.value = oldArea;
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            // Revertir cambio en caso de error
-            if (dropdown) dropdown.value = oldArea;
+            if (error !== 'Server error' && error !== 'Session expired') {
+                console.error('Error:', error);
+                if (dropdown) dropdown.value = oldArea;
+                
+                window.consecutiveErrors = (window.consecutiveErrors || 0) + 1;
+                if (window.consecutiveErrors >= 3) {
+                    console.error('❌ 3 errores consecutivos. Recargando página...');
+                    showAutoReloadNotification('Múltiples errores. Recargando página...', 3000);
+                    setTimeout(() => window.location.reload(), 3000);
+                }
+            }
         });
 }
 
@@ -530,6 +578,42 @@ function updateRowFromBroadcast(orderId, field, newValue, updatedFields, order, 
             diaEntregaDropdown.value = valorFinal;
             diaEntregaDropdown.setAttribute('data-value', valorFinal);
             console.log(`✅ Día de entrega sincronizado en tiempo real: ${valorFinal || 'Seleccionar'} para orden ${orderId}`);
+            
+            // IMPORTANTE: Actualizar el color de la fila cuando cambia el día de entrega
+            if (totalDiasCalculados && order) {
+                const totalDias = totalDiasCalculados[orderId] || 0;
+                const estado = order.estado || '';
+                
+                // Remover todas las clases condicionales
+                row.classList.remove('row-delivered', 'row-anulada', 'row-warning', 'row-danger-light', 'row-secondary', 'row-dia-entrega-warning', 'row-dia-entrega-danger', 'row-dia-entrega-critical');
+                
+                // Aplicar nueva clase según la lógica
+                if (estado === 'Entregado') {
+                    row.classList.add('row-delivered');
+                } else if (estado === 'Anulada') {
+                    row.classList.add('row-anulada');
+                } else if (valorFinal && valorFinal !== '') {
+                    const diaEntrega = parseInt(valorFinal);
+                    if (totalDias >= 15) {
+                        row.classList.add('row-dia-entrega-critical');
+                    } else if (totalDias >= 10 && totalDias <= 14) {
+                        row.classList.add('row-dia-entrega-danger');
+                    } else if (totalDias >= 5 && totalDias <= 9) {
+                        row.classList.add('row-dia-entrega-warning');
+                    }
+                } else {
+                    // Lógica original sin día de entrega
+                    if (totalDias > 20) {
+                        row.classList.add('row-secondary');
+                    } else if (totalDias === 20) {
+                        row.classList.add('row-danger-light');
+                    } else if (totalDias > 14 && totalDias < 20) {
+                        row.classList.add('row-warning');
+                    }
+                }
+                
+                console.log(`🎨 Color de fila actualizado en tiempo real para orden ${orderId}`);
+            }
         }
     } else {
         // Para otros campos (celdas editables)
@@ -1090,11 +1174,11 @@ function actualizarOrdenEnTabla(orden) {
         const column = cell.getAttribute('data-column');
         if (!column) return;
 
-        // Skip dia_de_entrega column as it's already updated by the dropdown
-        if (column === 'dia_de_entrega') return;
-
         let value = orden[column];
-        if (value === null || value === undefined) return;
+        if (value === null || value === undefined) {
+            // Para dia_de_entrega, null/undefined es válido (significa "Seleccionar")
+            if (column !== 'dia_de_entrega') return;
+        }
 
         // Find the element to update (could be select, span, or div)
         const cellContent = cell.querySelector('.cell-content');
@@ -1126,6 +1210,24 @@ function actualizarOrdenEnTabla(orden) {
                     cell.style.transition = 'background-color 0.3s ease';
                     cell.style.backgroundColor = '';
                 }, 30);
+            }
+        } else if (column === 'dia_de_entrega') {
+            // CRÍTICO: Actualizar dropdown de día de entrega desde WebSocket
+            const select = cellContent.querySelector('.dia-entrega-dropdown');
+            if (select) {
+                const valorFinal = (value === null || value === undefined || value === '') ? '' : String(value);
+                if (select.value !== valorFinal) {
+                    select.value = valorFinal;
+                    select.setAttribute('data-value', valorFinal);
+                    hasChanges = true;
+                    // Flash animation
+                    cell.style.backgroundColor = 'rgba(249, 115, 22, 0.3)';
+                    setTimeout(() => {
+                        cell.style.transition = 'background-color 0.3s ease';
+                        cell.style.backgroundColor = '';
+                    }, 30);
+                    console.log(`✅ Día de entrega actualizado vía WebSocket: ${valorFinal || 'Seleccionar'} para orden ${orden.pedido}`);
+                }
             }
         } else {
             const span = cellContent.querySelector('.cell-text');
@@ -1161,13 +1263,20 @@ function actualizarOrdenEnTabla(orden) {
         }
     }
 
-    // Obtener dia_de_entrega si existe
+    // Obtener dia_de_entrega - priorizar el valor del evento, luego del dropdown
     let diaDeEntrega = null;
-    const diaEntregaDropdown = row.querySelector('.dia-entrega-dropdown');
-    if (diaEntregaDropdown) {
-        const valorDiaEntrega = diaEntregaDropdown.value;
-        if (valorDiaEntrega && valorDiaEntrega !== '') {
-            diaDeEntrega = parseInt(valorDiaEntrega);
+    
+    // Primero intentar obtener del evento (más actualizado)
+    if (orden.dia_de_entrega !== null && orden.dia_de_entrega !== undefined && orden.dia_de_entrega !== '') {
+        diaDeEntrega = parseInt(orden.dia_de_entrega);
+    } else {
+        // Si no viene en el evento, leer del dropdown
+        const diaEntregaDropdown = row.querySelector('.dia-entrega-dropdown');
+        if (diaEntregaDropdown) {
+            const valorDiaEntrega = diaEntregaDropdown.value;
+            if (valorDiaEntrega && valorDiaEntrega !== '') {
+                diaDeEntrega = parseInt(valorDiaEntrega);
+            }
         }
     }
 
@@ -1230,14 +1339,15 @@ function actualizarOrdenEnTabla(orden) {
 // ===== DIA DE ENTREGA DROPDOWN =====
 function initializeDiaEntregaDropdowns() {
     const dropdowns = document.querySelectorAll('.dia-entrega-dropdown');
+    
+    if (dropdowns.length === 0) {
+        console.log('⚠️ No se encontraron dropdowns de día de entrega');
+        return;
+    }
+    
     let newlyInitialized = 0;
     
     dropdowns.forEach(dropdown => {
-        // Evitar re-inicializar dropdowns que ya tienen listeners
-        if (dropdown.dataset.initialized === 'true') {
-            return;
-        }
-        
         // IMPORTANTE: Siempre sincronizar data-value con el valor actual del select
         const currentValue = dropdown.value || '';
         const existingDataValue = dropdown.getAttribute('data-value');
@@ -1245,23 +1355,30 @@ function initializeDiaEntregaDropdowns() {
         // Si data-value no coincide con el valor actual, actualizarlo
         if (existingDataValue !== currentValue) {
             dropdown.setAttribute('data-value', currentValue);
-            console.log(`🔧 Sincronizando dropdown orden ${dropdown.dataset.id}: data-value="${existingDataValue}" → "${currentValue}"`);
         }
 
-        // Limpiar eventos anteriores para evitar duplicados
-        dropdown.removeEventListener('change', handleDiaEntregaChange);
+        // CRÍTICO: Siempre limpiar eventos anteriores antes de agregar nuevos
+        // Esto evita que se acumulen múltiples listeners
+        const oldHandler = dropdown._diaEntregaHandler;
+        if (oldHandler) {
+            dropdown.removeEventListener('change', oldHandler);
+        }
 
+        // Crear nuevo handler y guardarlo en el elemento
+        const newHandler = function() {
+            handleDiaEntregaChange.call(this);
+        };
+        dropdown._diaEntregaHandler = newHandler;
+        
         // Agregar evento de cambio
-        dropdown.addEventListener('change', handleDiaEntregaChange);
+        dropdown.addEventListener('change', newHandler);
         
         // Marcar como inicializado
         dropdown.dataset.initialized = 'true';
         newlyInitialized++;
     });
     
-    if (newlyInitialized > 0) {
-        console.log(`✅ ${newlyInitialized} dropdowns de día de entrega inicializados (${dropdowns.length} total)`);
-    }
+    console.log(`✅ ${newlyInitialized} dropdowns de día de entrega inicializados/actualizados`);
 }
 
 // Manejador de cambio de día de entrega
@@ -1270,11 +1387,16 @@ function handleDiaEntregaChange() {
     const oldValue = this.dataset.value;
     const orderId = this.dataset.id;
     
-    console.log(`📝 Cambio detectado en orden ${orderId}: ${oldValue} → ${newValue}`);
+    // Evitar procesar si el valor no cambió realmente
+    if (newValue === oldValue) {
+        console.log(`⏭️ Valor sin cambios para orden ${orderId}, ignorando`);
+        return;
+    }
     
-    // Agregar animación visual y deshabilitar temporalmente
+    console.log(`📝 Cambio detectado en orden ${orderId}: "${oldValue}" → "${newValue}"`);
+    
+    // Agregar animación visual pero NO deshabilitar (para mejor UX)
     this.classList.add('updating');
-    this.disabled = true;
     
     // Actualizar data-value inmediatamente para feedback visual
     this.setAttribute('data-value', newValue);
@@ -1288,7 +1410,7 @@ const updateDiaEntregaDebounce = new Map();
 
 // Función para actualizar día de entrega en la base de datos
 function updateOrderDiaEntrega(orderId, newDias, oldDias, dropdown) {
-    // OPTIMIZACIÓN: Debounce de 300ms para evitar requests duplicados
+    // OPTIMIZACIÓN: Debounce reducido a 150ms para mejor respuesta
     const debounceKey = `dia-entrega-${orderId}`;
     if (updateDiaEntregaDebounce.has(debounceKey)) {
         clearTimeout(updateDiaEntregaDebounce.get(debounceKey));
@@ -1299,7 +1421,7 @@ function updateOrderDiaEntrega(orderId, newDias, oldDias, dropdown) {
         updateDiaEntregaDebounce.delete(debounceKey);
         console.log(`🚀 Ejecutando actualización para orden ${orderId}`);
         executeDiaEntregaUpdate(orderId, newDias, oldDias, dropdown);
-    }, 300);
+    }, 150);
     
     updateDiaEntregaDebounce.set(debounceKey, timeoutId);
 }
@@ -1319,6 +1441,23 @@ function executeDiaEntregaUpdate(orderId, newDias, oldDias, dropdown) {
     })
         .then(response => {
             console.log(`📥 Respuesta recibida para orden ${orderId}:`, response.status);
+            
+            // Si hay error de servidor (500, 502, 503, etc.), recargar página
+            if (response.status >= 500) {
+                console.error(`❌ Error del servidor (${response.status}). Recargando página en 2 segundos...`);
+                showAutoReloadNotification('Error del servidor detectado. Recargando página...', 2000);
+                setTimeout(() => window.location.reload(), 2000);
+                return Promise.reject('Server error');
+            }
+            
+            // Si hay error de autenticación (401, 419), recargar inmediatamente
+            if (response.status === 401 || response.status === 419) {
+                console.error(`❌ Sesión expirada (${response.status}). Recargando página...`);
+                showAutoReloadNotification('Sesión expirada. Recargando página...', 1000);
+                setTimeout(() => window.location.reload(), 1000);
+                return Promise.reject('Session expired');
+            }
+            
             return response.json();
         })
         .then(data => {
@@ -1330,9 +1469,11 @@ function executeDiaEntregaUpdate(orderId, newDias, oldDias, dropdown) {
                     : `✅ Día de entrega actualizado: ${newDias} días para orden ${orderId}`;
                 console.log(mensaje);
                 
-                // Re-habilitar el dropdown y remover clase updating
+                // Resetear contador de errores en caso de éxito
+                window.consecutiveErrors = 0;
+                
+                // Remover clase updating (no se deshabilitó)
                 if (dropdown) {
-                    dropdown.disabled = false;
                     dropdown.classList.remove('updating');
                     dropdown.setAttribute('data-value', newDias || '');
                 }
@@ -1393,7 +1534,6 @@ function executeDiaEntregaUpdate(orderId, newDias, oldDias, dropdown) {
                 if (dropdown) {
                     dropdown.value = oldDias || '';
                     dropdown.setAttribute('data-value', oldDias || '');
-                    dropdown.disabled = false;
                     dropdown.classList.remove('updating');
                 }
                 alert(`Error al guardar: ${data.message}`);
@@ -1401,59 +1541,204 @@ function executeDiaEntregaUpdate(orderId, newDias, oldDias, dropdown) {
         })
         .catch(error => {
             console.error('❌ Error de red:', error);
-            // Revertir cambio en caso de error
-            if (dropdown) {
-                dropdown.value = oldDias || '';
-                dropdown.setAttribute('data-value', oldDias || '');
-                dropdown.disabled = false;
-                dropdown.classList.remove('updating');
+            
+            // Si el error no es de servidor/sesión (ya manejados arriba), intentar revertir
+            if (error !== 'Server error' && error !== 'Session expired') {
+                // Revertir cambio en caso de error
+                if (dropdown) {
+                    dropdown.value = oldDias || '';
+                    dropdown.setAttribute('data-value', oldDias || '');
+                    dropdown.classList.remove('updating');
+                }
+                
+                // Contar errores consecutivos
+                window.consecutiveErrors = (window.consecutiveErrors || 0) + 1;
+                
+                // Si hay 3 errores consecutivos, recargar página
+                if (window.consecutiveErrors >= 3) {
+                    console.error('❌ 3 errores consecutivos detectados. Recargando página en 3 segundos...');
+                    showAutoReloadNotification('Múltiples errores detectados. Recargando página...', 3000);
+                    setTimeout(() => window.location.reload(), 3000);
+                } else {
+                    alert(`Error de conexión (${window.consecutiveErrors}/3). Por favor, intenta de nuevo.`);
+                }
             }
-            alert('Error de conexión. Por favor, intenta de nuevo.');
         });
 }
 
 // Inicializar dropdowns de día de entrega al cargar la página
-// Usar múltiples estrategias para asegurar que se inicialice correctamente
+// Estrategia simplificada y más confiable
 function ensureInitialization() {
-    console.log('🔄 Intentando inicializar dropdowns de día de entrega...');
+    console.log('🔄 Inicializando dropdowns de día de entrega...');
     
-    // Esperar un momento para asegurar que el DOM esté completamente listo
+    // Esperar un breve momento para asegurar que el DOM esté listo
     setTimeout(() => {
-        const dropdowns = document.querySelectorAll('.dia-entrega-dropdown');
-        if (dropdowns.length > 0) {
-            initializeDiaEntregaDropdowns();
-            console.log('✅ Inicialización completada');
-        } else {
-            console.log('⚠️ No se encontraron dropdowns, reintentando...');
-            // Reintentar después de 500ms si no hay dropdowns
-            setTimeout(() => {
-                const retryDropdowns = document.querySelectorAll('.dia-entrega-dropdown');
-                if (retryDropdowns.length > 0) {
-                    initializeDiaEntregaDropdowns();
-                    console.log('✅ Inicialización completada (segundo intento)');
-                }
-            }, 500);
-        }
-    }, 100);
+        initializeDiaEntregaDropdowns();
+    }, 50);
 }
 
-// Estrategia 1: DOMContentLoaded (carga inicial)
+// Inicializar cuando el DOM esté listo
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', ensureInitialization);
 } else {
-    // Estrategia 2: Si el DOM ya está listo, ejecutar inmediatamente
     ensureInitialization();
 }
 
-// Estrategia 3: window.load como respaldo
-window.addEventListener('load', function() {
-    // Solo inicializar si no se ha hecho antes
-    const dropdowns = document.querySelectorAll('.dia-entrega-dropdown');
-    if (dropdowns.length > 0) {
-        const hasListeners = Array.from(dropdowns).some(d => d.dataset.initialized === 'true');
-        if (!hasListeners) {
-            console.log('🔄 Inicializando desde window.load (respaldo)');
-            initializeDiaEntregaDropdowns();
-        }
+// ===== SISTEMA DE AUTO-RECARGA =====
+// Función para mostrar notificación de auto-recarga
+function showAutoReloadNotification(message, duration) {
+    // Remover notificaciones existentes
+    const existingNotifications = document.querySelectorAll('.auto-reload-notification');
+    existingNotifications.forEach(notification => notification.remove());
+    
+    // Crear nueva notificación
+    const notification = document.createElement('div');
+    notification.className = 'auto-reload-notification';
+    notification.innerHTML = `
+        <div class="auto-reload-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+        </div>
+        <div class="auto-reload-content">
+            <div class="auto-reload-title">Recargando página</div>
+            <div class="auto-reload-message">${message}</div>
+            <div class="auto-reload-progress">
+                <div class="auto-reload-progress-bar" style="animation-duration: ${duration}ms"></div>
+            </div>
+        </div>
+    `;
+    
+    // Agregar estilos inline si no existen
+    if (!document.getElementById('auto-reload-styles')) {
+        const style = document.createElement('style');
+        style.id = 'auto-reload-styles';
+        style.textContent = `
+            .auto-reload-notification {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                color: white;
+                padding: 16px 20px;
+                border-radius: 12px;
+                box-shadow: 0 10px 40px rgba(239, 68, 68, 0.4);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                min-width: 320px;
+                animation: slideInRight 0.3s ease-out;
+            }
+            
+            .auto-reload-icon {
+                flex-shrink: 0;
+                width: 32px;
+                height: 32px;
+                animation: spin 1s linear infinite;
+            }
+            
+            .auto-reload-icon svg {
+                width: 100%;
+                height: 100%;
+            }
+            
+            .auto-reload-content {
+                flex: 1;
+            }
+            
+            .auto-reload-title {
+                font-weight: 700;
+                font-size: 14px;
+                margin-bottom: 4px;
+            }
+            
+            .auto-reload-message {
+                font-size: 12px;
+                opacity: 0.9;
+                margin-bottom: 8px;
+            }
+            
+            .auto-reload-progress {
+                width: 100%;
+                height: 4px;
+                background: rgba(255, 255, 255, 0.3);
+                border-radius: 2px;
+                overflow: hidden;
+            }
+            
+            .auto-reload-progress-bar {
+                height: 100%;
+                background: white;
+                border-radius: 2px;
+                animation: progressBar linear forwards;
+            }
+            
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+            
+            @keyframes progressBar {
+                from { width: 100%; }
+                to { width: 0%; }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+    
+    // Agregar al DOM
+    document.body.appendChild(notification);
+    
+    console.log(`🔄 Notificación de auto-recarga mostrada: ${message}`);
+}
+
+// Detectar errores globales de JavaScript
+window.addEventListener('error', function(event) {
+    console.error('❌ Error global detectado:', event.error);
+    
+    // Contar errores globales
+    window.globalJsErrors = (window.globalJsErrors || 0) + 1;
+    
+    // Si hay 5 errores globales, recargar página
+    if (window.globalJsErrors >= 5) {
+        console.error('❌ 5 errores JavaScript detectados. Recargando página en 3 segundos...');
+        showAutoReloadNotification('Múltiples errores detectados. Recargando página...', 3000);
+        setTimeout(() => window.location.reload(), 3000);
     }
 });
+
+// Detectar si el WebSocket se desconecta
+if (window.Echo) {
+    window.Echo.connector.pusher.connection.bind('disconnected', function() {
+        console.warn('⚠️ WebSocket desconectado. Intentando reconectar...');
+        
+        // Si no se reconecta en 10 segundos, recargar
+        const reconnectTimeout = setTimeout(() => {
+            if (window.Echo.connector.pusher.connection.state !== 'connected') {
+                console.error('❌ WebSocket no pudo reconectar. Recargando página...');
+                showAutoReloadNotification('Conexión perdida. Recargando página...', 2000);
+                setTimeout(() => window.location.reload(), 2000);
+            }
+        }, 10000);
+        
+        // Limpiar timeout si se reconecta
+        window.Echo.connector.pusher.connection.bind('connected', function() {
+            clearTimeout(reconnectTimeout);
+            console.log('✅ WebSocket reconectado exitosamente');
+        });
+    });
+}
+
+console.log('✅ Sistema de auto-recarga inicializado');
