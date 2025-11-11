@@ -35,8 +35,8 @@ class RegistroOrdenController extends Controller
         if ($request->has('get_unique_values') && $request->column) {
             $column = $request->column;
         $allowedColumns = [
-            'pedido', 'estado', 'area', 'tiempo', 'total_de_dias_', 'cliente',
-            'hora', 'descripcion', 'cantidad', 'novedades', 'asesora', 'forma_de_pago',
+            'pedido', 'estado', 'area', 'total_de_dias_', 'dia_de_entrega', 'cliente',
+            'descripcion', 'cantidad', 'novedades', 'asesora', 'forma_de_pago',
             'fecha_de_creacion_de_orden', 'encargado_orden', 'dias_orden', 'inventario',
             'encargados_inventario', 'dias_inventario', 'insumos_y_telas', 'encargados_insumos',
             'dias_insumos', 'corte', 'encargados_de_corte', 'dias_corte', 'bordado',
@@ -50,7 +50,19 @@ class RegistroOrdenController extends Controller
         ];
 
             if (in_array($column, $allowedColumns)) {
-                $uniqueValues = TablaOriginal::distinct()->pluck($column)->filter()->values()->toArray();
+                // Si es la columna calculada total_de_dias_, obtener todos los registros y calcular
+                if ($column === 'total_de_dias_') {
+                    $festivos = \App\Models\Festivo::pluck('fecha')->toArray();
+                    $ordenes = TablaOriginal::all();
+                    foreach ($ordenes as $orden) {
+                        $orden->setFestivos($festivos);
+                    }
+                    $uniqueValues = $ordenes->map(function($orden) {
+                        return $orden->total_de_dias;
+                    })->unique()->sort()->values()->toArray();
+                } else {
+                    $uniqueValues = TablaOriginal::distinct()->pluck($column)->filter()->values()->toArray();
+                }
                 
                 // Si es una columna de fecha, formatear los valores a d/m/Y
                 if (in_array($column, $dateColumns)) {
@@ -85,6 +97,9 @@ class RegistroOrdenController extends Controller
             });
         }
 
+        // Detectar si hay filtro de total_de_dias_ para procesarlo después
+        $filterTotalDias = null;
+        
         // Apply column filters (dynamic for all columns)
         foreach ($request->all() as $key => $value) {
             if (str_starts_with($key, 'filter_') && !empty($value)) {
@@ -93,8 +108,8 @@ class RegistroOrdenController extends Controller
 
                 // Whitelist de columnas permitidas para seguridad
                 $allowedColumns = [
-                    'id', 'estado', 'area', 'tiempo', 'total_de_dias_', '_pedido', 'cliente',
-                    'hora', 'descripcion', 'cantidad', 'novedades', 'asesora', 'forma_de_pago',
+                    'id', 'estado', 'area', 'total_de_dias_', 'dia_de_entrega', 'pedido', 'cliente',
+                    'descripcion', 'cantidad', 'novedades', 'asesora', 'forma_de_pago',
                     'fecha_de_creacion_de_orden', 'encargado_orden', 'dias_orden', 'inventario',
                     'encargados_inventario', 'dias_inventario', 'insumos_y_telas', 'encargados_insumos',
                     'dias_insumos', 'corte', 'encargados_de_corte', 'dias_corte', 'bordado',
@@ -108,6 +123,13 @@ class RegistroOrdenController extends Controller
                 ];
 
                 if (in_array($column, $allowedColumns)) {
+                    // Si es total_de_dias_, guardarlo para filtrar después del cálculo
+                    if ($column === 'total_de_dias_') {
+                        $filterTotalDias = array_map('intval', $values);
+                        \Log::info("Filtro recibido - Columna: {$column}, Valores raw: " . json_encode($values) . ", Valores int: " . json_encode($filterTotalDias));
+                        continue;
+                    }
+                    
                     // Si es una columna de fecha, convertir los valores de d/m/Y a formato de base de datos
                     if (in_array($column, $dateColumns)) {
                         $query->where(function($q) use ($column, $values) {
@@ -137,11 +159,54 @@ class RegistroOrdenController extends Controller
             FestivosColombiaService::obtenerFestivos($nextYear)
         );
         
-        // Optimización: Reducir paginación de 50 a 25 para mejor performance
-        $ordenes = $query->paginate(25);
+        \Log::info("Antes de verificar filtro - filterTotalDias: " . json_encode($filterTotalDias) . ", es null: " . ($filterTotalDias === null ? 'SI' : 'NO'));
+        
+        // Si hay filtro de total_de_dias_, necesitamos obtener todos los registros para calcular y filtrar
+        if ($filterTotalDias !== null) {
+            \Log::info("Iniciando filtrado por total_de_dias_ con valores: " . json_encode($filterTotalDias));
+            $todasOrdenes = $query->get();
+            \Log::info("Total órdenes obtenidas: " . $todasOrdenes->count());
+            
+            // Convertir a array para el cálculo
+            $ordenesArray = $todasOrdenes->map(function($orden) {
+                return (object) $orden->getAttributes();
+            })->toArray();
+            
+            $totalDiasCalculados = $this->calcularTotalDiasBatchConCache($ordenesArray, $festivos);
+            
+            // Filtrar por total_de_dias_
+            $ordenesFiltradas = $todasOrdenes->filter(function($orden) use ($totalDiasCalculados, $filterTotalDias) {
+                $totalDias = $totalDiasCalculados[$orden->pedido] ?? 0;
+                $match = in_array((int)$totalDias, $filterTotalDias, true);
+                
+                // Log temporal para debug (eliminar después)
+                if ($orden->pedido <= 3) {
+                    \Log::info("Filtro total_dias - Pedido: {$orden->pedido}, Total días: {$totalDias}, Filtros: " . json_encode($filterTotalDias) . ", Match: " . ($match ? 'SI' : 'NO'));
+                }
+                
+                return $match;
+            });
+            
+            // Paginar manualmente los resultados filtrados
+            $currentPage = request()->get('page', 1);
+            $perPage = 25;
+            $ordenes = new \Illuminate\Pagination\LengthAwarePaginator(
+                $ordenesFiltradas->forPage($currentPage, $perPage)->values(),
+                $ordenesFiltradas->count(),
+                $perPage,
+                $currentPage,
+                ['path' => request()->url(), 'query' => request()->query()]
+            );
+            
+            // Recalcular solo para las órdenes de la página actual
+            $totalDiasCalculados = $this->calcularTotalDiasBatchConCache($ordenes->items(), $festivos);
+        } else {
+            // Optimización: Reducir paginación de 50 a 25 para mejor performance
+            $ordenes = $query->paginate(25);
 
-        // Cálculo optimizado con caché para TODAS las órdenes visibles
-        $totalDiasCalculados = $this->calcularTotalDiasBatchConCache($ordenes->items(), $festivos);
+            // Cálculo optimizado con caché para TODAS las órdenes visibles
+            $totalDiasCalculados = $this->calcularTotalDiasBatchConCache($ordenes->items(), $festivos);
+        }
 
         // Obtener opciones del enum 'area'
         $areaOptions = $this->getEnumOptions('tabla_original', 'area');
@@ -365,7 +430,7 @@ class RegistroOrdenController extends Controller
 
             // Whitelist de columnas permitidas para edición
             $allowedColumns = [
-                'estado', 'area', '_pedido', 'cliente', 'hora', 'descripcion', 'cantidad',
+                'estado', 'area', 'dia_de_entrega', '_pedido', 'cliente', 'descripcion', 'cantidad',
                 'novedades', 'asesora', 'forma_de_pago', 'fecha_de_creacion_de_orden',
                 'encargado_orden', 'dias_orden', 'inventario', 'encargados_inventario',
                 'dias_inventario', 'insumos_y_telas', 'encargados_insumos', 'dias_insumos',
@@ -387,15 +452,21 @@ class RegistroOrdenController extends Controller
             $validatedData = $request->validate([
                 'estado' => 'nullable|in:' . implode(',', $estadoOptions),
                 'area' => 'nullable|in:' . implode(',', $areaOptions),
+                'dia_de_entrega' => 'nullable|integer|in:15,20,25,30',
             ]);
+            
+            // Convertir string vacío a null para dia_de_entrega
+            if (isset($validatedData['dia_de_entrega']) && $validatedData['dia_de_entrega'] === '') {
+                $validatedData['dia_de_entrega'] = null;
+            }
 
             // Validar columnas adicionales permitidas como strings
             $additionalValidation = [];
             foreach ($allowedColumns as $col) {
-                if ($request->has($col) && $col !== 'estado' && $col !== 'area') {
-                    // La columna descripcion puede tener hasta 1000 caracteres
+                if ($request->has($col) && $col !== 'estado' && $col !== 'area' && $col !== 'dia_de_entrega') {
+                    // El campo descripcion es TEXT y puede ser más largo
                     if ($col === 'descripcion') {
-                        $additionalValidation[$col] = 'nullable|string|max:1000';
+                        $additionalValidation[$col] = 'nullable|string|max:65535';
                     } else {
                         $additionalValidation[$col] = 'nullable|string|max:255';
                     }
@@ -416,6 +487,9 @@ class RegistroOrdenController extends Controller
                     $updates[$field] = now()->toDateString();
                     $updatedFields[$field] = now()->toDateString();
                 }
+            }
+            if (array_key_exists('dia_de_entrega', $validatedData)) {
+                $updates['dia_de_entrega'] = $validatedData['dia_de_entrega'];
             }
 
             // Agregar otras columnas permitidas y convertir fechas si es necesario
@@ -820,6 +894,181 @@ class RegistroOrdenController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al actualizar el número de pedido: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener registros por orden (API para el modal de edición)
+     */
+    public function getRegistrosPorOrden($pedido)
+    {
+        try {
+            $registros = DB::table('registros_por_orden')
+                ->where('pedido', $pedido)
+                ->orderBy('prenda')
+                ->orderBy('talla')
+                ->get();
+
+            return response()->json($registros);
+
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener registros por orden', [
+                'pedido' => $pedido,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cargar los registros'
+            ], 500);
+        }
+    }
+
+    /**
+     * Editar orden completa (actualiza tabla_original y registros_por_orden)
+     */
+    public function editFullOrder(Request $request, $pedido)
+    {
+        try {
+            $validatedData = $request->validate([
+                'pedido' => 'required|integer',
+                'estado' => 'nullable|in:No iniciado,En Ejecución,Entregado,Anulada',
+                'cliente' => 'required|string|max:255',
+                'fecha_creacion' => 'required|date',
+                'encargado' => 'nullable|string|max:255',
+                'asesora' => 'nullable|string|max:255',
+                'forma_pago' => 'nullable|string|max:255',
+                'prendas' => 'required|array',
+                'prendas.*.prenda' => 'required|string|max:255',
+                'prendas.*.descripcion' => 'nullable|string|max:1000',
+                'prendas.*.tallas' => 'required|array',
+                'prendas.*.tallas.*.talla' => 'required|string|max:50',
+                'prendas.*.tallas.*.cantidad' => 'required|integer|min:1',
+                'prendas.*.originalName' => 'nullable|string|max:255',
+            ]);
+
+            DB::beginTransaction();
+
+            // Calcular cantidad total
+            $totalCantidad = 0;
+            foreach ($request->prendas as $prenda) {
+                foreach ($prenda['tallas'] as $talla) {
+                    $totalCantidad += $talla['cantidad'];
+                }
+            }
+
+            // Construir campo descripcion
+            $descripcionCompleta = '';
+            foreach ($request->prendas as $index => $prenda) {
+                $descripcionCompleta .= "Prenda " . ($index + 1) . ": " . $prenda['prenda'] . "\n";
+                if (!empty($prenda['descripcion'])) {
+                    $descripcionCompleta .= "Descripción: " . $prenda['descripcion'] . "\n";
+                }
+                $tallasCantidades = [];
+                foreach ($prenda['tallas'] as $talla) {
+                    $tallasCantidades[] = $talla['talla'] . ':' . $talla['cantidad'];
+                }
+                if (count($tallasCantidades) > 0) {
+                    $descripcionCompleta .= "Tallas: " . implode(', ', $tallasCantidades) . "\n\n";
+                } else {
+                    $descripcionCompleta .= "\n";
+                }
+            }
+
+            // Actualizar tabla_original
+            $ordenData = [
+                'estado' => $request->estado ?? 'No iniciado',
+                'cliente' => $request->cliente,
+                'fecha_de_creacion_de_orden' => $request->fecha_creacion,
+                'encargado_orden' => $request->encargado,
+                'asesora' => $request->asesora,
+                'forma_de_pago' => $request->forma_pago,
+                'descripcion' => $descripcionCompleta,
+                'cantidad' => $totalCantidad,
+            ];
+
+            DB::table('tabla_original')
+                ->where('pedido', $pedido)
+                ->update($ordenData);
+
+            // Eliminar todos los registros_por_orden existentes
+            DB::table('registros_por_orden')
+                ->where('pedido', $pedido)
+                ->delete();
+
+            // Insertar nuevos registros_por_orden
+            foreach ($request->prendas as $prenda) {
+                foreach ($prenda['tallas'] as $talla) {
+                    DB::table('registros_por_orden')->insert([
+                        'pedido' => $pedido,
+                        'cliente' => $request->cliente,
+                        'prenda' => $prenda['prenda'],
+                        'descripcion' => $prenda['descripcion'] ?? '',
+                        'talla' => $talla['talla'],
+                        'cantidad' => $talla['cantidad'],
+                        'total_pendiente_por_talla' => $talla['cantidad'],
+                    ]);
+                }
+            }
+
+            // Invalidar caché
+            $this->invalidarCacheDias($pedido);
+
+            // Log news
+            News::create([
+                'event_type' => 'order_updated',
+                'description' => "Orden editada: Pedido {$pedido} para cliente {$request->cliente}",
+                'user_id' => auth()->id(),
+                'pedido' => $pedido,
+                'metadata' => ['cliente' => $request->cliente, 'total_prendas' => count($request->prendas)]
+            ]);
+
+            DB::commit();
+
+            // Obtener la orden actualizada para retornar y broadcast
+            $ordenActualizada = TablaOriginal::where('pedido', $pedido)->first();
+
+            // Obtener los registros por orden actualizados
+            $registrosActualizados = DB::table('registros_por_orden')
+                ->where('pedido', $pedido)
+                ->get();
+
+            // Broadcast event for real-time updates
+            broadcast(new \App\Events\OrdenUpdated($ordenActualizada, 'updated'));
+            broadcast(new \App\Events\RegistrosPorOrdenUpdated($pedido, $registrosActualizados, 'updated'));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Orden actualizada correctamente',
+                'pedido' => $pedido,
+                'orden' => $ordenActualizada
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            \Log::error('Error de validación al editar orden', [
+                'pedido' => $pedido,
+                'errors' => $e->errors()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error al editar orden completa', [
+                'pedido' => $pedido,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar la orden: ' . $e->getMessage()
             ], 500);
         }
     }

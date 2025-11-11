@@ -82,6 +82,35 @@ text-overflow: ellipsis;
 white-space: nowrap;
 }
 
+/* Ancho fijo para columna de acciones */
+#tablaOrdenes thead th.acciones-column,
+#tablaOrdenes tbody td.acciones-column {
+min-width: 200px !important;
+width: 200px !important;
+max-width: 200px !important;
+}
+
+/* Estilos para botones de acción */
+.action-btn {
+transition: all 0.2s ease;
+white-space: nowrap;
+}
+
+.action-btn.edit-btn:hover {
+transform: translateY(-1px);
+box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+.action-btn.detail-btn:hover {
+transform: translateY(-1px);
+box-shadow: 0 4px 8px rgba(0, 128, 0, 0.3);
+}
+
+.action-btn.delete-btn:hover {
+transform: translateY(-1px);
+box-shadow: 0 4px 8px rgba(248, 76, 76, 0.3);
+}
+
 /* Fila moderna */
 #tablaOrdenes tbody .table-row {
 border-bottom: 2px solid #000000 !important;
@@ -151,7 +180,7 @@ background-color: #777777 !important;
 color: #f8f9fa !important;
 }
 #tablaOrdenes tbody .table-row.row-secondary:hover {
-background-color: #8a8a8a !important;
+background-color: #999999 !important; /* Más claro en hover para mejor contraste */
 }
 body.dark-theme #tablaOrdenes tbody .table-row.row-secondary:hover {
 background-color: #f8f9fa !important;
@@ -161,9 +190,46 @@ background-color: #c55601d7 !important;
 color: #f8f9fa !important;
 }
 #tablaOrdenes tbody .table-row.row-anulada:hover {
-background-color: #d2691e !important;
+background-color: #e67e22 !important; /* Más claro en hover para mejor contraste */
 }
 body.dark-theme #tablaOrdenes tbody .table-row.row-anulada:hover {
+background-color: #f8f9fa !important;
+}
+
+/* === NUEVOS ESTILOS: Día de Entrega === */
+/* Amarillo: 5-9 días - Tono suave y profesional */
+#tablaOrdenes tbody .table-row.row-dia-entrega-warning {
+background-color: #fff8e1 !important;
+color: #5d4037 !important;
+}
+#tablaOrdenes tbody .table-row.row-dia-entrega-warning:hover {
+background-color: #ffecb3 !important;
+}
+body.dark-theme #tablaOrdenes tbody .table-row.row-dia-entrega-warning:hover {
+background-color: #f8f9fa !important;
+}
+
+/* Rojo: 10-14 días - Tono coral suave */
+#tablaOrdenes tbody .table-row.row-dia-entrega-danger {
+background-color: #ffcdd2 !important;
+color: #000000 !important;
+}
+#tablaOrdenes tbody .table-row.row-dia-entrega-danger:hover {
+background-color: #ef9a9a !important;
+}
+body.dark-theme #tablaOrdenes tbody .table-row.row-dia-entrega-danger:hover {
+background-color: #f8f9fa !important;
+}
+
+/* Gris oscuro: 15+ días - Tono profesional */
+#tablaOrdenes tbody .table-row.row-dia-entrega-critical {
+background-color: #546e7a !important;
+color: #ffffff !important;
+}
+#tablaOrdenes tbody .table-row.row-dia-entrega-critical:hover {
+background-color: #607d8b !important; /* Más claro en hover para mejor contraste */
+}
+body.dark-theme #tablaOrdenes tbody .table-row.row-dia-entrega-critical:hover {
 background-color: #f8f9fa !important;
 }
 
@@ -174,32 +240,43 @@ color: #000;
 }
 
 /* Color blanco solo para filas sin colores condicionales */
-#tablaOrdenes tbody .table-row:not(.row-delivered):not(.row-warning):not(.row-danger-light):not(.row-secondary):not(.row-anulada) .cell-text {
+#tablaOrdenes tbody .table-row:not(.row-delivered):not(.row-warning):not(.row-danger-light):not(.row-secondary):not(.row-anulada):not(.row-dia-entrega-warning):not(.row-dia-entrega-danger):not(.row-dia-entrega-critical) .cell-text {
 color: #fff;
 }
 
 /* Color negro para filas sin colores en modo claro */
-body:not(.dark-theme) #tablaOrdenes tbody .table-row:not(.row-delivered):not(.row-warning):not(.row-danger-light):not(.row-secondary):not(.row-anulada) .cell-text {
+body:not(.dark-theme) #tablaOrdenes tbody .table-row:not(.row-delivered):not(.row-warning):not(.row-danger-light):not(.row-secondary):not(.row-anulada):not(.row-dia-entrega-warning):not(.row-dia-entrega-danger):not(.row-dia-entrega-critical) .cell-text {
 color: #2c3e50;
 }
 
 /* Colores de texto adaptativos en filas oscuras */
 #tablaOrdenes tbody .table-row.row-secondary .cell-text,
-#tablaOrdenes tbody .table-row.row-anulada .cell-text {
-color: #f8f9fa !important;
+#tablaOrdenes tbody .table-row.row-anulada .cell-text,
+#tablaOrdenes tbody .table-row.row-dia-entrega-critical .cell-text {
+color: #ffffff !important;
+}
+
+/* Texto oscuro para filas con fondo claro */
+#tablaOrdenes tbody .table-row.row-dia-entrega-warning .cell-text,
+#tablaOrdenes tbody .table-row.row-dia-entrega-danger .cell-text {
+color: inherit !important;
 }
 
 /* Hover en modo claro: mantiene contraste */
 #tablaOrdenes tbody .table-row:hover .cell-text,
 #tablaOrdenes tbody .table-row.row-delivered:hover .cell-text,
 #tablaOrdenes tbody .table-row.row-warning:hover .cell-text,
-#tablaOrdenes tbody .table-row.row-danger-light:hover .cell-text {
+#tablaOrdenes tbody .table-row.row-danger-light:hover .cell-text,
+#tablaOrdenes tbody .table-row.row-dia-entrega-warning:hover .cell-text,
+#tablaOrdenes tbody .table-row.row-dia-entrega-danger:hover .cell-text {
 color: #212529 !important;
 }
 
+/* Filas oscuras en modo claro: texto NEGRO en hover para mejor visibilidad */
 #tablaOrdenes tbody .table-row.row-secondary:hover .cell-text,
-#tablaOrdenes tbody .table-row.row-anulada:hover .cell-text {
-color: #ffffff !important;
+#tablaOrdenes tbody .table-row.row-anulada:hover .cell-text,
+#tablaOrdenes tbody .table-row.row-dia-entrega-critical:hover .cell-text {
+color: #000000 !important;
 }
 
 /* Hover en modo oscuro: fondo blanco y texto negro para TODAS las filas */
@@ -208,7 +285,10 @@ body.dark-theme #tablaOrdenes tbody .table-row.row-delivered:hover .cell-text,
 body.dark-theme #tablaOrdenes tbody .table-row.row-warning:hover .cell-text,
 body.dark-theme #tablaOrdenes tbody .table-row.row-danger-light:hover .cell-text,
 body.dark-theme #tablaOrdenes tbody .table-row.row-secondary:hover .cell-text,
-body.dark-theme #tablaOrdenes tbody .table-row.row-anulada:hover .cell-text {
+body.dark-theme #tablaOrdenes tbody .table-row.row-anulada:hover .cell-text,
+body.dark-theme #tablaOrdenes tbody .table-row.row-dia-entrega-warning:hover .cell-text,
+body.dark-theme #tablaOrdenes tbody .table-row.row-dia-entrega-danger:hover .cell-text,
+body.dark-theme #tablaOrdenes tbody .table-row.row-dia-entrega-critical:hover .cell-text {
 color: #212529 !important;
 }
 

@@ -32,8 +32,8 @@ class RegistroBodegaController extends Controller
         if ($request->has('get_unique_values') && $request->column) {
             $column = $request->column;
         $allowedColumns = [
-            'pedido', 'estado', 'area', 'tiempo', 'total_de_dias_', 'cliente',
-            'hora', 'descripcion', 'cantidad', 'novedades', 'asesora', 'forma_de_pago',
+            'pedido', 'estado', 'area', 'total_de_dias_', 'cliente',
+            'descripcion', 'cantidad', 'novedades', 'asesora', 'forma_de_pago',
             'fecha_de_creacion_de_orden', 'encargado_orden', 'dias_orden', 'inventario',
             'encargados_inventario', 'dias_inventario', 'insumos_y_telas', 'encargados_insumos',
             'dias_insumos', 'corte', 'encargados_de_corte', 'dias_corte', 'bordado',
@@ -47,7 +47,19 @@ class RegistroBodegaController extends Controller
         ];
 
             if (in_array($column, $allowedColumns)) {
-                $uniqueValues = TablaOriginalBodega::distinct()->pluck($column)->filter()->values()->toArray();
+                // Si es la columna calculada total_de_dias_, obtener todos los registros y calcular
+                if ($column === 'total_de_dias_') {
+                    $festivos = \App\Models\Festivo::pluck('fecha')->toArray();
+                    $ordenes = TablaOriginalBodega::all();
+                    foreach ($ordenes as $orden) {
+                        $orden->setFestivos($festivos);
+                    }
+                    $uniqueValues = $ordenes->map(function($orden) {
+                        return $orden->total_de_dias;
+                    })->unique()->sort()->values()->toArray();
+                } else {
+                    $uniqueValues = TablaOriginalBodega::distinct()->pluck($column)->filter()->values()->toArray();
+                }
                 
                 // Si es una columna de fecha, formatear los valores a d/m/Y
                 if (in_array($column, $dateColumns)) {
@@ -82,6 +94,9 @@ class RegistroBodegaController extends Controller
             });
         }
 
+        // Detectar si hay filtro de total_de_dias_ para procesarlo después
+        $filterTotalDias = null;
+        
         // Apply column filters (dynamic for all columns)
         foreach ($request->all() as $key => $value) {
             if (str_starts_with($key, 'filter_') && !empty($value)) {
@@ -90,8 +105,8 @@ class RegistroBodegaController extends Controller
 
                 // Whitelist de columnas permitidas para seguridad
                 $allowedColumns = [
-                    'id', 'estado', 'area', 'tiempo', 'total_de_dias_', '_pedido', 'cliente',
-                    'hora', 'descripcion', 'cantidad', 'novedades', 'asesora', 'forma_de_pago',
+                    'id', 'estado', 'area', 'total_de_dias_', 'pedido', 'cliente',
+                    'descripcion', 'cantidad', 'novedades', 'asesora', 'forma_de_pago',
                     'fecha_de_creacion_de_orden', 'encargado_orden', 'dias_orden', 'inventario',
                     'encargados_inventario', 'dias_inventario', 'insumos_y_telas', 'encargados_insumos',
                     'dias_insumos', 'corte', 'encargados_de_corte', 'dias_corte', 'bordado',
@@ -105,6 +120,12 @@ class RegistroBodegaController extends Controller
                 ];
 
                 if (in_array($column, $allowedColumns)) {
+                    // Si es total_de_dias_, guardarlo para filtrar después del cálculo
+                    if ($column === 'total_de_dias_') {
+                        $filterTotalDias = array_map('intval', $values);
+                        continue;
+                    }
+                    
                     // Si es una columna de fecha, convertir los valores de d/m/Y a formato de base de datos
                     if (in_array($column, $dateColumns)) {
                         $query->where(function($q) use ($column, $values) {
@@ -127,11 +148,44 @@ class RegistroBodegaController extends Controller
         }
 
         $festivos = Festivo::pluck('fecha')->toArray();
-        $ordenes = $query->paginate(50);
+        
+        // Si hay filtro de total_de_dias_, necesitamos obtener todos los registros para calcular y filtrar
+        if ($filterTotalDias !== null) {
+            $todasOrdenes = $query->get();
+            
+            // Convertir a array para el cálculo
+            $ordenesArray = $todasOrdenes->map(function($orden) {
+                return (object) $orden->getAttributes();
+            })->toArray();
+            
+            $totalDiasCalculados = $this->calcularTotalDiasBatch($ordenesArray, $festivos);
+            
+            // Filtrar por total_de_dias_
+            $ordenesFiltradas = $todasOrdenes->filter(function($orden) use ($totalDiasCalculados, $filterTotalDias) {
+                $totalDias = $totalDiasCalculados[$orden->pedido] ?? 0;
+                return in_array((int)$totalDias, $filterTotalDias, true);
+            });
+            
+            // Paginar manualmente los resultados filtrados
+            $currentPage = request()->get('page', 1);
+            $perPage = 50;
+            $ordenes = new \Illuminate\Pagination\LengthAwarePaginator(
+                $ordenesFiltradas->forPage($currentPage, $perPage)->values(),
+                $ordenesFiltradas->count(),
+                $perPage,
+                $currentPage,
+                ['path' => request()->url(), 'query' => request()->query()]
+            );
+            
+            // Recalcular solo para las órdenes de la página actual
+            $totalDiasCalculados = $this->calcularTotalDiasBatch($ordenes->items(), $festivos);
+        } else {
+            $ordenes = $query->paginate(50);
 
-        // Cálculo optimizado tipo fórmula array (como Google Sheets)
-        // Una sola operación para calcular TODAS las órdenes visibles
-        $totalDiasCalculados = $this->calcularTotalDiasBatch($ordenes->items(), $festivos);
+            // Cálculo optimizado tipo fórmula array (como Google Sheets)
+            // Una sola operación para calcular TODAS las órdenes visibles
+            $totalDiasCalculados = $this->calcularTotalDiasBatch($ordenes->items(), $festivos);
+        }
 
         // Obtener opciones del enum 'area'
         $areaOptions = $this->getEnumOptions('tabla_original_bodega', 'area');
@@ -344,7 +398,7 @@ class RegistroBodegaController extends Controller
 
             // Whitelist de columnas permitidas para edición
             $allowedColumns = [
-                'estado', 'area', '_pedido', 'cliente', 'hora', 'descripcion', 'cantidad',
+                'estado', 'area', '_pedido', 'cliente', 'descripcion', 'cantidad',
                 'novedades', 'asesora', 'forma_de_pago', 'fecha_de_creacion_de_orden',
                 'encargado_orden', 'dias_orden', 'inventario', 'encargados_inventario',
                 'dias_inventario', 'insumos_y_telas', 'encargados_insumos', 'dias_insumos',
@@ -372,7 +426,12 @@ class RegistroBodegaController extends Controller
             $additionalValidation = [];
             foreach ($allowedColumns as $col) {
                 if ($request->has($col) && $col !== 'estado' && $col !== 'area') {
-                    $additionalValidation[$col] = 'nullable|string|max:255';
+                    // El campo descripcion es TEXT y puede ser más largo
+                    if ($col === 'descripcion') {
+                        $additionalValidation[$col] = 'nullable|string|max:65535';
+                    } else {
+                        $additionalValidation[$col] = 'nullable|string|max:255';
+                    }
                 }
             }
             $additionalData = $request->validate($additionalValidation);
@@ -652,6 +711,174 @@ class RegistroBodegaController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al actualizar el número de pedido: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener registros por orden bodega para el modal de edición
+     */
+    public function getRegistrosPorOrden($pedido)
+    {
+        try {
+            $registros = DB::table('registros_por_orden_bodega')
+                ->where('pedido', $pedido)
+                ->select('prenda', 'descripcion', 'talla', 'cantidad')
+                ->get();
+
+            return response()->json($registros);
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener registros por orden bodega', [
+                'pedido' => $pedido,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener los registros'
+            ], 500);
+        }
+    }
+
+    /**
+     * Editar orden completa de bodega (tabla_original_bodega + registros_por_orden_bodega)
+     */
+    public function editFullOrder(Request $request, $pedido)
+    {
+        DB::beginTransaction();
+
+        try {
+            // Validar datos de entrada
+            $validatedData = $request->validate([
+                'pedido' => 'required|integer',
+                'estado' => 'nullable|in:No iniciado,En Ejecución,Entregado,Anulada',
+                'cliente' => 'required|string|max:255',
+                'fecha_creacion' => 'required|date',
+                'encargado' => 'nullable|string|max:255',
+                'asesora' => 'nullable|string|max:255',
+                'forma_pago' => 'nullable|string|max:255',
+                'prendas' => 'required|array|min:1',
+                'prendas.*.prenda' => 'required|string|max:255',
+                'prendas.*.descripcion' => 'nullable|string|max:1000',
+                'prendas.*.tallas' => 'required|array|min:1',
+                'prendas.*.tallas.*.talla' => 'required|string|max:50',
+                'prendas.*.tallas.*.cantidad' => 'required|integer|min:1',
+            ]);
+
+            // Verificar que la orden existe
+            $orden = TablaOriginalBodega::where('pedido', $pedido)->first();
+            if (!$orden) {
+                throw new \Exception('La orden no existe');
+            }
+
+            // Calcular cantidad total
+            $totalCantidad = 0;
+            foreach ($request->prendas as $prenda) {
+                foreach ($prenda['tallas'] as $talla) {
+                    $totalCantidad += $talla['cantidad'];
+                }
+            }
+
+            // Construir descripción completa
+            $descripcionCompleta = '';
+            foreach ($request->prendas as $index => $prenda) {
+                $descripcionCompleta .= "Prenda " . ($index + 1) . ": " . $prenda['prenda'] . "\n";
+                if (!empty($prenda['descripcion'])) {
+                    $descripcionCompleta .= "Descripción: " . $prenda['descripcion'] . "\n";
+                }
+                $tallasCantidades = [];
+                foreach ($prenda['tallas'] as $talla) {
+                    $tallasCantidades[] = $talla['talla'] . ':' . $talla['cantidad'];
+                }
+                if (count($tallasCantidades) > 0) {
+                    $descripcionCompleta .= "Tallas: " . implode(', ', $tallasCantidades) . "\n\n";
+                } else {
+                    $descripcionCompleta .= "\n";
+                }
+            }
+
+            // Actualizar tabla_original_bodega
+            $ordenData = [
+                'estado' => $request->estado ?? 'No iniciado',
+                'cliente' => $request->cliente,
+                'fecha_de_creacion_de_orden' => $request->fecha_creacion,
+                'encargado_orden' => $request->encargado,
+                'asesora' => $request->asesora,
+                'forma_de_pago' => $request->forma_pago,
+                'descripcion' => $descripcionCompleta,
+                'cantidad' => $totalCantidad,
+            ];
+
+            DB::table('tabla_original_bodega')
+                ->where('pedido', $pedido)
+                ->update($ordenData);
+
+            // Eliminar todos los registros_por_orden_bodega existentes
+            DB::table('registros_por_orden_bodega')
+                ->where('pedido', $pedido)
+                ->delete();
+
+            // Insertar nuevos registros_por_orden_bodega
+            foreach ($request->prendas as $prenda) {
+                foreach ($prenda['tallas'] as $talla) {
+                    DB::table('registros_por_orden_bodega')->insert([
+                        'pedido' => $pedido,
+                        'cliente' => $request->cliente,
+                        'prenda' => $prenda['prenda'],
+                        'descripcion' => $prenda['descripcion'] ?? '',
+                        'talla' => $talla['talla'],
+                        'cantidad' => $talla['cantidad'],
+                        'total_pendiente_por_talla' => $talla['cantidad'],
+                    ]);
+                }
+            }
+
+            DB::commit();
+
+            // Obtener la orden actualizada para retornar
+            $ordenActualizada = TablaOriginalBodega::where('pedido', $pedido)->first();
+
+            // Obtener los registros por orden actualizados
+            $registrosActualizados = DB::table('registros_por_orden_bodega')
+                ->where('pedido', $pedido)
+                ->get();
+
+            // Broadcast event for real-time updates (si existe el evento)
+            if (class_exists('\App\Events\OrdenBodegaUpdated')) {
+                broadcast(new \App\Events\OrdenBodegaUpdated($ordenActualizada, 'updated'));
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Orden de bodega actualizada correctamente',
+                'pedido' => $pedido,
+                'orden' => $ordenActualizada
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            \Log::error('Error de validación al editar orden bodega', [
+                'pedido' => $pedido,
+                'errors' => $e->errors()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error al editar orden completa bodega', [
+                'pedido' => $pedido,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar la orden: ' . $e->getMessage()
             ], 500);
         }
     }

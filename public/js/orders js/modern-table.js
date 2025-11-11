@@ -3,6 +3,7 @@ class ModernTable {
         console.log('ModernTable: Constructor called');
         this.headers = [];
         this.baseRoute = this.getBaseRoute();
+        this.isLoadingFilter = false; // Prevenir doble clic en filtros
         this.storage = {
             rowHeight: parseInt(this.getStorage('table_rowHeight')) || 50,
             columnWidths: JSON.parse(this.getStorage('table_columnWidths')) || {},
@@ -232,11 +233,6 @@ class ModernTable {
                 ? ['Entregado', 'En Ejecución', 'No iniciado', 'Anulada']
                 : window.areaOptions || [];
 
-            // Debug temporal
-            if (key === 'estado') {
-                console.log(`Creando dropdown estado para orden ${orden.pedido}: valor="${value}"`);
-            }
-
             // Normalizar el valor actual para comparación
             const normalizedValue = value ? String(value).trim() : '';
 
@@ -250,7 +246,6 @@ class ModernTable {
                     option.setAttribute('selected', 'selected');
                     option.defaultSelected = true;
                     option.selected = true;
-                    console.log(`✅ Opción "${opt}" marcada como selected`);
                 }
                 
                 select.appendChild(option);
@@ -258,13 +253,42 @@ class ModernTable {
 
             // Forzar el valor del select después de agregar todas las opciones
             if (normalizedValue) {
-                // Usar setTimeout para asegurar que el DOM esté actualizado
                 setTimeout(() => {
                     select.value = normalizedValue;
-                    console.log(`🔄 Select.value establecido a: "${select.value}"`);
                 }, 0);
             }
 
+            content.appendChild(select);
+        } else if (key === 'dia_de_entrega' && window.modalContext === 'orden') {
+            // CRÍTICO: Crear dropdown de día de entrega
+            const select = document.createElement('select');
+            select.className = 'dia-entrega-dropdown';
+            select.dataset.id = orden.pedido || orden.id;
+            
+            // Normalizar el valor (null, undefined, '' → '')
+            const diasValue = (value === null || value === undefined || value === '') ? '' : String(value);
+            select.dataset.value = diasValue;
+
+            // Opción "Seleccionar" por defecto
+            const defaultOption = document.createElement('option');
+            defaultOption.value = '';
+            defaultOption.textContent = 'Seleccionar';
+            if (diasValue === '') {
+                defaultOption.selected = true;
+            }
+            select.appendChild(defaultOption);
+
+            // Opciones de días
+            [15, 20, 25, 30].forEach(dias => {
+                const option = document.createElement('option');
+                option.value = dias;
+                option.textContent = `${dias} días`;
+                if (String(dias) === diasValue) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+            
             content.appendChild(select);
         } else {
             const span = document.createElement('span');
@@ -579,6 +603,14 @@ class ModernTable {
 
     async openFilterModal(columnIndex, columnName) {
         console.log('openFilterModal called with columnIndex:', columnIndex, 'columnName:', columnName);
+        
+        // Prevenir apertura múltiple
+        if (this.isLoadingFilter) {
+            console.log('Ya se está cargando un filtro, ignorando...');
+            return;
+        }
+        
+        this.isLoadingFilter = true;
         this.currentColumn = columnIndex;
         this.currentColumnName = columnName;
         const modal = document.getElementById('filterModal');
@@ -587,6 +619,13 @@ class ModernTable {
         
         document.getElementById('filterColumnName').textContent = columnName;
         document.getElementById('filterSearch').value = '';
+        
+        // Mostrar indicador de carga
+        filterList.innerHTML = '<div style="text-align: center; padding: 20px; color: #666;"><i class="fas fa-spinner fa-spin"></i> Cargando valores...</div>';
+        
+        // Abrir modal inmediatamente para mostrar el loading
+        overlay.classList.add('active');
+        modal.classList.add('active');
 
         try {
             const response = await fetch(`${this.baseRoute}?get_unique_values=1&column=${encodeURIComponent(columnName)}`, {
@@ -602,10 +641,9 @@ class ModernTable {
                     .filter(v => v)
             )].sort();
             this.generateFilterList(values, columnIndex);
+        } finally {
+            this.isLoadingFilter = false;
         }
-
-        overlay.classList.add('active');
-        modal.classList.add('active');
     }
 
     generateFilterList(values, columnIndex) {
@@ -615,7 +653,9 @@ class ModernTable {
 
         const filterList = document.getElementById('filterList');
         filterList.innerHTML = values.map(val => {
-            const isChecked = filteredValues.length === 0 || filteredValues.includes(val);
+            // Convertir ambos a string para comparación consistente
+            const valStr = String(val);
+            const isChecked = filteredValues.length === 0 || filteredValues.includes(valStr);
             return `
                 <div class="filter-item" data-value="${val}">
                     <input type="checkbox" id="filter_${columnIndex}_${val}" value="${val}" ${isChecked ? 'checked' : ''}>
@@ -705,6 +745,18 @@ class ModernTable {
             
             // Actualizar marcadores de filtros activos
             this.markActiveFilters();
+            
+            // CRÍTICO: Reinicializar todos los dropdowns después de aplicar filtros
+            if (typeof initializeStatusDropdowns === 'function') {
+                initializeStatusDropdowns();
+            }
+            if (typeof initializeAreaDropdowns === 'function') {
+                initializeAreaDropdowns();
+            }
+            if (typeof initializeDiaEntregaDropdowns === 'function') {
+                initializeDiaEntregaDropdowns();
+                console.log('✅ Dropdowns reinicializados después de aplicar filtros');
+            }
             
             // Scroll a la tabla
             document.querySelector('.table-container')?.scrollIntoView({ 
@@ -988,6 +1040,12 @@ class ModernTable {
             this.updateUrl(params.toString());
             this.initializeStatusDropdowns();
             this.initializeAreaDropdowns();
+            
+            // CRÍTICO: Reinicializar dropdown de día de entrega después de búsqueda
+            if (typeof initializeDiaEntregaDropdowns === 'function') {
+                initializeDiaEntregaDropdowns();
+                console.log('✅ Dropdowns de día de entrega reinicializados después de búsqueda');
+            }
         } catch (error) {
             console.error('Error en búsqueda:', error);
             window.location.href = `${this.baseRoute}?${params}`;
@@ -1041,18 +1099,25 @@ class ModernTable {
         // PRIMERO: Crear la columna de acciones
         const accionesTd = document.createElement('td');
         accionesTd.className = 'table-cell acciones-column';
+        accionesTd.style.minWidth = '200px';
         const accionesDiv = document.createElement('div');
         accionesDiv.className = 'cell-content';
+        accionesDiv.style.cssText = 'display: flex; gap: 4px; flex-wrap: wrap;';
         accionesDiv.innerHTML = `
-            <button class="action-btn delete-btn" onclick="deleteOrder(${pedidoKey})" 
-                title="Eliminar orden"
-                style="background-color:#f84c4cff ; color: white; border: none; padding: 5px 10px; margin-right: 5px; border-radius: 4px; cursor: pointer;">
-                Borrar
+            <button class="action-btn edit-btn" onclick="openEditModal(${pedidoKey})"
+                title="Editar orden"
+                style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                Editar
             </button>
             <button class="action-btn detail-btn" onclick="viewDetail(${pedidoKey})" 
                 title="Ver detalle"
-                style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
                 Ver
+            </button>
+            <button class="action-btn delete-btn" onclick="deleteOrder(${pedidoKey})" 
+                title="Eliminar orden"
+                style="background-color:#f84c4cff ; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                Borrar
             </button>
         `;
         accionesTd.appendChild(accionesDiv);
@@ -1131,18 +1196,25 @@ appendRowsToTable(orders, totalDiasCalculados) {
         // PRIMERO: Crear la columna de acciones
         const accionesTd = document.createElement('td');
         accionesTd.className = 'table-cell acciones-column';
+        accionesTd.style.minWidth = '200px';
         const accionesDiv = document.createElement('div');
         accionesDiv.className = 'cell-content';
+        accionesDiv.style.cssText = 'display: flex; gap: 4px; flex-wrap: wrap;';
         accionesDiv.innerHTML = `
-            <button class="action-btn delete-btn" onclick="deleteOrder(${pedidoKey})" 
-                title="Eliminar orden"
-                style="background-color:#f84c4cff ; color: white; border: none; padding: 5px 10px; margin-right: 5px; border-radius: 4px; cursor: pointer;">
-                Borrar
+            <button class="action-btn edit-btn" onclick="openEditModal(${pedidoKey})"
+                title="Editar orden"
+                style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                Editar
             </button>
             <button class="action-btn detail-btn" onclick="viewDetail(${pedidoKey})" 
                 title="Ver detalle"
-                style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
                 Ver
+            </button>
+            <button class="action-btn delete-btn" onclick="deleteOrder(${pedidoKey})" 
+                title="Eliminar orden"
+                style="background-color:#f84c4cff ; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                Borrar
             </button>
         `;
         accionesTd.appendChild(accionesDiv);
@@ -1471,12 +1543,15 @@ appendRowsToTable(orders, totalDiasCalculados) {
             if (!cell) return;
 
             const value = orden[column];
-            if (value === null || value === undefined) return;
+            // Para dia_de_entrega, null/undefined es válido (significa "Seleccionar")
+            if (value === null || value === undefined) {
+                if (column !== 'dia_de_entrega') return;
+            }
 
             const cellContent = cell.querySelector('.cell-content');
             if (!cellContent) return;
 
-            // Manejar dropdowns de estado y área
+            // Manejar dropdowns de estado, área y día de entrega
             if (column === 'estado') {
                 const select = cellContent.querySelector('.estado-dropdown');
                 if (select && select.value !== value) {
@@ -1500,6 +1575,23 @@ appendRowsToTable(orders, totalDiasCalculados) {
                         cell.style.transition = 'background-color 0.3s ease';
                         cell.style.backgroundColor = '';
                     }, 30);
+                }
+            } else if (column === 'dia_de_entrega') {
+                // CRÍTICO: Actualizar dropdown de día de entrega
+                const select = cellContent.querySelector('.dia-entrega-dropdown');
+                if (select) {
+                    const valorFinal = (value === null || value === undefined || value === '') ? '' : String(value);
+                    if (select.value !== valorFinal) {
+                        select.value = valorFinal;
+                        select.setAttribute('data-value', valorFinal);
+                        hasChanges = true;
+                        cell.style.backgroundColor = 'rgba(249, 115, 22, 0.3)'; // Naranja
+                        setTimeout(() => {
+                            cell.style.transition = 'background-color 0.3s ease';
+                            cell.style.backgroundColor = '';
+                        }, 30);
+                        console.log(`✅ Día de entrega actualizado vía WebSocket (modern-table): ${valorFinal || 'Seleccionar'} para orden ${orden.pedido}`);
+                    }
                 }
             } else {
                 const span = cellContent.querySelector('.cell-text');
@@ -1526,19 +1618,45 @@ appendRowsToTable(orders, totalDiasCalculados) {
             }
         }
 
-        row.classList.remove('row-delivered', 'row-anulada', 'row-warning', 'row-danger-light', 'row-secondary');
+        // Obtener día de entrega
+        let diaDeEntrega = null;
+        if (orden.dia_de_entrega !== null && orden.dia_de_entrega !== undefined && orden.dia_de_entrega !== '') {
+            diaDeEntrega = parseInt(orden.dia_de_entrega);
+        } else {
+            const diaEntregaDropdown = row.querySelector('.dia-entrega-dropdown');
+            if (diaEntregaDropdown && diaEntregaDropdown.value !== '') {
+                diaDeEntrega = parseInt(diaEntregaDropdown.value);
+            }
+        }
+
+        row.classList.remove('row-delivered', 'row-anulada', 'row-warning', 'row-danger-light', 'row-secondary', 'row-dia-entrega-warning', 'row-dia-entrega-danger', 'row-dia-entrega-critical');
         row.style.backgroundColor = '';
 
+        // PRIORIDAD 1: Estados especiales
         if (estado === 'Entregado') {
             row.classList.add('row-delivered');
         } else if (estado === 'Anulada') {
             row.classList.add('row-anulada');
-        } else if (totalDias > 20) {
-            row.classList.add('row-secondary');
-        } else if (totalDias === 20) {
-            row.classList.add('row-danger-light');
-        } else if (totalDias > 14 && totalDias < 20) {
-            row.classList.add('row-warning');
+        }
+        // PRIORIDAD 2: Día de entrega (si existe)
+        else if (diaDeEntrega !== null && diaDeEntrega > 0) {
+            if (totalDias >= 15) {
+                row.classList.add('row-dia-entrega-critical');
+            } else if (totalDias >= 10 && totalDias <= 14) {
+                row.classList.add('row-dia-entrega-danger');
+            } else if (totalDias >= 5 && totalDias <= 9) {
+                row.classList.add('row-dia-entrega-warning');
+            }
+        }
+        // PRIORIDAD 3: Lógica original
+        else {
+            if (totalDias > 20) {
+                row.classList.add('row-secondary');
+            } else if (totalDias === 20) {
+                row.classList.add('row-danger-light');
+            } else if (totalDias > 14 && totalDias < 20) {
+                row.classList.add('row-warning');
+            }
         }
 
         if (hasChanges) {

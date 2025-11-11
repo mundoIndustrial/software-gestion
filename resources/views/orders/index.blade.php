@@ -37,18 +37,20 @@
                                         <span class="header-text">Acciones</span>
                                     </div>
                                 </th>
+                                @php $columnIndex = 0; @endphp
                                 @foreach(array_keys($ordenes->first()->getAttributes()) as $index => $columna)
                                     @if($columna !== 'id' && $columna !== 'tiempo')
                                         <th class="table-header-cell" data-column="{{ $columna }}">
                                             <div class="header-content">
                                                 <span class="header-text">{{ ucfirst(str_replace('_', ' ', $columna)) }}</span>
                                                 @if($columna !== 'acciones')
-                                                    <button class="filter-btn" data-column="{{ $columna }}" data-column-name="{{ $columna }}">
+                                                    <button class="filter-btn" data-column="{{ $columnIndex }}" data-column-name="{{ $columna }}">
                                                         <i class="fas fa-filter"></i>
                                                     </button>
                                                 @endif
                                             </div>
                                         </th>
+                                        @php $columnIndex++; @endphp
                                     @endif
                                 @endforeach
                             </tr>
@@ -66,31 +68,53 @@
                                 @php
                                     $totalDias = intval($totalDiasCalculados[$orden->pedido] ?? 0);
                                     $estado = $orden->estado ?? '';
+                                    $diaDeEntrega = $orden->dia_de_entrega ? intval($orden->dia_de_entrega) : null;
                                     $conditionalClass = '';
+                                    
+                                    // PRIORIDAD 1: Estados especiales
                                     if ($estado === 'Entregado') {
                                         $conditionalClass = 'row-delivered';
                                     } elseif ($estado === 'Anulada') {
                                         $conditionalClass = 'row-anulada';
-                                    } elseif ($totalDias > 14 && $totalDias < 20) {
-                                        $conditionalClass = 'row-warning';
-                                    } elseif ($totalDias == 20) {
-                                        $conditionalClass = 'row-danger-light';
-                                    } elseif ($totalDias > 20) {
-                                        $conditionalClass = 'row-secondary';
+                                    }
+                                    // PRIORIDAD 2: NUEVA LÓGICA - Día de entrega (si existe)
+                                    elseif ($diaDeEntrega !== null && $diaDeEntrega > 0) {
+                                        if ($totalDias >= 15) {
+                                            $conditionalClass = 'row-dia-entrega-critical'; // Negro (15+)
+                                        } elseif ($totalDias >= 10 && $totalDias <= 14) {
+                                            $conditionalClass = 'row-dia-entrega-danger'; // Rojo (10-14)
+                                        } elseif ($totalDias >= 5 && $totalDias <= 9) {
+                                            $conditionalClass = 'row-dia-entrega-warning'; // Amarillo (5-9)
+                                        }
+                                    }
+                                    // PRIORIDAD 3: LÓGICA ORIGINAL - Solo si NO hay día de entrega
+                                    else {
+                                        if ($totalDias > 20) {
+                                            $conditionalClass = 'row-secondary';
+                                        } elseif ($totalDias == 20) {
+                                            $conditionalClass = 'row-danger-light';
+                                        } elseif ($totalDias > 14 && $totalDias < 20) {
+                                            $conditionalClass = 'row-warning';
+                                        }
                                     }
                                 @endphp
                                 <tr class="table-row {{ $conditionalClass }}" data-order-id="{{ $orden->pedido }}">
-                                    <td class="table-cell acciones-column">
-                                        <div class="cell-content">
-                                            <button class="action-btn delete-btn" onclick="deleteOrder({{ $orden->pedido }})"
-                                                title="Eliminar orden"
-                                                style="background-color:#f84c4cff ; color: white; border: none; padding: 5px 10px; margin-right: 5px; border-radius: 4px; cursor: pointer;">
-                                                Borrar
+                                    <td class="table-cell acciones-column" style="min-width: 200px !important;">
+                                        <div class="cell-content" style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                            <button class="action-btn edit-btn" onclick="openEditModal({{ $orden->pedido }})"
+                                                title="Editar orden"
+                                                style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                                                Editar
                                             </button>
                                             <button class="action-btn detail-btn" onclick="viewDetail({{ $orden->pedido }})"
                                                 title="Ver detalle"
-                                                style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
+                                                style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
                                                 Ver
+                                            </button>
+                                            <button class="action-btn delete-btn" onclick="deleteOrder({{ $orden->pedido }})"
+                                                title="Eliminar orden"
+                                                style="background-color:#f84c4cff ; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                                                Borrar
                                             </button>
                                         </div>
                                     </td>
@@ -112,6 +136,14 @@
                                                                 <option value="{{ $areaOption }}" {{ $valor === $areaOption ? 'selected' : '' }}>
                                                                     {{ $areaOption }}</option>
                                                             @endforeach
+                                                        </select>
+                                                    @elseif($key === 'dia_de_entrega' && $context === 'registros')
+                                                        <select class="dia-entrega-dropdown" data-id="{{ $orden->pedido }}" data-value="{{ $valor ?? '' }}">
+                                                            <option value="" {{ is_null($valor) ? 'selected' : '' }}>Seleccionar</option>
+                                                            <option value="15" {{ $valor == 15 ? 'selected' : '' }}>15 días</option>
+                                                            <option value="20" {{ $valor == 20 ? 'selected' : '' }}>20 días</option>
+                                                            <option value="25" {{ $valor == 25 ? 'selected' : '' }}>25 días</option>
+                                                            <option value="30" {{ $valor == 30 ? 'selected' : '' }}>30 días</option>
                                                         </select>
                                                     @else
                                                         <span class="cell-text">
@@ -283,8 +315,11 @@
         </div>
     </div>
 
-    <script src="{{ asset('js/orders js/modern-table.js') }}"></script>
-    <script src="{{ asset('js/orders js/orders-table.js') }}"></script>
-    <script src="{{ asset('js/orders js/pagination.js') }}"></script>
-    <script src="{{ asset('js/orders js/realtime-listeners.js') }}"></script>
+    <!-- Modal de Edición de Orden -->
+    @include('components.orders-components.order-edit-modal')
+
+    <script src="{{ asset('js/orders js/modern-table.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/orders js/orders-table.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/orders js/pagination.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/orders js/realtime-listeners.js') }}?v={{ time() }}"></script>
 @endsection

@@ -43,6 +43,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Actualizar contenido de forma rápida
                 const newTableBody = doc.getElementById('tablaOrdenesBody');
                 if (newTableBody) {
+                    // CRÍTICO: Limpiar todos los event listeners antes de reemplazar el HTML
+                    const oldDropdowns = tableBody.querySelectorAll('.dia-entrega-dropdown');
+                    oldDropdowns.forEach(dropdown => {
+                        // Remover el handler guardado
+                        if (dropdown._diaEntregaHandler) {
+                            dropdown.removeEventListener('change', dropdown._diaEntregaHandler);
+                            delete dropdown._diaEntregaHandler;
+                        }
+                        dropdown.dataset.initialized = 'false';
+                    });
+                    
                     tableBody.innerHTML = newTableBody.innerHTML;
                 }
                 
@@ -59,6 +70,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Actualizar URL
                 window.history.pushState({}, '', url.toString());
+                
+                // RE-INICIALIZAR DROPDOWNS después de actualizar el HTML
+                if (typeof initializeStatusDropdowns === 'function') {
+                    initializeStatusDropdowns();
+                }
+                if (typeof initializeAreaDropdowns === 'function') {
+                    initializeAreaDropdowns();
+                }
+                if (typeof initializeDiaEntregaDropdowns === 'function') {
+                    initializeDiaEntregaDropdowns();
+                    console.log('🔄 Dropdowns re-inicializados después de cambiar de página');
+                }
                 
                 // Restaurar inmediatamente
                 tableBody.style.opacity = '1';

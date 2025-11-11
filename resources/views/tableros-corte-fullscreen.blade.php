@@ -153,7 +153,7 @@
         }
 
         .table-title {
-            font-size: 13px;
+            font-size: 15px;
             font-weight: 700;
             color: white;
             background: linear-gradient(135deg, #3498db, #2980b9);
@@ -211,7 +211,7 @@
         .total-row {
             background: linear-gradient(135deg, #34495e, #2c3e50) !important;
             font-weight: 700;
-            font-size: 12px;
+            font-size: 14px;
         }
 
         .total-row td {

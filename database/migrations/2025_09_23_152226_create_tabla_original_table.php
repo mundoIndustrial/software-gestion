@@ -29,11 +29,9 @@ return new class extends Migration
             ])->nullable();
 
             // Resto de columnas
-            $table->string('tiempo', 65)->nullable();
             $table->string('total_de_dias_', 50)->nullable();
             $table->unsignedInteger('pedido')->primary();
             $table->string('cliente', 96)->nullable();
-            $table->text('hora')->nullable();
             $table->text('descripcion')->nullable();
             $table->string('cantidad', 56)->nullable();
             $table->text('novedades')->nullable();
