@@ -1031,22 +1031,74 @@ body:not(.dark-theme) #cellModal .cell-modal-footer {
     background: rgba(255, 255, 255, 0.05);
 }
 
-.delete-btn {
+/* Contenedor de botones de acción */
+.action-buttons {
     display: flex;
+    gap: 8px;
     align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
+    justify-content: center;
+}
+
+/* Botón de duplicar */
+.duplicate-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
     border: none;
     border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
     cursor: pointer;
     transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.duplicate-btn:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+.duplicate-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+
+.duplicate-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Botón de eliminar */
+.delete-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    border: none;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+}
+
+.delete-btn:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+}
+
+.delete-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
 }
 
 .delete-btn svg {
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
 }
 
 .delete-btn-secondary {

@@ -149,9 +149,14 @@
                                     <td class="table-cell editable-cell {{ $eficienciaClass }}" data-column="{{ $column }}" data-value="{{ $column === 'fecha' ? $displayValue : $value }}" title="Doble clic para editar">{{ $displayValue }}</td>
                                 @endforeach
                                 <td class="table-cell">
-                                    <button class="delete-btn" data-id="{{ $registro->id }}" data-section="produccion" title="Eliminar registro">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-icon lucide-trash"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                    </button>
+                                    <div class="action-buttons">
+                                        <button class="duplicate-btn" data-id="{{ $registro->id }}" data-section="produccion" title="Duplicar registro">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                        </button>
+                                        <button class="delete-btn" data-id="{{ $registro->id }}" data-section="produccion" title="Eliminar registro">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-icon lucide-trash"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                             @endforeach
@@ -259,9 +264,14 @@
                                     <td class="table-cell editable-cell {{ $eficienciaClass }}" data-column="{{ $column }}" data-value="{{ $column === 'fecha' ? $displayValue : $value }}" title="Doble clic para editar">{{ $displayValue }}</td>
                                 @endforeach
                                 <td class="table-cell">
-                                    <button class="delete-btn" data-id="{{ $registro->id }}" data-section="polos" title="Eliminar registro">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-icon lucide-trash"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                    </button>
+                                    <div class="action-buttons">
+                                        <button class="duplicate-btn" data-id="{{ $registro->id }}" data-section="polos" title="Duplicar registro">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                        </button>
+                                        <button class="delete-btn" data-id="{{ $registro->id }}" data-section="polos" title="Eliminar registro">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-icon lucide-trash"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                             @endforeach
@@ -384,9 +394,14 @@
                                     <td class="table-cell editable-cell {{ $eficienciaClass }}" data-column="{{ $column }}" data-value="{{ $dataValue }}" title="Doble clic para editar">{{ $displayValue }}</td>
                                 @endforeach
                                 <td class="table-cell">
-                                    <button class="delete-btn" data-id="{{ $registro->id }}" data-section="corte" title="Eliminar registro">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-icon lucide-trash"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                                    </button>
+                                    <div class="action-buttons">
+                                        <button class="duplicate-btn" data-id="{{ $registro->id }}" data-section="corte" title="Duplicar registro">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                        </button>
+                                        <button class="delete-btn" data-id="{{ $registro->id }}" data-section="corte" title="Eliminar registro">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-icon lucide-trash"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                             @endforeach
@@ -672,17 +687,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 tr.appendChild(td);
             });
 
-            // Agregar celda del botón de eliminar al final
-            const deleteTd = document.createElement('td');
-            deleteTd.className = 'table-cell';
-            const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'delete-btn';
-            deleteBtn.setAttribute('data-id', registro.id);
-            deleteBtn.setAttribute('data-section', section);
-            deleteBtn.title = 'Eliminar registro';
-            deleteBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-icon lucide-trash"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
-            deleteTd.appendChild(deleteBtn);
-            tr.appendChild(deleteTd);
+            // Agregar celda de acciones con botones de duplicar y eliminar
+            const actionTd = document.createElement('td');
+            actionTd.className = 'table-cell';
+            actionTd.innerHTML = `
+                <div class="action-buttons">
+                    <button class="duplicate-btn" data-id="${registro.id}" data-section="${section}" title="Duplicar registro">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    </button>
+                    <button class="delete-btn" data-id="${registro.id}" data-section="${section}" title="Eliminar registro">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-icon lucide-trash"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                </div>
+            `;
+            tr.appendChild(actionTd);
 
             // Agregar al final de la tabla (orden ascendente por ID)
             tbody.appendChild(tr);
@@ -1005,6 +1023,48 @@ document.addEventListener('DOMContentLoaded', function() {
         return '';
     }
 
+    // Función para manejar duplicación de registros
+    function duplicateRegistro(id, section) {
+        // Mostrar loading
+        showLoading('Duplicando registro...');
+        
+        // Hacer la petición para duplicar
+        fetch(`/tableros/${id}/duplicate?section=${section}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log('✅ Registro duplicado exitosamente:', data.registro);
+                
+                // Ocultar loading
+                hideLoading();
+                
+                // Mostrar notificación de éxito
+                showNotification('Registro duplicado correctamente', 'success');
+                
+                // NO agregamos la fila manualmente aquí
+                // El WebSocket se encargará de agregarla automáticamente
+                // Esto evita duplicación y asegura que tenga todos los botones correctos
+                console.log('⏳ Esperando que WebSocket agregue el registro a la tabla...');
+                
+            } else {
+                console.error('Error al duplicar:', data.message);
+                hideLoading();
+                alert('Error al duplicar el registro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            hideLoading();
+            alert('Error al duplicar el registro');
+        });
+    }
+
     // Función para manejar eliminación de registros
     function deleteRegistro(id, section) {
         // Mostrar modal de confirmación
@@ -1163,6 +1223,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const id = btn.dataset.id;
             const section = btn.dataset.section;
             deleteRegistro(id, section);
+        }
+        
+        // Event listener para botones de duplicar
+        if (e.target.classList.contains('duplicate-btn') || e.target.closest('.duplicate-btn')) {
+            e.preventDefault();
+            const btn = e.target.closest('.duplicate-btn');
+            const id = btn.dataset.id;
+            const section = btn.dataset.section;
+            duplicateRegistro(id, section);
         }
     });
 
@@ -1467,17 +1536,20 @@ function agregarRegistroTiempoReal(registro, section) {
         row.appendChild(td);
     });
 
-    // Agregar botón de eliminar
-    const deleteTd = document.createElement('td');
-    deleteTd.className = 'table-cell';
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'delete-btn';
-    deleteBtn.setAttribute('data-id', registro.id);
-    deleteBtn.setAttribute('data-section', section);
-    deleteBtn.title = 'Eliminar registro';
-    deleteBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
-    deleteTd.appendChild(deleteBtn);
-    row.appendChild(deleteTd);
+    // Agregar celda de acciones con botones de duplicar y eliminar
+    const actionTd = document.createElement('td');
+    actionTd.className = 'table-cell';
+    actionTd.innerHTML = `
+        <div class="action-buttons">
+            <button class="duplicate-btn" data-id="${registro.id}" data-section="${section}" title="Duplicar registro">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            </button>
+            <button class="delete-btn" data-id="${registro.id}" data-section="${section}" title="Eliminar registro">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-icon lucide-trash"><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
+        </div>
+    `;
+    row.appendChild(actionTd);
 
     // Insertar fila en la posición correcta según el ID (orden descendente - más reciente primero)
     const rows = Array.from(tbody.querySelectorAll('tr[data-id]'));
@@ -1506,6 +1578,11 @@ function agregarRegistroTiempoReal(registro, section) {
         row.style.transition = 'background-color 1s ease';
         row.style.backgroundColor = '';
     }, 100);
+
+    // Adjuntar event listeners de edición a las nuevas celdas
+    if (window.attachEditableCellListeners) {
+        window.attachEditableCellListeners();
+    }
 
     console.log(`✅ Registro ${registro.id} agregado a la tabla de ${section}`);
 }
@@ -1563,6 +1640,11 @@ function actualizarFilaExistente(row, registro, section) {
         row.style.transition = 'background-color 1s ease';
         row.style.backgroundColor = '';
     }, 100);
+    
+    // Adjuntar event listeners de edición a las celdas actualizadas
+    if (window.attachEditableCellListeners) {
+        window.attachEditableCellListeners();
+    }
 }
 
 // Función auxiliar para obtener columnas según sección
