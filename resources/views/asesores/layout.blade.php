@@ -111,6 +111,18 @@
                         <span class="menu-label">Reportes</span>
                     </a>
                 </li>
+                <li class="menu-item">
+                    <form action="{{ route('logout') }}" method="POST">
+                        @csrf
+                        <button type="submit" 
+                                class="menu-link" 
+                                style="border:none;background:none;cursor:pointer;width:100%;"
+                                aria-label="Cerrar sesión">
+                            <span class="material-symbols-rounded" aria-hidden="true">logout</span>
+                            <span class="menu-label">Salir</span>
+                        </button>
+                    </form>
+                </li>
             </ul>
         </div>
 

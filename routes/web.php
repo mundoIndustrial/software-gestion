@@ -151,6 +151,12 @@ Route::middleware(['auth', 'role:asesor'])->prefix('asesores')->name('asesores.'
     Route::get('/profile', [App\Http\Controllers\AsesoresController::class, 'profile'])->name('profile');
     Route::post('/profile/update', [App\Http\Controllers\AsesoresController::class, 'updateProfile'])->name('profile.update');
     Route::post('/profile/delete-avatar', [App\Http\Controllers\AsesoresController::class, 'deleteAvatar'])->name('profile.delete-avatar');
+    
+    // Inventario de Telas
+    Route::get('/inventario-telas', [App\Http\Controllers\AsesoresInventarioTelasController::class, 'index'])->name('inventario-telas.index');
+    Route::post('/inventario-telas', [App\Http\Controllers\AsesoresInventarioTelasController::class, 'store'])->name('inventario-telas.store');
+    Route::post('/inventario-telas/ajustar-stock', [App\Http\Controllers\AsesoresInventarioTelasController::class, 'ajustarStock'])->name('inventario-telas.ajustar-stock');
+    Route::get('/inventario-telas/historial', [App\Http\Controllers\AsesoresInventarioTelasController::class, 'historial'])->name('inventario-telas.historial');
 });
 
 require __DIR__.'/auth.php';
