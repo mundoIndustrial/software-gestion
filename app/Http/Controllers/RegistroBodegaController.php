@@ -357,6 +357,12 @@ class RegistroBodegaController extends Controller
                 'encargados_calidad', 'dias_c_c', 'entrega', 'encargados_entrega', 'despacho', 'column_52'
             ];
 
+            // Columnas que son de tipo fecha
+            $dateColumns = [
+                'fecha_de_creacion_de_orden', 'insumos_y_telas', 'corte', 'costura', 
+                'lavanderia', 'arreglos', 'control_de_calidad', 'entrega', 'despacho'
+            ];
+
             $validatedData = $request->validate([
                 'estado' => 'nullable|in:' . implode(',', $estadoOptions),
                 'area' => 'nullable|in:' . implode(',', $areaOptions),
@@ -386,9 +392,27 @@ class RegistroBodegaController extends Controller
                 }
             }
 
-            // Agregar otras columnas permitidas
+            // Agregar otras columnas permitidas y convertir fechas si es necesario
             foreach ($additionalData as $key => $value) {
-                $updates[$key] = $value;
+                // Si es una columna de fecha y el valor no está vacío, convertir formato
+                if (in_array($key, $dateColumns) && !empty($value)) {
+                    try {
+                        // Intentar parsear desde formato d/m/Y (11/11/2025)
+                        $date = \Carbon\Carbon::createFromFormat('d/m/Y', $value);
+                        $updates[$key] = $date->format('Y-m-d');
+                    } catch (\Exception $e) {
+                        try {
+                            // Si falla, intentar parsear como fecha genérica (puede ser Y-m-d ya)
+                            $date = \Carbon\Carbon::parse($value);
+                            $updates[$key] = $date->format('Y-m-d');
+                        } catch (\Exception $e2) {
+                            // Si todo falla, guardar el valor tal cual
+                            $updates[$key] = $value;
+                        }
+                    }
+                } else {
+                    $updates[$key] = $value;
+                }
             }
 
             $oldArea = $orden->area;
