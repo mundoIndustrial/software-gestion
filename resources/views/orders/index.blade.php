@@ -317,8 +317,8 @@
     <!-- Modal de Edición de Orden -->
     @include('components.orders-components.order-edit-modal')
 
-    <script src="{{ asset('js/orders js/modern-table.js') }}"></script>
-    <script src="{{ asset('js/orders js/orders-table.js') }}"></script>
-    <script src="{{ asset('js/orders js/pagination.js') }}"></script>
-    <script src="{{ asset('js/orders js/realtime-listeners.js') }}"></script>
+    <script src="{{ asset('js/orders js/modern-table.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/orders js/orders-table.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/orders js/pagination.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/orders js/realtime-listeners.js') }}?v={{ time() }}"></script>
 @endsection

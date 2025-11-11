@@ -47,7 +47,19 @@ class RegistroBodegaController extends Controller
         ];
 
             if (in_array($column, $allowedColumns)) {
-                $uniqueValues = TablaOriginalBodega::distinct()->pluck($column)->filter()->values()->toArray();
+                // Si es la columna calculada total_de_dias_, obtener todos los registros y calcular
+                if ($column === 'total_de_dias_') {
+                    $festivos = \App\Models\Festivo::pluck('fecha')->toArray();
+                    $ordenes = TablaOriginalBodega::all();
+                    foreach ($ordenes as $orden) {
+                        $orden->setFestivos($festivos);
+                    }
+                    $uniqueValues = $ordenes->map(function($orden) {
+                        return $orden->total_de_dias;
+                    })->unique()->sort()->values()->toArray();
+                } else {
+                    $uniqueValues = TablaOriginalBodega::distinct()->pluck($column)->filter()->values()->toArray();
+                }
                 
                 // Si es una columna de fecha, formatear los valores a d/m/Y
                 if (in_array($column, $dateColumns)) {
@@ -82,6 +94,9 @@ class RegistroBodegaController extends Controller
             });
         }
 
+        // Detectar si hay filtro de total_de_dias_ para procesarlo después
+        $filterTotalDias = null;
+        
         // Apply column filters (dynamic for all columns)
         foreach ($request->all() as $key => $value) {
             if (str_starts_with($key, 'filter_') && !empty($value)) {
@@ -105,6 +120,12 @@ class RegistroBodegaController extends Controller
                 ];
 
                 if (in_array($column, $allowedColumns)) {
+                    // Si es total_de_dias_, guardarlo para filtrar después del cálculo
+                    if ($column === 'total_de_dias_') {
+                        $filterTotalDias = array_map('intval', $values);
+                        continue;
+                    }
+                    
                     // Si es una columna de fecha, convertir los valores de d/m/Y a formato de base de datos
                     if (in_array($column, $dateColumns)) {
                         $query->where(function($q) use ($column, $values) {
@@ -127,11 +148,44 @@ class RegistroBodegaController extends Controller
         }
 
         $festivos = Festivo::pluck('fecha')->toArray();
-        $ordenes = $query->paginate(50);
+        
+        // Si hay filtro de total_de_dias_, necesitamos obtener todos los registros para calcular y filtrar
+        if ($filterTotalDias !== null) {
+            $todasOrdenes = $query->get();
+            
+            // Convertir a array para el cálculo
+            $ordenesArray = $todasOrdenes->map(function($orden) {
+                return (object) $orden->getAttributes();
+            })->toArray();
+            
+            $totalDiasCalculados = $this->calcularTotalDiasBatch($ordenesArray, $festivos);
+            
+            // Filtrar por total_de_dias_
+            $ordenesFiltradas = $todasOrdenes->filter(function($orden) use ($totalDiasCalculados, $filterTotalDias) {
+                $totalDias = $totalDiasCalculados[$orden->pedido] ?? 0;
+                return in_array((int)$totalDias, $filterTotalDias, true);
+            });
+            
+            // Paginar manualmente los resultados filtrados
+            $currentPage = request()->get('page', 1);
+            $perPage = 50;
+            $ordenes = new \Illuminate\Pagination\LengthAwarePaginator(
+                $ordenesFiltradas->forPage($currentPage, $perPage)->values(),
+                $ordenesFiltradas->count(),
+                $perPage,
+                $currentPage,
+                ['path' => request()->url(), 'query' => request()->query()]
+            );
+            
+            // Recalcular solo para las órdenes de la página actual
+            $totalDiasCalculados = $this->calcularTotalDiasBatch($ordenes->items(), $festivos);
+        } else {
+            $ordenes = $query->paginate(50);
 
-        // Cálculo optimizado tipo fórmula array (como Google Sheets)
-        // Una sola operación para calcular TODAS las órdenes visibles
-        $totalDiasCalculados = $this->calcularTotalDiasBatch($ordenes->items(), $festivos);
+            // Cálculo optimizado tipo fórmula array (como Google Sheets)
+            // Una sola operación para calcular TODAS las órdenes visibles
+            $totalDiasCalculados = $this->calcularTotalDiasBatch($ordenes->items(), $festivos);
+        }
 
         // Obtener opciones del enum 'area'
         $areaOptions = $this->getEnumOptions('tabla_original_bodega', 'area');
