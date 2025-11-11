@@ -10,8 +10,9 @@
         <title>{{ config('app.name', 'Mundo Industrial') }}</title>
 
         <!-- Favicon -->
-        <link rel="icon" href="{{ asset('mundo_icon.png') }}" type="image/png">
-        <link rel="apple-touch-icon" href="{{ asset('mundo_icon.png') }}">
+        <link rel="icon" href="{{ asset('mundo_icon.ico') }}" type="image/x-icon">
+        <link rel="shortcut icon" href="{{ asset('mundo_icon.ico') }}" type="image/x-icon">
+        <link rel="apple-touch-icon" href="{{ asset('mundo_icon.ico') }}">
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">

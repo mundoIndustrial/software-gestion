@@ -31,16 +31,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
                 if (!validTypes.includes(file.type)) {
                     showMessage('Por favor selecciona una imagen válida (JPG, PNG, GIF)', 'error');
+                    avatarInput.value = ''; // Limpiar input
                     return;
                 }
                 
                 // Validar tamaño (2MB)
                 if (file.size > 2 * 1024 * 1024) {
                     showMessage('La imagen no debe superar los 2MB', 'error');
+                    avatarInput.value = ''; // Limpiar input
                     return;
                 }
                 
-                // Crear preview
+                // Crear preview solamente (NO subir automáticamente)
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     // Si ya existe una imagen, actualizarla
@@ -48,30 +50,19 @@ document.addEventListener('DOMContentLoaded', function() {
                         avatarImage.src = e.target.result;
                     } else {
                         // Si no existe, crear nueva imagen
-                        avatarPreview.innerHTML = `<img src="${e.target.result}" alt="Avatar" id="avatarImage">`;
+                        avatarPreview.innerHTML = `<img src="${e.target.result}" alt="Avatar Preview" id="avatarImage">`;
                     }
                     
-                    // Mostrar botón de eliminar si no existe
-                    if (!deleteAvatarBtn) {
-                        const avatarActions = document.querySelector('.avatar-actions');
-                        const deleteBtn = document.createElement('button');
-                        deleteBtn.type = 'button';
-                        deleteBtn.className = 'btn-delete';
-                        deleteBtn.id = 'deleteAvatarBtn';
-                        deleteBtn.innerHTML = `
-                            <span class="material-symbols-rounded">delete</span>
-                            <span>Eliminar</span>
-                        `;
-                        avatarActions.appendChild(deleteBtn);
-                        
-                        // Agregar event listener al nuevo botón
-                        deleteBtn.addEventListener('click', handleDeleteAvatar);
+                    // Agregar indicador de cambios pendientes
+                    const avatarCard = document.querySelector('.avatar-card');
+                    if (avatarCard && !avatarCard.querySelector('.pending-changes')) {
+                        const pendingBadge = document.createElement('div');
+                        pendingBadge.className = 'pending-changes';
+                        pendingBadge.innerHTML = '<span class="material-symbols-rounded">info</span> Haz clic en "Guardar Cambios" para actualizar tu foto';
+                        avatarCard.querySelector('.card-body').insertBefore(pendingBadge, avatarCard.querySelector('.avatar-section'));
                     }
                 };
                 reader.readAsDataURL(file);
-                
-                // Subir automáticamente
-                uploadAvatar(file);
             }
         });
     }
@@ -133,45 +124,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    function uploadAvatar(file) {
-        const formData = new FormData();
-        formData.append('avatar', file);
-        formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
-        
-        fetch('/asesores/profile/update', {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Accept': 'application/json',
-            },
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showMessage('Foto de perfil actualizada exitosamente', 'success');
-                
-                // Actualizar avatar en el header si existe
-                if (data.avatar_url) {
-                    const headerAvatar = document.querySelector('.user-avatar img');
-                    if (headerAvatar) {
-                        headerAvatar.src = data.avatar_url;
-                    } else {
-                        const avatarContainer = document.querySelector('.user-avatar');
-                        if (avatarContainer) {
-                            avatarContainer.innerHTML = `<img src="${data.avatar_url}" alt="Avatar">`;
-                        }
-                    }
-                }
-            } else {
-                showMessage(data.message, 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showMessage('Error al subir la imagen', 'error');
-        });
-    }
 
     // ========================================
     // FORMULARIO DE PERFIL
@@ -182,6 +134,11 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             
             const formData = new FormData(profileForm);
+            
+            // Agregar el archivo de avatar si se seleccionó uno nuevo
+            if (avatarInput && avatarInput.files.length > 0) {
+                formData.append('avatar', avatarInput.files[0]);
+            }
             
             // Validaciones básicas
             const name = formData.get('name');
@@ -208,6 +165,8 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => response.json())
             .then(data => {
+                console.log('Respuesta del servidor:', data); // Debug
+                
                 if (data.success) {
                     showMessage(data.message, 'success');
                     
@@ -222,6 +181,31 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (avatarPlaceholder) {
                         const initials = formData.get('name').substring(0, 2).toUpperCase();
                         avatarPlaceholder.textContent = initials;
+                    }
+                    
+                    // Actualizar avatar en el header si se subió uno nuevo
+                    if (data.avatar_url) {
+                        console.log('URL del avatar:', data.avatar_url); // Debug
+                        
+                        const avatarContainer = document.querySelector('.user-avatar');
+                        console.log('Avatar container encontrado:', avatarContainer); // Debug
+                        
+                        if (avatarContainer) {
+                            const timestamp = new Date().getTime();
+                            avatarContainer.innerHTML = `<img src="${data.avatar_url}?t=${timestamp}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+                            console.log('Avatar actualizado en el header'); // Debug
+                        }
+                        
+                        // Limpiar el input de archivo
+                        if (avatarInput) {
+                            avatarInput.value = '';
+                        }
+                    }
+                    
+                    // Eliminar indicador de cambios pendientes
+                    const pendingBadge = document.querySelector('.pending-changes');
+                    if (pendingBadge) {
+                        pendingBadge.remove();
                     }
                 } else {
                     showMessage(data.message, 'error');

@@ -550,3 +550,27 @@
         justify-content: center;
     }
 }
+
+/* ========================================
+   ESTILOS PARA LISTA DE PEDIDOS
+   ======================================== */
+
+.erp-tab-badge {
+    background: var(--erp-primary);
+    color: white;
+    padding: 0.125rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    margin-left: 0.5rem;
+}
+
+.erp-tab-badge.badge-warning {
+    background: linear-gradient(135deg, #F77F00, #FFA726);
+}
+
+.erp-btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    min-height: auto;
+}

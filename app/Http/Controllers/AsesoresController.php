@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\TablaOriginal;
+use App\Models\OrdenAsesor;
 use App\Models\ProductoPedido;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -93,65 +94,95 @@ class AsesoresController extends Controller
     }
 
     /**
-     * Listar pedidos del asesor
+     * Listar pedidos del asesor (usando OrdenAsesor con sistema de borradores)
      */
     public function index(Request $request)
     {
-        $asesoraNombre = Auth::user()->name;
+        $asesorId = Auth::id();
         
-        $query = TablaOriginal::delAsesor($asesoraNombre)->with('productos');
+        // Determinar qué pestaña mostrar (borradores o confirmados)
+        $tipo = $request->get('tipo', 'confirmados');
+        
+        $query = OrdenAsesor::where('asesor_id', $asesorId);
 
-        // Filtros
-        if ($request->filled('estado')) {
-            $query->where('estado', $request->estado);
+        // Filtrar por tipo (borrador o confirmado)
+        if ($tipo === 'borradores') {
+            $query->where('es_borrador', true);
+        } else {
+            $query->where('es_borrador', false);
         }
 
-        if ($request->filled('area')) {
-            $query->where('area', $request->area);
+        // Filtros adicionales
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->estado);
         }
 
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('pedido', 'LIKE', "%{$search}%")
+                  ->orWhere('numero_orden', 'LIKE', "%{$search}%")
                   ->orWhere('cliente', 'LIKE', "%{$search}%");
             });
         }
 
-        $pedidos = $query->orderBy('fecha_de_creacion_de_orden', 'desc')->paginate(20);
+        $pedidos = $query->orderBy('created_at', 'desc')->paginate(20);
+
+        // Contar borradores y confirmados
+        $cantidadBorradores = OrdenAsesor::where('asesor_id', $asesorId)
+            ->where('es_borrador', true)
+            ->count();
+            
+        $cantidadConfirmados = OrdenAsesor::where('asesor_id', $asesorId)
+            ->where('es_borrador', false)
+            ->count();
 
         // Obtener valores únicos para filtros
-        $estados = TablaOriginal::select('estado')
-            ->whereNotNull('estado')
-            ->distinct()
-            ->pluck('estado');
+        $estados = ['pendiente', 'en_proceso', 'completada', 'cancelada'];
+        
+        // Áreas disponibles
+        $areas = [
+            'Corte',
+            'Control-Calidad',
+            'Costura',
+            'Bordado',
+            'Creación Orden',
+            'Estampado',
+            'Entrega',
+            'Polos',
+            'Taller',
+            'Insumos',
+            'Lavandería',
+            'Arreglos',
+            'Despachos'
+        ];
 
-        $areas = TablaOriginal::select('area')
-            ->whereNotNull('area')
-            ->distinct()
-            ->pluck('area');
-
-        return view('asesores.pedidos.index', compact('pedidos', 'estados', 'areas'));
+        return view('asesores.pedidos.index', compact(
+            'pedidos', 
+            'estados',
+            'areas',
+            'tipo',
+            'cantidadBorradores',
+            'cantidadConfirmados'
+        ));
     }
 
     /**
-     * Mostrar formulario para crear pedido
+     * Mostrar formulario para crear pedido (como borrador)
      */
     public function create()
     {
-        // Obtener el siguiente número de pedido
-        $ultimoPedido = TablaOriginal::max('pedido');
-        $siguientePedido = $ultimoPedido ? $ultimoPedido + 1 : 1;
-
+        // NO asignamos número de pedido aquí, se asignará al confirmar
+        
         // Obtener opciones de enums
-        $estados = ['No iniciado', 'En Ejecución', 'Entregado', 'Anulada'];
+        $estados = ['pendiente', 'en_proceso', 'completada', 'cancelada'];
         $areas = [
             'Creación Orden', 'Corte', 'Costura', 'Bordado', 'Estampado',
             'Control-Calidad', 'Entrega', 'Polos', 'Taller', 'Insumos',
             'Lavandería', 'Arreglos', 'Despachos'
         ];
 
-        return view('asesores.pedidos.create', compact('siguientePedido', 'estados', 'areas'));
+        return view('asesores.pedidos.create', compact('estados', 'areas'));
     }
 
     /**

@@ -6,8 +6,9 @@
     <title>Mundo Industrial</title>
     
     <!-- Favicon -->
-    <link rel="icon" href="{{ asset('mundo_icon.png') }}" type="image/png">
-    <link rel="apple-touch-icon" href="{{ asset('mundo_icon.png') }}">
+    <link rel="icon" href="{{ asset('mundo_icon.ico') }}" type="image/x-icon">
+    <link rel="shortcut icon" href="{{ asset('mundo_icon.ico') }}" type="image/x-icon">
+    <link rel="apple-touch-icon" href="{{ asset('mundo_icon.ico') }}">
     
     <script src="https://cdn.tailwindcss.com"></script>
 </head>

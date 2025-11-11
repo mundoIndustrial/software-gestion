@@ -20,8 +20,11 @@
                 <span>{{ Auth::user()->name }}</span>
             </div>
             <div class="erp-meta-item">
-                <span class="material-symbols-rounded">tag</span>
-                <span>Pedido #{{ $siguientePedido }}</span>
+                <span class="material-symbols-rounded">edit_note</span>
+                <span style="color: var(--warning-color); font-weight: 600;">BORRADOR</span>
+                <small style="color: var(--text-secondary); font-size: 0.75rem; margin-left: 0.5rem;">
+                    (El número se asignará al confirmar)
+                </small>
             </div>
         </div>
     </div>
@@ -63,13 +66,8 @@
                 <div class="erp-section-body">
             
                     <div class="erp-form-grid cols-3">
-                        <div class="erp-form-group">
-                            <label class="erp-label required">
-                                <span class="material-symbols-rounded">tag</span>
-                                Número de Pedido
-                            </label>
-                            <input type="number" id="pedido" name="pedido" value="{{ $siguientePedido }}" class="erp-input" readonly required>
-                        </div>
+                        <!-- El número de pedido se asignará automáticamente al confirmar -->
+                        <input type="hidden" name="es_borrador" value="1">
 
                         <div class="erp-form-group">
                             <label class="erp-label required">

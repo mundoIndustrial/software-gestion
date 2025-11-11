@@ -1,86 +1,124 @@
-// ========================================
-// SIDEBAR TOGGLE
-// ========================================
-document.addEventListener('DOMContentLoaded', function() {
-    const sidebar = document.getElementById('sidebar');
-    const sidebarToggle = document.getElementById('sidebarToggle');
-    const mobileToggle = document.getElementById('mobileToggle');
-    
-    // Toggle sidebar en desktop
-    if (sidebarToggle) {
-        sidebarToggle.addEventListener('click', function() {
-            sidebar.classList.toggle('collapsed');
-            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
-        });
+const sidebarToggleBtns = document.querySelectorAll(".sidebar-toggle");
+const sidebar = document.querySelector(".sidebar");
+const menuLinks = document.querySelectorAll(".menu-link");
+const themeToggle = document.getElementById("themeToggle");
+const logo = document.querySelector(".header-logo");
+
+// Theme management
+const getStoredTheme = () => localStorage.getItem("theme");
+const setStoredTheme = (theme) => {
+  localStorage.setItem("theme", theme);
+  // Guardar también en cookie para que el servidor pueda leerlo
+  document.cookie = `theme=${theme}; path=/; max-age=31536000`; // 1 año
+};
+
+const applyTheme = (theme) => {
+  if (theme === "dark") {
+    document.documentElement.classList.add("dark-theme");
+    document.documentElement.setAttribute("data-theme", "dark");
+    document.body.classList.add("dark-theme");
+    if (logo) {
+      logo.src = logo.dataset.logoDark;
     }
-    
-    // Toggle sidebar en mobile
-    if (mobileToggle) {
-        mobileToggle.addEventListener('click', function() {
-            sidebar.classList.toggle('show');
-        });
+  } else {
+    document.documentElement.classList.remove("dark-theme");
+    document.documentElement.removeAttribute("data-theme");
+    document.body.classList.remove("dark-theme");
+    if (logo) {
+      logo.src = logo.dataset.logoLight;
     }
-    
-    // Restaurar estado del sidebar
-    const sidebarCollapsed = localStorage.getItem('sidebarCollapsed');
-    if (sidebarCollapsed === 'true') {
-        sidebar.classList.add('collapsed');
-    }
-    
-    // Cerrar sidebar al hacer click fuera en mobile
-    document.addEventListener('click', function(event) {
-        if (window.innerWidth <= 1024) {
-            if (!sidebar.contains(event.target) && !mobileToggle.contains(event.target)) {
-                sidebar.classList.remove('show');
-            }
-        }
-    });
+  }
+  
+  updateThemeButton(theme);
+};
+
+const updateThemeButton = (theme) => {
+  const icon = themeToggle.querySelector(".material-symbols-rounded");
+  const text = themeToggle.querySelector(".theme-text");
+  
+  if (theme === "dark") {
+    icon.textContent = "dark_mode";
+    text.textContent = "Modo Oscuro";
+  } else {
+    icon.textContent = "light_mode";
+    text.textContent = "Modo Claro";
+  }
+};
+
+// Initialize theme from localStorage or default to light
+const initialTheme = getStoredTheme() || "light";
+// Asegurar que la cookie esté sincronizada con localStorage
+if (initialTheme) {
+  setStoredTheme(initialTheme);
+}
+applyTheme(initialTheme);
+
+// Theme toggle event
+themeToggle.addEventListener("click", () => {
+  const currentTheme = document.body.classList.contains("dark-theme") ? "dark" : "light";
+  const newTheme = currentTheme === "dark" ? "light" : "dark";
+  setStoredTheme(newTheme);
+  applyTheme(newTheme);
 });
 
-// ========================================
-// THEME TOGGLE
-// ========================================
-document.addEventListener('DOMContentLoaded', function() {
-    const themeToggle = document.getElementById('themeToggle');
-    const body = document.body;
-    
-    // Cargar tema guardado
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    if (savedTheme === 'dark') {
-        body.classList.add('dark-theme');
-        updateThemeButton(true);
-    }
-    
-    // Toggle theme
-    if (themeToggle) {
-        themeToggle.addEventListener('click', function() {
-            body.classList.toggle('dark-theme');
-            const isDark = body.classList.contains('dark-theme');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-            updateThemeButton(isDark);
-        });
-    }
-    
-    function updateThemeButton(isDark) {
-        const icon = themeToggle.querySelector('.material-symbols-rounded');
-        const text = themeToggle.querySelector('.theme-text');
-        const logo = document.querySelector('.header-logo');
-        
-        if (isDark) {
-            if (icon) icon.textContent = 'light_mode';
-            if (text) text.textContent = 'Modo Claro';
-            if (logo) {
-                logo.src = logo.dataset.logoDark || 'https://prueba.mundoindustrial.co/wp-content/uploads/2024/07/logo-mundo-industrial-white.png';
-            }
-        } else {
-            if (icon) icon.textContent = 'dark_mode';
-            if (text) text.textContent = 'Modo Oscuro';
-            if (logo) {
-                logo.src = logo.dataset.logoLight || logo.dataset.logoLight;
-            }
-        }
-    }
+// Toggle sidebar collapsed state on buttons click
+sidebarToggleBtns.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    sidebar.classList.toggle("collapsed");
+  });
 });
+
+// Expand sidebar by default on large screens
+if (window.innerWidth > 768) sidebar.classList.remove("collapsed");
+
+// Submenu toggle functionality
+const submenuToggles = document.querySelectorAll(".submenu-toggle");
+
+submenuToggles.forEach((toggle) => {
+  toggle.addEventListener("click", (e) => {
+    e.preventDefault();
+    const submenu = toggle.nextElementSibling;
+    if (submenu && submenu.classList.contains("submenu")) {
+      submenu.classList.toggle("open");
+      toggle.classList.toggle("active");
+    }
+  });
+});
+
+// Mobile toggle functionality
+const mobileToggle = document.getElementById('mobileToggle');
+const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+if (mobileToggle) {
+  mobileToggle.addEventListener('click', () => {
+    sidebar.classList.add('active');
+    sidebar.classList.remove('collapsed');
+    if (sidebarOverlay) {
+      sidebarOverlay.classList.add('active');
+    }
+  });
+}
+
+if (sidebarOverlay) {
+  sidebarOverlay.addEventListener('click', () => {
+    sidebar.classList.remove('active');
+    sidebarOverlay.classList.remove('active');
+  });
+}
+
+// Cerrar sidebar en móvil al hacer clic en un enlace
+if (window.innerWidth <= 1024) {
+  menuLinks.forEach((link) => {
+    link.addEventListener('click', () => {
+      if (sidebar.classList.contains('active')) {
+        sidebar.classList.remove('active');
+        if (sidebarOverlay) {
+          sidebarOverlay.classList.remove('active');
+        }
+      }
+    });
+  });
+}
 
 // ========================================
 // USER DROPDOWN

@@ -6,10 +6,18 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Panel de Asesores') - MundoIndustrial</title>
     
+    <!-- Favicon -->
+    <link rel="icon" href="{{ asset('mundo_icon.ico') }}" type="image/x-icon">
+    <link rel="shortcut icon" href="{{ asset('mundo_icon.ico') }}" type="image/x-icon">
+    <link rel="apple-touch-icon" href="{{ asset('mundo_icon.ico') }}">
+    
     <!-- CSS -->
     <link rel="stylesheet" href="{{ asset('css/asesores/layout.css') }}">
     <link rel="stylesheet" href="{{ asset('css/asesores/dashboard.css') }}">
     <link rel="stylesheet" href="{{ asset('css/asesores/pedidos-erp.css') }}">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Chart.js para gráficas -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -20,72 +28,80 @@
     @stack('styles')
 </head>
 <body class="light-theme">
-    <!-- Sidebar -->
-    <aside class="sidebar" id="sidebar">
+    <!-- Overlay para móviles -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Container principal -->
+    <div class="container">
+        <!-- Sidebar principal -->
+    <aside class="sidebar collapsed" id="sidebar">
         <div class="sidebar-header">
-            <img src="{{ asset('images/logo2.png') }}" 
-                 alt="Logo Mundo Industrial" 
+            <img src="{{ asset('images/logo2.png') }}"
+                 alt="Logo Mundo Industrial"
                  class="header-logo"
                  data-logo-light="{{ asset('images/logo2.png') }}"
                  data-logo-dark="https://prueba.mundoindustrial.co/wp-content/uploads/2024/07/logo-mundo-industrial-white.png" />
-            <button class="sidebar-toggle" id="sidebarToggle" aria-label="Colapsar menú">
+            <button class="sidebar-toggle" aria-label="Colapsar menú">
                 <span class="material-symbols-rounded">chevron_left</span>
             </button>
         </div>
 
         <div class="sidebar-content">
+            <!-- Lista del menú principal -->
             <ul class="menu-list" role="navigation" aria-label="Menú de asesores">
                 <li class="menu-item">
-                    <a href="{{ route('asesores.dashboard') }}" 
+                    <a href="{{ route('asesores.dashboard') }}"
                        class="menu-link {{ request()->routeIs('asesores.dashboard') ? 'active' : '' }}"
                        aria-label="Ir al Dashboard">
                         <span class="material-symbols-rounded" aria-hidden="true">dashboard</span>
                         <span class="menu-label">Dashboard</span>
                     </a>
                 </li>
+
                 <li class="menu-item">
-                    <a href="{{ route('asesores.pedidos.index') }}" 
+                    <a href="{{ route('asesores.pedidos.index') }}"
                        class="menu-link {{ request()->routeIs('asesores.pedidos.index') || request()->routeIs('asesores.pedidos.show') ? 'active' : '' }}"
                        aria-label="Ver mis pedidos">
                         <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
                         <span class="menu-label">Mis Pedidos</span>
                     </a>
                 </li>
+
                 <li class="menu-item">
-                    <a href="{{ route('asesores.pedidos.create') }}" 
+                    <a href="{{ route('asesores.pedidos.create') }}"
                        class="menu-link {{ request()->routeIs('asesores.pedidos.create') ? 'active' : '' }}"
                        aria-label="Crear nuevo pedido">
                         <span class="material-symbols-rounded" aria-hidden="true">add_circle</span>
                         <span class="menu-label">Nuevo Pedido</span>
                     </a>
                 </li>
+
+                <li class="menu-item">
+                    <a href="{{ route('asesores.pedidos.index', ['tipo' => 'borradores']) }}"
+                       class="menu-link {{ request()->get('tipo') === 'borradores' ? 'active' : '' }}"
+                       aria-label="Ver borradores">
+                        <span class="material-symbols-rounded" aria-hidden="true">edit_note</span>
+                        <span class="menu-label">Borradores</span>
+                    </a>
+                </li>
+
                 <li class="menu-item">
                     <a href="#" class="menu-link" aria-label="Ver clientes">
                         <span class="material-symbols-rounded" aria-hidden="true">group</span>
                         <span class="menu-label">Clientes</span>
                     </a>
                 </li>
+
                 <li class="menu-item">
                     <a href="#" class="menu-link" aria-label="Ver reportes">
                         <span class="material-symbols-rounded" aria-hidden="true">bar_chart</span>
                         <span class="menu-label">Reportes</span>
                     </a>
                 </li>
-                <li class="menu-item">
-                    <form action="{{ route('logout') }}" method="POST">
-                        @csrf
-                        <button type="submit" 
-                                class="menu-link" 
-                                style="border:none;background:none;cursor:pointer;width:100%;"
-                                aria-label="Cerrar sesión">
-                            <span class="material-symbols-rounded" aria-hidden="true">logout</span>
-                            <span class="menu-label">Salir</span>
-                        </button>
-                    </form>
-                </li>
             </ul>
         </div>
 
+        <!-- Footer con toggle de tema -->
         <div class="sidebar-footer">
             <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema">
                 <div class="theme-label">
@@ -176,6 +192,7 @@
             @yield('content')
         </main>
     </div>
+    </div><!-- Cierre del container -->
 
     <!-- Scripts -->
     <script src="{{ asset('js/asesores/layout.js') }}"></script>
