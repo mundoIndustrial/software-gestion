@@ -43,9 +43,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Actualizar contenido de forma rápida
                 const newTableBody = doc.getElementById('tablaOrdenesBody');
                 if (newTableBody) {
-                    // Limpiar marcas de inicialización antes de reemplazar el HTML
-                    const oldDropdowns = tableBody.querySelectorAll('.dia-entrega-dropdown[data-initialized="true"]');
-                    oldDropdowns.forEach(d => d.dataset.initialized = 'false');
+                    // CRÍTICO: Limpiar todos los event listeners antes de reemplazar el HTML
+                    const oldDropdowns = tableBody.querySelectorAll('.dia-entrega-dropdown');
+                    oldDropdowns.forEach(dropdown => {
+                        // Remover el handler guardado
+                        if (dropdown._diaEntregaHandler) {
+                            dropdown.removeEventListener('change', dropdown._diaEntregaHandler);
+                            delete dropdown._diaEntregaHandler;
+                        }
+                        dropdown.dataset.initialized = 'false';
+                    });
                     
                     tableBody.innerHTML = newTableBody.innerHTML;
                 }
