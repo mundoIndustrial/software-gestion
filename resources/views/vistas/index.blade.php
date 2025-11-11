@@ -117,6 +117,9 @@
                                             @endphp
                                             {{ $encargado }}
                                         </span>
+                                        <button class="btn-toggle-edit" data-card-id="{{ $pedido }}-{{ $cliente }}" title="Activar edición">
+                                            <i class="fas fa-edit"></i> Editar
+                                        </button>
                                     </div>
                                 </div>
                                 <div class="card-body">
@@ -135,14 +138,14 @@
                                         </thead>
                                         <tbody>
                                             @foreach($groupRegistros as $registro)
-                                                <tr>
+                                                <tr data-id="{{ $registro->id }}" data-tipo="{{ $tipo }}">
                                                     <td class="prenda-cell cell-clickable" data-content="{{ $registro->prenda ?: '-' }}">{{ $registro->prenda ?: '-' }}</td>
                                                     <td class="descripcion-cell cell-clickable" data-content="{{ $registro->descripcion ?: '-' }}">{{ $registro->descripcion ?: '-' }}</td>
                                                     <td class="talla-cell">{{ $registro->talla ?: '-' }}</td>
-                                                    <td class="cantidad-cell">{{ $registro->cantidad ?: '-' }}</td>
-                                                    <td class="costurero-cell cell-clickable" data-content="{{ $registro->costurero ?: '-' }}">{{ $registro->costurero ?: '-' }}</td>
-                                                    <td class="total_producido_por_talla-cell">{{ $registro->total_producido_por_talla ?: '-' }}</td>
-                                                    <td class="total_pendiente_por_talla-cell">{{ $registro->total_pendiente_por_talla ?: '-' }}</td>
+                                                    <td class="cantidad-cell editable" data-field="cantidad" data-value="{{ $registro->cantidad ?? '' }}">{{ $registro->cantidad !== null && $registro->cantidad !== '' ? $registro->cantidad : '-' }}</td>
+                                                    <td class="costurero-cell cell-clickable editable" data-field="costurero" data-content="{{ $registro->costurero ?: '-' }}" data-value="{{ $registro->costurero ?? '' }}">{{ $registro->costurero ?: '-' }}</td>
+                                                    <td class="total_producido_por_talla-cell editable" data-field="total_producido_por_talla" data-value="{{ $registro->total_producido_por_talla ?? '' }}">{{ $registro->total_producido_por_talla !== null && $registro->total_producido_por_talla !== '' ? $registro->total_producido_por_talla : '-' }}</td>
+                                                    <td class="total_pendiente_por_talla-cell editable" data-field="total_pendiente_por_talla" data-value="{{ $registro->total_pendiente_por_talla ?? '' }}">{{ $registro->total_pendiente_por_talla !== null && $registro->total_pendiente_por_talla !== '' ? $registro->total_pendiente_por_talla : '-' }}</td>
                                                     <td class="fecha_completado-cell">
                                                         @if($registro->fecha_completado)
                                                             {{ \Carbon\Carbon::parse($registro->fecha_completado)->format('d/m/Y') }}
@@ -353,5 +356,193 @@
                 isLoadingPagination = false;
             });
         });
+
+        // Toggle edit mode for cards
+        document.body.addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn-toggle-edit');
+            if (!btn) return;
+
+            const card = btn.closest('.pedido-card');
+            const isEditing = card.classList.contains('edit-mode');
+
+            if (isEditing) {
+                // Desactivar modo edición
+                card.classList.remove('edit-mode');
+                btn.innerHTML = '<i class="fas fa-edit"></i> Editar';
+                btn.classList.remove('active');
+            } else {
+                // Activar modo edición
+                card.classList.add('edit-mode');
+                btn.innerHTML = '<i class="fas fa-save"></i> Guardar';
+                btn.classList.add('active');
+            }
+        });
+
+        // Inline cell editing functionality
+        document.body.addEventListener('dblclick', function(e) {
+            const cell = e.target.closest('td.editable');
+            if (!cell || cell.querySelector('input')) return;
+
+            // Verificar si el card está en modo edición
+            const card = cell.closest('.pedido-card');
+            if (!card || !card.classList.contains('edit-mode')) {
+                return; // No permitir edición si no está activado el modo edición
+            }
+
+            const currentValue = cell.dataset.value || '';
+            const field = cell.dataset.field;
+            const row = cell.closest('tr');
+            const recordId = row.dataset.id;
+            const tipo = row.dataset.tipo;
+
+            // Create input element
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentValue;
+            input.className = 'cell-edit-input';
+            input.style.cssText = 'width: 100%; padding: 4px; border: 2px solid #4CAF50; border-radius: 4px; font-size: inherit; color: #000; background-color: #fff;';
+            
+            // Store original content
+            const originalContent = cell.innerHTML;
+            
+            // Replace cell content with input
+            cell.innerHTML = '';
+            cell.appendChild(input);
+            input.focus();
+            input.select();
+
+            // Function to save changes
+            function saveChanges() {
+                const newValue = input.value.trim();
+                
+                // Show loading state
+                cell.innerHTML = '<span style="color: #999;">Guardando...</span>';
+                
+                // Send AJAX request to update
+                fetch('/api/vistas/update-cell', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Accept': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        id: recordId,
+                        field: field,
+                        value: newValue,
+                        tipo: tipo
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update cell with new value
+                        cell.dataset.value = newValue;
+                        cell.innerHTML = newValue !== '' && newValue !== null ? newValue : '-';
+                        
+                        // Show success feedback
+                        cell.style.backgroundColor = '#d4edda';
+                        setTimeout(() => {
+                            cell.style.backgroundColor = '';
+                        }, 1000);
+                    } else {
+                        // Restore original content on error
+                        cell.innerHTML = originalContent;
+                        alert('Error al guardar: ' + (data.message || 'Error desconocido'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    cell.innerHTML = originalContent;
+                    alert('Error al guardar los cambios');
+                });
+            }
+
+            // Function to cancel editing
+            function cancelEdit() {
+                cell.innerHTML = originalContent;
+            }
+
+            // Variable to track if we should save
+            let shouldSave = false;
+
+            // Save on Enter key
+            input.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    shouldSave = true;
+                    saveChanges();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    shouldSave = false;
+                    cancelEdit();
+                }
+            });
+
+            // Cancel on blur (click outside) - NO guardar
+            input.addEventListener('blur', function() {
+                setTimeout(() => {
+                    if (!shouldSave) {
+                        cancelEdit();
+                    }
+                }, 100);
+            });
+        });
+
+        // Add visual feedback for editable cells
+        const style = document.createElement('style');
+        style.textContent = `
+            .btn-toggle-edit {
+                background: #ff9800;
+                color: white;
+                border: none;
+                padding: 6px 12px;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 13px;
+                margin-left: 15px;
+                transition: all 0.3s ease;
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+            }
+            .btn-toggle-edit:hover {
+                background: #f57c00;
+                transform: translateY(-1px);
+                box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+            }
+            .btn-toggle-edit.active {
+                background: #4CAF50;
+            }
+            .btn-toggle-edit.active:hover {
+                background: #45a049;
+            }
+            .pedido-card.edit-mode {
+                box-shadow: 0 0 0 2px #ff9800;
+            }
+            .pedido-card:not(.edit-mode) td.editable {
+                cursor: default;
+            }
+            .pedido-card.edit-mode td.editable {
+                cursor: pointer;
+                position: relative;
+                transition: background-color 0.2s ease;
+            }
+            .pedido-card.edit-mode td.editable:hover {
+                background-color: rgba(255, 152, 0, 0.15) !important;
+                outline: 1px dashed #ff9800;
+            }
+            .pedido-card.edit-mode td.editable:hover::after {
+                content: '✎';
+                position: absolute;
+                right: 4px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: #ff9800;
+                font-size: 12px;
+                opacity: 0.9;
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 @endsection
