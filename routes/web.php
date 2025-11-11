@@ -104,6 +104,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/tableros/unique-values', [TablerosController::class, 'getUniqueValues'])->name('tableros.unique-values');
     Route::get('/vistas', [VistasController::class, 'index'])->name('vistas.index');
     Route::get('/api/vistas/search', [VistasController::class, 'search'])->name('api.vistas.search');
+    Route::post('/api/vistas/update-cell', [VistasController::class, 'updateCell'])->name('api.vistas.update-cell');
     Route::get('/vistas/control-calidad', [VistasController::class, 'controlCalidad'])->name('vistas.control-calidad');
     Route::get('/vistas/control-calidad-fullscreen', [VistasController::class, 'controlCalidadFullscreen'])->name('vistas.control-calidad-fullscreen');
     
