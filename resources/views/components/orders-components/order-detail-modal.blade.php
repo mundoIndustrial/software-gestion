@@ -14,11 +14,21 @@
             <div id="order-forma-pago" class="order-forma-pago">FORMA DE PAGO: <span id="forma-pago-value"></span></div>
             <div id="order-cliente" class="order-cliente">CLIENTE: <span id="cliente-value"></span></div>
             <div id="order-descripcion" class="order-descripcion">
-                <p id="descripcion-text"></p>
-                <button id="prev-arrow" class="arrow-btn" style="display: none;">&larr;</button>
-                <button id="next-arrow" class="arrow-btn" style="display: none;">&rarr;</button>
+                <div id="descripcion-text"></div>
             </div>
             <h2 class="receipt-title">RECIBO DE COSTURA</h2>
+            <div class="arrow-container">
+                <button id="prev-arrow" class="arrow-btn" style="display: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+                <button id="next-arrow" class="arrow-btn" style="display: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+            </div>
             <div id="order-pedido" class="pedido-number"></div>
 
             <div class="separator-line"></div>
@@ -192,10 +202,38 @@
             background: none;
             border: none;
             color: red;
-            font-size: 20px;
-            font-weight: bold;
             cursor: pointer;
-            margin: 0 5px;
+            padding: 5px;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .arrow-btn:hover {
+            transform: scale(1.15);
+            background-color: rgba(255, 0, 0, 0.1);
+        }
+
+        .arrow-btn svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        #descripcion-text {
+            width: 100%;
+            text-align: left;
+        }
+
+        .arrow-container {
+            position: absolute;
+            top: 85px;
+            right: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
         }
 
         .signature-section {
