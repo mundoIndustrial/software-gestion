@@ -15,7 +15,6 @@
 <div class="inventario-telas-container">
     <!-- Barra de Acciones -->
     <div class="list-header">
-        @if(false) {{-- Oculto para asesores, disponible para futuro rol insumos --}}
         <button type="button" class="btn btn-create" onclick="abrirModalCrearTela()">
             <span class="material-symbols-rounded">add_circle</span>
             Nueva Tela
@@ -24,7 +23,6 @@
             <span class="material-symbols-rounded">analytics</span>
             Historial y Estadísticas
         </button>
-        @endif
         <div class="search-box">
             <i class="fas fa-search"></i>
             <input type="text" id="searchInput" placeholder="Buscar por nombre o categoría...">
@@ -51,9 +49,7 @@
                         <th>Stock</th>
                         <th>Metraje Sugerido</th>
                         <th>Fecha de Registro</th>
-                        @if(false) {{-- Oculto para asesores --}}
                         <th>Acciones</th>
-                        @endif
                     </tr>
                 </thead>
                 <tbody id="telasTableBody">
@@ -70,7 +66,6 @@
                                 {{ $tela->metraje_sugerido ? ($tela->metraje_sugerido == floor($tela->metraje_sugerido) ? number_format($tela->metraje_sugerido, 0) : number_format($tela->metraje_sugerido, 2)) . ' m' : '-' }}
                             </td>
                             <td class="fecha-cell">{{ $tela->fecha_registro ? \Carbon\Carbon::parse($tela->fecha_registro)->format('d/m/Y H:i') : '-' }}</td>
-                            @if(false) {{-- Oculto para asesores --}}
                             <td class="actions-cell">
                                 <button type="button" 
                                         class="btn-action btn-adjust" 
@@ -79,7 +74,6 @@
                                     <span class="material-symbols-rounded">tune</span>
                                 </button>
                             </td>
-                            @endif
                         </tr>
                     @endforeach
                 </tbody>
