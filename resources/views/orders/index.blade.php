@@ -37,18 +37,20 @@
                                         <span class="header-text">Acciones</span>
                                     </div>
                                 </th>
+                                @php $columnIndex = 0; @endphp
                                 @foreach(array_keys($ordenes->first()->getAttributes()) as $index => $columna)
                                     @if($columna !== 'id' && $columna !== 'tiempo')
                                         <th class="table-header-cell" data-column="{{ $columna }}">
                                             <div class="header-content">
                                                 <span class="header-text">{{ ucfirst(str_replace('_', ' ', $columna)) }}</span>
                                                 @if($columna !== 'acciones')
-                                                    <button class="filter-btn" data-column="{{ $columna }}" data-column-name="{{ $columna }}">
+                                                    <button class="filter-btn" data-column="{{ $columnIndex }}" data-column-name="{{ $columna }}">
                                                         <i class="fas fa-filter"></i>
                                                     </button>
                                                 @endif
                                             </div>
                                         </th>
+                                        @php $columnIndex++; @endphp
                                     @endif
                                 @endforeach
                             </tr>
