@@ -43,17 +43,44 @@ async function recargarTablaPedidos() {
 
             data.orders.forEach(orden => {
                 const totalDias = data.totalDiasCalculados[orden.pedido] ?? 0;
+                const diaDeEntrega = orden.dia_de_entrega ? parseInt(orden.dia_de_entrega) : null;
+                
+                // Debug: Log para verificar valores
+                if (diaDeEntrega !== null) {
+                    console.log(`🔍 Orden ${orden.pedido}: diaDeEntrega=${diaDeEntrega}, totalDias=${totalDias}`);
+                }
+                
                 let conditionalClass = '';
+                
+                // PRIORIDAD 1: Estados especiales
                 if (orden.estado === 'Entregado') {
                     conditionalClass = 'row-delivered';
                 } else if (orden.estado === 'Anulada') {
                     conditionalClass = 'row-anulada';
-                } else if (totalDias > 14 && totalDias < 20) {
-                    conditionalClass = 'row-warning';
-                } else if (totalDias === 20) {
-                    conditionalClass = 'row-danger-light';
-                } else if (totalDias > 20) {
-                    conditionalClass = 'row-secondary';
+                }
+                // PRIORIDAD 2: NUEVA LÓGICA - Día de entrega (si existe)
+                else if (diaDeEntrega !== null && diaDeEntrega > 0) {
+                    if (totalDias >= 15) {
+                        conditionalClass = 'row-dia-entrega-critical'; // Negro (15+)
+                        console.log(`✅ Aplicando NEGRO a orden ${orden.pedido}`);
+                    } else if (totalDias >= 10 && totalDias <= 14) {
+                        conditionalClass = 'row-dia-entrega-danger'; // Rojo (10-14)
+                        console.log(`✅ Aplicando ROJO a orden ${orden.pedido}`);
+                    } else if (totalDias >= 5 && totalDias <= 9) {
+                        conditionalClass = 'row-dia-entrega-warning'; // Amarillo (5-9)
+                        console.log(`✅ Aplicando AMARILLO a orden ${orden.pedido}`);
+                    }
+                    // Si totalDias < 5, no se aplica ninguna clase (sin color)
+                }
+                // PRIORIDAD 3: LÓGICA ORIGINAL - Solo si NO hay día de entrega
+                else {
+                    if (totalDias > 20) {
+                        conditionalClass = 'row-secondary';
+                    } else if (totalDias === 20) {
+                        conditionalClass = 'row-danger-light';
+                    } else if (totalDias > 14 && totalDias < 20) {
+                        conditionalClass = 'row-warning';
+                    }
                 }
 
                 const tr = document.createElement('tr');
@@ -121,6 +148,35 @@ async function recargarTablaPedidos() {
                             select.appendChild(option);
                         });
                         div.appendChild(select);
+                    } else if (column === 'dia_de_entrega' && window.modalContext === 'orden') {
+                        const select = document.createElement('select');
+                        select.className = 'dia-entrega-dropdown';
+                        select.dataset.id = orden.pedido;
+                        
+                        // IMPORTANTE: Normalizar el valor (null, undefined, '' → '')
+                        const diasValue = (valor === null || valor === undefined || valor === '') ? '' : String(valor);
+                        select.dataset.value = diasValue;
+
+                        // Opción "Seleccionar" por defecto
+                        const defaultOption = document.createElement('option');
+                        defaultOption.value = '';
+                        defaultOption.textContent = 'Seleccionar';
+                        if (diasValue === '') defaultOption.selected = true;
+                        select.appendChild(defaultOption);
+
+                        // Opciones de días
+                        [15, 20, 25, 30].forEach(dias => {
+                            const option = document.createElement('option');
+                            option.value = dias;
+                            option.textContent = `${dias} días`;
+                            if (String(dias) === diasValue) option.selected = true;
+                            select.appendChild(option);
+                        });
+                        
+                        div.appendChild(select);
+                        
+                        // Debug: Verificar que se creó correctamente
+                        console.log(`🔧 Dropdown creado para orden ${orden.pedido}: valor="${diasValue}", selected="${select.value}"`);
                     } else {
                         const span = document.createElement('span');
                         span.className = 'cell-text';
@@ -149,6 +205,7 @@ async function recargarTablaPedidos() {
         // Re-inicializar dropdowns y eventos
         initializeStatusDropdowns();
         initializeAreaDropdowns();
+        initializeDiaEntregaDropdowns();
 
     } catch (error) {
         console.error('Error al recargar tabla de pedidos:', error);
@@ -350,22 +407,54 @@ function updateRowColor(orderId, newStatus) {
         totalDias = parseInt(text) || 0;
     }
 
-    let conditionalClass = '';
-    if (newStatus === 'Entregado') {
-        conditionalClass = 'row-delivered';
-    } else if (totalDias > 14 && totalDias < 20) {
-        conditionalClass = 'row-warning';
-    } else if (totalDias === 20) {
-        conditionalClass = 'row-danger-light';
-    } else if (totalDias > 20) {
-        conditionalClass = 'row-secondary';
+    // Obtener dia_de_entrega del dropdown
+    let diaDeEntrega = null;
+    const diaEntregaDropdown = row.querySelector('.dia-entrega-dropdown');
+    if (diaEntregaDropdown) {
+        const valorDiaEntrega = diaEntregaDropdown.value;
+        if (valorDiaEntrega && valorDiaEntrega !== '') {
+            diaDeEntrega = parseInt(valorDiaEntrega);
+        }
     }
 
-    // Remover clases anteriores y agregar la nueva
-    row.classList.remove('row-delivered', 'row-warning', 'row-danger-light', 'row-secondary');
+    // Remover todas las clases condicionales
+    row.classList.remove('row-delivered', 'row-anulada', 'row-warning', 'row-danger-light', 'row-secondary', 'row-dia-entrega-warning', 'row-dia-entrega-danger', 'row-dia-entrega-critical');
+
+    let conditionalClass = '';
+    
+    // PRIORIDAD 1: Estados especiales
+    if (newStatus === 'Entregado') {
+        conditionalClass = 'row-delivered';
+    } else if (newStatus === 'Anulada') {
+        conditionalClass = 'row-anulada';
+    }
+    // PRIORIDAD 2: NUEVA LÓGICA - Día de entrega (si existe)
+    else if (diaDeEntrega !== null && diaDeEntrega > 0) {
+        if (totalDias >= 15) {
+            conditionalClass = 'row-dia-entrega-critical'; // Negro (15+)
+        } else if (totalDias >= 10 && totalDias <= 14) {
+            conditionalClass = 'row-dia-entrega-danger'; // Rojo (10-14)
+        } else if (totalDias >= 5 && totalDias <= 9) {
+            conditionalClass = 'row-dia-entrega-warning'; // Amarillo (5-9)
+        }
+    }
+    // PRIORIDAD 3: LÓGICA ORIGINAL - Solo si NO hay día de entrega
+    else {
+        if (totalDias > 20) {
+            conditionalClass = 'row-secondary';
+        } else if (totalDias === 20) {
+            conditionalClass = 'row-danger-light';
+        } else if (totalDias > 14 && totalDias < 20) {
+            conditionalClass = 'row-warning';
+        }
+    }
+
+    // Agregar la clase correspondiente
     if (conditionalClass) {
         row.classList.add(conditionalClass);
     }
+    
+    console.log(`🎨 Color actualizado para orden ${orderId}: estado="${newStatus}", totalDias=${totalDias}, diaEntrega=${diaDeEntrega}, clase="${conditionalClass}"`);
 }
 
 // OPTIMIZACIÓN: Inicializar solo una vez al cargar el DOM
@@ -425,6 +514,15 @@ function updateRowFromBroadcast(orderId, field, newValue, updatedFields, order, 
         if (areaDropdown) {
             areaDropdown.value = newValue;
             areaDropdown.dataset.value = newValue;
+        }
+    } else if (field === 'dia_de_entrega') {
+        const diaEntregaDropdown = row.querySelector('.dia-entrega-dropdown');
+        if (diaEntregaDropdown) {
+            // Si newValue es null o vacío, establecer a cadena vacía
+            const valorFinal = (newValue === null || newValue === '') ? '' : newValue;
+            diaEntregaDropdown.value = valorFinal;
+            diaEntregaDropdown.setAttribute('data-value', valorFinal);
+            console.log(`✅ Día de entrega sincronizado en tiempo real: ${valorFinal || 'Seleccionar'} para orden ${orderId}`);
         }
     } else {
         // Para otros campos (celdas editables)
@@ -985,6 +1083,9 @@ function actualizarOrdenEnTabla(orden) {
         const column = cell.getAttribute('data-column');
         if (!column) return;
 
+        // Skip dia_de_entrega column as it's already updated by the dropdown
+        if (column === 'dia_de_entrega') return;
+
         let value = orden[column];
         if (value === null || value === undefined) return;
 
@@ -1053,31 +1154,62 @@ function actualizarOrdenEnTabla(orden) {
         }
     }
 
-    console.log(`🔍 Debug - Orden ${orden.pedido}: estado="${estado}", totalDias=${totalDias}, clase a aplicar: ${
-        estado === 'Entregado' ? 'row-delivered' :
-        estado === 'Anulada' ? 'row-anulada' :
-        totalDias > 20 ? 'row-secondary' :
-        totalDias === 20 ? 'row-danger-light' :
-        totalDias > 14 ? 'row-warning' : 'ninguna'
-    }`);
+    // Obtener dia_de_entrega si existe
+    let diaDeEntrega = null;
+    const diaEntregaDropdown = row.querySelector('.dia-entrega-dropdown');
+    if (diaEntregaDropdown) {
+        const valorDiaEntrega = diaEntregaDropdown.value;
+        if (valorDiaEntrega && valorDiaEntrega !== '') {
+            diaDeEntrega = parseInt(valorDiaEntrega);
+        }
+    }
 
     // Remove all conditional classes
-    row.classList.remove('row-delivered', 'row-anulada', 'row-warning', 'row-danger-light', 'row-secondary');
+    row.classList.remove('row-delivered', 'row-anulada', 'row-warning', 'row-danger-light', 'row-secondary', 'row-dia-entrega-warning', 'row-dia-entrega-danger', 'row-dia-entrega-critical');
 
     // Remove any inline background color that might override CSS
     row.style.backgroundColor = '';
 
     // Apply new class based on estado and dias (ORDEN DE PRIORIDAD)
+    
+    // PRIORIDAD 1: Estados especiales
     if (estado === 'Entregado') {
         row.classList.add('row-delivered');
+        console.log(`🔍 Debug - Orden ${orden.pedido}: estado="Entregado", clase: row-delivered`);
     } else if (estado === 'Anulada') {
         row.classList.add('row-anulada');
-    } else if (totalDias > 20) {
-        row.classList.add('row-secondary');
-    } else if (totalDias === 20) {
-        row.classList.add('row-danger-light');
-    } else if (totalDias > 14 && totalDias < 20) {
-        row.classList.add('row-warning');
+        console.log(`🔍 Debug - Orden ${orden.pedido}: estado="Anulada", clase: row-anulada`);
+    }
+    // PRIORIDAD 2: NUEVA LÓGICA - Día de entrega (si existe)
+    else if (diaDeEntrega !== null && diaDeEntrega > 0) {
+        if (totalDias >= 15) {
+            row.classList.add('row-dia-entrega-critical'); // Negro (15+)
+            console.log(`🔍 Debug - Orden ${orden.pedido}: diaEntrega=${diaDeEntrega}, totalDias=${totalDias} (≥15), clase: row-dia-entrega-critical (NEGRO)`);
+        } else if (totalDias >= 10 && totalDias <= 14) {
+            row.classList.add('row-dia-entrega-danger'); // Rojo (10-14)
+            console.log(`🔍 Debug - Orden ${orden.pedido}: diaEntrega=${diaDeEntrega}, totalDias=${totalDias} (10-14), clase: row-dia-entrega-danger (ROJO)`);
+        } else if (totalDias >= 5 && totalDias <= 9) {
+            row.classList.add('row-dia-entrega-warning'); // Amarillo (5-9)
+            console.log(`🔍 Debug - Orden ${orden.pedido}: diaEntrega=${diaDeEntrega}, totalDias=${totalDias} (5-9), clase: row-dia-entrega-warning (AMARILLO)`);
+        } else {
+            // Si totalDias < 5, no se aplica ninguna clase (sin color)
+            console.log(`🔍 Debug - Orden ${orden.pedido}: diaEntrega=${diaDeEntrega}, totalDias=${totalDias} (<5), sin color especial`);
+        }
+    }
+    // PRIORIDAD 3: LÓGICA ORIGINAL - Solo si NO hay día de entrega
+    else {
+        if (totalDias > 20) {
+            row.classList.add('row-secondary');
+            console.log(`🔍 Debug - Orden ${orden.pedido}: totalDias=${totalDias} (>20), clase: row-secondary`);
+        } else if (totalDias === 20) {
+            row.classList.add('row-danger-light');
+            console.log(`🔍 Debug - Orden ${orden.pedido}: totalDias=${totalDias} (=20), clase: row-danger-light`);
+        } else if (totalDias > 14 && totalDias < 20) {
+            row.classList.add('row-warning');
+            console.log(`🔍 Debug - Orden ${orden.pedido}: totalDias=${totalDias} (>14 y <20), clase: row-warning`);
+        } else {
+            console.log(`🔍 Debug - Orden ${orden.pedido}: totalDias=${totalDias}, sin clase especial`);
+        }
     }
 
     if (hasChanges) {
@@ -1087,3 +1219,234 @@ function actualizarOrdenEnTabla(orden) {
 
 // OPTIMIZACIÓN: Echo listeners ya se inicializan en index.blade.php (líneas 362-404)
 // Eliminada duplicación para evitar múltiples suscripciones al mismo canal
+
+// ===== DIA DE ENTREGA DROPDOWN =====
+function initializeDiaEntregaDropdowns() {
+    const dropdowns = document.querySelectorAll('.dia-entrega-dropdown');
+    let newlyInitialized = 0;
+    
+    dropdowns.forEach(dropdown => {
+        // Evitar re-inicializar dropdowns que ya tienen listeners
+        if (dropdown.dataset.initialized === 'true') {
+            return;
+        }
+        
+        // IMPORTANTE: Siempre sincronizar data-value con el valor actual del select
+        const currentValue = dropdown.value || '';
+        const existingDataValue = dropdown.getAttribute('data-value');
+        
+        // Si data-value no coincide con el valor actual, actualizarlo
+        if (existingDataValue !== currentValue) {
+            dropdown.setAttribute('data-value', currentValue);
+            console.log(`🔧 Sincronizando dropdown orden ${dropdown.dataset.id}: data-value="${existingDataValue}" → "${currentValue}"`);
+        }
+
+        // Limpiar eventos anteriores para evitar duplicados
+        dropdown.removeEventListener('change', handleDiaEntregaChange);
+
+        // Agregar evento de cambio
+        dropdown.addEventListener('change', handleDiaEntregaChange);
+        
+        // Marcar como inicializado
+        dropdown.dataset.initialized = 'true';
+        newlyInitialized++;
+    });
+    
+    if (newlyInitialized > 0) {
+        console.log(`✅ ${newlyInitialized} dropdowns de día de entrega inicializados (${dropdowns.length} total)`);
+    }
+}
+
+// Manejador de cambio de día de entrega
+function handleDiaEntregaChange() {
+    const newValue = this.value;
+    const oldValue = this.dataset.value;
+    const orderId = this.dataset.id;
+    
+    console.log(`📝 Cambio detectado en orden ${orderId}: ${oldValue} → ${newValue}`);
+    
+    // Agregar animación visual y deshabilitar temporalmente
+    this.classList.add('updating');
+    this.disabled = true;
+    
+    // Actualizar data-value inmediatamente para feedback visual
+    this.setAttribute('data-value', newValue);
+    
+    // Llamar a la función de actualización
+    updateOrderDiaEntrega(orderId, newValue, oldValue, this);
+}
+
+// OPTIMIZACIÓN: Debounce map para día de entrega
+const updateDiaEntregaDebounce = new Map();
+
+// Función para actualizar día de entrega en la base de datos
+function updateOrderDiaEntrega(orderId, newDias, oldDias, dropdown) {
+    // OPTIMIZACIÓN: Debounce de 300ms para evitar requests duplicados
+    const debounceKey = `dia-entrega-${orderId}`;
+    if (updateDiaEntregaDebounce.has(debounceKey)) {
+        clearTimeout(updateDiaEntregaDebounce.get(debounceKey));
+        console.log(`⏱️ Debounce cancelado para orden ${orderId}`);
+    }
+    
+    const timeoutId = setTimeout(() => {
+        updateDiaEntregaDebounce.delete(debounceKey);
+        console.log(`🚀 Ejecutando actualización para orden ${orderId}`);
+        executeDiaEntregaUpdate(orderId, newDias, oldDias, dropdown);
+    }, 300);
+    
+    updateDiaEntregaDebounce.set(debounceKey, timeoutId);
+}
+
+// Función auxiliar para ejecutar la actualización de día de entrega
+function executeDiaEntregaUpdate(orderId, newDias, oldDias, dropdown) {
+    // Si newDias es vacío o null, enviar null; sino convertir a entero
+    const valorAEnviar = (newDias === '' || newDias === null) ? null : parseInt(newDias);
+    
+    fetch(`${window.updateUrl}/${orderId}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ dia_de_entrega: valorAEnviar })
+    })
+        .then(response => {
+            console.log(`📥 Respuesta recibida para orden ${orderId}:`, response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log(`📦 Datos recibidos para orden ${orderId}:`, data);
+            
+            if (data.success) {
+                const mensaje = valorAEnviar === null 
+                    ? `✅ Día de entrega limpiado (Seleccionar) para orden ${orderId}`
+                    : `✅ Día de entrega actualizado: ${newDias} días para orden ${orderId}`;
+                console.log(mensaje);
+                
+                // Re-habilitar el dropdown y remover clase updating
+                if (dropdown) {
+                    dropdown.disabled = false;
+                    dropdown.classList.remove('updating');
+                    dropdown.setAttribute('data-value', newDias || '');
+                }
+                
+                // IMPORTANTE: Actualizar el color de la fila inmediatamente
+                const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
+                if (row && data.totalDiasCalculados) {
+                    const totalDias = data.totalDiasCalculados[orderId] || 0;
+                    const estado = data.order?.estado || '';
+                    
+                    // Remover todas las clases condicionales
+                    row.classList.remove('row-delivered', 'row-anulada', 'row-warning', 'row-danger-light', 'row-secondary', 'row-dia-entrega-warning', 'row-dia-entrega-danger', 'row-dia-entrega-critical');
+                    
+                    // Aplicar nueva clase según la lógica
+                    if (estado === 'Entregado') {
+                        row.classList.add('row-delivered');
+                    } else if (estado === 'Anulada') {
+                        row.classList.add('row-anulada');
+                    } else if (valorAEnviar !== null && valorAEnviar > 0) {
+                        // Nueva lógica con día de entrega
+                        if (totalDias >= 15) {
+                            row.classList.add('row-dia-entrega-critical');
+                        } else if (totalDias >= 10 && totalDias <= 14) {
+                            row.classList.add('row-dia-entrega-danger');
+                        } else if (totalDias >= 5 && totalDias <= 9) {
+                            row.classList.add('row-dia-entrega-warning');
+                        }
+                    } else {
+                        // Lógica original sin día de entrega
+                        if (totalDias > 20) {
+                            row.classList.add('row-secondary');
+                        } else if (totalDias === 20) {
+                            row.classList.add('row-danger-light');
+                        } else if (totalDias > 14 && totalDias < 20) {
+                            row.classList.add('row-warning');
+                        }
+                    }
+                    
+                    console.log(`✅ Color de fila actualizado para orden ${orderId}: totalDias=${totalDias}, diaEntrega=${valorAEnviar}`);
+                }
+                
+                // Enviar mensaje a otras pestañas usando localStorage para sincronización en tiempo real
+                const timestamp = Date.now();
+                localStorage.setItem('orders-updates', JSON.stringify({
+                    type: 'dia_entrega_update',
+                    orderId: orderId,
+                    field: 'dia_de_entrega',
+                    newValue: newDias || null,
+                    oldValue: oldDias,
+                    order: data.order,
+                    totalDiasCalculados: data.totalDiasCalculados,
+                    timestamp: timestamp
+                }));
+                localStorage.setItem('last-orders-update-timestamp', timestamp.toString());
+            } else {
+                console.error('❌ Error al actualizar día de entrega:', data.message);
+                // Revertir cambio en caso de error
+                if (dropdown) {
+                    dropdown.value = oldDias || '';
+                    dropdown.setAttribute('data-value', oldDias || '');
+                    dropdown.disabled = false;
+                    dropdown.classList.remove('updating');
+                }
+                alert(`Error al guardar: ${data.message}`);
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error de red:', error);
+            // Revertir cambio en caso de error
+            if (dropdown) {
+                dropdown.value = oldDias || '';
+                dropdown.setAttribute('data-value', oldDias || '');
+                dropdown.disabled = false;
+                dropdown.classList.remove('updating');
+            }
+            alert('Error de conexión. Por favor, intenta de nuevo.');
+        });
+}
+
+// Inicializar dropdowns de día de entrega al cargar la página
+// Usar múltiples estrategias para asegurar que se inicialice correctamente
+function ensureInitialization() {
+    console.log('🔄 Intentando inicializar dropdowns de día de entrega...');
+    
+    // Esperar un momento para asegurar que el DOM esté completamente listo
+    setTimeout(() => {
+        const dropdowns = document.querySelectorAll('.dia-entrega-dropdown');
+        if (dropdowns.length > 0) {
+            initializeDiaEntregaDropdowns();
+            console.log('✅ Inicialización completada');
+        } else {
+            console.log('⚠️ No se encontraron dropdowns, reintentando...');
+            // Reintentar después de 500ms si no hay dropdowns
+            setTimeout(() => {
+                const retryDropdowns = document.querySelectorAll('.dia-entrega-dropdown');
+                if (retryDropdowns.length > 0) {
+                    initializeDiaEntregaDropdowns();
+                    console.log('✅ Inicialización completada (segundo intento)');
+                }
+            }, 500);
+        }
+    }, 100);
+}
+
+// Estrategia 1: DOMContentLoaded (carga inicial)
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ensureInitialization);
+} else {
+    // Estrategia 2: Si el DOM ya está listo, ejecutar inmediatamente
+    ensureInitialization();
+}
+
+// Estrategia 3: window.load como respaldo
+window.addEventListener('load', function() {
+    // Solo inicializar si no se ha hecho antes
+    const dropdowns = document.querySelectorAll('.dia-entrega-dropdown');
+    if (dropdowns.length > 0) {
+        const hasListeners = Array.from(dropdowns).some(d => d.dataset.initialized === 'true');
+        if (!hasListeners) {
+            console.log('🔄 Inicializando desde window.load (respaldo)');
+            initializeDiaEntregaDropdowns();
+        }
+    }
+});

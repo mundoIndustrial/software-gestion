@@ -32,8 +32,8 @@ class RegistroBodegaController extends Controller
         if ($request->has('get_unique_values') && $request->column) {
             $column = $request->column;
         $allowedColumns = [
-            'pedido', 'estado', 'area', 'tiempo', 'total_de_dias_', 'cliente',
-            'hora', 'descripcion', 'cantidad', 'novedades', 'asesora', 'forma_de_pago',
+            'pedido', 'estado', 'area', 'total_de_dias_', 'cliente',
+            'descripcion', 'cantidad', 'novedades', 'asesora', 'forma_de_pago',
             'fecha_de_creacion_de_orden', 'encargado_orden', 'dias_orden', 'inventario',
             'encargados_inventario', 'dias_inventario', 'insumos_y_telas', 'encargados_insumos',
             'dias_insumos', 'corte', 'encargados_de_corte', 'dias_corte', 'bordado',
@@ -90,8 +90,8 @@ class RegistroBodegaController extends Controller
 
                 // Whitelist de columnas permitidas para seguridad
                 $allowedColumns = [
-                    'id', 'estado', 'area', 'tiempo', 'total_de_dias_', '_pedido', 'cliente',
-                    'hora', 'descripcion', 'cantidad', 'novedades', 'asesora', 'forma_de_pago',
+                    'id', 'estado', 'area', 'total_de_dias_', '_pedido', 'cliente',
+                    'descripcion', 'cantidad', 'novedades', 'asesora', 'forma_de_pago',
                     'fecha_de_creacion_de_orden', 'encargado_orden', 'dias_orden', 'inventario',
                     'encargados_inventario', 'dias_inventario', 'insumos_y_telas', 'encargados_insumos',
                     'dias_insumos', 'corte', 'encargados_de_corte', 'dias_corte', 'bordado',
@@ -344,7 +344,7 @@ class RegistroBodegaController extends Controller
 
             // Whitelist de columnas permitidas para edición
             $allowedColumns = [
-                'estado', 'area', '_pedido', 'cliente', 'hora', 'descripcion', 'cantidad',
+                'estado', 'area', '_pedido', 'cliente', 'descripcion', 'cantidad',
                 'novedades', 'asesora', 'forma_de_pago', 'fecha_de_creacion_de_orden',
                 'encargado_orden', 'dias_orden', 'inventario', 'encargados_inventario',
                 'dias_inventario', 'insumos_y_telas', 'encargados_insumos', 'dias_insumos',

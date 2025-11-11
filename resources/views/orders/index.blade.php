@@ -66,17 +66,34 @@
                                 @php
                                     $totalDias = intval($totalDiasCalculados[$orden->pedido] ?? 0);
                                     $estado = $orden->estado ?? '';
+                                    $diaDeEntrega = $orden->dia_de_entrega ? intval($orden->dia_de_entrega) : null;
                                     $conditionalClass = '';
+                                    
+                                    // PRIORIDAD 1: Estados especiales
                                     if ($estado === 'Entregado') {
                                         $conditionalClass = 'row-delivered';
                                     } elseif ($estado === 'Anulada') {
                                         $conditionalClass = 'row-anulada';
-                                    } elseif ($totalDias > 14 && $totalDias < 20) {
-                                        $conditionalClass = 'row-warning';
-                                    } elseif ($totalDias == 20) {
-                                        $conditionalClass = 'row-danger-light';
-                                    } elseif ($totalDias > 20) {
-                                        $conditionalClass = 'row-secondary';
+                                    }
+                                    // PRIORIDAD 2: NUEVA LÓGICA - Día de entrega (si existe)
+                                    elseif ($diaDeEntrega !== null && $diaDeEntrega > 0) {
+                                        if ($totalDias >= 15) {
+                                            $conditionalClass = 'row-dia-entrega-critical'; // Negro (15+)
+                                        } elseif ($totalDias >= 10 && $totalDias <= 14) {
+                                            $conditionalClass = 'row-dia-entrega-danger'; // Rojo (10-14)
+                                        } elseif ($totalDias >= 5 && $totalDias <= 9) {
+                                            $conditionalClass = 'row-dia-entrega-warning'; // Amarillo (5-9)
+                                        }
+                                    }
+                                    // PRIORIDAD 3: LÓGICA ORIGINAL - Solo si NO hay día de entrega
+                                    else {
+                                        if ($totalDias > 20) {
+                                            $conditionalClass = 'row-secondary';
+                                        } elseif ($totalDias == 20) {
+                                            $conditionalClass = 'row-danger-light';
+                                        } elseif ($totalDias > 14 && $totalDias < 20) {
+                                            $conditionalClass = 'row-warning';
+                                        }
                                     }
                                 @endphp
                                 <tr class="table-row {{ $conditionalClass }}" data-order-id="{{ $orden->pedido }}">
@@ -112,6 +129,14 @@
                                                                 <option value="{{ $areaOption }}" {{ $valor === $areaOption ? 'selected' : '' }}>
                                                                     {{ $areaOption }}</option>
                                                             @endforeach
+                                                        </select>
+                                                    @elseif($key === 'dia_de_entrega' && $context === 'registros')
+                                                        <select class="dia-entrega-dropdown" data-id="{{ $orden->pedido }}" data-value="{{ $valor ?? '' }}">
+                                                            <option value="" {{ is_null($valor) ? 'selected' : '' }}>Seleccionar</option>
+                                                            <option value="15" {{ $valor == 15 ? 'selected' : '' }}>15 días</option>
+                                                            <option value="20" {{ $valor == 20 ? 'selected' : '' }}>20 días</option>
+                                                            <option value="25" {{ $valor == 25 ? 'selected' : '' }}>25 días</option>
+                                                            <option value="30" {{ $valor == 30 ? 'selected' : '' }}>30 días</option>
                                                         </select>
                                                     @else
                                                         <span class="cell-text">

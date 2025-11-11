@@ -43,6 +43,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Actualizar contenido de forma rápida
                 const newTableBody = doc.getElementById('tablaOrdenesBody');
                 if (newTableBody) {
+                    // Limpiar marcas de inicialización antes de reemplazar el HTML
+                    const oldDropdowns = tableBody.querySelectorAll('.dia-entrega-dropdown[data-initialized="true"]');
+                    oldDropdowns.forEach(d => d.dataset.initialized = 'false');
+                    
                     tableBody.innerHTML = newTableBody.innerHTML;
                 }
                 
@@ -59,6 +63,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Actualizar URL
                 window.history.pushState({}, '', url.toString());
+                
+                // RE-INICIALIZAR DROPDOWNS después de actualizar el HTML
+                if (typeof initializeStatusDropdowns === 'function') {
+                    initializeStatusDropdowns();
+                }
+                if (typeof initializeAreaDropdowns === 'function') {
+                    initializeAreaDropdowns();
+                }
+                if (typeof initializeDiaEntregaDropdowns === 'function') {
+                    initializeDiaEntregaDropdowns();
+                    console.log('🔄 Dropdowns re-inicializados después de cambiar de página');
+                }
                 
                 // Restaurar inmediatamente
                 tableBody.style.opacity = '1';
