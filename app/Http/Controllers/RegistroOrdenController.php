@@ -28,8 +28,8 @@ class RegistroOrdenController extends Controller
         if ($request->has('get_unique_values') && $request->column) {
             $column = $request->column;
         $allowedColumns = [
-            'pedido', 'estado', 'area', 'tiempo', 'total_de_dias_', 'cliente',
-            'hora', 'descripcion', 'cantidad', 'novedades', 'asesora', 'forma_de_pago',
+            'pedido', 'estado', 'area', 'total_de_dias_', 'dia_de_entrega', 'cliente',
+            'descripcion', 'cantidad', 'novedades', 'asesora', 'forma_de_pago',
             'fecha_de_creacion_de_orden', 'encargado_orden', 'dias_orden', 'inventario',
             'encargados_inventario', 'dias_inventario', 'insumos_y_telas', 'encargados_insumos',
             'dias_insumos', 'corte', 'encargados_de_corte', 'dias_corte', 'bordado',
@@ -68,8 +68,8 @@ class RegistroOrdenController extends Controller
 
                 // Whitelist de columnas permitidas para seguridad
                 $allowedColumns = [
-                    'id', 'estado', 'area', 'tiempo', 'total_de_dias_', '_pedido', 'cliente',
-                    'hora', 'descripcion', 'cantidad', 'novedades', 'asesora', 'forma_de_pago',
+                    'id', 'estado', 'area', 'total_de_dias_', 'dia_de_entrega', '_pedido', 'cliente',
+                    'descripcion', 'cantidad', 'novedades', 'asesora', 'forma_de_pago',
                     'fecha_de_creacion_de_orden', 'encargado_orden', 'dias_orden', 'inventario',
                     'encargados_inventario', 'dias_inventario', 'insumos_y_telas', 'encargados_insumos',
                     'dias_insumos', 'corte', 'encargados_de_corte', 'dias_corte', 'bordado',
@@ -324,7 +324,7 @@ class RegistroOrdenController extends Controller
 
             // Whitelist de columnas permitidas para edición
             $allowedColumns = [
-                'estado', 'area', '_pedido', 'cliente', 'hora', 'descripcion', 'cantidad',
+                'estado', 'area', 'dia_de_entrega', '_pedido', 'cliente', 'descripcion', 'cantidad',
                 'novedades', 'asesora', 'forma_de_pago', 'fecha_de_creacion_de_orden',
                 'encargado_orden', 'dias_orden', 'inventario', 'encargados_inventario',
                 'dias_inventario', 'insumos_y_telas', 'encargados_insumos', 'dias_insumos',
@@ -340,12 +340,18 @@ class RegistroOrdenController extends Controller
             $validatedData = $request->validate([
                 'estado' => 'nullable|in:' . implode(',', $estadoOptions),
                 'area' => 'nullable|in:' . implode(',', $areaOptions),
+                'dia_de_entrega' => 'nullable|integer|in:15,20,25,30',
             ]);
+            
+            // Convertir string vacío a null para dia_de_entrega
+            if (isset($validatedData['dia_de_entrega']) && $validatedData['dia_de_entrega'] === '') {
+                $validatedData['dia_de_entrega'] = null;
+            }
 
             // Validar columnas adicionales permitidas como strings
             $additionalValidation = [];
             foreach ($allowedColumns as $col) {
-                if ($request->has($col) && $col !== 'estado' && $col !== 'area') {
+                if ($request->has($col) && $col !== 'estado' && $col !== 'area' && $col !== 'dia_de_entrega') {
                     $additionalValidation[$col] = 'nullable|string|max:255';
                 }
             }
@@ -364,6 +370,9 @@ class RegistroOrdenController extends Controller
                     $updates[$field] = now()->toDateString();
                     $updatedFields[$field] = now()->toDateString();
                 }
+            }
+            if (array_key_exists('dia_de_entrega', $validatedData)) {
+                $updates['dia_de_entrega'] = $validatedData['dia_de_entrega'];
             }
 
             // Agregar otras columnas permitidas

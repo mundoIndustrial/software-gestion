@@ -21,3 +21,103 @@
     background-color: #ffffff;
     color: #1f2937;
 }
+
+/* ===== DIA DE ENTREGA DROPDOWN ===== */
+/* Modo Claro */
+.dia-entrega-dropdown {
+    background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+    border: 2px solid #f97316;
+    border-radius: 8px;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #ffffff;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-width: 110px;
+    box-shadow: 0 2px 8px rgba(249, 115, 22, 0.35);
+    text-align: center;
+}
+
+/* Estado "Seleccionar" - gris neutral */
+.dia-entrega-dropdown[data-value=""] {
+    background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%);
+    border-color: #6b7280;
+    box-shadow: 0 2px 8px rgba(107, 114, 128, 0.3);
+}
+
+.dia-entrega-dropdown[data-value=""]:hover {
+    background: linear-gradient(135deg, #4b5563 0%, #6b7280 100%);
+    border-color: #4b5563;
+    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.4);
+}
+
+.dia-entrega-dropdown:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.5);
+    border-color: #ea580c;
+    background: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
+}
+
+.dia-entrega-dropdown:focus {
+    outline: none;
+    border-color: #ea580c;
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.25);
+}
+
+.dia-entrega-dropdown option {
+    background-color: #ffffff;
+    color: #1f2937;
+    font-weight: 500;
+    padding: 0.5rem;
+}
+
+/* Modo Oscuro */
+body.dark-theme .dia-entrega-dropdown {
+    background: linear-gradient(135deg, #fb923c 0%, #fdba74 100%);
+    border: 2px solid #fb923c;
+    box-shadow: 0 2px 8px rgba(251, 146, 60, 0.4);
+}
+
+/* Estado "Seleccionar" en modo oscuro - gris claro */
+body.dark-theme .dia-entrega-dropdown[data-value=""] {
+    background: linear-gradient(135deg, #9ca3af 0%, #d1d5db 100%);
+    border-color: #9ca3af;
+    box-shadow: 0 2px 8px rgba(156, 163, 175, 0.4);
+}
+
+body.dark-theme .dia-entrega-dropdown[data-value=""]:hover {
+    background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%);
+    border-color: #6b7280;
+    box-shadow: 0 4px 12px rgba(156, 163, 175, 0.5);
+}
+
+body.dark-theme .dia-entrega-dropdown:hover {
+    background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+    border-color: #f97316;
+    box-shadow: 0 4px 12px rgba(251, 146, 60, 0.6);
+}
+
+body.dark-theme .dia-entrega-dropdown:focus {
+    border-color: #f97316;
+    box-shadow: 0 0 0 4px rgba(251, 146, 60, 0.3);
+}
+
+body.dark-theme .dia-entrega-dropdown option {
+    background-color: #1f2937;
+    color: #f9fafb;
+}
+
+/* Animación al cambiar valor */
+.dia-entrega-dropdown.updating {
+    animation: pulse-dias 0.5s ease-in-out;
+}
+
+@keyframes pulse-dias {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
