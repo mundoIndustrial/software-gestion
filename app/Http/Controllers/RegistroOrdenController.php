@@ -399,9 +399,9 @@ class RegistroOrdenController extends Controller
             $additionalValidation = [];
             foreach ($allowedColumns as $col) {
                 if ($request->has($col) && $col !== 'estado' && $col !== 'area' && $col !== 'dia_de_entrega') {
-                    // La columna descripcion puede tener hasta 1000 caracteres
+                    // El campo descripcion es TEXT y puede ser más largo
                     if ($col === 'descripcion') {
-                        $additionalValidation[$col] = 'nullable|string|max:1000';
+                        $additionalValidation[$col] = 'nullable|string|max:65535';
                     } else {
                         $additionalValidation[$col] = 'nullable|string|max:255';
                     }
@@ -829,6 +829,181 @@ class RegistroOrdenController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al actualizar el número de pedido: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener registros por orden (API para el modal de edición)
+     */
+    public function getRegistrosPorOrden($pedido)
+    {
+        try {
+            $registros = DB::table('registros_por_orden')
+                ->where('pedido', $pedido)
+                ->orderBy('prenda')
+                ->orderBy('talla')
+                ->get();
+
+            return response()->json($registros);
+
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener registros por orden', [
+                'pedido' => $pedido,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cargar los registros'
+            ], 500);
+        }
+    }
+
+    /**
+     * Editar orden completa (actualiza tabla_original y registros_por_orden)
+     */
+    public function editFullOrder(Request $request, $pedido)
+    {
+        try {
+            $validatedData = $request->validate([
+                'pedido' => 'required|integer',
+                'estado' => 'nullable|in:No iniciado,En Ejecución,Entregado,Anulada',
+                'cliente' => 'required|string|max:255',
+                'fecha_creacion' => 'required|date',
+                'encargado' => 'nullable|string|max:255',
+                'asesora' => 'nullable|string|max:255',
+                'forma_pago' => 'nullable|string|max:255',
+                'prendas' => 'required|array',
+                'prendas.*.prenda' => 'required|string|max:255',
+                'prendas.*.descripcion' => 'nullable|string|max:1000',
+                'prendas.*.tallas' => 'required|array',
+                'prendas.*.tallas.*.talla' => 'required|string|max:50',
+                'prendas.*.tallas.*.cantidad' => 'required|integer|min:1',
+                'prendas.*.originalName' => 'nullable|string|max:255',
+            ]);
+
+            DB::beginTransaction();
+
+            // Calcular cantidad total
+            $totalCantidad = 0;
+            foreach ($request->prendas as $prenda) {
+                foreach ($prenda['tallas'] as $talla) {
+                    $totalCantidad += $talla['cantidad'];
+                }
+            }
+
+            // Construir campo descripcion
+            $descripcionCompleta = '';
+            foreach ($request->prendas as $index => $prenda) {
+                $descripcionCompleta .= "Prenda " . ($index + 1) . ": " . $prenda['prenda'] . "\n";
+                if (!empty($prenda['descripcion'])) {
+                    $descripcionCompleta .= "Descripción: " . $prenda['descripcion'] . "\n";
+                }
+                $tallasCantidades = [];
+                foreach ($prenda['tallas'] as $talla) {
+                    $tallasCantidades[] = $talla['talla'] . ':' . $talla['cantidad'];
+                }
+                if (count($tallasCantidades) > 0) {
+                    $descripcionCompleta .= "Tallas: " . implode(', ', $tallasCantidades) . "\n\n";
+                } else {
+                    $descripcionCompleta .= "\n";
+                }
+            }
+
+            // Actualizar tabla_original
+            $ordenData = [
+                'estado' => $request->estado ?? 'No iniciado',
+                'cliente' => $request->cliente,
+                'fecha_de_creacion_de_orden' => $request->fecha_creacion,
+                'encargado_orden' => $request->encargado,
+                'asesora' => $request->asesora,
+                'forma_de_pago' => $request->forma_pago,
+                'descripcion' => $descripcionCompleta,
+                'cantidad' => $totalCantidad,
+            ];
+
+            DB::table('tabla_original')
+                ->where('pedido', $pedido)
+                ->update($ordenData);
+
+            // Eliminar todos los registros_por_orden existentes
+            DB::table('registros_por_orden')
+                ->where('pedido', $pedido)
+                ->delete();
+
+            // Insertar nuevos registros_por_orden
+            foreach ($request->prendas as $prenda) {
+                foreach ($prenda['tallas'] as $talla) {
+                    DB::table('registros_por_orden')->insert([
+                        'pedido' => $pedido,
+                        'cliente' => $request->cliente,
+                        'prenda' => $prenda['prenda'],
+                        'descripcion' => $prenda['descripcion'] ?? '',
+                        'talla' => $talla['talla'],
+                        'cantidad' => $talla['cantidad'],
+                        'total_pendiente_por_talla' => $talla['cantidad'],
+                    ]);
+                }
+            }
+
+            // Invalidar caché
+            $this->invalidarCacheDias($pedido);
+
+            // Log news
+            News::create([
+                'event_type' => 'order_updated',
+                'description' => "Orden editada: Pedido {$pedido} para cliente {$request->cliente}",
+                'user_id' => auth()->id(),
+                'pedido' => $pedido,
+                'metadata' => ['cliente' => $request->cliente, 'total_prendas' => count($request->prendas)]
+            ]);
+
+            DB::commit();
+
+            // Obtener la orden actualizada para retornar y broadcast
+            $ordenActualizada = TablaOriginal::where('pedido', $pedido)->first();
+
+            // Obtener los registros por orden actualizados
+            $registrosActualizados = DB::table('registros_por_orden')
+                ->where('pedido', $pedido)
+                ->get();
+
+            // Broadcast event for real-time updates
+            broadcast(new \App\Events\OrdenUpdated($ordenActualizada, 'updated'));
+            broadcast(new \App\Events\RegistrosPorOrdenUpdated($pedido, $registrosActualizados, 'updated'));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Orden actualizada correctamente',
+                'pedido' => $pedido,
+                'orden' => $ordenActualizada
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            \Log::error('Error de validación al editar orden', [
+                'pedido' => $pedido,
+                'errors' => $e->errors()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error al editar orden completa', [
+                'pedido' => $pedido,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar la orden: ' . $e->getMessage()
             ], 500);
         }
     }

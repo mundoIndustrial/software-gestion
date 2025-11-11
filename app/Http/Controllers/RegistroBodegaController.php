@@ -372,7 +372,12 @@ class RegistroBodegaController extends Controller
             $additionalValidation = [];
             foreach ($allowedColumns as $col) {
                 if ($request->has($col) && $col !== 'estado' && $col !== 'area') {
-                    $additionalValidation[$col] = 'nullable|string|max:255';
+                    // El campo descripcion es TEXT y puede ser más largo
+                    if ($col === 'descripcion') {
+                        $additionalValidation[$col] = 'nullable|string|max:65535';
+                    } else {
+                        $additionalValidation[$col] = 'nullable|string|max:255';
+                    }
                 }
             }
             $additionalData = $request->validate($additionalValidation);

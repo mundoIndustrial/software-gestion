@@ -82,6 +82,35 @@ text-overflow: ellipsis;
 white-space: nowrap;
 }
 
+/* Ancho fijo para columna de acciones */
+#tablaOrdenes thead th.acciones-column,
+#tablaOrdenes tbody td.acciones-column {
+min-width: 200px !important;
+width: 200px !important;
+max-width: 200px !important;
+}
+
+/* Estilos para botones de acción */
+.action-btn {
+transition: all 0.2s ease;
+white-space: nowrap;
+}
+
+.action-btn.edit-btn:hover {
+transform: translateY(-1px);
+box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+.action-btn.detail-btn:hover {
+transform: translateY(-1px);
+box-shadow: 0 4px 8px rgba(0, 128, 0, 0.3);
+}
+
+.action-btn.delete-btn:hover {
+transform: translateY(-1px);
+box-shadow: 0 4px 8px rgba(248, 76, 76, 0.3);
+}
+
 /* Fila moderna */
 #tablaOrdenes tbody .table-row {
 border-bottom: 2px solid #000000 !important;
