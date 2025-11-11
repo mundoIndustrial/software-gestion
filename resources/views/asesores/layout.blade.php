@@ -41,6 +41,7 @@
                  class="header-logo"
                  data-logo-light="{{ asset('images/logo2.png') }}"
                  data-logo-dark="https://prueba.mundoindustrial.co/wp-content/uploads/2024/07/logo-mundo-industrial-white.png" />
+            <h2 class="sidebar-title">Menú</h2>
             <button class="sidebar-toggle" aria-label="Colapsar menú">
                 <span class="material-symbols-rounded">chevron_left</span>
             </button>
@@ -59,30 +60,42 @@
                 </li>
 
                 <li class="menu-item">
-                    <a href="{{ route('asesores.pedidos.index') }}"
-                       class="menu-link {{ request()->routeIs('asesores.pedidos.index') || request()->routeIs('asesores.pedidos.show') ? 'active' : '' }}"
-                       aria-label="Ver mis pedidos">
-                        <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
-                        <span class="menu-label">Mis Pedidos</span>
-                    </a>
-                </li>
-
-                <li class="menu-item">
-                    <a href="{{ route('asesores.pedidos.create') }}"
-                       class="menu-link {{ request()->routeIs('asesores.pedidos.create') ? 'active' : '' }}"
-                       aria-label="Crear nuevo pedido">
-                        <span class="material-symbols-rounded" aria-hidden="true">add_circle</span>
-                        <span class="menu-label">Nuevo Pedido</span>
-                    </a>
-                </li>
-
-                <li class="menu-item">
-                    <a href="{{ route('asesores.pedidos.index', ['tipo' => 'borradores']) }}"
-                       class="menu-link {{ request()->get('tipo') === 'borradores' ? 'active' : '' }}"
-                       aria-label="Ver borradores">
-                        <span class="material-symbols-rounded" aria-hidden="true">edit_note</span>
-                        <span class="menu-label">Borradores</span>
-                    </a>
+                    <button class="menu-link submenu-toggle {{ request()->routeIs('asesores.pedidos.*') ? 'active' : '' }}"
+                            aria-label="Gestionar Pedidos">
+                        <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
+                        <span class="menu-label">Gestionar Pedido</span>
+                        <span class="material-symbols-rounded submenu-arrow" aria-hidden="true">expand_more</span>
+                    </button>
+                    <ul class="submenu">
+                        <li class="submenu-item">
+                            <a href="{{ route('asesores.pedidos.index') }}"
+                               class="menu-link {{ request()->routeIs('asesores.pedidos.index') && !request()->get('tipo') ? 'active' : '' }}"
+                               aria-label="Ver mis pedidos">
+                                <span class="menu-label">Mis Pedidos</span>
+                            </a>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="{{ route('asesores.pedidos.create') }}"
+                               class="menu-link {{ request()->routeIs('asesores.pedidos.create') ? 'active' : '' }}"
+                               aria-label="Crear nuevo pedido">
+                                <span class="menu-label">Nuevo Pedido</span>
+                            </a>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="{{ route('asesores.pedidos.index', ['tipo' => 'borradores']) }}"
+                               class="menu-link {{ request()->get('tipo') === 'borradores' ? 'active' : '' }}"
+                               aria-label="Ver borradores">
+                                <span class="menu-label">Borradores</span>
+                            </a>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="{{ route('asesores.pedidos.index', ['tipo' => 'historial']) }}"
+                               class="menu-link {{ request()->get('tipo') === 'historial' ? 'active' : '' }}"
+                               aria-label="Ver historial">
+                                <span class="menu-label">Historial</span>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
 
                 <li class="menu-item">
