@@ -656,6 +656,12 @@ async function viewDetail(pedido) {
             prendasEntregadasValue.textContent = `${totalEntregado} de ${totalCantidad}`;
         }
 
+        // Definir elementos del DOM antes de usarlos
+        const descripcionText = document.getElementById('descripcion-text');
+        const prevArrow = document.getElementById('prev-arrow');
+        const nextArrow = document.getElementById('next-arrow');
+        const arrowContainer = prevArrow?.parentElement;
+
         const verEntregasLink = document.getElementById('ver-entregas');
         // Remover el listener anterior si existe
         if (verEntregasLink._verEntregasHandler) {
@@ -695,8 +701,7 @@ async function viewDetail(pedido) {
                         </div>
                     `;
                     descripcionText.innerHTML = tableHtml;
-                    prevArrow.style.display = 'none';
-                    nextArrow.style.display = 'none';
+                    if (arrowContainer) arrowContainer.style.display = 'none';
                     verEntregasLink.textContent = 'LIMPIAR';
                     verEntregasLink.style.color = 'green';
                 } catch (error) {
@@ -710,16 +715,16 @@ async function viewDetail(pedido) {
                     function updateDescripcion() {
                         if (prendas.length <= 2) {
                             descripcionText.textContent = prendas.join('\n\n');
-                            prevArrow.style.display = 'none';
-                            nextArrow.style.display = 'none';
+                            if (arrowContainer) arrowContainer.style.display = 'none';
                         } else {
                             if (currentIndex === 0) {
                                 descripcionText.textContent = prendas[0] + '\n\n' + prendas[1];
                             } else {
                                 descripcionText.textContent = prendas[currentIndex + 1];
                             }
-                            prevArrow.style.display = currentIndex > 0 ? 'inline' : 'none';
-                            nextArrow.style.display = currentIndex < prendas.length - 2 ? 'inline' : 'none';
+                            if (arrowContainer) arrowContainer.style.display = 'flex';
+                            prevArrow.style.display = currentIndex > 0 ? 'inline-block' : 'none';
+                            nextArrow.style.display = currentIndex < prendas.length - 2 ? 'inline-block' : 'none';
                         }
                     }
                     updateDescripcion();
@@ -737,8 +742,7 @@ async function viewDetail(pedido) {
                     });
                 } else {
                     descripcionText.textContent = '';
-                    prevArrow.style.display = 'none';
-                    nextArrow.style.display = 'none';
+                    if (arrowContainer) arrowContainer.style.display = 'none';
                 }
                 verEntregasLink.textContent = 'VER ENTREGAS';
                 verEntregasLink.style.color = 'red';
@@ -746,10 +750,6 @@ async function viewDetail(pedido) {
         };
         // Agregar el nuevo listener
         verEntregasLink.addEventListener('click', verEntregasLink._verEntregasHandler);
-
-        const descripcionText = document.getElementById('descripcion-text');
-        const prevArrow = document.getElementById('prev-arrow');
-        const nextArrow = document.getElementById('next-arrow');
 
         let currentIndex = 0;
         let prendas = [];
@@ -760,16 +760,16 @@ async function viewDetail(pedido) {
             function updateDescripcion() {
                 if (prendas.length <= 2) {
                     descripcionText.textContent = prendas.join('\n\n');
-                    prevArrow.style.display = 'none';
-                    nextArrow.style.display = 'none';
+                    if (arrowContainer) arrowContainer.style.display = 'none';
                 } else {
                     if (currentIndex === 0) {
                         descripcionText.textContent = prendas[0] + '\n\n' + prendas[1];
                     } else {
                         descripcionText.textContent = prendas[currentIndex + 1];
                     }
-                    prevArrow.style.display = currentIndex > 0 ? 'inline' : 'none';
-                    nextArrow.style.display = currentIndex < prendas.length - 2 ? 'inline' : 'none';
+                    if (arrowContainer) arrowContainer.style.display = 'flex';
+                    prevArrow.style.display = currentIndex > 0 ? 'inline-block' : 'none';
+                    nextArrow.style.display = currentIndex < prendas.length - 2 ? 'inline-block' : 'none';
                 }
             }
 
@@ -788,8 +788,7 @@ async function viewDetail(pedido) {
             });
         } else {
             descripcionText.textContent = '';
-            prevArrow.style.display = 'none';
-            nextArrow.style.display = 'none';
+            if (arrowContainer) arrowContainer.style.display = 'none';
         }
 
         // Adaptar el modal según el contexto
