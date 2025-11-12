@@ -106,8 +106,9 @@ body {
 
 /* Main sidebar styles */
 .sidebar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
   width: var(--sidebar-width-desktop);
   height: 100vh;
   display: flex;
@@ -119,6 +120,8 @@ body {
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1100;
   pointer-events: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .sidebar.collapsed {
@@ -298,6 +301,42 @@ body.dark-theme .sidebar-header .header-logo {
 .menu-list .menu-link:hover .material-symbols-rounded {
   transform: scale(1.15) rotate(-5deg);
   filter: drop-shadow(0 2px 4px rgba(255, 255, 255, 0.3));
+}
+
+/* Icon thread SVG styles */
+.menu-list .menu-link .icon-thread {
+  width: 1.4rem;
+  height: 1.4rem;
+  min-width: 1.4rem;
+  min-height: 1.4rem;
+  flex-shrink: 0;
+  filter: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.menu-list .menu-link .icon-thread path {
+  fill: var(--color-text-primary);
+  stroke: var(--color-text-primary);
+}
+
+.menu-list .menu-link:hover .icon-thread {
+  transform: scale(1.15) rotate(-5deg);
+  filter: drop-shadow(0 2px 4px rgba(255, 255, 255, 0.3));
+}
+
+.menu-list .menu-link:hover .icon-thread path {
+  fill: white;
+  stroke: white;
+}
+
+.menu-list .menu-link.active .icon-thread path {
+  fill: white;
+  stroke: white;
+}
+
+body.dark-theme .menu-list .menu-link .icon-thread path {
+  fill: #f1f5f9;
+  stroke: #f1f5f9;
 }
 
 /* Submenu styles - Modern Design */
@@ -646,6 +685,11 @@ body.dark-theme .theme-toggle-indicator {
 .container {
   display: flex;
   min-height: 100vh;
+  margin-left: var(--sidebar-width-desktop);
+}
+
+.container.sidebar-collapsed {
+  margin-left: var(--sidebar-width-collapsed);
 }
 
 .container .main-content {
