@@ -800,6 +800,9 @@ function handleOrdenUpdate(orden, action) {
 async function viewDetail(pedido) {
     console.log('viewDetail called with pedido:', pedido);
     try {
+        // Actualizar la orden actual para navegación
+        setCurrentOrder(pedido);
+        
         const response = await fetch(`${window.fetchUrl}/${pedido}`);
         if (!response.ok) throw new Error('Error fetching order');
         const order = await response.json();
