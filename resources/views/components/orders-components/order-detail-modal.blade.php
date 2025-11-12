@@ -166,6 +166,10 @@
             font-weight: bold;
             font-size: 14px;
             color: #000;
+            max-width: 45%;
+            word-wrap: break-word;
+            white-space: normal;
+            line-height: 1.3;
         }
 
         .order-forma-pago {
@@ -175,6 +179,10 @@
             font-weight: bold;
             font-size: 14px;
             color: #000;
+            max-width: 45%;
+            word-wrap: break-word;
+            white-space: normal;
+            line-height: 1.3;
         }
 
         .order-cliente {
@@ -184,6 +192,11 @@
             font-weight: bold;
             font-size: 14px;
             color: #000;
+            max-width: 45%;
+            word-wrap: break-word;
+            white-space: normal;
+            line-height: 1.3;
+            text-align: right;
         }
 
         .order-descripcion {

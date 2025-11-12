@@ -1,10 +1,15 @@
-// order-navigation.js - Navegación entre órdenes con teclas de flecha
+// order-navigation.js - Navegación entre órdenes con teclas de flecha, swipe y botones
 
 let currentOrderId = null;
 let allOrderIds = [];
 let keysPressed = new Set(); // Rastrear teclas presionadas
 let navigationInterval = null; // Intervalo de navegación continua
 const NAVIGATION_SPEED = 400; // Milisegundos entre navegaciones mientras se mantiene presionada
+
+// Variables para gestos táctiles
+let touchStartX = 0;
+let touchEndX = 0;
+const SWIPE_THRESHOLD = 50; // Distancia mínima en píxeles para considerar un swipe
 
 /**
  * Obtener lista de todas las órdenes de la tabla actual
@@ -211,13 +216,79 @@ function monitorModalClose() {
     });
 }
 
+/**
+ * Inicializar gestos táctiles (swipe)
+ */
+function initializeTouchNavigation() {
+    const modalContainer = document.querySelector('.order-detail-modal-container');
+    
+    if (!modalContainer) return;
+    
+    // Detectar inicio del swipe
+    modalContainer.addEventListener('touchstart', (e) => {
+        if (!isOrderDetailModalOpen()) return;
+        touchStartX = e.changedTouches[0].screenX;
+    }, false);
+    
+    // Detectar fin del swipe
+    modalContainer.addEventListener('touchend', (e) => {
+        if (!isOrderDetailModalOpen()) return;
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+    }, false);
+}
+
+/**
+ * Procesar el gesto de swipe
+ */
+function handleSwipe() {
+    const difference = touchStartX - touchEndX;
+    
+    // Swipe hacia la izquierda (diferencia positiva) = siguiente orden
+    if (difference > SWIPE_THRESHOLD) {
+        navigateToNextOrder();
+    }
+    // Swipe hacia la derecha (diferencia negativa) = orden anterior
+    else if (difference < -SWIPE_THRESHOLD) {
+        navigateToPreviousOrder();
+    }
+}
+
+/**
+ * Inicializar botones de navegación
+ */
+function initializeButtonNavigation() {
+    const prevButton = document.getElementById('prev-arrow');
+    const nextButton = document.getElementById('next-arrow');
+    
+    if (prevButton) {
+        prevButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            navigateToPreviousOrder();
+        });
+    }
+    
+    if (nextButton) {
+        nextButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            navigateToNextOrder();
+        });
+    }
+}
+
 // Inicializar cuando el DOM esté listo
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
         initializeKeyboardNavigation();
+        initializeTouchNavigation();
+        initializeButtonNavigation();
         monitorModalClose();
     });
 } else {
     initializeKeyboardNavigation();
+    initializeTouchNavigation();
+    initializeButtonNavigation();
     monitorModalClose();
 }

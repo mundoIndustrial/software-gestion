@@ -99,21 +99,21 @@
                                     }
                                 @endphp
                                 <tr class="table-row {{ $conditionalClass }}" data-order-id="{{ $orden->pedido }}">
-                                    <td class="table-cell acciones-column" style="min-width: 200px !important;">
-                                        <div class="cell-content" style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                    <td class="table-cell acciones-column" style="min-width: 220px !important;">
+                                        <div class="cell-content" style="display: flex; gap: 4px; flex-wrap: nowrap; align-items: center; justify-content: flex-start;">
                                             <button class="action-btn edit-btn" onclick="openEditModal({{ $orden->pedido }})"
                                                 title="Editar orden"
-                                                style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                                                style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 4px 6px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
                                                 Editar
                                             </button>
                                             <button class="action-btn detail-btn" onclick="viewDetail({{ $orden->pedido }})"
                                                 title="Ver detalle"
-                                                style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                                                style="background-color: green; color: white; border: none; padding: 4px 6px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
                                                 Ver
                                             </button>
                                             <button class="action-btn delete-btn" onclick="deleteOrder({{ $orden->pedido }})"
                                                 title="Eliminar orden"
-                                                style="background-color:#f84c4cff ; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                                                style="background-color:#f84c4cff ; color: white; border: none; padding: 4px 6px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
                                                 Borrar
                                             </button>
                                         </div>
@@ -220,7 +220,6 @@
             <div class="modal-body">
                 <div class="modal-search">
                     <div class="search-input-wrapper">
-                        <i class="fas fa-search search-icon"></i>
                         <input type="text" id="filterSearch" placeholder="Buscar valores..." style="color: black;">
                     </div>
                 </div>
