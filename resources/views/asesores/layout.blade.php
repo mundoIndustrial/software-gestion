@@ -36,11 +36,13 @@
         <!-- Sidebar principal -->
     <aside class="sidebar collapsed" id="sidebar">
         <div class="sidebar-header">
-            <img src="{{ asset('images/logo2.png') }}"
-                 alt="Logo Mundo Industrial"
-                 class="header-logo"
-                 data-logo-light="{{ asset('images/logo2.png') }}"
-                 data-logo-dark="https://prueba.mundoindustrial.co/wp-content/uploads/2024/07/logo-mundo-industrial-white.png" />
+            <a href="{{ route('asesores.dashboard') }}" class="logo-link" aria-label="Ir al Dashboard">
+                <img src="{{ asset('images/logo2.png') }}"
+                     alt="Logo Mundo Industrial"
+                     class="header-logo"
+                     data-logo-light="{{ asset('images/logo2.png') }}"
+                     data-logo-dark="https://prueba.mundoindustrial.co/wp-content/uploads/2024/07/logo-mundo-industrial-white.png" />
+            </a>
             <h2 class="sidebar-title">Menú</h2>
             <button class="sidebar-toggle" aria-label="Colapsar menú">
                 <span class="material-symbols-rounded">chevron_left</span>

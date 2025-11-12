@@ -108,7 +108,7 @@
                             </div>
                             <div>
                                 <p style="margin: 0; color: var(--text-secondary); font-size: 0.75rem;">Cantidad Total</p>
-                                <p style="margin: 0; color: var(--text-primary); font-weight: 600;">{{ $pedido->cantidad_prendas ?? 0 }} unidades</p>
+                                <p style="margin: 0; color: var(--text-primary); font-weight: 600;">{{ $pedido->cantidad ?? 0 }} unidades</p>
                             </div>
                             <div>
                                 <p style="margin: 0; color: var(--text-secondary); font-size: 0.75rem;">Estado</p>
