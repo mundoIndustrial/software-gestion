@@ -6,12 +6,22 @@ use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 use App\Models\Festivo;
 use App\Traits\Auditable;
+use App\Observers\TablaOriginalObserver;
 
 class TablaOriginal extends Model
 {
     use Auditable;
     // Nombre exacto de la tabla en tu BD
     protected $table = 'tabla_original';
+
+    /**
+     * Registrar observers del modelo
+     */
+    protected static function boot()
+    {
+        parent::boot();
+        static::observe(TablaOriginalObserver::class);
+    }
 
     // Definir la clave primaria como 'pedido'
     protected $primaryKey = 'pedido';
@@ -88,5 +98,50 @@ class TablaOriginal extends Model
         }
         
         return $weekends;
+    }
+
+    /**
+     * Calcula la fecha estimada de entrega basada en:
+     * - Fecha de creación de orden
+     * - Días de entrega especificados
+     * - Excluyendo sábados, domingos y festivos
+     */
+    public function calcularFechaEstimadaEntrega(): ?Carbon
+    {
+        if (!$this->fecha_de_creacion_de_orden || !$this->dia_de_entrega) {
+            return null;
+        }
+
+        $fechaInicio = Carbon::parse($this->fecha_de_creacion_de_orden);
+        $diasRequeridos = intval($this->dia_de_entrega);
+        $festivos = $this->festivos ?: Festivo::pluck('fecha')->toArray();
+
+        // Comenzar desde el día siguiente
+        $fechaActual = $fechaInicio->copy()->addDay();
+        $diasContados = 0;
+
+        // Contar días hábiles hasta alcanzar los días requeridos
+        while ($diasContados < $diasRequeridos) {
+            // Verificar si es fin de semana o festivo
+            if (!$fechaActual->isWeekend() && !in_array($fechaActual->toDateString(), $festivos)) {
+                $diasContados++;
+            }
+
+            // Si aún no hemos contado todos los días, avanzar al siguiente
+            if ($diasContados < $diasRequeridos) {
+                $fechaActual->addDay();
+            }
+        }
+
+        return $fechaActual;
+    }
+
+    /**
+     * Accessor para obtener la fecha estimada de entrega formateada
+     */
+    public function getFechaEstimadaEntregaFormattedAttribute(): ?string
+    {
+        $fecha = $this->calcularFechaEstimadaEntrega();
+        return $fecha ? $fecha->format('d/m/Y') : null;
     }
 }

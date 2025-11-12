@@ -149,6 +149,8 @@
                                                         <span class="cell-text">
                                                             @if($key === 'total_de_dias_')
                                                                 {{ $totalDiasCalculados[$orden->pedido] ?? 'N/A' }}
+                                                            @elseif($key === 'fecha_estimada_de_entrega')
+                                                                {{ $orden->getFechaEstimadaEntregaFormattedAttribute() ?? '-' }}
                                                             @elseif(in_array($key, ['fecha_de_creacion_de_orden', 'inventario', 'insumos_y_telas', 'corte', 'bordado', 'estampado', 'costura', 'reflectivo', 'lavanderia', 'arreglos', 'marras', 'control_de_calidad', 'entrega']))
                                                                 @php
                                                                     try {

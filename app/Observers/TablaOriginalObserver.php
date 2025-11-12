@@ -3,6 +3,8 @@
 namespace App\Observers;
 
 use App\Models\TablaOriginal;
+use App\Models\Festivo;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -21,6 +23,11 @@ class TablaOriginalObserver
         // Verificar si cambió el campo 'cliente'
         if ($orden->isDirty('cliente')) {
             $this->sincronizarClienteConHijos($orden);
+        }
+
+        // Verificar si cambió 'dia_de_entrega' (SOLO dia_de_entrega, NO fecha_de_creacion)
+        if ($orden->isDirty('dia_de_entrega')) {
+            $this->actualizarFechaEstimadaEntrega($orden);
         }
     }
 
@@ -155,6 +162,65 @@ class TablaOriginalObserver
             Log::error("Error sincronizando cliente con hijos", [
                 'pedido' => $orden->pedido,
                 'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Actualizar fecha estimada de entrega cuando cambia dia_de_entrega o fecha_de_creacion_de_orden
+     */
+    private function actualizarFechaEstimadaEntrega(TablaOriginal $orden)
+    {
+        try {
+            // Si no tiene fecha de creación o días de entrega, no calcular
+            if (!$orden->fecha_de_creacion_de_orden || !$orden->dia_de_entrega) {
+                DB::table('tabla_original')
+                    ->where('pedido', $orden->pedido)
+                    ->update(['fecha_estimada_de_entrega' => null]);
+                return;
+            }
+
+            // Obtener festivos
+            $festivos = Festivo::pluck('fecha')->toArray();
+
+            // Calcular fecha estimada
+            $fechaInicio = Carbon::parse($orden->fecha_de_creacion_de_orden);
+            $diasRequeridos = intval($orden->dia_de_entrega);
+
+            // Comenzar desde el día siguiente
+            $fechaActual = $fechaInicio->copy()->addDay();
+            $diasContados = 0;
+
+            // Contar días hábiles hasta alcanzar los días requeridos
+            while ($diasContados < $diasRequeridos) {
+                // Verificar si es fin de semana o festivo
+                if (!$fechaActual->isWeekend() && !in_array($fechaActual->toDateString(), $festivos)) {
+                    $diasContados++;
+                }
+
+                // Si aún no hemos contado todos los días, avanzar al siguiente
+                if ($diasContados < $diasRequeridos) {
+                    $fechaActual->addDay();
+                }
+            }
+
+            // Guardar la fecha estimada en la base de datos
+            DB::table('tabla_original')
+                ->where('pedido', $orden->pedido)
+                ->update(['fecha_estimada_de_entrega' => $fechaActual->toDateString()]);
+
+            Log::info("Fecha estimada de entrega actualizada", [
+                'pedido' => $orden->pedido,
+                'fecha_creacion' => $orden->fecha_de_creacion_de_orden,
+                'dias_entrega' => $orden->dia_de_entrega,
+                'fecha_estimada' => $fechaActual->toDateString()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error("Error actualizando fecha estimada de entrega", [
+                'pedido' => $orden->pedido,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
         }
     }

@@ -26,7 +26,7 @@ class RegistroOrdenController extends Controller
     {
         // Definir columnas de fecha
         $dateColumns = [
-            'fecha_de_creacion_de_orden', 'inventario', 'insumos_y_telas', 'corte',
+            'fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega', 'inventario', 'insumos_y_telas', 'corte',
             'bordado', 'estampado', 'costura', 'reflectivo', 'lavanderia',
             'arreglos', 'marras', 'control_de_calidad', 'entrega'
         ];
@@ -35,7 +35,7 @@ class RegistroOrdenController extends Controller
         if ($request->has('get_unique_values') && $request->column) {
             $column = $request->column;
         $allowedColumns = [
-            'pedido', 'estado', 'area', 'total_de_dias_', 'dia_de_entrega', 'cliente',
+            'pedido', 'estado', 'area', 'total_de_dias_', 'dia_de_entrega', 'fecha_estimada_de_entrega', 'cliente',
             'descripcion', 'cantidad', 'novedades', 'asesora', 'forma_de_pago',
             'fecha_de_creacion_de_orden', 'encargado_orden', 'dias_orden', 'inventario',
             'encargados_inventario', 'dias_inventario', 'insumos_y_telas', 'encargados_insumos',
@@ -108,7 +108,7 @@ class RegistroOrdenController extends Controller
 
                 // Whitelist de columnas permitidas para seguridad
                 $allowedColumns = [
-                    'id', 'estado', 'area', 'total_de_dias_', 'dia_de_entrega', 'pedido', 'cliente',
+                    'id', 'estado', 'area', 'total_de_dias_', 'dia_de_entrega', 'fecha_estimada_de_entrega', 'pedido', 'cliente',
                     'descripcion', 'cantidad', 'novedades', 'asesora', 'forma_de_pago',
                     'fecha_de_creacion_de_orden', 'encargado_orden', 'dias_orden', 'inventario',
                     'encargados_inventario', 'dias_inventario', 'insumos_y_telas', 'encargados_insumos',

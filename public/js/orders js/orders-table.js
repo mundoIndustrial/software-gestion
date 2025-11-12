@@ -1487,6 +1487,28 @@ function executeDiaEntregaUpdate(orderId, newDias, oldDias, dropdown) {
                     const totalDias = data.totalDiasCalculados[orderId] || 0;
                     const estado = data.order?.estado || '';
                     
+                    // ACTUALIZAR FECHA ESTIMADA DE ENTREGA
+                    if (data.order && data.order.fecha_estimada_de_entrega) {
+                        const fechaEstimadaCell = row.querySelector('td[data-column="fecha_estimada_de_entrega"] .cell-text');
+                        if (fechaEstimadaCell) {
+                            // Formatear fecha de YYYY-MM-DD a DD/MM/YYYY
+                            let fechaFormateada = data.order.fecha_estimada_de_entrega;
+                            if (fechaFormateada.includes('-')) {
+                                const partes = fechaFormateada.split('-');
+                                // partes[0] = YYYY, partes[1] = MM, partes[2] = DD
+                                fechaFormateada = `${partes[2]}/${partes[1]}/${partes[0]}`;
+                            }
+                            fechaEstimadaCell.textContent = fechaFormateada;
+                            console.log(`📅 Fecha estimada actualizada: ${fechaFormateada} (desde ${data.order.fecha_estimada_de_entrega})`);
+                        }
+                    } else {
+                        // Si no hay fecha estimada, limpiar la celda
+                        const fechaEstimadaCell = row.querySelector('td[data-column="fecha_estimada_de_entrega"] .cell-text');
+                        if (fechaEstimadaCell) {
+                            fechaEstimadaCell.textContent = '-';
+                        }
+                    }
+                    
                     // Remover todas las clases condicionales
                     row.classList.remove('row-delivered', 'row-anulada', 'row-warning', 'row-danger-light', 'row-secondary', 'row-dia-entrega-warning', 'row-dia-entrega-danger', 'row-dia-entrega-critical');
                     
