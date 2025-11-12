@@ -794,9 +794,13 @@ class ModernTable {
             input.select();
         }
         
+        // Columnas que permiten saltos de línea
+        const multilineColumns = ['descripcion', 'novedades', 'cliente', 'encargado_orden', 'asesora', 'forma_de_pago'];
+        const isMultilineColumn = multilineColumns.includes(column);
+        
         // Mostrar mensaje de ayuda según la columna
         if (hint) {
-            if (column === 'descripcion') {
+            if (isMultilineColumn) {
                 hint.textContent = 'Presiona Enter para salto de línea. Ctrl+Enter o clic en Guardar para guardar cambios.';
             } else {
                 hint.textContent = 'Presiona Enter o clic en Guardar para guardar cambios.';
@@ -806,9 +810,9 @@ class ModernTable {
         const save = () => this.saveCellEdit();
         const cancel = () => this.closeCellModal();
         const keyHandler = e => {
-            // Para la columna descripcion, permitir Enter para saltos de línea
+            // Para columnas que permiten múltiples líneas, permitir Enter para saltos de línea
             // Solo guardar con Ctrl+Enter
-            if (column === 'descripcion') {
+            if (isMultilineColumn) {
                 if (e.key === 'Enter' && e.ctrlKey) { 
                     e.preventDefault(); 
                     save(); 
@@ -852,6 +856,46 @@ class ModernTable {
         const oldValue = document.querySelector('.table-cell.selected .cell-text')?.textContent || '';
 
         try {
+            // Si estamos editando el campo descripcion, usar endpoint especial para actualizar prendas
+            if (this.currentColumn === 'descripcion') {
+                const response = await fetch(`${this.baseRoute}/update-descripcion-prendas`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({ 
+                        pedido: this.currentOrderId,
+                        descripcion: newValue 
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const selected = document.querySelector('.table-cell.selected');
+                    if (selected) {
+                        const cellText = selected.querySelector('.cell-text');
+                        if (cellText) {
+                            cellText.textContent = newValue;
+                            cellText.innerHTML = this.wrapText(newValue, 20);
+                            selected.querySelector('.cell-content').title = newValue;
+                        }
+                    }
+
+                    // Mostrar notificación moderna de éxito
+                    this.showModernNotification(data.message, 'success', {
+                        prendas: data.prendas_procesadas,
+                        registrosRegenerados: data.registros_regenerados
+                    });
+
+                    this.closeCellModal();
+                } else {
+                    this.showModernNotification(data.message || 'Error al actualizar la descripción y prendas', 'error');
+                }
+                return;
+            }
+
             // Si estamos editando el campo pedido, usar endpoint especial
             if (this.currentColumn === 'pedido') {
                 const response = await fetch(`${this.baseRoute}/update-pedido`, {
@@ -908,7 +952,7 @@ class ModernTable {
                     
                     this.closeCellModal();
                 } else {
-                    alert(data.message || 'Error al actualizar el número de pedido');
+                    this.showModernNotification(data.message || 'Error al actualizar el número de pedido', 'error');
                 }
                 return;
             }
@@ -939,17 +983,149 @@ class ModernTable {
 
                 this.closeCellModal();
             } else {
-                alert('Error al guardar los cambios');
+                this.showModernNotification('Error al guardar los cambios', 'error');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('Error al guardar los cambios');
+            this.showModernNotification('Error de conexión al guardar los cambios', 'error');
         }
     }
 
     closeCellModal() {
         document.getElementById('cellModal')?.classList.remove('active');
         document.getElementById('modalOverlay')?.classList.remove('active');
+    }
+
+    /**
+     * Mostrar notificación moderna y dinámica
+     */
+    showModernNotification(message, type = 'info', extraData = null) {
+        // Crear el contenedor de notificaciones si no existe
+        let container = document.getElementById('modern-notifications-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'modern-notifications-container';
+            container.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 10000;
+                pointer-events: none;
+            `;
+            document.body.appendChild(container);
+        }
+
+        // Crear la notificación
+        const notification = document.createElement('div');
+        const notificationId = 'notification-' + Date.now();
+        notification.id = notificationId;
+        
+        // Estilos según el tipo
+        const typeStyles = {
+            success: {
+                bg: 'linear-gradient(135deg, #10b981, #059669)',
+                icon: '✅',
+                border: '#10b981'
+            },
+            error: {
+                bg: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                icon: '❌',
+                border: '#ef4444'
+            },
+            warning: {
+                bg: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                icon: '⚠️',
+                border: '#f59e0b'
+            },
+            info: {
+                bg: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                icon: 'ℹ️',
+                border: '#3b82f6'
+            }
+        };
+
+        const style = typeStyles[type] || typeStyles.info;
+        
+        // Construir contenido adicional
+        let extraContent = '';
+        if (extraData) {
+            if (extraData.prendas !== undefined) {
+                extraContent += `<div style="font-size: 0.8em; opacity: 0.9; margin-top: 4px;">
+                    📦 ${extraData.prendas} prenda(s) procesada(s)
+                </div>`;
+            }
+            if (extraData.registrosRegenerados) {
+                extraContent += `<div style="font-size: 0.8em; opacity: 0.9;">
+                    🔄 Registros regenerados automáticamente
+                </div>`;
+            }
+        }
+
+        notification.style.cssText = `
+            background: ${style.bg};
+            color: white;
+            padding: 16px 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            margin-bottom: 12px;
+            max-width: 400px;
+            pointer-events: auto;
+            cursor: pointer;
+            transform: translateX(100%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-left: 4px solid ${style.border};
+            backdrop-filter: blur(10px);
+        `;
+
+        notification.innerHTML = `
+            <div style="display: flex; align-items: flex-start; gap: 12px;">
+                <span style="font-size: 1.2em; flex-shrink: 0;">${style.icon}</span>
+                <div style="flex: 1;">
+                    <div style="font-weight: 600; line-height: 1.4; white-space: pre-line;">${message}</div>
+                    ${extraContent}
+                </div>
+                <button style="
+                    background: none; 
+                    border: none; 
+                    color: white; 
+                    font-size: 1.2em; 
+                    cursor: pointer; 
+                    opacity: 0.7;
+                    padding: 0;
+                    margin-left: 8px;
+                    flex-shrink: 0;
+                " onclick="this.parentElement.parentElement.remove()">×</button>
+            </div>
+        `;
+
+        // Agregar al contenedor
+        container.appendChild(notification);
+
+        // Animar entrada
+        setTimeout(() => {
+            notification.style.transform = 'translateX(0)';
+        }, 10);
+
+        // Auto-remover después de un tiempo (más tiempo para mensajes largos)
+        const autoRemoveTime = type === 'error' ? 8000 : (message.length > 100 ? 6000 : 4000);
+        setTimeout(() => {
+            if (document.getElementById(notificationId)) {
+                notification.style.transform = 'translateX(100%)';
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }
+        }, autoRemoveTime);
+
+        // Remover al hacer clic
+        notification.addEventListener('click', () => {
+            notification.style.transform = 'translateX(100%)';
+            notification.style.opacity = '0';
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        });
     }
 
     updateRowColor(orderId, status) {

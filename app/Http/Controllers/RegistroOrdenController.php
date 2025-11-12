@@ -1072,4 +1072,185 @@ class RegistroOrdenController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Actualizar descripción y regenerar registros_por_orden basado en el contenido
+     */
+    public function updateDescripcionPrendas(Request $request)
+    {
+        try {
+            $validatedData = $request->validate([
+                'pedido' => 'required|integer',
+                'descripcion' => 'required|string'
+            ]);
+
+            $pedido = $validatedData['pedido'];
+            $nuevaDescripcion = $validatedData['descripcion'];
+
+            DB::beginTransaction();
+
+            // Actualizar la descripción en tabla_original
+            $orden = TablaOriginal::where('pedido', $pedido)->firstOrFail();
+            $orden->update(['descripcion' => $nuevaDescripcion]);
+
+            // Parsear la nueva descripción para extraer prendas y tallas
+            $prendas = $this->parseDescripcionToPrendas($nuevaDescripcion);
+            $mensaje = '';
+            $procesarRegistros = false;
+
+            // Verificar si se encontraron prendas válidas con el formato estructurado
+            if (!empty($prendas)) {
+                $totalTallasEncontradas = 0;
+                foreach ($prendas as $prenda) {
+                    $totalTallasEncontradas += count($prenda['tallas']);
+                }
+
+                if ($totalTallasEncontradas > 0) {
+                    $procesarRegistros = true;
+                    
+                    // Eliminar registros existentes en registros_por_orden
+                    DB::table('registros_por_orden')->where('pedido', $pedido)->delete();
+
+                    // Insertar nuevos registros basados en la descripción parseada
+                    foreach ($prendas as $prenda) {
+                        foreach ($prenda['tallas'] as $talla) {
+                            DB::table('registros_por_orden')->insert([
+                                'pedido' => $pedido,
+                                'cliente' => $orden->cliente,
+                                'prenda' => $prenda['nombre'],
+                                'descripcion' => $prenda['descripcion'] ?? '',
+                                'talla' => $talla['talla'],
+                                'cantidad' => $talla['cantidad'],
+                                'total_pendiente_por_talla' => $talla['cantidad'],
+                            ]);
+                        }
+                    }
+
+                    // Recalcular cantidad total
+                    $totalCantidad = 0;
+                    foreach ($prendas as $prenda) {
+                        foreach ($prenda['tallas'] as $talla) {
+                            $totalCantidad += $talla['cantidad'];
+                        }
+                    }
+                    $orden->update(['cantidad' => $totalCantidad]);
+                    
+                    $mensaje = "✅ Descripción actualizada y registros regenerados automáticamente. Se procesaron " . count($prendas) . " prenda(s) con " . $totalTallasEncontradas . " talla(s).";
+                } else {
+                    $mensaje = "⚠️ Descripción actualizada, pero no se encontraron tallas válidas. Los registros existentes se mantuvieron intactos.";
+                }
+            } else {
+                $mensaje = "📝 Descripción actualizada como texto libre. Para regenerar registros automáticamente, use el formato:\n\nPrenda 1: NOMBRE\nDescripción: detalles\nTallas: M:5, L:3";
+            }
+
+            // Invalidar caché
+            $this->invalidarCacheDias($pedido);
+
+            // Log news
+            News::create([
+                'event_type' => 'description_updated',
+                'description' => "Descripción y prendas actualizadas para pedido {$pedido}",
+                'user_id' => auth()->id(),
+                'pedido' => $pedido,
+                'metadata' => ['prendas_count' => count($prendas)]
+            ]);
+
+            DB::commit();
+
+            // Broadcast events
+            $ordenActualizada = TablaOriginal::where('pedido', $pedido)->first();
+            $registrosActualizados = DB::table('registros_por_orden')->where('pedido', $pedido)->get();
+            
+            broadcast(new \App\Events\OrdenUpdated($ordenActualizada, 'updated'));
+            broadcast(new \App\Events\RegistrosPorOrdenUpdated($pedido, $registrosActualizados, 'updated'));
+
+            return response()->json([
+                'success' => true,
+                'message' => $mensaje,
+                'prendas_procesadas' => count($prendas),
+                'registros_regenerados' => $procesarRegistros
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => '❌ Error de validación: Los datos proporcionados no son válidos. Verifique el formato e intente nuevamente.',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error al actualizar descripción y prendas', [
+                'pedido' => $request->pedido ?? 'N/A',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => '🚨 Error interno del servidor: No se pudo actualizar la descripción y prendas. Por favor, intente nuevamente o contacte al administrador si el problema persiste.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Parsear descripción para extraer información de prendas y tallas
+     */
+    private function parseDescripcionToPrendas($descripcion)
+    {
+        $prendas = [];
+        $lineas = explode("\n", $descripcion);
+        $prendaActual = null;
+
+        foreach ($lineas as $linea) {
+            $linea = trim($linea);
+            if (empty($linea)) continue;
+
+            // Detectar inicio de nueva prenda (formato: "Prenda X: NOMBRE")
+            if (preg_match('/^Prenda\s+\d+:\s*(.+)$/i', $linea, $matches)) {
+                // Guardar prenda anterior si existe
+                if ($prendaActual !== null) {
+                    $prendas[] = $prendaActual;
+                }
+                
+                // Iniciar nueva prenda
+                $prendaActual = [
+                    'nombre' => trim($matches[1]),
+                    'descripcion' => '',
+                    'tallas' => []
+                ];
+            }
+            // Detectar descripción (formato: "Descripción: TEXTO")
+            elseif (preg_match('/^Descripción:\s*(.+)$/i', $linea, $matches)) {
+                if ($prendaActual !== null) {
+                    $prendaActual['descripcion'] = trim($matches[1]);
+                }
+            }
+            // Detectar tallas (formato: "Tallas: M:5, L:3, XL:2")
+            elseif (preg_match('/^Tallas:\s*(.+)$/i', $linea, $matches)) {
+                if ($prendaActual !== null) {
+                    $tallasStr = trim($matches[1]);
+                    $tallasPares = explode(',', $tallasStr);
+                    
+                    foreach ($tallasPares as $par) {
+                        $par = trim($par);
+                        if (preg_match('/^([^:]+):(\d+)$/', $par, $tallaMatches)) {
+                            $prendaActual['tallas'][] = [
+                                'talla' => trim($tallaMatches[1]),
+                                'cantidad' => intval($tallaMatches[2])
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+
+        // Agregar la última prenda si existe
+        if ($prendaActual !== null) {
+            $prendas[] = $prendaActual;
+        }
+
+        return $prendas;
+    }
 }
