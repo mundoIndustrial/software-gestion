@@ -296,28 +296,50 @@ class ModernTable {
             
             // Columnas de fecha que deben formatearse
             const dateColumns = [
-                'fecha_de_creacion_de_orden', 'inventario', 'insumos_y_telas', 'corte',
+                'fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega', 'inventario', 'insumos_y_telas', 'corte',
                 'bordado', 'estampado', 'costura', 'reflectivo', 'lavanderia',
-                'arreglos', 'marras', 'control_de_calidad', 'entrega'
+                'arreglos', 'marras', 'control_de_calidad', 'entrega', 'despacho'
             ];
             
             let displayValue;
             if (key === 'total_de_dias_') {
                 displayValue = this.virtual.totalDiasCalculados[orden.pedido || orden.id] ?? 'N/A';
             } else if (dateColumns.includes(key) && value) {
-                // Formatear fecha a d/m/Y
+                // Formatear fecha a d/m/Y - IMPORTANTE: Usar split en lugar de new Date() para evitar problemas de zona horaria
+                console.log(`[modern-table.js] Formateando fecha - Columna: ${key}, Valor original: "${value}", Tipo: ${typeof value}`);
                 try {
-                    const date = new Date(value);
-                    if (!isNaN(date.getTime())) {
-                        const day = String(date.getDate()).padStart(2, '0');
-                        const month = String(date.getMonth() + 1).padStart(2, '0');
-                        const year = date.getFullYear();
-                        displayValue = `${day}/${month}/${year}`;
+                    // Si es formato YYYY-MM-DD, convertir directamente sin usar new Date()
+                    if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        const partes = value.split('-');
+                        displayValue = `${partes[2]}/${partes[1]}/${partes[0]}`;
+                        console.log(`[modern-table.js] ✅ Fecha formateada (YYYY-MM-DD → DD/MM/YYYY): ${value} → ${displayValue}`);
+                    } else if (typeof value === 'string' && value.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+                        // Ya está en formato DD/MM/YYYY
+                        displayValue = value;
+                        console.log(`[modern-table.js] ✅ Fecha ya formateada (DD/MM/YYYY): ${value}`);
+                    } else if (typeof value === 'string' && value.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+                        // Formato YYYY/MM/DD (incorrecto) - convertir a DD/MM/YYYY
+                        const partes = value.split('/');
+                        displayValue = `${partes[2]}/${partes[1]}/${partes[0]}`;
+                        console.log(`[modern-table.js] ⚠️ Fecha en formato YYYY/MM/DD (incorrecto): ${value} → ${displayValue}`);
                     } else {
-                        displayValue = value ?? '';
+                        // Fallback: intentar con new Date()
+                        console.log(`[modern-table.js] ⚠️ Formato no reconocido, intentando con new Date(): ${value}`);
+                        const date = new Date(value);
+                        if (!isNaN(date.getTime())) {
+                            const day = String(date.getDate()).padStart(2, '0');
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const year = date.getFullYear();
+                            displayValue = `${day}/${month}/${year}`;
+                            console.log(`[modern-table.js] ✅ Fecha formateada (new Date): ${value} → ${displayValue}`);
+                        } else {
+                            displayValue = value ?? '';
+                            console.log(`[modern-table.js] ❌ Fecha inválida (NaN): ${value}`);
+                        }
                     }
                 } catch (e) {
                     displayValue = value ?? '';
+                    console.log(`[modern-table.js] ❌ Error formateando fecha: ${e.message}`);
                 }
             } else {
                 displayValue = value ?? '';
@@ -1415,8 +1437,38 @@ appendRowsToTable(orders, totalDiasCalculados) {
     
     this.initializeStatusDropdowns();
     this.initializeAreaDropdowns();
+    
+    // Formatear todas las fechas en la tabla después de renderizar
+    this.formatearTodasLasFechas();
 }
-    initializeStatusDropdowns() {
+
+/**
+ * Formatea todas las fechas en la tabla a DD/MM/YYYY
+ */
+formatearTodasLasFechas() {
+    const dateColumns = [
+        'fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega', 'inventario', 
+        'insumos_y_telas', 'corte', 'bordado', 'estampado', 'costura', 'reflectivo', 
+        'lavanderia', 'arreglos', 'marras', 'control_de_calidad', 'entrega', 'despacho'
+    ];
+    
+    // Buscar todas las celdas de fecha
+    dateColumns.forEach(column => {
+        document.querySelectorAll(`td[data-column="${column}"] .cell-text`).forEach(cell => {
+            const fechaActual = cell.textContent.trim();
+            
+            // Si está en YYYY-MM-DD, convertir a DD/MM/YYYY
+            if (fechaActual && fechaActual.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                const partes = fechaActual.split('-');
+                const fechaFormateada = `${partes[2]}/${partes[1]}/${partes[0]}`;
+                cell.textContent = fechaFormateada;
+                console.log(`✅ [formatearTodasLasFechas] ${column}: ${fechaActual} → ${fechaFormateada}`);
+            }
+        });
+    });
+}
+
+initializeStatusDropdowns() {
         document.querySelectorAll('.estado-dropdown').forEach(dropdown => {
             // Guardar el valor actual antes de clonar
             const currentValue = dropdown.value;

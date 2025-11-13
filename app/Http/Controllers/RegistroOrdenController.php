@@ -9,6 +9,7 @@ use App\Models\Festivo;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use App\Services\FestivosColombiaService;
+use Carbon\Carbon;
 
 class RegistroOrdenController extends Controller
 {
@@ -569,11 +570,74 @@ class RegistroOrdenController extends Controller
 
             // Obtener la orden actualizada para retornar todos los campos
             $ordenActualizada = TablaOriginal::where('pedido', $pedido)->first();
+            
+            // Preparar datos de la orden para retornar
+            $ordenData = $ordenActualizada->toArray();
+            
+            // Formatear TODAS las columnas de fecha a DD/MM/YYYY para el frontend
+            $dateColumns = [
+                'fecha_de_creacion_de_orden',
+                'fecha_estimada_de_entrega',
+                'inventario',
+                'insumos_y_telas',
+                'corte',
+                'bordado',
+                'estampado',
+                'costura',
+                'reflectivo',
+                'lavanderia',
+                'arreglos',
+                'marras',
+                'control_de_calidad',
+                'entrega',
+                'despacho'
+            ];
+            
+            foreach ($dateColumns as $column) {
+                // Verificar si la columna existe y tiene valor
+                if (isset($ordenData[$column]) && $ordenData[$column] !== null && $ordenData[$column] !== '') {
+                    try {
+                        $valorOriginal = $ordenData[$column];
+                        // Parsear y formatear la fecha
+                        $fechaParsed = \Carbon\Carbon::parse($valorOriginal);
+                        $ordenData[$column] = $fechaParsed->format('d/m/Y');
+                        
+                        \Log::info("CONTROLADOR: Fecha formateada", [
+                            'columna' => $column,
+                            'original' => $valorOriginal,
+                            'formateada' => $ordenData[$column]
+                        ]);
+                    } catch (\Exception $e) {
+                        \Log::warning("CONTROLADOR: Error formateando fecha", [
+                            'columna' => $column,
+                            'valor' => $ordenData[$column] ?? 'null',
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+            }
+            
+            // Log DESPUÉS del formateo
+            \Log::info("\n========== CONTROLADOR: ORDEN ACTUALIZADA (FORMATEADA) ==========", [
+                'pedido' => $pedido,
+                'fecha_de_creacion_de_orden' => $ordenData['fecha_de_creacion_de_orden'] ?? 'N/A',
+                'fecha_estimada_de_entrega' => $ordenData['fecha_estimada_de_entrega'] ?? 'N/A',
+                'dia_de_entrega' => $ordenActualizada->dia_de_entrega,
+                'updated_fields' => $updatedFields
+            ]);
+            
+            \Log::info("CONTROLADOR: Datos que se retornan al cliente (FORMATEADOS)", [
+                'pedido' => $pedido,
+                'order_data_fechas' => [
+                    'fecha_de_creacion_de_orden' => $ordenData['fecha_de_creacion_de_orden'] ?? 'N/A',
+                    'fecha_estimada_de_entrega' => $ordenData['fecha_estimada_de_entrega'] ?? 'N/A'
+                ]
+            ]);
 
             return response()->json([
                 'success' => true,
                 'updated_fields' => $updatedFields,
-                'order' => $ordenActualizada,
+                'order' => $ordenData,
                 'totalDiasCalculados' => $this->calcularTotalDiasBatch([$ordenActualizada], Festivo::pluck('fecha')->toArray())
             ]);
         } catch (\Exception $e) {
