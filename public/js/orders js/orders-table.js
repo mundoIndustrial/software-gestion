@@ -192,8 +192,8 @@ async function recargarTablaPedidos() {
                         style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
                         Editar
                     </button>
-                    <button class="action-btn detail-btn" onclick="viewDetail(${orden.pedido})"
-                        title="Ver detalle"
+                    <button class="action-btn detail-btn" onclick="createViewButtonDropdown(${orden.pedido})"
+                        title="Ver opciones"
                         style="background-color: green; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
                         Ver
                     </button>
