@@ -1630,6 +1630,12 @@ function executeDiaEntregaUpdate(orderId, newDias, oldDias, dropdown) {
                     const totalDias = data.totalDiasCalculados[orderId] || 0;
                     const estado = data.order?.estado || '';
                     
+                    console.log(`\n[executeDiaEntregaUpdate] ========== DATOS PARA COLOR ==========`);
+                    console.log(`[executeDiaEntregaUpdate] totalDiasCalculados:`, data.totalDiasCalculados);
+                    console.log(`[executeDiaEntregaUpdate] totalDias para orden ${orderId}: ${totalDias}`);
+                    console.log(`[executeDiaEntregaUpdate] estado: ${estado}`);
+                    console.log(`[executeDiaEntregaUpdate] valorAEnviar: ${valorAEnviar}`);
+                    
                     // ACTUALIZAR FECHA ESTIMADA DE ENTREGA (SOLO esta fecha, NO fecha_de_creacion_de_orden)
                     console.log(`\n[executeDiaEntregaUpdate] ========== ACTUALIZANDO FECHAS ==========`);
                     console.log(`[executeDiaEntregaUpdate] data.order:`, data.order);

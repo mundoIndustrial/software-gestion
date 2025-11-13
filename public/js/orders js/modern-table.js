@@ -1824,7 +1824,24 @@ initializeStatusDropdowns() {
             } else {
                 const span = cellContent.querySelector('.cell-text');
                 if (span && span.textContent.trim() !== String(value).trim()) {
-                    span.textContent = value;
+                    // Formatear fechas si es columna de fecha
+                    const dateColumns = [
+                        'fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega', 'inventario', 
+                        'insumos_y_telas', 'corte', 'bordado', 'estampado', 'costura', 'reflectivo', 
+                        'lavanderia', 'arreglos', 'marras', 'control_de_calidad', 'entrega', 'despacho'
+                    ];
+                    
+                    let displayValue = value;
+                    if (dateColumns.includes(column) && value) {
+                        // Si está en YYYY-MM-DD, convertir a DD/MM/YYYY
+                        if (String(value).match(/^\d{4}-\d{2}-\d{2}$/)) {
+                            const partes = String(value).split('-');
+                            displayValue = `${partes[2]}/${partes[1]}/${partes[0]}`;
+                            console.log(`✅ [WebSocket] Fecha formateada ${column}: ${value} → ${displayValue}`);
+                        }
+                    }
+                    
+                    span.textContent = displayValue;
                     hasChanges = true;
                     cell.style.backgroundColor = 'rgba(59, 130, 246, 0.3)';
                     setTimeout(() => {
