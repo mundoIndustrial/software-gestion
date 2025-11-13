@@ -7,6 +7,7 @@
         crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="{{ asset('css/orders styles/modern-table.css') }}">
     <link rel="stylesheet" href="{{ asset('css/orders styles/dropdown-styles.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/viewButtonDropdown.css') }}">
 
     <div class="table-container">
         <div class="table-header" id="tableHeader">
@@ -106,8 +107,8 @@
                                                 style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
                                                 Editar
                                             </button>
-                                            <button class="action-btn detail-btn" onclick="viewDetail({{ $orden->pedido }})"
-                                                title="Ver detalle"
+                                            <button class="action-btn detail-btn" onclick="createViewButtonDropdown({{ $orden->pedido }})"
+                                                title="Ver opciones"
                                                 style="background-color: green; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
                                                 Ver
                                             </button>
@@ -274,6 +275,14 @@
         window.modalContext = '{{ $modalContext }}';
         window.fetchUrl = '{{ $fetchUrl }}';
         window.updateUrl = '{{ $updateUrl }}';
+        
+        // Verificar que las funciones de tracking estén disponibles
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ Verificando funciones de tracking...');
+            console.log('createViewButtonDropdown disponible:', typeof createViewButtonDropdown === 'function');
+            console.log('openOrderTracking disponible:', typeof openOrderTracking === 'function');
+            console.log('closeOrderTracking disponible:', typeof closeOrderTracking === 'function');
+        });
     </script>
 
     <div class="order-registration-modal">
@@ -283,6 +292,9 @@
     <div class="order-detail-modal">
         <x-orders-components.order-detail-modal />
     </div>
+
+    <!-- Modal de Seguimiento del Pedido -->
+    <x-orders-components.order-tracking-modal />
 
     <!-- Modal de confirmación moderno para eliminar orden -->
     <div id="deleteConfirmationModal" class="delete-confirmation-modal" style="display: none;">
@@ -324,4 +336,5 @@
     <script src="{{ asset('js/orders js/order-navigation.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/pagination.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/realtime-listeners.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/orderTracking.js') }}?v={{ time() }}"></script>
 @endsection
