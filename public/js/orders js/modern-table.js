@@ -1832,9 +1832,15 @@ initializeStatusDropdowns() {
                     ];
                     
                     let displayValue = value;
-                    if (dateColumns.includes(column) && value) {
-                        // Si está en YYYY-MM-DD, convertir a DD/MM/YYYY
-                        if (String(value).match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    
+                    // Si es columna de fecha
+                    if (dateColumns.includes(column)) {
+                        // Si no hay valor (null, undefined, vacío), mostrar guión
+                        if (!value || value === null || value === undefined || value === '') {
+                            displayValue = '-';
+                            console.log(`✅ [WebSocket] Fecha limpiada ${column}: mostrar "-"`);
+                        } else if (String(value).match(/^\d{4}-\d{2}-\d{2}$/)) {
+                            // Si está en YYYY-MM-DD, convertir a DD/MM/YYYY
                             const partes = String(value).split('-');
                             displayValue = `${partes[2]}/${partes[1]}/${partes[0]}`;
                             console.log(`✅ [WebSocket] Fecha formateada ${column}: ${value} → ${displayValue}`);

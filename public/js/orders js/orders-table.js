@@ -684,20 +684,18 @@ function updateRowFromBroadcast(orderId, field, newValue, updatedFields, order, 
             diaEntregaDropdown.setAttribute('data-value', valorFinal);
             console.log(`✅ Día de entrega sincronizado en tiempo real: ${valorFinal || 'Seleccionar'} para orden ${orderId}`);
             
-            // IMPORTANTE: Actualizar la fecha estimada de entrega si viene en order
-            if (order && order.fecha_estimada_de_entrega) {
-                const fechaEstimadaCell = row.querySelector('td[data-column="fecha_estimada_de_entrega"] .cell-text');
-                if (fechaEstimadaCell) {
+            // IMPORTANTE: Actualizar la fecha estimada de entrega
+            const fechaEstimadaCell = row.querySelector('td[data-column="fecha_estimada_de_entrega"] .cell-text');
+            if (fechaEstimadaCell) {
+                // Si hay fecha estimada en order, mostrarla
+                if (order && order.fecha_estimada_de_entrega) {
                     const fechaFormateada = formatearFecha(order.fecha_estimada_de_entrega);
                     fechaEstimadaCell.textContent = fechaFormateada;
                     console.log(`📅 Fecha estimada actualizada desde localStorage: ${fechaFormateada}`);
-                }
-            } else if (valorFinal === '' || valorFinal === null) {
-                // Si se limpia el día de entrega, limpiar la fecha estimada
-                const fechaEstimadaCell = row.querySelector('td[data-column="fecha_estimada_de_entrega"] .cell-text');
-                if (fechaEstimadaCell) {
+                } else {
+                    // Si no hay fecha estimada (null, undefined, vacío), mostrar guión
                     fechaEstimadaCell.textContent = '-';
-                    console.log(`📅 Fecha estimada limpiada (día de entrega vacío)`);
+                    console.log(`📅 Fecha estimada limpiada (sin valor)`);
                 }
             }
             

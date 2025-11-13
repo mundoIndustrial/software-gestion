@@ -25,8 +25,8 @@ class TablaOriginalObserver
             $this->sincronizarClienteConHijos($orden);
         }
 
-        // Verificar si cambió 'dia_de_entrega' (SOLO dia_de_entrega, NO fecha_de_creacion)
-        if ($orden->isDirty('dia_de_entrega')) {
+        // Verificar si cambió 'dia_de_entrega' o 'fecha_de_creacion_de_orden'
+        if ($orden->isDirty('dia_de_entrega') || $orden->isDirty('fecha_de_creacion_de_orden')) {
             $this->actualizarFechaEstimadaEntrega($orden);
         }
     }
