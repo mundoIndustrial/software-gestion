@@ -7,6 +7,7 @@ use Carbon\Carbon;
 use App\Models\Festivo;
 use App\Traits\Auditable;
 use App\Observers\TablaOriginalObserver;
+use App\Services\FestivosColombiaService;
 
 class TablaOriginal extends Model
 {
@@ -114,7 +115,18 @@ class TablaOriginal extends Model
 
         $fechaInicio = Carbon::parse($this->fecha_de_creacion_de_orden);
         $diasRequeridos = intval($this->dia_de_entrega);
-        $festivos = $this->festivos ?: Festivo::pluck('fecha')->toArray();
+        
+        // Usar FestivosColombiaService en lugar de tabla BD para consistencia
+        $fechaFin = $fechaInicio->copy()->addDays($diasRequeridos * 3);
+        $festivos = FestivosColombiaService::festivosEnRango($fechaInicio, $fechaFin);
+        
+        \Log::info("[MODELO] calcularFechaEstimadaEntrega - Iniciando cálculo", [
+            'pedido' => $this->pedido,
+            'fecha_creacion' => $this->fecha_de_creacion_de_orden,
+            'dias_requeridos' => $diasRequeridos,
+            'cantidad_festivos_api' => count($festivos),
+            'festivos_api' => $festivos
+        ]);
 
         // Comenzar desde el día siguiente
         $fechaActual = $fechaInicio->copy()->addDay();
@@ -133,6 +145,13 @@ class TablaOriginal extends Model
             }
         }
 
+        \Log::info("[MODELO] calcularFechaEstimadaEntrega - Cálculo completado", [
+            'pedido' => $this->pedido,
+            'fecha_estimada' => $fechaActual->format('Y-m-d'),
+            'fecha_estimada_formateada' => $fechaActual->format('d/m/Y'),
+            'dias_contados' => $diasContados
+        ]);
+
         return $fechaActual;
     }
 
@@ -144,4 +163,5 @@ class TablaOriginal extends Model
         $fecha = $this->calcularFechaEstimadaEntrega();
         return $fecha ? $fecha->format('d/m/Y') : null;
     }
+
 }

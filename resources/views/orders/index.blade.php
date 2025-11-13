@@ -150,14 +150,28 @@
                                                         <span class="cell-text">
                                                             @if($key === 'total_de_dias_')
                                                                 {{ $totalDiasCalculados[$orden->pedido] ?? 'N/A' }}
-                                                            @elseif($key === 'fecha_estimada_de_entrega')
-                                                                {{ $orden->getFechaEstimadaEntregaFormattedAttribute() ?? '-' }}
-                                                            @elseif(in_array($key, ['fecha_de_creacion_de_orden', 'inventario', 'insumos_y_telas', 'corte', 'bordado', 'estampado', 'costura', 'reflectivo', 'lavanderia', 'arreglos', 'marras', 'control_de_calidad', 'entrega']))
+                                                            @elseif(in_array($key, ['fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega', 'inventario', 'insumos_y_telas', 'corte', 'bordado', 'estampado', 'costura', 'reflectivo', 'lavanderia', 'arreglos', 'marras', 'control_de_calidad', 'entrega']))
+                                                                {{-- Formatear TODAS las columnas de fecha a DD/MM/YYYY --}}
                                                                 @php
                                                                     try {
-                                                                        echo !empty($valor) ? \Carbon\Carbon::parse($valor)->format('d/m/Y') : '';
+                                                                        $fechaFormateada = !empty($valor) ? \Carbon\Carbon::parse($valor)->format('d/m/Y') : '';
+                                                                        echo $fechaFormateada;
+                                                                        // Log para debugging
+                                                                        if ($key === 'fecha_de_creacion_de_orden' || $key === 'fecha_estimada_de_entrega') {
+                                                                            \Log::info("BLADE: Formateando fecha", [
+                                                                                'pedido' => $orden->pedido,
+                                                                                'columna' => $key,
+                                                                                'valor_original' => $valor,
+                                                                                'valor_formateado' => $fechaFormateada
+                                                                            ]);
+                                                                        }
                                                                     } catch (\Exception $e) {
                                                                         echo $valor;
+                                                                        \Log::warning("BLADE: Error formateando fecha", [
+                                                                            'columna' => $key,
+                                                                            'valor' => $valor,
+                                                                            'error' => $e->getMessage()
+                                                                        ]);
                                                                     }
                                                                 @endphp
                                                             @else

@@ -1,4 +1,96 @@
+console.log('✅ orders-table.js cargado - Versión: ' + new Date().getTime());
+
 const updateDebounceMap = new Map();
+
+/**
+ * Función helper para formatear fechas
+ * Convierte YYYY-MM-DD a DD/MM/YYYY
+ * También maneja Date objects
+ * Lista de columnas de fecha conocidas
+ */
+const COLUMNAS_FECHA = [
+    'fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega', 'inventario', 
+    'insumos_y_telas', 'corte', 'bordado', 'estampado', 'costura', 'reflectivo', 
+    'lavanderia', 'arreglos', 'marras', 'control_de_calidad', 'entrega', 'despacho'
+];
+
+function formatearFecha(fecha, columna = 'desconocida') {
+    console.log(`[formatearFecha] Entrada: "${fecha}" (tipo: ${typeof fecha}, columna: ${columna})`);
+    
+    if (!fecha) {
+        console.log(`[formatearFecha] Fecha vacía, retornando: ${fecha}`);
+        return fecha;
+    }
+    
+    // Si es un Date object, convertir a string YYYY-MM-DD primero
+    if (fecha instanceof Date) {
+        const year = fecha.getFullYear();
+        const month = String(fecha.getMonth() + 1).padStart(2, '0');
+        const day = String(fecha.getDate()).padStart(2, '0');
+        fecha = `${year}-${month}-${day}`;
+        console.log(`[formatearFecha] Date object convertido a: ${fecha}`);
+    }
+    
+    if (typeof fecha !== 'string') {
+        console.log(`[formatearFecha] No es string, retornando tal cual: ${fecha}`);
+        return fecha;
+    }
+    
+    // Si ya está en formato DD/MM/YYYY, devolverla tal cual
+    // (El servidor ahora retorna fechas en este formato)
+    if (fecha.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+        console.log(`[formatearFecha] ✅ Ya está en DD/MM/YYYY (formato correcto): ${fecha}`);
+        return fecha;
+    }
+    
+    // Si está en formato YYYY-MM-DD, convertir
+    if (fecha.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const partes = fecha.split('-');
+        if (partes.length === 3) {
+            const resultado = `${partes[2]}/${partes[1]}/${partes[0]}`;
+            console.log(`[formatearFecha] Convertido YYYY-MM-DD → DD/MM/YYYY: ${fecha} → ${resultado}`);
+            return resultado;
+        }
+    }
+    
+    // Si está en formato YYYY/MM/DD (incorrecto), convertir a DD/MM/YYYY
+    if (fecha.match(/^\d{4}\/\d{2}\/\d{2}$/)) {
+        const partes = fecha.split('/');
+        if (partes.length === 3) {
+            const resultado = `${partes[2]}/${partes[1]}/${partes[0]}`;
+            console.log(`[formatearFecha] ⚠️ Convertido YYYY/MM/DD → DD/MM/YYYY: ${fecha} → ${resultado}`);
+            return resultado;
+        }
+    }
+    
+    console.log(`[formatearFecha] Formato no reconocido, retornando tal cual: ${fecha}`);
+    return fecha;
+}
+
+/**
+ * Función para NO formatear fechas que ya vienen formateadas del servidor
+ * Simplemente retorna el valor tal cual si ya está en DD/MM/YYYY
+ */
+function asegurarFormatoFecha(fecha) {
+    if (!fecha || typeof fecha !== 'string') {
+        return fecha;
+    }
+    
+    // Si ya está en DD/MM/YYYY, retornar tal cual
+    if (fecha.match(/^\d{2}\/\d{2}\/\d{4}$/)) {
+        return fecha;
+    }
+    
+    // Si no, intentar formatear
+    return formatearFecha(fecha);
+}
+
+/**
+ * Función para verificar si una columna es de fecha
+ */
+function esColumnaFecha(column) {
+    return COLUMNAS_FECHA.includes(column);
+}
 
 // Función para recargar la tabla de pedidos
 async function recargarTablaPedidos() {
@@ -189,6 +281,11 @@ async function recargarTablaPedidos() {
                         span.className = 'cell-text';
                         if (column === 'total_de_dias_') {
                             span.textContent = totalDias;
+                        } else if (esColumnaFecha(column)) {
+                            // Formatear cualquier columna de fecha
+                            const fechaFormateada = formatearFecha(valor, column) || '-';
+                            console.log(`[recargarTablaPedidos] Orden ${orden.pedido}, Columna: ${column}, Valor original: "${valor}", Formateado: "${fechaFormateada}"`);
+                            span.textContent = fechaFormateada;
                         } else {
                             span.textContent = valor;
                         }
@@ -587,6 +684,21 @@ function updateRowFromBroadcast(orderId, field, newValue, updatedFields, order, 
             diaEntregaDropdown.setAttribute('data-value', valorFinal);
             console.log(`✅ Día de entrega sincronizado en tiempo real: ${valorFinal || 'Seleccionar'} para orden ${orderId}`);
             
+            // IMPORTANTE: Actualizar la fecha estimada de entrega
+            const fechaEstimadaCell = row.querySelector('td[data-column="fecha_estimada_de_entrega"] .cell-text');
+            if (fechaEstimadaCell) {
+                // Si hay fecha estimada en order, mostrarla
+                if (order && order.fecha_estimada_de_entrega) {
+                    const fechaFormateada = formatearFecha(order.fecha_estimada_de_entrega);
+                    fechaEstimadaCell.textContent = fechaFormateada;
+                    console.log(`📅 Fecha estimada actualizada desde localStorage: ${fechaFormateada}`);
+                } else {
+                    // Si no hay fecha estimada (null, undefined, vacío), mostrar guión
+                    fechaEstimadaCell.textContent = '-';
+                    console.log(`📅 Fecha estimada limpiada (sin valor)`);
+                }
+            }
+            
             // IMPORTANTE: Actualizar el color de la fila cuando cambia el día de entrega
             if (totalDiasCalculados && order) {
                 const totalDias = totalDiasCalculados[orderId] || 0;
@@ -627,17 +739,34 @@ function updateRowFromBroadcast(orderId, field, newValue, updatedFields, order, 
         // Para otros campos (celdas editables)
         const cell = row.querySelector(`td[data-column="${field}"] .cell-text`);
         if (cell) {
-            cell.textContent = newValue;
+            // Formatear si es una columna de fecha
+            let displayValue = newValue;
+            if (esColumnaFecha(field)) {
+                displayValue = formatearFecha(newValue);
+            }
+            cell.textContent = displayValue;
             cell.closest('.cell-content').title = newValue;
         }
     }
 
     // Actualizar campos relacionados (fechas, etc.)
+    // IMPORTANTE: NO actualizar fecha_de_creacion_de_orden en tiempo real
     if (updatedFields) {
         for (const [updateField, updateValue] of Object.entries(updatedFields)) {
+            // Saltar fecha de creación - nunca debe cambiar en tiempo real
+            if (updateField === 'fecha_de_creacion_de_orden') {
+                console.log(`⚠️ Ignorando actualización de fecha_de_creacion_de_orden (no debe cambiar)`);
+                continue;
+            }
+            
             const updateCell = row.querySelector(`td[data-column="${updateField}"] .cell-text`);
             if (updateCell) {
-                updateCell.textContent = updateValue;
+                // Formatear si es una columna de fecha
+                let displayValue = updateValue;
+                if (esColumnaFecha(updateField)) {
+                    displayValue = formatearFecha(updateValue);
+                }
+                updateCell.textContent = displayValue;
             }
         }
     }
@@ -1244,8 +1373,8 @@ function actualizarOrdenEnTabla(orden) {
             const span = cellContent.querySelector('.cell-text');
             if (span) {
                 let displayValue = value;
-                if (column === 'fecha_de_creacion_de_orden' && value) {
-                    displayValue = new Date(value).toLocaleDateString('es-ES');
+                if (esColumnaFecha(column) && value) {
+                    displayValue = formatearFecha(value);
                 }
 
                 if (span.textContent.trim() !== String(displayValue).trim()) {
@@ -1442,6 +1571,10 @@ function executeDiaEntregaUpdate(orderId, newDias, oldDias, dropdown) {
     // Si newDias es vacío o null, enviar null; sino convertir a entero
     const valorAEnviar = (newDias === '' || newDias === null) ? null : parseInt(newDias);
     
+    console.log(`\n[executeDiaEntregaUpdate] ========== INICIANDO ACTUALIZACIÓN ==========`);
+    console.log(`[executeDiaEntregaUpdate] Orden: ${orderId}`);
+    console.log(`[executeDiaEntregaUpdate] Días antiguos: ${oldDias}, Días nuevos: ${newDias}, Valor a enviar: ${valorAEnviar}`);
+    
     fetch(`${window.updateUrl}/${orderId}`, {
         method: 'PATCH',
         headers: {
@@ -1495,27 +1628,56 @@ function executeDiaEntregaUpdate(orderId, newDias, oldDias, dropdown) {
                     const totalDias = data.totalDiasCalculados[orderId] || 0;
                     const estado = data.order?.estado || '';
                     
-                    // ACTUALIZAR FECHA ESTIMADA DE ENTREGA
+                    console.log(`\n[executeDiaEntregaUpdate] ========== DATOS PARA COLOR ==========`);
+                    console.log(`[executeDiaEntregaUpdate] totalDiasCalculados:`, data.totalDiasCalculados);
+                    console.log(`[executeDiaEntregaUpdate] totalDias para orden ${orderId}: ${totalDias}`);
+                    console.log(`[executeDiaEntregaUpdate] estado: ${estado}`);
+                    console.log(`[executeDiaEntregaUpdate] valorAEnviar: ${valorAEnviar}`);
+                    
+                    // ACTUALIZAR FECHA ESTIMADA DE ENTREGA (SOLO esta fecha, NO fecha_de_creacion_de_orden)
+                    console.log(`\n[executeDiaEntregaUpdate] ========== ACTUALIZANDO FECHAS ==========`);
+                    console.log(`[executeDiaEntregaUpdate] data.order:`, data.order);
+                    console.log(`[executeDiaEntregaUpdate] fecha_estimada_de_entrega (BD): ${data.order?.fecha_estimada_de_entrega}`);
+                    console.log(`[executeDiaEntregaUpdate] fecha_de_creacion_de_orden (BD): ${data.order?.fecha_de_creacion_de_orden}`);
+                    
                     if (data.order && data.order.fecha_estimada_de_entrega) {
                         const fechaEstimadaCell = row.querySelector('td[data-column="fecha_estimada_de_entrega"] .cell-text');
                         if (fechaEstimadaCell) {
-                            // Formatear fecha de YYYY-MM-DD a DD/MM/YYYY
-                            let fechaFormateada = data.order.fecha_estimada_de_entrega;
-                            if (fechaFormateada.includes('-')) {
-                                const partes = fechaFormateada.split('-');
-                                // partes[0] = YYYY, partes[1] = MM, partes[2] = DD
-                                fechaFormateada = `${partes[2]}/${partes[1]}/${partes[0]}`;
-                            }
+                            console.log(`[executeDiaEntregaUpdate] Buscando celda fecha_estimada_de_entrega...`);
+                            // El servidor ya retorna la fecha formateada en DD/MM/YYYY
+                            const fechaFormateada = asegurarFormatoFecha(data.order.fecha_estimada_de_entrega);
+                            console.log(`[executeDiaEntregaUpdate] Celda encontrada, actualizando con: ${fechaFormateada}`);
                             fechaEstimadaCell.textContent = fechaFormateada;
-                            console.log(`📅 Fecha estimada actualizada: ${fechaFormateada} (desde ${data.order.fecha_estimada_de_entrega})`);
+                            console.log(`📅 Fecha estimada actualizada: ${data.order.fecha_estimada_de_entrega} → ${fechaFormateada}`);
+                        } else {
+                            console.log(`[executeDiaEntregaUpdate] ❌ Celda fecha_estimada_de_entrega NO encontrada`);
                         }
                     } else {
                         // Si no hay fecha estimada, limpiar la celda
                         const fechaEstimadaCell = row.querySelector('td[data-column="fecha_estimada_de_entrega"] .cell-text');
                         if (fechaEstimadaCell) {
                             fechaEstimadaCell.textContent = '-';
+                            console.log(`📅 Fecha estimada limpiada (sin valor)`);
                         }
                     }
+                    
+                    // PROTECCIÓN: Asegurar que fecha_de_creacion_de_orden NO se modifica
+                    const fechaCreacionCell = row.querySelector('td[data-column="fecha_de_creacion_de_orden"] .cell-text');
+                    if (fechaCreacionCell) {
+                        console.log(`[executeDiaEntregaUpdate] Fecha creación actual en tabla: ${fechaCreacionCell.textContent}`);
+                        console.log(`🔒 Protección: fecha_de_creacion_de_orden NO se modifica (${data.order?.fecha_de_creacion_de_orden})`);
+                        
+                        // Asegurar que la celda tenga el formato correcto DD/MM/YYYY
+                        const fechaActual = fechaCreacionCell.textContent;
+                        if (fechaActual && fechaActual.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                            // Si está en YYYY-MM-DD, convertir a DD/MM/YYYY
+                            const partes = fechaActual.split('-');
+                            const fechaFormateada = `${partes[2]}/${partes[1]}/${partes[0]}`;
+                            fechaCreacionCell.textContent = fechaFormateada;
+                            console.log(`✅ Fecha de creación formateada: ${fechaActual} → ${fechaFormateada}`);
+                        }
+                    }
+                    // NO tocar la celda de fecha_de_creacion_de_orden
                     
                     // Remover todas las clases condicionales
                     row.classList.remove('row-delivered', 'row-anulada', 'row-warning', 'row-danger-light', 'row-secondary', 'row-dia-entrega-warning', 'row-dia-entrega-danger', 'row-dia-entrega-critical');
