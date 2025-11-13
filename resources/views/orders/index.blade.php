@@ -100,20 +100,20 @@
                                 @endphp
                                 <tr class="table-row {{ $conditionalClass }}" data-order-id="{{ $orden->pedido }}">
                                     <td class="table-cell acciones-column" style="min-width: 220px !important;">
-                                        <div class="cell-content" style="display: flex; gap: 4px; flex-wrap: nowrap; align-items: center; justify-content: flex-start;">
+                                        <div class="cell-content" style="display: flex; gap: 8px; flex-wrap: nowrap; align-items: center; justify-content: flex-start; padding: 4px 0;">
                                             <button class="action-btn edit-btn" onclick="openEditModal({{ $orden->pedido }})"
                                                 title="Editar orden"
-                                                style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 4px 6px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
+                                                style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
                                                 Editar
                                             </button>
                                             <button class="action-btn detail-btn" onclick="viewDetail({{ $orden->pedido }})"
                                                 title="Ver detalle"
-                                                style="background-color: green; color: white; border: none; padding: 4px 6px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
+                                                style="background-color: green; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
                                                 Ver
                                             </button>
                                             <button class="action-btn delete-btn" onclick="deleteOrder({{ $orden->pedido }})"
                                                 title="Eliminar orden"
-                                                style="background-color:#f84c4cff ; color: white; border: none; padding: 4px 6px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
+                                                style="background-color:#f84c4cff ; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
                                                 Borrar
                                             </button>
                                         </div>

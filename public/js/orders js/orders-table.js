@@ -93,21 +93,21 @@ async function recargarTablaPedidos() {
                 accionesTd.style.minWidth = '200px';
                 const accionesDiv = document.createElement('div');
                 accionesDiv.className = 'cell-content';
-                accionesDiv.style.cssText = 'display: flex; gap: 4px; flex-wrap: wrap;';
+                accionesDiv.style.cssText = 'display: flex; gap: 8px; flex-wrap: nowrap; align-items: center; justify-content: flex-start; padding: 4px 0;';
                 accionesDiv.innerHTML = `
                     <button class="action-btn edit-btn" onclick="openEditModal(${orden.pedido})"
                         title="Editar orden"
-                        style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                        style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
                         Editar
                     </button>
                     <button class="action-btn detail-btn" onclick="viewDetail(${orden.pedido})"
                         title="Ver detalle"
-                        style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                        style="background-color: green; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
                         Ver
                     </button>
                     <button class="action-btn delete-btn" onclick="deleteOrder(${orden.pedido})"
                         title="Eliminar orden"
-                        style="background-color:#f84c4cff ; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                        style="background-color:#f84c4cff ; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
                         Borrar
                     </button>
                 `;
@@ -402,14 +402,15 @@ function executeAreaUpdate(orderId, newArea, oldArea, dropdown) {
                 console.log('Area actualizada correctamente');
                 window.consecutiveErrors = 0; // Resetear contador
                 
-                // Actualizar las celdas con las fechas actualizadas
+                // Actualizar las celdas con las fechas actualizadas y otros campos
                 if (data.updated_fields) {
                     const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
                     if (row) {
-                        for (const [field, date] of Object.entries(data.updated_fields)) {
+                        for (const [field, value] of Object.entries(data.updated_fields)) {
                             const cell = row.querySelector(`td[data-column="${field}"] .cell-text`);
                             if (cell) {
-                                cell.textContent = date;
+                                cell.textContent = value;
+                                cell.closest('.cell-content').title = value;
                             }
                         }
                     }
@@ -569,6 +570,13 @@ function updateRowFromBroadcast(orderId, field, newValue, updatedFields, order, 
         if (areaDropdown) {
             areaDropdown.value = newValue;
             areaDropdown.dataset.value = newValue;
+        }
+    } else if (field === 'encargados_entrega') {
+        // Actualizar el campo encargados_entrega cuando se sincroniza desde otra pestaña
+        const encargadosEntregaCell = row.querySelector('td[data-column="encargados_entrega"] .cell-text');
+        if (encargadosEntregaCell) {
+            encargadosEntregaCell.textContent = newValue;
+            encargadosEntregaCell.closest('.cell-content').title = newValue;
         }
     } else if (field === 'dia_de_entrega') {
         const diaEntregaDropdown = row.querySelector('.dia-entrega-dropdown');

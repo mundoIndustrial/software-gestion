@@ -487,6 +487,12 @@ class RegistroOrdenController extends Controller
                     $updates[$field] = now()->toDateString();
                     $updatedFields[$field] = now()->toDateString();
                 }
+                
+                // Si el área es "Entrega", copiar encargado_orden a encargados_entrega
+                if ($validatedData['area'] === 'Entrega' && !empty($orden->encargado_orden)) {
+                    $updates['encargados_entrega'] = $orden->encargado_orden;
+                    $updatedFields['encargados_entrega'] = $orden->encargado_orden;
+                }
             }
             if (array_key_exists('dia_de_entrega', $validatedData)) {
                 $updates['dia_de_entrega'] = $validatedData['dia_de_entrega'];

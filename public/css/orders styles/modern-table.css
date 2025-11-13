@@ -98,7 +98,12 @@ white-space: nowrap;
 	flex: 1;
 	min-width: 50px;
 	font-size: 11px;
-	padding: 4px 8px !important;
+	padding: 8px 12px !important;
+	height: 36px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0 4px;
 }
 
 .action-btn.edit-btn:hover {
@@ -415,28 +420,32 @@ white-space: nowrap;
 @media (max-width: 1200px) {
 	#tablaOrdenes thead th.acciones-column,
 	#tablaOrdenes tbody td.acciones-column {
-		min-width: 240px !important;
-		width: 240px !important;
-		max-width: 240px !important;
+		min-width: 260px !important;
+		width: 260px !important;
+		max-width: 260px !important;
 	}
 	
 	.action-btn {
 		font-size: 10px;
-		padding: 3px 6px !important;
+		padding: 8px 10px !important;
+		height: 36px;
+		margin: 0 3px;
 	}
 }
 
 @media (max-width: 992px) {
 	#tablaOrdenes thead th.acciones-column,
 	#tablaOrdenes tbody td.acciones-column {
-		min-width: 250px !important;
-		width: 250px !important;
-		max-width: 250px !important;
+		min-width: 270px !important;
+		width: 270px !important;
+		max-width: 270px !important;
 	}
 	
 	.action-btn {
 		font-size: 9px;
-		padding: 3px 5px !important;
+		padding: 8px 8px !important;
+		height: 36px;
+		margin: 0 3px;
 	}
 }
 
@@ -461,14 +470,16 @@ align-items: stretch;
 
 #tablaOrdenes thead th.acciones-column,
 #tablaOrdenes tbody td.acciones-column {
-	min-width: 250px !important;
-	width: 250px !important;
-	max-width: 250px !important;
+	min-width: 280px !important;
+	width: 280px !important;
+	max-width: 280px !important;
 }
 
 .action-btn {
 	font-size: 8px;
-	padding: 2px 4px !important;
+	padding: 8px 6px !important;
+	height: 36px;
+	margin: 0 2px;
 }
 
 }
