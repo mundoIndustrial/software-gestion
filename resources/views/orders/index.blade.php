@@ -99,21 +99,21 @@
                                     }
                                 @endphp
                                 <tr class="table-row {{ $conditionalClass }}" data-order-id="{{ $orden->pedido }}">
-                                    <td class="table-cell acciones-column" style="min-width: 200px !important;">
-                                        <div class="cell-content" style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                    <td class="table-cell acciones-column" style="min-width: 220px !important;">
+                                        <div class="cell-content" style="display: flex; gap: 8px; flex-wrap: nowrap; align-items: center; justify-content: flex-start; padding: 4px 0;">
                                             <button class="action-btn edit-btn" onclick="openEditModal({{ $orden->pedido }})"
                                                 title="Editar orden"
-                                                style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                                                style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
                                                 Editar
                                             </button>
                                             <button class="action-btn detail-btn" onclick="viewDetail({{ $orden->pedido }})"
                                                 title="Ver detalle"
-                                                style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                                                style="background-color: green; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
                                                 Ver
                                             </button>
                                             <button class="action-btn delete-btn" onclick="deleteOrder({{ $orden->pedido }})"
                                                 title="Eliminar orden"
-                                                style="background-color:#f84c4cff ; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                                                style="background-color:#f84c4cff ; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
                                                 Borrar
                                             </button>
                                         </div>
@@ -149,12 +149,28 @@
                                                         <span class="cell-text">
                                                             @if($key === 'total_de_dias_')
                                                                 {{ $totalDiasCalculados[$orden->pedido] ?? 'N/A' }}
-                                                            @elseif(in_array($key, ['fecha_de_creacion_de_orden', 'inventario', 'insumos_y_telas', 'corte', 'bordado', 'estampado', 'costura', 'reflectivo', 'lavanderia', 'arreglos', 'marras', 'control_de_calidad', 'entrega']))
+                                                            @elseif(in_array($key, ['fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega', 'inventario', 'insumos_y_telas', 'corte', 'bordado', 'estampado', 'costura', 'reflectivo', 'lavanderia', 'arreglos', 'marras', 'control_de_calidad', 'entrega']))
+                                                                {{-- Formatear TODAS las columnas de fecha a DD/MM/YYYY --}}
                                                                 @php
                                                                     try {
-                                                                        echo !empty($valor) ? \Carbon\Carbon::parse($valor)->format('d/m/Y') : '';
+                                                                        $fechaFormateada = !empty($valor) ? \Carbon\Carbon::parse($valor)->format('d/m/Y') : '';
+                                                                        echo $fechaFormateada;
+                                                                        // Log para debugging
+                                                                        if ($key === 'fecha_de_creacion_de_orden' || $key === 'fecha_estimada_de_entrega') {
+                                                                            \Log::info("BLADE: Formateando fecha", [
+                                                                                'pedido' => $orden->pedido,
+                                                                                'columna' => $key,
+                                                                                'valor_original' => $valor,
+                                                                                'valor_formateado' => $fechaFormateada
+                                                                            ]);
+                                                                        }
                                                                     } catch (\Exception $e) {
                                                                         echo $valor;
+                                                                        \Log::warning("BLADE: Error formateando fecha", [
+                                                                            'columna' => $key,
+                                                                            'valor' => $valor,
+                                                                            'error' => $e->getMessage()
+                                                                        ]);
                                                                     }
                                                                 @endphp
                                                             @else
@@ -220,7 +236,6 @@
             <div class="modal-body">
                 <div class="modal-search">
                     <div class="search-input-wrapper">
-                        <i class="fas fa-search search-icon"></i>
                         <input type="text" id="filterSearch" placeholder="Buscar valores..." style="color: black;">
                     </div>
                 </div>
@@ -320,6 +335,7 @@
 
     <script src="{{ asset('js/orders js/modern-table.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/orders-table.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/orders js/order-navigation.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/pagination.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/realtime-listeners.js') }}?v={{ time() }}"></script>
 @endsection

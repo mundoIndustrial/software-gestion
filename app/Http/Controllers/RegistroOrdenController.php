@@ -9,6 +9,7 @@ use App\Models\Festivo;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use App\Services\FestivosColombiaService;
+use Carbon\Carbon;
 
 class RegistroOrdenController extends Controller
 {
@@ -26,7 +27,7 @@ class RegistroOrdenController extends Controller
     {
         // Definir columnas de fecha
         $dateColumns = [
-            'fecha_de_creacion_de_orden', 'inventario', 'insumos_y_telas', 'corte',
+            'fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega', 'inventario', 'insumos_y_telas', 'corte',
             'bordado', 'estampado', 'costura', 'reflectivo', 'lavanderia',
             'arreglos', 'marras', 'control_de_calidad', 'entrega'
         ];
@@ -35,7 +36,7 @@ class RegistroOrdenController extends Controller
         if ($request->has('get_unique_values') && $request->column) {
             $column = $request->column;
         $allowedColumns = [
-            'pedido', 'estado', 'area', 'total_de_dias_', 'dia_de_entrega', 'cliente',
+            'pedido', 'estado', 'area', 'total_de_dias_', 'dia_de_entrega', 'fecha_estimada_de_entrega', 'cliente',
             'descripcion', 'cantidad', 'novedades', 'asesora', 'forma_de_pago',
             'fecha_de_creacion_de_orden', 'encargado_orden', 'dias_orden', 'inventario',
             'encargados_inventario', 'dias_inventario', 'insumos_y_telas', 'encargados_insumos',
@@ -108,7 +109,7 @@ class RegistroOrdenController extends Controller
 
                 // Whitelist de columnas permitidas para seguridad
                 $allowedColumns = [
-                    'id', 'estado', 'area', 'total_de_dias_', 'dia_de_entrega', 'pedido', 'cliente',
+                    'id', 'estado', 'area', 'total_de_dias_', 'dia_de_entrega', 'fecha_estimada_de_entrega', 'pedido', 'cliente',
                     'descripcion', 'cantidad', 'novedades', 'asesora', 'forma_de_pago',
                     'fecha_de_creacion_de_orden', 'encargado_orden', 'dias_orden', 'inventario',
                     'encargados_inventario', 'dias_inventario', 'insumos_y_telas', 'encargados_insumos',
@@ -487,6 +488,15 @@ class RegistroOrdenController extends Controller
                     $updates[$field] = now()->toDateString();
                     $updatedFields[$field] = now()->toDateString();
                 }
+                
+                // Si el área es "Entrega", copiar encargado_orden a encargados_entrega
+                if ($validatedData['area'] === 'Entrega' && !empty($orden->encargado_orden)) {
+                    $updates['encargados_entrega'] = $orden->encargado_orden;
+                    $updatedFields['encargados_entrega'] = $orden->encargado_orden;
+                }
+            }
+            if (array_key_exists('dia_de_entrega', $validatedData)) {
+                $updates['dia_de_entrega'] = $validatedData['dia_de_entrega'];
             }
             if (array_key_exists('dia_de_entrega', $validatedData)) {
                 $updates['dia_de_entrega'] = $validatedData['dia_de_entrega'];
@@ -563,11 +573,74 @@ class RegistroOrdenController extends Controller
 
             // Obtener la orden actualizada para retornar todos los campos
             $ordenActualizada = TablaOriginal::where('pedido', $pedido)->first();
+            
+            // Preparar datos de la orden para retornar
+            $ordenData = $ordenActualizada->toArray();
+            
+            // Formatear TODAS las columnas de fecha a DD/MM/YYYY para el frontend
+            $dateColumns = [
+                'fecha_de_creacion_de_orden',
+                'fecha_estimada_de_entrega',
+                'inventario',
+                'insumos_y_telas',
+                'corte',
+                'bordado',
+                'estampado',
+                'costura',
+                'reflectivo',
+                'lavanderia',
+                'arreglos',
+                'marras',
+                'control_de_calidad',
+                'entrega',
+                'despacho'
+            ];
+            
+            foreach ($dateColumns as $column) {
+                // Verificar si la columna existe y tiene valor
+                if (isset($ordenData[$column]) && $ordenData[$column] !== null && $ordenData[$column] !== '') {
+                    try {
+                        $valorOriginal = $ordenData[$column];
+                        // Parsear y formatear la fecha
+                        $fechaParsed = \Carbon\Carbon::parse($valorOriginal);
+                        $ordenData[$column] = $fechaParsed->format('d/m/Y');
+                        
+                        \Log::info("CONTROLADOR: Fecha formateada", [
+                            'columna' => $column,
+                            'original' => $valorOriginal,
+                            'formateada' => $ordenData[$column]
+                        ]);
+                    } catch (\Exception $e) {
+                        \Log::warning("CONTROLADOR: Error formateando fecha", [
+                            'columna' => $column,
+                            'valor' => $ordenData[$column] ?? 'null',
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+            }
+            
+            // Log DESPUÉS del formateo
+            \Log::info("\n========== CONTROLADOR: ORDEN ACTUALIZADA (FORMATEADA) ==========", [
+                'pedido' => $pedido,
+                'fecha_de_creacion_de_orden' => $ordenData['fecha_de_creacion_de_orden'] ?? 'N/A',
+                'fecha_estimada_de_entrega' => $ordenData['fecha_estimada_de_entrega'] ?? 'N/A',
+                'dia_de_entrega' => $ordenActualizada->dia_de_entrega,
+                'updated_fields' => $updatedFields
+            ]);
+            
+            \Log::info("CONTROLADOR: Datos que se retornan al cliente (FORMATEADOS)", [
+                'pedido' => $pedido,
+                'order_data_fechas' => [
+                    'fecha_de_creacion_de_orden' => $ordenData['fecha_de_creacion_de_orden'] ?? 'N/A',
+                    'fecha_estimada_de_entrega' => $ordenData['fecha_estimada_de_entrega'] ?? 'N/A'
+                ]
+            ]);
 
             return response()->json([
                 'success' => true,
                 'updated_fields' => $updatedFields,
-                'order' => $ordenActualizada,
+                'order' => $ordenData,
                 'totalDiasCalculados' => $this->calcularTotalDiasBatch([$ordenActualizada], Festivo::pluck('fecha')->toArray())
             ]);
         } catch (\Exception $e) {
@@ -1071,5 +1144,186 @@ class RegistroOrdenController extends Controller
                 'message' => 'Error al actualizar la orden: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Actualizar descripción y regenerar registros_por_orden basado en el contenido
+     */
+    public function updateDescripcionPrendas(Request $request)
+    {
+        try {
+            $validatedData = $request->validate([
+                'pedido' => 'required|integer',
+                'descripcion' => 'required|string'
+            ]);
+
+            $pedido = $validatedData['pedido'];
+            $nuevaDescripcion = $validatedData['descripcion'];
+
+            DB::beginTransaction();
+
+            // Actualizar la descripción en tabla_original
+            $orden = TablaOriginal::where('pedido', $pedido)->firstOrFail();
+            $orden->update(['descripcion' => $nuevaDescripcion]);
+
+            // Parsear la nueva descripción para extraer prendas y tallas
+            $prendas = $this->parseDescripcionToPrendas($nuevaDescripcion);
+            $mensaje = '';
+            $procesarRegistros = false;
+
+            // Verificar si se encontraron prendas válidas con el formato estructurado
+            if (!empty($prendas)) {
+                $totalTallasEncontradas = 0;
+                foreach ($prendas as $prenda) {
+                    $totalTallasEncontradas += count($prenda['tallas']);
+                }
+
+                if ($totalTallasEncontradas > 0) {
+                    $procesarRegistros = true;
+                    
+                    // Eliminar registros existentes en registros_por_orden
+                    DB::table('registros_por_orden')->where('pedido', $pedido)->delete();
+
+                    // Insertar nuevos registros basados en la descripción parseada
+                    foreach ($prendas as $prenda) {
+                        foreach ($prenda['tallas'] as $talla) {
+                            DB::table('registros_por_orden')->insert([
+                                'pedido' => $pedido,
+                                'cliente' => $orden->cliente,
+                                'prenda' => $prenda['nombre'],
+                                'descripcion' => $prenda['descripcion'] ?? '',
+                                'talla' => $talla['talla'],
+                                'cantidad' => $talla['cantidad'],
+                                'total_pendiente_por_talla' => $talla['cantidad'],
+                            ]);
+                        }
+                    }
+
+                    // Recalcular cantidad total
+                    $totalCantidad = 0;
+                    foreach ($prendas as $prenda) {
+                        foreach ($prenda['tallas'] as $talla) {
+                            $totalCantidad += $talla['cantidad'];
+                        }
+                    }
+                    $orden->update(['cantidad' => $totalCantidad]);
+                    
+                    $mensaje = "✅ Descripción actualizada y registros regenerados automáticamente. Se procesaron " . count($prendas) . " prenda(s) con " . $totalTallasEncontradas . " talla(s).";
+                } else {
+                    $mensaje = "⚠️ Descripción actualizada, pero no se encontraron tallas válidas. Los registros existentes se mantuvieron intactos.";
+                }
+            } else {
+                $mensaje = "📝 Descripción actualizada como texto libre. Para regenerar registros automáticamente, use el formato:\n\nPrenda 1: NOMBRE\nDescripción: detalles\nTallas: M:5, L:3";
+            }
+
+            // Invalidar caché
+            $this->invalidarCacheDias($pedido);
+
+            // Log news
+            News::create([
+                'event_type' => 'description_updated',
+                'description' => "Descripción y prendas actualizadas para pedido {$pedido}",
+                'user_id' => auth()->id(),
+                'pedido' => $pedido,
+                'metadata' => ['prendas_count' => count($prendas)]
+            ]);
+
+            DB::commit();
+
+            // Broadcast events
+            $ordenActualizada = TablaOriginal::where('pedido', $pedido)->first();
+            $registrosActualizados = DB::table('registros_por_orden')->where('pedido', $pedido)->get();
+            
+            broadcast(new \App\Events\OrdenUpdated($ordenActualizada, 'updated'));
+            broadcast(new \App\Events\RegistrosPorOrdenUpdated($pedido, $registrosActualizados, 'updated'));
+
+            return response()->json([
+                'success' => true,
+                'message' => $mensaje,
+                'prendas_procesadas' => count($prendas),
+                'registros_regenerados' => $procesarRegistros
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => '❌ Error de validación: Los datos proporcionados no son válidos. Verifique el formato e intente nuevamente.',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Error al actualizar descripción y prendas', [
+                'pedido' => $request->pedido ?? 'N/A',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => '🚨 Error interno del servidor: No se pudo actualizar la descripción y prendas. Por favor, intente nuevamente o contacte al administrador si el problema persiste.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Parsear descripción para extraer información de prendas y tallas
+     */
+    private function parseDescripcionToPrendas($descripcion)
+    {
+        $prendas = [];
+        $lineas = explode("\n", $descripcion);
+        $prendaActual = null;
+
+        foreach ($lineas as $linea) {
+            $linea = trim($linea);
+            if (empty($linea)) continue;
+
+            // Detectar inicio de nueva prenda (formato: "Prenda X: NOMBRE")
+            if (preg_match('/^Prenda\s+\d+:\s*(.+)$/i', $linea, $matches)) {
+                // Guardar prenda anterior si existe
+                if ($prendaActual !== null) {
+                    $prendas[] = $prendaActual;
+                }
+                
+                // Iniciar nueva prenda
+                $prendaActual = [
+                    'nombre' => trim($matches[1]),
+                    'descripcion' => '',
+                    'tallas' => []
+                ];
+            }
+            // Detectar descripción (formato: "Descripción: TEXTO")
+            elseif (preg_match('/^Descripción:\s*(.+)$/i', $linea, $matches)) {
+                if ($prendaActual !== null) {
+                    $prendaActual['descripcion'] = trim($matches[1]);
+                }
+            }
+            // Detectar tallas (formato: "Tallas: M:5, L:3, XL:2")
+            elseif (preg_match('/^Tallas:\s*(.+)$/i', $linea, $matches)) {
+                if ($prendaActual !== null) {
+                    $tallasStr = trim($matches[1]);
+                    $tallasPares = explode(',', $tallasStr);
+                    
+                    foreach ($tallasPares as $par) {
+                        $par = trim($par);
+                        if (preg_match('/^([^:]+):(\d+)$/', $par, $tallaMatches)) {
+                            $prendaActual['tallas'][] = [
+                                'talla' => trim($tallaMatches[1]),
+                                'cantidad' => intval($tallaMatches[2])
+                            ];
+                        }
+                    }
+                }
+            }
+        }
+
+        // Agregar la última prenda si existe
+        if ($prendaActual !== null) {
+            $prendas[] = $prendaActual;
+        }
+
+        return $prendas;
     }
 }

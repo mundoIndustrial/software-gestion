@@ -13,6 +13,11 @@ async function openEditModal(pedido) {
         currentEditOrderId = pedido;
         const modal = document.getElementById('orderEditModal');
         
+        // Guardar el overflow original del body antes de modificarlo
+        if (!window.originalBodyOverflow) {
+            window.originalBodyOverflow = document.body.style.overflow || getComputedStyle(document.body).overflow || '';
+        }
+        
         // Mostrar modal con animación
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
@@ -32,7 +37,16 @@ async function openEditModal(pedido) {
 function closeEditModal() {
     const modal = document.getElementById('orderEditModal');
     modal.style.display = 'none';
-    document.body.style.overflow = 'auto';
+    
+    // Restaurar el overflow original del body
+    if (window.originalBodyOverflow !== undefined) {
+        document.body.style.overflow = window.originalBodyOverflow;
+        // Limpiar la variable para la próxima vez
+        window.originalBodyOverflow = undefined;
+    } else {
+        // Fallback: remover el estilo inline para que use el CSS por defecto
+        document.body.style.overflow = '';
+    }
     
     // Restaurar el botón guardar a su estado original
     const guardarBtn = document.getElementById('edit_guardarBtn');
@@ -114,17 +128,20 @@ async function loadPrendas(pedido) {
         
         const registros = await response.json();
 
-        // Agrupar por prenda
+        // Agrupar por prenda + descripción (para diferenciar prendas con mismo nombre pero diferente descripción)
         const prendasMap = {};
         registros.forEach(registro => {
-            if (!prendasMap[registro.prenda]) {
-                prendasMap[registro.prenda] = {
+            // Crear clave única combinando nombre y descripción
+            const prendaKey = `${registro.prenda}|||${registro.descripcion || ''}`;
+            
+            if (!prendasMap[prendaKey]) {
+                prendasMap[prendaKey] = {
                     nombre: registro.prenda,
                     descripcion: registro.descripcion || '',
                     tallas: []
                 };
             }
-            prendasMap[registro.prenda].tallas.push({
+            prendasMap[prendaKey].tallas.push({
                 talla: registro.talla,
                 cantidad: registro.cantidad
             });
