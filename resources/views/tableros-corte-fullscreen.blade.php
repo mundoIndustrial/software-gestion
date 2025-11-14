@@ -632,6 +632,9 @@
     @vite(['resources/js/app.js'])
     
     <script>
+    // Variables globales para almacenar los filtros
+    let filterParams = {};
+    
     // Función para actualizar las tablas con datos JSON
     function updateCorteTablas(horasData, operariosData) {
         console.log('📊 Actualizando tablas con datos JSON', { horasData, operariosData });
@@ -729,12 +732,18 @@
     function fetchCorteData() {
         const url = new URL('{{ route("tableros.corte.dashboard") }}', window.location.origin);
         
-        // Agregar parámetros de filtro si existen
-        const params = new URLSearchParams(window.location.search);
-        if (params.has('start_date')) url.searchParams.set('start_date', params.get('start_date'));
-        if (params.has('end_date')) url.searchParams.set('end_date', params.get('end_date'));
-        if (params.has('specific_date')) url.searchParams.set('specific_date', params.get('specific_date'));
-        if (params.has('month')) url.searchParams.set('month', params.get('month'));
+        // Usar los filterParams globales (establecidos al cargar la página)
+        console.log('📤 Utilizando filterParams globales:', filterParams);
+        
+        // Agregar todos los parámetros al URL
+        Object.keys(filterParams).forEach(key => {
+            if (filterParams[key]) {
+                url.searchParams.set(key, filterParams[key]);
+                console.log(`  - ${key}: ${filterParams[key]}`);
+            }
+        });
+        
+        console.log('📤 URL completa:', url.toString());
         
         fetch(url.toString(), {
             headers: {
@@ -779,9 +788,55 @@
     // Inicializar cuando el DOM esté listo
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
+            // Extraer y guardar los filtros de la URL actual - SOLO los que existen
+            const params = new URLSearchParams(window.location.search);
+            filterParams = {};
+            
+            // Solo guardar parámetros que realmente existen
+            if (params.get('filter_type')) {
+                filterParams['filter_type'] = params.get('filter_type');
+                
+                // Según el tipo de filtro, guardar los parámetros correspondientes
+                if (filterParams['filter_type'] === 'day') {
+                    if (params.get('specific_date')) {
+                        filterParams['specific_date'] = params.get('specific_date');
+                    }
+                } else if (filterParams['filter_type'] === 'range') {
+                    if (params.get('start_date')) filterParams['start_date'] = params.get('start_date');
+                    if (params.get('end_date')) filterParams['end_date'] = params.get('end_date');
+                } else if (filterParams['filter_type'] === 'month') {
+                    if (params.get('month')) filterParams['month'] = params.get('month');
+                }
+            }
+            
+            console.log('🎯 Filtros iniciales cargados:', Object.keys(filterParams).length > 0 ? filterParams : 'NINGUNO - Mostrando TODOS los datos');
+            
             setTimeout(initializeCorteFullscreenRealtime, 1000);
         });
     } else {
+        // Extraer y guardar los filtros de la URL actual - SOLO los que existen
+        const params = new URLSearchParams(window.location.search);
+        filterParams = {};
+        
+        // Solo guardar parámetros que realmente existen
+        if (params.get('filter_type')) {
+            filterParams['filter_type'] = params.get('filter_type');
+            
+            // Según el tipo de filtro, guardar los parámetros correspondientes
+            if (filterParams['filter_type'] === 'day') {
+                if (params.get('specific_date')) {
+                    filterParams['specific_date'] = params.get('specific_date');
+                }
+            } else if (filterParams['filter_type'] === 'range') {
+                if (params.get('start_date')) filterParams['start_date'] = params.get('start_date');
+                if (params.get('end_date')) filterParams['end_date'] = params.get('end_date');
+            } else if (filterParams['filter_type'] === 'month') {
+                if (params.get('month')) filterParams['month'] = params.get('month');
+            }
+        }
+        
+        console.log('🎯 Filtros iniciales cargados:', Object.keys(filterParams).length > 0 ? filterParams : 'NINGUNO - Mostrando TODOS los datos');
+        
         setTimeout(initializeCorteFullscreenRealtime, 1000);
     }
     </script>

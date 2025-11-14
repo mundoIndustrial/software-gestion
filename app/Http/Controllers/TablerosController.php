@@ -784,6 +784,7 @@ class TablerosController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Registro actualizado correctamente.',
+                    'data' => $registro,
                     'debug' => [
                         'total_ms' => round($duration, 2),
                         'findOrFail_ms' => round($findDuration, 2),
@@ -894,7 +895,7 @@ class TablerosController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Registro actualizado correctamente.',
-                    'data' => [
+                    'data' => $request->section === 'corte' ? $registro : [
                         'tiempo_disponible' => $tiempo_disponible,
                         'meta' => $meta,
                         'eficiencia' => $eficiencia
@@ -921,6 +922,7 @@ class TablerosController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Registro actualizado correctamente.',
+                    'data' => $request->section === 'corte' ? $registro : null
                 ]);
             }
         } catch (\Exception $e) {
@@ -1007,12 +1009,11 @@ class TablerosController extends Controller
         };
 
         try {
-            $registroOriginal = $model::findOrFail($id);
-            
-            // Para corte, cargar las relaciones necesarias
-            if ($section === 'corte') {
-                $registroOriginal->load(['hora', 'operario', 'maquina', 'tela']);
-            }
+            // ⚡ OPTIMIZACIÓN: Cargar con relaciones solo si es corte
+            $relaciones = $section === 'corte' ? ['hora', 'operario', 'maquina', 'tela'] : [];
+            $registroOriginal = $relaciones 
+                ? $model::with($relaciones)->findOrFail($id)
+                : $model::findOrFail($id);
             
             // Crear un array con los datos del registro original
             $datosNuevos = $registroOriginal->toArray();
@@ -1022,12 +1023,18 @@ class TablerosController extends Controller
             unset($datosNuevos['created_at']);
             unset($datosNuevos['updated_at']);
             
-            // Crear el nuevo registro duplicado
+            // ⚡ OPTIMIZACIÓN: Remover relaciones del array antes de crear
+            // Las relaciones ya están guardadas en las foreign keys
+            foreach ($relaciones as $rel) {
+                unset($datosNuevos[$rel]);
+            }
+            
+            // Crear el nuevo registro duplicado (sin load adicional después)
             $registroDuplicado = $model::create($datosNuevos);
             
-            // Para corte, cargar las relaciones en el registro duplicado
-            if ($section === 'corte') {
-                $registroDuplicado->load(['hora', 'operario', 'maquina', 'tela']);
+            // ⚡ OPTIMIZACIÓN: Cargar relaciones solo una vez, DESPUÉS de crear
+            if ($relaciones) {
+                $registroDuplicado->load($relaciones);
             }
             
             // Emitir evento de creación via WebSocket para actualización en tiempo real
@@ -1397,17 +1404,42 @@ class TablerosController extends Controller
 
     public function getDashboardCorteData(Request $request)
     {
+        // Log de todos los parámetros recibidos (solo los que tienen valor)
+        $paramsRecibidos = array_filter($request->all(), function($value) {
+            return $value !== null && $value !== '';
+        });
+        
+        $hayFiltro = !empty($paramsRecibidos) && isset($paramsRecibidos['filter_type']);
+        \Log::info('Dashboard Corte API: Parámetros recibidos', [
+            'hay_filtro' => $hayFiltro,
+            'parametros' => $paramsRecibidos
+        ]);
+        
         // Obtener todos los registros de corte con relaciones
         $query = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela']);
-        
-        // Aplicar los mismos filtros que el fullscreen
         $registrosCorte = $query->get();
-        $registrosCorteFiltrados = $this->filtrarRegistrosPorFecha($registrosCorte, $request);
         
-        \Log::info('Dashboard Corte API: Registros obtenidos', [
-            'total' => $registrosCorteFiltrados->count(),
-            'filtro_type' => $request->get('filter_type', 'sin_filtro'),
+        \Log::info('Dashboard Corte API: Total registros antes de filtrar', [
+            'total' => $registrosCorte->count()
         ]);
+        
+        // Aplicar filtros solo si hay filtro_type
+        if ($hayFiltro) {
+            $registrosCorteFiltrados = $this->filtrarRegistrosPorFecha($registrosCorte, $request);
+            \Log::info('Dashboard Corte API: Registros FILTRADOS', [
+                'total' => $registrosCorteFiltrados->count(),
+                'filtro_type' => $request->get('filter_type'),
+                'specific_date' => $request->get('specific_date'),
+                'start_date' => $request->get('start_date'),
+                'end_date' => $request->get('end_date'),
+                'month' => $request->get('month'),
+            ]);
+        } else {
+            $registrosCorteFiltrados = $registrosCorte;
+            \Log::info('Dashboard Corte API: SIN FILTRO - Mostrando TODOS los registros', [
+                'total' => $registrosCorteFiltrados->count()
+            ]);
+        }
         
         // Calcular datos dinámicos para las tablas
         $horasData = $this->calcularProduccionPorHoras($registrosCorteFiltrados);

@@ -509,6 +509,34 @@ let currentRowId = null;
 let currentColumn = null;
 let currentAutocompleteListener = null;
 
+// 🗺️ Mapa para almacenar referencias a los registros por ID
+// Esto permite actualizar el objeto cuando se edita una celda
+const registrosMap = {
+    corte: {},
+    produccion: {},
+    polos: {}
+};
+
+// ⚡ OPTIMIZACIÓN: Debounce para actualizar seguimiento (evitar múltiples llamadas en rápida sucesión)
+const seguimientoDebounceTimers = {};
+
+function actualizarSeguimientoDebounced(section) {
+    // Cancelar el timeout anterior si existe
+    if (seguimientoDebounceTimers[section]) {
+        clearTimeout(seguimientoDebounceTimers[section]);
+    }
+    
+    // Esperar 500ms antes de recargar el seguimiento
+    // Si se llama de nuevo antes de que termine el timeout, se cancela el anterior
+    seguimientoDebounceTimers[section] = setTimeout(() => {
+        console.log(`📊 Actualizando seguimiento de ${section} después del debounce...`);
+        if (typeof recargarSeguimientoEspecifico === 'function') {
+            recargarSeguimientoEspecifico(section);
+        }
+        delete seguimientoDebounceTimers[section];
+    }, 500);
+}
+
 // ⚡ OPTIMIZACIÓN: Cachear búsquedas anteriores para evitar llamadas duplicadas
 const searchCache = {
     operario: {},
@@ -980,6 +1008,8 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(data => {
             console.log(`✅ Respuesta del servidor:`, data);
+            console.log(`🔍 data.data existe:`, !!data.data);
+            console.log(`🔍 data.data contenido:`, data.data);
             const totalTime = performance.now() - startTime;
             console.log(`⏱️ TIMINGS TOTALES:
             - Búsqueda: ${timings.searchRequest?.toFixed(2) || 'N/A'}ms
@@ -988,13 +1018,53 @@ document.addEventListener('DOMContentLoaded', function() {
             - TOTAL: ${totalTime.toFixed(2)}ms
             `);
             if (data.success) {
-                // 🎯 FIX: Actualizar la celda con el displayName CORRECTO
-                // Para hora_id, operario_id, maquina_id y tela_id, mostrar el nombre/valor, no el ID
-                if (['hora_id', 'operario_id', 'maquina_id', 'tela_id'].includes(currentColumn)) {
-                    // ⚡ IMPORTANTE: Usar displayName que ya tiene el nombre correcto
+                // 🎯 FIX: Si se cambió una relación (operario, máquina, tela), obtener el nombre actualizado del servidor
+                if (['operario_id', 'maquina_id', 'tela_id', 'hora_id'].includes(currentColumn) && data.data) {
+                    console.log(`🔍 Intentando extraer relación de data.data para columna: ${currentColumn}`);
+                    // El servidor devolvió el registro actualizado con las relaciones cargadas
+                    let displayValue = displayName;
+                    
+                    if (currentColumn === 'hora_id' && data.data.hora && typeof data.data.hora === 'object') {
+                        displayValue = data.data.hora.hora;
+                        console.log(`✅ Extraído hora: ${displayValue}`);
+                        // Actualizar el objeto local también
+                        if (registrosMap[section] && registrosMap[section][currentRowId]) {
+                            registrosMap[section][currentRowId].hora = data.data.hora;
+                        }
+                    } else if (currentColumn === 'operario_id' && data.data.operario && typeof data.data.operario === 'object') {
+                        displayValue = data.data.operario.name;
+                        console.log(`✅ Extraído operario: ${displayValue}`);
+                        // Actualizar el objeto local también
+                        if (registrosMap[section] && registrosMap[section][currentRowId]) {
+                            registrosMap[section][currentRowId].operario = data.data.operario;
+                        }
+                    } else if (currentColumn === 'maquina_id' && data.data.maquina && typeof data.data.maquina === 'object') {
+                        displayValue = data.data.maquina.nombre_maquina;
+                        console.log(`✅ Extraído maquina: ${displayValue}`);
+                        // Actualizar el objeto local también
+                        if (registrosMap[section] && registrosMap[section][currentRowId]) {
+                            registrosMap[section][currentRowId].maquina = data.data.maquina;
+                        }
+                    } else if (currentColumn === 'tela_id' && data.data.tela && typeof data.data.tela === 'object') {
+                        displayValue = data.data.tela.nombre_tela;
+                        console.log(`✅ Extraído tela: ${displayValue}`);
+                        // Actualizar el objeto local también
+                        if (registrosMap[section] && registrosMap[section][currentRowId]) {
+                            registrosMap[section][currentRowId].tela = data.data.tela;
+                        }
+                    } else {
+                        console.log(`⚠️ No se encontró relación en data.data. data.data.operario:`, data.data.operario, 'data.data.maquina:', data.data.maquina, 'data.data.tela:', data.data.tela, 'data.data.hora:', data.data.hora);
+                    }
+                    
+                    currentCell.dataset.value = displayValue;
+                    currentCell.textContent = displayValue;
+                    console.log(`✅ Celda confirmada con nombre desde servidor: ${displayValue}`);
+                } else if (['operario_id', 'maquina_id', 'tela_id', 'hora_id'].includes(currentColumn)) {
+                    console.log(`⚠️ No hay data.data para extraer, usando displayName: ${displayName}`);
+                    // Asegurar que se muestra el displayName (ya actualizado en optimistic update)
                     currentCell.dataset.value = displayName;
                     currentCell.textContent = displayName;
-                    console.log(`✅ Celda re-confirmada con: ${displayName} (es el nombre, no el ID)`);
+                    console.log(`✅ Celda confirmada con: ${displayName}`);
                 } else {
                     currentCell.dataset.value = newValue;
                     currentCell.textContent = formatDisplayValue(currentColumn, newValue);
@@ -1444,6 +1514,25 @@ function initializeRealtimeListeners() {
     console.log('=== TABLEROS - Inicializando Echo para tiempo real ===');
     console.log('window.Echo disponible:', !!window.Echo);
 
+    // 🗺️ Inicializar el mapa de registros con los datos que ya están en las tablas
+    // Esto es importante para que cuando se editen celdas, se actualice la relación correcta
+    const tables = document.querySelectorAll('table[data-section]');
+    tables.forEach(table => {
+        const section = table.dataset.section;
+        const rows = table.querySelectorAll('tbody tr[data-id]');
+        rows.forEach(row => {
+            const rowId = parseInt(row.dataset.id);
+            // Por ahora solo guardamos una referencia al row, se actualizará cuando recibamos WebSocket updates
+            if (!registrosMap[section]) {
+                registrosMap[section] = {};
+            }
+            // Estos se actualizarán cuando lleguen los eventos de tiempo real
+            // pero nos permite tener un registro incluso si solo hay datos en HTML
+        });
+    });
+    
+    console.log('✅ Mapa de registros inicializado. Contenido:', registrosMap);
+
     if (!window.Echo) {
         console.error('❌ Echo NO está disponible. Reintentando en 500ms...');
         setTimeout(initializeRealtimeListeners, 500);
@@ -1565,10 +1654,10 @@ function agregarRegistroTiempoReal(registro, section) {
     const table = document.querySelector(`table[data-section="${section}"]`);
     if (!table) {
         console.warn(`Tabla no encontrada para sección: ${section}`);
-        // Aún así, actualizar el seguimiento
+        // Aún así, actualizar el seguimiento con debounce
         console.log('📊 Actualizando seguimiento aunque no haya tabla visible...');
-        if (typeof recargarSeguimientoEspecifico === 'function') {
-            recargarSeguimientoEspecifico(section);
+        if (typeof actualizarSeguimientoDebounced === 'function') {
+            actualizarSeguimientoDebounced(section);
         }
         return;
     }
@@ -1585,19 +1674,15 @@ function agregarRegistroTiempoReal(registro, section) {
         console.log(`Registro ${registro.id} ya existe, actualizando...`);
         // Actualizar fila existente
         actualizarFilaExistente(existingRow, registro, section);
-        // También actualizar el seguimiento
-        console.log('📊 Actualizando seguimiento después de actualizar registro...');
-        if (typeof recargarSeguimientoEspecifico === 'function') {
-            recargarSeguimientoEspecifico(section);
+        // ⚡ OPTIMIZACIÓN: Actualizar el seguimiento con debounce (no inmediatamente)
+        if (typeof actualizarSeguimientoDebounced === 'function') {
+            actualizarSeguimientoDebounced(section);
         }
         return;
     }
     
-    // También actualizar el seguimiento cuando se agrega un nuevo registro
-    console.log('📊 Actualizando seguimiento después de agregar nuevo registro...');
-    if (typeof recargarSeguimientoEspecifico === 'function') {
-        recargarSeguimientoEspecifico(section);
-    }
+    // ⏳ NO actualizar el seguimiento ANTES de agregar - hacerlo DESPUÉS
+    // Esto evita múltiples fetches innecesarios
 
     // Crear nueva fila
     const row = document.createElement('tr');
@@ -1703,7 +1788,15 @@ function agregarRegistroTiempoReal(registro, section) {
         window.attachEditableCellListeners();
     }
 
+    // 🗺️ Guardar referencia al registro para poder actualizarlo si se edita
+    registrosMap[section][registro.id] = registro;
+
     console.log(`✅ Registro ${registro.id} agregado a la tabla de ${section}`);
+    
+    // ⚡ OPTIMIZACIÓN: Actualizar el seguimiento con debounce (no inmediatamente)
+    if (typeof actualizarSeguimientoDebounced === 'function') {
+        actualizarSeguimientoDebounced(section);
+    }
 }
 
 // Función auxiliar para actualizar fila existente
@@ -1764,6 +1857,9 @@ function actualizarFilaExistente(row, registro, section) {
     if (window.attachEditableCellListeners) {
         window.attachEditableCellListeners();
     }
+
+    // 🗺️ Actualizar referencia al registro en el mapa
+    registrosMap[section][registro.id] = registro;
 }
 
 // Función auxiliar para obtener columnas según sección
