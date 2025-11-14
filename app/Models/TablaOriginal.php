@@ -66,17 +66,17 @@ class TablaOriginal extends Model
 
     private function calcularDiasHabiles(Carbon $inicio, Carbon $fin, array $festivos): int
     {
-        $totalDays = $inicio->diffInDays($fin) + 1;
+        $totalDays = $inicio->diffInDays($fin);
+        
+        // Contar fines de semana
         $weekends = $this->countWeekends($inicio, $fin);
+        
+        // Contar festivos en el rango
         $holidaysInRange = count(array_filter($festivos, function ($festivo) use ($inicio, $fin) {
             return Carbon::parse($festivo)->between($inicio, $fin);
         }));
         
         $businessDays = $totalDays - $weekends - $holidaysInRange;
-        
-        // Adjust if start or end is weekend/holiday (but since we count inclusive, fine-tune)
-        if ($inicio->isWeekend() || in_array($inicio->toDateString(), $festivos)) $businessDays--;
-        if ($fin->isWeekend() || in_array($fin->toDateString(), $festivos)) $businessDays--;
         
         return max(0, $businessDays);
     }

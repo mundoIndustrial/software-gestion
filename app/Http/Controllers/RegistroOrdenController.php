@@ -733,10 +733,6 @@ class RegistroOrdenController extends Controller
     private function calcularTotalDiasBatchConCache(array $ordenes, array $festivos): array
     {
         $resultados = [];
-        $hoy = now()->format('Y-m-d');
-        
-        // Generar clave de caché global basada en festivos y fecha actual
-        $festivosCacheKey = md5(serialize($festivos));
 
         foreach ($ordenes as $orden) {
             $ordenPedido = $orden->pedido;
@@ -747,26 +743,24 @@ class RegistroOrdenController extends Controller
                 continue;
             }
 
-            // Generar clave única de caché para esta orden
-            $cacheKey = "orden_dias_{$ordenPedido}_{$orden->estado}_{$hoy}_{$festivosCacheKey}";
-            
-            // Intentar obtener del caché (TTL: 24 horas = 86400 segundos)
-            $dias = Cache::remember($cacheKey, 86400, function () use ($orden, $festivos) {
-                try {
-                    $fechaCreacion = \Carbon\Carbon::parse($orden->fecha_de_creacion_de_orden);
+            // DESACTIVADO: Caché deshabilitado para pruebas
+            // Calcular directamente sin caché
+            try {
+                $fechaCreacion = \Carbon\Carbon::parse($orden->fecha_de_creacion_de_orden);
 
-                    if ($orden->estado === 'Entregado') {
-                        $fechaEntrega = $orden->entrega ? \Carbon\Carbon::parse($orden->entrega) : null;
-                        return $fechaEntrega ? $this->calcularDiasHabilesBatch($fechaCreacion, $fechaEntrega, $festivos) : 0;
-                    } else {
-                        return $this->calcularDiasHabilesBatch($fechaCreacion, \Carbon\Carbon::now(), $festivos);
-                    }
-                } catch (\Exception $e) {
-                    return 0;
+                if ($orden->estado === 'Entregado') {
+                    // Usar la fecha de DESPACHO cuando el estado es Entregado
+                    $fechaDespacho = $orden->despacho ? \Carbon\Carbon::parse($orden->despacho) : null;
+                    $dias = $fechaDespacho ? $this->calcularDiasHabilesBatch($fechaCreacion, $fechaDespacho, $festivos) : 0;
+                } else {
+                    // Para órdenes en ejecución, contar hasta hoy
+                    $dias = $this->calcularDiasHabilesBatch($fechaCreacion, \Carbon\Carbon::now(), $festivos);
                 }
-            });
 
-            $resultados[$ordenPedido] = max(0, $dias);
+                $resultados[$ordenPedido] = max(0, $dias);
+            } catch (\Exception $e) {
+                $resultados[$ordenPedido] = 0;
+            }
         }
 
         return $resultados;
@@ -786,24 +780,27 @@ class RegistroOrdenController extends Controller
      */
     private function calcularDiasHabilesBatch(\Carbon\Carbon $inicio, \Carbon\Carbon $fin, array $festivos): int
     {
-        $totalDays = $inicio->diffInDays($fin) + 1;
+        $totalDays = $inicio->diffInDays($fin);
 
         // Contar fines de semana de forma vectorizada
         $weekends = $this->contarFinesDeSemanaBatch($inicio, $fin);
 
-        // Contar festivos en el rango
+        // Contar festivos en el rango (eliminar duplicados)
         $festivosEnRango = array_filter($festivos, function ($festivo) use ($inicio, $fin) {
             $fechaFestivo = \Carbon\Carbon::parse($festivo);
             return $fechaFestivo->between($inicio, $fin);
         });
 
-        $holidaysInRange = count($festivosEnRango);
+        // Eliminar duplicados de festivos
+        $festivosUnicos = [];
+        foreach ($festivosEnRango as $festivo) {
+            $fecha = \Carbon\Carbon::parse($festivo)->format('Y-m-d');
+            $festivosUnicos[$fecha] = $festivo;
+        }
+        
+        $holidaysInRange = count($festivosUnicos);
 
         $businessDays = $totalDays - $weekends - $holidaysInRange;
-
-        // BUG FIX: Eliminados ajustes que causaban doble resta de fines de semana
-        // Los fines de semana ya están contados en $weekends
-        // Los festivos ya están contados en $holidaysInRange
 
         return max(0, $businessDays);
     }
