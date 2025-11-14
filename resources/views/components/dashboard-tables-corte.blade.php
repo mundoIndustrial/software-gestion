@@ -160,10 +160,10 @@ function recargarDashboardCorte() {
             console.log('📅 Filtro fecha_fin:', fechaFinInput.value);
         }
         
-        // Si no hay filtros, usar fecha actual
+        // ⚡ IMPORTANTE: Si no hay filtros, NO filtrar por fecha
+        // Esto permite ver registros de cualquier fecha
         if (!params.has('fecha') && !params.has('fecha_inicio')) {
-            params.set('fecha', new Date().toISOString().split('T')[0]);
-            console.log('📅 Sin filtros, usando fecha actual');
+            console.log('📅 Sin filtros, mostrando todos los registros (sin filtro de fecha)');
         }
     }
     
@@ -311,6 +311,8 @@ function actualizarTablaOperariosCompleta(operarios) {
 
 // Listen for real-time updates with detailed debugging
 // Esperar a que Echo esté disponible (se inicializa en bootstrap.js)
+let recargarDashboardTimeout = null;
+
 function initializeCorteChannel() {
     console.log('=== DASHBOARD CORTE - Inicializando Echo ===');
     console.log('window.Echo disponible:', !!window.Echo);
@@ -329,18 +331,20 @@ function initializeCorteChannel() {
         });
         
         channel.listen('CorteRecordCreated', (e) => {
-            console.log('🎉 Evento CorteRecordCreated recibido!');
-            console.log('Datos del evento:', e);
-            console.log('Registro:', e.registro);
+            console.log('🎉 Evento CorteRecordCreated recibido en dashboard-tables-corte!');
             
-            // Recargar las tablas del dashboard (tanto para crear/actualizar como para eliminar)
-            console.log('Recargando tablas del dashboard...');
-            recargarDashboardCorte();
-        });
-        
-        // Listener para TODOS los eventos (debugging)
-        channel.listen('.App\\Events\\CorteRecordCreated', (e) => {
-            console.log('🔔 Evento recibido con nombre completo:', e);
+            // ⚡ DEBOUNCE: Evitar múltiples recargas en corto tiempo
+            // Cancelar el timeout anterior si existe
+            if (recargarDashboardTimeout) {
+                clearTimeout(recargarDashboardTimeout);
+            }
+            
+            // Programar recarga en 500ms (agrupa eventos cercanos)
+            recargarDashboardTimeout = setTimeout(() => {
+                console.log('Recargando tablas del dashboard (debounced)...');
+                recargarDashboardCorte();
+                recargarDashboardTimeout = null;
+            }, 500);
         });
         
         console.log('Listeners configurados. Esperando eventos...');

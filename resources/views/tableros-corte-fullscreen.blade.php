@@ -632,6 +632,126 @@
     @vite(['resources/js/app.js'])
     
     <script>
+    // Función para actualizar las tablas con datos JSON
+    function updateCorteTablas(horasData, operariosData) {
+        console.log('📊 Actualizando tablas con datos JSON', { horasData, operariosData });
+        
+        // Actualizar tabla de horas
+        const horasTable = document.querySelector('.table-section:nth-child(1) tbody');
+        if (horasTable && horasData && horasData.length) {
+            let html = '';
+            let totalCantidad = 0;
+            let totalMeta = 0;
+            
+            horasData.forEach(row => {
+                totalCantidad += row.cantidad;
+                totalMeta += row.meta;
+                const eficiencia = row.eficiencia;
+                const eficienciaClass = eficiencia >= 80 ? 'eficiencia-blue' 
+                    : (eficiencia >= 70 ? 'eficiencia-yellow' 
+                    : 'eficiencia-red');
+                
+                html += `<tr>
+                    <td class="name-cell">${row.hora}</td>
+                    <td>${Math.round(row.cantidad).toLocaleString()}</td>
+                    <td>${Math.round(row.meta).toLocaleString()}</td>
+                    <td class="eficiencia-cell ${eficienciaClass}">
+                        ${row.eficiencia > 0 ? row.eficiencia.toFixed(1) + '%' : '-'}
+                    </td>
+                </tr>`;
+            });
+            
+            // Agregar fila de totales
+            const eficienciaTotal = totalMeta > 0 ? (totalCantidad / totalMeta) * 100 : 0;
+            const eficienciaClassTotal = eficienciaTotal >= 80 ? 'eficiencia-blue' 
+                : (eficienciaTotal >= 70 ? 'eficiencia-yellow' 
+                : 'eficiencia-red');
+            
+            html += `<tr class="total-row">
+                <td class="name-cell">Suma total</td>
+                <td>${Math.round(totalCantidad).toLocaleString()}</td>
+                <td>${Math.round(totalMeta).toLocaleString()}</td>
+                <td class="eficiencia-cell ${eficienciaClassTotal}">
+                    ${eficienciaTotal.toFixed(1)}%
+                </td>
+            </tr>`;
+            
+            horasTable.innerHTML = html;
+            console.log('✅ Tabla de horas actualizada');
+        }
+        
+        // Actualizar tabla de operarios
+        const operariosTable = document.querySelector('.table-section:nth-child(2) tbody');
+        if (operariosTable && operariosData && operariosData.length) {
+            let html = '';
+            let totalCantidad = 0;
+            let totalMeta = 0;
+            
+            operariosData.forEach(row => {
+                totalCantidad += row.cantidad;
+                totalMeta += row.meta;
+                const eficiencia = row.eficiencia;
+                const eficienciaClass = eficiencia >= 80 ? 'eficiencia-blue' 
+                    : (eficiencia >= 70 ? 'eficiencia-yellow' 
+                    : 'eficiencia-red');
+                
+                html += `<tr>
+                    <td class="name-cell">${row.operario}</td>
+                    <td>${Math.round(row.cantidad).toLocaleString()}</td>
+                    <td>${Math.round(row.meta).toLocaleString()}</td>
+                    <td class="eficiencia-cell ${eficienciaClass}">
+                        ${row.eficiencia > 0 ? row.eficiencia.toFixed(1) + '%' : '-'}
+                    </td>
+                </tr>`;
+            });
+            
+            // Agregar fila de totales
+            const eficienciaTotal = totalMeta > 0 ? (totalCantidad / totalMeta) * 100 : 0;
+            const eficienciaClassTotal = eficienciaTotal >= 80 ? 'eficiencia-blue' 
+                : (eficienciaTotal >= 70 ? 'eficiencia-yellow' 
+                : 'eficiencia-red');
+            
+            html += `<tr class="total-row">
+                <td class="name-cell">Suma total</td>
+                <td>${Math.round(totalCantidad).toLocaleString()}</td>
+                <td>${Math.round(totalMeta).toLocaleString()}</td>
+                <td class="eficiencia-cell ${eficienciaClassTotal}">
+                    ${eficienciaTotal.toFixed(1)}%
+                </td>
+            </tr>`;
+            
+            operariosTable.innerHTML = html;
+            console.log('✅ Tabla de operarios actualizada');
+        }
+    }
+    
+    // Función para obtener datos del API
+    function fetchCorteData() {
+        const url = new URL('{{ route("tableros.corte.dashboard") }}', window.location.origin);
+        
+        // Agregar parámetros de filtro si existen
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('start_date')) url.searchParams.set('start_date', params.get('start_date'));
+        if (params.has('end_date')) url.searchParams.set('end_date', params.get('end_date'));
+        if (params.has('specific_date')) url.searchParams.set('specific_date', params.get('specific_date'));
+        if (params.has('month')) url.searchParams.set('month', params.get('month'));
+        
+        fetch(url.toString(), {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('✅ Datos obtenidos del API:', data);
+            updateCorteTablas(data.horas, data.operarios);
+        })
+        .catch(error => {
+            console.error('❌ Error al obtener datos del API:', error);
+        });
+    }
+    
     // Esperar a que Echo esté disponible
     function initializeCorteFullscreenRealtime() {
         console.log('=== CORTE FULLSCREEN - Inicializando tiempo real ===');
@@ -647,49 +767,10 @@
         // Canal de Corte
         window.Echo.channel('corte').listen('CorteRecordCreated', (e) => {
             console.log('🎉 Evento CorteRecordCreated recibido en fullscreen', e);
+            console.log('✏️ Actualizando tablas con nuevo registro...');
             
-            // Para cualquier cambio, recargar solo las tablas sin recargar toda la página
-            if (e.registro && e.registro.deleted) {
-                console.log('🗑️ Registro eliminado, actualizando tablas...');
-            } else {
-                console.log('✏️ Registro creado/actualizado, actualizando tablas...');
-            }
-            
-            // Recargar solo las tablas sin recargar toda la página
-            const url = new URL(window.location.href);
-            
-            fetch(url.toString(), {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'text/html'
-                }
-            })
-            .then(response => response.text())
-            .then(html => {
-                // Parsear el HTML recibido
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                
-                // Actualizar solo las tablas de datos
-                const newHorasTable = doc.querySelector('.table-section:nth-child(1) tbody');
-                const newOperariosTable = doc.querySelector('.table-section:nth-child(2) tbody');
-                
-                const currentHorasTable = document.querySelector('.table-section:nth-child(1) tbody');
-                const currentOperariosTable = document.querySelector('.table-section:nth-child(2) tbody');
-                
-                if (newHorasTable && currentHorasTable) {
-                    currentHorasTable.innerHTML = newHorasTable.innerHTML;
-                    console.log('✅ Tabla de horas actualizada');
-                }
-                
-                if (newOperariosTable && currentOperariosTable) {
-                    currentOperariosTable.innerHTML = newOperariosTable.innerHTML;
-                    console.log('✅ Tabla de operarios actualizada');
-                }
-            })
-            .catch(error => {
-                console.error('Error al actualizar tablas:', error);
-            });
+            // Recargar datos del API
+            fetchCorteData();
         });
 
         console.log('✅ Listener configurado en fullscreen de corte');

@@ -681,6 +681,12 @@
                 this.createKey = config.createKey;
                 this.onSelect = config.onSelect || (() => {});
                 
+                // ⚡ Cache local para búsquedas
+                this.searchCache = new Map();
+                this.cacheExpiry = 5 * 60 * 1000; // 5 minutos
+                this.currentAbortController = null;
+                this.searchTimeout = 5000; // 5 segundos máximo
+                
                 console.log('AutocompleteBase inicializado para:', config.inputId, 'con callback:', typeof this.onSelect);
                 
                 this.httpService = new HttpService();
@@ -751,7 +757,59 @@
             }
 
             async search(query) {
-                return await this.httpService.get(`${this.searchRoute}?q=${encodeURIComponent(query)}`);
+                // ⚡ Verificar cache
+                const cacheKey = `${this.searchRoute}:${query}`;
+                const cached = this.searchCache.get(cacheKey);
+                
+                if (cached && Date.now() - cached.timestamp < this.cacheExpiry) {
+                    console.log('📦 Cache hit para:', query);
+                    return cached.data;
+                }
+                
+                // ⚡ Cancelar búsqueda anterior si existe
+                if (this.currentAbortController) {
+                    this.currentAbortController.abort();
+                }
+                
+                // ⚡ Crear nuevo AbortController con timeout
+                this.currentAbortController = new AbortController();
+                const timeoutId = setTimeout(() => {
+                    this.currentAbortController.abort();
+                    console.warn('⏱️ Búsqueda cancelada por timeout (5s)');
+                }, this.searchTimeout);
+                
+                try {
+                    const response = await fetch(`${this.searchRoute}?q=${encodeURIComponent(query)}`, {
+                        signal: this.currentAbortController.signal,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'application/json'
+                        }
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // ⚡ Guardar en cache
+                    this.searchCache.set(cacheKey, {
+                        data: data,
+                        timestamp: Date.now()
+                    });
+                    
+                    return data;
+                } catch (error) {
+                    clearTimeout(timeoutId);
+                    if (error.name === 'AbortError') {
+                        console.warn('Búsqueda abortada');
+                        return { telas: [], maquinas: [], operarios: [] };
+                    }
+                    throw error;
+                }
             }
 
             renderSuggestions(data, query) {

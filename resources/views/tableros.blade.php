@@ -534,8 +534,17 @@ function hideLoading() {
     }
 }
 
+// ⚡ Flag para evitar múltiples aperturas del modal
+let modalOpening = false;
+
 // Función global para manejar doble click en celdas
 function handleCellDoubleClick() {
+    // ⚡ Evitar múltiples aperturas del modal
+    if (modalOpening) {
+        console.log('⏭️ Modal ya está abriéndose, ignorando doble clic');
+        return;
+    }
+    
     console.log('🖱️ Doble clic detectado en celda');
     currentCell = this;
     const row = this.closest('tr');
@@ -562,6 +571,7 @@ function handleCellDoubleClick() {
     
     console.log('Modal encontrado:', !!modal);
     if (modal) {
+        modalOpening = true;
         // Configurar título según la columna
         if (currentColumn === 'operario_id' || currentColumn === 'operario') {
             modalTitle.textContent = 'Editar Operario';
@@ -1098,6 +1108,8 @@ document.addEventListener('DOMContentLoaded', function() {
             modal.style.opacity = '0';
             modal.style.visibility = 'hidden';
         }
+        // ⚡ Resetear flag para permitir nuevas aperturas del modal
+        modalOpening = false;
         currentCell = null;
         currentRowId = null;
         currentColumn = null;
@@ -1520,6 +1532,14 @@ function initializeRealtimeListeners() {
     corteChannel.listen('CorteRecordCreated', (e) => {
         console.log('🎉 Evento CorteRecordCreated recibido!', e);
         
+        // ⚡ OPTIMIZACIÓN: Solo procesar si la tabla de corte está visible
+        // El dashboard-tables-corte.blade.php tiene su propio listener
+        const corteTable = document.querySelector('table[data-section="corte"]');
+        if (!corteTable) {
+            console.log('⏭️ Tabla de corte no visible, ignorando evento');
+            return;
+        }
+        
         // Si es un evento de eliminación
         if (e.registro && e.registro.deleted) {
             console.log('🗑️ Eliminando registro ID:', e.registro.id);
@@ -1529,9 +1549,6 @@ function initializeRealtimeListeners() {
                 row.style.opacity = '0';
                 setTimeout(() => row.remove(), 300);
             }
-            
-            // NO llamar a recargarDashboardCorte aquí
-            // El componente dashboard-tables-corte.blade.php ya tiene su propio listener
         } else {
             // Es un evento de creación o actualización
             agregarRegistroTiempoReal(e.registro, 'corte');
