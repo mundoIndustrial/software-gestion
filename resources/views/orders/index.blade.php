@@ -7,6 +7,7 @@
         crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="{{ asset('css/orders styles/modern-table.css') }}">
     <link rel="stylesheet" href="{{ asset('css/orders styles/dropdown-styles.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/viewButtonDropdown.css') }}">
 
     <div class="table-container">
         <div class="table-header" id="tableHeader">
@@ -107,21 +108,21 @@
                                     <td class="table-cell acciones-column" style="min-width: 220px !important;">
                                         <div class="cell-content" style="display: flex; gap: 8px; flex-wrap: nowrap; align-items: center; justify-content: flex-start; padding: 4px 0;">
                                             @if(auth()->user()->role && auth()->user()->role->name === 'supervisor')
-                                                <!-- Solo botón Ver para supervisores -->
-                                                <button class="action-btn detail-btn" onclick="viewDetail({{ $orden->pedido }})"
-                                                    title="Ver detalle"
+                                                <!-- Solo botón Ver para supervisores, usando el dropdown de opciones -->
+                                                <button class="action-btn detail-btn" onclick="createViewButtonDropdown({{ $orden->pedido }})"
+                                                    title="Ver opciones"
                                                     style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; flex: 1; min-width: 60px; height: 38px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3); transition: all 0.2s ease;">
                                                     <i class="fas fa-eye" style="margin-right: 6px;"></i> Ver
                                                 </button>
                                             @else
-                                                <!-- Botones completos para otros roles -->
+                                                <!-- Botones completos para otros roles con dropdown de opciones -->
                                                 <button class="action-btn edit-btn" onclick="openEditModal({{ $orden->pedido }})"
                                                     title="Editar orden"
                                                     style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
                                                     Editar
                                                 </button>
-                                                <button class="action-btn detail-btn" onclick="viewDetail({{ $orden->pedido }})"
-                                                    title="Ver detalle"
+                                                <button class="action-btn detail-btn" onclick="createViewButtonDropdown({{ $orden->pedido }})"
+                                                    title="Ver opciones"
                                                     style="background-color: green; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
                                                     Ver
                                                 </button>
@@ -332,6 +333,14 @@
         window.modalContext = '{{ $modalContext }}';
         window.fetchUrl = '{{ $fetchUrl }}';
         window.updateUrl = '{{ $updateUrl }}';
+        
+        // Verificar que las funciones de tracking estén disponibles
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ Verificando funciones de tracking...');
+            console.log('createViewButtonDropdown disponible:', typeof createViewButtonDropdown === 'function');
+            console.log('openOrderTracking disponible:', typeof openOrderTracking === 'function');
+            console.log('closeOrderTracking disponible:', typeof closeOrderTracking === 'function');
+        });
     </script>
 
     <div class="order-registration-modal">
@@ -341,6 +350,9 @@
     <div class="order-detail-modal">
         <x-orders-components.order-detail-modal />
     </div>
+
+    <!-- Modal de Seguimiento del Pedido -->
+    <x-orders-components.order-tracking-modal />
 
     <!-- Modal de confirmación moderno para eliminar orden -->
     <div id="deleteConfirmationModal" class="delete-confirmation-modal" style="display: none;">
@@ -382,4 +394,5 @@
     <script src="{{ asset('js/orders js/order-navigation.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/pagination.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/realtime-listeners.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/orderTracking.js') }}?v={{ time() }}"></script>
 @endsection
