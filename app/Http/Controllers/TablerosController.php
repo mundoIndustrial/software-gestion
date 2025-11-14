@@ -578,6 +578,13 @@ class TablerosController extends Controller
 
     public function store(Request $request)
     {
+        \Log::info('🟠 store (GENÉRICO) INICIADO', [
+            'all_data' => $request->all(),
+            'method' => $request->method(),
+            'route' => $request->route()->getName(),
+            'section' => $request->get('section')
+        ]);
+
         $request->validate([
             'registros' => 'required|array',
             'registros.*.fecha' => 'required|date',
@@ -750,21 +757,17 @@ class TablerosController extends Controller
             if ($soloRelacionesExternas) {
                 $registro->update($validated);
                 
-                // ⚡ IMPORTANTE: Cargar relaciones ANTES de hacer broadcast para que tengan datos completos
+                // ⚡ BROADCAST: Cargar relaciones y emitir evento
                 if ($request->section === 'corte') {
                     $registro->load(['hora', 'operario', 'maquina', 'tela']);
-                }
-                
-                // Emitir broadcast de forma NON-BLOCKING (no esperar)
-                try {
-                    if ($request->section === 'corte') {
+                    try {
                         broadcast(new CorteRecordCreated($registro));
+                    } catch (\Exception $e) {
+                        \Log::warning('Broadcast error: ' . $e->getMessage());
                     }
-                } catch (\Exception $e) {
-                    \Log::warning('Broadcast error: ' . $e->getMessage());
                 }
                 
-                // Retornar inmediatamente sin esperar al broadcast
+                // Retornar inmediatamente
                 $endTime = microtime(true);
                 $duration = ($endTime - $startTime) * 1000;
                 $findDuration = ($findStart - $validateStart) * 1000;
@@ -1065,6 +1068,11 @@ class TablerosController extends Controller
 
     public function storeCorte(Request $request)
     {
+        \Log::info('🔴 storeCorte INICIADO', [
+            'all_data' => $request->all(),
+            'method' => $request->method()
+        ]);
+
         $request->validate([
             'fecha' => 'required|date',
             'orden_produccion' => 'required|string',
@@ -1142,6 +1150,15 @@ class TablerosController extends Controller
                 $eficiencia = $meta == 0 ? 0 : $request->cantidad_producida / $meta;
             }
 
+            \Log::info('Corte - Calculando valores', [
+                'tiempo_disponible' => $tiempo_disponible,
+                'meta' => $meta,
+                'eficiencia' => $eficiencia,
+                'cantidad_producida' => $request->cantidad_producida,
+                'tiempo_ciclo' => $request->tiempo_ciclo,
+                'actividad' => $request->actividad
+            ]);
+
             $registro = RegistroPisoCorte::create([
                 'fecha' => $request->fecha,
                 // 'modulo' NO existe en registro_piso_corte
@@ -1167,6 +1184,13 @@ class TablerosController extends Controller
                 'tiempo_disponible' => $tiempo_disponible,
                 'meta' => $meta,
                 'eficiencia' => $eficiencia,
+            ]);
+
+            \Log::info('Corte - Registro guardado', [
+                'registro_id' => $registro->id,
+                'tiempo_disponible_guardado' => $registro->tiempo_disponible,
+                'meta_guardada' => $registro->meta,
+                'eficiencia_guardada' => $registro->eficiencia,
             ]);
 
             // Load relations for broadcasting
@@ -1256,8 +1280,11 @@ class TablerosController extends Controller
 
     public function searchTelas(Request $request)
     {
-        $query = strtoupper($request->get('q', ''));
-        $telas = Tela::where('nombre_tela', 'like', '%' . $query . '%')
+        $query = $request->get('q', '');
+        
+        // ⚡ OPTIMIZACIÓN: Buscar con índice sin transformar
+        // MySQL usa índice cuando buscamos desde el inicio
+        $telas = Tela::where('nombre_tela', 'like', $query . '%')
             ->select('id', 'nombre_tela')
             ->limit(10)
             ->get();
@@ -1303,8 +1330,11 @@ class TablerosController extends Controller
 
     public function searchMaquinas(Request $request)
     {
-        $query = strtoupper($request->get('q', ''));
-        $maquinas = Maquina::where('nombre_maquina', 'like', '%' . $query . '%')
+        $query = $request->get('q', '');
+        
+        // ⚡ OPTIMIZACIÓN: Buscar con índice sin transformar
+        // MySQL usa índice cuando buscamos desde el inicio
+        $maquinas = Maquina::where('nombre_maquina', 'like', $query . '%')
             ->select('id', 'nombre_maquina')
             ->limit(10)
             ->get();
@@ -1314,8 +1344,11 @@ class TablerosController extends Controller
 
     public function searchOperarios(Request $request)
     {
-        $query = strtoupper($request->get('q', ''));
-        $operarios = User::where('name', 'like', '%' . $query . '%')
+        $query = $request->get('q', '');
+        
+        // ⚡ OPTIMIZACIÓN: Buscar con índice sin transformar
+        // MySQL usa índice cuando buscamos desde el inicio
+        $operarios = User::where('name', 'like', $query . '%')
             ->select('id', 'name')
             ->limit(10)
             ->get();
@@ -1364,14 +1397,26 @@ class TablerosController extends Controller
 
     public function getDashboardCorteData(Request $request)
     {
-        $fecha = $request->input('fecha', now()->toDateString());
+        // Obtener todos los registros de corte con relaciones
+        $query = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela']);
         
-        $registrosCorte = RegistroPisoCorte::whereDate('fecha', $fecha)
-            ->with(['hora', 'operario'])
-            ->get();
+        // Aplicar los mismos filtros que el fullscreen
+        $registrosCorte = $query->get();
+        $registrosCorteFiltrados = $this->filtrarRegistrosPorFecha($registrosCorte, $request);
         
-        $horasData = $this->calcularProduccionPorHoras($registrosCorte);
-        $operariosData = $this->calcularProduccionPorOperarios($registrosCorte);
+        \Log::info('Dashboard Corte API: Registros obtenidos', [
+            'total' => $registrosCorteFiltrados->count(),
+            'filtro_type' => $request->get('filter_type', 'sin_filtro'),
+        ]);
+        
+        // Calcular datos dinámicos para las tablas
+        $horasData = $this->calcularProduccionPorHoras($registrosCorteFiltrados);
+        $operariosData = $this->calcularProduccionPorOperarios($registrosCorteFiltrados);
+        
+        \Log::info('Dashboard Corte API: Datos calculados', [
+            'horas_count' => count($horasData),
+            'operarios_count' => count($operariosData),
+        ]);
         
         return response()->json([
             'horas' => $horasData,
@@ -1398,11 +1443,13 @@ class TablerosController extends Controller
                     'hora' => $hora,
                     'cantidad' => 0,
                     'meta' => 0,
-                    'eficiencia' => 0
+                    'eficiencia' => 0,
+                    'tiempo_disponible' => 0
                 ];
             }
             $horasData[$hora]['cantidad'] += $registro->cantidad ?? 0;
             $horasData[$hora]['meta'] += $registro->meta ?? 0;
+            $horasData[$hora]['tiempo_disponible'] += $registro->tiempo_disponible ?? 0;
         }
 
         // Calcular eficiencia para cada hora
