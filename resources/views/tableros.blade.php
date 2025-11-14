@@ -519,14 +519,21 @@ const registrosMap = {
 
 // ⚡ OPTIMIZACIÓN: Debounce para actualizar seguimiento (evitar múltiples llamadas en rápida sucesión)
 const seguimientoDebounceTimers = {};
+let isSearchingCell = false; // Flag para evitar actualizar seguimiento durante búsqueda
 
 function actualizarSeguimientoDebounced(section) {
+    // NO actualizar si estamos buscando una celda
+    if (isSearchingCell) {
+        console.log(`⏭️ Saltando actualización de seguimiento porque isSearchingCell=true`);
+        return;
+    }
+    
     // Cancelar el timeout anterior si existe
     if (seguimientoDebounceTimers[section]) {
         clearTimeout(seguimientoDebounceTimers[section]);
     }
     
-    // Esperar 500ms antes de recargar el seguimiento
+    // Esperar 1500ms antes de recargar el seguimiento (antes era 500ms)
     // Si se llama de nuevo antes de que termine el timeout, se cancela el anterior
     seguimientoDebounceTimers[section] = setTimeout(() => {
         console.log(`📊 Actualizando seguimiento de ${section} después del debounce...`);
@@ -534,7 +541,7 @@ function actualizarSeguimientoDebounced(section) {
             recargarSeguimientoEspecifico(section);
         }
         delete seguimientoDebounceTimers[section];
-    }, 500);
+    }, 1500);
 }
 
 // ⚡ OPTIMIZACIÓN: Cachear búsquedas anteriores para evitar llamadas duplicadas
@@ -861,12 +868,15 @@ document.addEventListener('DOMContentLoaded', function() {
         } else if (currentColumn === 'operario') {
             columnName = 'operario_id';
             newValue = newValue.toUpperCase(); // Solo convertir a mayúsculas para texto
+            displayName = newValue; // ⚡ IMPORTANTE: Actualizar displayName también
         } else if (currentColumn === 'maquina') {
             columnName = 'maquina_id';
             newValue = newValue.toUpperCase();
+            displayName = newValue; // ⚡ IMPORTANTE: Actualizar displayName también
         } else if (currentColumn === 'tela') {
             columnName = 'tela_id';
             newValue = newValue.toUpperCase();
+            displayName = newValue; // ⚡ IMPORTANTE: Actualizar displayName también
         }
         
         // Datos a enviar (permitir agregar campos adicionales cuando se requiera)
@@ -923,23 +933,28 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log(`✅ ${columnName} obtenido del caché:`, cachedData, `(${timings.cacheHit.toFixed(2)}ms)`);
                 } else {
                     const searchStart = performance.now();
-                    // Hacer la búsqueda si no está en caché
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                        },
-                        body: JSON.stringify(
-                            columnName === 'hora_id' ? { hora: newValue } :
-                            columnName === 'operario_id' ? { name: newValue } :
-                            columnName === 'maquina_id' ? { nombre: newValue } :
-                            { nombre: newValue }
-                        )
-                    });
+                    // ⚡ OPTIMIZACIÓN: Marcar que estamos buscando para evitar actualizaciones de seguimiento
+                    isSearchingCell = true;
+                    console.log(`⏳ isSearchingCell = true (búsqueda iniciada)`);
                     
-                    const data = await response.json();
-                    timings.searchRequest = performance.now() - searchStart;
+                    try {
+                        // Hacer la búsqueda si no está en caché
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify(
+                                columnName === 'hora_id' ? { hora: newValue } :
+                                columnName === 'operario_id' ? { name: newValue } :
+                                columnName === 'maquina_id' ? { nombre: newValue } :
+                                { nombre: newValue }
+                            )
+                        });
+                        
+                        const data = await response.json();
+                        timings.searchRequest = performance.now() - searchStart;
                     if (data.success || data.id) {
                         displayName = data[displayKey] || data[dataKey];
                         newValue = data[dataKey];
@@ -959,10 +974,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         alert(`Error al procesar ${columnName}`);
                         return;
                     }
+                    } finally {
+                        // ⚡ OPTIMIZACIÓN: Resetear el flag después de búsqueda
+                        isSearchingCell = false;
+                        console.log(`✅ isSearchingCell = false (búsqueda completada)`);
+                    }
                 }
             }
         } catch (error) {
             console.error('❌ Error al buscar/crear:', error);
+            isSearchingCell = false; // Resetear también en caso de error
             hideLoading();
             alert('Error al procesar el cambio');
             return;

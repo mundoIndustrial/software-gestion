@@ -64,27 +64,42 @@ class TablerosController extends Controller
         if ($isAjax && $section) {
             return $this->loadSection($section);
         }
+
+        // ⚡ OPTIMIZACIÓN CRÍTICA: En la página inicial, limitar a últimos 30 días
+        // si no hay filtros aplicados. Esto hace que cargue mucho más rápido
+        $limit_days = 30; // Mostrar últimos 30 días por defecto
+        $hasFilters = request()->has('filters') || request()->has('filter_type') || 
+                      request()->has('start_date') || request()->has('end_date');
+        
+        if (!$hasFilters) {
+            // Sin filtros, usar límite de 30 días
+            $start_date = now()->subDays($limit_days);
+        } else {
+            // Con filtros, dejar que filtrarRegistrosPorFecha maneje el rango
+            $start_date = now()->subMonths(1); // Permitir búsquedas hasta 1 mes atrás
+        }
         
         // TABLAS PRINCIPALES: SIN FILTRO DE FECHA (mostrar todos los registros)
         // Orden descendente: registros más recientes primero
-        $queryProduccion = RegistroPisoProduccion::query();
+        $queryProduccion = RegistroPisoProduccion::whereDate('fecha', '>=', $start_date);
         $this->aplicarFiltrosDinamicos($queryProduccion, request(), 'produccion');
-        // Paginación: 50 registros por página
+        // ⚡ OPTIMIZACIÓN: Cargar con SELECT solo las columnas necesarias para la tabla
+        // Esto reduce el tamaño de datos transferidos
         $registros = $queryProduccion->orderBy('id', 'desc')->paginate(50);
         $columns = Schema::getColumnListing('registro_piso_produccion');
         $columns = array_diff($columns, ['id', 'created_at', 'updated_at', 'producida']);
 
-        $queryPolos = RegistroPisoPolo::query();
+        $queryPolos = RegistroPisoPolo::whereDate('fecha', '>=', $start_date);
         $this->aplicarFiltrosDinamicos($queryPolos, request(), 'polos');
         $registrosPolos = $queryPolos->orderBy('id', 'desc')->paginate(50);
         $columnsPolos = Schema::getColumnListing('registro_piso_polo');
         $columnsPolos = array_diff($columnsPolos, ['id', 'created_at', 'updated_at', 'producida']);
 
-        $queryCorte = RegistroPisoCorte::query();
+        $queryCorte = RegistroPisoCorte::whereDate('fecha', '>=', $start_date);
         $this->aplicarFiltrosDinamicos($queryCorte, request(), 'corte');
-        $registrosCorte = $queryCorte->orderBy('id', 'desc')->paginate(50);
-        // ⚡ OPTIMIZACIÓN: Cargar relaciones SOLO para items de la página actual
-        $registrosCorte->load(['hora', 'operario', 'maquina', 'tela']);
+        // ⚡ OPTIMIZACIÓN: Eager load relaciones ANTES de paginar para evitar N+1 queries
+        $registrosCorte = $queryCorte->with(['hora', 'operario', 'maquina', 'tela'])->orderBy('id', 'desc')->paginate(50);
+        // Ya no necesitamos load() aquí porque eager loading ya cargó las relaciones
         
         // 🔍 DEBUG: Verificar que las relaciones se cargaron
         \Log::info('RegistrosCorte loaded with relations', [
@@ -93,9 +108,7 @@ class TablerosController extends Controller
             'first_item_hora_value' => !empty($registrosCorte->items()) ? $registrosCorte->items()[0]->hora?->hora : null
         ]);
         $columnsCorte = Schema::getColumnListing('registro_piso_corte');
-        $columnsCorte = array_diff($columnsCorte, ['id', 'created_at', 'updated_at', 'producida']);
-
-        if (request()->wantsJson()) {
+        $columnsCorte = array_diff($columnsCorte, ['id', 'created_at', 'updated_at', 'producida']);        if (request()->wantsJson()) {
             return response()->json([
                 'registros' => $registros->items(),
                 'columns' => array_values($columns),
@@ -150,20 +163,65 @@ class TablerosController extends Controller
         }
 
         // Obtener todos los registros para seguimiento
-        // ⚡ OPTIMIZACIÓN: Cargar relaciones solo si es necesario para el seguimiento
-        $todosRegistrosProduccion = RegistroPisoProduccion::all();
-        $todosRegistrosPolos = RegistroPisoPolo::all();
-        $todosRegistrosCorte = RegistroPisoCorte::all(); // Sin cargar relaciones aquí
+        // ⚡ OPTIMIZACIÓN: Detectar si hay filtro de fecha para cargar datos apropiados
+        $endDate = now();
+        
+        // Por defecto, cargar últimos 7 días
+        $startDate = now()->subDays(7);
+        
+        // SI hay filtro de fecha aplicado, calcular el rango necesario
+        $filterType = request()->get('filter_type');
+        if ($filterType) {
+            if ($filterType === 'day') {
+                $specificDate = request()->get('specific_date');
+                if ($specificDate) {
+                    $startDate = \Carbon\Carbon::createFromFormat('Y-m-d', $specificDate)->startOfDay();
+                    $endDate = \Carbon\Carbon::createFromFormat('Y-m-d', $specificDate)->endOfDay();
+                }
+            } elseif ($filterType === 'range') {
+                $startDateStr = request()->get('start_date');
+                $endDateStr = request()->get('end_date');
+                if ($startDateStr && $endDateStr) {
+                    $startDate = \Carbon\Carbon::createFromFormat('Y-m-d', $startDateStr)->startOfDay();
+                    $endDate = \Carbon\Carbon::createFromFormat('Y-m-d', $endDateStr)->endOfDay();
+                }
+            } elseif ($filterType === 'month') {
+                $month = request()->get('month');
+                if ($month) {
+                    $startDate = \Carbon\Carbon::createFromFormat('Y-m', $month)->startOfMonth()->startOfDay();
+                    $endDate = \Carbon\Carbon::createFromFormat('Y-m', $month)->endOfMonth()->endOfDay();
+                }
+            } elseif ($filterType === 'specific') {
+                $specificDates = request()->get('specific_dates');
+                if ($specificDates) {
+                    $datesArray = array_map(function($date) {
+                        return \Carbon\Carbon::createFromFormat('Y-m-d', trim($date));
+                    }, explode(',', $specificDates));
+                    $startDate = collect($datesArray)->min();
+                    $endDate = collect($datesArray)->max()->endOfDay();
+                }
+            }
+        }
+        
+        \Log::info('index() - Cargando registros de seguimiento:', [
+            'startDate' => $startDate->format('Y-m-d H:i:s'),
+            'endDate' => $endDate->format('Y-m-d H:i:s'),
+            'filter_type' => $filterType
+        ]);
+        
+        $todosRegistrosProduccion = RegistroPisoProduccion::whereDate('fecha', '>=', $startDate)->whereDate('fecha', '<=', $endDate)->get();
+        $todosRegistrosPolos = RegistroPisoPolo::whereDate('fecha', '>=', $startDate)->whereDate('fecha', '<=', $endDate)->get();
+        $todosRegistrosCorte = RegistroPisoCorte::whereDate('fecha', '>=', $startDate)->whereDate('fecha', '<=', $endDate)->get(); // Sin cargar relaciones aquí
 
         // Filtrar registros por fecha SOLO para el tablero activo
         $activeSection = request()->get('active_section', 'produccion');
         
-        // Por defecto, usar todos los registros (sin filtro)
+        // Por defecto, usar todos los registros (sin filtro adicional de fecha)
         $registrosProduccionFiltrados = $todosRegistrosProduccion;
         $registrosPolosFiltrados = $todosRegistrosPolos;
         $registrosCorteFiltrados = $todosRegistrosCorte;
         
-        // Aplicar filtro solo al tablero activo
+        // Aplicar filtro solo al tablero activo (si hubiera filtros adicionales)
         if ($activeSection === 'produccion') {
             $registrosProduccionFiltrados = $this->filtrarRegistrosPorFecha($todosRegistrosProduccion, request());
         } elseif ($activeSection === 'polos') {
@@ -757,7 +815,7 @@ class TablerosController extends Controller
             if ($soloRelacionesExternas) {
                 $registro->update($validated);
                 
-                // ⚡ BROADCAST: Cargar relaciones y emitir evento
+                // ⚡ BROADCAST: Cargar relaciones y emitir evento (ASINCRÓNICO gracias a ShouldBroadcast)
                 if ($request->section === 'corte') {
                     $registro->load(['hora', 'operario', 'maquina', 'tela']);
                     try {
@@ -784,7 +842,7 @@ class TablerosController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Registro actualizado correctamente.',
-                    'data' => $registro,
+                    'data' => $registro->toArray(), // ⚡ Convertir a array para asegurar relaciones se serializan
                     'debug' => [
                         'total_ms' => round($duration, 2),
                         'findOrFail_ms' => round($findDuration, 2),
@@ -895,7 +953,7 @@ class TablerosController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Registro actualizado correctamente.',
-                    'data' => $request->section === 'corte' ? $registro : [
+                    'data' => $request->section === 'corte' ? $registro->toArray() : [ // ⚡ Convertir a array
                         'tiempo_disponible' => $tiempo_disponible,
                         'meta' => $meta,
                         'eficiencia' => $eficiencia
@@ -922,7 +980,7 @@ class TablerosController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Registro actualizado correctamente.',
-                    'data' => $request->section === 'corte' ? $registro : null
+                    'data' => $request->section === 'corte' ? $registro->toArray() : null // ⚡ Convertir a array
                 ]);
             }
         } catch (\Exception $e) {
@@ -1555,6 +1613,23 @@ class TablerosController extends Controller
     public function getSeguimientoData(Request $request)
     {
         $section = $request->get('section', 'produccion');
+        
+        // 🔍 DEBUG: Loguear parámetros recibidos
+        $filterType = $request->get('filter_type');
+        $specificDate = $request->get('specific_date');
+        $startDate = $request->get('start_date');
+        $endDate = $request->get('end_date');
+        $month = $request->get('month');
+        
+        \Log::info('getSeguimientoData - Parámetros recibidos:', [
+            'section' => $section,
+            'filter_type' => $filterType,
+            'specific_date' => $specificDate,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'month' => $month,
+            'all_params' => $request->all()
+        ]);
 
         $model = match($section) {
             'produccion' => RegistroPisoProduccion::class,
@@ -1564,7 +1639,24 @@ class TablerosController extends Controller
 
         $query = $model::query();
         $this->aplicarFiltroFecha($query, $request);
+        
+        // ⚡ OPTIMIZACIÓN: Si no hay filtro específico, limitar a último día o últimos 500 registros
+        // para evitar procesar 7000+ registros que bloquean el servidor
+        if (!$filterType) {
+            $query = $query->latest()->limit(500);
+            \Log::info('getSeguimientoData - Aplicando LIMIT 500 porque no hay filtro');
+        }
+        
         $registrosFiltrados = $query->get();
+        
+        // 🔍 DEBUG: Loguear cantidad de registros filtrados
+        \Log::info('getSeguimientoData - Registros filtrados:', [
+            'section' => $section,
+            'cantidad' => count($registrosFiltrados),
+            'filter_type' => $filterType,
+            'specific_date' => $specificDate,
+            'limited' => !$filterType ? true : false
+        ]);
 
         $seguimiento = $this->calcularSeguimientoModulos($registrosFiltrados);
 
@@ -1576,17 +1668,35 @@ class TablerosController extends Controller
      */
     public function findOrCreateOperario(Request $request)
     {
+        $startTime = microtime(true);
         $name = strtoupper($request->input('name'));
         
         // ⚡ OPTIMIZACIÓN: Primero buscar sin crear para evitar bcrypt en la mayoría de casos
+        $searchStart = microtime(true);
         $operario = User::where('name', $name)->first();
+        $searchTime = (microtime(true) - $searchStart) * 1000;
         
         if (!$operario) {
             // Solo crear si no existe
+            $createStart = microtime(true);
             $operario = User::create([
                 'name' => $name,
                 'email' => strtolower(str_replace(' ', '', $name)) . '@mundoindustrial.com',
                 'password' => bcrypt('password123')
+            ]);
+            $createTime = (microtime(true) - $createStart) * 1000;
+            
+            \Log::info('findOrCreateOperario - creado:', [
+                'name' => $name,
+                'search_time_ms' => round($searchTime, 2),
+                'create_time_ms' => round($createTime, 2),
+                'total_time_ms' => round($searchTime + $createTime, 2)
+            ]);
+        } else {
+            $totalTime = (microtime(true) - $startTime) * 1000;
+            \Log::info('findOrCreateOperario - encontrado:', [
+                'name' => $name,
+                'total_time_ms' => round($totalTime, 2)
             ]);
         }
 
@@ -1601,11 +1711,35 @@ class TablerosController extends Controller
      */
     public function findOrCreateMaquina(Request $request)
     {
+        $startTime = microtime(true);
         $nombre = strtoupper($request->input('nombre'));
         
-        $maquina = Maquina::firstOrCreate(
-            ['nombre_maquina' => $nombre]
-        );
+        $createStart = microtime(true);
+        
+        // ⚡ OPTIMIZACIÓN: Primero intentar buscar sin lock
+        $maquina = Maquina::where('nombre_maquina', $nombre)->first();
+        
+        if (!$maquina) {
+            // Solo crear si no existe - usar try/catch por si hay race condition
+            try {
+                $maquina = Maquina::create(['nombre_maquina' => $nombre]);
+            } catch (\Exception $e) {
+                // Si falla por duplicate, buscar nuevamente
+                $maquina = Maquina::where('nombre_maquina', $nombre)->first();
+                if (!$maquina) {
+                    // Si aún no existe, re-lanzar el error
+                    throw $e;
+                }
+            }
+        }
+        
+        $duration = (microtime(true) - $createStart) * 1000;
+        
+        \Log::info('findOrCreateMaquina:', [
+            'nombre' => $nombre,
+            'maquina_id' => $maquina->id,
+            'operation_time_ms' => round($duration, 2)
+        ]);
 
         return response()->json([
             'id' => $maquina->id,
@@ -1717,11 +1851,35 @@ class TablerosController extends Controller
      */
     public function findOrCreateTela(Request $request)
     {
+        $startTime = microtime(true);
         $nombre = strtoupper($request->input('nombre'));
         
-        $tela = Tela::firstOrCreate(
-            ['nombre_tela' => $nombre]
-        );
+        $createStart = microtime(true);
+        
+        // ⚡ OPTIMIZACIÓN: Primero intentar buscar sin lock
+        $tela = Tela::where('nombre_tela', $nombre)->first();
+        
+        if (!$tela) {
+            // Solo crear si no existe - usar try/catch por si hay race condition
+            try {
+                $tela = Tela::create(['nombre_tela' => $nombre]);
+            } catch (\Exception $e) {
+                // Si falla por duplicate, buscar nuevamente
+                $tela = Tela::where('nombre_tela', $nombre)->first();
+                if (!$tela) {
+                    // Si aún no existe, re-lanzar el error
+                    throw $e;
+                }
+            }
+        }
+        
+        $duration = (microtime(true) - $createStart) * 1000;
+        
+        \Log::info('findOrCreateTela:', [
+            'nombre' => $nombre,
+            'tela_id' => $tela->id,
+            'operation_time_ms' => round($duration, 2)
+        ]);
 
         return response()->json([
             'id' => $tela->id,
@@ -1827,16 +1985,39 @@ class TablerosController extends Controller
 
     public function findHoraId(Request $request)
     {
+        $startTime = microtime(true);
         $request->validate([
             'hora' => 'required|string',
         ]);
 
         $horaValue = $request->hora;
         
-        // Buscar o crear la hora por su valor (ej: "1", "2", "3", etc.)
-        $hora = Hora::firstOrCreate(
-            ['hora' => $horaValue]
-        );
+        $searchStart = microtime(true);
+        
+        // ⚡ OPTIMIZACIÓN: Primero intentar buscar sin lock
+        $hora = Hora::where('hora', $horaValue)->first();
+        
+        if (!$hora) {
+            // Solo crear si no existe - usar try/catch por si hay race condition
+            try {
+                $hora = Hora::create(['hora' => $horaValue]);
+            } catch (\Exception $e) {
+                // Si falla por duplicate, buscar nuevamente
+                $hora = Hora::where('hora', $horaValue)->first();
+                if (!$hora) {
+                    // Si aún no existe, re-lanzar el error
+                    throw $e;
+                }
+            }
+        }
+        
+        $duration = (microtime(true) - $searchStart) * 1000;
+        
+        \Log::info('findHoraId performance:', [
+            'horaValue' => $horaValue,
+            'hora_id' => $hora->id,
+            'operation_time_ms' => round($duration, 2)
+        ]);
 
         return response()->json([
             'success' => true,

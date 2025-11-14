@@ -540,6 +540,9 @@ function updateSeguimientoTable(params) {
     seguimientoUrl.search = params.toString();
     seguimientoUrl.searchParams.set('section', currentSection);
 
+    console.log('🔍 updateSeguimientoTable - URL construida:', seguimientoUrl.toString());
+    console.log('🔍 Parámetros recibidos en updateSeguimientoTable:', params.toString());
+
     fetch(seguimientoUrl.toString(), {
         method: 'GET',
         headers: {
@@ -554,6 +557,7 @@ function updateSeguimientoTable(params) {
         return response.json();
     })
     .then(data => {
+        console.log('✅ Datos de seguimiento recibidos:', data);
         updateSeguimientoTableContent(data);
     })
     .catch(error => {
