@@ -9,6 +9,7 @@ use App\Models\EntregaBodegaCostura;
 use App\Models\EntregaBodegaCorte;
 use App\Models\News;
 use App\Events\EntregaRegistrada;
+use App\Events\EntregaEliminada;
 use Carbon\Carbon;
 
 class EntregaController extends Controller
@@ -525,6 +526,9 @@ class EntregaController extends Controller
 
                 $entrega->delete();
 
+                // Broadcast event
+                broadcast(new EntregaEliminada($tipo, 'costura', $id, $entrega));
+
                 // Log news
                 News::create([
                     'event_type' => 'delivery_deleted',
@@ -537,6 +541,9 @@ class EntregaController extends Controller
             } elseif ($subtipo === 'corte') {
                 $entrega = $config['corte']::findOrFail($id);
                 $entrega->delete();
+
+                // Broadcast event
+                broadcast(new EntregaEliminada($tipo, 'corte', $id, $entrega));
 
                 // Log news
                 News::create([

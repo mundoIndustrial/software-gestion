@@ -1093,6 +1093,14 @@
                             this.entregas = [];
                             // Vaciar completamente el formulario después del envío exitoso
                             this.resetForm();
+                            
+                            // Actualizar las tablas inmediatamente sin esperar a Laravel Echo
+                            setTimeout(() => {
+                                if (typeof window.filtrarDatos === 'function') {
+                                    window.filtrarDatos();
+                                }
+                            }, 500);
+                            
                             setTimeout(() => {
                                 this.closeModal();
                             }, 2000);
