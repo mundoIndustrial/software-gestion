@@ -21,7 +21,7 @@ Route::get('/test-echo', function () {
     return view('test-echo');
 })->name('test.echo');
 
-Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified', 'supervisor-access'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -29,7 +29,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'supervisor-access'])->group(function () {
     Route::get('/users', [UserController::class, 'index'])->name('users.index');
     Route::post('/users', [UserController::class, 'store'])->name('users.store');
     Route::patch('/users/{user}', [UserController::class, 'update'])->name('users.update');
@@ -53,7 +53,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/entrega/{tipo}/{subtipo}/{id}', [EntregaController::class, 'destroy'])->name('entrega.destroy')->where('tipo', 'pedido|bodega')->where('subtipo', 'costura|corte');
 });
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/registros', [RegistroOrdenController::class, 'index'])->name('registros.index');
     Route::get('/registros/next-pedido', [RegistroOrdenController::class, 'getNextPedido'])->name('registros.next-pedido');
     Route::get('/registros/{pedido}', [RegistroOrdenController::class, 'show'])->name('registros.show');

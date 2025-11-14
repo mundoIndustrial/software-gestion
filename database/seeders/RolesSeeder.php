@@ -31,8 +31,8 @@ class RolesSeeder extends Seeder
         ]);
 
         \App\Models\Role::create([
-            'name' => 'asesor',
-            'description' => 'Asesor de ventas - Gestión de órdenes',
+            'name' => 'supervisor',
+            'description' => 'Supervisor de gestión de órdenes (solo lectura)',
             'requires_credentials' => true,
         ]);
     }

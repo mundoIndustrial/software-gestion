@@ -89,6 +89,14 @@ class RegistroOrdenController extends Controller
 
         $query = TablaOriginal::query();
 
+        // Filtro por defecto para supervisores: "En Ejecución" (pero puede cambiarse)
+        if (auth()->user() && auth()->user()->role && auth()->user()->role->name === 'supervisor') {
+            // Si no hay filtro de estado en la URL, aplicar "En Ejecución" por defecto
+            if (!$request->has('filter_estado')) {
+                $query->where('estado', 'En Ejecución');
+            }
+        }
+
         // Apply search filter - search by 'pedido' or 'cliente'
         if ($request->has('search') && !empty($request->search)) {
             $searchTerm = $request->search;

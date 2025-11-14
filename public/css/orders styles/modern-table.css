@@ -1279,6 +1279,40 @@ body:not(.dark-theme) #cellModal .cell-modal-footer {
     color: white;
 }
 
+/* ===== BOTÓN VER MEJORADO PARA SUPERVISORES ===== */
+.action-btn.detail-btn {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.action-btn.detail-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4) !important;
+}
+
+.action-btn.detail-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3) !important;
+}
+
+.action-btn.detail-btn i {
+    transition: transform 0.3s ease;
+}
+
+.action-btn.detail-btn:hover i {
+    transform: scale(1.1);
+}
+
+/* Modo Oscuro */
+body.dark-theme .action-btn.detail-btn {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+}
+
+body.dark-theme .action-btn.detail-btn:hover {
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.5) !important;
+}
+
 @media (max-width: 768px) {
     .delete-modal-content {
         margin: 20px;
