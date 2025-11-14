@@ -50,7 +50,7 @@
       <!-- Alpine.js -->
       <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
   </head>
-  <body class="{{ isset($_COOKIE['theme']) && $_COOKIE['theme'] === 'dark' ? 'dark-theme' : '' }}">
+  <body class="{{ isset($_COOKIE['theme']) && $_COOKIE['theme'] === 'dark' ? 'dark-theme' : '' }}" data-user-role="{{ auth()->user()->role?->name ?? 'guest' }}">
       <script>
           // Sincronizar con localStorage inmediatamente
           (function() {

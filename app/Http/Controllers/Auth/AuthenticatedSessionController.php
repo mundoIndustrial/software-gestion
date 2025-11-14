@@ -28,6 +28,11 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // Si el usuario es supervisor, redirigir a gestión de órdenes
+        if (auth()->user()->role && auth()->user()->role->name === 'supervisor') {
+            return redirect()->intended(route('registros.index', absolute: false));
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 

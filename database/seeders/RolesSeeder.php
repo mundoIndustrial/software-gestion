@@ -29,5 +29,11 @@ class RolesSeeder extends Seeder
             'description' => 'Operario de piso de corte',
             'requires_credentials' => false,
         ]);
+
+        \App\Models\Role::create([
+            'name' => 'supervisor',
+            'description' => 'Supervisor de gestión de órdenes (solo lectura)',
+            'requires_credentials' => true,
+        ]);
     }
 }

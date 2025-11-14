@@ -1963,17 +1963,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         clearBtn.addEventListener('click', () => modernTable.clearAllFilters());
 
-        // Add register orders button
-        const registerBtn = Object.assign(document.createElement('button'), {
-            textContent: 'Registrar Órdenes',
-            className: 'btn btn-primary ml-2',
-            style: 'font-size:12px; background-color: #ff9d58; border-color: #ff9d58; color: #fff;'
-        });
-        registerBtn.addEventListener('click', () => {
-            window.dispatchEvent(new CustomEvent('open-modal', { detail: 'order-registration' }));
-        });
+        // Add register orders button (solo para no supervisores)
+        const isSupervisor = document.body.dataset.userRole === 'supervisor';
+        if (!isSupervisor) {
+            const registerBtn = Object.assign(document.createElement('button'), {
+                textContent: 'Registrar Órdenes',
+                className: 'btn btn-primary ml-2',
+                style: 'font-size:12px; background-color: #ff9d58; border-color: #ff9d58; color: #fff;'
+            });
+            registerBtn.addEventListener('click', () => {
+                window.dispatchEvent(new CustomEvent('open-modal', { detail: 'order-registration' }));
+            });
+
+            document.querySelector('.table-actions')?.appendChild(registerBtn);
+        }
 
         document.querySelector('.table-actions')?.appendChild(clearBtn);
-        document.querySelector('.table-actions')?.appendChild(registerBtn);
     }
 })

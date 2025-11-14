@@ -40,17 +40,22 @@
                                 @php $columnIndex = 0; @endphp
                                 @foreach(array_keys($ordenes->first()->getAttributes()) as $index => $columna)
                                     @if($columna !== 'id' && $columna !== 'tiempo')
-                                        <th class="table-header-cell" data-column="{{ $columna }}">
-                                            <div class="header-content">
-                                                <span class="header-text">{{ ucfirst(str_replace('_', ' ', $columna)) }}</span>
-                                                @if($columna !== 'acciones')
-                                                    <button class="filter-btn" data-column="{{ $columnIndex }}" data-column-name="{{ $columna }}">
-                                                        <i class="fas fa-filter"></i>
-                                                    </button>
-                                                @endif
-                                            </div>
-                                        </th>
-                                        @php $columnIndex++; @endphp
+                                        {{-- Ocultar columna "día de entrega" para supervisores --}}
+                                        @if($columna === 'dia_de_entrega' && auth()->user()->role && auth()->user()->role->name === 'supervisor')
+                                            {{-- Columna oculta para supervisores --}}
+                                        @else
+                                            <th class="table-header-cell" data-column="{{ $columna }}">
+                                                <div class="header-content">
+                                                    <span class="header-text">{{ ucfirst(str_replace('_', ' ', $columna)) }}</span>
+                                                    @if($columna !== 'acciones')
+                                                        <button class="filter-btn" data-column="{{ $columnIndex }}" data-column-name="{{ $columna }}">
+                                                            <i class="fas fa-filter"></i>
+                                                        </button>
+                                                    @endif
+                                                </div>
+                                            </th>
+                                            @php $columnIndex++; @endphp
+                                        @endif
                                     @endif
                                 @endforeach
                             </tr>
@@ -101,43 +106,81 @@
                                 <tr class="table-row {{ $conditionalClass }}" data-order-id="{{ $orden->pedido }}">
                                     <td class="table-cell acciones-column" style="min-width: 220px !important;">
                                         <div class="cell-content" style="display: flex; gap: 8px; flex-wrap: nowrap; align-items: center; justify-content: flex-start; padding: 4px 0;">
-                                            <button class="action-btn edit-btn" onclick="openEditModal({{ $orden->pedido }})"
-                                                title="Editar orden"
-                                                style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
-                                                Editar
-                                            </button>
-                                            <button class="action-btn detail-btn" onclick="viewDetail({{ $orden->pedido }})"
-                                                title="Ver detalle"
-                                                style="background-color: green; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
-                                                Ver
-                                            </button>
-                                            <button class="action-btn delete-btn" onclick="deleteOrder({{ $orden->pedido }})"
-                                                title="Eliminar orden"
-                                                style="background-color:#f84c4cff ; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
-                                                Borrar
-                                            </button>
+                                            @if(auth()->user()->role && auth()->user()->role->name === 'supervisor')
+                                                <!-- Solo botón Ver para supervisores -->
+                                                <button class="action-btn detail-btn" onclick="viewDetail({{ $orden->pedido }})"
+                                                    title="Ver detalle"
+                                                    style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; flex: 1; min-width: 60px; height: 38px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3); transition: all 0.2s ease;">
+                                                    <i class="fas fa-eye" style="margin-right: 6px;"></i> Ver
+                                                </button>
+                                            @else
+                                                <!-- Botones completos para otros roles -->
+                                                <button class="action-btn edit-btn" onclick="openEditModal({{ $orden->pedido }})"
+                                                    title="Editar orden"
+                                                    style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
+                                                    Editar
+                                                </button>
+                                                <button class="action-btn detail-btn" onclick="viewDetail({{ $orden->pedido }})"
+                                                    title="Ver detalle"
+                                                    style="background-color: green; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
+                                                    Ver
+                                                </button>
+                                                <button class="action-btn delete-btn" onclick="deleteOrder({{ $orden->pedido }})"
+                                                    title="Eliminar orden"
+                                                    style="background-color:#f84c4cff ; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
+                                                    Borrar
+                                                </button>
+                                            @endif
                                         </div>
                                     </td>
                                     @foreach($orden->getAttributes() as $key => $valor)
                                         @if($key !== 'id' && $key !== 'tiempo')
+                                            {{-- Ocultar celda "día de entrega" para supervisores --}}
+                                            @if($key === 'dia_de_entrega' && auth()->user()->role && auth()->user()->role->name === 'supervisor')
+                                                {{-- Celda oculta para supervisores --}}
+                                            @else
                                             <td class="table-cell" data-column="{{ $key }}">
                                                 <div class="cell-content" title="{{ $valor }}">
                                                     @if($key === 'estado')
-                                                        <select class="estado-dropdown" data-id="{{ $orden->pedido }}"
-                                                            data-value="{{ $valor }}">
-                                                            @foreach(['Entregado', 'En Ejecución', 'No iniciado', 'Anulada'] as $estado)
-                                                                <option value="{{ $estado }}" {{ $valor === $estado ? 'selected' : '' }}>{{ $estado }}
-                                                                </option>
-                                                            @endforeach
-                                                        </select>
+                                                        @if(auth()->user()->role && auth()->user()->role->name === 'supervisor')
+                                                            <!-- Selector deshabilitado para supervisores -->
+                                                            <select class="estado-dropdown" data-id="{{ $orden->pedido }}"
+                                                                data-value="{{ $valor }}" disabled style="cursor: not-allowed; opacity: 0.8;">
+                                                                @foreach(['Entregado', 'En Ejecución', 'No iniciado', 'Anulada'] as $estado)
+                                                                    <option value="{{ $estado }}" {{ $valor === $estado ? 'selected' : '' }}>{{ $estado }}
+                                                                    </option>
+                                                                @endforeach
+                                                            </select>
+                                                        @else
+                                                            <!-- Selector editable para otros roles -->
+                                                            <select class="estado-dropdown" data-id="{{ $orden->pedido }}"
+                                                                data-value="{{ $valor }}">
+                                                                @foreach(['Entregado', 'En Ejecución', 'No iniciado', 'Anulada'] as $estado)
+                                                                    <option value="{{ $estado }}" {{ $valor === $estado ? 'selected' : '' }}>{{ $estado }}
+                                                                    </option>
+                                                                @endforeach
+                                                            </select>
+                                                        @endif
                                                     @elseif($key === 'area')
-                                                        <select class="area-dropdown" data-id="{{ $orden->pedido }}" data-value="{{ $valor }}">
-                                                            @foreach($areaOptions as $areaOption)
-                                                                <option value="{{ $areaOption }}" {{ $valor === $areaOption ? 'selected' : '' }}>
-                                                                    {{ $areaOption }}</option>
-                                                            @endforeach
-                                                        </select>
+                                                        @if(auth()->user()->role && auth()->user()->role->name === 'supervisor')
+                                                            <!-- Selector deshabilitado para supervisores -->
+                                                            <select class="area-dropdown" data-id="{{ $orden->pedido }}" data-value="{{ $valor }}" disabled style="cursor: not-allowed; opacity: 0.8;">
+                                                                @foreach($areaOptions as $areaOption)
+                                                                    <option value="{{ $areaOption }}" {{ $valor === $areaOption ? 'selected' : '' }}>
+                                                                        {{ $areaOption }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        @else
+                                                            <!-- Selector editable para otros roles -->
+                                                            <select class="area-dropdown" data-id="{{ $orden->pedido }}" data-value="{{ $valor }}">
+                                                                @foreach($areaOptions as $areaOption)
+                                                                    <option value="{{ $areaOption }}" {{ $valor === $areaOption ? 'selected' : '' }}>
+                                                                        {{ $areaOption }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        @endif
                                                     @elseif($key === 'dia_de_entrega' && $context === 'registros')
+                                                        <!-- Selector editable para otros roles (supervisores no llegan aquí) -->
                                                         <select class="dia-entrega-dropdown" data-id="{{ $orden->pedido }}" data-value="{{ $valor ?? '' }}">
                                                             <option value="" {{ is_null($valor) ? 'selected' : '' }}>Seleccionar</option>
                                                             <option value="15" {{ $valor == 15 ? 'selected' : '' }}>15 días</option>
@@ -180,6 +223,7 @@
                                                     @endif
                                                 </div>
                                             </td>
+                                            @endif
                                         @endif
                                     @endforeach
                                 </tr>
