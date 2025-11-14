@@ -695,6 +695,9 @@ class TablerosController extends Controller
 
     public function update(Request $request, $id)
     {
+        $startTime = microtime(true);
+        
+        $validateStart = microtime(true);
         $request->validate([
             'section' => 'required|string|in:produccion,polos,corte',
         ]);
@@ -705,8 +708,10 @@ class TablerosController extends Controller
             'corte' => RegistroPisoCorte::class,
         };
 
+        $findStart = microtime(true);
         $registro = $model::findOrFail($id);
-
+        
+        $validateStart2 = microtime(true);
         $validated = $request->validate([
             'fecha' => 'sometimes|date',
             'modulo' => 'sometimes|string',
@@ -760,9 +765,27 @@ class TablerosController extends Controller
                 }
                 
                 // Retornar inmediatamente sin esperar al broadcast
+                $endTime = microtime(true);
+                $duration = ($endTime - $startTime) * 1000;
+                $findDuration = ($findStart - $validateStart) * 1000;
+                $validate2Duration = ($validateStart2 - $findStart) * 1000;
+                
+                \Log::info('TablerosController::update TIMING', [
+                    'total_ms' => round($duration, 2),
+                    'findOrFail_ms' => round($findDuration, 2),
+                    'validate_ms' => round($validate2Duration, 2),
+                    'registro_id' => $id,
+                    'section' => $request->section
+                ]);
+                
                 return response()->json([
                     'success' => true,
                     'message' => 'Registro actualizado correctamente.',
+                    'debug' => [
+                        'total_ms' => round($duration, 2),
+                        'findOrFail_ms' => round($findDuration, 2),
+                        'validate_ms' => round($validate2Duration, 2)
+                    ]
                 ]);
             }
 
@@ -1476,10 +1499,17 @@ class TablerosController extends Controller
     {
         $name = strtoupper($request->input('name'));
         
-        $operario = User::firstOrCreate(
-            ['name' => $name],
-            ['email' => strtolower(str_replace(' ', '', $name)) . '@mundoindustrial.com', 'password' => bcrypt('password123')]
-        );
+        // ⚡ OPTIMIZACIÓN: Primero buscar sin crear para evitar bcrypt en la mayoría de casos
+        $operario = User::where('name', $name)->first();
+        
+        if (!$operario) {
+            // Solo crear si no existe
+            $operario = User::create([
+                'name' => $name,
+                'email' => strtolower(str_replace(' ', '', $name)) . '@mundoindustrial.com',
+                'password' => bcrypt('password123')
+            ]);
+        }
 
         return response()->json([
             'id' => $operario->id,
