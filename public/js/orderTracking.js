@@ -372,10 +372,16 @@ async function displayOrderTracking(order) {
     // Obtener recorrido del pedido (ahora es async)
     const trackingPath = await getOrderTrackingPath(order);
 
+    // Calcular total de días sumando los días de cada área
+    let totalDiasReal = 0;
+    trackingPath.forEach(item => {
+        totalDiasReal += item.daysInArea;
+    });
+
     // Mostrar total de días
     const totalDiasElement = document.getElementById('trackingTotalDays');
-    if (totalDiasElement && trackingPath.totalDiasCalculado !== undefined) {
-        totalDiasElement.textContent = trackingPath.totalDiasCalculado;
+    if (totalDiasElement) {
+        totalDiasElement.textContent = totalDiasReal;
     }
 
     // Llenar timeline de áreas
