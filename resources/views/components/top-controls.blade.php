@@ -59,6 +59,12 @@
                     clearCalendarSelection();
                 }
 
+                // 🔑 LIMPIAR dashboardFilterParams GLOBAL para mostrar todos los datos
+                if (typeof dashboardFilterParams !== 'undefined') {
+                    dashboardFilterParams = {};
+                    console.log('✅ dashboardFilterParams limpiado - Mostrando TODOS los datos');
+                }
+
                 // Clear URL parameters
                 const url = new URL(window.location);
                 url.search = '';
@@ -135,8 +141,32 @@
 
                 console.log('Filtros aplicados:', params.toString());
 
-                // NO actualizar la URL - solo aplicar filtros sin recargar
-                // Esto hace que al recargar manualmente (F5), los filtros se limpien
+                // 🔑 ACTUALIZAR dashboardFilterParams GLOBAL para que persista en tiempo real
+                if (typeof dashboardFilterParams !== 'undefined') {
+                    dashboardFilterParams = {};
+                    
+                    if (params.has('filter_type')) {
+                        dashboardFilterParams['filter_type'] = params.get('filter_type');
+                        
+                        if (params.has('specific_date')) {
+                            dashboardFilterParams['specific_date'] = params.get('specific_date');
+                        }
+                        if (params.has('start_date')) {
+                            dashboardFilterParams['start_date'] = params.get('start_date');
+                        }
+                        if (params.has('end_date')) {
+                            dashboardFilterParams['end_date'] = params.get('end_date');
+                        }
+                        if (params.has('month')) {
+                            dashboardFilterParams['month'] = params.get('month');
+                        }
+                        if (params.has('specific_dates')) {
+                            dashboardFilterParams['specific_dates'] = params.get('specific_dates');
+                        }
+                    }
+                    
+                    console.log('✅ dashboardFilterParams actualizado para tiempo real:', dashboardFilterParams);
+                }
                 
                 // Llamar a la función para actualizar las tablas del dashboard
                 if (typeof updateDashboardTablesFromFilter === 'function') {
@@ -978,6 +1008,18 @@ function toggleDate(dateStr) {
 }
 
 function updateDashboardTablesFromFilter(params) {
+    // 🔑 Actualizar dashboardFilterParams con los nuevos filtros
+    if (typeof actualizarFiltrosDashboard === 'function') {
+        actualizarFiltrosDashboard(
+            params.get('filter_type'),
+            params.get('specific_date'),
+            params.get('start_date'),
+            params.get('end_date'),
+            params.get('month'),
+            params.get('specific_dates')
+        );
+    }
+    
     const dashboardUrl = new URL('/tableros/dashboard-tables-data', window.location.origin);
     dashboardUrl.search = params.toString();
 

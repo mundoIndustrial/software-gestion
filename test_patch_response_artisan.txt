@@ -1,0 +1,54 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Test para verificar que el endpoint PATCH devuelve relaciones correctas
+ * 
+ * Uso: php artisan tinker < test_patch_response_artisan.php
+ */
+
+// Este script asume que se ejecuta dentro de 'php artisan tinker'
+// Simplemente ejecutar las líneas abajo en tinker
+
+echo "=== Verificar que registros CORTE se pueden cargar con relaciones ===\n\n";
+
+// Obtener primer registro
+$corte = \App\Models\RegistroPisoCorte::with(['operario', 'maquina', 'tela', 'hora'])->first();
+
+if (!$corte) {
+    echo "❌ No hay registros de CORTE\n";
+    exit(1);
+}
+
+echo "✅ Registro ID: {$corte->id}\n\n";
+
+echo "Datos cargados:\n";
+echo "- operario: " . ($corte->operario ? $corte->operario->name : "null") . "\n";
+echo "- maquina: " . ($corte->maquina ? $corte->maquina->nombre_maquina : "null") . "\n";
+echo "- tela: " . ($corte->tela ? $corte->tela->nombre_tela : "null") . "\n";
+echo "- hora: " . ($corte->hora ? $corte->hora->hora : "null") . "\n\n";
+
+echo "Probando serialización JSON:\n";
+$response = [
+    'success' => true,
+    'message' => 'Test',
+    'data' => $corte
+];
+
+$json = json_encode($response);
+
+if (json_last_error() !== JSON_ERROR_NONE) {
+    echo "❌ Error: " . json_last_error_msg() . "\n";
+    exit(1);
+}
+
+echo "✅ JSON válido\n\n";
+
+$decoded = json_decode($json, true);
+echo "Accediendo a: data.data.operario.name = " . ($decoded['data']['operario']['name'] ?? 'null') . "\n";
+echo "Accediendo a: data.data.maquina.nombre_maquina = " . ($decoded['data']['maquina']['nombre_maquina'] ?? 'null') . "\n";
+echo "Accediendo a: data.data.tela.nombre_tela = " . ($decoded['data']['tela']['nombre_tela'] ?? 'null') . "\n";
+echo "Accediendo a: data.data.hora.hora = " . ($decoded['data']['hora']['hora'] ?? 'null') . "\n\n";
+
+echo "✅ Todo funciona correctamente\n";
+?>

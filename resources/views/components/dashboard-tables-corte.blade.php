@@ -125,53 +125,94 @@ body:not(.dark-theme) {
 </div>
 
 <script>
+// Variable global para mantener los filtros a través de eventos WebSocket
+let dashboardFilterParams = {};
+
+// Función para obtener filtros desde inputs o URL
+function obtenerFiltrosDashboard() {
+    console.log('🔍 Obteniendo filtros del dashboard...');
+    
+    // Resetear filtros
+    dashboardFilterParams = {};
+    
+    // Primero, intentar obtener desde la URL (si está en fullscreen o tiene parámetros)
+    const currentUrl = new URL(window.location.href);
+    const urlFilterType = currentUrl.searchParams.get('filter_type');
+    
+    if (urlFilterType) {
+        // Si hay filtro_type en URL, capturar todos los parámetros relacionados
+        dashboardFilterParams['filter_type'] = urlFilterType;
+        
+        if (urlFilterType === 'day') {
+            const specificDate = currentUrl.searchParams.get('specific_date');
+            if (specificDate) {
+                dashboardFilterParams['specific_date'] = specificDate;
+            }
+        } else if (urlFilterType === 'range') {
+            const startDate = currentUrl.searchParams.get('start_date');
+            const endDate = currentUrl.searchParams.get('end_date');
+            if (startDate) dashboardFilterParams['start_date'] = startDate;
+            if (endDate) dashboardFilterParams['end_date'] = endDate;
+        } else if (urlFilterType === 'month') {
+            const month = currentUrl.searchParams.get('month');
+            if (month) dashboardFilterParams['month'] = month;
+        } else if (urlFilterType === 'specific') {
+            const specificDates = currentUrl.searchParams.get('specific_dates');
+            if (specificDates) dashboardFilterParams['specific_dates'] = specificDates;
+        }
+        
+        console.log('✅ Filtros desde URL:', dashboardFilterParams);
+    }
+    
+    // Si no hay filtros en URL, mostrar mensaje de "sin filtros"
+    if (Object.keys(dashboardFilterParams).length === 0) {
+        console.log('📅 Sin filtros - Se mostrarán TODOS los registros de cualquier fecha');
+    }
+    
+    return dashboardFilterParams;
+}
+
+// Función para actualizar filtros desde top-controls (llamada desde filtrarPorFechas)
+function actualizarFiltrosDashboard(filterType, specificDate, startDate, endDate, month, specificDates) {
+    console.log('🔄 Actualizando filtros del dashboard desde top-controls...');
+    
+    dashboardFilterParams = {};
+    
+    if (filterType) {
+        dashboardFilterParams['filter_type'] = filterType;
+        
+        if (filterType === 'day' && specificDate) {
+            dashboardFilterParams['specific_date'] = specificDate;
+        } else if (filterType === 'range' && startDate && endDate) {
+            dashboardFilterParams['start_date'] = startDate;
+            dashboardFilterParams['end_date'] = endDate;
+        } else if (filterType === 'month' && month) {
+            dashboardFilterParams['month'] = month;
+        } else if (filterType === 'specific' && specificDates) {
+            dashboardFilterParams['specific_dates'] = specificDates;
+        }
+    }
+    
+    console.log('✅ dashboardFilterParams actualizado:', Object.keys(dashboardFilterParams).length > 0 ? dashboardFilterParams : 'VACÍO - Mostrando TODOS');
+}
+
 // Función para recargar las tablas del dashboard
 function recargarDashboardCorte() {
     console.log('🔄 Recargando dashboard de Corte...');
     
-    // Obtener los filtros activos desde la URL actual
-    const currentUrl = new URL(window.location.href);
-    const params = new URLSearchParams();
+    // Crear URL base
+    const url = new URL('/tableros/corte/dashboard', window.location.origin);
     
-    // Capturar specific_date de la URL (tiene prioridad)
-    const specificDate = currentUrl.searchParams.get('specific_date');
-    if (specificDate) {
-        params.set('fecha', specificDate);
-        console.log('📅 Filtro desde URL (specific_date):', specificDate);
-    } else {
-        // Capturar fecha (si existe en input)
-        const fechaInput = document.querySelector('input[name="fecha"]');
-        if (fechaInput && fechaInput.value) {
-            params.set('fecha', fechaInput.value);
-            console.log('📅 Filtro fecha desde input:', fechaInput.value);
-        }
-        
-        // Capturar fecha_inicio (si existe)
-        const fechaInicioInput = document.querySelector('input[name="fecha_inicio"]');
-        if (fechaInicioInput && fechaInicioInput.value) {
-            params.set('fecha_inicio', fechaInicioInput.value);
-            console.log('📅 Filtro fecha_inicio:', fechaInicioInput.value);
-        }
-        
-        // Capturar fecha_fin (si existe)
-        const fechaFinInput = document.querySelector('input[name="fecha_fin"]');
-        if (fechaFinInput && fechaFinInput.value) {
-            params.set('fecha_fin', fechaFinInput.value);
-            console.log('📅 Filtro fecha_fin:', fechaFinInput.value);
-        }
-        
-        // ⚡ IMPORTANTE: Si no hay filtros, NO filtrar por fecha
-        // Esto permite ver registros de cualquier fecha
-        if (!params.has('fecha') && !params.has('fecha_inicio')) {
-            console.log('📅 Sin filtros, mostrando todos los registros (sin filtro de fecha)');
-        }
-    }
+    // Agregar SOLO los parámetros de filtro que existen
+    Object.keys(dashboardFilterParams).forEach(key => {
+        url.searchParams.set(key, dashboardFilterParams[key]);
+    });
     
-    const url = `/tableros/corte/dashboard?${params.toString()}`;
-    console.log('🌐 URL de recarga:', url);
+    console.log('🌐 URL de recarga:', url.toString());
+    console.log('📊 Parámetros de filtro:', Object.keys(dashboardFilterParams).length > 0 ? dashboardFilterParams : 'NINGUNO - Trayendo TODOS los datos');
     
     // Hacer petición AJAX para obtener datos actualizados
-    fetch(url, {
+    fetch(url.toString(), {
         method: 'GET',
         headers: {
             'X-Requested-With': 'XMLHttpRequest',
@@ -180,7 +221,7 @@ function recargarDashboardCorte() {
     })
     .then(response => response.json())
     .then(data => {
-        console.log('Datos del dashboard recibidos:', data);
+        console.log('✅ Datos del dashboard recibidos:', data);
         
         // Actualizar tabla de horas
         if (data.horas) {
@@ -193,7 +234,7 @@ function recargarDashboardCorte() {
         }
     })
     .catch(error => {
-        console.error('Error al recargar dashboard:', error);
+        console.error('❌ Error al recargar dashboard:', error);
     });
 }
 
@@ -316,6 +357,10 @@ let recargarDashboardTimeout = null;
 function initializeCorteChannel() {
     console.log('=== DASHBOARD CORTE - Inicializando Echo ===');
     console.log('window.Echo disponible:', !!window.Echo);
+    
+    // Obtener y guardar filtros globales en el componente
+    obtenerFiltrosDashboard();
+    console.log('📊 Filtros capturados para dashboard:', dashboardFilterParams);
 
     if (window.Echo) {
         console.log('Suscribiéndose al canal "corte"...');
@@ -332,6 +377,7 @@ function initializeCorteChannel() {
         
         channel.listen('CorteRecordCreated', (e) => {
             console.log('🎉 Evento CorteRecordCreated recibido en dashboard-tables-corte!');
+            console.log('📊 Usando filtros:', dashboardFilterParams);
             
             // ⚡ DEBOUNCE: Evitar múltiples recargas en corto tiempo
             // Cancelar el timeout anterior si existe
