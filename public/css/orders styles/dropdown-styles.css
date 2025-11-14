@@ -132,3 +132,76 @@ body.dark-theme .dia-entrega-dropdown option {
     cursor: not-allowed;
     pointer-events: none;
 }
+
+/* ===== SELECTORES DESHABILITADOS PARA SUPERVISORES ===== */
+/* Estado Dropdown - Deshabilitado */
+.estado-dropdown:disabled {
+    background-color: #e0e7ff;
+    border: 1px solid #c7d2fe;
+    border-radius: 6px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    color: #4f46e5;
+    cursor: not-allowed;
+    opacity: 0.85;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.estado-dropdown:disabled:focus {
+    outline: none;
+    border-color: #c7d2fe;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.estado-dropdown:disabled option {
+    background-color: #ffffff;
+    color: #4f46e5;
+}
+
+/* Modo Oscuro - Estado Dropdown Deshabilitado */
+body.dark-theme .estado-dropdown:disabled {
+    background-color: #312e81;
+    border: 1px solid #4c1d95;
+    color: #a5b4fc;
+}
+
+body.dark-theme .estado-dropdown:disabled option {
+    background-color: #1f2937;
+    color: #a5b4fc;
+}
+
+/* Área Dropdown - Deshabilitado */
+.area-dropdown:disabled {
+    background-color: #fef3c7;
+    border: 1px solid #fcd34d;
+    border-radius: 6px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    color: #92400e;
+    cursor: not-allowed;
+    opacity: 0.85;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.area-dropdown:disabled:focus {
+    outline: none;
+    border-color: #fcd34d;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.area-dropdown:disabled option {
+    background-color: #ffffff;
+    color: #92400e;
+}
+
+/* Modo Oscuro - Área Dropdown Deshabilitado */
+body.dark-theme .area-dropdown:disabled {
+    background-color: #78350f;
+    border: 1px solid #b45309;
+    color: #fcd34d;
+}
+
+body.dark-theme .area-dropdown:disabled option {
+    background-color: #1f2937;
+    color: #fcd34d;
+}

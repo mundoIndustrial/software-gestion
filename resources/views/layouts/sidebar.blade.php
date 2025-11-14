@@ -24,6 +24,7 @@
   <div class="sidebar-content">
     <!-- Lista del menú principal -->
     <ul class="menu-list" role="navigation" aria-label="Menú principal">
+      @if(auth()->user()->role && auth()->user()->role->name !== 'supervisor')
       <li class="menu-item">
         <a href="{{ route('dashboard') }}"
            class="menu-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"
@@ -32,7 +33,20 @@
           <span class="menu-label">Dashboard</span>
         </a>
       </li>
+      @endif
 
+      @if(auth()->user()->role && auth()->user()->role->name === 'supervisor')
+      <!-- Menú simplificado para supervisores: Solo Gestión de Órdenes > Pedidos sin submenú -->
+      <li class="menu-item">
+        <a href="{{ route('registros.index') }}"
+           class="menu-link {{ request()->routeIs('registros.index') ? 'active' : '' }}"
+           aria-label="Ver registro de órdenes">
+          <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
+          <span class="menu-label">Gestión de Órdenes</span>
+        </a>
+      </li>
+      @else
+      <!-- Menú completo para otros roles -->
       <li class="menu-item">
         <button class="menu-link submenu-toggle {{ (request()->routeIs('registros.index') || request()->routeIs('bodega.index')) ? 'active' : '' }}"
                 aria-label="Ver órdenes">
@@ -148,6 +162,7 @@
           </li>
         </ul>
       </li>
+      @endif
 
       @if(auth()->user()->role && auth()->user()->role->name === 'admin')
       <li class="menu-item">
