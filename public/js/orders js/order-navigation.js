@@ -66,43 +66,6 @@ function setCurrentOrder(pedido) {
     currentOrderId = pedido;
     allOrderIds = getAllOrderIds();
     console.log(`📋 Orden actual: ${currentOrderId}, Total órdenes: ${allOrderIds.length}`);
-    
-    // Deshabilitar scroll horizontal de la tabla cuando el modal está abierto
-    disableTableScroll();
-}
-
-/**
- * Deshabilitar scroll horizontal de la tabla
- */
-function disableTableScroll() {
-    const tbody = document.getElementById('tablaOrdenesBody');
-    if (tbody) {
-        const table = tbody.closest('table');
-        if (table) {
-            const wrapper = table.closest('.table-wrapper') || table.parentElement;
-            if (wrapper) {
-                wrapper.style.overflowX = 'hidden';
-                wrapper.style.overflowY = 'auto';
-            }
-        }
-    }
-}
-
-/**
- * Habilitar scroll horizontal de la tabla
- */
-function enableTableScroll() {
-    const tbody = document.getElementById('tablaOrdenesBody');
-    if (tbody) {
-        const table = tbody.closest('table');
-        if (table) {
-            const wrapper = table.closest('.table-wrapper') || table.parentElement;
-            if (wrapper) {
-                wrapper.style.overflowX = 'auto';
-                wrapper.style.overflowY = 'auto';
-            }
-        }
-    }
 }
 
 /**
@@ -204,13 +167,12 @@ function initializeKeyboardNavigation() {
 }
 
 /**
- * Monitorear cierre del modal para habilitar scroll
+ * Monitorear cierre del modal
  */
 function monitorModalClose() {
     // Escuchar el evento close-modal
     document.addEventListener('close-modal', (e) => {
         if (e.detail === 'order-detail') {
-            enableTableScroll();
             currentOrderId = null;
         }
     });
