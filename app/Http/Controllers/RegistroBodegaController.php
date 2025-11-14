@@ -510,20 +510,11 @@ class RegistroBodegaController extends Controller
     {
         $resultados = [];
 
-        // Cache de cálculos para evitar repeticiones
-        static $cacheCalculos = [];
-
-        // Generar clave de cache basada en festivos y fechas
-        $cacheKey = md5(serialize($festivos) . now()->format('Y-m-d'));
+        // DESACTIVADO: Cache deshabilitado para pruebas
+        // Calcular directamente sin cache
 
         foreach ($ordenes as $orden) {
             $ordenPedido = $orden->pedido;
-
-            // Verificar si ya está en cache
-            if (isset($cacheCalculos[$cacheKey][$ordenPedido])) {
-                $resultados[$ordenPedido] = $cacheCalculos[$cacheKey][$ordenPedido];
-                continue;
-            }
 
             // Verificar si fecha_de_creacion_de_orden existe
             if (!$orden->fecha_de_creacion_de_orden) {
@@ -536,15 +527,15 @@ class RegistroBodegaController extends Controller
                 $fechaCreacion = \Carbon\Carbon::parse($orden->fecha_de_creacion_de_orden);
 
                 if ($orden->estado === 'Entregado') {
-                    $fechaEntrega = $orden->entrega ? \Carbon\Carbon::parse($orden->entrega) : null;
-                    $dias = $fechaEntrega ? $this->calcularDiasHabilesBatch($fechaCreacion, $fechaEntrega, $festivos) : 0;
+                    // Usar la fecha de DESPACHO cuando el estado es Entregado
+                    $fechaDespacho = $orden->despacho ? \Carbon\Carbon::parse($orden->despacho) : null;
+                    $dias = $fechaDespacho ? $this->calcularDiasHabilesBatch($fechaCreacion, $fechaDespacho, $festivos) : 0;
                 } else {
+                    // Para órdenes en ejecución, contar hasta hoy
                     $dias = $this->calcularDiasHabilesBatch($fechaCreacion, \Carbon\Carbon::now(), $festivos);
                 }
 
-                // Cachear resultado
-                $cacheCalculos[$cacheKey][$ordenPedido] = max(0, $dias);
-                $resultados[$ordenPedido] = $cacheCalculos[$cacheKey][$ordenPedido];
+                $resultados[$ordenPedido] = max(0, $dias);
             } catch (\Exception $e) {
                 // Si hay error en el cálculo, poner 0
                 $resultados[$ordenPedido] = 0;
@@ -559,24 +550,27 @@ class RegistroBodegaController extends Controller
      */
     private function calcularDiasHabilesBatch(\Carbon\Carbon $inicio, \Carbon\Carbon $fin, array $festivos): int
     {
-        $totalDays = $inicio->diffInDays($fin) + 1;
+        $totalDays = $inicio->diffInDays($fin);
 
         // Contar fines de semana de forma vectorizada
         $weekends = $this->contarFinesDeSemanaBatch($inicio, $fin);
 
-        // Contar festivos en el rango
+        // Contar festivos en el rango (eliminar duplicados)
         $festivosEnRango = array_filter($festivos, function ($festivo) use ($inicio, $fin) {
             $fechaFestivo = \Carbon\Carbon::parse($festivo);
             return $fechaFestivo->between($inicio, $fin);
         });
 
-        $holidaysInRange = count($festivosEnRango);
+        // Eliminar duplicados de festivos
+        $festivosUnicos = [];
+        foreach ($festivosEnRango as $festivo) {
+            $fecha = \Carbon\Carbon::parse($festivo)->format('Y-m-d');
+            $festivosUnicos[$fecha] = $festivo;
+        }
+        
+        $holidaysInRange = count($festivosUnicos);
 
         $businessDays = $totalDays - $weekends - $holidaysInRange;
-
-        // Ajustes finos para inicio/fin en fines de semana o festivos
-        if ($inicio->isWeekend() || in_array($inicio->toDateString(), $festivos)) $businessDays--;
-        if ($fin->isWeekend() || in_array($fin->toDateString(), $festivos)) $businessDays--;
 
         return max(0, $businessDays);
     }
