@@ -803,12 +803,18 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     async function saveCellEdit() {
+        // 🕐 TIMING: Inicio del proceso
+        const startTime = performance.now();
+        const timings = {};
+        
         // Mostrar loading
         showLoading('Guardando cambios...');
         
         let newValue = document.getElementById('editCellInput').value;
         const section = currentCell.closest('table').dataset.section;
         let displayName = newValue; // Guardar el nombre para mostrar
+        
+        timings.start = 0;
         
         // Mapear nombres de columnas si es necesario (ej: 'hora' -> 'hora_id', 'operario' -> 'operario_id', etc.)
         let columnName = currentColumn;
@@ -875,8 +881,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     displayName = cachedData[displayKey];
                     newValue = cachedData[dataKey];
                     payload[columnName] = newValue;
-                    console.log(`✅ ${columnName} obtenido del caché:`, cachedData);
+                    timings.cacheHit = performance.now() - startTime;
+                    console.log(`✅ ${columnName} obtenido del caché:`, cachedData, `(${timings.cacheHit.toFixed(2)}ms)`);
                 } else {
+                    const searchStart = performance.now();
                     // Hacer la búsqueda si no está en caché
                     const response = await fetch(url, {
                         method: 'POST',
@@ -893,6 +901,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                     
                     const data = await response.json();
+                    timings.searchRequest = performance.now() - searchStart;
                     if (data.success || data.id) {
                         displayName = data[displayKey] || data[dataKey];
                         newValue = data[dataKey];
@@ -906,7 +915,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         const keyToStore = cacheType === 'hora' ? String(data[displayKey]) : String(data[displayKey]).toUpperCase();
                         searchCache[cacheType][keyToStore] = data;
                         
-                        console.log(`✅ ${columnName} encontrado/creado y cacheado:`, data);
+                        console.log(`✅ ${columnName} encontrado/creado y cacheado:`, data, `(búsqueda: ${timings.searchRequest.toFixed(2)}ms)`);
                     } else {
                         hideLoading();
                         alert(`Error al procesar ${columnName}`);
@@ -932,6 +941,8 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log(`📤 Enviando PATCH a /tableros/${currentRowId}`);
         console.log(`📦 Payload:`, payload);
         
+        const patchStart = performance.now();
+        
         // 🎯 FIX: Actualizar la celda INMEDIATAMENTE en el front (Optimistic Update)
         // Sin esperar respuesta del servidor
         if (['hora_id', 'operario_id', 'maquina_id', 'tela_id'].includes(currentColumn)) {
@@ -953,11 +964,19 @@ document.addEventListener('DOMContentLoaded', function() {
             body: JSON.stringify(payload)
         })
         .then(response => {
-            console.log(`📥 Respuesta HTTP: ${response.status}`);
+            timings.patchRequest = performance.now() - patchStart;
+            console.log(`📥 Respuesta HTTP: ${response.status} (${timings.patchRequest.toFixed(2)}ms)`);
             return response.json();
         })
         .then(data => {
             console.log(`✅ Respuesta del servidor:`, data);
+            const totalTime = performance.now() - startTime;
+            console.log(`⏱️ TIMINGS TOTALES:
+            - Búsqueda: ${timings.searchRequest?.toFixed(2) || 'N/A'}ms
+            - Cache hit: ${timings.cacheHit?.toFixed(2) || 'N/A'}ms
+            - PATCH request: ${timings.patchRequest?.toFixed(2) || 'N/A'}ms
+            - TOTAL: ${totalTime.toFixed(2)}ms
+            `);
             if (data.success) {
                 // 🎯 FIX: Actualizar la celda con el displayName CORRECTO
                 // Para hora_id, operario_id, maquina_id y tela_id, mostrar el nombre/valor, no el ID
