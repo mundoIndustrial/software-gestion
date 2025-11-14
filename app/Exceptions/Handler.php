@@ -11,6 +11,8 @@ use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Illuminate\Auth\AuthenticationException;
+use Illuminate\Session\TokenMismatchException;
 
 class Handler extends ExceptionHandler
 {
@@ -40,6 +42,17 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Throwable $e): Response
     {
+        // Si usuario no está autenticado y accede a ruta protegida o no existe, redirigir a login
+        if (!auth()->check() && ($e instanceof NotFoundHttpException || $e instanceof AccessDeniedHttpException)) {
+            return redirect()->route('login')->with('error', 'No puedes acceder a esta página. Debes estar autenticado.');
+        }
+
+        // Si la sesión expiró o token CSRF inválido, redirigir a login
+        // (solo si el usuario ESTABA autenticado antes)
+        if ($e instanceof AuthenticationException || $e instanceof TokenMismatchException) {
+            return redirect()->route('login')->with('error', 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
+        }
+
         // Si es una petición AJAX o API, devolver JSON
         if ($request->expectsJson()) {
             return $this->renderJsonResponse($e);
@@ -123,7 +136,7 @@ class Handler extends ExceptionHandler
                 return 'La operación tardó demasiado tiempo en completarse. Intenta nuevamente o contacta al administrador.';
                 
             case str_contains($e->getMessage(), 'CSRF'):
-                return 'Tu sesión ha expirado por seguridad. Por favor, recarga la página e intenta nuevamente.';
+                return 'Tu sesión ha expirado por seguridad. Por favor, inicia sesión nuevamente.';
                 
             case str_contains($e->getMessage(), 'permission denied'):
                 return 'El sistema no tiene permisos para realizar esta operación. Contacta al administrador.';

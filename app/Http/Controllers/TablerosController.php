@@ -80,9 +80,18 @@ class TablerosController extends Controller
         $columnsPolos = Schema::getColumnListing('registro_piso_polo');
         $columnsPolos = array_diff($columnsPolos, ['id', 'created_at', 'updated_at', 'producida']);
 
-        $queryCorte = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela']);
+        $queryCorte = RegistroPisoCorte::query();
         $this->aplicarFiltrosDinamicos($queryCorte, request(), 'corte');
         $registrosCorte = $queryCorte->orderBy('id', 'desc')->paginate(50);
+        // ⚡ OPTIMIZACIÓN: Cargar relaciones SOLO para items de la página actual
+        $registrosCorte->load(['hora', 'operario', 'maquina', 'tela']);
+        
+        // 🔍 DEBUG: Verificar que las relaciones se cargaron
+        \Log::info('RegistrosCorte loaded with relations', [
+            'count' => count($registrosCorte->items()),
+            'first_item_has_hora' => !empty($registrosCorte->items()) ? !!$registrosCorte->items()[0]->hora : null,
+            'first_item_hora_value' => !empty($registrosCorte->items()) ? $registrosCorte->items()[0]->hora?->hora : null
+        ]);
         $columnsCorte = Schema::getColumnListing('registro_piso_corte');
         $columnsCorte = array_diff($columnsCorte, ['id', 'created_at', 'updated_at', 'producida']);
 
@@ -94,6 +103,7 @@ class TablerosController extends Controller
                 'columnsPolos' => array_values($columnsPolos),
                 'registrosCorte' => $registrosCorte->map(function($registro) {
                     $registroArray = $registro->toArray();
+                    // Agregar displays de relaciones para AJAX
                     if ($registro->hora) {
                         $registroArray['hora_display'] = $registro->hora->hora;
                     }
@@ -140,9 +150,10 @@ class TablerosController extends Controller
         }
 
         // Obtener todos los registros para seguimiento
+        // ⚡ OPTIMIZACIÓN: Cargar relaciones solo si es necesario para el seguimiento
         $todosRegistrosProduccion = RegistroPisoProduccion::all();
         $todosRegistrosPolos = RegistroPisoPolo::all();
-        $todosRegistrosCorte = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela'])->get();
+        $todosRegistrosCorte = RegistroPisoCorte::all(); // Sin cargar relaciones aquí
 
         // Filtrar registros por fecha SOLO para el tablero activo
         $activeSection = request()->get('active_section', 'produccion');
@@ -718,6 +729,43 @@ class TablerosController extends Controller
         ]);
 
         try {
+            // ⚡ OPTIMIZACIÓN: Si solo se actualizan campos de relaciones (hora, operario, máquina, tela)
+            // NO recalcular nada, solo guardar y devolver éxito inmediatamente
+            $fieldsRelacionesExternas = ['hora_id', 'operario_id', 'maquina_id', 'tela_id'];
+            $soloRelacionesExternas = true;
+            
+            foreach ($validated as $field => $value) {
+                if (!in_array($field, $fieldsRelacionesExternas)) {
+                    $soloRelacionesExternas = false;
+                    break;
+                }
+            }
+
+            // ⚡ RÁPIDO: Si solo son campos de relaciones, guardar y retornar sin cálculos
+            if ($soloRelacionesExternas) {
+                $registro->update($validated);
+                
+                // ⚡ IMPORTANTE: Cargar relaciones ANTES de hacer broadcast para que tengan datos completos
+                if ($request->section === 'corte') {
+                    $registro->load(['hora', 'operario', 'maquina', 'tela']);
+                }
+                
+                // Emitir broadcast de forma NON-BLOCKING (no esperar)
+                try {
+                    if ($request->section === 'corte') {
+                        broadcast(new CorteRecordCreated($registro));
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('Broadcast error: ' . $e->getMessage());
+                }
+                
+                // Retornar inmediatamente sin esperar al broadcast
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Registro actualizado correctamente.',
+                ]);
+            }
+
             $registro->update($validated);
 
             // Recalcular siempre que se actualice cualquier campo que afecte los cálculos

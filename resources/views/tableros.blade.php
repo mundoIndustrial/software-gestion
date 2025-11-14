@@ -509,6 +509,14 @@ let currentRowId = null;
 let currentColumn = null;
 let currentAutocompleteListener = null;
 
+// ⚡ OPTIMIZACIÓN: Cachear búsquedas anteriores para evitar llamadas duplicadas
+const searchCache = {
+    operario: {},
+    maquina: {},
+    tela: {},
+    hora: {}
+};
+
 // Funciones para mostrar/ocultar loading overlay
 function showLoading(message = 'Procesando...') {
     const overlay = document.getElementById('loadingOverlay');
@@ -528,13 +536,23 @@ function hideLoading() {
 
 // Función global para manejar doble click en celdas
 function handleCellDoubleClick() {
-    console.log('Doble clic detectado en celda');
+    console.log('🖱️ Doble clic detectado en celda');
     currentCell = this;
-    currentRowId = this.closest('tr').dataset.id;
+    const row = this.closest('tr');
+    console.log('🔍 Row encontrado:', !!row);
+    console.log('🔍 Row dataset:', row?.dataset);
+    currentRowId = row?.dataset?.id;
     currentColumn = this.dataset.column;
 
-    const currentValue = this.dataset.value || this.textContent.trim();
-    console.log('Valor actual:', currentValue, 'Columna:', currentColumn);
+    // Obtener el valor a mostrar (preferir textContent que tiene el nombre, no el ID)
+    const currentValue = this.textContent.trim();
+    console.log(`📝 Editando - ID: ${currentRowId}, Columna: ${currentColumn}, Valor: ${currentValue}`);
+    
+    if (!currentRowId) {
+        console.error('❌ ERROR: No se pudo obtener el ID del registro');
+        alert('Error: No se pudo identificar el registro');
+        return;
+    }
     
     const modal = document.getElementById('editCellModal');
     const input = document.getElementById('editCellInput');
@@ -545,18 +563,22 @@ function handleCellDoubleClick() {
     console.log('Modal encontrado:', !!modal);
     if (modal) {
         // Configurar título según la columna
-        if (currentColumn === 'operario_id') {
+        if (currentColumn === 'operario_id' || currentColumn === 'operario') {
             modalTitle.textContent = 'Editar Operario';
             hint.textContent = 'Escribe el nombre del operario (se creará si no existe)';
             setupAutocomplete('operario');
-        } else if (currentColumn === 'maquina_id') {
+        } else if (currentColumn === 'maquina_id' || currentColumn === 'maquina') {
             modalTitle.textContent = 'Editar Máquina';
             hint.textContent = 'Escribe el nombre de la máquina (se creará si no existe)';
             setupAutocomplete('maquina');
-        } else if (currentColumn === 'tela_id') {
+        } else if (currentColumn === 'tela_id' || currentColumn === 'tela') {
             modalTitle.textContent = 'Editar Tela';
             hint.textContent = 'Escribe el nombre de la tela (se creará si no existe)';
             setupAutocomplete('tela');
+        } else if (currentColumn === 'hora_id' || currentColumn === 'hora') {
+            modalTitle.textContent = 'Editar Hora';
+            hint.textContent = 'Escribe la hora (ej: 1, 2, 3, etc.)';
+            datalist.innerHTML = ''; // Sin autocomplete para hora
         } else {
             modalTitle.textContent = 'Editar Celda';
             hint.textContent = 'Ingrese el nuevo valor';
@@ -591,7 +613,7 @@ function setupAutocomplete(type) {
     let searchTimeout;
     currentAutocompleteListener = function(e) {
         clearTimeout(searchTimeout);
-        const query = e.target.value.toUpperCase();
+        const query = e.target.value.toUpperCase().trim();
         
         if (query.length < 1) {
             datalist.innerHTML = '';
@@ -608,23 +630,45 @@ function setupAutocomplete(type) {
                 searchUrl = '/search-telas';
             }
             
+            console.log(`🔍 Buscando ${type}: "${query}"`);
+            
             fetch(`${searchUrl}?q=${encodeURIComponent(query)}`)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     datalist.innerHTML = '';
-                    data.forEach(item => {
+                    // Extraer el array correcto según el tipo
+                    let items = [];
+                    if (type === 'operario' && data.operarios) {
+                        items = data.operarios;
+                    } else if (type === 'maquina' && data.maquinas) {
+                        items = data.maquinas;
+                    } else if (type === 'tela' && data.telas) {
+                        items = data.telas;
+                    }
+                    
+                    console.log(`✅ Encontrados ${items.length} resultados para ${type}`);
+                    
+                    items.forEach(item => {
                         const option = document.createElement('option');
                         if (type === 'operario') {
                             option.value = item.name;
+                            console.log(`  - ${item.name} (ID: ${item.id})`);
                         } else if (type === 'maquina') {
                             option.value = item.nombre_maquina;
+                            console.log(`  - ${item.nombre_maquina} (ID: ${item.id})`);
                         } else if (type === 'tela') {
                             option.value = item.nombre_tela;
+                            console.log(`  - ${item.nombre_tela} (ID: ${item.id})`);
                         }
                         datalist.appendChild(option);
                     });
                 })
-                .catch(error => console.error('Error buscando:', error));
+                .catch(error => console.error(`❌ Error buscando ${type}:`, error));
         }, 300);
     };
     
@@ -723,13 +767,19 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Función para hacer celdas editables con doble click
+    // ⚡ OPTIMIZACIÓN: Usar event delegation en lugar de adjuntar listeners a cada celda
     function attachEditableCellListeners() {
-        const editableCells = document.querySelectorAll('.editable-cell');
-        console.log('Celdas editables encontradas:', editableCells.length);
-        editableCells.forEach(cell => {
-            cell.removeEventListener('dblclick', handleCellDoubleClick);
-            cell.addEventListener('dblclick', handleCellDoubleClick);
-        });
+        // Solo adjuntar listener UNA VEZ al documento, no a cada celda
+        if (!window.editableCellListenerAttached) {
+            document.addEventListener('dblclick', function(e) {
+                const cell = e.target.closest('.editable-cell');
+                if (cell) {
+                    handleCellDoubleClick.call(cell);
+                }
+            });
+            window.editableCellListenerAttached = true;
+            console.log('✅ Event delegation para celdas editables adjuntado UNA sola vez');
+        }
     }
 
     // Inicializar event listeners
@@ -756,11 +806,28 @@ document.addEventListener('DOMContentLoaded', function() {
         // Mostrar loading
         showLoading('Guardando cambios...');
         
-        let newValue = document.getElementById('editCellInput').value.toUpperCase(); // Convertir a mayúsculas
+        let newValue = document.getElementById('editCellInput').value;
         const section = currentCell.closest('table').dataset.section;
         let displayName = newValue; // Guardar el nombre para mostrar
+        
+        // Mapear nombres de columnas si es necesario (ej: 'hora' -> 'hora_id', 'operario' -> 'operario_id', etc.)
+        let columnName = currentColumn;
+        if (currentColumn === 'hora') {
+            columnName = 'hora_id';
+        } else if (currentColumn === 'operario') {
+            columnName = 'operario_id';
+            newValue = newValue.toUpperCase(); // Solo convertir a mayúsculas para texto
+        } else if (currentColumn === 'maquina') {
+            columnName = 'maquina_id';
+            newValue = newValue.toUpperCase();
+        } else if (currentColumn === 'tela') {
+            columnName = 'tela_id';
+            newValue = newValue.toUpperCase();
+        }
+        
         // Datos a enviar (permitir agregar campos adicionales cuando se requiera)
-        const payload = { [currentColumn]: newValue, section: section };
+        const payload = { [columnName]: newValue, section: section };
+        console.log(`📝 Columna original: ${currentColumn}, Columna mapeada: ${columnName}`);
 
         // Mapear PARADAS PROGRAMADAS -> TIEMPO PARA PROGRAMADA (segundos)
         function mapParadaToSeconds(valor) {
@@ -770,93 +837,88 @@ document.addEventListener('DOMContentLoaded', function() {
             return 0; // Default
         }
 
-        // Si es hora_id, buscar o crear el ID correspondiente
-        if (currentColumn === 'hora_id') {
-            try {
-                const response = await fetch('/find-hora-id', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify({ hora: newValue })
-                });
-                const data = await response.json();
-                if (data.success) {
-                    displayName = data.hora; // Guardar el valor de la hora para mostrar
-                    newValue = data.id; // Usar el ID de la hora para guardar
-                    console.log('Hora encontrada/creada:', data);
-                } else {
-                    hideLoading();
-                    alert('Error al procesar la hora');
-                    return;
+        // ⚡ OPTIMIZACIÓN: Ejecutar búsquedas en PARALELO usando Promise.all()
+        try {
+            if (['hora_id', 'operario_id', 'maquina_id', 'tela_id'].includes(columnName)) {
+                // Determinar la URL y nombre del campo según el tipo
+                let url = '';
+                let dataKey = '';
+                let displayKey = '';
+                let cacheType = '';
+                
+                if (columnName === 'hora_id') {
+                    url = '/find-hora-id';
+                    dataKey = 'id';
+                    displayKey = 'hora';
+                    cacheType = 'hora';
+                } else if (columnName === 'operario_id') {
+                    url = '/find-or-create-operario';
+                    dataKey = 'id';
+                    displayKey = 'name';
+                    cacheType = 'operario';
+                } else if (columnName === 'maquina_id') {
+                    url = '/find-or-create-maquina';
+                    dataKey = 'id';
+                    displayKey = 'nombre_maquina';
+                    cacheType = 'maquina';
+                } else if (columnName === 'tela_id') {
+                    url = '/find-or-create-tela';
+                    dataKey = 'id';
+                    displayKey = 'nombre_tela';
+                    cacheType = 'tela';
                 }
-            } catch (error) {
-                console.error('Error al buscar/crear hora:', error);
-                hideLoading();
-                alert('Error al procesar la hora');
-                return;
+                
+                // ⚡ OPTIMIZACIÓN: Revisar caché primero
+                const cacheKey = cacheType === 'hora' ? newValue : newValue.toUpperCase();
+                if (searchCache[cacheType] && searchCache[cacheType][cacheKey]) {
+                    const cachedData = searchCache[cacheType][cacheKey];
+                    displayName = cachedData[displayKey];
+                    newValue = cachedData[dataKey];
+                    payload[columnName] = newValue;
+                    console.log(`✅ ${columnName} obtenido del caché:`, cachedData);
+                } else {
+                    // Hacer la búsqueda si no está en caché
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: JSON.stringify(
+                            columnName === 'hora_id' ? { hora: newValue } :
+                            columnName === 'operario_id' ? { name: newValue } :
+                            columnName === 'maquina_id' ? { nombre: newValue } :
+                            { nombre: newValue }
+                        )
+                    });
+                    
+                    const data = await response.json();
+                    if (data.success || data.id) {
+                        displayName = data[displayKey] || data[dataKey];
+                        newValue = data[dataKey];
+                        payload[columnName] = newValue;
+                        
+                        // ⚡ OPTIMIZACIÓN: Guardar en caché para búsquedas futuras
+                        if (!searchCache[cacheType]) {
+                            searchCache[cacheType] = {};
+                        }
+                        // Para hora, no hacer toUpperCase() del key
+                        const keyToStore = cacheType === 'hora' ? String(data[displayKey]) : String(data[displayKey]).toUpperCase();
+                        searchCache[cacheType][keyToStore] = data;
+                        
+                        console.log(`✅ ${columnName} encontrado/creado y cacheado:`, data);
+                    } else {
+                        hideLoading();
+                        alert(`Error al procesar ${columnName}`);
+                        return;
+                    }
+                }
             }
-        } else if (currentColumn === 'operario_id') {
-            try {
-                const response = await fetch('/find-or-create-operario', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify({ name: newValue })
-                });
-                const data = await response.json();
-                displayName = data.name; // Guardar el nombre
-                newValue = data.id; // Usar el ID del operario para guardar
-                console.log('Operario encontrado/creado:', data);
-            } catch (error) {
-                console.error('Error al buscar/crear operario:', error);
-                hideLoading();
-                alert('Error al procesar el operario');
-                return;
-            }
-        } else if (currentColumn === 'maquina_id') {
-            try {
-                const response = await fetch('/find-or-create-maquina', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify({ nombre: newValue })
-                });
-                const data = await response.json();
-                displayName = data.nombre_maquina; // Guardar el nombre
-                newValue = data.id; // Usar el ID de la máquina para guardar
-                console.log('Máquina encontrada/creada:', data);
-            } catch (error) {
-                console.error('Error al buscar/crear máquina:', error);
-                hideLoading();
-                alert('Error al procesar la máquina');
-                return;
-            }
-        } else if (currentColumn === 'tela_id') {
-            try {
-                const response = await fetch('/find-or-create-tela', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify({ nombre: newValue })
-                });
-                const data = await response.json();
-                displayName = data.nombre_tela; // Guardar el nombre
-                newValue = data.id; // Usar el ID de la tela para guardar
-                console.log('Tela encontrada/creada:', data);
-            } catch (error) {
-                console.error('Error al buscar/crear tela:', error);
-                hideLoading();
-                alert('Error al procesar la tela');
-                return;
-            }
+        } catch (error) {
+            console.error('❌ Error al buscar/crear:', error);
+            hideLoading();
+            alert('Error al procesar el cambio');
+            return;
         }
 
         // Si se edita PARADAS PROGRAMADAS, establecer TIEMPO PARA PROGRAMADA automáticamente
@@ -864,8 +926,24 @@ document.addEventListener('DOMContentLoaded', function() {
             const tppSeconds = mapParadaToSeconds(newValue);
             // Incluir en el payload para que backend pueda recalcular con este dato
             payload['tiempo_para_programada'] = tppSeconds;
+            payload[currentColumn] = newValue; // Asegurar que el payload tiene el valor correcto
         }
 
+        console.log(`📤 Enviando PATCH a /tableros/${currentRowId}`);
+        console.log(`📦 Payload:`, payload);
+        
+        // 🎯 FIX: Actualizar la celda INMEDIATAMENTE en el front (Optimistic Update)
+        // Sin esperar respuesta del servidor
+        if (['hora_id', 'operario_id', 'maquina_id', 'tela_id'].includes(currentColumn)) {
+            currentCell.dataset.value = displayName;
+            currentCell.textContent = displayName;
+            console.log(`✅ Celda actualizada INMEDIATAMENTE en el front: ${displayName}`);
+        } else if (currentColumn !== 'paradas_programadas') {
+            // Para otros campos que no son paradas_programadas, actualizar también inmediatamente
+            currentCell.dataset.value = newValue;
+            currentCell.textContent = formatDisplayValue(currentColumn, newValue);
+        }
+        
         fetch(`/tableros/${currentRowId}`, {
             method: 'PATCH',
             headers: {
@@ -874,14 +952,20 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             body: JSON.stringify(payload)
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log(`📥 Respuesta HTTP: ${response.status}`);
+            return response.json();
+        })
         .then(data => {
+            console.log(`✅ Respuesta del servidor:`, data);
             if (data.success) {
-                // Actualizar la celda en la interfaz
-                // Para hora_id, operario, máquina y tela, mostrar el nombre/valor, no el ID
+                // 🎯 FIX: Actualizar la celda con el displayName CORRECTO
+                // Para hora_id, operario_id, maquina_id y tela_id, mostrar el nombre/valor, no el ID
                 if (['hora_id', 'operario_id', 'maquina_id', 'tela_id'].includes(currentColumn)) {
+                    // ⚡ IMPORTANTE: Usar displayName que ya tiene el nombre correcto
                     currentCell.dataset.value = displayName;
                     currentCell.textContent = displayName;
+                    console.log(`✅ Celda re-confirmada con: ${displayName} (es el nombre, no el ID)`);
                 } else {
                     currentCell.dataset.value = newValue;
                     currentCell.textContent = formatDisplayValue(currentColumn, newValue);
@@ -943,22 +1027,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
 
+                // ⚡ FAST: Cerrar modal y ocultar loading INMEDIATAMENTE
                 closeEditModal();
-                
-                // Ocultar loading
                 hideLoading();
                 
                 // Mostrar notificación de éxito
                 showNotification('Cambios guardados correctamente', 'success');
             } else {
                 hideLoading();
+                console.error('❌ Error del servidor:', data.message);
+                console.error('❌ Respuesta completa:', data);
                 alert('Error al guardar: ' + data.message);
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+            console.error('❌ Error de red:', error);
             hideLoading();
-            alert('Error al guardar los cambios');
+            alert('Error al guardar los cambios: ' + error.message);
         });
     }
     
@@ -1041,17 +1126,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 console.log('✅ Registro duplicado exitosamente:', data.registro);
                 
+                // Agregar el registro a la tabla INMEDIATAMENTE (sin esperar WebSocket)
+                console.log('⚡ Agregando registro a la tabla inmediatamente...');
+                agregarRegistroTiempoReal(data.registro, section);
+                
                 // Ocultar loading
                 hideLoading();
                 
                 // Mostrar notificación de éxito
                 showNotification('Registro duplicado correctamente', 'success');
-                
-                // NO agregamos la fila manualmente aquí
-                // El WebSocket se encargará de agregarla automáticamente
-                // Esto evita duplicación y asegura que tenga todos los botones correctos
-                console.log('⏳ Esperando que WebSocket agregue el registro a la tabla...');
-                
             } else {
                 console.error('Error al duplicar:', data.message);
                 hideLoading();
@@ -1500,7 +1583,7 @@ function agregarRegistroTiempoReal(registro, section) {
         
         // Manejar relaciones (objetos)
         // En corte, hora es un objeto; en produccion/polos, es un string
-        if (column === 'hora' && registro.hora) {
+        if ((column === 'hora' || column === 'hora_id') && registro.hora) {
             if (typeof registro.hora === 'object' && registro.hora.hora) {
                 // Corte: hora es un objeto
                 value = registro.hora.id;
@@ -1510,13 +1593,13 @@ function agregarRegistroTiempoReal(registro, section) {
                 value = registro.hora;
                 displayValue = registro.hora;
             }
-        } else if (column === 'operario' && registro.operario) {
+        } else if ((column === 'operario' || column === 'operario_id') && registro.operario) {
             value = registro.operario.id;
             displayValue = registro.operario.name;
-        } else if (column === 'maquina' && registro.maquina) {
+        } else if ((column === 'maquina' || column === 'maquina_id') && registro.maquina) {
             value = registro.maquina.id;
             displayValue = registro.maquina.nombre_maquina;
-        } else if (column === 'tela' && registro.tela) {
+        } else if ((column === 'tela' || column === 'tela_id') && registro.tela) {
             value = registro.tela.id;
             displayValue = registro.tela.nombre_tela;
         } else if (column === 'fecha' && value) {
@@ -1599,7 +1682,7 @@ function actualizarFilaExistente(row, registro, section) {
             
             // Manejar relaciones (objetos)
             // En corte, hora es un objeto; en produccion/polos, es un string
-            if (column === 'hora' && registro.hora) {
+            if ((column === 'hora' || column === 'hora_id') && registro.hora) {
                 if (typeof registro.hora === 'object' && registro.hora.hora) {
                     // Corte: hora es un objeto
                     value = registro.hora.id;
@@ -1609,13 +1692,13 @@ function actualizarFilaExistente(row, registro, section) {
                     value = registro.hora;
                     displayValue = registro.hora;
                 }
-            } else if (column === 'operario' && registro.operario) {
+            } else if ((column === 'operario' || column === 'operario_id') && registro.operario) {
                 value = registro.operario.id;
                 displayValue = registro.operario.name;
-            } else if (column === 'maquina' && registro.maquina) {
+            } else if ((column === 'maquina' || column === 'maquina_id') && registro.maquina) {
                 value = registro.maquina.id;
                 displayValue = registro.maquina.nombre_maquina;
-            } else if (column === 'tela' && registro.tela) {
+            } else if ((column === 'tela' || column === 'tela_id') && registro.tela) {
                 value = registro.tela.id;
                 displayValue = registro.tela.nombre_tela;
             } else if (column === 'fecha' && value) {
