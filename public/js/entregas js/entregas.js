@@ -283,6 +283,16 @@ function setupRealtimeListeners() {
         }
     });
 
+    channel.listen('EntregaEliminada', (data) => {
+        console.log('🗑️ Evento EntregaEliminada recibido!', data);
+        
+        // Recargar datos de forma automática
+        window.filtrarDatos();
+        
+        // Mostrar notificación visual
+        mostrarNotificacionEliminada(data);
+    });
+
     console.log('✅ Listener de entregas configurado');
 }
 
@@ -302,6 +312,39 @@ function mostrarNotificacion(data) {
         <div class="notification-content">
             <svg class="notification-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <span>${mensaje}</span>
+        </div>
+    `;
+    
+    document.body.appendChild(notificacion);
+    
+    // Animar entrada
+    setTimeout(() => notificacion.classList.add('show'), 10);
+    
+    // Remover después de 4 segundos
+    setTimeout(() => {
+        notificacion.classList.remove('show');
+        setTimeout(() => notificacion.remove(), 300);
+    }, 4000);
+}
+
+// Mostrar notificación de entrega eliminada
+function mostrarNotificacionEliminada(data) {
+    const notificacion = document.createElement('div');
+    notificacion.className = 'realtime-notification notification-delete';
+    
+    let mensaje = '';
+    if (data.subtipo === 'costura') {
+        mensaje = `Entrega de costura eliminada: Pedido ${data.entrega.pedido}`;
+    } else if (data.subtipo === 'corte') {
+        mensaje = `Entrega de corte eliminada: Pedido ${data.entrega.pedido}`;
+    }
+    
+    notificacion.innerHTML = `
+        <div class="notification-content">
+            <svg class="notification-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             <span>${mensaje}</span>
         </div>
@@ -415,7 +458,7 @@ async function saveCell(newValue) {
                 const row = cell.closest('tr');
                 const piezasCell = row.querySelector('[data-field="piezas"] .table-badge');
                 const pasadasCell = row.querySelector('[data-field="pasadas"] .table-badge');
-                const etiqueteadasCell = row.querySelectorAll('.table-badge')[2]; // Third badge
+                const etiqueteadasCell = row.querySelectorAll('.table-badge')[2];
                 
                 if (piezasCell && pasadasCell && etiqueteadasCell) {
                     const piezas = parseInt(piezasCell.textContent);
@@ -460,7 +503,6 @@ window.deleteEntrega = async function(id, subtipo) {
         const data = await response.json();
         
         if (data.success) {
-            showSuccessMessage('✓ Entrega eliminada');
             // Reload data
             window.filtrarDatos();
         } else {
