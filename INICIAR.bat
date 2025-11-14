@@ -24,7 +24,7 @@ echo       Procesos detenidos
 echo.
 
 echo [3/6] Configurando variables de entorno...
-REM Verificar si existe VITE_HMR_HOST en .env
+REM Actualizar VITE_HMR_HOST
 findstr /C:"VITE_HMR_HOST" .env >nul
 if %errorlevel% equ 0 (
     powershell -Command "(Get-Content .env) -replace '^VITE_HMR_HOST=.*', 'VITE_HMR_HOST=%IP%' | Set-Content .env.temp" >nul
@@ -33,14 +33,38 @@ if %errorlevel% equ 0 (
     echo VITE_HMR_HOST=%IP% >> .env
 )
 
-REM Actualizar otras variables si es necesario
-powershell -Command "(Get-Content .env) -replace '^VITE_REVERB_HOST=.*', 'VITE_REVERB_HOST=%IP%' | Set-Content .env.temp" >nul
-move /Y .env.temp .env >nul
+REM Actualizar VITE_REVERB_HOST
+findstr /C:"VITE_REVERB_HOST" .env >nul
+if %errorlevel% equ 0 (
+    powershell -Command "(Get-Content .env) -replace '^VITE_REVERB_HOST=.*', 'VITE_REVERB_HOST=%IP%' | Set-Content .env.temp" >nul
+    move /Y .env.temp .env >nul
+) else (
+    echo VITE_REVERB_HOST=%IP% >> .env
+)
 
-powershell -Command "(Get-Content .env) -replace '^APP_URL=.*', 'APP_URL=http://%IP%:8000' | Set-Content .env.temp" >nul
-move /Y .env.temp .env >nul
+REM Actualizar REVERB_HOST (importante para WebSocket)
+findstr /C:"REVERB_HOST" .env >nul
+if %errorlevel% equ 0 (
+    powershell -Command "(Get-Content .env) -replace '^REVERB_HOST=.*', 'REVERB_HOST=%IP%' | Set-Content .env.temp" >nul
+    move /Y .env.temp .env >nul
+) else (
+    echo REVERB_HOST=%IP% >> .env
+)
 
-echo       Variables configuradas
+REM Actualizar APP_URL
+findstr /C:"APP_URL" .env >nul
+if %errorlevel% equ 0 (
+    powershell -Command "(Get-Content .env) -replace '^APP_URL=.*', 'APP_URL=http://%IP%:8000' | Set-Content .env.temp" >nul
+    move /Y .env.temp .env >nul
+) else (
+    echo APP_URL=http://%IP%:8000 >> .env
+)
+
+echo       Variables configuradas:
+echo       - VITE_HMR_HOST=%IP%
+echo       - VITE_REVERB_HOST=%IP%
+echo       - REVERB_HOST=%IP%
+echo       - APP_URL=http://%IP%:8000
 echo.
 
 echo [4/6] Limpiando cache...

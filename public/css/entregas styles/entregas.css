@@ -543,6 +543,12 @@ body:not(.dark-theme) .btn-secondary:hover {
     flex-shrink: 0;
 }
 
+/* Notificación de eliminación */
+.realtime-notification.notification-delete {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
+}
+
 @media (max-width: 768px) {
     .ep-container {
         padding: 1rem;
