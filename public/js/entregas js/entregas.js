@@ -415,7 +415,7 @@ async function saveCell(newValue) {
                 const row = cell.closest('tr');
                 const piezasCell = row.querySelector('[data-field="piezas"] .table-badge');
                 const pasadasCell = row.querySelector('[data-field="pasadas"] .table-badge');
-                const etiqueteadasCell = row.querySelectorAll('.table-badge')[2]; // Third badge
+                const etiqueteadasCell = row.querySelectorAll('.table-badge')[2];
                 
                 if (piezasCell && pasadasCell && etiqueteadasCell) {
                     const piezas = parseInt(piezasCell.textContent);

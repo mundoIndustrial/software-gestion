@@ -208,17 +208,6 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="pasadas" class="form-label">
-                                <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M9 5l7 7-7 7" stroke-width="2" stroke-linecap="round" />
-                                </svg>
-                                Pasadas
-                            </label>
-                            <input type="number" id="pasadas" name="pasadas" class="form-input" placeholder="0"
-                                min="0" />
-                        </div>
-
-                        <div class="form-group">
                             <label for="etiquetador" class="form-label">
                                 <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                     <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
@@ -228,18 +217,6 @@
                             </label>
                             <input type="text" id="etiquetador" name="etiquetador" class="form-input"
                                 placeholder="Nombre del etiquetador" />
-                        </div>
-
-                        <div class="form-group">
-                            <label for="mes" class="form-label">
-                                <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path
-                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                        stroke-width="2" stroke-linecap="round" />
-                                </svg>
-                                Mes
-                            </label>
-                            <input type="text" id="mes" name="mes" class="form-input" placeholder="MM/YYYY" />
                         </div>
                     </div>
 
@@ -662,7 +639,10 @@
 
                 init() {
                     this.resetForm();
-                    this.setupEventListeners();
+                    // Delay to ensure DOM elements are ready
+                    setTimeout(() => {
+                        this.setupEventListeners();
+                    }, 100);
                 },
 
                 setupEventListeners() {
@@ -677,63 +657,96 @@
 
                     // Pedido input with debouncing
                     let pedidoTimeout;
-                    document.getElementById('pedido').addEventListener('input', (e) => {
-                        this.form.pedido = e.target.value;
-                        clearTimeout(pedidoTimeout);
-                        if (this.form.pedido.length >= 3) { // Only search after 3 characters
-                            pedidoTimeout = setTimeout(() => {
-                                this.fetchOrderData();
-                            }, 500); // Wait 500ms after user stops typing
-                        } else {
-                            // Clear error if less than 3 characters
-                            document.getElementById('pedidoError').classList.add('hidden');
-                            document.getElementById('cliente').value = '';
-                            this.orderData = {};
-                            this.garments = [];
-                        }
-                    });
+                    const pedidoEl = document.getElementById('pedido');
+                    if (pedidoEl) {
+                        pedidoEl.addEventListener('input', (e) => {
+                            this.form.pedido = e.target.value;
+                            clearTimeout(pedidoTimeout);
+                            if (this.form.pedido.length >= 3) { // Only search after 3 characters
+                                pedidoTimeout = setTimeout(() => {
+                                    this.fetchOrderData();
+                                }, 500); // Wait 500ms after user stops typing
+                            } else {
+                                // Clear error if less than 3 characters
+                                document.getElementById('pedidoError').classList.add('hidden');
+                                document.getElementById('cliente').value = '';
+                                this.orderData = {};
+                                this.garments = [];
+                            }
+                        });
+                    }
+
+                    // Fecha input
+                    const fechaEntregaEl = document.getElementById('fecha_entrega');
+                    if (fechaEntregaEl) {
+                        fechaEntregaEl.addEventListener('input', (e) => {
+                            this.form.fecha_entrega = e.target.value;
+                            this.updateButtonState();
+                        });
+                    }
 
                     // Costura form fields
-                    document.getElementById('prenda').addEventListener('change', (e) => {
-                        this.form.prenda = e.target.value;
-                        this.fetchSizes();
-                    });
+                    const prendaEl = document.getElementById('prenda');
+                    if (prendaEl) {
+                        prendaEl.addEventListener('change', (e) => {
+                            this.form.prenda = e.target.value;
+                            this.fetchSizes();
+                        });
+                    }
 
-                    document.getElementById('talla').addEventListener('change', (e) => {
-                        this.form.talla = e.target.value;
-                        this.updateSummary();
-                        this.validateQuantity();
-                    });
+                    const tallaEl = document.getElementById('talla');
+                    if (tallaEl) {
+                        tallaEl.addEventListener('change', (e) => {
+                            this.form.talla = e.target.value;
+                            this.updateSummary();
+                            this.validateQuantity();
+                        });
+                    }
 
-                    document.getElementById('cantidad_entregada').addEventListener('input', (e) => {
-                        this.form.cantidad_entregada = e.target.value;
-                        this.validateQuantity();
-                        this.updateButtonState();
-                    });
+                    const cantidadEntregadaEl = document.getElementById('cantidad_entregada');
+                    if (cantidadEntregadaEl) {
+                        cantidadEntregadaEl.addEventListener('input', (e) => {
+                            this.form.cantidad_entregada = e.target.value;
+                            this.validateQuantity();
+                            this.updateButtonState();
+                        });
+                    }
 
-                    document.getElementById('costurero').addEventListener('input', (e) => {
-                        this.form.costurero = e.target.value;
-                        this.updateButtonState();
-                    });
+                    const costureroEl = document.getElementById('costurero');
+                    if (costureroEl) {
+                        costureroEl.addEventListener('input', (e) => {
+                            this.form.costurero = e.target.value;
+                            this.updateButtonState();
+                        });
+                    }
 
                     // Corte form fields
-                    document.getElementById('cortador').addEventListener('input', (e) => {
-                        this.form.cortador = e.target.value;
-                        this.updateButtonState();
-                    });
+                    const cortadorEl = document.getElementById('cortador');
+                    if (cortadorEl) {
+                        cortadorEl.addEventListener('input', (e) => {
+                            this.form.cortador = e.target.value;
+                            this.updateButtonState();
+                        });
+                    }
 
-                    document.getElementById('cantidad_prendas').addEventListener('input', (e) => {
-                        this.form.cantidad_prendas = e.target.value;
-                        this.updateButtonState();
-                    });
+                    const cantidadPrendasEl = document.getElementById('cantidad_prendas');
+                    if (cantidadPrendasEl) {
+                        cantidadPrendasEl.addEventListener('input', (e) => {
+                            this.form.cantidad_prendas = parseInt(e.target.value) || '';
+                            this.updateButtonState();
+                        });
+                    }
 
-                    document.getElementById('piezas').addEventListener('input', (e) => {
-                        this.form.piezas = e.target.value;
-                        this.updateButtonState();
-                    });
+                    const piezasEl = document.getElementById('piezas');
+                    if (piezasEl) {
+                        piezasEl.addEventListener('input', (e) => {
+                            this.form.piezas = parseInt(e.target.value) || '';
+                            this.updateButtonState();
+                        });
+                    }
 
                     // Optional fields
-                    ['pasadas', 'etiquetador', 'mes'].forEach(field => {
+                    ['etiquetador'].forEach(field => {
                         const element = document.getElementById(field);
                         if (element) {
                             element.addEventListener('input', (e) => {
@@ -754,6 +767,9 @@
                     // Show/hide forms
                     document.getElementById('costuraForm').style.display = subtipo === 'costura' ? 'block' : 'none';
                     document.getElementById('corteForm').style.display = subtipo === 'corte' ? 'block' : 'none';
+
+                    // Ensure button state is updated after switching
+                    setTimeout(() => this.updateButtonState(), 0);
                 },
 
                 resetForm() {
@@ -768,9 +784,7 @@
                         cortador: '',
                         cantidad_prendas: '',
                         piezas: '',
-                        pasadas: '',
-                        etiquetador: '',
-                        mes: ''
+                        etiquetador: ''
                     };
                     this.orderData = {};
                     this.garments = [];
@@ -783,19 +797,41 @@
                 },
 
                 clearFormFields() {
+                    // General fields
+                    const pedidoEl = document.getElementById('pedido');
+                    if (pedidoEl) pedidoEl.value = '';
+                    
+                    const fechaEl = document.getElementById('fecha_entrega');
+                    if (fechaEl) fechaEl.value = this.form.fecha_entrega;
+                    
+                    const clienteEl = document.getElementById('cliente');
+                    if (clienteEl) clienteEl.value = '';
+
                     // Costura fields
-                    document.getElementById('prenda').value = '';
-                    document.getElementById('talla').innerHTML = '<option value="">Seleccionar talla</option>';
-                    document.getElementById('cantidad_entregada').value = '';
-                    document.getElementById('costurero').value = '';
+                    const prendaEl = document.getElementById('prenda');
+                    if (prendaEl) prendaEl.value = '';
+                    
+                    const tallaEl = document.getElementById('talla');
+                    if (tallaEl) tallaEl.innerHTML = '<option value="">Seleccionar talla</option>';
+                    
+                    const cantidadEntregadaEl = document.getElementById('cantidad_entregada');
+                    if (cantidadEntregadaEl) cantidadEntregadaEl.value = '';
+                    
+                    const costureroEl = document.getElementById('costurero');
+                    if (costureroEl) costureroEl.value = '';
 
                     // Corte fields
-                    document.getElementById('cortador').value = '';
-                    document.getElementById('cantidad_prendas').value = '';
-                    document.getElementById('piezas').value = '';
-                    document.getElementById('pasadas').value = '';
-                    document.getElementById('etiquetador').value = '';
-                    document.getElementById('mes').value = '';
+                    const cortadorEl = document.getElementById('cortador');
+                    if (cortadorEl) cortadorEl.value = '';
+                    
+                    const cantidadPrendasEl = document.getElementById('cantidad_prendas');
+                    if (cantidadPrendasEl) cantidadPrendasEl.value = '';
+                    
+                    const piezasEl = document.getElementById('piezas');
+                    if (piezasEl) piezasEl.value = '';
+                    
+                    const etiquetadorEl = document.getElementById('etiquetador');
+                    if (etiquetadorEl) etiquetadorEl.value = '';
 
                     // Hide summary
                     const summarySection = document.getElementById('summarySection');
@@ -835,12 +871,14 @@
                                 this.showSuccessMessage = false;
                             }, 2000);
                             await this.fetchGarments();
+                            this.updateButtonState();
                         } else {
                             document.getElementById('cliente').value = '';
                             this.orderData = {};
                             this.garments = [];
                             document.getElementById('pedidoError').textContent = 'Pedido no encontrado';
                             document.getElementById('pedidoError').classList.remove('hidden');
+                            this.updateButtonState();
                         }
                     } catch (error) {
                         console.error('Error:', error);

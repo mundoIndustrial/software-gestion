@@ -292,7 +292,6 @@ class EntregaController extends Controller
                         'cortador' => 'required|string',
                         'cantidad_prendas' => 'required|integer',
                         'piezas' => 'required|integer',
-                        'pasadas' => 'nullable|integer',
                         'etiquetador' => 'nullable|string',
                         'fecha_entrega' => 'required|date',
                     ]);
@@ -329,9 +328,14 @@ class EntregaController extends Controller
                     }
                     $entrega['prenda'] = trim($prendaString);
 
+                    // Calculate pasadas automatically: cantidad_prendas / piezas
+                    $cantidad_prendas = $entrega['cantidad_prendas'] ?? 1;
+                    $piezas = $entrega['piezas'] ?? 1;
+                    $pasadas = $cantidad_prendas > 0 ? ceil($cantidad_prendas / $piezas) : 0;
+                    $entrega['pasadas'] = $pasadas;
+
                     // Calculate etiqueteadas as piezas * pasadas (calculated internally, to be saved in DB)
-                    $pasadas = $entrega['pasadas'] ?? 0;
-                    $etiqueteadas = $entrega['piezas'] * $pasadas;
+                    $etiqueteadas = $piezas * $pasadas;
 
                     // Add 'etiqueteadas' to entrega array to avoid DB error
                     $entrega['etiqueteadas'] = $etiqueteadas;
@@ -452,12 +456,20 @@ class EntregaController extends Controller
                     'cortador' => 'sometimes|string',
                     'cantidad_prendas' => 'sometimes|integer',
                     'piezas' => 'sometimes|integer',
-                    'pasadas' => 'sometimes|integer',
+                    'pasadas' => 'sometimes|integer', // Permitir edición manual de pasadas
                     'etiquetador' => 'sometimes|string',
                     'fecha_entrega' => 'sometimes|date',
                 ]);
 
-                // Recalculate etiqueteadas if piezas or pasadas changed
+                // Recalculate pasadas automatically only if cantidad_prendas or piezas changed (not if pasadas was manually edited)
+                if ((isset($validated['cantidad_prendas']) || isset($validated['piezas'])) && !isset($validated['pasadas'])) {
+                    $cantidad_prendas = $validated['cantidad_prendas'] ?? $entrega->cantidad_prendas;
+                    $piezas = $validated['piezas'] ?? $entrega->piezas;
+                    $pasadas = $cantidad_prendas > 0 ? ceil($cantidad_prendas / $piezas) : 0;
+                    $validated['pasadas'] = $pasadas;
+                }
+
+                // Recalculate etiqueteadas: piezas * pasadas
                 if (isset($validated['piezas']) || isset($validated['pasadas'])) {
                     $piezas = $validated['piezas'] ?? $entrega->piezas;
                     $pasadas = $validated['pasadas'] ?? $entrega->pasadas;
@@ -489,7 +501,6 @@ class EntregaController extends Controller
             if ($subtipo === 'costura') {
                 $entrega = $config['costura']::findOrFail($id);
                 
-                // Restore the production records
                 if ($tipo === 'pedido') {
                     \App\Models\RegistrosPorOrden::where('pedido', $entrega->pedido)
                         ->where('prenda', $entrega->prenda)
