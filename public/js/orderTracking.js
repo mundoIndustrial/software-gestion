@@ -96,34 +96,111 @@ const areaFieldMappings = {
 };
 
 /**
- * Calcula los días entre dos fechas (excluyendo fines de semana)
+ * Festivos de Colombia 2025 (mismo fallback que el backend)
+ * Incluye Ley Emiliani (festivos trasladados al lunes)
+ */
+const FESTIVOS_COLOMBIA_2025 = [
+    '2025-01-01', // Año Nuevo
+    '2025-01-06', // Reyes Magos (trasladado al lunes)
+    '2025-03-24', // San José (trasladado al lunes)
+    '2025-04-17', // Jueves Santo
+    '2025-04-18', // Viernes Santo
+    '2025-05-01', // Día del Trabajo
+    '2025-06-02', // Ascensión (trasladado al lunes)
+    '2025-06-23', // Corpus Christi (trasladado al lunes)
+    '2025-06-30', // Sagrado Corazón (trasladado al lunes)
+    '2025-07-07', // San Pedro y San Pablo (trasladado al lunes)
+    '2025-07-20', // Día de la Independencia
+    '2025-08-07', // Batalla de Boyacá
+    '2025-08-18', // Asunción (trasladado al lunes)
+    '2025-10-13', // Día de la Raza (trasladado al lunes)
+    '2025-11-03', // Todos los Santos (trasladado al lunes)
+    '2025-11-17', // Independencia de Cartagena (trasladado al lunes)
+    '2025-12-08', // Inmaculada Concepción
+    '2025-12-25', // Navidad
+];
+
+/**
+ * Obtiene los festivos de Colombia
+ * Usa la misma lógica que el backend: API pública + fallback hardcodeado
+ */
+let festivosCache = null;
+async function obtenerFestivos() {
+    if (festivosCache) {
+        return festivosCache;
+    }
+    
+    try {
+        const year = new Date().getFullYear();
+        // Intentar obtener desde la API pública (nager.at)
+        const response = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/CO`);
+        if (response.ok) {
+            const data = await response.json();
+            festivosCache = data.map(h => h.date);
+            console.log(`✅ Festivos obtenidos de API para ${year}:`, festivosCache);
+            return festivosCache;
+        }
+    } catch (error) {
+        console.log('API de festivos no disponible, usando fallback');
+    }
+    
+    // Usar fallback si la API falla
+    festivosCache = FESTIVOS_COLOMBIA_2025;
+    console.log('✅ Usando festivos fallback:', festivosCache);
+    return festivosCache;
+}
+
+/**
+ * Parsea una fecha string (YYYY-MM-DD) a Date sin problemas de zona horaria
+ */
+function parseLocalDate(dateString) {
+    if (!dateString) return null;
+    const [year, month, day] = dateString.split('T')[0].split('-');
+    const date = new Date(year, month - 1, day);
+    date.setHours(0, 0, 0, 0);
+    return date;
+}
+
+/**
+ * Calcula los días entre dos fechas (excluyendo fines de semana y festivos)
  * Lógica: Si entra y sale el mismo día = 0 días
  * Si entra el 20 y sale el 25 = 3 días (21, 22, 23, 24 no se cuentan, solo los días completos después del primero)
  */
-function calculateBusinessDays(startDate, endDate) {
+function calculateBusinessDays(startDate, endDate, festivos = []) {
     if (!startDate || !endDate) return 0;
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    // Si es string, parsear como local; si es Date, usar directamente
+    const start = typeof startDate === 'string' ? parseLocalDate(startDate) : new Date(startDate);
+    const end = typeof endDate === 'string' ? parseLocalDate(endDate) : new Date(endDate);
 
-    // Normalizar fechas a medianoche
     start.setHours(0, 0, 0, 0);
     end.setHours(0, 0, 0, 0);
 
-    // Si es el mismo día, retorna 0
     if (start.getTime() === end.getTime()) {
         return 0;
     }
 
+    const festivosSet = new Set(festivos.map(f => {
+        if (typeof f === 'string') {
+            return f.split('T')[0];
+        }
+        return f;
+    }));
+
     let days = 0;
     const current = new Date(start);
-    current.setDate(current.getDate() + 1); // Comenzar desde el día siguiente
+    current.setDate(current.getDate() + 1);
 
     while (current <= end) {
         const dayOfWeek = current.getDay();
-        if (dayOfWeek !== 0 && dayOfWeek !== 6) { // No es sábado (6) ni domingo (0)
+        const dateString = current.toISOString().split('T')[0];
+        const isFestivo = festivosSet.has(dateString);
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+        
+        if (!isWeekend && !isFestivo) {
             days++;
         }
+        
         current.setDate(current.getDate() + 1);
     }
 
@@ -134,9 +211,13 @@ function calculateBusinessDays(startDate, endDate) {
  * Obtiene el recorrido del pedido por las áreas
  * Calcula los días que pasó en cada área hasta la siguiente
  * Para el área actual, cuenta hasta hoy
+ * Excluye sábados, domingos y festivos (igual que total_de_dias)
  */
-function getOrderTrackingPath(order) {
+async function getOrderTrackingPath(order) {
     const path = [];
+    
+    // Obtener festivos
+    const festivos = await obtenerFestivos();
     
     // Orden específica de áreas según el flujo típico
     const areaOrder = [
@@ -163,18 +244,29 @@ function getOrderTrackingPath(order) {
         
         const dateValue = order[mapping.dateField];
         if (dateValue) {
+            const dateObj = parseLocalDate(dateValue);
+            
             areasWithDates.push({
                 area: area,
                 mapping: mapping,
                 dateValue: dateValue,
-                date: new Date(dateValue)
+                date: dateObj
             });
         }
     }
     
+    // IMPORTANTE: Ordenar las áreas por fecha (cronológicamente)
+    // Esto asegura que el conteo de días sea correcto según la secuencia real
+    areasWithDates.sort((a, b) => a.date.getTime() - b.date.getTime());
+    
     // Calcular días en cada área
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    
+    let totalDiasModal = 0;
+    
+    // Encontrar el índice del área "Despachos" si existe
+    const despachosIndex = areasWithDates.findIndex(a => a.area === 'Despachos');
     
     for (let i = 0; i < areasWithDates.length; i++) {
         const current = areasWithDates[i];
@@ -183,13 +275,26 @@ function getOrderTrackingPath(order) {
         let daysInArea = 0;
         
         if (next) {
-            // Si hay siguiente área, contar días hasta esa fecha
-            daysInArea = calculateBusinessDays(current.date, next.date);
+            // Si hay siguiente área, contar días hasta esa fecha (excluyendo festivos)
+            daysInArea = calculateBusinessDays(current.date, next.date, festivos);
         } else {
-            // Si es la última área (área actual), contar hasta hoy
-            daysInArea = calculateBusinessDays(current.date, today);
+            // Si es la última área
+            // IMPORTANTE: Si la última área es "Despachos", contar hasta esa fecha (no hasta hoy)
+            // Esto detiene el contador cuando llega a despachos
+            if (current.area === 'Despachos') {
+                // Despachos es el final, no contar más allá
+                daysInArea = 0;
+            } else if (despachosIndex !== -1 && i < despachosIndex) {
+                // Si hay despachos después de esta área, contar hasta despachos
+                const despachosDate = areasWithDates[despachosIndex].date;
+                daysInArea = calculateBusinessDays(current.date, despachosDate, festivos);
+            } else {
+                // Si no hay despachos o es la última área sin despachos, contar hasta hoy
+                daysInArea = calculateBusinessDays(current.date, today, festivos);
+            }
         }
         
+        totalDiasModal += daysInArea;
         const chargeValue = current.mapping.chargeField ? order[current.mapping.chargeField] : null;
         
         path.push({
@@ -202,6 +307,10 @@ function getOrderTrackingPath(order) {
             isCompleted: true
         });
     }
+    
+    // IMPORTANTE: El backend resta 1 al final porque no cuenta el día de creación como día 0
+    // El modal debe hacer lo mismo para coincidir
+    path.totalDiasCalculado = totalDiasModal > 0 ? totalDiasModal - 1 : 0;
     
     return path;
 }
@@ -232,7 +341,7 @@ function openOrderTracking(orderId) {
 /**
  * Muestra el modal de seguimiento con los datos del pedido
  */
-function displayOrderTracking(order) {
+async function displayOrderTracking(order) {
     const modal = document.getElementById('orderTrackingModal');
     if (!modal) {
         console.error('Modal de seguimiento no encontrado');
@@ -241,17 +350,39 @@ function displayOrderTracking(order) {
     
     // Llenar información del pedido
     document.getElementById('trackingOrderNumber').textContent = `#${order.pedido}`;
-    document.getElementById('trackingOrderDate').textContent = formatDate(order.fecha_de_creacion_de_orden);
+    
+    // Usar parseLocalDate para evitar problemas de zona horaria
+    let fechaCreacion = order.fecha_de_creacion_de_orden;
+    if (fechaCreacion) {
+        document.getElementById('trackingOrderDate').textContent = formatDate(fechaCreacion);
+    } else {
+        document.getElementById('trackingOrderDate').textContent = '-';
+    }
+    
+    // Calcular y mostrar fecha estimada de entrega
+    let fechaEstimada = order.fecha_estimada_de_entrega;
+    if (fechaEstimada) {
+        document.getElementById('trackingEstimatedDate').textContent = formatDate(fechaEstimada);
+    } else {
+        document.getElementById('trackingEstimatedDate').textContent = '-';
+    }
+    
     document.getElementById('trackingOrderClient').textContent = order.cliente || '-';
     
-    // Obtener el recorrido
-    const trackingPath = getOrderTrackingPath(order);
-    
-    // Llenar timeline
+    // Obtener recorrido del pedido (ahora es async)
+    const trackingPath = await getOrderTrackingPath(order);
+
+    // Mostrar total de días
+    const totalDiasElement = document.getElementById('trackingTotalDays');
+    if (totalDiasElement && trackingPath.totalDiasCalculado !== undefined) {
+        totalDiasElement.textContent = trackingPath.totalDiasCalculado;
+    }
+
+    // Llenar timeline de áreas
     const timelineContainer = document.getElementById('trackingTimelineContainer');
     timelineContainer.innerHTML = '';
     
-    trackingPath.forEach((item, index) => {
+    trackingPath.forEach(item => {
         const timelineItem = document.createElement('div');
         timelineItem.className = `tracking-timeline-item ${item.isCompleted ? 'completed' : 'pending'}`;
         
@@ -279,16 +410,16 @@ function displayOrderTracking(order) {
             `;
         }
         
-        if (item.daysInArea > 0) {
-            detailsHTML += `
-                <div class="tracking-detail-row">
-                    <span class="tracking-detail-label">Días en Área</span>
-                    <span class="tracking-detail-value">
-                        <span class="tracking-days-badge">${item.daysInArea} día${item.daysInArea !== 1 ? 's' : ''}</span>
-                    </span>
-                </div>
-            `;
-        }
+        // Siempre mostrar días en área, incluso si es 0
+        const badgeClass = item.daysInArea === 0 ? 'tracking-days-badge-zero' : 'tracking-days-badge';
+        detailsHTML += `
+            <div class="tracking-detail-row">
+                <span class="tracking-detail-label">Días en Área</span>
+                <span class="tracking-detail-value">
+                    <span class="${badgeClass}">${item.daysInArea} día${item.daysInArea !== 1 ? 's' : ''}</span>
+                </span>
+            </div>
+        `;
         
         detailsHTML += '</div>';
         
@@ -303,12 +434,23 @@ function displayOrderTracking(order) {
 
 /**
  * Formatea una fecha al formato d/m/Y
+ * Usa parseLocalDate para evitar problemas de zona horaria
  */
 function formatDate(dateString) {
     if (!dateString) return '-';
     
     try {
-        const date = new Date(dateString);
+        // Si es string en formato YYYY-MM-DD, usar parseLocalDate
+        if (typeof dateString === 'string' && dateString.includes('-')) {
+            const date = parseLocalDate(dateString);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+        
+        // Si es un objeto Date, usar directamente
+        const date = typeof dateString === 'string' ? parseLocalDate(dateString) : dateString;
         const day = String(date.getDate()).padStart(2, '0');
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const year = date.getFullYear();

@@ -1260,6 +1260,32 @@ class ModernTable {
             });
 
             const data = await response.json();
+            
+            // 🔍 LOGGING: Mostrar en console los días calculados para cada pedido
+            if (data.totalDiasCalculados && Object.keys(data.totalDiasCalculados).length > 0) {
+                console.log('%c📊 BÚSQUEDA DE PEDIDO - DÍAS CALCULADOS', 'color: #2563eb; font-weight: bold; font-size: 14px;');
+                console.log('%cTérmino de búsqueda:', 'color: #7c3aed; font-weight: bold;', term);
+                console.log('%cResultados encontrados:', 'color: #059669; font-weight: bold;', data.orders.length);
+                console.log('%c' + '='.repeat(60), 'color: #6b7280;');
+                
+                data.orders.forEach(order => {
+                    const dias = data.totalDiasCalculados[order.pedido] || 0;
+                    const estado = order.estado || 'N/A';
+                    const area = order.area || 'N/A';
+                    const cliente = order.cliente || 'N/A';
+                    
+                    console.log(
+                        `%c📦 Pedido: ${order.pedido}%c | Días: ${dias}%c | Estado: ${estado}%c | Área: ${area}%c | Cliente: ${cliente}`,
+                        'color: #dc2626; font-weight: bold;',
+                        'color: #2563eb; font-weight: bold;',
+                        'color: #7c3aed;',
+                        'color: #059669;',
+                        'color: #6b7280;'
+                    );
+                });
+                console.log('%c' + '='.repeat(60), 'color: #6b7280;');
+            }
+            
             this.updateTableWithData(data.orders, data.totalDiasCalculados);
             this.updatePaginationInfo(data.pagination);
             this.updatePaginationControls(data.pagination_html);
@@ -1335,8 +1361,8 @@ class ModernTable {
                 style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
                 Editar
             </button>
-            <button class="action-btn detail-btn" onclick="viewDetail(${pedidoKey})" 
-                title="Ver detalle"
+            <button class="action-btn detail-btn" onclick="createViewButtonDropdown(${pedidoKey})" 
+                title="Ver opciones"
                 style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
                 Ver
             </button>
@@ -1432,8 +1458,8 @@ appendRowsToTable(orders, totalDiasCalculados) {
                 style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
                 Editar
             </button>
-            <button class="action-btn detail-btn" onclick="viewDetail(${pedidoKey})" 
-                title="Ver detalle"
+            <button class="action-btn detail-btn" onclick="createViewButtonDropdown(${pedidoKey})" 
+                title="Ver opciones"
                 style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
                 Ver
             </button>
