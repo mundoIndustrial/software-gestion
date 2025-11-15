@@ -9,7 +9,7 @@ const CONFIG = {
         secondary: ['#f093fb', '#f5576c'],
         tertiary: ['#4facfe', '#00f2fe'],
         success: ['#10b981', '#059669'],
-        warning: ['#fbbf24', '#f59e0b'],
+        warning: ['#3b82f6', '#2563eb'],
         danger: ['#ef4444', '#dc2626'],
         info: ['#3b82f6', '#2563eb']
     },

@@ -47,7 +47,7 @@ function renderNotifications(data) {
             const diasRestantes = Math.ceil((new Date(orden.fecha_entrega) - new Date()) / (1000 * 60 * 60 * 24));
             notifications.push({
                 icon: 'fa-clock',
-                color: '#f59e0b',
+                color: '#3b82f6',
                 title: 'Orden próxima a vencer',
                 message: `${orden.numero_orden} - ${orden.cliente}`,
                 time: `Vence en ${diasRestantes} día${diasRestantes !== 1 ? 's' : ''}`,

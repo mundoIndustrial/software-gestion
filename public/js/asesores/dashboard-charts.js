@@ -81,14 +81,14 @@ function createOrdenesLineChart(data) {
             datasets: [{
                 label: 'Órdenes',
                 data: values,
-                borderColor: '#FF6B35',
-                backgroundColor: 'rgba(255, 107, 53, 0.1)',
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
                 borderWidth: 3,
                 fill: true,
                 tension: 0.4,
                 pointRadius: 4,
                 pointHoverRadius: 6,
-                pointBackgroundColor: '#FF6B35',
+                pointBackgroundColor: '#3b82f6',
                 pointBorderColor: '#fff',
                 pointBorderWidth: 2
             }]
@@ -104,7 +104,7 @@ function createOrdenesLineChart(data) {
                     backgroundColor: 'rgba(15, 23, 42, 0.95)',
                     titleColor: '#fff',
                     bodyColor: '#cbd5e1',
-                    borderColor: '#FF6B35',
+                    borderColor: '#3b82f6',
                     borderWidth: 1,
                     padding: 12,
                     cornerRadius: 8,
@@ -162,8 +162,8 @@ function createAsesoresBarChart(data) {
     // Generar gradientes
     const gradients = labels.map((_, index) => {
         const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 400);
-        gradient.addColorStop(0, '#FF6B35');
-        gradient.addColorStop(1, '#f7931e');
+        gradient.addColorStop(0, '#3b82f6');
+        gradient.addColorStop(1, '#2563eb');
         return gradient;
     });
     
@@ -190,7 +190,7 @@ function createAsesoresBarChart(data) {
                     backgroundColor: 'rgba(15, 23, 42, 0.95)',
                     titleColor: '#fff',
                     bodyColor: '#cbd5e1',
-                    borderColor: '#FF6B35',
+                    borderColor: '#3b82f6',
                     borderWidth: 1,
                     padding: 12,
                     cornerRadius: 8,
@@ -241,7 +241,7 @@ function createEstadosDoughnutChart(data) {
     }
     
     const estadoColors = {
-        'pendiente': '#fbbf24',
+        'pendiente': '#3b82f6',
         'en_proceso': '#3b82f6',
         'completada': '#10b981',
         'cancelada': '#ef4444'
@@ -284,7 +284,7 @@ function createEstadosDoughnutChart(data) {
                     backgroundColor: 'rgba(15, 23, 42, 0.95)',
                     titleColor: '#fff',
                     bodyColor: '#cbd5e1',
-                    borderColor: '#FF6B35',
+                    borderColor: '#3b82f6',
                     borderWidth: 1,
                     padding: 12,
                     cornerRadius: 8,
