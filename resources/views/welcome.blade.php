@@ -19,9 +19,10 @@
             <a href="{{ route('login') }}" class="px-6 py-2.5 border-2 border-white/80 rounded-lg hover:bg-white hover:text-gray-900 transition-all duration-300 transform hover:scale-105 shadow-lg backdrop-blur-sm bg-black/20 font-medium">
                 Iniciar Sesión
             </a>
-            <a href="{{ route('register') }}" class="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-300 transform hover:scale-105 shadow-lg font-medium">
+            {{-- Botón de registro desactivado - Solo el administrador puede registrar --}}
+            {{-- <a href="{{ route('register') }}" class="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-300 transform hover:scale-105 shadow-lg font-medium">
                 Registrarse
-            </a>
+            </a> --}}
         </div>
     </header>
 
