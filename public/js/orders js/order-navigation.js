@@ -218,26 +218,12 @@ function handleSwipe() {
 
 /**
  * Inicializar botones de navegación
+ * NOTA: Los botones de flecha ahora se usan para navegar prendas en orders-table.js
+ * Esta función se mantiene para compatibilidad pero no agrega listeners
  */
 function initializeButtonNavigation() {
-    const prevButton = document.getElementById('prev-arrow');
-    const nextButton = document.getElementById('next-arrow');
-    
-    if (prevButton) {
-        prevButton.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            navigateToPreviousOrder();
-        });
-    }
-    
-    if (nextButton) {
-        nextButton.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            navigateToNextOrder();
-        });
-    }
+    // Los listeners de navegación de órdenes se manejan en orders-table.js
+    // para evitar conflictos con la navegación de prendas
 }
 
 // Inicializar cuando el DOM esté listo
