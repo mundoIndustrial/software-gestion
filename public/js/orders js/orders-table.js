@@ -1057,18 +1057,32 @@ async function viewDetail(pedido) {
                         }
                     }
                     updateDescripcion();
-                    prevArrow.addEventListener('click', () => {
+                    
+                    // Remover listeners anteriores para evitar acumulación
+                    if (prevArrow._prendasClickHandler) {
+                        prevArrow.removeEventListener('click', prevArrow._prendasClickHandler);
+                    }
+                    if (nextArrow._prendasClickHandler) {
+                        nextArrow.removeEventListener('click', nextArrow._prendasClickHandler);
+                    }
+                    
+                    // Crear nuevos handlers y guardarlos
+                    prevArrow._prendasClickHandler = () => {
                         if (currentIndex > 0) {
                             currentIndex--;
                             updateDescripcion();
                         }
-                    });
-                    nextArrow.addEventListener('click', () => {
+                    };
+                    
+                    nextArrow._prendasClickHandler = () => {
                         if (currentIndex < prendas.length - 2) {
                             currentIndex++;
                             updateDescripcion();
                         }
-                    });
+                    };
+                    
+                    prevArrow.addEventListener('click', prevArrow._prendasClickHandler);
+                    nextArrow.addEventListener('click', nextArrow._prendasClickHandler);
                 } else {
                     descripcionText.textContent = '';
                     if (arrowContainer) arrowContainer.style.display = 'none';
@@ -1103,18 +1117,32 @@ async function viewDetail(pedido) {
             }
 
             updateDescripcion();
-            prevArrow.addEventListener('click', () => {
+            
+            // Remover listeners anteriores para evitar acumulación
+            if (prevArrow._prendasClickHandler) {
+                prevArrow.removeEventListener('click', prevArrow._prendasClickHandler);
+            }
+            if (nextArrow._prendasClickHandler) {
+                nextArrow.removeEventListener('click', nextArrow._prendasClickHandler);
+            }
+            
+            // Crear nuevos handlers y guardarlos para poder removerlos después
+            prevArrow._prendasClickHandler = () => {
                 if (currentIndex > 0) {
                     currentIndex--;
                     updateDescripcion();
                 }
-            });
-            nextArrow.addEventListener('click', () => {
+            };
+            
+            nextArrow._prendasClickHandler = () => {
                 if (currentIndex < prendas.length - 2) {
                     currentIndex++;
                     updateDescripcion();
                 }
-            });
+            };
+            
+            prevArrow.addEventListener('click', prevArrow._prendasClickHandler);
+            nextArrow.addEventListener('click', nextArrow._prendasClickHandler);
         } else {
             descripcionText.textContent = '';
             if (arrowContainer) arrowContainer.style.display = 'none';
