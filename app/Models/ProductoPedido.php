@@ -13,6 +13,7 @@ class ProductoPedido extends Model
 
     protected $fillable = [
         'pedido',
+        'orden_asesor_id',
         'nombre_producto',
         'tela',
         'tipo_manga',
@@ -28,6 +29,21 @@ class ProductoPedido extends Model
         'subtotal',
         'imagen',
         'notas',
+        'estampados',
+        'personalizacion_combinada',
+        'categoria_prenda',
+        'tipo_prenda',
+        'configuracion_cuello',
+        'configuracion_bolsillos',
+        'configuracion_puños',
+        'configuracion_cierre',
+        'configuracion_reflectivos',
+        'configuracion_bordados',
+        'caracteristicas_especiales',
+        'tallas_cantidades',
+        'ciclos',
+        'origen',
+        'configuracion_telas',
     ];
 
     protected $casts = [
@@ -42,6 +58,14 @@ class ProductoPedido extends Model
     public function pedidoOriginal()
     {
         return $this->belongsTo(TablaOriginal::class, 'pedido', 'pedido');
+    }
+
+    /**
+     * Relación con la orden del asesor (para borradores)
+     */
+    public function ordenAsesor()
+    {
+        return $this->belongsTo(OrdenAsesor::class, 'orden_asesor_id');
     }
 
     /**

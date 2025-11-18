@@ -126,10 +126,6 @@ class AsesoresController extends Controller
             $query->where('estado', $request->estado);
         }
 
-        if ($request->filled('area')) {
-            $query->where('area', $request->area);
-        }
-
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
@@ -146,12 +142,7 @@ class AsesoresController extends Controller
             ->distinct()
             ->pluck('estado');
 
-        $areas = TablaOriginal::select('area')
-            ->whereNotNull('area')
-            ->distinct()
-            ->pluck('area');
-
-        return view('asesores.pedidos.index', compact('pedidos', 'estados', 'areas'));
+        return view('asesores.pedidos.index', compact('pedidos', 'estados'));
     }
 
     /**
@@ -190,8 +181,13 @@ class AsesoresController extends Controller
             'productos' => 'required|array|min:1',
             'productos.*.nombre_producto' => 'required|string',
             'productos.*.descripcion' => 'nullable|string',
+            'productos.*.tella' => 'nullable|string',
+            'productos.*.tipo_manga' => 'nullable|string',
+            'productos.*.color' => 'nullable|string',
             'productos.*.talla' => 'nullable|string',
+            'productos.*.genero' => 'nullable|string',
             'productos.*.cantidad' => 'required|integer|min:1',
+            'productos.*.ref_hilo' => 'nullable|string',
             'productos.*.precio_unitario' => 'nullable|numeric|min:0',
         ]);
 
@@ -446,5 +442,125 @@ class AsesoresController extends Controller
             'success' => true,
             'message' => 'Notificaciones marcadas como leídas'
         ]);
+    }
+
+    /**
+     * Actualizar el perfil del asesor
+     */
+    public function updateProfile(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Usuario no autenticado'
+                ], 401);
+            }
+
+            // Validar datos
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+                'telefono' => 'nullable|string|max:20',
+                'ciudad' => 'nullable|string|max:255',
+                'departamento' => 'nullable|string|max:255',
+                'bio' => 'nullable|string|max:500',
+                'password' => 'nullable|string|min:8|confirmed',
+                'avatar' => 'nullable|image|mimes:jpeg,png,gif,webp|max:2048'
+            ]);
+
+            // Actualizar datos del usuario
+            $user->name = $validated['name'];
+            $user->email = $validated['email'];
+            $user->telefono = $validated['telefono'] ?? $user->telefono;
+            $user->ciudad = $validated['ciudad'] ?? $user->ciudad;
+            $user->departamento = $validated['departamento'] ?? $user->departamento;
+            $user->bio = $validated['bio'] ?? $user->bio;
+
+            // Actualizar contraseña si se proporciona
+            if (!empty($validated['password'])) {
+                $user->password = bcrypt($validated['password']);
+            }
+
+            // Manejar avatar
+            if ($request->hasFile('avatar')) {
+                // Eliminar avatar anterior si existe
+                if ($user->avatar && Storage::disk('public')->exists('avatars/' . $user->avatar)) {
+                    try {
+                        Storage::disk('public')->delete('avatars/' . $user->avatar);
+                        \Log::info('Avatar anterior eliminado: ' . $user->avatar);
+                    } catch (\Exception $e) {
+                        \Log::warning('Error al eliminar avatar anterior: ' . $e->getMessage());
+                    }
+                }
+
+                // Crear directorio si no existe
+                if (!Storage::disk('public')->exists('avatars')) {
+                    Storage::disk('public')->makeDirectory('avatars');
+                    \Log::info('Directorio de avatars creado');
+                }
+
+                // Guardar nuevo avatar
+                $file = $request->file('avatar');
+                $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                
+                // Guardar archivo
+                try {
+                    $path = $file->storeAs('avatars', $filename, 'public');
+                    
+                    if ($path) {
+                        // Guardar solo el nombre del archivo
+                        $user->avatar = $filename;
+                        \Log::info('Avatar guardado exitosamente: ' . $filename);
+                    } else {
+                        throw new \Exception('No se pudo guardar el archivo de avatar');
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Error al guardar avatar: ' . $e->getMessage());
+                    throw new \Exception('Error al guardar la imagen: ' . $e->getMessage());
+                }
+            }
+
+            $user->save();
+
+            // Preparar respuesta con URL del avatar correcta
+            $avatarUrl = null;
+            if ($user->avatar) {
+                // Generar URL completa: /storage/avatars/{filename}
+                $avatarUrl = asset('storage/avatars/' . $user->avatar);
+                
+                // Log para debugging
+                \Log::info('Avatar URL generada: ' . $avatarUrl);
+                \Log::info('Archivo en storage: storage/app/public/avatars/' . $user->avatar);
+                \Log::info('Existe en storage: ' . (Storage::disk('public')->exists('avatars/' . $user->avatar) ? 'Sí' : 'No'));
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Perfil actualizado correctamente',
+                'avatar_url' => $avatarUrl,
+                'user' => [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'avatar' => $user->avatar
+                ]
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Errores de validación: ' . json_encode($e->errors()));
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Error al actualizar perfil: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar el perfil: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

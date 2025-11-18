@@ -15,59 +15,42 @@
         <span class="message-text"></span>
     </div>
 
-    <div class="profile-grid">
-        <!-- Sección de Avatar -->
-        <div class="profile-card avatar-card">
-            <div class="card-header">
-                <h2 class="card-title">
-                    <span class="material-symbols-rounded">account_circle</span>
-                    Foto de Perfil
-                </h2>
-            </div>
-            <div class="card-body">
-                <div class="avatar-section">
-                    <div class="avatar-preview" id="avatarPreview">
-                        @if($user->avatar)
-                            <img src="{{ asset('storage/' . $user->avatar) }}" alt="Avatar" id="avatarImage">
-                        @else
-                            <div class="avatar-placeholder-large">
-                                {{ strtoupper(substr($user->name, 0, 2)) }}
-                            </div>
-                        @endif
+    <!-- Header del Perfil -->
+    <div class="profile-header">
+        <div class="profile-header-avatar">
+            <div class="avatar-preview" id="avatarPreview">
+                @if($user->avatar)
+                    <img src="{{ asset('storage/avatars/' . $user->avatar) }}" alt="Avatar" id="avatarImage" class="avatar-img">
+                @else
+                    <div class="avatar-placeholder-large">
+                        {{ strtoupper(substr($user->name, 0, 2)) }}
                     </div>
-                    
-                    <div class="avatar-actions">
-                        <label for="avatarInput" class="btn-upload">
-                            <span class="material-symbols-rounded">cloud_upload</span>
-                            <span>Subir Foto</span>
-                        </label>
-                        <input type="file" id="avatarInput" accept="image/*" style="display: none;">
-                        
-                        @if($user->avatar)
-                        <button type="button" class="btn-delete" id="deleteAvatarBtn">
-                            <span class="material-symbols-rounded">delete</span>
-                            <span>Eliminar</span>
-                        </button>
-                        @endif
-                    </div>
-                    
-                    <p class="avatar-info">
-                        <span class="material-symbols-rounded">info</span>
-                        Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 2MB
-                    </p>
-                </div>
+                @endif
+                <!-- Botón flotante para editar avatar -->
+                <label for="avatarInput" class="avatar-edit-btn" title="Cambiar foto">
+                    <span class="material-symbols-rounded">photo_camera</span>
+                </label>
+                <input type="file" id="avatarInput" accept="image/*" style="display: none;">
             </div>
         </div>
+        <div class="profile-header-info">
+            <h1>{{ $user->name }}</h1>
+            <p>{{ $user->email }}</p>
+        </div>
+    </div>
 
-        <!-- Formulario de Información Personal -->
-        <div class="profile-card info-card">
+    <!-- Grid de Secciones - Estilo Facebook -->
+    <div class="profile-grid">
+        <!-- Tarjeta Principal Unificada -->
+        <div class="profile-card">
+            <!-- Sección de Información Personal -->
             <div class="card-header">
                 <h2 class="card-title">
                     <span class="material-symbols-rounded">person</span>
                     Información Personal
                 </h2>
             </div>
-            <div class="card-body">
+            <div class="card-body profile-section">
                 <form id="profileForm" class="profile-form">
                     @csrf
                     
@@ -164,17 +147,18 @@
                     </div>
                 </form>
             </div>
-        </div>
 
-        <!-- Sección de Seguridad -->
-        <div class="profile-card security-card">
+            <!-- Divisor -->
+            <div style="border-top: 1px solid var(--gray-100);"></div>
+
+            <!-- Sección de Seguridad -->
             <div class="card-header">
                 <h2 class="card-title">
                     <span class="material-symbols-rounded">lock</span>
                     Seguridad
                 </h2>
             </div>
-            <div class="card-body">
+            <div class="card-body profile-section">
                 <form id="passwordForm" class="profile-form">
                     @csrf
                     
@@ -233,17 +217,18 @@
                     </div>
                 </form>
             </div>
-        </div>
 
-        <!-- Información de Cuenta -->
-        <div class="profile-card account-card">
+            <!-- Divisor -->
+            <div style="border-top: 1px solid var(--gray-100);"></div>
+
+            <!-- Sección de Información de Cuenta -->
             <div class="card-header">
                 <h2 class="card-title">
                     <span class="material-symbols-rounded">info</span>
                     Información de Cuenta
                 </h2>
             </div>
-            <div class="card-body">
+            <div class="card-body profile-section">
                 <div class="account-info">
                     <div class="info-item">
                         <span class="info-label">
@@ -271,6 +256,7 @@
                 </div>
             </div>
         </div>
+        <!-- Fin de Tarjeta Principal Unificada -->
     </div>
 </div>
 @endsection

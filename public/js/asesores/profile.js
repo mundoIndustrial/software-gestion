@@ -10,7 +10,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const avatarInput = document.getElementById('avatarInput');
     const avatarPreview = document.getElementById('avatarPreview');
     const avatarImage = document.getElementById('avatarImage');
-    const deleteAvatarBtn = document.getElementById('deleteAvatarBtn');
     const profileForm = document.getElementById('profileForm');
     const passwordForm = document.getElementById('passwordForm');
     const bioTextarea = document.getElementById('bio');
@@ -21,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // MANEJO DE AVATAR
     // ========================================
     
-    // Preview de imagen al seleccionar
+    // Preview de imagen al seleccionar y subir automáticamente
     if (avatarInput) {
         avatarInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -42,88 +41,34 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 
-                // Crear preview solamente (NO subir automáticamente)
+                // Crear preview local
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    // Si ya existe una imagen, actualizarla
+                    const dataUrl = e.target.result;
+                    
+                    // Actualizar avatar en el header
                     if (avatarImage) {
-                        avatarImage.src = e.target.result;
+                        avatarImage.src = dataUrl;
                     } else {
                         // Si no existe, crear nueva imagen
-                        avatarPreview.innerHTML = `<img src="${e.target.result}" alt="Avatar Preview" id="avatarImage">`;
+                        avatarPreview.innerHTML = `<img src="${dataUrl}" alt="Avatar Preview" id="avatarImage" class="avatar-img">`;
+                        // Re-agregar el botón flotante
+                        const editBtn = document.querySelector('.avatar-edit-btn');
+                        if (editBtn) {
+                            avatarPreview.appendChild(editBtn);
+                        }
                     }
                     
-                    // Agregar indicador de cambios pendientes
-                    const avatarCard = document.querySelector('.avatar-card');
-                    if (avatarCard && !avatarCard.querySelector('.pending-changes')) {
-                        const pendingBadge = document.createElement('div');
-                        pendingBadge.className = 'pending-changes';
-                        pendingBadge.innerHTML = '<span class="material-symbols-rounded">info</span> Haz clic en "Guardar Cambios" para actualizar tu foto';
-                        avatarCard.querySelector('.card-body').insertBefore(pendingBadge, avatarCard.querySelector('.avatar-section'));
-                    }
+                    // Mostrar mensaje de carga
+                    showMessage('Subiendo tu foto de perfil...', 'info');
+                    
+                    // Subir automáticamente
+                    uploadAvatar(file);
                 };
                 reader.readAsDataURL(file);
             }
         });
     }
-    
-    // Eliminar avatar
-    if (deleteAvatarBtn) {
-        deleteAvatarBtn.addEventListener('click', handleDeleteAvatar);
-    }
-    
-    function handleDeleteAvatar() {
-        if (!confirm('¿Estás segura de que deseas eliminar tu foto de perfil?')) {
-            return;
-        }
-        
-        fetch('/asesores/profile/delete-avatar', {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Accept': 'application/json',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Obtener la primera letra del nombre
-                const userName = document.querySelector('.user-name').textContent;
-                const initials = userName.substring(0, 2).toUpperCase();
-                
-                // Reemplazar con placeholder
-                avatarPreview.innerHTML = `
-                    <div class="avatar-placeholder-large">
-                        ${initials}
-                    </div>
-                `;
-                
-                // Eliminar botón de eliminar
-                if (deleteAvatarBtn) {
-                    deleteAvatarBtn.remove();
-                }
-                
-                // Actualizar avatar en el header
-                const headerAvatar = document.querySelector('.user-avatar');
-                if (headerAvatar) {
-                    headerAvatar.innerHTML = `
-                        <div class="avatar-placeholder">
-                            ${initials.substring(0, 1)}
-                        </div>
-                    `;
-                }
-                
-                showMessage(data.message, 'success');
-            } else {
-                showMessage(data.message, 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showMessage('Error al eliminar el avatar', 'error');
-        });
-    }
-    
 
     // ========================================
     // FORMULARIO DE PERFIL
@@ -134,11 +79,6 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             
             const formData = new FormData(profileForm);
-            
-            // Agregar el archivo de avatar si se seleccionó uno nuevo
-            if (avatarInput && avatarInput.files.length > 0) {
-                formData.append('avatar', avatarInput.files[0]);
-            }
             
             // Validaciones básicas
             const name = formData.get('name');
@@ -155,66 +95,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Enviar formulario
-            fetch('/asesores/profile/update', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json',
-                },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Respuesta del servidor:', data); // Debug
-                
-                if (data.success) {
-                    showMessage(data.message, 'success');
-                    
-                    // Actualizar nombre en el header
-                    const userName = document.querySelector('.user-name');
-                    if (userName) {
-                        userName.textContent = formData.get('name');
-                    }
-                    
-                    // Actualizar placeholder del avatar si cambió el nombre
-                    const avatarPlaceholder = document.querySelector('.avatar-placeholder-large');
-                    if (avatarPlaceholder) {
-                        const initials = formData.get('name').substring(0, 2).toUpperCase();
-                        avatarPlaceholder.textContent = initials;
-                    }
-                    
-                    // Actualizar avatar en el header si se subió uno nuevo
-                    if (data.avatar_url) {
-                        console.log('URL del avatar:', data.avatar_url); // Debug
-                        
-                        const avatarContainer = document.querySelector('.user-avatar');
-                        console.log('Avatar container encontrado:', avatarContainer); // Debug
-                        
-                        if (avatarContainer) {
-                            const timestamp = new Date().getTime();
-                            avatarContainer.innerHTML = `<img src="${data.avatar_url}?t=${timestamp}" alt="Avatar" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-                            console.log('Avatar actualizado en el header'); // Debug
-                        }
-                        
-                        // Limpiar el input de archivo
-                        if (avatarInput) {
-                            avatarInput.value = '';
-                        }
-                    }
-                    
-                    // Eliminar indicador de cambios pendientes
-                    const pendingBadge = document.querySelector('.pending-changes');
-                    if (pendingBadge) {
-                        pendingBadge.remove();
-                    }
-                } else {
-                    showMessage(data.message, 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showMessage('Error al actualizar el perfil', 'error');
-            });
+            submitProfileForm(formData);
         });
     }
 
@@ -226,9 +107,8 @@ document.addEventListener('DOMContentLoaded', function() {
         passwordForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const formData = new FormData(passwordForm);
-            const password = formData.get('password');
-            const passwordConfirmation = formData.get('password_confirmation');
+            const password = document.getElementById('password').value;
+            const passwordConfirmation = document.getElementById('password_confirmation').value;
             
             // Validar que se haya ingresado contraseña
             if (!password) {
@@ -248,12 +128,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Agregar datos del perfil al FormData
-            formData.append('name', document.getElementById('name').value);
-            formData.append('email', document.getElementById('email').value);
+            // Preparar datos
+            const formData = new FormData(passwordForm);
+            
+            // Agregar datos del perfil (requeridos para actualizar el perfil)
+            if (document.getElementById('name')) {
+                formData.append('name', document.getElementById('name').value);
+            }
+            if (document.getElementById('email')) {
+                formData.append('email', document.getElementById('email').value);
+            }
             
             // Enviar formulario
-            fetch('/asesores/profile/update', {
+            fetch('/asesores/perfil/update', {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -264,15 +151,15 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    showMessage('Contraseña actualizada exitosamente', 'success');
+                    showMessage('✓ Contraseña actualizada exitosamente', 'success');
                     passwordForm.reset();
                 } else {
-                    showMessage(data.message, 'error');
+                    showMessage('✗ ' + (data.message || 'Error al actualizar contraseña'), 'error');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                showMessage('Error al actualizar la contraseña', 'error');
+                showMessage('Error de conexión al actualizar contraseña', 'error');
             });
         });
     }
@@ -321,6 +208,85 @@ document.addEventListener('DOMContentLoaded', function() {
     // FUNCIONES AUXILIARES
     // ========================================
     
+    function uploadAvatar(file) {
+        const formData = new FormData();
+        formData.append('avatar', file);
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]').content);
+        
+        // Obtener otros datos del formulario
+        if (document.getElementById('name')) {
+            formData.append('name', document.getElementById('name').value);
+        }
+        if (document.getElementById('email')) {
+            formData.append('email', document.getElementById('email').value);
+        }
+        
+        fetch('/asesores/perfil/update', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Respuesta del servidor:', data);
+            
+            if (data.success) {
+                // Actualizar la URL de la imagen con la URL correcta del servidor
+                if (data.avatar_url && avatarImage) {
+                    // Agregar un parámetro de cache para forzar la recarga
+                    const timestamp = new Date().getTime();
+                    avatarImage.src = data.avatar_url + '?t=' + timestamp;
+                    console.log('Avatar actualizado a:', data.avatar_url);
+                }
+                
+                showMessage('✓ Foto de perfil actualizada exitosamente', 'success');
+                
+                // Limpiar el input de archivo
+                if (avatarInput) {
+                    avatarInput.value = '';
+                }
+            } else {
+                showMessage('Error: ' + (data.message || 'No se pudo subir la foto'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error al subir avatar:', error);
+            showMessage('Error de conexión al subir la foto', 'error');
+        });
+    }
+    
+    function submitProfileForm(formData) {
+        fetch('/asesores/perfil/update', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Respuesta del servidor:', data);
+            
+            if (data.success) {
+                showMessage('✓ ' + data.message, 'success');
+                // NO recargar página - actualizar datos en tiempo real
+                if (avatarInput) {
+                    avatarInput.value = '';
+                }
+            } else {
+                showMessage('✗ ' + (data.message || 'Error al actualizar'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showMessage('Error de conexión al actualizar perfil', 'error');
+        });
+    }
+    
     function showMessage(message, type) {
         const messageDiv = document.getElementById('profileMessage');
         const messageText = messageDiv.querySelector('.message-text');
@@ -331,8 +297,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (type === 'success') {
             messageIcon.textContent = 'check_circle';
-        } else {
+        } else if (type === 'error') {
             messageIcon.textContent = 'error';
+        } else if (type === 'info') {
+            messageIcon.textContent = 'info';
         }
         
         messageDiv.style.display = 'flex';

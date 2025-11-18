@@ -14,6 +14,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
+            'supervisor-access' => \App\Http\Middleware\SupervisorAccessControl::class,
+            'supervisor-readonly' => \App\Http\Middleware\SupervisorReadOnly::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

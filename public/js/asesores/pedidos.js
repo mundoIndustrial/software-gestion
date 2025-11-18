@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (formCrear) {
         formCrear.addEventListener('submit', async function(e) {
             e.preventDefault();
-            await guardarPedido(this);
+            await guardarPedido(this, true);
         });
     }
 
@@ -213,7 +213,7 @@ function renumerarProductos() {
 // ========================================
 // GUARDAR PEDIDO
 // ========================================
-async function guardarPedido(form) {
+async function guardarPedido(form, crear = false) {
     const formData = new FormData(form);
     const productos = [];
     
@@ -222,41 +222,55 @@ async function guardarPedido(form) {
     productosItems.forEach((item, index) => {
         const nombreInput = item.querySelector(`[name*="nombre_producto"]`);
         const descripcionInput = item.querySelector(`[name*="descripcion"]`);
+        const telaInput = item.querySelector(`[name*="tela"]`);
+        const tipoMangaInput = item.querySelector(`[name*="tipo_manga"]`);
+        const colorInput = item.querySelector(`[name*="color"]`);
         const tallaInput = item.querySelector(`[name*="talla"]`);
+        const generoInput = item.querySelector(`[name*="genero"]`);
         const cantidadInput = item.querySelector(`[name*="cantidad"]`);
+        const refHiloInput = item.querySelector(`[name*="ref_hilo"]`);
         const precioInput = item.querySelector(`[name*="precio_unitario"]`);
         
         if (nombreInput && cantidadInput) {
             productos.push({
                 nombre_producto: nombreInput.value,
                 descripcion: descripcionInput ? descripcionInput.value : '',
+                tela: telaInput ? telaInput.value : '',
+                tipo_manga: tipoMangaInput ? tipoMangaInput.value : '',
+                color: colorInput ? colorInput.value : '',
                 talla: tallaInput ? tallaInput.value : '',
+                genero: generoInput ? generoInput.value : '',
                 cantidad: parseInt(cantidadInput.value) || 1,
+                ref_hilo: refHiloInput ? refHiloInput.value : '',
                 precio_unitario: precioInput ? parseFloat(precioInput.value) || null : null
             });
         }
     });
     
-    // Validar que haya al menos un producto
-    if (productos.length === 0) {
+    // Validar que haya al menos un producto (solo si se va a crear)
+    if (crear && productos.length === 0) {
         mostrarToast('Debes agregar al menos un producto', 'error');
         return;
     }
     
     // Preparar datos
     const data = {
-        pedido: parseInt(formData.get('pedido')),
+        pedido: crear ? parseInt(formData.get('pedido')) : null,
         cliente: formData.get('cliente'),
         descripcion: formData.get('descripcion'),
         novedades: formData.get('novedades'),
         forma_de_pago: formData.get('forma_de_pago'),
         estado: formData.get('estado'),
         area: formData.get('area') || 'Creación Orden',
+        crear: crear,
         productos: productos
     };
     
+    // Determinar la ruta según si es crear o guardar como borrador
+    const ruta = crear ? '/asesores/pedidos' : '/asesores/borradores/guardar';
+    
     try {
-        const response = await fetch('/asesores/pedidos', {
+        const response = await fetch(ruta, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -268,16 +282,23 @@ async function guardarPedido(form) {
         const result = await response.json();
         
         if (result.success) {
-            mostrarToast('Pedido creado exitosamente', 'success');
-            setTimeout(() => {
-                window.location.href = `/asesores/pedidos/${result.pedido}`;
-            }, 1500);
+            if (crear) {
+                mostrarToast('Pedido creado exitosamente', 'success');
+                setTimeout(() => {
+                    window.location.href = `/asesores/pedidos/${result.pedido}`;
+                }, 1500);
+            } else {
+                mostrarToast('Borrador guardado exitosamente', 'success');
+                setTimeout(() => {
+                    window.location.href = '/asesores/borradores';
+                }, 1500);
+            }
         } else {
-            mostrarToast(result.message || 'Error al crear el pedido', 'error');
+            mostrarToast(result.message || 'Error al guardar', 'error');
         }
     } catch (error) {
         console.error('Error:', error);
-        mostrarToast('Error al crear el pedido', 'error');
+        mostrarToast('Error al guardar', 'error');
     }
 }
 
@@ -294,16 +315,26 @@ async function actualizarPedido(form) {
     productosItems.forEach((item, index) => {
         const nombreInput = item.querySelector(`[name*="nombre_producto"]`);
         const descripcionInput = item.querySelector(`[name*="descripcion"]`);
+        const telaInput = item.querySelector(`[name*="tela"]`);
+        const tipoMangaInput = item.querySelector(`[name*="tipo_manga"]`);
+        const colorInput = item.querySelector(`[name*="color"]`);
         const tallaInput = item.querySelector(`[name*="talla"]`);
+        const generoInput = item.querySelector(`[name*="genero"]`);
         const cantidadInput = item.querySelector(`[name*="cantidad"]`);
+        const refHiloInput = item.querySelector(`[name*="ref_hilo"]`);
         const precioInput = item.querySelector(`[name*="precio_unitario"]`);
         
         if (nombreInput && cantidadInput) {
             productos.push({
                 nombre_producto: nombreInput.value,
                 descripcion: descripcionInput ? descripcionInput.value : '',
+                tela: telaInput ? telaInput.value : '',
+                tipo_manga: tipoMangaInput ? tipoMangaInput.value : '',
+                color: colorInput ? colorInput.value : '',
                 talla: tallaInput ? tallaInput.value : '',
+                genero: generoInput ? generoInput.value : '',
                 cantidad: parseInt(cantidadInput.value) || 1,
+                ref_hilo: refHiloInput ? refHiloInput.value : '',
                 precio_unitario: precioInput ? parseFloat(precioInput.value) || null : null
             });
         }

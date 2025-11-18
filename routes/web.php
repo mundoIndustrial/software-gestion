@@ -142,18 +142,37 @@ Route::middleware(['auth', 'role:asesor'])->prefix('asesores')->name('asesores.'
     
     // Perfil
     Route::get('/perfil', [App\Http\Controllers\AsesoresController::class, 'profile'])->name('profile')->middleware('auth');
+    Route::post('/perfil/update', [App\Http\Controllers\AsesoresController::class, 'updateProfile'])->name('profile.update');
     
     // Pedidos (usando tabla_original)
     Route::get('/pedidos', [App\Http\Controllers\AsesoresController::class, 'index'])->name('pedidos.index');
     Route::get('/pedidos/create', [App\Http\Controllers\AsesoresController::class, 'create'])->name('pedidos.create');
+    Route::get('/pedidos/next-pedido', [App\Http\Controllers\AsesoresController::class, 'getNextPedido'])->name('next-pedido');
     Route::post('/pedidos', [App\Http\Controllers\AsesoresController::class, 'store'])->name('pedidos.store');
     Route::get('/pedidos/{pedido}', [App\Http\Controllers\AsesoresController::class, 'show'])->name('pedidos.show');
     Route::get('/pedidos/{pedido}/edit', [App\Http\Controllers\AsesoresController::class, 'edit'])->name('pedidos.edit');
     Route::put('/pedidos/{pedido}', [App\Http\Controllers\AsesoresController::class, 'update'])->name('pedidos.update');
     Route::delete('/pedidos/{pedido}', [App\Http\Controllers\AsesoresController::class, 'destroy'])->name('pedidos.destroy');
     
-    // Utilidades
-    Route::get('/next-pedido', [App\Http\Controllers\AsesoresController::class, 'getNextPedido'])->name('next-pedido');
+    // ========================================
+    // SISTEMA DE ÓRDENES CON BORRADORES
+    // ========================================
+    
+    // BORRADORES - Gestión de borradores
+    Route::get('/borradores', [App\Http\Controllers\OrdenController::class, 'borradores'])->name('borradores.index');
+    
+    // ÓRDENES - CRUD principal
+    Route::get('/ordenes/create', [App\Http\Controllers\OrdenController::class, 'create'])->name('ordenes.create');
+    Route::post('/ordenes/guardar', [App\Http\Controllers\OrdenController::class, 'guardarBorrador'])->name('ordenes.store.draft');
+    Route::get('/ordenes/{id}/edit', [App\Http\Controllers\OrdenController::class, 'edit'])->name('ordenes.edit');
+    Route::patch('/ordenes/{id}', [App\Http\Controllers\OrdenController::class, 'update'])->name('ordenes.update');
+    Route::post('/ordenes/{id}/confirmar', [App\Http\Controllers\OrdenController::class, 'confirmar'])->name('ordenes.confirm');
+    Route::delete('/ordenes/{id}', [App\Http\Controllers\OrdenController::class, 'destroy'])->name('ordenes.destroy');
+    Route::get('/ordenes', [App\Http\Controllers\OrdenController::class, 'index'])->name('ordenes.index');
+    Route::get('/ordenes/{id}', [App\Http\Controllers\OrdenController::class, 'show'])->name('ordenes.show');
+    
+    // Estadísticas de órdenes
+    Route::get('/ordenes/stats', [App\Http\Controllers\OrdenController::class, 'stats'])->name('ordenes.stats');
     
     // Notificaciones
     Route::get('/notifications', [App\Http\Controllers\AsesoresController::class, 'getNotifications'])->name('notifications');

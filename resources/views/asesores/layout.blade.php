@@ -58,10 +58,10 @@
                         </a>
                     </li>
                     <li class="menu-item">
-                        <a href="{{ route('asesores.pedidos.create') }}" 
-                           class="menu-link {{ request()->routeIs('asesores.pedidos.create') ? 'active' : '' }}">
-                            <span class="material-symbols-rounded">add_circle</span>
-                            <span class="menu-label">Nuevo Pedido</span>
+                        <a href="{{ route('asesores.borradores.index') }}" 
+                           class="menu-link {{ request()->routeIs('asesores.borradores.*') ? 'active' : '' }}">
+                            <span class="material-symbols-rounded">edit_note</span>
+                            <span class="menu-label">Mis Borradores</span>
                         </a>
                     </li>
                 </ul>
@@ -91,13 +91,6 @@
                 <span class="material-symbols-rounded">light_mode</span>
                 <span class="theme-text">Tema</span>
             </button>
-            <form action="{{ route('logout') }}" method="POST" class="logout-form">
-                @csrf
-                <button type="submit" class="logout-btn" aria-label="Cerrar sesión">
-                    <span class="material-symbols-rounded">logout</span>
-                    <span>Salir</span>
-                </button>
-            </form>
         </div>
     </aside>
 
@@ -146,7 +139,7 @@
                     <button class="user-btn" id="userBtn">
                         <div class="user-avatar">
                             @if(Auth::user()->avatar)
-                                <img src="{{ Auth::user()->avatar }}" alt="{{ Auth::user()->name }}">
+                                <img src="{{ asset('storage/avatars/' . Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}">
                             @else
                                 <div class="avatar-placeholder">
                                     {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
@@ -162,7 +155,7 @@
                         <div class="user-menu-header">
                             <div class="user-avatar-large">
                                 @if(Auth::user()->avatar)
-                                    <img src="{{ Auth::user()->avatar }}" alt="{{ Auth::user()->name }}">
+                                    <img src="{{ asset('storage/avatars/' . Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}">
                                 @else
                                     <div class="avatar-placeholder">
                                         {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
