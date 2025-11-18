@@ -12,26 +12,6 @@ use Illuminate\Support\Facades\Storage;
 class AsesoresController extends Controller
 {
     /**
-     * Mostrar el perfil del asesor
-     *
-     * @return \Illuminate\View\View
-     */
-    public function profile()
-    {
-        try {
-            $user = Auth::user();
-            
-            if (!$user) {
-                return redirect()->route('login')->with('error', 'Por favor inicia sesión para ver tu perfil.');
-            }
-            
-            return view('asesores.profile', compact('user'));
-            
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Error al cargar el perfil: ' . $e->getMessage());
-        }
-    }
-    /**
      * Mostrar el dashboard de asesores
      */
     public function dashboard()

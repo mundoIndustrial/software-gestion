@@ -290,7 +290,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (length > 450) {
                 bioCounter.style.color = '#dc3545';
             } else if (length > 400) {
-                bioCounter.style.color = '#3b82f6';
+                bioCounter.style.color = '#ffc107';
             } else {
                 bioCounter.style.color = '#6c757d';
             }

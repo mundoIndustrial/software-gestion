@@ -8,134 +8,123 @@
     
     <!-- CSS -->
     <link rel="stylesheet" href="{{ asset('css/asesores/layout.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/asesores/module.css') }}">
     <link rel="stylesheet" href="{{ asset('css/asesores/dashboard.css') }}">
     
     <!-- Chart.js para gráficas -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     
     <!-- Material Symbols para iconos -->
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
-    
-    <!-- Google Fonts - Poppins -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" rel="stylesheet">
     
     @stack('styles')
 </head>
 <body class="light-theme">
-    <!-- Sidebar Moderno -->
+    <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <div class="logo-wrapper">
-                <img src="{{ asset('images/logo2.png') }}" 
-                     alt="Logo" 
-                     class="header-logo"
-                     data-logo-light="{{ asset('images/logo2.png') }}"
-                     data-logo-dark="https://prueba.mundoindustrial.co/wp-content/uploads/2024/07/logo-mundo-industrial-white.png" />
-            </div>
+            <img src="{{ asset('images/logo2.png') }}" 
+                 alt="Logo Mundo Industrial" 
+                 class="header-logo"
+                 data-logo-light="{{ asset('images/logo2.png') }}"
+                 data-logo-dark="https://prueba.mundoindustrial.co/wp-content/uploads/2024/07/logo-mundo-industrial-white.png" />
             <button class="sidebar-toggle" id="sidebarToggle" aria-label="Colapsar menú">
                 <span class="material-symbols-rounded">chevron_left</span>
             </button>
         </div>
 
         <div class="sidebar-content">
-            <div class="menu-section">
-                <span class="menu-section-title">Gestión</span>
-                <ul class="menu-list" role="navigation">
-                    <li class="menu-item">
-                        <a href="{{ route('asesores.dashboard') }}" 
-                           class="menu-link {{ request()->routeIs('asesores.dashboard') ? 'active' : '' }}">
-                            <span class="material-symbols-rounded">dashboard</span>
-                            <span class="menu-label">Dashboard</span>
-                            <span class="menu-badge">New</span>
-                        </a>
-                    </li>
-                    <li class="menu-item">
-                        <a href="{{ route('asesores.pedidos.index') }}" 
-                           class="menu-link {{ request()->routeIs('asesores.pedidos.index') || request()->routeIs('asesores.pedidos.show') ? 'active' : '' }}">
-                            <span class="material-symbols-rounded">assignment</span>
-                            <span class="menu-label">Mis Pedidos</span>
-                        </a>
-                    </li>
-                    <li class="menu-item">
-                        <a href="{{ route('asesores.pedidos.create') }}" 
-                           class="menu-link {{ request()->routeIs('asesores.pedidos.create') ? 'active' : '' }}">
-                            <span class="material-symbols-rounded">add_circle</span>
-                            <span class="menu-label">Nuevo Pedido</span>
-                        </a>
-                    </li>
-                </ul>
-            </div>
-
-            <div class="menu-section">
-                <span class="menu-section-title">Información</span>
-                <ul class="menu-list">
-                    <li class="menu-item">
-                        <a href="#" class="menu-link">
-                            <span class="material-symbols-rounded">group</span>
-                            <span class="menu-label">Clientes</span>
-                        </a>
-                    </li>
-                    <li class="menu-item">
-                        <a href="#" class="menu-link">
-                            <span class="material-symbols-rounded">bar_chart</span>
-                            <span class="menu-label">Reportes</span>
-                        </a>
-                    </li>
-                </ul>
-            </div>
+            <ul class="menu-list" role="navigation" aria-label="Menú de asesores">
+                <li class="menu-item">
+                    <a href="{{ route('asesores.dashboard') }}" 
+                       class="menu-link {{ request()->routeIs('asesores.dashboard') ? 'active' : '' }}"
+                       aria-label="Ir al Dashboard">
+                        <span class="material-symbols-rounded" aria-hidden="true">dashboard</span>
+                        <span class="menu-label">Dashboard</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{{ route('asesores.pedidos.index') }}" 
+                       class="menu-link {{ request()->routeIs('asesores.pedidos.index') || request()->routeIs('asesores.pedidos.show') ? 'active' : '' }}"
+                       aria-label="Ver mis pedidos">
+                        <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
+                        <span class="menu-label">Mis Pedidos</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{{ route('asesores.pedidos.create') }}" 
+                       class="menu-link {{ request()->routeIs('asesores.pedidos.create') ? 'active' : '' }}"
+                       aria-label="Crear nuevo pedido">
+                        <span class="material-symbols-rounded" aria-hidden="true">add_circle</span>
+                        <span class="menu-label">Nuevo Pedido</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#" class="menu-link" aria-label="Ver clientes">
+                        <span class="material-symbols-rounded" aria-hidden="true">group</span>
+                        <span class="menu-label">Clientes</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="#" class="menu-link" aria-label="Ver reportes">
+                        <span class="material-symbols-rounded" aria-hidden="true">bar_chart</span>
+                        <span class="menu-label">Reportes</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <form action="{{ route('logout') }}" method="POST">
+                        @csrf
+                        <button type="submit" 
+                                class="menu-link" 
+                                style="border:none;background:none;cursor:pointer;width:100%;"
+                                aria-label="Cerrar sesión">
+                            <span class="material-symbols-rounded" aria-hidden="true">logout</span>
+                            <span class="menu-label">Salir</span>
+                        </button>
+                    </form>
+                </li>
+            </ul>
         </div>
 
         <div class="sidebar-footer">
             <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema">
-                <span class="material-symbols-rounded">light_mode</span>
-                <span class="theme-text">Tema</span>
+                <div class="theme-label">
+                    <span class="material-symbols-rounded" aria-hidden="true">light_mode</span>
+                    <span class="theme-text">Modo Claro</span>
+                </div>
+                <div class="theme-toggle-track">
+                    <div class="theme-toggle-indicator"></div>
+                </div>
             </button>
-            <form action="{{ route('logout') }}" method="POST" class="logout-form">
-                @csrf
-                <button type="submit" class="logout-btn" aria-label="Cerrar sesión">
-                    <span class="material-symbols-rounded">logout</span>
-                    <span>Salir</span>
-                </button>
-            </form>
         </div>
     </aside>
 
     <!-- Main Content -->
     <div class="main-content" id="mainContent">
-        <!-- Top Navigation Moderna -->
+        <!-- Top Navigation -->
         <header class="top-nav">
             <div class="nav-left">
                 <button class="mobile-toggle" id="mobileToggle">
                     <span class="material-symbols-rounded">menu</span>
                 </button>
-                <div class="breadcrumb-section">
-                    <h1 class="page-title">@yield('page-title', 'Dashboard')</h1>
-                </div>
+                <h1 class="page-title">@yield('page-title', 'Dashboard')</h1>
             </div>
 
             <div class="nav-right">
-                <!-- Search Bar -->
-                <div class="search-bar">
-                    <span class="material-symbols-rounded">search</span>
-                    <input type="text" placeholder="Buscar pedidos...">
-                </div>
-
                 <!-- Notificaciones -->
                 <div class="notification-dropdown">
-                    <button class="notification-btn" id="notificationBtn" aria-label="Notificaciones">
+                    <button class="notification-btn" id="notificationBtn">
                         <span class="material-symbols-rounded">notifications</span>
                         <span class="notification-badge" id="notificationBadge">0</span>
                     </button>
                     <div class="notification-menu" id="notificationMenu">
                         <div class="notification-header">
                             <h3>Notificaciones</h3>
-                            <button class="mark-all-read">Marcar todas</button>
+                            <button class="mark-all-read">Marcar todas como leídas</button>
                         </div>
                         <div class="notification-list" id="notificationList">
                             <div class="notification-empty">
                                 <span class="material-symbols-rounded">notifications_off</span>
-                                <p>Sin notificaciones</p>
+                                <p>No tienes notificaciones</p>
                             </div>
                         </div>
                     </div>
@@ -157,25 +146,10 @@
                             <span class="user-name">{{ Auth::user()->name }}</span>
                             <span class="user-role">Asesor</span>
                         </div>
+                        <span class="material-symbols-rounded">expand_more</span>
                     </button>
                     <div class="user-menu" id="userMenu">
-                        <div class="user-menu-header">
-                            <div class="user-avatar-large">
-                                @if(Auth::user()->avatar)
-                                    <img src="{{ Auth::user()->avatar }}" alt="{{ Auth::user()->name }}">
-                                @else
-                                    <div class="avatar-placeholder">
-                                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
-                                    </div>
-                                @endif
-                            </div>
-                            <div>
-                                <p class="user-menu-name">{{ Auth::user()->name }}</p>
-                                <p class="user-menu-email">{{ Auth::user()->email }}</p>
-                            </div>
-                        </div>
-                        <div class="menu-divider"></div>
-                        <a href="{{ route('asesores.profile') }}" class="menu-item">
+                        <a href="#" class="menu-item">
                             <span class="material-symbols-rounded">person</span>
                             <span>Mi Perfil</span>
                         </a>

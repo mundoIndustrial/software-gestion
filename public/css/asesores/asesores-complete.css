@@ -751,6 +751,211 @@ body.dark-theme .theme-toggle-indicator {
     padding: 15px;
   }
 }
+/* ===== MÃ“DULO ASESORES - ESTILOS ADICIONALES ===== */
+
+/* Dropdown Styles */
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: var(--color-bg-sidebar);
+    border: 1px solid var(--color-border-hr);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px var(--color-shadow);
+    min-width: 250px;
+    z-index: 1000;
+    margin-top: 8px;
+}
+
+.dropdown-menu.show {
+    display: block;
+}
+
+.dropdown-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border-hr);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.dropdown-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    color: var(--color-text-primary);
+    text-decoration: none;
+    transition: background 0.2s;
+    cursor: pointer;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+}
+
+.dropdown-item:hover {
+    background: var(--color-hover-secondary);
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: var(--color-border-hr);
+    margin: 4px 0;
+}
+
+/* Notification Badge */
+.notification-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #EF4444;
+    color: white;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+}
+
+/* Icon Button */
+.icon-btn {
+    position: relative;
+    background: none;
+    border: none;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--color-text-primary);
+    transition: background 0.2s;
+}
+
+.icon-btn:hover {
+    background: var(--color-hover-secondary);
+}
+
+/* User Button */
+.user-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: none;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--color-text-primary);
+    transition: background 0.2s;
+}
+
+.user-btn:hover {
+    background: var(--color-hover-secondary);
+}
+
+.user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4F46E5, #818CF8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.user-name {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.user-role {
+    font-size: 12px;
+    color: var(--color-text-placeholder);
+}
+
+/* Sidebar collapsed state */
+.module-sidebar.collapsed {
+    width: 70px;
+}
+
+.module-sidebar.collapsed .nav-label,
+.module-sidebar.collapsed .theme-label {
+    display: none;
+}
+
+/* Mobile sidebar */
+@media (max-width: 768px) {
+    .module-sidebar {
+        position: fixed;
+        left: -280px;
+        transition: left 0.3s ease;
+        z-index: 1000;
+    }
+    
+    .module-sidebar.active {
+        left: 0;
+    }
+}
+
+/* Alert Styles */
+.alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.alert-success {
+    background: #D1FAE5;
+    color: #065F46;
+    border: 1px solid #10B981;
+}
+
+.alert-error {
+    background: #FEE2E2;
+    color: #991B1B;
+    border: 1px solid #EF4444;
+}
+
+body.dark-theme .alert-success {
+    background: rgba(16, 185, 129, 0.2);
+    color: #6EE7B7;
+}
+
+body.dark-theme .alert-error {
+    background: rgba(239, 68, 68, 0.2);
+    color: #FCA5A5;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 32px;
+    color: var(--color-text-placeholder);
+}
+
+.empty-state .material-symbols-rounded {
+    font-size: 48px;
+    opacity: 0.5;
+    margin-bottom: 12px;
+}
 /* ===== DASHBOARD STYLES ===== */
 
 /* CSS Variables for Light/Dark Mode */
@@ -1764,3 +1969,27 @@ body:not(.dark-theme) .filter-date {
 .animate-in {
     animation: fadeInUp 0.5s ease-out forwards;
 }
+
+/* ===== ESTILOS DEL MÓDULO DE ASESORES ===== */
+body { background: var(--color-bg-primary); margin: 0; padding: 0; display: flex; min-height: 100vh; }
+.module-sidebar { width: 280px; background: var(--color-bg-sidebar); border-right: 1px solid var(--color-border-hr); display: flex; flex-direction: column; position: fixed; left: 0; top: 0; height: 100vh; z-index: 100; }
+.sidebar-header { padding: 20px; border-bottom: 1px solid var(--color-border-hr); display: flex; align-items: center; justify-content: space-between; }
+.sidebar-logo { max-width: 150px; height: auto; }
+.sidebar-toggle-btn { background: none; border: none; color: var(--color-text-primary); cursor: pointer; padding: 8px; border-radius: 8px; }
+.sidebar-toggle-btn:hover { background: var(--color-hover-secondary); }
+.sidebar-nav { flex: 1; padding: 20px 10px; overflow-y: auto; }
+.nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: var(--color-text-primary); text-decoration: none; border-radius: 8px; margin-bottom: 4px; transition: all 0.2s; }
+.nav-item:hover { background: var(--color-hover-secondary); }
+.nav-item.active { background: var(--color-hover-primary); color: white; }
+.sidebar-footer { padding: 20px 10px; border-top: 1px solid var(--color-border-hr); }
+.theme-toggle-btn { width: 100%; display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: none; border: none; color: var(--color-text-primary); cursor: pointer; border-radius: 8px; }
+.theme-toggle-btn:hover { background: var(--color-hover-secondary); }
+.logout-form { margin-top: 8px; }
+.logout-btn { width: 100%; }
+.module-content { margin-left: 280px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+.module-header { background: var(--color-bg-sidebar); border-bottom: 1px solid var(--color-border-hr); padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+.header-left, .header-right { display: flex; align-items: center; gap: 16px; }
+.page-title { font-size: 24px; font-weight: 600; color: var(--color-text-primary); margin: 0; }
+.mobile-menu-btn { display: none; background: none; border: none; color: var(--color-text-primary); cursor: pointer; padding: 8px; }
+.page-content { flex: 1; padding: 24px; }
+@media (max-width: 768px) { .module-sidebar { left: -280px; transition: left 0.3s; } .module-sidebar.active { left: 0; } .module-content { margin-left: 0; } .mobile-menu-btn { display: block; } }
