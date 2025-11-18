@@ -113,7 +113,13 @@ class RegistroOrdenController extends Controller
         foreach ($request->all() as $key => $value) {
             if (str_starts_with($key, 'filter_') && !empty($value)) {
                 $column = str_replace('filter_', '', $key);
-                $values = explode(',', $value);
+                
+                // Usar separador especial para valores que pueden contener comas y saltos de línea
+                $separator = '|||FILTER_SEPARATOR|||';
+                $values = explode($separator, $value);
+                
+                // Limpiar valores vacíos y trimear espacios
+                $values = array_filter(array_map('trim', $values));
 
                 // Whitelist de columnas permitidas para seguridad
                 $allowedColumns = [
