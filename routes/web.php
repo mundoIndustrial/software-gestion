@@ -149,6 +149,7 @@ Route::middleware(['auth', 'role:asesor'])->prefix('asesores')->name('asesores.'
     Route::get('/pedidos/create', [App\Http\Controllers\AsesoresController::class, 'create'])->name('pedidos.create');
     Route::get('/pedidos/next-pedido', [App\Http\Controllers\AsesoresController::class, 'getNextPedido'])->name('next-pedido');
     Route::post('/pedidos', [App\Http\Controllers\AsesoresController::class, 'store'])->name('pedidos.store');
+    Route::post('/pedidos/confirm', [App\Http\Controllers\AsesoresController::class, 'confirm'])->name('pedidos.confirm');
     Route::get('/pedidos/{pedido}', [App\Http\Controllers\AsesoresController::class, 'show'])->name('pedidos.show');
     Route::get('/pedidos/{pedido}/edit', [App\Http\Controllers\AsesoresController::class, 'edit'])->name('pedidos.edit');
     Route::put('/pedidos/{pedido}', [App\Http\Controllers\AsesoresController::class, 'update'])->name('pedidos.update');

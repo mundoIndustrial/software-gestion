@@ -146,23 +146,11 @@ class AsesoresController extends Controller
     }
 
     /**
-     * Mostrar formulario para crear pedido
+     * Mostrar formulario para crear pedido (versión amigable)
      */
     public function create()
     {
-        // Obtener el siguiente número de pedido
-        $ultimoPedido = TablaOriginal::max('pedido');
-        $siguientePedido = $ultimoPedido ? $ultimoPedido + 1 : 1;
-
-        // Obtener opciones de enums
-        $estados = ['No iniciado', 'En Ejecución', 'Entregado', 'Anulada'];
-        $areas = [
-            'Creación Orden', 'Corte', 'Costura', 'Bordado', 'Estampado',
-            'Control-Calidad', 'Entrega', 'Polos', 'Taller', 'Insumos',
-            'Lavandería', 'Arreglos', 'Despachos'
-        ];
-
-        return view('asesores.pedidos.create', compact('siguientePedido', 'estados', 'areas'));
+        return view('asesores.pedidos.create-friendly');
     }
 
     /**
@@ -170,57 +158,54 @@ class AsesoresController extends Controller
      */
     public function store(Request $request)
     {
+        // Soportar ambos formatos: productos y productos_friendly
+        $productosKey = $request->has('productos') ? 'productos' : 'productos_friendly';
+        
         $validated = $request->validate([
-            'pedido' => 'required|integer|unique:tabla_original,pedido',
             'cliente' => 'required|string|max:255',
-            'descripcion' => 'nullable|string',
-            'novedades' => 'nullable|string',
             'forma_de_pago' => 'nullable|string|max:69',
-            'estado' => 'nullable|string',
             'area' => 'nullable|string',
-            'productos' => 'required|array|min:1',
-            'productos.*.nombre_producto' => 'required|string',
-            'productos.*.descripcion' => 'nullable|string',
-            'productos.*.tella' => 'nullable|string',
-            'productos.*.tipo_manga' => 'nullable|string',
-            'productos.*.color' => 'nullable|string',
-            'productos.*.talla' => 'nullable|string',
-            'productos.*.genero' => 'nullable|string',
-            'productos.*.cantidad' => 'required|integer|min:1',
-            'productos.*.ref_hilo' => 'nullable|string',
-            'productos.*.precio_unitario' => 'nullable|numeric|min:0',
+            $productosKey => 'required|array|min:1',
+            $productosKey.'.*.nombre_producto' => 'required|string',
+            $productosKey.'.*.descripcion' => 'nullable|string',
+            $productosKey.'.*.tella' => 'nullable|string',
+            $productosKey.'.*.tipo_manga' => 'nullable|string',
+            $productosKey.'.*.color' => 'nullable|string',
+            $productosKey.'.*.talla' => 'nullable|string',
+            $productosKey.'.*.genero' => 'nullable|string',
+            $productosKey.'.*.cantidad' => 'required|integer|min:1',
+            $productosKey.'.*.ref_hilo' => 'nullable|string',
+            $productosKey.'.*.precio_unitario' => 'nullable|numeric|min:0',
         ]);
 
         DB::beginTransaction();
         try {
             // Calcular cantidad total de productos
-            $cantidadTotal = collect($validated['productos'])->sum('cantidad');
+            $cantidadTotal = collect($validated[$productosKey])->sum('cantidad');
 
-            // Crear el pedido en tabla_original
-            $pedido = TablaOriginal::create([
-                'pedido' => $validated['pedido'],
+            // Guardar como borrador SIN ASIGNAR ID AÚN
+            // Usar pedido = 0 como placeholder - se asignará al confirmar
+            $pedidoBorrador = TablaOriginal::create([
+                'pedido' => 0, // Placeholder - se asignará al confirmar
                 'cliente' => $validated['cliente'],
                 'asesora' => Auth::user()->name,
-                'descripcion' => $validated['descripcion'] ?? null,
-                'novedades' => $validated['novedades'] ?? null,
                 'forma_de_pago' => $validated['forma_de_pago'] ?? null,
                 'cantidad' => $cantidadTotal,
-                'estado' => $validated['estado'] ?? 'No iniciado',
+                'estado' => 'No iniciado', // SE ASIGNA AUTOMÁTICAMENTE
                 'area' => $validated['area'] ?? 'Creación Orden',
                 'fecha_de_creacion_de_orden' => now()->toDateString(),
             ]);
 
-            // Crear los productos del pedido
-            foreach ($validated['productos'] as $productoData) {
+            // Crear los productos del pedido borrador
+            foreach ($validated[$productosKey] as $productoData) {
                 $subtotal = null;
                 if (isset($productoData['precio_unitario']) && isset($productoData['cantidad'])) {
                     $subtotal = $productoData['precio_unitario'] * $productoData['cantidad'];
                 }
 
                 ProductoPedido::create([
-                    'pedido' => $pedido->pedido,
+                    'pedido' => 0, // Placeholder
                     'nombre_producto' => $productoData['nombre_producto'],
-                    'descripcion' => $productoData['descripcion'] ?? null,
                     'talla' => $productoData['talla'] ?? null,
                     'cantidad' => $productoData['cantidad'],
                     'precio_unitario' => $productoData['precio_unitario'] ?? null,
@@ -232,8 +217,52 @@ class AsesoresController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Pedido creado exitosamente',
-                'pedido' => $pedido->pedido
+                'message' => 'Pedido guardado como borrador',
+                'borrador_id' => $pedidoBorrador->id
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar el pedido: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Confirmar pedido y asignar ID
+     */
+    public function confirm(Request $request)
+    {
+        $validated = $request->validate([
+            'borrador_id' => 'required|integer|exists:tabla_original,id',
+            'pedido' => 'required|integer|unique:tabla_original,pedido',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Obtener el borrador
+            $borrador = TablaOriginal::findOrFail($validated['borrador_id']);
+            
+            // Actualizar el borrador con el ID real
+            $borrador->update([
+                'pedido' => $validated['pedido']
+            ]);
+
+            // Actualizar también los productos con el nuevo ID de pedido
+            ProductoPedido::where('pedido', 0)
+                ->where('nombre_producto', $borrador->productos->pluck('nombre_producto')->first())
+                ->update([
+                    'pedido' => $validated['pedido']
+                ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pedido creado exitosamente con ID: ' . $validated['pedido'],
+                'pedido' => $validated['pedido']
             ]);
 
         } catch (\Exception $e) {

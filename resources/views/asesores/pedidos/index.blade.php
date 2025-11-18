@@ -31,10 +31,10 @@
                 Mis Borradores
             </a>
 
-            <button onclick="abrirModalCrearPedido()" class="btn btn-primary">
+            <a href="{{ route('asesores.pedidos.create') }}" class="btn btn-primary">
                 <i class="fas fa-plus"></i>
                 Nuevo Pedido
-            </button>
+            </a>
         </div>
     </div>
 
@@ -124,182 +124,216 @@
 
 <!-- MODAL CREAR PEDIDO - SISTEMA DE TABS/PESTAÑAS -->
 <div id="modalCrearPedido" class="modal-overlay" style="display: none;">
-    <div class="modal-container-tabs">
-        <!-- Header del Modal -->
-        <div class="modal-header">
-            <h2>Crear Nuevo Pedido</h2>
-            <button onclick="cerrarModalCrearPedido()" class="btn-close" title="Cerrar">
-                ✕
-            </button>
-        </div>
-
-        <!-- TABS NAVIGATION -->
-        <div class="tabs-navigation">
-            <button type="button" class="tab-button active" onclick="mostrarTabModal('info-general')">
-                <i class="fas fa-info-circle"></i>
-                <span>Información</span>
-            </button>
-            <button type="button" class="tab-button" onclick="mostrarTabModal('productos')">
-                <i class="fas fa-box"></i>
-                <span>Productos</span>
-            </button>
-            <button type="button" class="tab-button" onclick="mostrarTabModal('resumen')">
-                <i class="fas fa-clipboard-list"></i>
-                <span>Resumen</span>
-            </button>
-        </div>
-
-        <form id="formCrearPedidoModal" class="form-modal-tabs">
-            @csrf
-
-            <!-- TAB 1: INFORMACIÓN GENERAL -->
-            <div id="tab-info-general" class="tab-content active">
-                <div class="tab-body">
-                    <div class="form-group">
-                        <label>Número de Pedido</label>
-                        <input type="number" id="nuevoPedido" class="form-control" readonly>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Cliente *</label>
-                        <input type="text" id="nuevoCliente" name="cliente" class="form-control" placeholder="Nombre cliente" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Forma de Pago</label>
-                        <select id="nuevoFormaPago" name="forma_de_pago" class="form-control">
-                            <option value="">Seleccionar...</option>
-                            <option value="Crédito">Crédito</option>
-                            <option value="Contado">Contado</option>
-                            <option value="50/50">50/50</option>
-                            <option value="Anticipo">Anticipo</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Estado Inicial</label>
-                        <select id="nuevoEstado" name="estado" class="form-control">
-                            <option value="No iniciado">No iniciado</option>
-                            <option value="En Ejecución">En Ejecución</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Descripción</label>
-                        <textarea id="nuevoDescripcion" name="descripcion" class="form-control" rows="3" placeholder="Descripción del pedido..."></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Novedades</label>
-                        <textarea id="nuevoNovedades" name="novedades" class="form-control" rows="2" placeholder="Instrucciones especiales..."></textarea>
-                    </div>
-                </div>
-
-                <div class="tab-actions">
-                    <button type="button" onclick="mostrarTabModal('productos')" class="btn btn-primary">
-                        <i class="fas fa-arrow-right"></i>
-                        Siguiente
-                    </button>
-                </div>
-            </div>
-
-            <!-- TAB 2: PRODUCTOS -->
-            <div id="tab-productos" class="tab-content">
-                <div class="tab-header">
-                    <button type="button" onclick="agregarProductoModal()" class="btn-add-product">
-                        <i class="fas fa-plus"></i>
-                        Agregar Producto
-                    </button>
-                </div>
-                <div class="tab-body">
-                    <div id="productosModalContainer" class="productos-modal-list">
-                        <!-- Productos se agregan aquí -->
-                    </div>
-                </div>
-
-                <div class="tab-actions">
-                    <button type="button" onclick="mostrarTabModal('info-general')" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i>
-                        Anterior
-                    </button>
-                    <button type="button" onclick="mostrarTabModal('resumen')" class="btn btn-primary">
-                        <i class="fas fa-arrow-right"></i>
-                        Siguiente
-                    </button>
-                </div>
-            </div>
-
-            <!-- TAB 3: RESUMEN -->
-            <div id="tab-resumen" class="tab-content">
-                <div class="tab-body">
-                    <div class="resumen-card">
-                        <h4>Resumen del Pedido</h4>
-                        <div class="resumen-item">
-                            <span>Total de Productos:</span>
-                            <strong id="resumenTotalProductos">0</strong>
-                        </div>
-                        <div class="resumen-item">
-                            <span>Cantidad Total:</span>
-                            <strong id="resumenCantidadTotal">0</strong>
-                        </div>
-                    </div>
-
-                    <div class="resumen-info">
-                        <i class="fas fa-check-circle"></i>
-                        <p>Revisa que toda la información esté correcta antes de crear el pedido.</p>
-                    </div>
-
-                    <div class="resumen-detalles">
-                        <div class="detalle-item">
-                            <span>Cliente:</span>
-                            <strong id="resumenCliente">-</strong>
-                        </div>
-                        <div class="detalle-item">
-                            <span>Forma de Pago:</span>
-                            <strong id="resumenFormaPago">-</strong>
-                        </div>
-                        <div class="detalle-item">
-                            <span>Estado:</span>
-                            <strong id="resumenEstado">-</strong>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="tab-actions">
-                    <button type="button" onclick="mostrarTabModal('productos')" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i>
-                        Anterior
-                    </button>
-                    <button type="button" onclick="guardarPedidoModal()" class="btn btn-primary">
-                        <i class="fas fa-check"></i>
-                        Crear Pedido
-                    </button>
-                </div>
-            </div>
-        </form>
+    <!-- Header del Modal -->
+    <div class="modal-header">
+        <h2>Crear Nuevo Pedido</h2>
+        <button onclick="cerrarModalCrearPedido()" class="btn-close" title="Cerrar">
+            ✕
+        </button>
     </div>
+
+    <!-- TABS NAVIGATION -->
+    <div class="tabs-navigation">
+        <button type="button" class="tab-button active" onclick="mostrarTabModal('info-general')">
+            <i class="fas fa-info-circle"></i>
+            <span>Información</span>
+        </button>
+        <button type="button" class="tab-button" onclick="mostrarTabModal('productos')">
+            <i class="fas fa-box"></i>
+            <span>Productos</span>
+        </button>
+        <button type="button" class="tab-button" onclick="mostrarTabModal('resumen')">
+            <i class="fas fa-clipboard-list"></i>
+            <span>Resumen</span>
+        </button>
+    </div>
+
+    <form id="formCrearPedidoModal" class="form-modal-tabs">
+        @csrf
+
+        <!-- TAB 1: INFORMACIÓN GENERAL -->
+        <div id="tab-info-general" class="tab-content active">
+            <div class="tab-body">
+                <div class="form-group">
+                    <label>Cliente *</label>
+                    <input type="text" id="nuevoCliente" name="cliente" class="form-control" placeholder="Nombre cliente" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Forma de Pago</label>
+                    <input type="text" id="nuevoFormaPago" name="forma_de_pago" class="form-control" placeholder="Escribir o seleccionar..." list="formasPagoList" autocomplete="off">
+                    <datalist id="formasPagoList">
+                        <option value="CRÉDITO"></option>
+                        <option value="CONTADO"></option>
+                        <option value="50/50"></option>
+                        <option value="ANTICIPO"></option>
+                    </datalist>
+                </div>
+            </div>
+
+            <div class="tab-actions">
+                <button type="button" onclick="mostrarTabModal('productos')" class="btn btn-primary">
+                    <i class="fas fa-arrow-right"></i>
+                    Siguiente
+                </button>
+            </div>
+        </div>
+
+        <!-- TAB 2: PRODUCTOS -->
+        <div id="tab-productos" class="tab-content">
+            <div class="tab-header">
+                <button type="button" onclick="agregarProductoModal()" class="btn-add-product">
+                    <i class="fas fa-plus"></i>
+                    Agregar Producto
+                </button>
+            </div>
+            <div class="tab-body">
+                <div id="productosModalContainer" class="productos-modal-list">
+                    <!-- Productos se agregan aquí -->
+                </div>
+            </div>
+
+            <div class="tab-actions">
+                <button type="button" onclick="mostrarTabModal('info-general')" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Anterior
+                </button>
+                <button type="button" onclick="mostrarTabModal('resumen')" class="btn btn-primary">
+                    <i class="fas fa-arrow-right"></i>
+                    Siguiente
+                </button>
+            </div>
+        </div>
+
+        <!-- TAB 3: RESUMEN -->
+        <div id="tab-resumen" class="tab-content">
+            <div class="tab-body">
+                <div class="resumen-card">
+                    <h4>Resumen del Pedido</h4>
+                    <div class="resumen-item">
+                        <span>Total de Productos:</span>
+                        <strong id="resumenTotalProductos">0</strong>
+                    </div>
+                    <div class="resumen-item">
+                        <span>Cantidad Total:</span>
+                        <strong id="resumenCantidadTotal">0</strong>
+                    </div>
+                </div>
+
+                <div class="resumen-info">
+                    <i class="fas fa-check-circle"></i>
+                    <p>Revisa que toda la información esté correcta antes de crear el pedido.</p>
+                </div>
+
+                <div class="resumen-detalles">
+                    <div class="detalle-item">
+                        <span>Cliente:</span>
+                        <strong id="resumenCliente">-</strong>
+                    </div>
+                    <div class="detalle-item">
+                        <span>Forma de Pago:</span>
+                        <strong id="resumenFormaPago">-</strong>
+                    </div>
+                    <div class="detalle-item">
+                        <span>Estado Inicial:</span>
+                        <strong id="resumenEstado">No iniciado</strong>
+                        <span style="font-size: 0.85rem; color: #666;">(asignado automáticamente)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-actions">
+                <button type="button" onclick="mostrarTabModal('productos')" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i>
+                    Anterior
+                </button>
+                <button type="button" onclick="guardarPedidoModal()" class="btn btn-primary">
+                    <i class="fas fa-check"></i>
+                    Crear Pedido
+                </button>
+            </div>
+        </div>
+    </form>
 </div>
 
 <!-- Template para producto en modal -->
 <template id="productoModalTemplate">
     <div class="producto-modal-item">
         <div class="producto-modal-header">
-            <input type="text" name="productos_modal[][nombre_producto]" class="input-sm" placeholder="Prenda" required>
+            <h4 class="prenda-numero">Prenda <span class="numero-prenda">1</span></h4>
             <button type="button" onclick="eliminarProductoModal(this)" class="btn-remove">
                 <i class="fas fa-trash"></i>
             </button>
         </div>
         <div class="producto-modal-body">
-            <input type="text" name="productos_modal[][color]" class="input-sm" placeholder="Color" required>
-            <input type="text" name="productos_modal[][talla]" class="input-sm" placeholder="Talla" required>
-            <input type="number" name="productos_modal[][cantidad]" class="input-sm producto-modal-cantidad" placeholder="Cant." min="1" value="1" onchange="actualizarResumenModal()" required>
-            <input type="text" name="productos_modal[][tela]" class="input-sm" placeholder="Tela">
-            <select name="productos_modal[][tipo_manga]" class="input-sm">
-                <option value="">Manga</option>
-                <option value="Manga Corta">Manga Corta</option>
-                <option value="Manga Larga">Manga Larga</option>
-                <option value="Sin Manga">Sin Manga</option>
-            </select>
+            <div class="form-row">
+                <div class="form-col">
+                    <label>Nombre de Prenda *</label>
+                    <input type="text" name="productos_modal[][nombre_producto]" class="form-control" placeholder="Ej: Polo, Camiseta..." required>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-col">
+                    <label>Descripción</label>
+                    <input type="text" name="productos_modal[][descripcion]" class="form-control" placeholder="Detalles adicionales">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-col">
+                    <label>Talla *</label>
+                    <input type="text" name="productos_modal[][talla]" class="form-control" placeholder="Ej: S, M, L, XL" required>
+                </div>
+                <div class="form-col">
+                    <label>Cantidad *</label>
+                    <input type="number" name="productos_modal[][cantidad]" class="form-control producto-modal-cantidad" placeholder="1" min="1" value="1" onchange="actualizarResumenModal()" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-col">
+                    <label>Color</label>
+                    <input type="text" name="productos_modal[][color]" class="form-control" placeholder="Ej: Blanco, Negro">
+                </div>
+                <div class="form-col">
+                    <label>Tela</label>
+                    <input type="text" name="productos_modal[][tella]" class="form-control" placeholder="Ej: Algodón 100%">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-col">
+                    <label>Tipo de Manga</label>
+                    <select name="productos_modal[][tipo_manga]" class="form-control">
+                        <option value="">Seleccionar...</option>
+                        <option value="Manga Corta">Manga Corta</option>
+                        <option value="Manga Larga">Manga Larga</option>
+                        <option value="Sin Manga">Sin Manga</option>
+                    </select>
+                </div>
+                <div class="form-col">
+                    <label>Género</label>
+                    <select name="productos_modal[][genero]" class="form-control">
+                        <option value="">Seleccionar...</option>
+                        <option value="Hombre">Hombre</option>
+                        <option value="Mujer">Mujer</option>
+                        <option value="Niño">Niño</option>
+                        <option value="Unisex">Unisex</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-col">
+                    <label>Referencia de Hilo</label>
+                    <input type="text" name="productos_modal[][ref_hilo]" class="form-control" placeholder="Código de hilo">
+                </div>
+                <div class="form-col">
+                    <label>Precio Unitario</label>
+                    <input type="number" name="productos_modal[][precio_unitario]" class="form-control" placeholder="0.00" step="0.01" min="0">
+                </div>
+            </div>
         </div>
     </div>
 </template>
@@ -309,56 +343,81 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/asesores/pedidos.css') }}">
 <style>
-    /* MODAL OVERLAY */
+    /* MODAL OVERLAY - AHORA ES EL CONTENEDOR PRINCIPAL */
     .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
         background: rgba(0, 0, 0, 0.5);
         display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 9999;
-        padding: 2rem;
-        overflow: auto;
-    }
-
-    /* CONTENEDOR MODAL - CON MÁRGENES */
-    .modal-container-tabs {
-        background: white;
-        width: 100%;
-        height: auto;
-        max-width: 1000px;
-        max-height: 85vh;
-        display: flex;
         flex-direction: column;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-        overflow: hidden;
-        border-radius: 8px;
+        align-items: center;
+        justify-content: flex-start;
+        z-index: 99999 !important;
+        padding: 2rem;
+        overflow-y: auto;
+        overflow-x: hidden;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        margin: 0 !important;
+        box-sizing: border-box !important;
     }
 
     /* HEADER MODAL */
-    .modal-header {
+    .modal-overlay .modal-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 1.5rem 2rem;
+        padding: 1rem 1.5rem;
         border-bottom: 2px solid #e0e0e0;
         background: linear-gradient(135deg, #f5f5f5, #fafafa);
         flex-shrink: 0;
-        min-height: 70px;
+        min-height: 60px;
+        width: 100%;
+        max-width: 800px;
+        border-radius: 8px 8px 0 0;
+        margin-bottom: -2px;
     }
 
-    .modal-header h2 {
+    /* TABS NAVIGATION */
+    .modal-overlay .tabs-navigation {
+        display: flex;
+        border-bottom: 2px solid #e0e0e0;
+        background: #fafafa;
+        padding: 0 1.5rem;
+        gap: 0.5rem;
+        overflow-x: auto;
+        flex-shrink: 0;
+        width: 100%;
+        max-width: 800px;
+    }
+
+    /* FORM MODAL TABS */
+    .modal-overlay .form-modal-tabs {
+        flex: 0 1 auto;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        max-width: 800px;
+        background: white;
+        border-radius: 0 0 8px 8px;
+        overflow: visible;
+        margin: 0;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    }
+
+    /* HEADER H2 Y BOTÓN CERRAR */
+    .modal-overlay .modal-header h2 {
         margin: 0;
         color: #333;
-        font-size: 1.5rem;
+        font-size: 1.3rem;
         font-weight: 700;
     }
 
-    .btn-close {
+    .modal-overlay .btn-close {
         width: 36px;
         height: 36px;
         border: none;
@@ -378,29 +437,19 @@
         padding: 0;
     }
 
-    .btn-close:hover {
+    .modal-overlay .btn-close:hover {
         background: #e63333;
         transform: scale(1.1) rotate(90deg);
         box-shadow: 0 4px 12px rgba(255, 68, 68, 0.5);
     }
 
-    .btn-close:active {
+    .modal-overlay .btn-close:active {
         transform: scale(0.95);
     }
 
-    /* TABS NAVIGATION */
-    .tabs-navigation {
-        display: flex;
-        border-bottom: 2px solid #e0e0e0;
-        background: #fafafa;
-        padding: 0 2rem;
-        gap: 0.5rem;
-        overflow-x: auto;
-        flex-shrink: 0;
-    }
-
-    .tab-button {
-        padding: 1rem 1.5rem;
+    /* TAB BUTTONS */
+    .modal-overlay .tab-button {
+        padding: 0.75rem 1.2rem;
         background: transparent;
         border: none;
         color: #666;
@@ -411,54 +460,45 @@
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        font-size: 0.95rem;
+        font-size: 0.9rem;
         white-space: nowrap;
         flex-shrink: 0;
     }
 
-    .tab-button i {
+    .modal-overlay .tab-button i {
         font-size: 1rem;
     }
 
-    .tab-button:hover {
+    .modal-overlay .tab-button:hover {
         color: #0066cc;
         background: rgba(0, 102, 204, 0.05);
     }
 
-    .tab-button.active {
+    .modal-overlay .tab-button.active {
         color: #0066cc;
         border-bottom-color: #0066cc;
     }
 
     /* CONTENIDO TABS */
-    .form-modal-tabs {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-    }
-
-    .tab-content {
+    .modal-overlay .tab-content {
         display: none;
         flex-direction: column;
-        flex: 1;
-        overflow: hidden;
+        flex: 0 1 auto;
+        overflow: visible;
     }
 
-    .tab-content.active {
+    .modal-overlay .tab-content.active {
         display: flex;
     }
 
     /* TAB BODY */
-    .tab-body {
-        padding: 2rem;
-        flex: 1;
-        overflow-y: auto;
-        overflow-x: hidden;
+    .modal-overlay .tab-body {
+        padding: 1.5rem;
+        flex: 0 1 auto;
     }
 
-    .tab-header {
-        padding: 1rem 2rem 0 2rem;
+    .modal-overlay .tab-header {
+        padding: 0.75rem 1.5rem 0 1.5rem;
         border-bottom: 1px solid #e0e0e0;
         display: flex;
         justify-content: space-between;
@@ -467,32 +507,47 @@
     }
 
     /* FORM GROUPS */
-    .form-group {
-        margin-bottom: 1.5rem;
+    .modal-overlay .form-group {
+        margin-bottom: 1rem;
     }
 
-    .form-group label {
+    .modal-overlay .form-group label {
         display: block;
         font-weight: 600;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.4rem;
         color: #333;
-        font-size: 0.95rem;
+        font-size: 0.9rem;
     }
 
-    .form-control {
+    .modal-overlay .form-control {
         width: 100%;
-        padding: 0.75rem;
+        padding: 0.6rem;
         border: 1px solid #ddd;
         border-radius: 6px;
-        font-size: 0.95rem;
+        font-size: 0.9rem;
         font-family: inherit;
         transition: border-color 0.3s, box-shadow 0.3s;
     }
 
-    .form-control:focus {
+    .modal-overlay .form-control:focus {
         outline: none;
         border-color: #0066cc;
         box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+    }
+
+    /* TODO EN MAYÚSCULA EN EL MODAL DE PEDIDOS */
+    #modalCrearPedido .form-control,
+    #modalCrearPedido input[type="text"],
+    #modalCrearPedido input[type="number"],
+    #modalCrearPedido textarea,
+    #modalCrearPedido select {
+        text-transform: uppercase;
+    }
+
+    /* TAMBIÉN EL RESUMEN EN MAYÚSCULA */
+    #resumenCliente,
+    #resumenFormaPago {
+        text-transform: uppercase;
     }
 
     /* BOTÓN AGREGAR PRODUCTO */
@@ -525,29 +580,48 @@
     }
 
     .producto-modal-item {
-        background: #f9f9f9;
-        border: 1px solid #e0e0e0;
-        border-left: 3px solid #0066cc;
-        border-radius: 6px;
-        padding: 1rem;
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s;
+    }
+
+    .producto-modal-item:hover {
+        box-shadow: 0 4px 12px rgba(0, 102, 204, 0.1);
+        border-color: #0066cc;
     }
 
     .producto-modal-header {
         display: flex;
-        gap: 0.75rem;
-        margin-bottom: 0.75rem;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        background: linear-gradient(135deg, #0066cc, #0052a3);
+        color: white;
+        border-bottom: 2px solid #0052a3;
     }
 
-    .producto-modal-header input {
-        flex: 1;
+    .prenda-numero {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: white;
+    }
+
+    .numero-prenda {
+        font-weight: 700;
+        color: #fff;
     }
 
     .btn-remove {
         width: 36px;
         height: 36px;
         padding: 0;
-        background: #ffebee;
-        color: #f44336;
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
         border: none;
         border-radius: 4px;
         cursor: pointer;
@@ -560,19 +634,48 @@
     }
 
     .btn-remove:hover {
-        background: #ffcdd2;
+        background: #f44336;
     }
 
     .producto-modal-body {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-        gap: 0.75rem;
+        padding: 1.5rem;
     }
 
-    .producto-modal-body input,
-    .producto-modal-body select {
-        padding: 0.6rem;
+    .form-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .form-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .form-col {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-col label {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #333;
         font-size: 0.9rem;
+    }
+
+    .producto-modal-body .form-control {
+        padding: 0.75rem;
+        font-size: 0.95rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        transition: all 0.3s;
+    }
+
+    .producto-modal-body .form-control:focus {
+        outline: none;
+        border-color: #0066cc;
+        box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
     }
 
     /* RESUMEN */
@@ -669,7 +772,7 @@
     .tab-actions {
         display: flex;
         gap: 1rem;
-        padding: 1.5rem 2rem;
+        padding: 1rem 1.5rem;
         border-top: 1px solid #e0e0e0;
         background: #fafafa;
         flex-shrink: 0;
@@ -677,8 +780,8 @@
 
     .tab-actions .btn {
         flex: 1;
-        min-height: 45px;
-        padding: 0.75rem 1.5rem;
+        min-height: 40px;
+        padding: 0.6rem 1.2rem;
         border: none;
         border-radius: 6px;
         font-weight: 600;
@@ -810,8 +913,6 @@
 
         .tab-body {
             padding: 1rem;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
         }
 
         .tab-header {
@@ -1030,8 +1131,16 @@ function abrirModalCrearPedido() {
     const modal = document.getElementById('modalCrearPedido');
     modal.style.display = 'flex';
     modal.addEventListener('click', cerrarAlClickAfuera);
+    
+    // Evitar scroll del body cuando el modal está abierto
+    document.body.style.overflow = 'hidden';
+    document.body.style.overflowX = 'hidden';
+    
     productoCountModal = 0;
-    obtenerSiguientePedido();
+    
+    // NO obtener el siguiente pedido aquí - se asignará al crear
+    document.getElementById('nuevoPedido').value = '';
+    
     document.getElementById('productosModalContainer').innerHTML = '';
     agregarProductoModal();
     
@@ -1043,6 +1152,71 @@ function abrirModalCrearPedido() {
         document.getElementById('nuevoCliente').focus();
     }, 100);
 }
+
+/**
+ * Configurar autocomplete para forma de pago
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    const inputFormaPago = document.getElementById('nuevoFormaPago');
+    const datalist = document.getElementById('formasPagoList');
+    const formasPagoStandard = ['CRÉDITO', 'CONTADO', '50/50', 'ANTICIPO'];
+    let formasPersonalizadas = [];
+
+    // Cargar formas personalizadas del localStorage
+    const formasGuardadas = localStorage.getItem('formasPagoPersonalizadas');
+    if (formasGuardadas) {
+        formasPersonalizadas = JSON.parse(formasGuardadas);
+        actualizarDatalist();
+    }
+
+    // Actualizar datalist con todas las opciones
+    function actualizarDatalist() {
+        datalist.innerHTML = '';
+        const todasLasFormas = [...new Set([...formasPagoStandard, ...formasPersonalizadas])];
+        todasLasFormas.forEach(forma => {
+            const option = document.createElement('option');
+            option.value = forma;
+            datalist.appendChild(option);
+        });
+    }
+
+    // Convertir a mayúscula mientras se escribe
+    inputFormaPago?.addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+    });
+
+    // Al seleccionar del datalist o escribir, solo usar lo que existe
+    inputFormaPago?.addEventListener('change', function() {
+        const valor = this.value.trim().toUpperCase();
+        const todasLasFormas = [...formasPagoStandard, ...formasPersonalizadas];
+        
+        // Si no existe la forma exacta, preguntar
+        const existe = todasLasFormas.some(forma => forma === valor);
+        
+        if (!existe && valor) {
+            // Mostrar sugerencia para crear
+            Swal.fire({
+                title: '¿Crear nueva forma de pago?',
+                text: `"${valor}" no existe. ¿Deseas agregarla?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#0066cc',
+                cancelButtonColor: '#f0f0f0',
+                confirmButtonText: 'Sí, crear',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    formasPersonalizadas.push(valor);
+                    localStorage.setItem('formasPagoPersonalizadas', JSON.stringify(formasPersonalizadas));
+                    actualizarDatalist();
+                    inputFormaPago.value = valor;
+                } else {
+                    inputFormaPago.value = '';
+                }
+            });
+        }
+    });
+});
 
 /**
  * Cerrar al hacer clic fuera del modal
@@ -1064,6 +1238,10 @@ function cerrarModalCrearPedido() {
     modal.style.display = 'none';
     modal.removeEventListener('click', cerrarAlClickAfuera);
     document.getElementById('formCrearPedidoModal').reset();
+    
+    // Restaurar el scroll del body
+    document.body.style.overflow = 'auto';
+    document.body.style.overflowX = 'auto';
 }
 
 /**
@@ -1073,6 +1251,10 @@ function agregarProductoModal() {
     const container = document.getElementById('productosModalContainer');
     const template = document.getElementById('productoModalTemplate');
     const clone = template.content.cloneNode(true);
+
+    // Actualizar número de prenda
+    const numeroPrenda = container.querySelectorAll('.producto-modal-item').length + 1;
+    clone.querySelector('.numero-prenda').textContent = numeroPrenda;
 
     // Actualizar índices
     const inputs = clone.querySelectorAll('input, select');
@@ -1119,15 +1301,14 @@ function actualizarResumenModal() {
     // Actualizar también los datos del resumen en el tab final
     const cliente = document.getElementById('nuevoCliente').value || '-';
     const formaPago = document.getElementById('nuevoFormaPago').value || '-';
-    const estado = document.getElementById('nuevoEstado').value || '-';
 
     document.getElementById('resumenCliente').textContent = cliente;
     document.getElementById('resumenFormaPago').textContent = formaPago;
-    document.getElementById('resumenEstado').textContent = estado;
+    document.getElementById('resumenEstado').textContent = 'No iniciado'; // El estado siempre es "No iniciado"
 }
 
 /**
- * Guardar pedido modal
+ * Guardar pedido modal como borrador (SIN ID AÚN)
  */
 function guardarPedidoModal() {
     const form = document.getElementById('formCrearPedidoModal');
@@ -1143,15 +1324,17 @@ function guardarPedidoModal() {
     }
 
     const formData = new FormData(form);
+    // NO incluir el ID de pedido - se asignará después
+    formData.delete('pedido');
     
     Swal.fire({
-        title: '¿Crear pedido?',
-        text: 'Se creará el pedido con la información ingresada',
+        title: '¿Guardar pedido?',
+        text: 'El pedido se guardará como borrador.',
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#0066cc',
         cancelButtonColor: '#f0f0f0',
-        confirmButtonText: 'Sí, crear',
+        confirmButtonText: 'Sí, guardar',
         cancelButtonText: 'Cancelar'
     }).then((result) => {
         if (result.isConfirmed) {
@@ -1162,19 +1345,14 @@ function guardarPedidoModal() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    Swal.fire({
-                        title: '¡Éxito!',
-                        text: 'Pedido creado correctamente',
-                        icon: 'success',
-                        confirmButtonColor: '#0066cc'
-                    }).then(() => {
-                        cerrarModalCrearPedido();
-                        location.reload();
-                    });
+                    cerrarModalCrearPedido();
+                    
+                    // Mostrar Toast con opción de crear
+                    mostrarToastCrear(data.borrador_id);
                 } else {
                     Swal.fire({
                         title: 'Error',
-                        text: data.message || 'Ocurrió un error al crear el pedido',
+                        text: data.message || 'Ocurrió un error al guardar el pedido',
                         icon: 'error',
                         confirmButtonColor: '#0066cc'
                     });
@@ -1184,13 +1362,96 @@ function guardarPedidoModal() {
                 console.error('Error:', error);
                 Swal.fire({
                     title: 'Error',
-                    text: 'Ocurrió un error al crear el pedido',
+                    text: 'Ocurrió un error al guardar el pedido',
                     icon: 'error',
                     confirmButtonColor: '#0066cc'
                 });
             });
         }
     });
+}
+
+/**
+ * Mostrar toast con opción de crear pedido
+ */
+function mostrarToastCrear(borradorId) {
+    Swal.fire({
+        position: 'top-end',
+        icon: 'success',
+        title: '¡Pedido guardado!',
+        html: 'El pedido se guardó como borrador. <br><strong>¿Deseas crear el pedido ahora?</strong>',
+        showConfirmButton: true,
+        showCancelButton: true,
+        confirmButtonText: 'Crear Pedido',
+        cancelButtonText: 'Luego',
+        confirmButtonColor: '#0066cc',
+        timer: 10000,
+        timerProgressBar: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            crearPedidoFromBorrador(borradorId);
+        }
+    });
+}
+
+/**
+ * Crear pedido a partir del borrador
+ */
+function crearPedidoFromBorrador(borradorId) {
+    // Obtener el siguiente número de pedido
+    fetch("{{ route('asesores.next-pedido') }}")
+        .then(response => response.json())
+        .then(data => {
+            const siguientePedido = data.siguiente_pedido;
+            
+            // Mostrar modal de confirmación para crear
+            Swal.fire({
+                title: 'Crear Pedido',
+                html: `<p>Tu pedido recibirá el ID: <strong>${siguientePedido}</strong></p>
+                       <p style="color: #666; font-size: 0.9rem;">Esto no se puede cambiar.</p>`,
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonColor: '#0066cc',
+                cancelButtonColor: '#f0f0f0',
+                confirmButtonText: 'Confirmar y Crear',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Llamar al método confirm del controlador
+                    fetch("{{ route('asesores.pedidos.confirm') }}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: JSON.stringify({
+                            borrador_id: borradorId,
+                            pedido: siguientePedido
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire({
+                                title: '¡Éxito!',
+                                text: `Pedido creado con ID: ${data.pedido}`,
+                                icon: 'success',
+                                confirmButtonColor: '#0066cc'
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Error',
+                                text: data.message || 'Error al crear el pedido',
+                                icon: 'error',
+                                confirmButtonColor: '#0066cc'
+                            });
+                        }
+                    });
+                }
+            });
+        });
 }
 </script>
 @endpush
