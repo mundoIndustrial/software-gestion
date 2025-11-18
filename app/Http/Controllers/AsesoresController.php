@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use App\Http\Controllers\AsesoresInventarioTelasController;
 
 class AsesoresController extends Controller
 {
@@ -591,5 +592,13 @@ class AsesoresController extends Controller
                 'message' => 'Error al actualizar el perfil: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Mostrar inventario de telas
+     */
+    public function inventarioTelas()
+    {
+        return app(AsesoresInventarioTelasController::class)->index();
     }
 }

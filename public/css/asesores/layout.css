@@ -929,3 +929,34 @@ body.dark-theme .sidebar-header .header-logo {
         right: -40px;
     }
 }
+
+/* ========================================
+   SVG ICONS IN MENU
+   ======================================== */
+.menu-icon-svg {
+    width: 1.3rem;
+    height: 1.3rem;
+    flex-shrink: 0;
+    fill: currentColor;
+    transition: all var(--transition-fast);
+}
+
+.menu-link .menu-icon-svg {
+    fill: var(--text-secondary);
+}
+
+.menu-link:hover .menu-icon-svg,
+.menu-link.active .menu-icon-svg {
+    fill: var(--text-white);
+    transform: scale(1.15);
+}
+
+/* Tema oscuro */
+body.dark-theme .menu-icon-svg {
+    fill: var(--text-secondary);
+}
+
+body.dark-theme .menu-link:hover .menu-icon-svg,
+body.dark-theme .menu-link.active .menu-icon-svg {
+    fill: var(--text-white);
+}
