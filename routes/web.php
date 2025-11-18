@@ -158,6 +158,14 @@ Route::middleware(['auth', 'role:asesor'])->prefix('asesores')->name('asesores.'
     // Notificaciones
     Route::get('/notifications', [App\Http\Controllers\AsesoresController::class, 'getNotifications'])->name('notifications');
     Route::post('/notifications/mark-all-read', [App\Http\Controllers\AsesoresController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    
+    // Inventario de Telas
+    Route::get('/inventario/telas', [App\Http\Controllers\AsesoresController::class, 'inventarioTelas'])->name('inventario.telas');
+    Route::prefix('inventario-telas')->name('inventario-telas.')->group(function () {
+        Route::post('/store', [App\Http\Controllers\AsesoresInventarioTelasController::class, 'store'])->name('store');
+        Route::post('/ajustar-stock', [App\Http\Controllers\AsesoresInventarioTelasController::class, 'ajustarStock'])->name('ajustar-stock');
+        Route::get('/historial', [App\Http\Controllers\AsesoresInventarioTelasController::class, 'historial'])->name('historial');
+    });
 });
 
 require __DIR__.'/auth.php';

@@ -568,3 +568,22 @@ body.dark-theme .result-icon.down {
         font-size: 1.75rem;
     }
 }
+
+/* ========================================
+   SVG ICONS STYLING
+   ======================================== */
+.fabric-inventory-icon {
+    width: 100%;
+    height: 100%;
+    fill: #000000;
+}
+
+/* Tema oscuro */
+body.dark-theme .fabric-inventory-icon {
+    fill: #ffffff;
+}
+
+/* Tema claro */
+body.light-theme .fabric-inventory-icon {
+    fill: #000000;
+}
