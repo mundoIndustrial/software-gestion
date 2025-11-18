@@ -650,18 +650,34 @@ class ModernTable {
         modal.classList.add('active');
 
         try {
+            console.log(`📡 Fetching unique values para columna: ${columnName}`);
             const response = await fetch(`${this.baseRoute}?get_unique_values=1&column=${encodeURIComponent(columnName)}`, {
                 headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
             });
             const data = await response.json();
+            console.log(`✅ Valores únicos recibidos del servidor:`, data.unique_values);
+            console.log(`📊 Total de valores únicos: ${data.unique_values?.length || 0}`);
+            
+            // Guardar los IDs asociados si es descripción
+            if (columnName === 'descripcion' && data.value_ids) {
+                this.valueIdsMap = {};
+                data.value_ids.forEach(item => {
+                    this.valueIdsMap[item.value] = item.ids;
+                });
+                console.log(`🆔 Mapa de IDs cargado:`, this.valueIdsMap);
+            }
+            
             this.generateFilterList(data.unique_values || [], columnIndex);
         } catch (error) {
-            console.error('Error fetching values:', error);
+            console.error('❌ Error fetching values:', error);
+            console.log(`⚠️ Usando fallback: extrayendo valores de la tabla`);
             const values = [...new Set(
                 Array.from(document.querySelectorAll(`#tablaOrdenes tbody tr td:nth-child(${columnIndex + 1})`))
                     .map(td => td.querySelector('select')?.value || td.querySelector('.cell-text')?.textContent.trim() || td.textContent.trim())
                     .filter(v => v)
             )].sort();
+            console.log(`✅ Valores extraídos de la tabla:`, values);
+            console.log(`📊 Total de valores del fallback: ${values.length}`);
             this.generateFilterList(values, columnIndex);
         } finally {
             this.isLoadingFilter = false;
@@ -669,15 +685,22 @@ class ModernTable {
     }
 
     generateFilterList(values, columnIndex) {
+        console.log(`🎯 generateFilterList llamado con ${values.length} valores`);
+        console.log(`📋 Valores a mostrar:`, values);
+        
         const url = new URL(window.location);
         const currentFilter = url.searchParams.get(`filter_${this.currentColumnName}`);
         const filteredValues = currentFilter ? currentFilter.split(',') : [];
+        
+        console.log(`🔗 Filtro actual en URL:`, currentFilter);
+        console.log(`✅ Valores ya filtrados:`, filteredValues);
 
         const filterList = document.getElementById('filterList');
         filterList.innerHTML = values.map(val => {
             // Convertir ambos a string para comparación consistente
             const valStr = String(val);
             const isChecked = filteredValues.length === 0 || filteredValues.includes(valStr);
+            console.log(`  ☑️ ${val} - Checked: ${isChecked}`);
             return `
                 <div class="filter-item" data-value="${val}">
                     <input type="checkbox" id="filter_${columnIndex}_${val}" value="${val}" ${isChecked ? 'checked' : ''}>
@@ -685,6 +708,8 @@ class ModernTable {
                 </div>
             `;
         }).join('');
+
+        console.log(`✨ Filtro renderizado con ${values.length} items`);
 
         filterList.querySelectorAll('.filter-item').forEach(item => {
             item.addEventListener('click', e => {
@@ -708,14 +733,94 @@ class ModernTable {
 
     applyServerSideColumnFilter() {
         const selected = Array.from(document.querySelectorAll('#filterList input:checked')).map(cb => cb.value);
-        this.applyServerSideFilter(`filter_${this.currentColumnName}`, selected.length ? selected.join(',') : '');
+        console.log(`🔘 Valores seleccionados en el filtro:`, selected);
+        console.log(`📊 Total seleccionados: ${selected.length}`);
+        
+        // Si es la columna "descripcion", usar los IDs del servidor
+        if (this.currentColumnName === 'descripcion' && this.valueIdsMap) {
+            const selectedIds = [];
+            
+            console.log(`🔍 Obteniendo IDs del mapa del servidor...`);
+            console.log(`📊 Mapa disponible:`, Object.keys(this.valueIdsMap).length, 'claves');
+            
+            selected.forEach(sel => {
+                // Buscar coincidencia exacta primero
+                let ids = this.valueIdsMap[sel];
+                let normalizedSel = null;
+                
+                // Si no encuentra coincidencia exacta, buscar por normalización
+                if (!ids) {
+                    normalizedSel = this.normalizeText(sel);
+                    for (const [key, value] of Object.entries(this.valueIdsMap)) {
+                        if (this.normalizeText(key) === normalizedSel) {
+                            ids = value;
+                            console.log(`  🔄 Coincidencia normalizada exacta encontrada`);
+                            break;
+                        }
+                    }
+                }
+                
+                // Si aún no encuentra, buscar por similitud (primeras 30 caracteres normalizados)
+                if (!ids) {
+                    if (!normalizedSel) {
+                        normalizedSel = this.normalizeText(sel);
+                    }
+                    const selPrefix = normalizedSel.substring(0, 30);
+                    
+                    for (const [key, value] of Object.entries(this.valueIdsMap)) {
+                        const keyPrefix = this.normalizeText(key).substring(0, 30);
+                        if (keyPrefix === selPrefix) {
+                            ids = value;
+                            console.log(`  🔄 Coincidencia por similitud encontrada`);
+                            break;
+                        }
+                    }
+                }
+                
+                if (ids && Array.isArray(ids)) {
+                    console.log(`  📝 "${sel.substring(0, 30)}..." → IDs: ${ids.join(', ')}`);
+                    selectedIds.push(...ids);
+                } else {
+                    if (!normalizedSel) {
+                        normalizedSel = this.normalizeText(sel);
+                    }
+                    console.log(`  ⚠️ No se encontraron IDs para: "${sel.substring(0, 30)}..."`);
+                    console.log(`     Normalizado: "${normalizedSel.substring(0, 30)}..."`);
+                }
+            });
+            
+            // Eliminar duplicados
+            const uniqueIds = [...new Set(selectedIds)];
+            
+            console.log(`🆔 IDs únicos de pedidos a filtrar:`, uniqueIds);
+            console.log(`📊 Total de IDs: ${uniqueIds.length}`);
+            
+            // Enviar como parámetro especial
+            this.applyServerSideFilter(`filter_pedido_ids`, uniqueIds.join(','));
+        } else {
+            // Para otras columnas, usar separador especial
+            const separator = '|||FILTER_SEPARATOR|||';
+            const filterValue = selected.length ? selected.join(separator) : '';
+            
+            console.log(`🔗 Valores con separador especial:`, filterValue);
+            
+            this.applyServerSideFilter(`filter_${this.currentColumnName}`, filterValue);
+        }
+        
         this.closeFilterModal();
+    }
+    
+    normalizeText(text) {
+        return text.toLowerCase().trim().replace(/\s+/g, ' ');
     }
 
     applyServerSideFilter(key, value) {
+        console.log(`🚀 Aplicando filtro:`, { key, value });
         const url = new URL(window.location);
         value ? url.searchParams.set(key, value) : url.searchParams.delete(key);
         url.searchParams.delete('page');
+        
+        console.log(`📍 URL con filtro:`, url.toString());
         
         // Aplicar filtro con AJAX sin recargar
         this.loadTableWithAjax(url.toString());
@@ -744,6 +849,8 @@ class ModernTable {
             // Actualizar tabla
             const newTableBody = doc.getElementById('tablaOrdenesBody');
             if (newTableBody) {
+                const rowCount = newTableBody.querySelectorAll('tr').length;
+                console.log(`✅ Tabla actualizada con ${rowCount} filas`);
                 tableBody.innerHTML = newTableBody.innerHTML;
             }
             
