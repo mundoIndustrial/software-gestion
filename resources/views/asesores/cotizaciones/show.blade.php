@@ -484,30 +484,28 @@
         @endif
         
         <!-- Formulario para subir imágenes -->
-        @if($cotizacion->es_borrador)
-            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e2e8f0;">
-                <form id="form-imagenes" enctype="multipart/form-data" style="display: flex; gap: 1rem; align-items: flex-end;">
-                    @csrf
-                    <div style="flex: 1;">
-                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--primary);">Subir Imágenes</label>
-                        <input type="file" name="imagenes[]" multiple accept="image/*" style="padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 6px; width: 100%;">
-                    </div>
-                    <div>
-                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--primary);">Tipo</label>
-                        <select name="tipo" style="padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 6px;">
-                            <option value="general">General</option>
-                            <option value="bordado">Bordado</option>
-                            <option value="estampado">Estampado</option>
-                            <option value="tela">Tela</option>
-                            <option value="prenda">Prenda</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn-custom btn-editar" style="margin: 0;">
-                        <i class="fas fa-upload"></i> Subir
-                    </button>
-                </form>
-            </div>
-        @endif
+        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e2e8f0;">
+            <form id="form-imagenes" enctype="multipart/form-data" style="display: flex; gap: 1rem; align-items: flex-end;">
+                @csrf
+                <div style="flex: 1;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--primary);">Subir Imágenes</label>
+                    <input type="file" name="imagenes[]" multiple accept="image/*" style="padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 6px; width: 100%;">
+                </div>
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--primary);">Tipo</label>
+                    <select name="tipo" style="padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 6px;">
+                        <option value="general">General</option>
+                        <option value="bordado">Bordado</option>
+                        <option value="estampado">Estampado</option>
+                        <option value="tela">Tela</option>
+                        <option value="prenda">Prenda</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-custom btn-editar" style="margin: 0;">
+                    <i class="fas fa-upload"></i> Subir
+                </button>
+            </form>
+        </div>
     </div>
 
     <!-- Modal para ver imagen -->
