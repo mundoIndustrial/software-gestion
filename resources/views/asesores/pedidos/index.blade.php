@@ -26,15 +26,6 @@
         </div>
 
         <div class="header-actions">
-            <a href="{{ route('asesores.borradores.index') }}" class="btn btn-info" title="Ver mis borradores de órdenes">
-                <i class="fas fa-file-alt"></i>
-                Mis Borradores
-            </a>
-
-            <a href="{{ route('asesores.pedidos.create') }}" class="btn btn-primary">
-                <i class="fas fa-plus"></i>
-                Nuevo Pedido
-            </a>
         </div>
     </div>
 

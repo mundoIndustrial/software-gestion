@@ -385,4 +385,5 @@
     <script src="{{ asset('js/orders js/pagination.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/realtime-listeners.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orderTracking.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/orders-scripts/image-gallery-zoom.js') }}?v={{ time() }}"></script>
 @endsection

@@ -40,7 +40,7 @@
 
         <div class="sidebar-content">
             <div class="menu-section">
-                <span class="menu-section-title">Gestión</span>
+                <span class="menu-section-title">Principal</span>
                 <ul class="menu-list" role="navigation">
                     <li class="menu-item">
                         <a href="{{ route('asesores.dashboard') }}" 
@@ -50,18 +50,37 @@
                             <span class="menu-badge">New</span>
                         </a>
                     </li>
+                </ul>
+            </div>
+
+            <div class="menu-section">
+                <span class="menu-section-title">Cotizaciones</span>
+                <ul class="menu-list" role="navigation">
+                    <li class="menu-item">
+                        <a href="{{ route('asesores.cotizaciones.index') }}" 
+                           class="menu-link {{ request()->routeIs('asesores.cotizaciones.*') ? 'active' : '' }}">
+                            <span class="material-symbols-rounded">description</span>
+                            <span class="menu-label">Mis Cotizaciones</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{{ route('asesores.pedidos.create') }}" 
+                           class="menu-link {{ request()->routeIs('asesores.pedidos.create') ? 'active' : '' }}">
+                            <span class="material-symbols-rounded">add_circle</span>
+                            <span class="menu-label">Nueva Cotización</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="menu-section">
+                <span class="menu-section-title">Seguimiento</span>
+                <ul class="menu-list" role="navigation">
                     <li class="menu-item">
                         <a href="{{ route('asesores.pedidos.index') }}" 
                            class="menu-link {{ request()->routeIs('asesores.pedidos.index') || request()->routeIs('asesores.pedidos.show') ? 'active' : '' }}">
                             <span class="material-symbols-rounded">assignment</span>
-                            <span class="menu-label">Mis Pedidos</span>
-                        </a>
-                    </li>
-                    <li class="menu-item">
-                        <a href="{{ route('asesores.borradores.index') }}" 
-                           class="menu-link {{ request()->routeIs('asesores.borradores.*') ? 'active' : '' }}">
-                            <span class="material-symbols-rounded">edit_note</span>
-                            <span class="menu-label">Mis Borradores</span>
+                            <span class="menu-label">Pedidos</span>
                         </a>
                     </li>
                 </ul>
@@ -71,13 +90,15 @@
                 <span class="menu-section-title">Información</span>
                 <ul class="menu-list">
                     <li class="menu-item">
-                        <a href="#" class="menu-link">
+                        <a href="{{ route('asesores.clientes.index') }}" 
+                           class="menu-link {{ request()->routeIs('asesores.clientes.*') ? 'active' : '' }}">
                             <span class="material-symbols-rounded">group</span>
                             <span class="menu-label">Clientes</span>
                         </a>
                     </li>
                     <li class="menu-item">
-                        <a href="#" class="menu-link">
+                        <a href="{{ route('asesores.reportes.index') }}" 
+                           class="menu-link {{ request()->routeIs('asesores.reportes.*') ? 'active' : '' }}">
                             <span class="material-symbols-rounded">bar_chart</span>
                             <span class="menu-label">Reportes</span>
                         </a>
@@ -108,12 +129,6 @@
             </div>
 
             <div class="nav-right">
-                <!-- Search Bar -->
-                <div class="search-bar">
-                    <span class="material-symbols-rounded">search</span>
-                    <input type="text" placeholder="Buscar pedidos...">
-                </div>
-
                 <!-- Notificaciones -->
                 <div class="notification-dropdown">
                     <button class="notification-btn" id="notificationBtn" aria-label="Notificaciones">

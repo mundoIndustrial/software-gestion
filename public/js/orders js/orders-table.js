@@ -943,6 +943,11 @@ async function viewDetail(pedido) {
         const response = await fetch(`${window.fetchUrl}/${pedido}`);
         if (!response.ok) throw new Error('Error fetching order');
         const order = await response.json();
+        
+        // Cargar imágenes de la orden
+        if (typeof loadOrderImages === 'function') {
+            loadOrderImages(pedido);
+        }
         const fechaCreacion = new Date(order.fecha_de_creacion_de_orden);
         const day = fechaCreacion.getDate().toString().padStart(2, '0');
         const month = fechaCreacion.toLocaleDateString('es-ES', { month: 'short' }).toUpperCase();
@@ -983,6 +988,91 @@ async function viewDetail(pedido) {
             const totalEntregado = order.total_entregado || 0;
             const totalCantidad = order.total_cantidad || 0;
             prendasEntregadasValue.textContent = `${totalEntregado} de ${totalCantidad}`;
+        }
+
+        // Cargar prendas detalladas
+        const prendasSection = document.getElementById('prendas-section');
+        const prendasDetalladas = document.getElementById('prendas-detalladas');
+        if (prendasDetalladas && order.prendas && order.prendas.length > 0) {
+            prendasDetalladas.innerHTML = '';
+            order.prendas.forEach((prenda, index) => {
+                const prendaCard = document.createElement('div');
+                prendaCard.className = 'prenda-card';
+                
+                // Construir HTML de descripción con saltos de línea
+                const descripcionHTML = prenda.descripcion ? 
+                    `<div class="prenda-detail-item prenda-descripcion-full">
+                        <div class="prenda-detail-label">Descripción</div>
+                        <div class="prenda-detail-value prenda-descripcion-text">${prenda.descripcion.replace(/\n/g, '<br>')}</div>
+                    </div>` : '';
+                
+                // Construir HTML de imágenes
+                let imagenesHTML = '';
+                if (prenda.imagen_tela || prenda.imagen_bordado) {
+                    imagenesHTML = `
+                        <div class="prenda-imagenes-grid">
+                            <div class="prenda-imagenes-title">Imágenes de Referencia</div>
+                            <div class="prenda-imagenes-container">
+                                ${prenda.imagen_tela ? `
+                                    <div class="prenda-imagen-item">
+                                        <div class="prenda-imagen-label">Tela</div>
+                                        <img src="${prenda.imagen_tela}" alt="Imagen de tela" class="prenda-imagen">
+                                    </div>
+                                ` : ''}
+                                ${prenda.imagen_bordado ? `
+                                    <div class="prenda-imagen-item">
+                                        <div class="prenda-imagen-label">Bordado</div>
+                                        <img src="${prenda.imagen_bordado}" alt="Imagen de bordado" class="prenda-imagen">
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                prendaCard.innerHTML = `
+                    <div class="prenda-card-header">
+                        <h3 class="prenda-card-title">${prenda.nombre_producto || 'Prenda ' + (index + 1)}</h3>
+                        <span class="prenda-card-cantidad">${prenda.cantidad || 0} unidades</span>
+                    </div>
+                    
+                    ${descripcionHTML}
+                    ${imagenesHTML}
+                    
+                    <div class="prenda-card-content">
+                        ${prenda.color ? `
+                            <div class="prenda-detail-item">
+                                <div class="prenda-detail-label">Color</div>
+                                <div class="prenda-detail-value">${prenda.color}</div>
+                            </div>
+                        ` : ''}
+                        ${prenda.tela ? `
+                            <div class="prenda-detail-item">
+                                <div class="prenda-detail-label">Tela</div>
+                                <div class="prenda-detail-value">${prenda.tela}</div>
+                            </div>
+                        ` : ''}
+                        ${prenda.referencia_hilo ? `
+                            <div class="prenda-detail-item">
+                                <div class="prenda-detail-label">Referencia Hilo</div>
+                                <div class="prenda-detail-value">${prenda.referencia_hilo}</div>
+                            </div>
+                        ` : ''}
+                    </div>
+                    ${prenda.talla ? `
+                        <div class="prenda-tallas-grid">
+                            <div class="prenda-tallas-title">Talla</div>
+                            <div class="prenda-tallas-list">
+                                <div class="talla-badge">${prenda.talla}</div>
+                            </div>
+                        </div>
+                    ` : ''}
+                `;
+                prendasDetalladas.appendChild(prendaCard);
+            });
+            if (prendasSection) prendasSection.style.display = 'block';
+        } else {
+            if (prendasSection) prendasSection.style.display = 'none';
         }
 
         // Definir elementos del DOM antes de usarlos

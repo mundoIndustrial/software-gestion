@@ -1331,4 +1331,28 @@ class RegistroOrdenController extends Controller
 
         return $prendas;
     }
+
+    /**
+     * Obtener imágenes de una orden
+     */
+    public function getImages($pedido)
+    {
+        try {
+            // Obtener la orden
+            $orden = TablaOriginal::where('pedido', $pedido)->first();
+            
+            if (!$orden) {
+                return response()->json(['images' => []], 404);
+            }
+
+            // Por ahora retornar array vacío
+            // En el futuro, aquí se cargarían imágenes de la BD o almacenamiento
+            $images = [];
+
+            return response()->json(['images' => $images]);
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener imágenes:', ['error' => $e->getMessage()]);
+            return response()->json(['images' => []], 500);
+        }
+    }
 }

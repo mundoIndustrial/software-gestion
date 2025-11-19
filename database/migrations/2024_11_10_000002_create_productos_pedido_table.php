@@ -23,9 +23,6 @@ return new class extends Migration
             $table->string('imagen')->nullable();
             $table->text('notas')->nullable();
             $table->timestamps();
-            
-            // Foreign key
-            $table->foreign('pedido')->references('pedido')->on('tabla_original')->onDelete('cascade');
         });
     }
 

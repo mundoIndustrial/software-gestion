@@ -708,27 +708,37 @@ textarea.input-medium {
 .btn-add-product-friendly {
     width: 100%;
     padding: 0.6rem;
-    background: #f0f0f0;
-    border: 2px dashed #0066cc;
-    border-radius: 6px;
-    color: #0066cc;
-    font-weight: 700;
-    font-size: 0.8rem;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
     transition: all 0.3s ease;
 }
 
 .btn-add-product-friendly:hover {
-    background: #e3f2fd;
-    transform: translateY(-1px);
+    background: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
 }
 
 .btn-add-product-friendly i {
     font-size: 0.95rem;
+}
+
+/* ============ BOTÓN ESPECIFICACIONES ============ */
+.btn-add-product-friendly:has(+ .especificaciones-btn),
+button[onclick="abrirModalEspecificaciones()"] {
+    background: #ff9800;
+    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+}
+
+button[onclick="abrirModalEspecificaciones()"]:hover {
+    background: #f57c00;
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
 }
 
 /* ============ REVIEW CARDS ============ */
@@ -1245,4 +1255,629 @@ textarea.input-medium {
         padding: 0.75rem;
         font-size: 0.95rem;
     }
+}
+
+/* ============ ESTILOS FACTURA - PASO 3 ============ */
+
+.erp-review-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Encabezado Factura */
+.factura-header {
+    background: linear-gradient(135deg, #0066cc, #0052a3);
+    padding: 2rem;
+    border-radius: 8px;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.25);
+    margin-bottom: 1rem;
+}
+
+.factura-titulo h2 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 800;
+}
+
+.factura-titulo p {
+    margin: 0.25rem 0 0 0;
+    font-size: 0.9rem;
+    opacity: 0.95;
+}
+
+.factura-datos {
+    display: flex;
+    gap: 2rem;
+    text-align: right;
+}
+
+.factura-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.factura-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.9;
+    margin-bottom: 0.25rem;
+}
+
+.factura-valor {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+/* Secciones Factura */
+.factura-seccion {
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.factura-seccion:hover {
+    border-color: #0066cc;
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.1);
+}
+
+.factura-seccion-titulo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, #f5f5f5, #fafafa);
+    border-bottom: 3px solid #0066cc;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0066cc;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.factura-seccion-titulo i {
+    color: #0066cc;
+    font-size: 1.2rem;
+}
+
+.factura-cliente-info {
+    padding: 1.5rem;
+}
+
+.factura-item-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.factura-item-row:last-child {
+    border-bottom: none;
+}
+
+.factura-item-row .factura-label {
+    color: #666;
+    text-transform: none;
+    letter-spacing: normal;
+    font-size: 0.9rem;
+}
+
+.factura-item-row .factura-valor {
+    color: #333;
+    font-size: 1rem;
+    text-align: right;
+}
+
+/* Contenedor de productos factura */
+.productos-factura-container {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Tarjeta de producto factura */
+.producto-factura-card {
+    background: #f9f9f9;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.producto-factura-card:hover {
+    border-color: #0066cc;
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.1);
+    background: #fafbff;
+}
+
+.producto-factura-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, #0066cc, #0052a3);
+    color: white;
+}
+
+.producto-factura-num {
+    flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    font-size: 1rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.producto-factura-info {
+    flex: 1;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.info-row:last-child {
+    margin-bottom: 0;
+}
+
+.cantidad-badge {
+    background: rgba(255, 255, 255, 0.3);
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.producto-factura-body {
+    padding: 1.5rem;
+}
+
+/* Filas de factura */
+.factura-row-full {
+    display: flex;
+    gap: 1rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.factura-row-full:last-child {
+    border-bottom: none;
+}
+
+.factura-row-full .label {
+    min-width: 120px;
+    font-weight: 600;
+    color: #666;
+}
+
+.factura-row-full .valor {
+    flex: 1;
+    color: #333;
+}
+
+.factura-row-multi {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.factura-row-multi .factura-item {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.factura-row-multi .label {
+    font-weight: 600;
+    color: #666;
+    min-width: 100px;
+}
+
+.factura-row-multi .valor {
+    color: #333;
+}
+
+/* ============ OCULTAR NAV EN COTIZACIONES ============ */
+body:has(.friendly-form-fullscreen) .top-nav {
+    display: none !important;
+}
+
+/* Sección de imágenes */
+.factura-imagenes-section {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    padding: 1rem 0;
+    margin-top: 1rem;
+    border-top: 2px solid #e0e0e0;
+    padding-top: 1.5rem;
+}
+
+.factura-columna-imagen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.factura-columna-imagen:hover {
+    border-color: #0066cc;
+    box-shadow: 0 2px 8px rgba(0, 102, 204, 0.15);
+}
+
+.imagen-label {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #333;
+    text-align: center;
+}
+
+.imagen-preview-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    align-items: center;
+    min-height: 70px;
+}
+
+.imagen-preview-container img {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* Resumen Factura */
+.factura-resumen {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    padding: 1.5rem;
+    background: white;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+}
+
+.resumen-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem;
+    background: #f9f9f9;
+    border-radius: 6px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.resumen-item.highlight {
+    background: linear-gradient(135deg, #e3f2fd, #f0f7ff);
+    border: 2px solid #0066cc;
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.15);
+}
+
+.resumen-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #666;
+    letter-spacing: 1px;
+    margin-bottom: 0.75rem;
+}
+
+.resumen-valor {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #0066cc;
+}
+
+.resumen-item.highlight .resumen-valor {
+    color: #0052a3;
+}
+
+/* Observaciones */
+.factura-observaciones {
+    padding: 1.5rem;
+    background: #f9f9f9;
+    border-left: 4px solid #0066cc;
+    border-radius: 4px;
+    min-height: 80px;
+}
+
+/* Pie factura */
+.factura-pie {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 2px solid #e0e0e0;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .factura-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .factura-datos {
+        justify-content: center;
+    }
+
+    .factura-imagenes-section {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .factura-header {
+        padding: 1.5rem;
+    }
+
+    .factura-titulo h2 {
+        font-size: 1.4rem;
+    }
+
+    .producto-factura-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .factura-row-multi {
+        grid-template-columns: 1fr;
+    }
+
+    .factura-imagenes-section {
+        grid-template-columns: 1fr;
+    }
+
+    .factura-resumen {
+        grid-template-columns: 1fr;
+    }
+
+    .producto-factura-body {
+        padding: 1rem;
+    }
+}
+
+/* ============ TABLA DE CONTROL COMPACTA ============ */
+
+.tabla-control-compacta {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    border-radius: 4px;
+    overflow: hidden;
+    font-size: 0.85rem;
+}
+
+.tabla-control-compacta thead {
+    background: #ffc107;
+}
+
+.tabla-control-compacta th {
+    padding: 0.5rem;
+    text-align: center;
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: #333;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-right: 1px solid #ffb300;
+}
+
+.tabla-control-compacta th:first-child {
+    text-align: left;
+    border-right: none;
+}
+
+.tabla-control-compacta th:last-child {
+    border-right: none;
+}
+
+.tabla-control-compacta tbody tr {
+    border-bottom: 1px solid #f0f0f0;
+    transition: background 0.2s ease;
+    height: 32px;
+}
+
+.tabla-control-compacta tbody tr:hover:not(.fila-grupo) {
+    background: #fffbf0;
+}
+
+.tabla-control-compacta tbody tr.fila-grupo {
+    background: #ffc107 !important;
+    height: auto;
+}
+
+.tabla-control-compacta tbody tr.fila-grupo:hover {
+    background: #ffc107 !important;
+}
+
+.tabla-control-compacta td {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.8rem;
+    color: #333;
+    vertical-align: middle;
+}
+
+.tabla-control-compacta td:first-child {
+    text-align: left;
+    padding-left: 0.75rem;
+}
+
+.tabla-control-compacta td label {
+    cursor: pointer;
+    user-select: none;
+    margin: 0;
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tabla-control-compacta .cell-check {
+    text-align: center;
+    padding: 0.25rem;
+    width: 40px;
+}
+
+.tabla-control-compacta input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: transparent;
+    margin: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: white;
+    border: 2px solid #ccc;
+    border-radius: 3px;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    font-size: 12px;
+    line-height: 1;
+    padding: 0;
+    vertical-align: middle;
+}
+
+.tabla-control-compacta input[type="checkbox"]:checked {
+    background: #ff9800;
+    border-color: #ff9800;
+}
+
+.tabla-control-compacta input[type="checkbox"]:checked::after {
+    content: '✕';
+    color: white;
+    font-weight: bold;
+    font-size: 12px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: auto;
+    text-align: center;
+    line-height: 1;
+}
+
+.tabla-control-compacta .input-compact {
+    width: 100%;
+    padding: 0.3rem 0.4rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+}
+
+.tabla-control-compacta .input-compact::placeholder {
+    color: #ccc;
+    font-size: 0.7rem;
+}
+
+.tabla-control-compacta .input-compact:focus {
+    outline: none;
+    border-color: #ff9800;
+    box-shadow: 0 0 0 2px rgba(255, 152, 0, 0.1);
+    background: #fff9e6;
+}
+
+/* Responsive para tabla compacta */
+@media (max-width: 768px) {
+    .tabla-control-compacta {
+        font-size: 0.75rem;
+    }
+
+    .tabla-control-compacta th {
+        padding: 0.35rem;
+        font-size: 0.65rem;
+    }
+
+    .tabla-control-compacta td {
+        padding: 0.3rem 0.35rem;
+        font-size: 0.7rem;
+    }
+
+    .tabla-control-compacta .cell-check {
+        padding: 0.2rem;
+        width: 35px;
+    }
+
+    .tabla-control-compacta input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+    }
+
+    .tabla-control-compacta .input-compact {
+        padding: 0.25rem 0.3rem;
+        font-size: 0.65rem;
+    }
+}
+
+/* ============ ESTILOS PARA MODAL ============ */
+.modal-especificaciones {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-especificaciones::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-especificaciones::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.modal-especificaciones::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.modal-especificaciones::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }

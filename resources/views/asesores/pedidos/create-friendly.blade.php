@@ -1,7 +1,7 @@
 @extends('asesores.layout')
 
-@section('title', 'Crear Nuevo Pedido')
-@section('page-title', 'Crear Nuevo Pedido')
+@section('title', 'Cotizaciones')
+@section('page-title', 'Cotizaciones')
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/asesores/create-friendly.css') }}">
@@ -9,6 +9,12 @@
 
 @section('content')
 <div class="friendly-form-fullscreen">
+    <!-- TÍTULO PRINCIPAL -->
+    <div style="text-align: center; margin-bottom: 15px; padding: 10px 0; border-bottom: 2px solid #3498db;">
+        <h1 style="margin: 0; font-size: 1.5rem; color: #333; font-weight: bold;">COTIZACIONES</h1>
+        <p style="margin: 5px 0 0 0; color: #666; font-size: 0.9rem;">Crea una nueva cotización para tu cliente</p>
+    </div>
+
     <!-- STEPPER VISUAL - CLICKEABLE -->
     <div class="stepper-container">
         <div class="stepper">
@@ -24,6 +30,11 @@
             <div class="step-line"></div>
             <div class="step" data-step="3" onclick="irAlPaso(3)" onkeypress="if(event.key==='Enter') irAlPaso(3)" tabindex="0" role="tab" aria-selected="false" style="cursor: pointer;">
                 <div class="step-number">3</div>
+                <div class="step-label">BORDADO/ESTAMPADO <span style="font-size: 0.7rem; font-weight: normal;">(OPCIONAL)</span></div>
+            </div>
+            <div class="step-line"></div>
+            <div class="step" data-step="4" onclick="irAlPaso(4)" onkeypress="if(event.key==='Enter') irAlPaso(4)" tabindex="0" role="tab" aria-selected="false" style="cursor: pointer;">
+                <div class="step-number">4</div>
                 <div class="step-label">REVISAR</div>
             </div>
         </div>
@@ -40,6 +51,24 @@
                 <p>CUÉNTANOS QUIÉN ES TU CLIENTE</p>
             </div>
 
+            <!-- INFORMACIÓN DE LA ASESORA Y FECHA -->
+            <div style="background: #f0f7ff; border-left: 4px solid #3498db; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <div>
+                        <p style="margin: 0; font-size: 0.9rem; color: #666;">
+                            <strong>{{ Auth::user()->genero === 'F' ? 'ASESORA COMERCIAL' : 'ASESOR COMERCIAL' }}:</strong>
+                            {{ Auth::user()->name }}
+                        </p>
+                    </div>
+                    <div>
+                        <p style="margin: 0; font-size: 0.9rem; color: #666;">
+                            <strong>FECHA:</strong>
+                            <span id="fechaActual"></span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <div class="form-section">
                 <div class="form-group-large">
                     <label for="cliente">
@@ -48,21 +77,6 @@
                     </label>
                     <input type="text" id="cliente" name="cliente" class="input-large" placeholder="EJ: JUAN GARCÍA, EMPRESA ABC..." required>
                     <small class="help-text">EL NOMBRE DE TU CLIENTE O EMPRESA</small>
-                </div>
-
-                <div class="form-group-large">
-                    <label for="forma_de_pago">
-                        <i class="fas fa-credit-card"></i>
-                        FORMA DE PAGO
-                    </label>
-                    <select id="forma_de_pago" name="forma_de_pago" class="input-large">
-                        <option value="">-- SELECCIONA UNA OPCIÓN --</option>
-                        <option value="CONTADO">💵 CONTADO (PAGO INMEDIATO)</option>
-                        <option value="CRÉDITO">📋 CRÉDITO (PAGO DESPUÉS)</option>
-                        <option value="50/50">⚖️ 50/50 (MITAD AHORA, MITAD DESPUÉS)</option>
-                        <option value="ANTICIPO">🎯 ANTICIPO (PAGO ANTES)</option>
-                    </select>
-                    <small class="help-text">CÓMO PAGARÁ TU CLIENTE</small>
                 </div>
             </div>
 
@@ -80,66 +94,197 @@
                 <p>AGREGA LAS PRENDAS QUE TU CLIENTE QUIERE</p>
             </div>
 
-            <div class="form-section">
-                <div class="productos-container" id="productosContainer"></div>
-                <button type="button" class="btn-add-product-friendly" onclick="agregarProductoFriendly()">
+            <!-- BOTONES DE ACCIÓN AL INICIO -->
+            <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+                <button type="button" class="btn-add-product-friendly" onclick="agregarProductoFriendly()" style="flex: 1; min-width: 200px;">
                     <i class="fas fa-plus-circle"></i> AGREGAR PRENDA
+                </button>
+                <button type="button" class="btn-add-product-friendly" onclick="abrirModalEspecificaciones()" style="flex: 1; min-width: 200px;">
+                    <i class="fas fa-clipboard-check"></i> ESPECIFICACIONES DE LA ORDEN
                 </button>
             </div>
 
-            <!-- SECCIÓN: Archivos y Documentos de la Orden -->
-            <div style="margin-top: 2.5rem; padding: 1.5rem; background: linear-gradient(135deg, #fff9e6 0%, #fffbf0 100%); border: 3px solid #ffc107; border-radius: 12px; box-shadow: 0 4px 12px rgba(255, 193, 7, 0.15);">
-                <button type="button" onclick="toggleArchivosOrden(this)" style="width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; font-size: 1.1rem; font-weight: 700; color: #ff9800; background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 0;">
-                    <div style="display: flex; align-items: center; gap: 0.75rem;">
-                        <i class="fas fa-paperclip"></i> ARCHIVOS ADICIONALES DE LA ORDEN
-                    </div>
-                    <i class="fas fa-chevron-down" style="transition: transform 0.3s ease;"></i>
-                </button>
-                
-                <!-- Contenedor expandible -->
-                <div class="archivos-orden-content" style="display: none; margin-top: 1rem;">
-                    <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">💡 AGREGA DISEÑOS, ESPECIFICACIONES O CUALQUIER DOCUMENTO IMPORTANTE PARA ESTA ORDEN</p>
-                    
-                    <!-- Imágenes de la Orden -->
-                    <div style="margin-bottom: 1rem; padding: 1.5rem; background: white; border-radius: 8px; border-left: 4px solid #ff9800;">
-                        <button type="button" onclick="toggleSubseccion(this)" style="width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; font-weight: 600; color: #ff9800; font-size: 0.95rem; background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 0;">
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fas fa-image"></i> 📸 IMÁGENES DE REFERENCIA
-                            </div>
-                            <i class="fas fa-chevron-down" style="transition: transform 0.3s ease;"></i>
-                        </button>
-                        <p style="color: #999; font-size: 0.85rem; margin-bottom: 0.75rem; margin-top: 0.5rem;">DISEÑOS, MOCKUPS, REFERENCIAS VISUALES, ETC.</p>
-                        <div class="subseccion-content" style="display: none;">
-                            <div class="fotos-drop-zone fotos-drop-zone-compact" ondrop="manejarDrop(event)" ondragover="event.preventDefault()" ondragleave="this.classList.remove('drag-over')" style="background: #fff9e6; border-color: #ffc107;">
-                                <input type="file" name="archivos_orden[imagenes][]" class="input-file-single" accept="image/*" multiple onchange="agregarFotosOrden(this.files, this)">
-                                <div class="drop-zone-content">
-                                    <i class="fas fa-cloud-upload-alt" style="color: #ff9800;"></i>
-                                    <p style="color: #ff9800;">ARRASTRA IMÁGENES AQUÍ</p>
-                                </div>
-                            </div>
-                            <div class="fotos-preview-orden" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 0.75rem; margin-top: 1rem;"></div>
-                        </div>
-                    </div>
+            <div class="form-section">
+                <div class="productos-container" id="productosContainer"></div>
+            </div>
 
-                    <!-- Documentos de la Orden -->
-                    <div style="padding: 1.5rem; background: white; border-radius: 8px; border-left: 4px solid #ff9800;">
-                        <button type="button" onclick="toggleSubseccion(this)" style="width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; font-weight: 600; color: #ff9800; font-size: 0.95rem; background: none; border: none; cursor: pointer; padding: 0; margin-bottom: 0;">
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <i class="fas fa-file-pdf"></i> 📄 DOCUMENTOS
-                            </div>
-                            <i class="fas fa-chevron-down" style="transition: transform 0.3s ease;"></i>
+            <!-- MODAL: ESPECIFICACIONES DE LA ORDEN -->
+            <div id="modalEspecificaciones" class="modal-especificaciones" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+                <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 900px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 2px solid #ffc107; padding-bottom: 1rem;">
+                        <h3 style="margin: 0; color: #333; font-size: 1.3rem;"><i class="fas fa-clipboard-check"></i> ESPECIFICACIONES DE LA ORDEN</h3>
+                        <button type="button" onclick="cerrarModalEspecificaciones()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999;">
+                            <i class="fas fa-times"></i>
                         </button>
-                        <p style="color: #999; font-size: 0.85rem; margin-bottom: 0.75rem; margin-top: 0.5rem;">PDF, WORD, EXCEL, ESPECIFICACIONES TÉCNICAS, ETC.</p>
-                        <div class="subseccion-content" style="display: none;">
-                            <div class="fotos-drop-zone fotos-drop-zone-compact" ondrop="manejarDrop(event)" ondragover="event.preventDefault()" ondragleave="this.classList.remove('drag-over')" style="background: #fff9e6; border-color: #ffc107;">
-                                <input type="file" name="archivos_orden[documentos][]" class="input-file-single" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt" multiple onchange="agregarDocumentosOrden(this.files, this)">
-                                <div class="drop-zone-content">
-                                    <i class="fas fa-cloud-upload-alt" style="color: #ff9800;"></i>
-                                    <p style="color: #ff9800;">ARRASTRA DOCUMENTOS AQUÍ</p>
-                                </div>
-                            </div>
-                            <div class="documentos-preview-orden" style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1rem;"></div>
-                        </div>
+                    </div>
+                    
+                    <table class="tabla-control-compacta">
+                        <thead>
+                            <tr>
+                                <th style="width: 40%;">ITEM</th>
+                                <th style="width: 60%;">OBSERVACIONES</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- DISPONIBILIDAD -->
+                            <tr class="fila-grupo">
+                                <td colspan="3" style="font-weight: 600; background: #ffc107; padding: 10px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span>📦 DISPONIBILIDAD</span>
+                                        <button type="button" onclick="agregarFilaEspecificacion('disponibilidad')" style="background: #3498db; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">+</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tbody id="tbody_disponibilidad">
+                                <tr>
+                                    <td><label style="margin: 0; font-size: 0.8rem;">Bodega</label></td>
+                                    <td style="display: flex; gap: 5px;">
+                                        <input type="text" name="tabla_orden[bodega_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
+                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><label style="margin: 0; font-size: 0.8rem;">Cúcuta</label></td>
+                                    <td style="display: flex; gap: 5px;">
+                                        <input type="text" name="tabla_orden[cucuta_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
+                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><label style="margin: 0; font-size: 0.8rem;">Lafayette</label></td>
+                                    <td style="display: flex; gap: 5px;">
+                                        <input type="text" name="tabla_orden[lafayette_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
+                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><label style="margin: 0; font-size: 0.8rem;">Fábrica</label></td>
+                                    <td style="display: flex; gap: 5px;">
+                                        <input type="text" name="tabla_orden[fabrica_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
+                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+
+                            <!-- PAGO -->
+                            <tr class="fila-grupo">
+                                <td colspan="3" style="font-weight: 600; background: #ffc107; padding: 10px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span>💳 FORMA DE PAGO</span>
+                                        <button type="button" onclick="agregarFilaEspecificacion('pago')" style="background: #3498db; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">+</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tbody id="tbody_pago">
+                                <tr>
+                                    <td><label style="margin: 0; font-size: 0.8rem;">Contado</label></td>
+                                    <td style="display: flex; gap: 5px;">
+                                        <input type="text" name="tabla_orden[pago_contado_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
+                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><label style="margin: 0; font-size: 0.8rem;">Crédito</label></td>
+                                    <td style="display: flex; gap: 5px;">
+                                        <input type="text" name="tabla_orden[pago_credito_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
+                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+
+                            <!-- RÉGIMEN -->
+                            <tr class="fila-grupo">
+                                <td colspan="3" style="font-weight: 600; background: #ffc107; padding: 10px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span>🏛️ RÉGIMEN</span>
+                                        <button type="button" onclick="agregarFilaEspecificacion('regimen')" style="background: #3498db; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">+</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tbody id="tbody_regimen">
+                                <tr>
+                                    <td><label style="margin: 0; font-size: 0.8rem;">Común</label></td>
+                                    <td style="display: flex; gap: 5px;">
+                                        <input type="text" name="tabla_orden[regimen_comun_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
+                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><label style="margin: 0; font-size: 0.8rem;">Simplificado</label></td>
+                                    <td style="display: flex; gap: 5px;">
+                                        <input type="text" name="tabla_orden[regimen_simp_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
+                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+
+                            <!-- SE HA VENDIDO -->
+                            <tr class="fila-grupo">
+                                <td colspan="3" style="font-weight: 600; background: #ffc107; padding: 10px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span>📊 SE HA VENDIDO</span>
+                                        <button type="button" onclick="agregarFilaEspecificacion('vendido')" style="background: #3498db; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">+</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tbody id="tbody_vendido">
+                                <tr>
+                                    <td><input type="text" name="tabla_orden[vendido_item]" class="input-compact" placeholder="Escribe aquí" style="width: 100%;"></td>
+                                    <td style="display: flex; gap: 5px;">
+                                        <input type="text" name="tabla_orden[vendido_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
+                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+
+                            <!-- ÚLTIMA VENTA -->
+                            <tr class="fila-grupo">
+                                <td colspan="3" style="font-weight: 600; background: #ffc107; padding: 10px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span>💰 ÚLTIMA VENTA</span>
+                                        <button type="button" onclick="agregarFilaEspecificacion('ultima_venta')" style="background: #3498db; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">+</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tbody id="tbody_ultima_venta">
+                                <tr>
+                                    <td><input type="text" name="tabla_orden[ultima_venta_item]" class="input-compact" placeholder="Escribe aquí" style="width: 100%;"></td>
+                                    <td style="display: flex; gap: 5px;">
+                                        <input type="text" name="tabla_orden[ultima_venta_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
+                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+
+                            <!-- FLETE DE ENVÍO -->
+                            <tr class="fila-grupo">
+                                <td colspan="3" style="font-weight: 600; background: #ffc107; padding: 10px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span>🚚 FLETE DE ENVÍO</span>
+                                        <button type="button" onclick="agregarFilaEspecificacion('flete')" style="background: #3498db; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">+</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tbody id="tbody_flete">
+                                <tr>
+                                    <td><input type="text" name="tabla_orden[flete_item]" class="input-compact" placeholder="Escribe aquí" style="width: 100%;"></td>
+                                    <td style="display: flex; gap: 5px;">
+                                        <input type="text" name="tabla_orden[flete_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
+                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </tbody>
+                    </table>
+
+                    <!-- Footer -->
+                    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 2px solid #ffc107; display: flex; gap: 1rem; justify-content: flex-end;">
+                        <button type="button" onclick="cerrarModalEspecificaciones()" style="padding: 0.6rem 1.5rem; background: #f0f0f0; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; font-weight: 600; color: #333;">
+                            CANCELAR
+                        </button>
+                        <button type="button" onclick="guardarEspecificaciones()" style="padding: 0.6rem 1.5rem; background: #0066cc; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; color: white;">
+                            GUARDAR
+                        </button>
                     </div>
                 </div>
             </div>
@@ -148,54 +293,238 @@
                 <button type="button" class="btn-prev" onclick="irAlPaso(1)">
                     <i class="fas fa-arrow-left"></i> ANTERIOR
                 </button>
-                <button type="button" class="btn-next" onclick="irAlPaso(3)">
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn-next" onclick="irAlPaso(4)" style="background: #95a5a6;">
+                        SALTAR <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <button type="button" class="btn-next" onclick="irAlPaso(3)">
+                        SIGUIENTE <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PASO 3: BORDADO/ESTAMPADO -->
+        <div class="form-step" data-step="3">
+            <div class="step-header">
+                <h2>PASO 3: BORDADO/ESTAMPADO</h2>
+                <p>ESPECIFICA LOS DETALLES DE BORDADO Y ESTAMPADO</p>
+            </div>
+
+            <div class="form-section">
+                <!-- IMÁGENES (5 máximo) - DRAG AND DROP -->
+                <div class="form-group-large">
+                    <label for="imagenes_bordado">
+                        <i class="fas fa-images"></i>
+                        IMÁGENES (MÁXIMO 5)
+                    </label>
+                    <div id="drop_zone_imagenes" style="border: 2px dashed #3498db; border-radius: 8px; padding: 30px; text-align: center; background: #f0f7ff; cursor: pointer; transition: all 0.3s ease; margin-bottom: 10px;">
+                        <i class="fas fa-cloud-upload-alt" style="font-size: 2.5rem; color: #3498db; margin-bottom: 10px; display: block;"></i>
+                        <p style="margin: 10px 0; color: #3498db; font-weight: 600;">ARRASTRA IMÁGENES AQUÍ O HAZ CLIC</p>
+                        <p style="margin: 5px 0; color: #666; font-size: 0.9rem;">Máximo 5 imágenes</p>
+                        <input type="file" id="imagenes_bordado" name="imagenes_bordado[]" accept="image/*" multiple style="display: none;">
+                    </div>
+                    <div id="galeria_imagenes" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 10px;">
+                    </div>
+                </div>
+
+                <!-- TARJETA: TÉCNICAS Y OBSERVACIONES -->
+                <div style="background: #f9f9f9; border: 2px solid #3498db; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <label style="font-weight: bold; font-size: 1.1rem; margin: 0;">
+                            Logo personalizado: Técnicas disponibles
+                        </label>
+                        <button type="button" onclick="agregarTecnica()" style="background: #3498db; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; justify-content: center; line-height: 1;">+</button>
+                    </div>
+                    
+                    <!-- Selector de técnicas -->
+                    <select id="selector_tecnicas" class="input-large" style="width: 100%; margin-bottom: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="">-- SELECCIONA UNA TÉCNICA --</option>
+                        <option value="BORDADO">BORDADO</option>
+                        <option value="DTF">DTF</option>
+                        <option value="ESTAMPADO">ESTAMPADO</option>
+                        <option value="SUBLIMADO">SUBLIMADO</option>
+                    </select>
+                    
+                    <!-- Técnicas seleccionadas -->
+                    <div id="tecnicas_seleccionadas" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; min-height: 30px;">
+                    </div>
+                    
+                    <!-- Observaciones -->
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem;">
+                        Observaciones
+                    </label>
+                    <textarea id="observaciones_tecnicas" name="observaciones_tecnicas" class="input-large" rows="2" placeholder="Observaciones..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;"></textarea>
+                </div>
+
+                <!-- TARJETA: UBICACIÓN POR SECCIÓN -->
+                <div style="background: #f9f9f9; border: 2px solid #3498db; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <label style="font-weight: bold; font-size: 1.1rem; margin: 0;">
+                            Ubicación
+                        </label>
+                        <button type="button" onclick="agregarSeccion()" style="background: #3498db; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; justify-content: center; line-height: 1;">+</button>
+                    </div>
+                    
+                    <!-- Selector de sección -->
+                    <label for="seccion_prenda" style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem;">Selecciona la sección a agregar:</label>
+                    <select id="seccion_prenda" class="input-large" style="width: 100%; margin-bottom: 12px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="">-- SELECCIONA UNA OPCIÓN --</option>
+                        <option value="CAMISA">CAMISA</option>
+                        <option value="JEAN_SUDADERA">JEAN/SUDADERA</option>
+                        <option value="GORRAS">GORRAS</option>
+                    </select>
+                    
+                    <!-- SECCIONES AGREGADAS -->
+                    <div id="secciones_agregadas" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                    </div>
+                </div>
+
+                <!-- TARJETA: OBSERVACIONES GENERALES -->
+                <div style="background: #f9f9f9; border: 2px solid #3498db; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <label style="font-weight: bold; font-size: 1.1rem; margin: 0;">
+                            Observaciones Generales
+                        </label>
+                        <button type="button" onclick="agregarObservacion()" style="background: #3498db; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; justify-content: center; line-height: 1;">+</button>
+                    </div>
+                    
+                    <!-- Observaciones agregadas -->
+                    <div id="observaciones_lista" style="display: flex; flex-direction: column; gap: 10px;">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn-prev" onclick="irAlPaso(2)">
+                    <i class="fas fa-arrow-left"></i> ANTERIOR
+                </button>
+                <button type="button" class="btn-next" onclick="irAlPaso(4)">
                     REVISAR <i class="fas fa-arrow-right"></i>
                 </button>
             </div>
         </div>
 
-        <!-- PASO 3: REVISAR Y CONFIRMAR -->
+        <!-- PASO 4: REVISAR Y CONFIRMAR -->
+        <div class="form-step" data-step="4">
+            <div class="step-header">
+                <h2>PASO 4: REVISAR COTIZACIÓN</h2>
+                <p>VERIFICA QUE TODO ESTÉ CORRECTO ANTES DE GUARDAR O ENVIAR</p>
+            </div>
+
+            <div class="form-section">
+                <div style="background: #f0f7ff; border-left: 4px solid #3498db; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                    <p style="margin: 0; color: #333;">
+                        <strong>✓ Resumen de tu cotización:</strong>
+                    </p>
+                    <ul style="margin: 10px 0 0 0; padding-left: 20px; color: #666;">
+                        <li>Cliente: <strong id="resumenCliente">-</strong></li>
+                        <li>Productos agregados: <strong id="resumenProductos">0</strong></li>
+                        <li>Asesora: <strong>{{ Auth::user()->name }}</strong></li>
+                        <li>Fecha: <strong id="resumenFecha"></strong></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn-prev" onclick="irAlPaso(3)">
+                    <i class="fas fa-arrow-left"></i> ANTERIOR
+                </button>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="btn-submit" onclick="guardarCotizacion()" style="background: #95a5a6;">
+                        <i class="fas fa-save"></i> GUARDAR (BORRADOR)
+                    </button>
+                    <button type="button" class="btn-submit" onclick="enviarCotizacion()">
+                        <i class="fas fa-paper-plane"></i> ENVIAR
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PASO 4: REVISAR Y CONFIRMAR - COMENTADO -->
+        <!-- 
         <div class="form-step" data-step="3">
             <div class="step-header">
                 <h2>PASO 3: REVISAR TU PEDIDO</h2>
                 <p>VERIFICA QUE TODO ESTÉ CORRECTO ANTES DE CREAR</p>
             </div>
 
-            <div class="form-section">
-                <div class="review-card">
-                    <div class="review-title"><i class="fas fa-user"></i> INFORMACIÓN DEL CLIENTE</div>
-                    <div class="review-content">
-                        <div class="review-item">
-                            <span class="review-label">CLIENTE:</span>
-                            <span class="review-value" id="reviewCliente">-</span>
+            <div class="form-section erp-review-section">
+                <!-- ENCABEZADO FACTURA
+                <div class="factura-header">
+                    <div class="factura-titulo">
+                        <h2>PEDIDO DE COMPRA</h2>
+                        <p>Resumen y confirmación del pedido</p>
+                    </div>
+                    <div class="factura-datos">
+                        <div class="factura-item">
+                            <span class="factura-label">NÚMERO:</span>
+                            <span class="factura-valor">NUEVO</span>
                         </div>
-                        <div class="review-item">
-                            <span class="review-label">FORMA DE PAGO:</span>
-                            <span class="review-value" id="reviewFormaPago">-</span>
+                        <div class="factura-item">
+                            <span class="factura-label">FECHA:</span>
+                            <span class="factura-valor" id="reviewFecha"></span>
                         </div>
                     </div>
                 </div>
 
-                <div class="review-card">
-                    <div class="review-title"><i class="fas fa-box"></i> PRODUCTOS (<span id="reviewTotalProductos">0</span>)</div>
-                    <div class="review-content" id="reviewProductos"></div>
-                </div>
-
-                <div class="review-card highlight">
-                    <div class="review-title"><i class="fas fa-calculator"></i> TOTALES</div>
-                    <div class="review-content">
-                        <div class="review-item large">
-                            <span class="review-label">TOTAL DE PRENDAS:</span>
-                            <span class="review-value" id="reviewCantidadTotal">0</span>
+                <!-- SECCIÓN: INFORMACIÓN DEL CLIENTE
+                <div class="factura-seccion">
+                    <div class="factura-seccion-titulo">
+                        <i class="fas fa-user-tie"></i> CLIENTE
+                    </div>
+                    <div class="factura-cliente-info">
+                        <div class="factura-item-row">
+                            <span class="factura-label">Nombre:</span>
+                            <span class="factura-valor" id="reviewCliente">-</span>
+                        </div>
+                        <div class="factura-item-row">
+                            <span class="factura-label">Forma de Pago:</span>
+                            <span class="factura-valor" id="reviewFormaPago">-</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="info-box success">
-                    <i class="fas fa-check-circle"></i>
-                    <div>
-                        <strong>¡TODO LISTO!</strong>
-                        <p>HAZ CLIC EN "CREAR PEDIDO" PARA GUARDAR TU PEDIDO EN EL SISTEMA.</p>
+                <!-- TABLA PRINCIPAL - PRODUCTOS CON DETALLES
+                <div class="factura-seccion">
+                    <div class="factura-seccion-titulo">
+                        <i class="fas fa-list"></i> DETALLE DE PRODUCTOS
+                    </div>
+                    <div class="productos-factura-container" id="productosFacturaContainer">
+                        <!-- Se llena dinámicamente con JavaScript
+                    </div>
+                </div>
+
+                <!-- RESUMEN FINAL
+                <div class="factura-resumen">
+                    <div class="resumen-item">
+                        <span class="resumen-label">TOTAL PRODUCTOS</span>
+                        <span class="resumen-valor" id="reviewProductosCount">0</span>
+                    </div>
+                    <div class="resumen-item highlight">
+                        <span class="resumen-label">TOTAL PRENDAS</span>
+                        <span class="resumen-valor" id="reviewCantidadTotal">0</span>
+                    </div>
+                </div>
+
+                <!-- OBSERVACIONES
+                <div class="factura-seccion">
+                    <div class="factura-seccion-titulo">
+                        <i class="fas fa-sticky-note"></i> OBSERVACIONES
+                    </div>
+                    <div class="factura-observaciones" id="reviewObservaciones">
+                        <p style="color: #999; font-style: italic;">Sin observaciones adicionales.</p>
+                    </div>
+                </div>
+
+                <!-- PIE FACTURA
+                <div class="factura-pie">
+                    <div class="info-box success">
+                        <i class="fas fa-check-circle"></i>
+                        <div>
+                            <strong>¡PEDIDO LISTO PARA CREAR!</strong>
+                            <p>Revisa toda la información. Si todo es correcto, haz clic en "CREAR PEDIDO" para guardar.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -209,6 +538,7 @@
                 </button>
             </div>
         </div>
+        -->
     </form>
 </div>
 
@@ -267,79 +597,17 @@
                 </div>
             </div>
 
-            <!-- SECCIÓN 3: TALLAS Y VARIANTES -->
+            <!-- SECCIÓN 3: Fotos de la Prenda -->
             <div class="producto-section">
                 <button type="button" class="section-title-btn" onclick="toggleSeccion(this)">
                     <div class="section-title">
-                        <i class="fas fa-ruler"></i> PASO 3: TALLAS Y VARIANTES
+                        <i class="fas fa-images"></i> PASO 3: FOTOS DE LA PRENDA (MÁX. 3)
                         <i class="fas fa-chevron-down" style="margin-left: auto; transition: transform 0.3s ease;"></i>
                     </div>
                 </button>
                 <div class="section-content">
-                <div class="tallas-container">
-                    <table class="tallas-table">
-                        <thead>
-                            <tr>
-                                <th>TALLA</th>
-                                <th>CANT.</th>
-                                <th>GÉNERO</th>
-                                <th>COLOR</th>
-                                <th>TELA</th>
-                                <th>REF. HILO</th>
-                                <th>ACCIONES</th>
-                            </tr>
-                        </thead>
-                        <tbody class="tallas-tbody">
-                            <tr class="talla-row">
-                                <td>
-                                    <select name="productos_friendly[][talla]" class="input-small" required onchange="actualizarResumenFriendly()">
-                                        <option value="">SEL</option>
-                                        <option value="XS">XS</option>
-                                        <option value="S">S</option>
-                                        <option value="M">M</option>
-                                        <option value="L">L</option>
-                                        <option value="XL">XL</option>
-                                        <option value="XXL">XXL</option>
-                                    </select>
-                                </td>
-                                <td><input type="number" name="productos_friendly[][cantidad]" class="input-small" placeholder="1" min="1" value="1" onchange="actualizarResumenFriendly()" required></td>
-                                <td>
-                                    <select name="productos_friendly[][genero]" class="input-small" onchange="actualizarResumenFriendly()">
-                                        <option value="">SELECCIONAR</option>
-                                        <option value="Dama">DAMA</option>
-                                        <option value="Caballero">CABALLERO</option>
-                                        <option value="Unisex">UNISEX</option>
-                                    </select>
-                                </td>
-                                <td><input type="text" name="productos_friendly[][color]" class="input-small" placeholder="BLANCO" onchange="actualizarResumenFriendly()"></td>
-                                <td><input type="text" name="productos_friendly[][tella]" class="input-small" placeholder="ALGODÓN" onchange="actualizarResumenFriendly()"></td>
-                                <td><input type="text" name="productos_friendly[][ref_hilo]" class="input-small" placeholder="REF-001" onchange="actualizarResumenFriendly()"></td>
-                                <td>
-                                    <button type="button" class="btn-remove-talla" onclick="eliminarFilaTalla(this)" title="Eliminar talla">
-                                        &times;
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <button type="button" class="btn-add-talla" onclick="agregarFilaTalla(this)">
-                    <i class="fas fa-plus"></i> AGREGAR OTRA TALLA
-                </button>
-                </div>
-            </div>
-
-            <!-- SECCIÓN 4: Fotos de la Prenda -->
-            <div class="producto-section">
-                <button type="button" class="section-title-btn" onclick="toggleSeccion(this)">
-                    <div class="section-title">
-                        <i class="fas fa-images"></i> PASO 4: FOTOS DE LA PRENDA (MÁX. 3)
-                        <i class="fas fa-chevron-down" style="margin-left: auto; transition: transform 0.3s ease;"></i>
-                    </div>
-                </button>
-                <div class="section-content">
-                <!-- Grid de 4 columnas para las fotos -->
-                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1rem;">
+                <!-- Grid de 2 columnas para las fotos -->
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1rem;">
                     <!-- Fotos de la Prenda -->
                     <div>
                         <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; margin-bottom: 0.5rem; color: #0066cc; font-size: 0.85rem;">
@@ -360,62 +628,14 @@
                         <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; margin-bottom: 0.5rem; color: #0066cc; font-size: 0.85rem;">
                             <i class="fas fa-fiber-manual-record"></i> TELA
                         </label>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <label style="flex: 1; min-height: 80px; padding: 0.75rem; border: 2px dashed #0066cc; border-radius: 6px; cursor: pointer; text-align: center; background: #f0f7ff; display: flex; flex-direction: column; align-items: center; justify-content: center;" ondrop="manejarDrop(event)" ondragover="event.preventDefault()" ondragleave="this.classList.remove('drag-over')">
-                                <input type="file" name="productos_friendly[][imagen_tela]" class="input-file-single" accept="image/*" onchange="agregarFotoTela(this)" style="display: none;">
-                                <div class="drop-zone-content" style="font-size: 0.75rem;">
-                                    <i class="fas fa-cloud-upload-alt" style="font-size: 1rem; color: #0066cc;"></i>
-                                    <p style="margin: 0.25rem 0; color: #0066cc; font-weight: 500;">FOTO</p>
-                                </div>
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 0.25rem; cursor: pointer; font-size: 0.75rem; color: #666; white-space: nowrap;">
-                                <input type="checkbox" name="productos_friendly[][no_aplica_tela]" class="checkbox-no-aplica" onchange="toggleImagenTela(this)">
-                                NO APLICA
-                            </label>
-                        </div>
-                        <div class="foto-tela-preview" style="display: grid; grid-template-columns: repeat(3, 60px); gap: 0.4rem; margin-top: 0.5rem;"></div>
-                    </div>
-
-                    <!-- Imagen de Bordado -->
-                    <div>
-                        <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; margin-bottom: 0.5rem; color: #0066cc; font-size: 0.85rem;">
-                            <i class="fas fa-palette"></i> BORDADO
-                        </div>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <label style="flex: 1; min-height: 80px; padding: 0.75rem; border: 2px dashed #0066cc; border-radius: 6px; cursor: pointer; text-align: center; background: #f0f7ff; display: flex; flex-direction: column; align-items: center; justify-content: center;" ondrop="manejarDrop(event)" ondragover="event.preventDefault()" ondragleave="this.classList.remove('drag-over')">
-                                <input type="file" name="productos_friendly[][imagen_bordado]" class="input-file-single" accept="image/*" onchange="agregarFotoBordado(this)" style="display: none;">
-                                <div class="drop-zone-content" style="font-size: 0.75rem;">
-                                    <i class="fas fa-cloud-upload-alt" style="font-size: 1rem; color: #0066cc;"></i>
-                                    <p style="margin: 0.25rem 0; color: #0066cc; font-weight: 500;">FOTO</p>
-                                </div>
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 0.25rem; cursor: pointer; font-size: 0.75rem; color: #666; white-space: nowrap;">
-                                <input type="checkbox" name="productos_friendly[][no_aplica_bordado]" class="checkbox-no-aplica" onchange="toggleImagenBordado(this)">
-                                NO APLICA
-                            </label>
-                        </div>
-                        <div class="foto-bordado-preview" style="display: grid; grid-template-columns: repeat(3, 60px); gap: 0.4rem; margin-top: 0.5rem;"></div>
-                    </div>
-
-                    <!-- Imagen de Estampado -->
-                    <div>
-                        <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; margin-bottom: 0.5rem; color: #0066cc; font-size: 0.85rem;">
-                            <i class="fas fa-print"></i> ESTAMPADO
-                        </div>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <label style="flex: 1; min-height: 80px; padding: 0.75rem; border: 2px dashed #0066cc; border-radius: 6px; cursor: pointer; text-align: center; background: #f0f7ff; display: flex; flex-direction: column; align-items: center; justify-content: center;" ondrop="manejarDrop(event)" ondragover="event.preventDefault()" ondragleave="this.classList.remove('drag-over')">
-                                <input type="file" name="productos_friendly[][imagen_estampado]" class="input-file-single" accept="image/*" onchange="agregarFotoEstampado(this)" style="display: none;">
-                                <div class="drop-zone-content" style="font-size: 0.75rem;">
-                                    <i class="fas fa-cloud-upload-alt" style="font-size: 1rem; color: #0066cc;"></i>
-                                    <p style="margin: 0.25rem 0; color: #0066cc; font-weight: 500;">FOTO</p>
-                                </div>
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 0.25rem; cursor: pointer; font-size: 0.75rem; color: #666; white-space: nowrap;">
-                                <input type="checkbox" name="productos_friendly[][no_aplica_estampado]" class="checkbox-no-aplica" onchange="toggleImagenEstampado(this)">
-                                NO APLICA
-                            </label>
-                        </div>
-                        <div class="foto-estampado-preview" style="display: grid; grid-template-columns: repeat(3, 60px); gap: 0.4rem; margin-top: 0.5rem;"></div>
+                        <label style="display: block; min-height: 80px; padding: 0.75rem; border: 2px dashed #0066cc; border-radius: 6px; cursor: pointer; text-align: center; background: #f0f7ff;" ondrop="manejarDrop(event)" ondragover="event.preventDefault()" ondragleave="this.classList.remove('drag-over')">
+                            <input type="file" name="productos_friendly[][imagen_tela]" class="input-file-single" accept="image/*" onchange="agregarFotoTela(this)" style="display: none;">
+                            <div class="drop-zone-content" style="font-size: 0.75rem;">
+                                <i class="fas fa-cloud-upload-alt" style="font-size: 1rem; color: #0066cc;"></i>
+                                <p style="margin: 0.25rem 0; color: #0066cc; font-weight: 500;">ARRASTRA O CLIC</p>
+                            </div>
+                        </label>
+                        <div class="foto-tela-preview" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; margin-top: 0.5rem;"></div>
                     </div>
                 </div>
                 </div>
@@ -478,8 +698,8 @@ function irAlPaso(paso) {
         stepElement.classList.add('active');
     }
 
-    // Si es el paso 3, actualizar resumen
-    if (paso === 3) {
+    // Si es el paso 4 (revisar), actualizar resumen
+    if (paso === 4) {
         setTimeout(() => actualizarResumenFriendly(), 100);
     }
 }
@@ -624,86 +844,32 @@ function eliminarFoto(productoId, index) {
     }
 }
 
-// Actualizar resumen
+// Actualizar resumen (versión simplificada)
 function actualizarResumenFriendly() {
-    // Información del cliente
-    const cliente = document.getElementById('cliente').value || '-';
-    const formaPago = document.getElementById('forma_de_pago').value || '-';
-
-    document.getElementById('reviewCliente').textContent = cliente;
-    document.getElementById('reviewFormaPago').textContent = formatearFormaPago(formaPago);
-
-    // Productos
-    const productos = document.querySelectorAll('.producto-card');
-    let totalProductos = 0;
-    let totalCantidad = 0;
-
-    const reviewProductos = document.getElementById('reviewProductos');
-    reviewProductos.innerHTML = '';
-
-    productos.forEach((producto, index) => {
-        const nombre = producto.querySelector('input[name*="nombre_producto"]').value || 'Sin nombre';
-        const cantidad = parseInt(producto.querySelector('input[name*="cantidad"]').value) || 0;
-        const talla = producto.querySelector('select[name*="talla"]').value || '-';
-        const color = producto.querySelector('input[name*="color"]').value || '-';
-
-        totalProductos++;
-        totalCantidad += cantidad;
-
-        // Crear tarjeta del producto
-        const card = document.createElement('div');
-        card.className = 'review-product-card';
-        
-        // Información del producto
-        let html = `
-            <div class="review-product-info">
-                <div class="review-item">
-                    <span class="review-label">${nombre}</span>
-                    <span class="review-value">${cantidad} unidades - Talla ${talla}</span>
-                </div>
-                <div class="review-item">
-                    <span class="review-label">Color:</span>
-                    <span class="review-value">${color}</span>
-                </div>
-            </div>
-        `;
-        
-        // Fotos del producto
-        const fotosInputs = producto.querySelectorAll('input[type="file"]');
-        let tienesFotos = false;
-        
-        fotosInputs.forEach((fileInput, fotoIndex) => {
-            if (fileInput.files && fileInput.files[0]) {
-                tienesFotos = true;
-            }
+    // Actualizar resumen en Paso 4 si existen los elementos
+    const resumenCliente = document.getElementById('resumenCliente');
+    const resumenProductos = document.getElementById('resumenProductos');
+    const resumenFecha = document.getElementById('resumenFecha');
+    
+    if (resumenCliente) {
+        const cliente = document.getElementById('cliente');
+        resumenCliente.textContent = cliente ? cliente.value || '-' : '-';
+    }
+    
+    if (resumenProductos) {
+        const productos = document.querySelectorAll('.producto-card');
+        resumenProductos.textContent = productos.length;
+    }
+    
+    if (resumenFecha) {
+        const hoy = new Date();
+        const fechaFormato = hoy.toLocaleDateString('es-ES', { 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit' 
         });
-        
-        if (tienesFotos) {
-            html += '<div class="review-product-fotos">';
-            fotosInputs.forEach((fileInput, fotoIndex) => {
-                if (fileInput.files && fileInput.files[0]) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        const fotoDiv = document.createElement('div');
-                        fotoDiv.className = 'review-foto';
-                        fotoDiv.innerHTML = `
-                            <img src="${e.target.result}" alt="Foto ${fotoIndex + 1}">
-                            <span class="review-foto-numero">${fotoIndex + 1}</span>
-                        `;
-                        card.querySelector('.review-product-fotos').appendChild(fotoDiv);
-                    };
-                    reader.readAsDataURL(fileInput.files[0]);
-                }
-            });
-            html += '</div>';
-        }
-        
-        card.innerHTML = html;
-        reviewProductos.appendChild(card);
-    });
-
-    document.getElementById('reviewTotalProductos').textContent = totalProductos;
-    document.getElementById('reviewCantidadTotal').textContent = totalCantidad;
+        resumenFecha.textContent = fechaFormato;
+    }
 }
 
 // Formatear forma de pago
@@ -715,6 +881,36 @@ function formatearFormaPago(valor) {
         'ANTICIPO': '🎯 Anticipo'
     };
     return opciones[valor] || '-';
+}
+
+// Obtener color hex aproximado desde nombre
+function obtenerColorHex(colorNombre) {
+    const colores = {
+        'blanco': '#ffffff',
+        'negro': '#000000',
+        'rojo': '#ff0000',
+        'azul': '#0066cc',
+        'verde': '#00cc00',
+        'amarillo': '#ffff00',
+        'naranja': '#ff9800',
+        'rosa': '#ff69b4',
+        'gris': '#808080',
+        'morado': '#800080',
+        'marrón': '#8b4513',
+        'beige': '#f5f5dc'
+    };
+    
+    const clave = colorNombre.toLowerCase().trim();
+    return colores[clave] || '#e0e0e0';
+}
+
+// Mostrar detalle del producto
+function mostrarDetalleProducto(index) {
+    const productos = document.querySelectorAll('.producto-card');
+    if (productos[index]) {
+        // Aquí puedes agregar un modal o expandir la vista
+        alert('Detalles del producto ' + (index + 1));
+    }
 }
 
 // ============ BÚSQUEDA DE PRENDAS ============
@@ -975,9 +1171,9 @@ function agregarDocumentosOrden(files, input) {
     });
 }
 
-// ============ EXPANDIR/CONTRAER ARCHIVOS ============
-function toggleArchivosOrden(btn) {
-    const content = btn.closest('div').querySelector('.archivos-orden-content');
+// ============ EXPANDIR/CONTRAER TABLA DE ORDEN ============
+function toggleTablaOrden(btn) {
+    const content = btn.closest('div').querySelector('.tabla-orden-content');
     const icon = btn.querySelector('i.fa-chevron-down');
     
     if (content.style.display === 'none') {
@@ -1029,6 +1225,434 @@ function toggleProductoBody(btn) {
     }
 }
 
+// ============ FUNCIONES PARA BORDADO/ESTAMPADO ============
+
+// Drag and Drop para imágenes
+const dropZone = document.getElementById('drop_zone_imagenes');
+const fileInput = document.getElementById('imagenes_bordado');
+const galeria = document.getElementById('galeria_imagenes');
+let archivosAcumulados = []; // Array para guardar las imágenes
+
+// Click en drop zone abre file input
+dropZone.addEventListener('click', () => fileInput.click());
+
+// Drag over
+dropZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    dropZone.style.background = '#e3f2fd';
+    dropZone.style.borderColor = '#2196F3';
+});
+
+// Drag leave
+dropZone.addEventListener('dragleave', () => {
+    dropZone.style.background = '#f0f7ff';
+    dropZone.style.borderColor = '#3498db';
+});
+
+// Drop
+dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.style.background = '#f0f7ff';
+    dropZone.style.borderColor = '#3498db';
+    
+    const files = e.dataTransfer.files;
+    agregarImagenes(files);
+});
+
+// File input change
+fileInput.addEventListener('change', function() {
+    agregarImagenes(this.files);
+});
+
+// Agregar imágenes sin borrar las anteriores
+function agregarImagenes(newFiles) {
+    const newFilesArray = Array.from(newFiles);
+    
+    // Validar máximo 5
+    if (archivosAcumulados.length + newFilesArray.length > 5) {
+        alert('Máximo 5 imágenes permitidas. Ya tienes ' + archivosAcumulados.length + ' imagen(es).');
+        fileInput.value = '';
+        return;
+    }
+    
+    // Agregar nuevos archivos al array
+    archivosAcumulados = archivosAcumulados.concat(newFilesArray);
+    
+    // Actualizar file input con DataTransfer
+    const dt = new DataTransfer();
+    archivosAcumulados.forEach(f => dt.items.add(f));
+    fileInput.files = dt.files;
+    
+    // Mostrar todas las imágenes
+    mostrarImagenes(archivosAcumulados);
+    
+    // Limpiar el input para permitir seleccionar el mismo archivo de nuevo
+    fileInput.value = '';
+}
+
+// Mostrar imágenes en galería
+function mostrarImagenes(files) {
+    const filesArray = Array.from(files);
+    
+    galeria.innerHTML = '';
+    
+    // Crear un array para almacenar las imágenes cargadas con su índice correcto
+    let imagenesLoaded = [];
+    let imagenesCount = 0;
+    
+    filesArray.forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            // Guardar la imagen con su índice correcto
+            imagenesLoaded[index] = {
+                src: event.target.result,
+                index: index
+            };
+            
+            imagenesCount++;
+            
+            // Cuando todas las imágenes se hayan cargado, renderizarlas en orden
+            if (imagenesCount === filesArray.length) {
+                imagenesLoaded.forEach((imgData, posicion) => {
+                    if (imgData) {
+                        const div = document.createElement('div');
+                        div.style.position = 'relative';
+                        div.style.width = '100%';
+                        div.style.paddingBottom = '100%';
+                        div.style.overflow = 'hidden';
+                        div.style.borderRadius = '8px';
+                        div.style.border = '1px solid #ddd';
+                        
+                        const img = document.createElement('img');
+                        img.src = imgData.src;
+                        img.style.position = 'absolute';
+                        img.style.top = '0';
+                        img.style.left = '0';
+                        img.style.width = '100%';
+                        img.style.height = '100%';
+                        img.style.objectFit = 'cover';
+                        
+                        // Número de imagen (basado en la posición en el array, no en el orden de carga)
+                        const numero = document.createElement('div');
+                        numero.innerHTML = posicion + 1;
+                        numero.style.position = 'absolute';
+                        numero.style.bottom = '5px';
+                        numero.style.left = '5px';
+                        numero.style.background = '#3498db';
+                        numero.style.color = 'white';
+                        numero.style.borderRadius = '50%';
+                        numero.style.width = '28px';
+                        numero.style.height = '28px';
+                        numero.style.display = 'flex';
+                        numero.style.alignItems = 'center';
+                        numero.style.justifyContent = 'center';
+                        numero.style.fontWeight = 'bold';
+                        numero.style.fontSize = '14px';
+                        
+                        const btnEliminar = document.createElement('button');
+                        btnEliminar.type = 'button';
+                        btnEliminar.innerHTML = '✕';
+                        btnEliminar.style.position = 'absolute';
+                        btnEliminar.style.top = '5px';
+                        btnEliminar.style.right = '5px';
+                        btnEliminar.style.background = '#f44336';
+                        btnEliminar.style.color = 'white';
+                        btnEliminar.style.border = 'none';
+                        btnEliminar.style.borderRadius = '50%';
+                        btnEliminar.style.width = '24px';
+                        btnEliminar.style.height = '24px';
+                        btnEliminar.style.cursor = 'pointer';
+                        btnEliminar.style.fontSize = '16px';
+                        btnEliminar.style.display = 'flex';
+                        btnEliminar.style.alignItems = 'center';
+                        btnEliminar.style.justifyContent = 'center';
+                        btnEliminar.style.padding = '0';
+                        
+                        btnEliminar.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            // Eliminar del array acumulado usando el índice correcto
+                            archivosAcumulados.splice(posicion, 1);
+                            
+                            // Actualizar file input
+                            const dt = new DataTransfer();
+                            archivosAcumulados.forEach(f => dt.items.add(f));
+                            fileInput.files = dt.files;
+                            
+                            // Mostrar imágenes actualizadas
+                            mostrarImagenes(archivosAcumulados);
+                        });
+                        
+                        div.appendChild(img);
+                        div.appendChild(numero);
+                        div.appendChild(btnEliminar);
+                        galeria.appendChild(div);
+                    }
+                });
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+// Agregar técnica
+function agregarTecnica() {
+    const selector = document.getElementById('selector_tecnicas');
+    const tecnica = selector.value;
+    
+    if (!tecnica) {
+        alert('Por favor selecciona una técnica');
+        return;
+    }
+    
+    const contenedor = document.getElementById('tecnicas_seleccionadas');
+    
+    // Verificar si ya existe
+    const existe = Array.from(contenedor.children).some(tag => tag.textContent.includes(tecnica));
+    if (existe) {
+        alert('Esta técnica ya está agregada');
+        return;
+    }
+    
+    // Crear etiqueta de técnica
+    const tag = document.createElement('div');
+    tag.style.background = '#3498db';
+    tag.style.color = 'white';
+    tag.style.padding = '6px 12px';
+    tag.style.borderRadius = '20px';
+    tag.style.display = 'flex';
+    tag.style.alignItems = 'center';
+    tag.style.gap = '8px';
+    tag.style.fontSize = '0.9rem';
+    tag.style.fontWeight = '600';
+    tag.innerHTML = `
+        <input type="hidden" name="tecnicas[]" value="${tecnica}">
+        <span>${tecnica}</span>
+        <button type="button" onclick="this.closest('div').remove()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.2rem; padding: 0; line-height: 1;">✕</button>
+    `;
+    
+    contenedor.appendChild(tag);
+    selector.value = '';
+}
+
+// Agregar sección con sus ubicaciones
+function agregarSeccion() {
+    const seccion = document.getElementById('seccion_prenda').value;
+    const contenedor = document.getElementById('secciones_agregadas');
+    
+    if (!seccion) {
+        alert('Por favor selecciona una sección');
+        return;
+    }
+    
+    let ubicaciones = [];
+    
+    if (seccion === 'CAMISA') {
+        ubicaciones = ['LADO IZQUIERDO', 'LADO DERECHO', 'ESPALDA', 'MANGA'];
+    } else if (seccion === 'JEAN_SUDADERA') {
+        ubicaciones = ['PIERNA IZQUIERDA', 'PIERNA DERECHA', 'BOLSILLO TRASERO', 'BOLSILLO RELOJERO'];
+    } else if (seccion === 'GORRAS') {
+        ubicaciones = ['FRONTAL', 'LATERAL'];
+    }
+    
+    // Crear contenedor de sección
+    const seccionDiv = document.createElement('div');
+    seccionDiv.style.background = '#f9f9f9';
+    seccionDiv.style.border = '2px solid #3498db';
+    seccionDiv.style.borderRadius = '8px';
+    seccionDiv.style.padding = '15px';
+    seccionDiv.style.position = 'relative';
+    
+    // Título de sección
+    const titulo = document.createElement('div');
+    titulo.style.fontWeight = 'bold';
+    titulo.style.fontSize = '1.1rem';
+    titulo.style.marginBottom = '10px';
+    titulo.innerHTML = `${seccion}`;
+    seccionDiv.appendChild(titulo);
+    
+    // Tabla de ubicaciones
+    const tabla = document.createElement('table');
+    tabla.style.width = '100%';
+    tabla.style.borderCollapse = 'collapse';
+    tabla.style.marginBottom = '10px';
+    
+    const thead = document.createElement('thead');
+    thead.innerHTML = `
+        <tr style="background: #f5f5f5; border-bottom: 2px solid #ddd;">
+            <th style="padding: 10px; text-align: left;">Ubicación</th>
+            <th style="padding: 10px; text-align: center; width: 50px;">Acción</th>
+        </tr>
+    `;
+    tabla.appendChild(thead);
+    
+    const tbody = document.createElement('tbody');
+    ubicaciones.forEach(ubicacion => {
+        const fila = document.createElement('tr');
+        fila.style.borderBottom = '1px solid #ddd';
+        fila.innerHTML = `
+            <td style="padding: 10px;">
+                <input type="hidden" name="ubicaciones_seccion[]" value="${seccion}">
+                <input type="hidden" name="ubicaciones[]" value="${ubicacion}">
+                ${ubicacion}
+            </td>
+            <td style="padding: 10px; text-align: center;">
+                <button type="button" class="btn-eliminar" onclick="this.closest('tr').remove()" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">
+                    ✕
+                </button>
+            </td>
+        `;
+        tbody.appendChild(fila);
+    });
+    tabla.appendChild(tbody);
+    seccionDiv.appendChild(tabla);
+    
+    // Botón agregar ubicación (esquina superior derecha)
+    const btnAgregarEsquina = document.createElement('button');
+    btnAgregarEsquina.type = 'button';
+    btnAgregarEsquina.textContent = '+';
+    btnAgregarEsquina.style.position = 'absolute';
+    btnAgregarEsquina.style.top = '10px';
+    btnAgregarEsquina.style.right = '10px';
+    btnAgregarEsquina.style.background = '#3498db';
+    btnAgregarEsquina.style.color = 'white';
+    btnAgregarEsquina.style.border = 'none';
+    btnAgregarEsquina.style.borderRadius = '50%';
+    btnAgregarEsquina.style.width = '36px';
+    btnAgregarEsquina.style.height = '36px';
+    btnAgregarEsquina.style.cursor = 'pointer';
+    btnAgregarEsquina.style.fontSize = '1.5rem';
+    btnAgregarEsquina.style.fontWeight = 'bold';
+    btnAgregarEsquina.style.display = 'flex';
+    btnAgregarEsquina.style.alignItems = 'center';
+    btnAgregarEsquina.style.justifyContent = 'center';
+    btnAgregarEsquina.style.lineHeight = '1';
+    btnAgregarEsquina.onclick = function() {
+        const fila = document.createElement('tr');
+        fila.style.borderBottom = '1px solid #ddd';
+        fila.innerHTML = `
+            <td style="padding: 10px;">
+                <input type="text" name="ubicaciones[]" class="input-large" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px;" placeholder="Ubicación...">
+            </td>
+            <td style="padding: 10px; text-align: center;">
+                <button type="button" class="btn-eliminar" onclick="this.closest('tr').remove()" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">
+                    ✕
+                </button>
+            </td>
+        `;
+        tbody.appendChild(fila);
+    };
+    seccionDiv.appendChild(btnAgregarEsquina);
+    
+    // Botón eliminar sección (esquina superior derecha, más a la izquierda)
+    const btnEliminarSeccion = document.createElement('button');
+    btnEliminarSeccion.type = 'button';
+    btnEliminarSeccion.textContent = '✕';
+    btnEliminarSeccion.style.position = 'absolute';
+    btnEliminarSeccion.style.top = '10px';
+    btnEliminarSeccion.style.right = '50px';
+    btnEliminarSeccion.style.background = '#f44336';
+    btnEliminarSeccion.style.color = 'white';
+    btnEliminarSeccion.style.border = 'none';
+    btnEliminarSeccion.style.borderRadius = '50%';
+    btnEliminarSeccion.style.width = '36px';
+    btnEliminarSeccion.style.height = '36px';
+    btnEliminarSeccion.style.cursor = 'pointer';
+    btnEliminarSeccion.style.fontSize = '1.2rem';
+    btnEliminarSeccion.style.display = 'flex';
+    btnEliminarSeccion.style.alignItems = 'center';
+    btnEliminarSeccion.style.justifyContent = 'center';
+    btnEliminarSeccion.style.lineHeight = '1';
+    btnEliminarSeccion.onclick = function() {
+        seccionDiv.remove();
+    };
+    seccionDiv.appendChild(btnEliminarSeccion);
+    
+    // Observación
+    const obsDiv = document.createElement('div');
+    obsDiv.style.marginTop = '10px';
+    obsDiv.innerHTML = `
+        <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem;">
+            <i class="fas fa-sticky-note"></i>
+            Observación
+        </label>
+        <textarea name="observaciones_seccion[]" class="input-large" rows="2" placeholder="Observación..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;"></textarea>
+    `;
+    seccionDiv.appendChild(obsDiv);
+    
+    contenedor.appendChild(seccionDiv);
+    
+    // Limpiar selector
+    document.getElementById('seccion_prenda').value = '';
+}
+
+// Agregar observación general
+function agregarObservacion() {
+    const contenedor = document.getElementById('observaciones_lista');
+    
+    // Crear fila de observación
+    const fila = document.createElement('div');
+    fila.style.display = 'flex';
+    fila.style.gap = '10px';
+    fila.style.alignItems = 'center';
+    fila.style.padding = '10px';
+    fila.style.background = 'white';
+    fila.style.borderRadius = '6px';
+    fila.style.border = '1px solid #ddd';
+    
+    // Crear ID único para esta fila
+    const filaId = 'obs_' + Date.now();
+    
+    fila.id = filaId;
+    fila.innerHTML = `
+        <input type="text" name="observaciones_generales[]" class="input-large" placeholder="Escribe una observación..." style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
+        
+        <!-- Contenedor para checkbox o campo de texto -->
+        <div class="obs-toggle-container" style="display: flex; gap: 5px; align-items: center; flex-shrink: 0;">
+            <!-- Checkbox (visible por defecto) -->
+            <div class="obs-checkbox-mode" style="display: flex; align-items: center; gap: 5px;">
+                <input type="checkbox" name="observaciones_check[]" style="width: 20px; height: 20px; cursor: pointer;">
+            </div>
+            
+            <!-- Campo de texto (oculto por defecto) -->
+            <div class="obs-text-mode" style="display: none; flex: 1;">
+                <input type="text" name="observaciones_valor[]" placeholder="Valor..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
+            </div>
+            
+            <!-- Botón toggle -->
+            <button type="button" class="obs-toggle-btn" style="background: #3498db; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; flex-shrink: 0;">✓/✎</button>
+        </div>
+        
+        <!-- Botón eliminar -->
+        <button type="button" onclick="this.closest('div').remove()" style="background: #f44336; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 1rem; flex-shrink: 0;">✕</button>
+    `;
+    
+    contenedor.appendChild(fila);
+    
+    // Agregar evento al botón toggle
+    const toggleBtn = fila.querySelector('.obs-toggle-btn');
+    const checkboxMode = fila.querySelector('.obs-checkbox-mode');
+    const textMode = fila.querySelector('.obs-text-mode');
+    
+    toggleBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        // Alternar visibilidad
+        if (checkboxMode.style.display === 'none') {
+            // Cambiar a checkbox
+            checkboxMode.style.display = 'block';
+            textMode.style.display = 'none';
+            toggleBtn.textContent = '✓/✎';
+            toggleBtn.style.background = '#3498db';
+        } else {
+            // Cambiar a texto
+            checkboxMode.style.display = 'none';
+            textMode.style.display = 'block';
+            toggleBtn.textContent = '✓/✎';
+            toggleBtn.style.background = '#ff9800';
+        }
+    });
+}
+
 // Manejar envío del formulario
 document.getElementById('formCrearPedidoFriendly').addEventListener('submit', function(e) {
     e.preventDefault();
@@ -1062,6 +1686,209 @@ document.getElementById('formCrearPedidoFriendly').addEventListener('submit', fu
 // Agregar primer producto automáticamente
 document.addEventListener('DOMContentLoaded', function() {
     agregarProductoFriendly();
+});
+
+// ============ MODAL: ESPECIFICACIONES DE LA ORDEN ============
+function abrirModalEspecificaciones() {
+    const modal = document.getElementById('modalEspecificaciones');
+    modal.style.display = 'flex';
+}
+
+function cerrarModalEspecificaciones() {
+    const modal = document.getElementById('modalEspecificaciones');
+    modal.style.display = 'none';
+}
+
+function guardarEspecificaciones() {
+    // Aquí puedes agregar lógica adicional si es necesario
+    cerrarModalEspecificaciones();
+}
+
+// Agregar fila a una categoría de especificaciones
+function agregarFilaEspecificacion(categoria) {
+    const tbodyId = 'tbody_' + categoria;
+    const tbody = document.getElementById(tbodyId);
+    
+    if (!tbody) return;
+    
+    const fila = document.createElement('tr');
+    fila.innerHTML = `
+        <td><input type="text" name="tabla_orden[${categoria}_item]" class="input-compact" placeholder="Escribe aquí" style="width: 100%;"></td>
+        <td style="display: flex; gap: 5px;">
+            <input type="text" name="tabla_orden[${categoria}_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
+            <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
+        </td>
+    `;
+    
+    tbody.appendChild(fila);
+}
+
+// Eliminar fila de especificaciones
+function eliminarFilaEspecificacion(btn) {
+    btn.closest('tr').remove();
+}
+
+// Mostrar fecha actual
+document.addEventListener('DOMContentLoaded', function() {
+    const fechaActualElement = document.getElementById('fechaActual');
+    if (fechaActualElement) {
+        const hoy = new Date();
+        const dia = String(hoy.getDate()).padStart(2, '0');
+        const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+        const año = hoy.getFullYear();
+        fechaActualElement.textContent = `${dia}/${mes}/${año}`;
+    }
+    
+    // Actualizar resumen en paso 4
+    actualizarResumenCotizacion();
+});
+
+// Actualizar resumen de cotización
+function actualizarResumenCotizacion() {
+    const clienteInput = document.getElementById('cliente');
+    const productosCount = document.querySelectorAll('#productosAgregados .producto-item').length;
+    const fechaElement = document.getElementById('resumenFecha');
+    
+    if (document.getElementById('resumenCliente')) {
+        document.getElementById('resumenCliente').textContent = clienteInput ? clienteInput.value || '-' : '-';
+    }
+    if (document.getElementById('resumenProductos')) {
+        document.getElementById('resumenProductos').textContent = productosCount;
+    }
+    if (fechaElement) {
+        const hoy = new Date();
+        const dia = String(hoy.getDate()).padStart(2, '0');
+        const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+        const año = hoy.getFullYear();
+        fechaElement.textContent = `${dia}/${mes}/${año}`;
+    }
+}
+
+// Recopilar datos del formulario
+function recopilarDatos() {
+    const cliente = document.getElementById('cliente').value;
+    
+    // Recopilar productos (buscar en .producto-card que es donde se agregan)
+    const productos = [];
+    document.querySelectorAll('.producto-card').forEach((item, index) => {
+        const nombre = item.querySelector('input[name*="nombre_producto"]')?.value || '';
+        const descripcion = item.querySelector('textarea[name*="descripcion"]')?.value || '';
+        const cantidad = item.querySelector('input[name*="cantidad"]')?.value || 1;
+        
+        if (nombre.trim()) { // Solo agregar si tiene nombre
+            productos.push({
+                nombre_producto: nombre,
+                descripcion: descripcion,
+                cantidad: parseInt(cantidad) || 1
+            });
+        }
+    });
+    
+    // Recopilar técnicas
+    const tecnicas = [];
+    document.querySelectorAll('#tecnicas_seleccionadas .tecnica-tag').forEach(tag => {
+        tecnicas.push(tag.textContent.replace('✕', '').trim());
+    });
+    
+    // Recopilar observaciones generales
+    const observaciones_generales = [];
+    document.querySelectorAll('#observaciones_lista > div').forEach(obs => {
+        const valor = obs.querySelector('input[name="observaciones_generales[]"]')?.value || '';
+        if (valor.trim()) {
+            observaciones_generales.push(valor);
+        }
+    });
+    
+    return {
+        cliente: cliente,
+        productos: productos,
+        tecnicas: tecnicas,
+        observaciones_generales: observaciones_generales
+    };
+}
+
+// Guardar cotización como borrador
+function guardarCotizacion() {
+    const datos = recopilarDatos();
+    
+    fetch('{{ route("asesores.cotizaciones.guardar") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+        },
+        body: JSON.stringify({
+            tipo: 'borrador',
+            cliente: datos.cliente,
+            productos: datos.productos,
+            tecnicas: datos.tecnicas,
+            observaciones_generales: datos.observaciones_generales
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✓ Cotización guardada en borradores');
+            window.location.href = '{{ route("asesores.cotizaciones.index") }}';
+        } else {
+            alert('✗ Error al guardar: ' + (data.message || 'Error desconocido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('✗ Error al guardar la cotización');
+    });
+}
+
+// Enviar cotización
+function enviarCotizacion() {
+    const datos = recopilarDatos();
+    
+    if (!datos.cliente.trim()) {
+        alert('✗ Por favor ingresa el nombre del cliente');
+        return;
+    }
+    
+    if (datos.productos.length === 0) {
+        alert('✗ Por favor agrega al menos un producto');
+        return;
+    }
+    
+    fetch('{{ route("asesores.cotizaciones.guardar") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+        },
+        body: JSON.stringify({
+            tipo: 'enviada',
+            cliente: datos.cliente,
+            productos: datos.productos,
+            tecnicas: datos.tecnicas,
+            observaciones_generales: datos.observaciones_generales
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('✓ Cotización enviada correctamente');
+            window.location.href = '{{ route("asesores.cotizaciones.index") }}';
+        } else {
+            alert('✗ Error al enviar: ' + (data.message || 'Error desconocido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('✗ Error al enviar la cotización');
+    });
+}
+
+// Cerrar modal al hacer clic fuera
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('modalEspecificaciones');
+    if (e.target === modal) {
+        cerrarModalEspecificaciones();
+    }
 });
 </script>
 @endpush

@@ -65,6 +65,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::delete('/registros/{pedido}', [RegistroOrdenController::class, 'destroy'])->name('registros.destroy');
     Route::post('/registros/update-status', [RegistroOrdenController::class, 'updateStatus'])->name('registros.updateStatus');
     Route::get('/registros/{pedido}/entregas', [RegistroOrdenController::class, 'getEntregas'])->name('registros.entregas');
+    Route::get('/registros/{pedido}/images', [RegistroOrdenController::class, 'getImages'])->name('registros.images');
     Route::get('/api/registros-por-orden/{pedido}', [RegistroOrdenController::class, 'getRegistrosPorOrden'])->name('api.registros-por-orden');
     Route::post('/registros/{pedido}/edit-full', [RegistroOrdenController::class, 'editFullOrder'])->name('registros.editFull');
     Route::get('/bodega', [RegistroBodegaController::class, 'index'])->name('bodega.index');
@@ -178,6 +179,34 @@ Route::middleware(['auth', 'role:asesor'])->prefix('asesores')->name('asesores.'
     // Notificaciones
     Route::get('/notifications', [App\Http\Controllers\AsesoresController::class, 'getNotifications'])->name('notifications');
     Route::post('/notifications/mark-all-read', [App\Http\Controllers\AsesoresController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    
+    // ========================================
+    // COTIZACIONES - Gestión de cotizaciones y borradores
+    // ========================================
+    Route::get('/cotizaciones', [App\Http\Controllers\Asesores\CotizacionesController::class, 'index'])->name('cotizaciones.index');
+    Route::post('/cotizaciones/guardar', [App\Http\Controllers\Asesores\CotizacionesController::class, 'guardar'])->name('cotizaciones.guardar');
+    Route::post('/cotizaciones/{id}/imagenes', [App\Http\Controllers\Asesores\CotizacionesController::class, 'subirImagenes'])->name('cotizaciones.subir-imagenes');
+    Route::get('/cotizaciones/{id}', [App\Http\Controllers\Asesores\CotizacionesController::class, 'show'])->name('cotizaciones.show');
+    Route::get('/cotizaciones/{id}/editar-borrador', [App\Http\Controllers\Asesores\CotizacionesController::class, 'editarBorrador'])->name('cotizaciones.edit-borrador');
+    Route::delete('/cotizaciones/{id}', [App\Http\Controllers\Asesores\CotizacionesController::class, 'destroy'])->name('cotizaciones.destroy');
+    Route::patch('/cotizaciones/{id}/estado/{estado}', [App\Http\Controllers\Asesores\CotizacionesController::class, 'cambiarEstado'])->name('cotizaciones.cambiar-estado');
+    Route::post('/cotizaciones/{id}/aceptar', [App\Http\Controllers\Asesores\CotizacionesController::class, 'aceptarCotizacion'])->name('cotizaciones.aceptar');
+    
+    // ========================================
+    // CLIENTES - Gestión de clientes
+    // ========================================
+    Route::get('/clientes', [App\Http\Controllers\Asesores\ClientesController::class, 'index'])->name('clientes.index');
+    Route::post('/clientes', [App\Http\Controllers\Asesores\ClientesController::class, 'store'])->name('clientes.store');
+    Route::patch('/clientes/{id}', [App\Http\Controllers\Asesores\ClientesController::class, 'update'])->name('clientes.update');
+    Route::delete('/clientes/{id}', [App\Http\Controllers\Asesores\ClientesController::class, 'destroy'])->name('clientes.destroy');
+    
+    // ========================================
+    // REPORTES - Gestión de reportes
+    // ========================================
+    Route::get('/reportes', [App\Http\Controllers\Asesores\ReportesController::class, 'index'])->name('reportes.index');
+    Route::post('/reportes', [App\Http\Controllers\Asesores\ReportesController::class, 'store'])->name('reportes.store');
+    Route::patch('/reportes/{id}', [App\Http\Controllers\Asesores\ReportesController::class, 'update'])->name('reportes.update');
+    Route::delete('/reportes/{id}', [App\Http\Controllers\Asesores\ReportesController::class, 'destroy'])->name('reportes.destroy');
 });
 
 require __DIR__.'/auth.php';
