@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Cotizacion extends Model
 {
@@ -13,7 +14,10 @@ class Cotizacion extends Model
 
     protected $fillable = [
         'user_id',
+        'numero_cotizacion',
+        'fecha',
         'cliente',
+        'asesora',
         'productos',
         'especificaciones',
         'imagenes',
@@ -23,6 +27,7 @@ class Cotizacion extends Model
         'observaciones_generales',
         'es_borrador',
         'estado',
+        'cotizar_segun_indicaciones'
     ];
 
     protected $casts = [
@@ -33,6 +38,7 @@ class Cotizacion extends Model
         'ubicaciones' => 'array',
         'observaciones_generales' => 'array',
         'es_borrador' => 'boolean',
+        'fecha' => 'date'
     ];
 
     /**
@@ -49,5 +55,21 @@ class Cotizacion extends Model
     public function pedidoProduccion()
     {
         return $this->hasOne(PedidoProduccion::class);
+    }
+
+    /**
+     * Relación con prendas de la cotización
+     */
+    public function prendas(): HasMany
+    {
+        return $this->hasMany(PrendaCotizacion::class);
+    }
+
+    /**
+     * Relación con formatos de cotización
+     */
+    public function formatos(): HasMany
+    {
+        return $this->hasMany(FormatoCotizacion::class);
     }
 }
