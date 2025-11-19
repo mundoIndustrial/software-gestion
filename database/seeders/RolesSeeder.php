@@ -23,5 +23,17 @@ class RolesSeeder extends Seeder
             'description' => 'Contador - Gestión de cotizaciones',
             'requires_credentials' => true,
         ]);
+
+        \App\Models\Role::create([
+            'name' => 'cortador',
+            'description' => 'Operario de piso de corte',
+            'requires_credentials' => false,
+        ]);
+
+        \App\Models\Role::create([
+            'name' => 'supervisor',
+            'description' => 'Supervisor de gestión de órdenes (solo lectura)',
+            'requires_credentials' => true,
+        ]);
     }
 }

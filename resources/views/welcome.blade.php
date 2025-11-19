@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Mundo Industrial</title>
     
     <!-- Favicon -->
@@ -10,7 +11,8 @@
     <link rel="shortcut icon" href="{{ asset('mundo_icon.ico') }}" type="image/x-icon">
     <link rel="apple-touch-icon" href="{{ asset('mundo_icon.ico') }}">
     
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Scripts -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="bg-gray-900 text-white min-h-screen relative overflow-hidden font-sans">
 
@@ -68,59 +70,6 @@
 
     </div>
 
-    <!-- Animaciones mejoradas -->
-    <style>
-        @keyframes fadeIn {
-            from { 
-                opacity: 0; 
-                transform: translateY(-20px);
-            }
-            to { 
-                opacity: 1; 
-                transform: translateY(0);
-            }
-        }
-        .animate-fadeIn { 
-            animation: fadeIn 1s ease-out forwards; 
-        }
-
-        @keyframes slideIn {
-            from { 
-                transform: translateY(40px); 
-                opacity: 0; 
-            }
-            to { 
-                transform: translateY(0); 
-                opacity: 1; 
-            }
-        }
-        .animate-slideIn { 
-            animation: slideIn 1s ease-out forwards; 
-            animation-delay: 0.3s;
-            opacity: 0;
-        }
-
-        @keyframes fadeInUp {
-            from { 
-                opacity: 0; 
-                transform: translateY(20px); 
-            }
-            to { 
-                opacity: 1; 
-                transform: translateY(0); 
-            }
-        }
-        .animate-fadeInUp { 
-            animation: fadeInUp 0.8s ease-out forwards; 
-            opacity: 0;
-        }
-
-        /* Efecto de brillo sutil en el fondo */
-        @keyframes shimmer {
-            0% { background-position: -1000px 0; }
-            100% { background-position: 1000px 0; }
-        }
-    </style>
 
 </body>
 </html>

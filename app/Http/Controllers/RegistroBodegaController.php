@@ -78,6 +78,19 @@ class RegistroBodegaController extends Controller
                     $uniqueValues = array_values(array_unique($uniqueValues));
                 }
                 
+                // Si es descripcion, devolver también los IDs asociados
+                if ($column === 'descripcion') {
+                    $result = [];
+                    foreach ($uniqueValues as $desc) {
+                        $ids = TablaOriginalBodega::where('descripcion', $desc)->pluck('pedido')->toArray();
+                        $result[] = [
+                            'value' => $desc,
+                            'ids' => $ids
+                        ];
+                    }
+                    return response()->json(['unique_values' => $uniqueValues, 'value_ids' => $result]);
+                }
+                
                 return response()->json(['unique_values' => $uniqueValues]);
             }
             return response()->json(['error' => 'Invalid column'], 400);
@@ -97,11 +110,55 @@ class RegistroBodegaController extends Controller
         // Detectar si hay filtro de total_de_dias_ para procesarlo después
         $filterTotalDias = null;
         
+        // Manejar filtro especial de IDs de pedidos (para descripción)
+        if ($request->has('filter_pedido_ids') && !empty($request->filter_pedido_ids)) {
+            $pedidoIds = explode(',', $request->filter_pedido_ids);
+            $pedidoIds = array_filter(array_map('trim', $pedidoIds));
+            
+            \Log::info("🆔 FILTRO POR IDS DE PEDIDOS", [
+                'ids_recibidos' => $pedidoIds,
+                'cantidad_ids' => count($pedidoIds)
+            ]);
+            
+            if (!empty($pedidoIds)) {
+                $query->whereIn('pedido', $pedidoIds);
+            }
+        }
+        
         // Apply column filters (dynamic for all columns)
         foreach ($request->all() as $key => $value) {
             if (str_starts_with($key, 'filter_') && !empty($value)) {
                 $column = str_replace('filter_', '', $key);
-                $values = explode(',', $value);
+                
+                // LOG: Registrar valor RAW recibido
+                \Log::info("📥 VALOR RAW RECIBIDO", [
+                    'columna' => $column,
+                    'longitud' => strlen($value),
+                    'primeros_100_chars' => substr($value, 0, 100),
+                    'ultimos_100_chars' => substr($value, -100)
+                ]);
+                
+                // Usar separador especial para valores que pueden contener comas y saltos de línea
+                $separator = '|||FILTER_SEPARATOR|||';
+                $values = explode($separator, $value);
+                
+                // LOG: Registrar después de explode
+                \Log::info("🔀 DESPUÉS DE EXPLODE", [
+                    'cantidad_valores_antes_filter' => count($values),
+                    'valores_raw' => array_map(function($v) { return substr($v, 0, 50); }, $values)
+                ]);
+                
+                // Limpiar valores vacíos y trimear espacios
+                $values = array_filter(array_map('trim', $values));
+                
+                if (empty($values)) continue;
+
+                // LOG: Registrar valores del filtro
+                \Log::info("🔍 FILTRO APLICADO", [
+                    'columna' => $column,
+                    'valores_recibidos' => array_map(function($v) { return substr($v, 0, 50); }, $values),
+                    'cantidad_valores' => count($values)
+                ]);
 
                 // Whitelist de columnas permitidas para seguridad
                 $allowedColumns = [
@@ -123,6 +180,7 @@ class RegistroBodegaController extends Controller
                     // Si es total_de_dias_, guardarlo para filtrar después del cálculo
                     if ($column === 'total_de_dias_') {
                         $filterTotalDias = array_map('intval', $values);
+                        \Log::info("📊 FILTRO TOTAL DÍAS", ['valores' => $filterTotalDias]);
                         continue;
                     }
                     
@@ -140,8 +198,22 @@ class RegistroBodegaController extends Controller
                                 }
                             }
                         });
+                        \Log::info("📅 FILTRO FECHA APLICADO", ['columna' => $column, 'valores' => $values]);
                     } else {
-                        $query->whereIn($column, $values);
+                        // Para columnas de texto, buscar coincidencia exacta
+                        // Los valores vienen de get_unique_values, así que son valores completos
+                        // Usar TRIM para ignorar espacios adicionales
+                        $query->where(function($q) use ($column, $values) {
+                            foreach ($values as $value) {
+                                // Buscar coincidencia exacta (case-insensitive)
+                                $q->orWhereRaw("TRIM(LOWER({$column})) = LOWER(?)", [trim($value)]);
+                            }
+                        });
+                        \Log::info("📝 FILTRO TEXTO APLICADO", [
+                            'columna' => $column,
+                            'valores_trimmed' => $values,
+                            'sql_generado' => "TRIM(LOWER({$column})) = LOWER(?)"
+                        ]);
                     }
                 }
             }
@@ -181,6 +253,15 @@ class RegistroBodegaController extends Controller
             $totalDiasCalculados = $this->calcularTotalDiasBatch($ordenes->items(), $festivos);
         } else {
             $ordenes = $query->paginate(50);
+
+            // LOG: Registrar cantidad de resultados
+            \Log::info("📊 RESULTADOS DEL FILTRO", [
+                'total_registros' => $ordenes->total(),
+                'registros_en_pagina' => count($ordenes->items()),
+                'pagina_actual' => $ordenes->currentPage(),
+                'sql_query' => $query->toSql(),
+                'sql_bindings' => $query->getBindings()
+            ]);
 
             // Cálculo optimizado tipo fórmula array (como Google Sheets)
             // Una sola operación para calcular TODAS las órdenes visibles
