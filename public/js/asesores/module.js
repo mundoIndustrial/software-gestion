@@ -90,9 +90,9 @@ const CONFIG = {
         '#38bdf8', // Cyan brillante
         '#8b5cf6', // Púrpura vibrante
         '#ec4899', // Rosa fucsia
-        '#3b82f6', // Azul brillante (reemplazo naranja intenso)
+        '#f97316', // Naranja intenso
         '#10b981', // Verde esmeralda
-        '#0ea5e9', // Azul cielo (reemplazo ámbar dorado)
+        '#f59e0b', // Ámbar dorado
         '#6366f1', // Índigo
         '#14b8a6', // Teal
         '#ef4444', // Rojo brillante
@@ -100,17 +100,18 @@ const CONFIG = {
         '#06b6d4', // Cyan oscuro
         '#84cc16', // Lima
         '#f472b6', // Rosa claro
-        '#3b82f6', // Azul brillante (reemplazo naranja claro)
+        '#fb923c', // Naranja claro
         '#22c55e', // Verde brillante
-        '#0ea5e9', // Azul cielo (reemplazo amarillo)
+        '#eab308', // Amarillo
         '#3b82f6', // Azul brillante
+        '#d946ef', // Magenta
         '#0ea5e9', // Azul cielo
         '#22d3ee', // Cyan claro
         '#a78bfa', // Púrpura pastel
-        '#3b82f6', // Azul brillante (reemplazo amarillo dorado)
+        '#fbbf24', // Amarillo dorado
         '#34d399', // Verde menta
-        '#3b82f6', // Azul brillante (reemplazo rosa coral)
-        '#0ea5e9'  // Azul cielo (reemplazo naranja melocotón)
+        '#fb7185', // Rosa coral
+        '#fdba74', // Naranja melocotón
     ],
     months: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
     currentYear: new Date().getFullYear(),
