@@ -208,11 +208,10 @@ class CotizacionesController extends Controller
                 'imagenes' => $todasLasImagenes
             ]);
 
-            // Guardar en BD
-            $jsonEncodado = json_encode($todasLasImagenes);
-            \Log::info('JSON a guardar', ['json' => $jsonEncodado]);
+            // Guardar en BD (como array, Laravel lo convierte a JSON automáticamente)
+            \Log::info('Imágenes a guardar', ['imagenes' => $todasLasImagenes]);
             
-            $resultado = $cotizacion->update(['imagenes' => $jsonEncodado]);
+            $resultado = $cotizacion->update(['imagenes' => $todasLasImagenes]);
             
             \Log::info('Actualización en BD', [
                 'resultado' => $resultado,

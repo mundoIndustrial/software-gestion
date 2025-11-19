@@ -182,58 +182,6 @@
         box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);
     }
 
-    .imagenes-container {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-        margin-bottom: 2.5rem;
-    }
-
-    .imagenes-gallery {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-        margin-top: 1rem;
-    }
-
-    .imagen-item {
-        position: relative;
-        overflow: hidden;
-        border-radius: 6px;
-        width: 120px;
-        height: 120px;
-        background: #f1f5f9;
-        border: 2px solid #e2e8f0;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-        flex-shrink: 0;
-    }
-
-    .imagen-item:hover {
-        border-color: var(--secondary);
-        transform: scale(1.05);
-        box-shadow: 0 8px 16px rgba(14, 165, 233, 0.2);
-    }
-
-    .imagen-item img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .imagen-placeholder {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        height: 100%;
-        background: #f1f5f9;
-        color: #cbd5e1;
-        font-size: 1.5rem;
-    }
-
     .observaciones-box {
         background: white;
         padding: 1.5rem;
@@ -411,7 +359,7 @@
                         </td>
                         <td style="text-align: center;">
                             @php
-                                $imagenProducto = $imagenes[$index] ?? null;
+                                $imagenProducto = $cotizacion->imagenes[$index] ?? null;
                             @endphp
                             @if($imagenProducto)
                                 <img src="{{ $imagenProducto }}" alt="Producto" 
@@ -446,157 +394,6 @@
         </div>
     @endif
 
-    <!-- Imágenes -->
-    @php
-        $imagenes = [];
-        if ($cotizacion->imagenes) {
-            if (is_array($cotizacion->imagenes)) {
-                $imagenes = $cotizacion->imagenes;
-            } else {
-                $imagenes = json_decode($cotizacion->imagenes, true) ?? [];
-            }
-        }
-    @endphp
-    
-    <div class="imagenes-container">
-        <div class="section-title" style="margin-top: 0; margin-bottom: 0;">
-            <i class="fas fa-images"></i> Imágenes
-        </div>
-        
-        @if(count($imagenes) > 0)
-            <div class="imagenes-gallery">
-                @foreach($imagenes as $imagen)
-                    <div class="imagen-item">
-                        @if(is_string($imagen))
-                            <img src="{{ $imagen }}" alt="Cotización" loading="lazy">
-                        @elseif(isset($imagen['url']))
-                            <img src="{{ $imagen['url'] }}" alt="Cotización" loading="lazy">
-                        @else
-                            <div class="imagen-placeholder">
-                                <i class="fas fa-image"></i>
-                            </div>
-                        @endif
-                    </div>
-                @endforeach
-            </div>
-        @else
-            <p style="color: #94a3b8; font-style: italic; margin-top: 1rem;">Sin imágenes agregadas</p>
-        @endif
-        
-        <!-- Formulario para subir imágenes -->
-        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e2e8f0;">
-            <form id="form-imagenes" enctype="multipart/form-data" style="display: flex; gap: 1rem; align-items: flex-end;">
-                @csrf
-                <div style="flex: 1;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--primary);">Subir Imágenes</label>
-                    <input type="file" name="imagenes[]" multiple accept="image/*" style="padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 6px; width: 100%;">
-                </div>
-                <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--primary);">Tipo</label>
-                    <select name="tipo" style="padding: 0.5rem; border: 1px solid #e2e8f0; border-radius: 6px;">
-                        <option value="general">General</option>
-                        <option value="bordado">Bordado</option>
-                        <option value="estampado">Estampado</option>
-                        <option value="tela">Tela</option>
-                        <option value="prenda">Prenda</option>
-                    </select>
-                </div>
-                <button type="submit" class="btn-custom btn-editar" style="margin: 0;">
-                    <i class="fas fa-upload"></i> Subir
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal para ver imagen -->
-    <div id="modal-imagen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center;">
-        <div style="background: white; border-radius: 8px; padding: 2rem; max-width: 600px; max-height: 80vh; overflow: auto; position: relative;">
-            <button onclick="cerrarModalImagen()" style="position: absolute; top: 1rem; right: 1rem; background: #e74c3c; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 1.2rem;">
-                ✕
-            </button>
-            <h3 id="modal-titulo" style="margin-top: 0; color: var(--primary);">Imagen</h3>
-            <img id="modal-imagen-src" src="" alt="Imagen" style="width: 100%; border-radius: 4px;">
-        </div>
-    </div>
-
-    <script>
-        function abrirModalImagen(src, titulo) {
-            document.getElementById('modal-imagen-src').src = src;
-            document.getElementById('modal-titulo').textContent = titulo;
-            document.getElementById('modal-imagen').style.display = 'flex';
-        }
-
-        function cerrarModalImagen() {
-            document.getElementById('modal-imagen').style.display = 'none';
-        }
-
-        // Cerrar modal al hacer click fuera
-        document.getElementById('modal-imagen')?.addEventListener('click', (e) => {
-            if (e.target.id === 'modal-imagen') {
-                cerrarModalImagen();
-            }
-        });
-
-        // Cerrar modal con ESC
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                cerrarModalImagen();
-            }
-        });
-
-        console.log('Inicializando script de imágenes...');
-        
-        const formImagenes = document.getElementById('form-imagenes');
-        console.log('Formulario encontrado:', formImagenes);
-        
-        if (formImagenes) {
-            formImagenes.addEventListener('submit', async (e) => {
-                console.log('Submit del formulario disparado');
-                e.preventDefault();
-                
-                const archivos = document.querySelector('input[name="imagenes[]"]').files;
-                console.log('Archivos seleccionados:', archivos.length);
-                
-                if (archivos.length === 0) {
-                    alert('Por favor selecciona al menos una imagen');
-                    return;
-                }
-                
-                const formData = new FormData(e.target);
-                const cotizacionId = {{ $cotizacion->id }};
-                
-                console.log('Enviando a:', `/asesores/cotizaciones/${cotizacionId}/imagenes`);
-                console.log('FormData keys:', Array.from(formData.keys()));
-                
-                try {
-                    const response = await fetch(`/asesores/cotizaciones/${cotizacionId}/imagenes`, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
-                        }
-                    });
-                    
-                    console.log('Response status:', response.status);
-                    
-                    const data = await response.json();
-                    console.log('Response data:', data);
-                    
-                    if (data.success) {
-                        alert('Imágenes subidas correctamente');
-                        location.reload();
-                    } else {
-                        alert('Error: ' + data.message);
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert('Error al subir imágenes: ' + error.message);
-                }
-            });
-        } else {
-            console.warn('Formulario de imágenes no encontrado');
-        }
-    </script>
 
     <!-- Observaciones Técnicas -->
     @if($cotizacion->observaciones_tecnicas)
@@ -633,4 +430,148 @@
     </div>
 </div>
 </div>
+
+<!-- Modal para ver imágenes en grande -->
+<div id="modalImagen" style="display: none !important; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.95); z-index: 9999; align-items: center; justify-content: center; padding: 0; margin: 0; overflow: hidden;">
+    <div style="position: relative; width: calc(100vw - 160px); height: calc(100vh - 120px); display: flex; align-items: center; justify-content: center;">
+        <!-- Imagen -->
+        <img id="imagenModal" src="" alt="Imagen" style="max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);"">
+        
+        <!-- Botón cerrar -->
+        <button onclick="cerrarModalImagen()" style="position: absolute; top: 20px; right: 20px; background: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 24px; display: flex; align-items: center; justify-content: center; color: #333; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+            ✕
+        </button>
+        
+        <!-- Botón anterior -->
+        <button id="btnAnterior" onclick="imagenAnterior()" style="position: absolute; left: 20px; top: 50%; transform: translateY(-50%); background: rgba(255, 255, 255, 0.8); border: none; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; font-size: 24px; display: flex; align-items: center; justify-content: center; color: #333; transition: all 0.3s; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+            ‹
+        </button>
+        
+        <!-- Botón siguiente -->
+        <button id="btnSiguiente" onclick="imagenSiguiente()" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); background: rgba(255, 255, 255, 0.8); border: none; width: 50px; height: 50px; border-radius: 50%; cursor: pointer; font-size: 24px; display: flex; align-items: center; justify-content: center; color: #333; transition: all 0.3s; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
+            ›
+        </button>
+        
+        <!-- Contador de imágenes -->
+        <div id="contadorImagenes" style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.6); color: white; padding: 10px 20px; border-radius: 20px; font-size: 14px; font-weight: 600;">
+            <span id="imagenActual">1</span> / <span id="totalImagenes">1</span>
+        </div>
+    </div>
+</div>
+
+<script>
+let todasLasImagenes = [];
+let imagenActualIndex = 0;
+
+function abrirModalImagen(src, titulo) {
+    console.log('🔵 abrirModalImagen llamado con:', src);
+    
+    // Obtener todas las imágenes de la tabla
+    const imagenes = document.querySelectorAll('.productos-table img[src*="/storage/cotizaciones/"]');
+    console.log('📸 Imágenes encontradas:', imagenes.length);
+    
+    todasLasImagenes = Array.from(imagenes).map(img => img.src);
+    console.log('📸 Array de imágenes:', todasLasImagenes);
+    
+    // Encontrar el índice de la imagen clickeada
+    imagenActualIndex = todasLasImagenes.indexOf(src);
+    if (imagenActualIndex === -1) {
+        imagenActualIndex = 0;
+    }
+    
+    console.log('📍 Índice actual:', imagenActualIndex);
+    
+    mostrarImagen();
+    
+    const modal = document.getElementById('modalImagen');
+    console.log('🎬 Modal encontrado:', modal);
+    
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.style.visibility = 'visible';
+        modal.style.opacity = '1';
+        console.log('✅ Modal mostrado');
+    }
+    
+    document.body.style.overflow = 'hidden';
+}
+
+function mostrarImagen() {
+    const img = document.getElementById('imagenModal');
+    const contador = document.getElementById('imagenActual');
+    const total = document.getElementById('totalImagenes');
+    const btnAnterior = document.getElementById('btnAnterior');
+    const btnSiguiente = document.getElementById('btnSiguiente');
+    
+    if (todasLasImagenes.length > 0) {
+        img.src = todasLasImagenes[imagenActualIndex];
+        contador.textContent = imagenActualIndex + 1;
+        total.textContent = todasLasImagenes.length;
+        
+        // Mostrar/ocultar botones según corresponda
+        btnAnterior.style.display = imagenActualIndex > 0 ? 'flex' : 'none';
+        btnSiguiente.style.display = imagenActualIndex < todasLasImagenes.length - 1 ? 'flex' : 'none';
+    }
+}
+
+function imagenAnterior() {
+    if (imagenActualIndex > 0) {
+        imagenActualIndex--;
+        mostrarImagen();
+    }
+}
+
+function imagenSiguiente() {
+    if (imagenActualIndex < todasLasImagenes.length - 1) {
+        imagenActualIndex++;
+        mostrarImagen();
+    }
+}
+
+function cerrarModalImagen() {
+    const modal = document.getElementById('modalImagen');
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+    todasLasImagenes = [];
+    imagenActualIndex = 0;
+}
+
+// Cerrar modal al hacer clic fuera de la imagen
+document.getElementById('modalImagen')?.addEventListener('click', function(e) {
+    if (e.target === this) {
+        cerrarModalImagen();
+    }
+});
+
+// Cerrar modal con tecla ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        cerrarModalImagen();
+    }
+    // Navegar con flechas
+    if (document.getElementById('modalImagen').style.display === 'flex') {
+        if (e.key === 'ArrowLeft') {
+            imagenAnterior();
+        } else if (e.key === 'ArrowRight') {
+            imagenSiguiente();
+        }
+    }
+});
+
+// Hover effects
+document.getElementById('btnAnterior')?.addEventListener('mouseover', function() {
+    this.style.background = 'rgba(255, 255, 255, 1)';
+});
+document.getElementById('btnAnterior')?.addEventListener('mouseout', function() {
+    this.style.background = 'rgba(255, 255, 255, 0.8)';
+});
+
+document.getElementById('btnSiguiente')?.addEventListener('mouseover', function() {
+    this.style.background = 'rgba(255, 255, 255, 1)';
+});
+document.getElementById('btnSiguiente')?.addEventListener('mouseout', function() {
+    this.style.background = 'rgba(255, 255, 255, 0.8)';
+});
+</script>
+
 @endsection

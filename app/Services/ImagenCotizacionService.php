@@ -67,11 +67,12 @@ class ImagenCotizacionService
 
             \Log::info('Archivo guardado en storage', ['ruta' => $ruta]);
 
-            // Retornar ruta pública
-            $rutaPublica = Storage::disk('public')->url($ruta);
-            \Log::info('Ruta pública generada', ['ruta_publica' => $rutaPublica]);
+            // Retornar ruta relativa (sin URL base)
+            // Formato: /storage/cotizaciones/37/prenda/37_prenda_20251119174859_197.jpg
+            $rutaRelativa = '/storage/' . $ruta;
+            \Log::info('Ruta relativa generada', ['ruta_relativa' => $rutaRelativa]);
 
-            return $rutaPublica;
+            return $rutaRelativa;
         } catch (\Exception $e) {
             \Log::error('Error al guardar imagen de cotización', [
                 'cotizacion_id' => $cotizacionId,
