@@ -18,12 +18,24 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse($cotizaciones as $cotizacion)
+                @php
+                    // Filtrar solo cotizaciones ENVIADAS (no borradores)
+                    $cotizacionesFiltradas = $cotizaciones->where('es_borrador', false)->values();
+                    // Paginar manualmente: 25 por página
+                    $perPage = 25;
+                    $currentPage = request()->get('page', 1);
+                    $total = $cotizacionesFiltradas->count();
+                    $totalPages = ceil($total / $perPage);
+                    $offset = ($currentPage - 1) * $perPage;
+                    $cotizacionesPaginadas = $cotizacionesFiltradas->slice($offset, $perPage);
+                @endphp
+                
+                @forelse($cotizacionesPaginadas as $cotizacion)
                     <tr>
-                        <td><strong>{{ $cotizacion->numero_cotizacion }}</strong></td>
-                        <td>{{ $cotizacion->fecha->format('d/m/Y') }}</td>
-                        <td>{{ $cotizacion->cliente }}</td>
-                        <td>{{ $cotizacion->asesora }}</td>
+                        <td><strong>COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}</strong></td>
+                        <td>{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y H:i') : 'N/A' }}</td>
+                        <td>{{ $cotizacion->cliente ?? 'N/A' }}</td>
+                        <td>{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? 'N/A') }}</td>
                         <td>
                             <button class="btn btn-primary" onclick="openCotizacionModal({{ $cotizacion->id }})">
                                 <span class="material-symbols-rounded">visibility</span>
@@ -41,6 +53,65 @@
                 @endforelse
             </tbody>
         </table>
+        
+        <!-- Paginación -->
+        @if($totalPages > 1)
+        <div style="display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 2rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+            <!-- Botón Anterior -->
+            @if($currentPage > 1)
+                <a href="?page=1" class="pagination-btn" style="padding: 0.5rem 0.75rem; background: #1e5ba8; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; font-weight: 600;">
+                    « Primera
+                </a>
+                <a href="?page={{ $currentPage - 1 }}" class="pagination-btn" style="padding: 0.5rem 0.75rem; background: #1e5ba8; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; font-weight: 600;">
+                    ‹ Anterior
+                </a>
+            @else
+                <span style="padding: 0.5rem 0.75rem; background: #e0e0e0; color: #999; border-radius: 4px; font-weight: 600;">
+                    « Primera
+                </span>
+                <span style="padding: 0.5rem 0.75rem; background: #e0e0e0; color: #999; border-radius: 4px; font-weight: 600;">
+                    ‹ Anterior
+                </span>
+            @endif
+            
+            <!-- Números de página -->
+            <div style="display: flex; gap: 0.25rem; align-items: center;">
+                @for($i = max(1, $currentPage - 2); $i <= min($totalPages, $currentPage + 2); $i++)
+                    @if($i == $currentPage)
+                        <span style="padding: 0.5rem 0.75rem; background: #1e5ba8; color: white; border-radius: 4px; font-weight: 700; min-width: 2.5rem; text-align: center;">
+                            {{ $i }}
+                        </span>
+                    @else
+                        <a href="?page={{ $i }}" style="padding: 0.5rem 0.75rem; background: white; color: #1e5ba8; border: 1px solid #1e5ba8; border-radius: 4px; text-decoration: none; font-weight: 600; min-width: 2.5rem; text-align: center; transition: all 0.2s;">
+                            {{ $i }}
+                        </a>
+                    @endif
+                @endfor
+            </div>
+            
+            <!-- Botón Siguiente -->
+            @if($currentPage < $totalPages)
+                <a href="?page={{ $currentPage + 1 }}" class="pagination-btn" style="padding: 0.5rem 0.75rem; background: #1e5ba8; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; font-weight: 600;">
+                    Siguiente ›
+                </a>
+                <a href="?page={{ $totalPages }}" class="pagination-btn" style="padding: 0.5rem 0.75rem; background: #1e5ba8; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; font-weight: 600;">
+                    Última »
+                </a>
+            @else
+                <span style="padding: 0.5rem 0.75rem; background: #e0e0e0; color: #999; border-radius: 4px; font-weight: 600;">
+                    Siguiente ›
+                </span>
+                <span style="padding: 0.5rem 0.75rem; background: #e0e0e0; color: #999; border-radius: 4px; font-weight: 600;">
+                    Última »
+                </span>
+            @endif
+        </div>
+        
+        <!-- Info de paginación -->
+        <div style="text-align: center; margin-top: 1rem; color: #666; font-size: 0.9rem;">
+            Mostrando {{ ($offset + 1) }} a {{ min($offset + $perPage, $total) }} de {{ $total }} cotizaciones
+        </div>
+        @endif
     </div>
 </section>
 
@@ -85,16 +156,6 @@
 
     function closeCotizacionModal() {
         document.getElementById('cotizacionModal').style.display = 'none';
-    }
-
-    function viewCotizacion(cotizacionId) {
-        // Implementar vista de cotización
-        console.log('Ver cotización:', cotizacionId);
-    }
-
-    function viewCotizacionBordado(cotizacionId) {
-        // Implementar vista de cotización bordado
-        console.log('Ver cotización bordado:', cotizacionId);
     }
 
     // Cerrar modal al hacer clic fuera
