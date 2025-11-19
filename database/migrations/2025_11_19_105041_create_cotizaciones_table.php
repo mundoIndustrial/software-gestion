@@ -15,8 +15,14 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             
-            // PASO 1: CLIENTE
+            // INFORMACIÓN BÁSICA
+            $table->string('numero_cotizacion')->unique()->nullable();
+            $table->date('fecha')->nullable();
             $table->string('cliente')->nullable();
+            $table->string('asesora')->nullable();
+            
+            // PASO 1: CLIENTE
+            $table->string('cotizar_segun_indicaciones')->nullable();
             
             // PASO 2: PRODUCTOS
             $table->json('productos')->nullable(); // Array de productos con: nombre_producto, descripcion, fotos, imagen_tela
@@ -35,6 +41,24 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
         });
+
+        Schema::create('prendas_cotizacion', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('cotizacion_id')->constrained('cotizaciones')->onDelete('cascade');
+            $table->longText('descripcion')->nullable();
+            $table->json('especificaciones')->nullable();
+            $table->string('imagen_url')->nullable();
+            $table->json('tallas')->nullable(); // Tallas con precios: {"S": 50000, "M": 55000, ...}
+            $table->json('aspectos_a_verificar')->nullable();
+            $table->string('forma_pago')->nullable();
+            $table->string('regimen')->nullable();
+            $table->string('filete_envio')->nullable();
+            $table->string('se_ha_vendido')->nullable();
+            $table->decimal('ultima_venta', 12, 2)->nullable();
+            $table->longText('observacion')->nullable();
+            $table->string('estado')->default('Pendiente');
+            $table->timestamps();
+        });
     }
 
     /**
@@ -42,6 +66,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('prendas_cotizacion');
         Schema::dropIfExists('cotizaciones');
     }
 };
