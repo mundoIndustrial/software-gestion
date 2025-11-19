@@ -11,8 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Esta migración es un placeholder para mantener el historial
-        // Las fechas se manejan en el modelo y controlador
+        Schema::create('componentes_prenda', function (Blueprint $table) {
+            $table->id();
+            $table->string('nombre')->unique();
+            $table->text('descripcion')->nullable();
+            $table->timestamps();
+        });
     }
 
     /**
@@ -20,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // No hay cambios que revertir
+        Schema::dropIfExists('componentes_prenda');
     }
 };

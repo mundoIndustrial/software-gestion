@@ -25,6 +25,9 @@ class DatabaseSeeder extends Seeder
             OperariosCortadoresSeeder::class, // Operarios de corte con IDs fijos (3, 4, 5)
             HorasSeeder::class,
             MaquinasTelasSeeder::class, // Seeder consolidado para máquinas, telas y tiempos de ciclo
+            ComponentePrendaSeeder::class, // Seeder para componentes de prendas
+            CotizacionSeeder::class, // Seeder para cotizaciones del módulo contador
+            FormatoCotizacionSeeder::class, // Seeder para formatos de cotización
         ]);
     }
 }

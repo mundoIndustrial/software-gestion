@@ -13,26 +13,14 @@ class RolesSeeder extends Seeder
     public function run(): void
     {
         \App\Models\Role::create([
-            'name' => 'admin',
-            'description' => 'Administrador del sistema',
-            'requires_credentials' => true,
-        ]);
-
-        \App\Models\Role::create([
-            'name' => 'operador',
-            'description' => 'Operador de producción',
-            'requires_credentials' => true,
-        ]);
-
-        \App\Models\Role::create([
-            'name' => 'cortador',
-            'description' => 'Operario de piso de corte',
-            'requires_credentials' => false,
-        ]);
-
-        \App\Models\Role::create([
             'name' => 'asesor',
             'description' => 'Asesor de ventas - Gestión de órdenes',
+            'requires_credentials' => true,
+        ]);
+
+        \App\Models\Role::create([
+            'name' => 'contador',
+            'description' => 'Contador - Gestión de cotizaciones',
             'requires_credentials' => true,
         ]);
     }
