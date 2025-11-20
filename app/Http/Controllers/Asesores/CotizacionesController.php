@@ -185,7 +185,7 @@ class CotizacionesController extends Controller
                 'rutas' => $rutas
             ]);
 
-            // Obtener imágenes actuales
+            // Obtener imágenes actuales (estructura por tipo)
             $imagenesActuales = [];
             if ($cotizacion->imagenes) {
                 \Log::info('Imágenes actuales encontradas', [
@@ -195,33 +195,55 @@ class CotizacionesController extends Controller
                 $imagenesActuales = is_array($cotizacion->imagenes) ? $cotizacion->imagenes : json_decode($cotizacion->imagenes, true) ?? [];
             }
             
+            // Asegurar que la estructura es un array asociativo por tipo
+            if (!isset($imagenesActuales['prenda'])) {
+                $imagenesActuales['prenda'] = [];
+            }
+            if (!isset($imagenesActuales['tela'])) {
+                $imagenesActuales['tela'] = [];
+            }
+            if (!isset($imagenesActuales['general'])) {
+                $imagenesActuales['general'] = [];
+            }
+            
             \Log::info('Imágenes actuales decodificadas', [
                 'cantidad' => count($imagenesActuales),
                 'imagenes' => $imagenesActuales
             ]);
 
-            // Combinar imágenes
-            $todasLasImagenes = array_merge($imagenesActuales, $rutas);
+            // Combinar imágenes por tipo
+            $tipo = $request->input('tipo', 'general');
+            if (isset($imagenesActuales[$tipo])) {
+                $imagenesActuales[$tipo] = array_merge($imagenesActuales[$tipo], $rutas);
+            } else {
+                $imagenesActuales[$tipo] = $rutas;
+            }
             
             \Log::info('Todas las imágenes combinadas', [
-                'cantidad_total' => count($todasLasImagenes),
-                'imagenes' => $todasLasImagenes
+                'cantidad_total' => count($imagenesActuales),
+                'imagenes' => $imagenesActuales
             ]);
 
             // Guardar en BD (como array, Laravel lo convierte a JSON automáticamente)
-            \Log::info('Imágenes a guardar', ['imagenes' => $todasLasImagenes]);
+            \Log::info('Imágenes a guardar', ['imagenes' => $imagenesActuales]);
             
-            $resultado = $cotizacion->update(['imagenes' => $todasLasImagenes]);
+            $resultado = $cotizacion->update(['imagenes' => $imagenesActuales]);
             
             \Log::info('Actualización en BD', [
                 'resultado' => $resultado,
                 'imagenes_guardadas' => $cotizacion->fresh()->imagenes
             ]);
 
+            // Contar total de imágenes por tipo
+            $totalImagenes = 0;
+            foreach ($imagenesActuales as $tipo_imgs) {
+                $totalImagenes += count($tipo_imgs);
+            }
+
             \Log::info('Imágenes subidas exitosamente', [
                 'cotizacion_id' => $cotizacion->id,
                 'cantidad_nuevas' => count($rutas),
-                'cantidad_total' => count($todasLasImagenes),
+                'cantidad_total' => $totalImagenes,
                 'tipo' => $request->input('tipo')
             ]);
 
@@ -229,7 +251,7 @@ class CotizacionesController extends Controller
                 'success' => true,
                 'message' => 'Imágenes subidas correctamente',
                 'imagenes' => $rutas,
-                'total' => count($todasLasImagenes)
+                'total' => $totalImagenes
             ]);
         } catch (\Exception $e) {
             \Log::error('Error al subir imágenes', [
@@ -246,7 +268,7 @@ class CotizacionesController extends Controller
     }
 
     /**
-     * Eliminar cotización
+     * Eliminar cotización (solo si es borrador)
      */
     public function destroy($id)
     {
@@ -254,6 +276,14 @@ class CotizacionesController extends Controller
         
         if ($cotizacion->user_id !== Auth::id()) {
             abort(403);
+        }
+
+        // Solo permitir eliminar si es borrador
+        if (!$cotizacion->es_borrador) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No se pueden eliminar cotizaciones enviadas. Solo se pueden eliminar borradores.'
+            ], 403);
         }
 
         // Eliminar imágenes de almacenamiento
@@ -264,7 +294,7 @@ class CotizacionesController extends Controller
         
         return response()->json([
             'success' => true,
-            'message' => 'Cotización eliminada'
+            'message' => 'Borrador eliminado'
         ]);
     }
 

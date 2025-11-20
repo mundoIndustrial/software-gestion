@@ -77,7 +77,7 @@
             <div class="step-line"></div>
             <div class="step" data-step="2" onclick="irAlPaso(2)" onkeypress="if(event.key==='Enter') irAlPaso(2)" tabindex="0" role="tab" aria-selected="false" style="cursor: pointer;">
                 <div class="step-number">2</div>
-                <div class="step-label">PRODUCTOS</div>
+                <div class="step-label">PRENDAS</div>
             </div>
             <div class="step-line"></div>
             <div class="step" data-step="3" onclick="irAlPaso(3)" onkeypress="if(event.key==='Enter') irAlPaso(3)" tabindex="0" role="tab" aria-selected="false" style="cursor: pointer;">
@@ -139,10 +139,10 @@
             </div>
         </div>
 
-        <!-- PASO 2: AGREGAR PRODUCTOS -->
+        <!-- PASO 2: AGREGAR PRENDAS -->
         <div class="form-step" data-step="2">
             <div class="step-header">
-                <h2>PASO 2: PRODUCTOS DEL PEDIDO</h2>
+                <h2>PASO 2: PRENDAS DEL PEDIDO</h2>
                 <p>AGREGA LAS PRENDAS QUE TU CLIENTE QUIERE</p>
             </div>
 
@@ -154,6 +154,19 @@
                 <button type="button" class="btn-add-product-friendly" onclick="abrirModalEspecificaciones()" style="flex: 1; min-width: 200px;">
                     <i class="fas fa-clipboard-check"></i> ESPECIFICACIONES DE LA ORDEN
                 </button>
+            </div>
+
+            <!-- TIPO DE COTIZACIÓN DE PRENDAS -->
+            <div style="background: #f9f9f9; border: 2px solid #3498db; border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: center; gap: 1rem;">
+                <label for="cotizar_segun_indicaciones" style="font-weight: 700; font-size: 1rem; color: #333; white-space: nowrap;">
+                    <i class="fas fa-tag"></i> Favor cotizar según indicaciones
+                </label>
+                <select id="cotizar_segun_indicaciones" name="cotizar_segun_indicaciones" style="width: 120px; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; cursor: pointer; background-color: white; text-align: center;">
+                    <option value="">Selecciona</option>
+                    <option value="M">M</option>
+                    <option value="D">D</option>
+                    <option value="X">X</option>
+                </select>
             </div>
 
             <div class="form-section">
@@ -173,8 +186,9 @@
                     <table class="tabla-control-compacta">
                         <thead>
                             <tr>
-                                <th style="width: 40%;">ITEM</th>
-                                <th style="width: 60%;">OBSERVACIONES</th>
+                                <th style="width: 30%; text-align: left;"></th>
+                                <th style="width: 15%; text-align: center;">SELECCIONAR</th>
+                                <th style="width: 55%; text-align: left;">OBSERVACIONES</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -190,30 +204,38 @@
                             <tbody id="tbody_disponibilidad">
                                 <tr>
                                     <td><label style="margin: 0; font-size: 0.8rem;">Bodega</label></td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                                    </td>
                                     <td style="display: flex; gap: 5px;">
                                         <input type="text" name="tabla_orden[bodega_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
-                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td><label style="margin: 0; font-size: 0.8rem;">Cúcuta</label></td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                                    </td>
                                     <td style="display: flex; gap: 5px;">
                                         <input type="text" name="tabla_orden[cucuta_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
-                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td><label style="margin: 0; font-size: 0.8rem;">Lafayette</label></td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                                    </td>
                                     <td style="display: flex; gap: 5px;">
                                         <input type="text" name="tabla_orden[lafayette_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
-                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td><label style="margin: 0; font-size: 0.8rem;">Fábrica</label></td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                                    </td>
                                     <td style="display: flex; gap: 5px;">
                                         <input type="text" name="tabla_orden[fabrica_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
-                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -230,16 +252,20 @@
                             <tbody id="tbody_pago">
                                 <tr>
                                     <td><label style="margin: 0; font-size: 0.8rem;">Contado</label></td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                                    </td>
                                     <td style="display: flex; gap: 5px;">
                                         <input type="text" name="tabla_orden[pago_contado_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
-                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td><label style="margin: 0; font-size: 0.8rem;">Crédito</label></td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                                    </td>
                                     <td style="display: flex; gap: 5px;">
                                         <input type="text" name="tabla_orden[pago_credito_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
-                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -256,16 +282,20 @@
                             <tbody id="tbody_regimen">
                                 <tr>
                                     <td><label style="margin: 0; font-size: 0.8rem;">Común</label></td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                                    </td>
                                     <td style="display: flex; gap: 5px;">
                                         <input type="text" name="tabla_orden[regimen_comun_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
-                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td><label style="margin: 0; font-size: 0.8rem;">Simplificado</label></td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                                    </td>
                                     <td style="display: flex; gap: 5px;">
                                         <input type="text" name="tabla_orden[regimen_simp_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
-                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -282,9 +312,11 @@
                             <tbody id="tbody_vendido">
                                 <tr>
                                     <td><input type="text" name="tabla_orden[vendido_item]" class="input-compact" placeholder="Escribe aquí" style="width: 100%;"></td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                                    </td>
                                     <td style="display: flex; gap: 5px;">
                                         <input type="text" name="tabla_orden[vendido_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
-                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -301,9 +333,11 @@
                             <tbody id="tbody_ultima_venta">
                                 <tr>
                                     <td><input type="text" name="tabla_orden[ultima_venta_item]" class="input-compact" placeholder="Escribe aquí" style="width: 100%;"></td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                                    </td>
                                     <td style="display: flex; gap: 5px;">
                                         <input type="text" name="tabla_orden[ultima_venta_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
-                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -320,9 +354,11 @@
                             <tbody id="tbody_flete">
                                 <tr>
                                     <td><input type="text" name="tabla_orden[flete_item]" class="input-compact" placeholder="Escribe aquí" style="width: 100%;"></td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                                    </td>
                                     <td style="display: flex; gap: 5px;">
                                         <input type="text" name="tabla_orden[flete_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
-                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -540,7 +576,7 @@
                 <!-- TABLA PRINCIPAL - PRODUCTOS CON DETALLES
                 <div class="factura-seccion">
                     <div class="factura-seccion-titulo">
-                        <i class="fas fa-list"></i> DETALLE DE PRODUCTOS
+                        <i class="fas fa-list"></i> DETALLE DE PRENDAS
                     </div>
                     <div class="productos-factura-container" id="productosFacturaContainer">
                         <!-- Se llena dinámicamente con JavaScript
@@ -550,7 +586,7 @@
                 <!-- RESUMEN FINAL
                 <div class="factura-resumen">
                     <div class="resumen-item">
-                        <span class="resumen-label">TOTAL PRODUCTOS</span>
+                        <span class="resumen-label">TOTAL PRENDAS</span>
                         <span class="resumen-valor" id="reviewProductosCount">0</span>
                     </div>
                     <div class="resumen-item highlight">
@@ -645,6 +681,47 @@
                         <label><i class="fas fa-pen"></i> DESCRIPCIÓN</label>
                         <textarea name="productos_friendly[][descripcion]" class="input-medium" placeholder="DESCRIPCIÓN DE LA PRENDA..." rows="2"></textarea>
                         <small class="help-text">DESCRIBE LA PRENDA, DETALLES ESPECIALES, LOGO, BORDADO, ESTAMPADO, ETC.</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 2.5: TALLAS -->
+            <div class="producto-section">
+                <div class="section-title">
+                    <i class="fas fa-ruler"></i> TALLAS A COTIZAR
+                </div>
+                <div class="form-row">
+                    <div class="form-col full">
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                            <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer;">
+                                <input type="checkbox" name="productos_friendly[][tallas]" value="S" style="width: 18px; height: 18px; cursor: pointer;">
+                                <span>S</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer;">
+                                <input type="checkbox" name="productos_friendly[][tallas]" value="M" style="width: 18px; height: 18px; cursor: pointer;">
+                                <span>M</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer;">
+                                <input type="checkbox" name="productos_friendly[][tallas]" value="L" style="width: 18px; height: 18px; cursor: pointer;">
+                                <span>L</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer;">
+                                <input type="checkbox" name="productos_friendly[][tallas]" value="XL" style="width: 18px; height: 18px; cursor: pointer;">
+                                <span>XL</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer;">
+                                <input type="checkbox" name="productos_friendly[][tallas]" value="XXL" style="width: 18px; height: 18px; cursor: pointer;">
+                                <span>XXL</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer; font-weight: 700; color: #0066cc; margin-left: 1rem;">
+                                <input type="checkbox" name="productos_friendly[][tallas]" value="TODAS" style="width: 18px; height: 18px; cursor: pointer;">
+                                <span>TODAS</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer; font-weight: 700; color: #f59e0b;">
+                                <input type="checkbox" name="productos_friendly[][tallas]" value="NO APLICA" style="width: 18px; height: 18px; cursor: pointer;">
+                                <span>NO APLICA</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1827,7 +1904,38 @@ function cerrarModalEspecificaciones() {
 }
 
 function guardarEspecificaciones() {
-    // Aquí puedes agregar lógica adicional si es necesario
+    // Recopilar especificaciones marcadas
+    const especificaciones = [];
+    const modal = document.getElementById('modalEspecificaciones');
+    
+    // Buscar todos los checkboxes marcados en el modal
+    const checkboxesMarcados = modal.querySelectorAll('input[type="checkbox"]:checked');
+    
+    checkboxesMarcados.forEach(checkbox => {
+        const fila = checkbox.closest('tr');
+        if (fila) {
+            // Obtener el texto del item (primera columna)
+            const itemCell = fila.querySelector('td:first-child');
+            const obsCell = fila.querySelector('td:last-child');
+            
+            const item = itemCell ? itemCell.textContent.trim() : '';
+            const obs = obsCell ? obsCell.querySelector('input[type="text"]')?.value || '' : '';
+            
+            if (item || obs) {
+                especificaciones.push({
+                    item: item,
+                    observaciones: obs
+                });
+            }
+        }
+    });
+    
+    // Guardar en variable global para enviar con la cotización
+    window.especificacionesSeleccionadas = especificaciones;
+    
+    console.log('✅ Especificaciones guardadas:', especificaciones);
+    console.log('📋 Se enviarán cuando hagas clic en ENVIAR la cotización');
+    
     cerrarModalEspecificaciones();
 }
 
@@ -1841,9 +1949,11 @@ function agregarFilaEspecificacion(categoria) {
     const fila = document.createElement('tr');
     fila.innerHTML = `
         <td><input type="text" name="tabla_orden[${categoria}_item]" class="input-compact" placeholder="Escribe aquí" style="width: 100%;"></td>
+        <td style="text-align: center;">
+            <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+        </td>
         <td style="display: flex; gap: 5px;">
             <input type="text" name="tabla_orden[${categoria}_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
-            <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
         </td>
     `;
     
@@ -1895,18 +2005,32 @@ function actualizarResumenCotizacion() {
 function recopilarDatos() {
     const cliente = document.getElementById('cliente').value;
     
+    // Recopilar tipo de cotización (M, D, X)
+    const cotizar_segun_indicaciones = document.getElementById('cotizar_segun_indicaciones').value || '';
+    
     // Recopilar productos (buscar en .producto-card que es donde se agregan)
     const productos = [];
     document.querySelectorAll('.producto-card').forEach((item, index) => {
         const nombre = item.querySelector('input[name*="nombre_producto"]')?.value || '';
         const descripcion = item.querySelector('textarea[name*="descripcion"]')?.value || '';
         const cantidad = item.querySelector('input[name*="cantidad"]')?.value || 1;
+        const tela = item.querySelector('input[name*="tela"]')?.value || '';
+        const imagenTela = item.querySelector('input[name*="imagen_tela"]')?.value || '';
+        
+        // Recopilar tallas seleccionadas
+        const tallasSeleccionadas = [];
+        item.querySelectorAll('input[name*="tallas"]:checked').forEach(checkbox => {
+            tallasSeleccionadas.push(checkbox.value);
+        });
         
         if (nombre.trim()) { // Solo agregar si tiene nombre
             productos.push({
                 nombre_producto: nombre,
                 descripcion: descripcion,
-                cantidad: parseInt(cantidad) || 1
+                cantidad: parseInt(cantidad) || 1,
+                tela: tela,
+                imagen_tela: imagenTela,
+                tallas: tallasSeleccionadas
             });
         }
     });
@@ -1928,6 +2052,7 @@ function recopilarDatos() {
     
     return {
         cliente: cliente,
+        cotizar_segun_indicaciones: cotizar_segun_indicaciones,
         productos: productos,
         tecnicas: tecnicas,
         observaciones_generales: observaciones_generales
@@ -2061,6 +2186,12 @@ async function enviarCotizacion() {
         general: window.imagenesEnMemoria.general.length
     });
     
+    // Obtener especificaciones guardadas de la variable global
+    let especificaciones = window.especificacionesSeleccionadas || [];
+    if (especificaciones.length > 0) {
+        console.log('📋 Especificaciones encontradas:', especificaciones);
+    }
+    
     try {
         // Crear cotización
         console.log('📤 Enviando cotización...');
@@ -2075,7 +2206,8 @@ async function enviarCotizacion() {
                 cliente: datos.cliente,
                 productos: datos.productos,
                 tecnicas: datos.tecnicas,
-                observaciones_generales: datos.observaciones_generales
+                observaciones_generales: datos.observaciones_generales,
+                especificaciones: especificaciones
             })
         });
         

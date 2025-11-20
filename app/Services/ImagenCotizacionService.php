@@ -53,6 +53,9 @@ class ImagenCotizacionService
             $nombreArchivo = $this->generarNombreArchivo($cotizacionId, $tipo, $archivo);
             \Log::info('Nombre archivo generado', ['nombre' => $nombreArchivo]);
 
+            // Redimensionar imagen si es necesario
+            $archivoRedimensionado = $this->redimensionarImagen($archivo);
+            
             // Guardar archivo
             \Log::info('Guardando archivo en storage', [
                 'carpeta' => $carpeta,
@@ -61,7 +64,7 @@ class ImagenCotizacionService
 
             $ruta = Storage::disk('public')->putFileAs(
                 $carpeta,
-                $archivo,
+                $archivoRedimensionado,
                 $nombreArchivo
             );
 
@@ -318,5 +321,133 @@ class ImagenCotizacionService
             'imagenes_por_tipo' => array_map('count', $imagenes),
             'existe_carpeta' => Storage::disk('public')->exists($carpetaPrincipal)
         ];
+    }
+
+    /**
+     * Redimensionar imagen a un tamaño mínimo
+     * Asegura que todas las imágenes tengan al menos 1024x768px
+     * 
+     * @param UploadedFile $archivo
+     * @return UploadedFile
+     */
+    private function redimensionarImagen(UploadedFile $archivo)
+    {
+        try {
+            // Verificar que GD está disponible
+            if (!extension_loaded('gd')) {
+                \Log::warning('Extensión GD no disponible, saltando redimensionamiento');
+                return $archivo;
+            }
+
+            $rutaTemporal = $archivo->getRealPath();
+            
+            if (!file_exists($rutaTemporal)) {
+                \Log::warning('Archivo temporal no existe');
+                return $archivo;
+            }
+
+            $info = @getimagesize($rutaTemporal);
+            
+            if (!$info) {
+                \Log::warning('No se pudo obtener información de la imagen');
+                return $archivo;
+            }
+
+            $ancho = $info[0];
+            $alto = $info[1];
+            $tipo = $info[2];
+
+            // Tamaño mínimo deseado
+            $anchoMinimo = 1024;
+            $altoMinimo = 768;
+
+            // Si la imagen es más pequeña que el mínimo, redimensionarla
+            if ($ancho < $anchoMinimo || $alto < $altoMinimo) {
+                \Log::info('Redimensionando imagen', [
+                    'tamaño_original' => "{$ancho}x{$alto}",
+                    'tamaño_minimo' => "{$anchoMinimo}x{$altoMinimo}"
+                ]);
+
+                // Calcular nuevas dimensiones manteniendo proporción
+                if ($ancho < $anchoMinimo && $alto < $altoMinimo) {
+                    // Ambas dimensiones son pequeñas, usar la que necesita más escala
+                    $escalaAncho = $anchoMinimo / $ancho;
+                    $escalaAlto = $altoMinimo / $alto;
+                    $escala = max($escalaAncho, $escalaAlto);
+                } elseif ($ancho < $anchoMinimo) {
+                    $escala = $anchoMinimo / $ancho;
+                } else {
+                    $escala = $altoMinimo / $alto;
+                }
+
+                $nuevoAncho = (int)($ancho * $escala);
+                $nuevoAlto = (int)($alto * $escala);
+
+                // Crear imagen redimensionada
+                $imagenOriginal = null;
+                $imagenNueva = null;
+
+                try {
+                    switch ($tipo) {
+                        case IMAGETYPE_JPEG:
+                            $imagenOriginal = @imagecreatefromjpeg($rutaTemporal);
+                            if ($imagenOriginal === false) {
+                                \Log::warning('No se pudo cargar JPEG');
+                                return $archivo;
+                            }
+                            $imagenNueva = imagecreatetruecolor($nuevoAncho, $nuevoAlto);
+                            imagecopyresampled($imagenNueva, $imagenOriginal, 0, 0, 0, 0, $nuevoAncho, $nuevoAlto, $ancho, $alto);
+                            imagejpeg($imagenNueva, $rutaTemporal, 90);
+                            break;
+                        case IMAGETYPE_PNG:
+                            $imagenOriginal = @imagecreatefrompng($rutaTemporal);
+                            if ($imagenOriginal === false) {
+                                \Log::warning('No se pudo cargar PNG');
+                                return $archivo;
+                            }
+                            $imagenNueva = imagecreatetruecolor($nuevoAncho, $nuevoAlto);
+                            imagealphablending($imagenNueva, false);
+                            imagesavealpha($imagenNueva, true);
+                            imagecopyresampled($imagenNueva, $imagenOriginal, 0, 0, 0, 0, $nuevoAncho, $nuevoAlto, $ancho, $alto);
+                            imagepng($imagenNueva, $rutaTemporal);
+                            break;
+                        case IMAGETYPE_GIF:
+                            $imagenOriginal = @imagecreatefromgif($rutaTemporal);
+                            if ($imagenOriginal === false) {
+                                \Log::warning('No se pudo cargar GIF');
+                                return $archivo;
+                            }
+                            $imagenNueva = imagecreatetruecolor($nuevoAncho, $nuevoAlto);
+                            imagecopyresampled($imagenNueva, $imagenOriginal, 0, 0, 0, 0, $nuevoAncho, $nuevoAlto, $ancho, $alto);
+                            imagegif($imagenNueva, $rutaTemporal);
+                            break;
+                        default:
+                            \Log::warning('Tipo de imagen no soportado', ['tipo' => $tipo]);
+                            return $archivo;
+                    }
+
+                    if ($imagenOriginal) @imagedestroy($imagenOriginal);
+                    if ($imagenNueva) @imagedestroy($imagenNueva);
+
+                    \Log::info('Imagen redimensionada exitosamente', [
+                        'tamaño_nuevo' => "{$nuevoAncho}x{$nuevoAlto}"
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::warning('Error durante redimensionamiento GD', [
+                        'error' => $e->getMessage()
+                    ]);
+                    if ($imagenOriginal) @imagedestroy($imagenOriginal);
+                    if ($imagenNueva) @imagedestroy($imagenNueva);
+                    return $archivo;
+                }
+            }
+
+            return $archivo;
+        } catch (\Exception $e) {
+            \Log::warning('Error al redimensionar imagen', [
+                'error' => $e->getMessage()
+            ]);
+            return $archivo;
+        }
     }
 }

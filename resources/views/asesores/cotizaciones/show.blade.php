@@ -15,13 +15,18 @@
         background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
         min-height: 100vh;
         padding: 2rem 0;
+        transform: scale(0.75);
+        transform-origin: top center;
+        width: 133.33%;
+        margin-left: -16.665%;
     }
 
     .cotizacion-header {
         background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
         color: white;
-        padding: 2.5rem;
-        margin-bottom: 2rem;
+        padding: 1.5rem 2.5rem;
+        margin-bottom: 1rem;
+        margin-top: -2rem;
         border-radius: 12px;
         box-shadow: 0 10px 30px rgba(30, 64, 175, 0.15);
         position: relative;
@@ -134,9 +139,9 @@
     }
 
     .productos-table td {
-        padding: 1rem;
+        padding: 1.2rem;
         border-bottom: 1px solid #e2e8f0;
-        font-size: 0.95rem;
+        font-size: 1.05rem;
     }
 
     .productos-table tbody tr:hover {
@@ -152,6 +157,12 @@
         color: var(--primary);
     }
 
+    .producto-tela {
+        color: #64748b;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
     .producto-cantidad {
         text-align: center;
         font-weight: 600;
@@ -161,8 +172,10 @@
     .producto-descripcion {
         color: #64748b;
         font-size: 0.9rem;
-        max-width: 300px;
+        line-height: 1.6;
+        max-width: 100%;
         word-wrap: break-word;
+        padding: 1rem 0.5rem;
     }
 
     .tecnicas-list {
@@ -327,18 +340,18 @@
         </div>
     </div>
 
-    <!-- Productos -->
+    <!-- Prendas -->
     <div class="section-title">
-        <i class="fas fa-box"></i> Productos
+        <i class="fas fa-box"></i> Prendas
     </div>
     @if($cotizacion->productos && count($cotizacion->productos) > 0)
         <table class="productos-table">
             <thead>
                 <tr>
-                    <th style="width: 20%;">Producto</th>
-                    <th style="width: 40%;">Descripción</th>
-                    <th style="width: 15%; text-align: center;">Cantidad</th>
-                    <th style="width: 25%; text-align: center;">Imagen</th>
+                    <th style="width: 20%;">Prenda</th>
+                    <th style="width: 35%;">Descripción</th>
+                    <th style="width: 10%; text-align: center;">Cantidad</th>
+                    <th style="width: 35%; text-align: center;">Imagen Prenda & Tela</th>
                 </tr>
             </thead>
             <tbody>
@@ -358,18 +371,51 @@
                             </div>
                         </td>
                         <td style="text-align: center;">
-                            @php
-                                $imagenProducto = $cotizacion->imagenes[$index] ?? null;
-                            @endphp
-                            @if($imagenProducto)
-                                <img src="{{ $imagenProducto }}" alt="Producto" 
-                                     style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer;" 
-                                     onclick="abrirModalImagen('{{ $imagenProducto }}', '{{ $producto['nombre_producto'] ?? 'Producto' }}')">
-                            @else
-                                <div style="width: 60px; height: 60px; background: #f1f5f9; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #cbd5e1;">
-                                    <i class="fas fa-image"></i>
+                            <div style="display: flex; gap: 1rem; justify-content: center; align-items: center;">
+                                <!-- Imagen de Prenda -->
+                                @php
+                                    $imagenProducto = null;
+                                    if (is_array($cotizacion->imagenes)) {
+                                        if (isset($cotizacion->imagenes['prenda'][$index])) {
+                                            $imagenProducto = $cotizacion->imagenes['prenda'][$index];
+                                        }
+                                    }
+                                @endphp
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                                    <small style="font-size: 0.75rem; color: #64748b; font-weight: 600;">PRENDA</small>
+                                    @if($imagenProducto)
+                                        <img src="{{ $imagenProducto }}" alt="Prenda" 
+                                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer;" 
+                                             onclick="abrirModalImagen('{{ $imagenProducto }}', '{{ $producto['nombre_producto'] ?? 'Prenda' }}')">
+                                    @else
+                                        <div style="width: 60px; height: 60px; background: #f1f5f9; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #cbd5e1;">
+                                            <i class="fas fa-image"></i>
+                                        </div>
+                                    @endif
                                 </div>
-                            @endif
+
+                                <!-- Imagen de Tela -->
+                                @php
+                                    $imagenTela = null;
+                                    if (is_array($cotizacion->imagenes)) {
+                                        if (isset($cotizacion->imagenes['tela'][$index])) {
+                                            $imagenTela = $cotizacion->imagenes['tela'][$index];
+                                        }
+                                    }
+                                @endphp
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                                    <small style="font-size: 0.75rem; color: #64748b; font-weight: 600;">TELA</small>
+                                    @if($imagenTela)
+                                        <img src="{{ $imagenTela }}" alt="Tela" 
+                                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer;" 
+                                             onclick="abrirModalImagen('{{ $imagenTela }}', 'Tela - {{ $producto['tela'] ?? 'Tela' }}')">
+                                    @else
+                                        <div style="width: 60px; height: 60px; background: #f1f5f9; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #cbd5e1;">
+                                            <i class="fas fa-image"></i>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
                         </td>
                     </tr>
                 @endforeach
@@ -379,6 +425,33 @@
         <div class="sin-contenido">
             <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
             Sin productos agregados
+        </div>
+    @endif
+
+    <!-- Especificaciones de la Orden -->
+    @if($cotizacion->especificaciones && count($cotizacion->especificaciones) > 0)
+        <div style="margin-top: 3rem;">
+            <div class="section-title">
+                <i class="fas fa-clipboard-check"></i> Especificaciones de la Orden
+            </div>
+            <div style="background: white; border-radius: 8px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #e2e8f0;">
+                            <th style="text-align: left; padding: 0.75rem; font-weight: 700; color: #1e40af;">ITEM</th>
+                            <th style="text-align: left; padding: 0.75rem; font-weight: 700; color: #1e40af;">OBSERVACIONES</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($cotizacion->especificaciones as $especificacion)
+                            <tr style="border-bottom: 1px solid #e2e8f0;">
+                                <td style="padding: 0.75rem; color: #333;">{{ $especificacion['item'] ?? '-' }}</td>
+                                <td style="padding: 0.75rem; color: #64748b;">{{ $especificacion['observaciones'] ?? '-' }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
     @endif
 
@@ -417,6 +490,22 @@
         @endforeach
     @endif
 
+    <!-- Imágenes de Bordado/Estampado -->
+    @if($cotizacion->imagenes && isset($cotizacion->imagenes['general']) && count($cotizacion->imagenes['general']) > 0)
+        <div class="section-title">
+            <i class="fas fa-image"></i> Imágenes de Bordado/Estampado
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+            @foreach($cotizacion->imagenes['general'] as $imagen)
+                <div style="position: relative; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); cursor: pointer; transition: transform 0.3s ease;">
+                    <img src="{{ $imagen }}" alt="Bordado/Estampado" 
+                         style="width: 100%; height: 150px; object-fit: cover;" 
+                         onclick="abrirModalImagen('{{ $imagen }}', 'Bordado/Estampado')">
+                </div>
+            @endforeach
+        </div>
+    @endif
+
     <!-- Acciones -->
     <div class="footer-actions">
         <a href="{{ route('asesores.cotizaciones.index') }}" class="btn-custom btn-volver">
@@ -433,9 +522,22 @@
 
 <!-- Modal para ver imágenes en grande -->
 <div id="modalImagen" style="display: none !important; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.95); z-index: 9999; align-items: center; justify-content: center; padding: 0; margin: 0; overflow: hidden;">
-    <div style="position: relative; width: calc(100vw - 160px); height: calc(100vh - 120px); display: flex; align-items: center; justify-content: center;">
-        <!-- Imagen -->
-        <img id="imagenModal" src="" alt="Imagen" style="max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);"">
+    <div style="position: relative; width: calc(100vw - 160px); height: calc(100vh - 120px); display: flex; align-items: center; justify-content: center; overflow: auto;">
+        <!-- Imagen con zoom -->
+        <img id="imagenModal" src="" alt="Imagen" style="width: 70vw; height: 70vh; object-fit: contain; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); cursor: zoom-in; transition: transform 0.2s ease;" onwheel="zoomImagen(event)" onclick="toggleZoomClick(event)">
+        
+        <!-- Botones de zoom -->
+        <button onclick="zoomMas()" style="position: absolute; top: 20px; left: 20px; background: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; color: #333; box-shadow: 0 2px 10px rgba(0,0,0,0.3); font-weight: bold;">
+            +
+        </button>
+        
+        <button onclick="zoomMenos()" style="position: absolute; top: 70px; left: 20px; background: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; color: #333; box-shadow: 0 2px 10px rgba(0,0,0,0.3); font-weight: bold;">
+            −
+        </button>
+        
+        <button onclick="resetZoom()" style="position: absolute; top: 120px; left: 20px; background: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; color: #333; box-shadow: 0 2px 10px rgba(0,0,0,0.3); font-weight: bold;">
+            1:1
+        </button>
         
         <!-- Botón cerrar -->
         <button onclick="cerrarModalImagen()" style="position: absolute; top: 20px; right: 20px; background: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 24px; display: flex; align-items: center; justify-content: center; color: #333; box-shadow: 0 2px 10px rgba(0,0,0,0.3);">
@@ -572,6 +674,96 @@ document.getElementById('btnSiguiente')?.addEventListener('mouseover', function(
 document.getElementById('btnSiguiente')?.addEventListener('mouseout', function() {
     this.style.background = 'rgba(255, 255, 255, 0.8)';
 });
+
+// Variables para zoom
+let zoomLevel = 1;
+const maxZoom = 10;
+const minZoom = 0.5;
+const zoomStep = 0.1;
+
+// Función para hacer zoom con rueda del mouse
+function zoomImagen(event) {
+    event.preventDefault();
+    const img = document.getElementById('imagenModal');
+    if (!img) return;
+    
+    const delta = event.deltaY > 0 ? -zoomStep : zoomStep;
+    zoomLevel = Math.max(minZoom, Math.min(maxZoom, zoomLevel + delta));
+    img.style.transform = `scale(${zoomLevel})`;
+    img.style.cursor = zoomLevel < maxZoom ? 'zoom-in' : 'zoom-out';
+}
+
+// Función para zoom más
+function zoomMas() {
+    const img = document.getElementById('imagenModal');
+    if (!img) return;
+    zoomLevel = Math.min(maxZoom, zoomLevel + zoomStep);
+    img.style.transform = `scale(${zoomLevel})`;
+    img.style.cursor = zoomLevel < maxZoom ? 'zoom-in' : 'zoom-out';
+}
+
+// Función para zoom menos
+function zoomMenos() {
+    const img = document.getElementById('imagenModal');
+    if (!img) return;
+    zoomLevel = Math.max(minZoom, zoomLevel - zoomStep);
+    img.style.transform = `scale(${zoomLevel})`;
+    img.style.cursor = zoomLevel < maxZoom ? 'zoom-in' : 'zoom-out';
+}
+
+// Función para resetear zoom
+function resetZoom() {
+    const img = document.getElementById('imagenModal');
+    if (!img) return;
+    zoomLevel = 1;
+    img.style.transform = `scale(1)`;
+    img.style.cursor = 'zoom-in';
+}
+
+// Función para toggle zoom al hacer clic en la imagen
+function toggleZoomClick(event) {
+    const img = document.getElementById('imagenModal');
+    if (!img) return;
+    
+    // Si está en zoom normal, hacer zoom a 2x
+    if (zoomLevel === 1) {
+        zoomLevel = 2;
+        img.style.transform = `scale(2)`;
+        img.style.cursor = 'zoom-out';
+    } else {
+        // Si está en zoom, volver a normal
+        zoomLevel = 1;
+        img.style.transform = `scale(1)`;
+        img.style.cursor = 'zoom-in';
+    }
+}
+
+// Ocultar navbar cuando se carga la página
+document.addEventListener('DOMContentLoaded', function() {
+    const topNav = document.querySelector('.top-nav');
+    if (topNav) {
+        topNav.style.display = 'none';
+    }
+    
+    // Ocultar también la barra de navegación secundaria (page-header)
+    const pageHeader = document.querySelector('.page-header');
+    if (pageHeader) {
+        pageHeader.style.display = 'none';
+    }
+});
+
+// Mostrar navbar cuando se vuelve a la lista
+window.addEventListener('beforeunload', function() {
+    const topNav = document.querySelector('.top-nav');
+    if (topNav) {
+        topNav.style.display = '';
+    }
+    const pageHeader = document.querySelector('.page-header');
+    if (pageHeader) {
+        pageHeader.style.display = '';
+    }
+});
+
 </script>
 
 @endsection
