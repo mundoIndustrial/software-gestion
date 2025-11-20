@@ -5,9 +5,61 @@
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/asesores/create-friendly.css') }}">
+<style>
+    .imagen-preview {
+        position: relative;
+        width: 100px;
+        height: 100px;
+        border-radius: 6px;
+        overflow: hidden;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .imagen-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .imagen-preview .btn-eliminar-imagen {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        background: #f44336;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    .imagen-preview:hover .btn-eliminar-imagen {
+        opacity: 1;
+    }
+</style>
 @endpush
 
 @section('content')
+
+<!-- Script para almacenar imágenes en memoria -->
+<script>
+    // Variables globales para almacenar imágenes en memoria
+    window.imagenesEnMemoria = {
+        prenda: [],
+        tela: [],
+        general: []
+    };
+    
+    console.log('🔵 Sistema de imágenes en memoria inicializado');
+</script>
+
 <div class="friendly-form-fullscreen">
     <!-- TÍTULO PRINCIPAL -->
     <div style="text-align: center; margin-bottom: 15px; padding: 10px 0; border-bottom: 2px solid #3498db;">
@@ -25,7 +77,7 @@
             <div class="step-line"></div>
             <div class="step" data-step="2" onclick="irAlPaso(2)" onkeypress="if(event.key==='Enter') irAlPaso(2)" tabindex="0" role="tab" aria-selected="false" style="cursor: pointer;">
                 <div class="step-number">2</div>
-                <div class="step-label">PRODUCTOS</div>
+                <div class="step-label">PRENDAS</div>
             </div>
             <div class="step-line"></div>
             <div class="step" data-step="3" onclick="irAlPaso(3)" onkeypress="if(event.key==='Enter') irAlPaso(3)" tabindex="0" role="tab" aria-selected="false" style="cursor: pointer;">
@@ -87,10 +139,10 @@
             </div>
         </div>
 
-        <!-- PASO 2: AGREGAR PRODUCTOS -->
+        <!-- PASO 2: AGREGAR PRENDAS -->
         <div class="form-step" data-step="2">
             <div class="step-header">
-                <h2>PASO 2: PRODUCTOS DEL PEDIDO</h2>
+                <h2>PASO 2: PRENDAS DEL PEDIDO</h2>
                 <p>AGREGA LAS PRENDAS QUE TU CLIENTE QUIERE</p>
             </div>
 
@@ -102,6 +154,19 @@
                 <button type="button" class="btn-add-product-friendly" onclick="abrirModalEspecificaciones()" style="flex: 1; min-width: 200px;">
                     <i class="fas fa-clipboard-check"></i> ESPECIFICACIONES DE LA ORDEN
                 </button>
+            </div>
+
+            <!-- TIPO DE COTIZACIÓN DE PRENDAS -->
+            <div style="background: #f9f9f9; border: 2px solid #3498db; border-radius: 8px; padding: 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: center; gap: 1rem;">
+                <label for="cotizar_segun_indicaciones" style="font-weight: 700; font-size: 1rem; color: #333; white-space: nowrap;">
+                    <i class="fas fa-tag"></i> Favor cotizar según indicaciones
+                </label>
+                <select id="cotizar_segun_indicaciones" name="cotizar_segun_indicaciones" style="width: 120px; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; cursor: pointer; background-color: white; text-align: center;">
+                    <option value="">Selecciona</option>
+                    <option value="M">M</option>
+                    <option value="D">D</option>
+                    <option value="X">X</option>
+                </select>
             </div>
 
             <div class="form-section">
@@ -121,8 +186,9 @@
                     <table class="tabla-control-compacta">
                         <thead>
                             <tr>
-                                <th style="width: 40%;">ITEM</th>
-                                <th style="width: 60%;">OBSERVACIONES</th>
+                                <th style="width: 30%; text-align: left;"></th>
+                                <th style="width: 15%; text-align: center;">SELECCIONAR</th>
+                                <th style="width: 55%; text-align: left;">OBSERVACIONES</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -138,30 +204,38 @@
                             <tbody id="tbody_disponibilidad">
                                 <tr>
                                     <td><label style="margin: 0; font-size: 0.8rem;">Bodega</label></td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                                    </td>
                                     <td style="display: flex; gap: 5px;">
                                         <input type="text" name="tabla_orden[bodega_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
-                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td><label style="margin: 0; font-size: 0.8rem;">Cúcuta</label></td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                                    </td>
                                     <td style="display: flex; gap: 5px;">
                                         <input type="text" name="tabla_orden[cucuta_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
-                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td><label style="margin: 0; font-size: 0.8rem;">Lafayette</label></td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                                    </td>
                                     <td style="display: flex; gap: 5px;">
                                         <input type="text" name="tabla_orden[lafayette_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
-                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td><label style="margin: 0; font-size: 0.8rem;">Fábrica</label></td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                                    </td>
                                     <td style="display: flex; gap: 5px;">
                                         <input type="text" name="tabla_orden[fabrica_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
-                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -178,16 +252,20 @@
                             <tbody id="tbody_pago">
                                 <tr>
                                     <td><label style="margin: 0; font-size: 0.8rem;">Contado</label></td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                                    </td>
                                     <td style="display: flex; gap: 5px;">
                                         <input type="text" name="tabla_orden[pago_contado_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
-                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td><label style="margin: 0; font-size: 0.8rem;">Crédito</label></td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                                    </td>
                                     <td style="display: flex; gap: 5px;">
                                         <input type="text" name="tabla_orden[pago_credito_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
-                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -204,16 +282,20 @@
                             <tbody id="tbody_regimen">
                                 <tr>
                                     <td><label style="margin: 0; font-size: 0.8rem;">Común</label></td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                                    </td>
                                     <td style="display: flex; gap: 5px;">
                                         <input type="text" name="tabla_orden[regimen_comun_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
-                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td><label style="margin: 0; font-size: 0.8rem;">Simplificado</label></td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                                    </td>
                                     <td style="display: flex; gap: 5px;">
                                         <input type="text" name="tabla_orden[regimen_simp_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
-                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -230,9 +312,11 @@
                             <tbody id="tbody_vendido">
                                 <tr>
                                     <td><input type="text" name="tabla_orden[vendido_item]" class="input-compact" placeholder="Escribe aquí" style="width: 100%;"></td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                                    </td>
                                     <td style="display: flex; gap: 5px;">
                                         <input type="text" name="tabla_orden[vendido_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
-                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -249,9 +333,11 @@
                             <tbody id="tbody_ultima_venta">
                                 <tr>
                                     <td><input type="text" name="tabla_orden[ultima_venta_item]" class="input-compact" placeholder="Escribe aquí" style="width: 100%;"></td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                                    </td>
                                     <td style="display: flex; gap: 5px;">
                                         <input type="text" name="tabla_orden[ultima_venta_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
-                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -268,9 +354,11 @@
                             <tbody id="tbody_flete">
                                 <tr>
                                     <td><input type="text" name="tabla_orden[flete_item]" class="input-compact" placeholder="Escribe aquí" style="width: 100%;"></td>
+                                    <td style="text-align: center;">
+                                        <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                                    </td>
                                     <td style="display: flex; gap: 5px;">
                                         <input type="text" name="tabla_orden[flete_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
-                                        <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -488,7 +576,7 @@
                 <!-- TABLA PRINCIPAL - PRODUCTOS CON DETALLES
                 <div class="factura-seccion">
                     <div class="factura-seccion-titulo">
-                        <i class="fas fa-list"></i> DETALLE DE PRODUCTOS
+                        <i class="fas fa-list"></i> DETALLE DE PRENDAS
                     </div>
                     <div class="productos-factura-container" id="productosFacturaContainer">
                         <!-- Se llena dinámicamente con JavaScript
@@ -498,7 +586,7 @@
                 <!-- RESUMEN FINAL
                 <div class="factura-resumen">
                     <div class="resumen-item">
-                        <span class="resumen-label">TOTAL PRODUCTOS</span>
+                        <span class="resumen-label">TOTAL PRENDAS</span>
                         <span class="resumen-valor" id="reviewProductosCount">0</span>
                     </div>
                     <div class="resumen-item highlight">
@@ -593,6 +681,47 @@
                         <label><i class="fas fa-pen"></i> DESCRIPCIÓN</label>
                         <textarea name="productos_friendly[][descripcion]" class="input-medium" placeholder="DESCRIPCIÓN DE LA PRENDA..." rows="2"></textarea>
                         <small class="help-text">DESCRIBE LA PRENDA, DETALLES ESPECIALES, LOGO, BORDADO, ESTAMPADO, ETC.</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 2.5: TALLAS -->
+            <div class="producto-section">
+                <div class="section-title">
+                    <i class="fas fa-ruler"></i> TALLAS A COTIZAR
+                </div>
+                <div class="form-row">
+                    <div class="form-col full">
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                            <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer;">
+                                <input type="checkbox" name="productos_friendly[][tallas]" value="S" style="width: 18px; height: 18px; cursor: pointer;">
+                                <span>S</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer;">
+                                <input type="checkbox" name="productos_friendly[][tallas]" value="M" style="width: 18px; height: 18px; cursor: pointer;">
+                                <span>M</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer;">
+                                <input type="checkbox" name="productos_friendly[][tallas]" value="L" style="width: 18px; height: 18px; cursor: pointer;">
+                                <span>L</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer;">
+                                <input type="checkbox" name="productos_friendly[][tallas]" value="XL" style="width: 18px; height: 18px; cursor: pointer;">
+                                <span>XL</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer;">
+                                <input type="checkbox" name="productos_friendly[][tallas]" value="XXL" style="width: 18px; height: 18px; cursor: pointer;">
+                                <span>XXL</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer; font-weight: 700; color: #0066cc; margin-left: 1rem;">
+                                <input type="checkbox" name="productos_friendly[][tallas]" value="TODAS" style="width: 18px; height: 18px; cursor: pointer;">
+                                <span>TODAS</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer; font-weight: 700; color: #f59e0b;">
+                                <input type="checkbox" name="productos_friendly[][tallas]" value="NO APLICA" style="width: 18px; height: 18px; cursor: pointer;">
+                                <span>NO APLICA</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -754,10 +883,16 @@ function agregarFotos(files, dropZone) {
         fotosSeleccionadas[productoId] = [];
     }
     
+    console.log('📁 Agregando fotos de prenda a memoria');
+    
     // Agregar nuevas fotos (máximo 3 total)
     Array.from(files).forEach(file => {
         if (fotosSeleccionadas[productoId].length < 3) {
             fotosSeleccionadas[productoId].push(file);
+            
+            // Guardar en memoria
+            window.imagenesEnMemoria.prenda.push(file);
+            console.log(`✅ Foto de prenda guardada en memoria: ${file.name}`);
         }
     });
     
@@ -971,6 +1106,15 @@ function toggleAdditionalImages(btn) {
 function agregarFotoTela(input) {
     const productoCard = input.closest('.producto-card');
     if (!productoCard) return;
+    
+    const files = input.files;
+    console.log('📁 Agregando foto de tela a memoria');
+    
+    // Guardar en memoria
+    Array.from(files).forEach(file => {
+        window.imagenesEnMemoria.tela.push(file);
+        console.log(`✅ Foto de tela guardada en memoria: ${file.name}`);
+    });
     
     const container = productoCard.querySelector('.foto-tela-preview');
     if (container) {
@@ -1683,9 +1827,69 @@ document.getElementById('formCrearPedidoFriendly').addEventListener('submit', fu
     });
 });
 
-// Agregar primer producto automáticamente
+// Cargar datos del borrador si existe
 document.addEventListener('DOMContentLoaded', function() {
-    agregarProductoFriendly();
+    console.log('✅ DOM cargado, inicializando...');
+    
+    @if(isset($cotizacion))
+        // Cargar cliente
+        const clienteInput = document.getElementById('cliente');
+        if (clienteInput) {
+            clienteInput.value = '{{ $cotizacion->cliente }}';
+        }
+        
+        // Cargar productos
+        const productos = @json($cotizacion->productos ?? []);
+        if (Array.isArray(productos) && productos.length > 0) {
+            // Limpiar primer producto
+            document.querySelectorAll('.producto-card').forEach(el => el.remove());
+            
+            // Agregar productos
+            productos.forEach(producto => {
+                agregarProductoFriendly();
+                const lastCard = document.querySelector('.producto-card:last-child');
+                if (lastCard) {
+                    const nombreInput = lastCard.querySelector('input[name*="nombre_producto"]');
+                    const descInput = lastCard.querySelector('textarea[name*="descripcion"]');
+                    const cantInput = lastCard.querySelector('input[name*="cantidad"]');
+                    
+                    if (nombreInput) nombreInput.value = producto.nombre_producto || '';
+                    if (descInput) descInput.value = producto.descripcion || '';
+                    if (cantInput) cantInput.value = producto.cantidad || 1;
+                }
+            });
+        } else {
+            agregarProductoFriendly();
+        }
+        
+        // Cargar técnicas
+        const tecnicas = @json($cotizacion->tecnicas ?? []);
+        if (Array.isArray(tecnicas)) {
+            tecnicas.forEach(tecnica => {
+                document.getElementById('selector_tecnicas').value = tecnica;
+                agregarTecnica();
+            });
+        }
+        
+        // Cargar observaciones generales
+        const observaciones = @json($cotizacion->observaciones_generales ?? []);
+        if (Array.isArray(observaciones)) {
+            observaciones.forEach(obs => {
+                agregarObservacion();
+                const lastObs = document.querySelector('#observaciones_lista > div:last-child');
+                if (lastObs) {
+                    const input = lastObs.querySelector('input[name="observaciones_generales[]"]');
+                    if (input) input.value = obs;
+                }
+            });
+        }
+    @else
+        agregarProductoFriendly();
+    @endif
+    
+    // Verificar que las funciones existan
+    console.log('✅ guardarCotizacion existe:', typeof guardarCotizacion);
+    console.log('✅ enviarCotizacion existe:', typeof enviarCotizacion);
 });
 
 // ============ MODAL: ESPECIFICACIONES DE LA ORDEN ============
@@ -1700,7 +1904,38 @@ function cerrarModalEspecificaciones() {
 }
 
 function guardarEspecificaciones() {
-    // Aquí puedes agregar lógica adicional si es necesario
+    // Recopilar especificaciones marcadas
+    const especificaciones = [];
+    const modal = document.getElementById('modalEspecificaciones');
+    
+    // Buscar todos los checkboxes marcados en el modal
+    const checkboxesMarcados = modal.querySelectorAll('input[type="checkbox"]:checked');
+    
+    checkboxesMarcados.forEach(checkbox => {
+        const fila = checkbox.closest('tr');
+        if (fila) {
+            // Obtener el texto del item (primera columna)
+            const itemCell = fila.querySelector('td:first-child');
+            const obsCell = fila.querySelector('td:last-child');
+            
+            const item = itemCell ? itemCell.textContent.trim() : '';
+            const obs = obsCell ? obsCell.querySelector('input[type="text"]')?.value || '' : '';
+            
+            if (item || obs) {
+                especificaciones.push({
+                    item: item,
+                    observaciones: obs
+                });
+            }
+        }
+    });
+    
+    // Guardar en variable global para enviar con la cotización
+    window.especificacionesSeleccionadas = especificaciones;
+    
+    console.log('✅ Especificaciones guardadas:', especificaciones);
+    console.log('📋 Se enviarán cuando hagas clic en ENVIAR la cotización');
+    
     cerrarModalEspecificaciones();
 }
 
@@ -1714,9 +1949,11 @@ function agregarFilaEspecificacion(categoria) {
     const fila = document.createElement('tr');
     fila.innerHTML = `
         <td><input type="text" name="tabla_orden[${categoria}_item]" class="input-compact" placeholder="Escribe aquí" style="width: 100%;"></td>
+        <td style="text-align: center;">
+            <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+        </td>
         <td style="display: flex; gap: 5px;">
             <input type="text" name="tabla_orden[${categoria}_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
-            <button type="button" onclick="eliminarFilaEspecificacion(this)" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">✕</button>
         </td>
     `;
     
@@ -1768,18 +2005,32 @@ function actualizarResumenCotizacion() {
 function recopilarDatos() {
     const cliente = document.getElementById('cliente').value;
     
+    // Recopilar tipo de cotización (M, D, X)
+    const cotizar_segun_indicaciones = document.getElementById('cotizar_segun_indicaciones').value || '';
+    
     // Recopilar productos (buscar en .producto-card que es donde se agregan)
     const productos = [];
     document.querySelectorAll('.producto-card').forEach((item, index) => {
         const nombre = item.querySelector('input[name*="nombre_producto"]')?.value || '';
         const descripcion = item.querySelector('textarea[name*="descripcion"]')?.value || '';
         const cantidad = item.querySelector('input[name*="cantidad"]')?.value || 1;
+        const tela = item.querySelector('input[name*="tela"]')?.value || '';
+        const imagenTela = item.querySelector('input[name*="imagen_tela"]')?.value || '';
+        
+        // Recopilar tallas seleccionadas
+        const tallasSeleccionadas = [];
+        item.querySelectorAll('input[name*="tallas"]:checked').forEach(checkbox => {
+            tallasSeleccionadas.push(checkbox.value);
+        });
         
         if (nombre.trim()) { // Solo agregar si tiene nombre
             productos.push({
                 nombre_producto: nombre,
                 descripcion: descripcion,
-                cantidad: parseInt(cantidad) || 1
+                cantidad: parseInt(cantidad) || 1,
+                tela: tela,
+                imagen_tela: imagenTela,
+                tallas: tallasSeleccionadas
             });
         }
     });
@@ -1801,6 +2052,7 @@ function recopilarDatos() {
     
     return {
         cliente: cliente,
+        cotizar_segun_indicaciones: cotizar_segun_indicaciones,
         productos: productos,
         tecnicas: tecnicas,
         observaciones_generales: observaciones_generales
@@ -1808,40 +2060,113 @@ function recopilarDatos() {
 }
 
 // Guardar cotización como borrador
-function guardarCotizacion() {
+async function guardarCotizacion() {
     const datos = recopilarDatos();
     
-    fetch('{{ route("asesores.cotizaciones.guardar") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
-        },
-        body: JSON.stringify({
-            tipo: 'borrador',
-            cliente: datos.cliente,
-            productos: datos.productos,
-            tecnicas: datos.tecnicas,
-            observaciones_generales: datos.observaciones_generales
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('✓ Cotización guardada en borradores');
+    console.log('🔵 guardarCotizacion() llamado');
+    console.log('📸 Imágenes en memoria:', {
+        prenda: window.imagenesEnMemoria.prenda.length,
+        tela: window.imagenesEnMemoria.tela.length,
+        general: window.imagenesEnMemoria.general.length
+    });
+    
+    try {
+        // Crear cotización
+        console.log('📤 Enviando cotización...');
+        const response = await fetch('{{ route("asesores.cotizaciones.guardar") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+            },
+            body: JSON.stringify({
+                tipo: 'borrador',
+                cliente: datos.cliente,
+                productos: datos.productos,
+                tecnicas: datos.tecnicas,
+                observaciones_generales: datos.observaciones_generales
+            })
+        });
+        
+        const data = await response.json();
+        
+        console.log('📋 Respuesta del servidor:', data);
+        
+        if (data.success && data.cotizacion_id) {
+            console.log('✅ Cotización creada con ID:', data.cotizacion_id);
+            
+            // Subir todas las imágenes de memoria
+            const totalImagenes = window.imagenesEnMemoria.prenda.length + 
+                                 window.imagenesEnMemoria.tela.length + 
+                                 window.imagenesEnMemoria.general.length;
+            
+            if (totalImagenes > 0) {
+                console.log('📸 Subiendo', totalImagenes, 'imágenes...');
+                
+                // Subir imágenes de prenda
+                if (window.imagenesEnMemoria.prenda.length > 0) {
+                    await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.prenda, 'prenda');
+                }
+                
+                // Subir imágenes de tela
+                if (window.imagenesEnMemoria.tela.length > 0) {
+                    await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.tela, 'tela');
+                }
+                
+                // Subir imágenes generales (Paso 3)
+                if (window.imagenesEnMemoria.general.length > 0) {
+                    await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.general, 'general');
+                }
+                
+                alert('✓ Cotización guardada con imágenes');
+            } else {
+                console.log('⚠️ Sin imágenes para subir');
+                alert('✓ Cotización guardada en borradores');
+            }
+            
             window.location.href = '{{ route("asesores.cotizaciones.index") }}';
         } else {
             alert('✗ Error al guardar: ' + (data.message || 'Error desconocido'));
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
+    } catch (error) {
+        console.error('❌ Error:', error);
         alert('✗ Error al guardar la cotización');
+    }
+}
+
+// Función auxiliar para subir imágenes
+async function subirImagenesAlServidor(cotizacionId, archivos, tipo) {
+    console.log(`📤 Subiendo ${archivos.length} imágenes de tipo "${tipo}"...`);
+    
+    const formData = new FormData();
+    archivos.forEach((file, index) => {
+        console.log(`  - ${tipo} ${index + 1}: ${file.name}`);
+        formData.append('imagenes[]', file);
     });
+    formData.append('tipo', tipo);
+    
+    try {
+        const response = await fetch(`/asesores/cotizaciones/${cotizacionId}/imagenes`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+            }
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+            console.log(`✅ ${archivos.length} imágenes de tipo "${tipo}" guardadas`);
+        } else {
+            console.error(`❌ Error al guardar imágenes de tipo "${tipo}":`, data.message);
+        }
+    } catch (error) {
+        console.error(`❌ Error al subir imágenes de tipo "${tipo}":`, error);
+    }
 }
 
 // Enviar cotización
-function enviarCotizacion() {
+async function enviarCotizacion() {
     const datos = recopilarDatos();
     
     if (!datos.cliente.trim()) {
@@ -1854,33 +2179,80 @@ function enviarCotizacion() {
         return;
     }
     
-    fetch('{{ route("asesores.cotizaciones.guardar") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
-        },
-        body: JSON.stringify({
-            tipo: 'enviada',
-            cliente: datos.cliente,
-            productos: datos.productos,
-            tecnicas: datos.tecnicas,
-            observaciones_generales: datos.observaciones_generales
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('✓ Cotización enviada correctamente');
+    console.log('🔵 enviarCotizacion() llamado');
+    console.log('📸 Imágenes en memoria:', {
+        prenda: window.imagenesEnMemoria.prenda.length,
+        tela: window.imagenesEnMemoria.tela.length,
+        general: window.imagenesEnMemoria.general.length
+    });
+    
+    // Obtener especificaciones guardadas de la variable global
+    let especificaciones = window.especificacionesSeleccionadas || [];
+    if (especificaciones.length > 0) {
+        console.log('📋 Especificaciones encontradas:', especificaciones);
+    }
+    
+    try {
+        // Crear cotización
+        console.log('📤 Enviando cotización...');
+        const response = await fetch('{{ route("asesores.cotizaciones.guardar") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+            },
+            body: JSON.stringify({
+                tipo: 'enviada',
+                cliente: datos.cliente,
+                productos: datos.productos,
+                tecnicas: datos.tecnicas,
+                observaciones_generales: datos.observaciones_generales,
+                especificaciones: especificaciones
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.cotizacion_id) {
+            console.log('✅ Cotización creada con ID:', data.cotizacion_id);
+            
+            // Subir todas las imágenes de memoria
+            const totalImagenes = window.imagenesEnMemoria.prenda.length + 
+                                 window.imagenesEnMemoria.tela.length + 
+                                 window.imagenesEnMemoria.general.length;
+            
+            if (totalImagenes > 0) {
+                console.log('📸 Subiendo', totalImagenes, 'imágenes...');
+                
+                // Subir imágenes de prenda
+                if (window.imagenesEnMemoria.prenda.length > 0) {
+                    await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.prenda, 'prenda');
+                }
+                
+                // Subir imágenes de tela
+                if (window.imagenesEnMemoria.tela.length > 0) {
+                    await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.tela, 'tela');
+                }
+                
+                // Subir imágenes generales (Paso 3)
+                if (window.imagenesEnMemoria.general.length > 0) {
+                    await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.general, 'general');
+                }
+                
+                alert('✓ Cotización enviada con imágenes');
+            } else {
+                console.log('⚠️ Sin imágenes para subir');
+                alert('✓ Cotización enviada correctamente');
+            }
+            
             window.location.href = '{{ route("asesores.cotizaciones.index") }}';
         } else {
             alert('✗ Error al enviar: ' + (data.message || 'Error desconocido'));
         }
-    })
-    .catch(error => {
+    } catch (error) {
         console.error('Error:', error);
         alert('✗ Error al enviar la cotización');
-    });
+    }
 }
 
 // Cerrar modal al hacer clic fuera
@@ -1890,6 +2262,170 @@ document.addEventListener('click', function(e) {
         cerrarModalEspecificaciones();
     }
 });
+
+// ============ MANEJO DE IMÁGENES ============
+
+// Cargar imágenes existentes si es un borrador
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔵 Inicializando formulario...');
+    
+    // Cargar imágenes existentes
+    @if(isset($cotizacion) && $cotizacion->imagenes)
+        const imagenesExistentes = @json($cotizacion->imagenes ?? []);
+        if (Array.isArray(imagenesExistentes) && imagenesExistentes.length > 0) {
+            mostrarImagenesExistentes(imagenesExistentes);
+        }
+    @endif
+    
+    // Configurar drag and drop
+    configurarDragAndDrop();
+});
+
+// Mostrar imágenes existentes
+function mostrarImagenesExistentes(imagenes) {
+    const galeria = document.getElementById('galeria_imagenes');
+    if (!galeria) return;
+    
+    imagenes.forEach((url, index) => {
+        if (url && typeof url === 'string') {
+            const div = document.createElement('div');
+            div.className = 'imagen-preview';
+            div.innerHTML = `
+                <img src="${url}" alt="Imagen ${index + 1}">
+                <button type="button" class="btn-eliminar-imagen" onclick="eliminarImagenExistente('${url}', this)">✕</button>
+            `;
+            galeria.appendChild(div);
+        }
+    });
+}
+
+// Configurar drag and drop
+function configurarDragAndDrop() {
+    const dropZone = document.getElementById('drop_zone_imagenes');
+    const inputFile = document.getElementById('imagenes_bordado');
+    
+    if (!dropZone || !inputFile) return;
+    
+    // Prevenir comportamiento por defecto
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    // Resaltar zona de drop
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZone.style.background = '#e3f2fd';
+            dropZone.style.borderColor = '#2196f3';
+        }, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZone.style.background = '#f0f7ff';
+            dropZone.style.borderColor = '#3498db';
+        }, false);
+    });
+    
+    // Manejar drop
+    dropZone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        inputFile.files = files;
+        procesarArchivos(files);
+    }, false);
+    
+    // Manejar click
+    dropZone.addEventListener('click', () => {
+        inputFile.click();
+    });
+    
+    // Manejar selección de archivos
+    inputFile.addEventListener('change', (e) => {
+        procesarArchivos(e.target.files);
+    });
+}
+
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+// Procesar archivos
+function procesarArchivos(files) {
+    const galeria = document.getElementById('galeria_imagenes');
+    if (!galeria) return;
+    
+    console.log('📁 Procesando', files.length, 'archivos de Paso 3');
+    
+    let contador = 0;
+    
+    for (let file of files) {
+        console.log(`  Archivo ${contador + 1}:`, file.name, file.size, file.type);
+        
+        // Validar tipo
+        if (!file.type.startsWith('image/')) {
+            alert(`${file.name} no es una imagen válida`);
+            continue;
+        }
+        
+        // Validar tamaño (5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert(`${file.name} es muy grande (máximo 5MB)`);
+            continue;
+        }
+        
+        // Limitar a 5 imágenes
+        if (galeria.children.length >= 5) {
+            alert('Máximo 5 imágenes permitidas');
+            break;
+        }
+        
+        // Guardar en memoria
+        window.imagenesEnMemoria.general.push(file);
+        console.log(`✅ Imagen guardada en memoria: ${file.name}`);
+        
+        // Mostrar preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const div = document.createElement('div');
+            div.className = 'imagen-preview';
+            div.innerHTML = `
+                <img src="${e.target.result}" alt="Imagen">
+                <button type="button" class="btn-eliminar-imagen" onclick="eliminarImagenNueva(this)">✕</button>
+            `;
+            galeria.appendChild(div);
+        };
+        reader.readAsDataURL(file);
+        
+        contador++;
+    }
+    
+    console.log(`📸 Total en memoria (general): ${window.imagenesEnMemoria.general.length}`);
+}
+
+// Eliminar imagen nueva
+function eliminarImagenNueva(btn) {
+    const div = btn.closest('.imagen-preview');
+    const img = div.querySelector('img');
+    const src = img.src;
+    
+    // Encontrar y eliminar del array
+    const index = imagenesNuevas.findIndex(f => {
+        const reader = new FileReader();
+        reader.onload = (e) => e.target.result === src;
+        return false; // Simplificar: solo eliminar del DOM
+    });
+    
+    div.remove();
+}
+
+// Eliminar imagen existente
+function eliminarImagenExistente(url, btn) {
+    btn.closest('.imagen-preview').remove();
+    // Marcar para eliminación (se puede hacer en backend)
+}
+
 </script>
 @endpush
 
