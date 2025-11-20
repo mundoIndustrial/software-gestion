@@ -211,6 +211,7 @@ Route::middleware(['auth', 'role:asesor'])->prefix('asesores')->name('asesores.'
     Route::get('/cotizaciones/{id}', [App\Http\Controllers\Asesores\CotizacionesController::class, 'show'])->name('cotizaciones.show');
     Route::get('/cotizaciones/{id}/editar-borrador', [App\Http\Controllers\Asesores\CotizacionesController::class, 'editarBorrador'])->name('cotizaciones.edit-borrador');
     Route::delete('/cotizaciones/{id}', [App\Http\Controllers\Asesores\CotizacionesController::class, 'destroy'])->name('cotizaciones.destroy');
+    Route::delete('/cotizaciones/{id}/borrador', [App\Http\Controllers\Asesores\CotizacionesController::class, 'destroy'])->name('cotizaciones.destroy-borrador');
     Route::patch('/cotizaciones/{id}/estado/{estado}', [App\Http\Controllers\Asesores\CotizacionesController::class, 'cambiarEstado'])->name('cotizaciones.cambiar-estado');
     Route::post('/cotizaciones/{id}/aceptar', [App\Http\Controllers\Asesores\CotizacionesController::class, 'aceptarCotizacion'])->name('cotizaciones.aceptar');
     

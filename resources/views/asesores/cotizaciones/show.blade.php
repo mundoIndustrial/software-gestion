@@ -1,5 +1,13 @@
 @extends('asesores.layout')
 
+@push('styles')
+<style>
+    .top-nav {
+        display: none !important;
+    }
+</style>
+@endpush
+
 @section('content')
 <style>
     * {

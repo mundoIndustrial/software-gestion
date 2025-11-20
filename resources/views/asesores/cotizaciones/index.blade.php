@@ -3,37 +3,228 @@
 @section('title', 'Cotizaciones')
 @section('page-title', 'Cotizaciones y Borradores')
 
+@push('styles')
+<style>
+    .top-nav {
+        display: none !important;
+    }
+    
+    /* Estilos para tabla mejorada */
+    table tbody tr {
+        border-bottom: 1px solid #d1d5db !important;
+        transition: background-color 0.2s ease;
+    }
+    
+    table tbody tr:hover {
+        background-color: #f9fafb !important;
+    }
+    
+    table tbody tr:nth-child(even) {
+        background-color: #f3f4f6;
+    }
+    
+    table tbody tr:nth-child(even):hover {
+        background-color: #e5e7eb !important;
+    }
+    
+    /* Estilos personalizados para SweetAlert2 */
+    .swal-custom-popup {
+        width: 90% !important;
+        max-width: 400px !important;
+        padding: 24px !important;
+        border-radius: 12px !important;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .swal-custom-title {
+        font-size: 1.25rem !important;
+        font-weight: 700 !important;
+        color: #1f2937 !important;
+        margin-bottom: 12px !important;
+    }
+    
+    .swal2-html-container {
+        font-size: 0.95rem !important;
+        color: #6b7280 !important;
+        line-height: 1.5 !important;
+    }
+    
+    .swal-custom-confirm,
+    .swal-custom-cancel {
+        padding: 10px 20px !important;
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+        border-radius: 6px !important;
+        border: none !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .swal-custom-confirm {
+        background-color: #ef4444 !important;
+        color: white !important;
+    }
+    
+    .swal-custom-confirm:hover {
+        background-color: #dc2626 !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important;
+    }
+    
+    .swal-custom-cancel {
+        background-color: #e5e7eb !important;
+        color: #374151 !important;
+        margin-right: 8px !important;
+    }
+    
+    .swal-custom-cancel:hover {
+        background-color: #d1d5db !important;
+        transform: translateY(-2px) !important;
+    }
+    
+    .swal2-icon {
+        width: 50px !important;
+        height: 50px !important;
+        margin: 0 auto 12px !important;
+    }
+    
+    .swal2-icon.swal2-warning {
+        border-color: #f59e0b !important;
+        color: #f59e0b !important;
+    }
+    
+    .swal2-icon.swal2-success {
+        border-color: #10b981 !important;
+        color: #10b981 !important;
+    }
+    
+    .swal2-icon.swal2-error {
+        border-color: #ef4444 !important;
+        color: #ef4444 !important;
+    }
+    
+    /* Estilos para Toast */
+    .swal-toast-popup {
+        width: auto !important;
+        max-width: 350px !important;
+        padding: 12px 16px !important;
+        border-radius: 8px !important;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15) !important;
+        background-color: #10b981 !important;
+        border: none !important;
+    }
+    
+    .swal-toast-title {
+        font-size: 0.95rem !important;
+        font-weight: 600 !important;
+        color: white !important;
+        margin: 0 !important;
+    }
+    
+    .swal2-toast-container {
+        top: 20px !important;
+        right: 20px !important;
+    }
+    
+    .swal2-toast .swal2-icon {
+        width: 32px !important;
+        height: 32px !important;
+        margin: 0 8px 0 0 !important;
+    }
+    
+    .swal2-toast .swal2-icon.swal2-success {
+        border-color: white !important;
+        color: white !important;
+    }
+    
+    .swal2-timer-progress-bar {
+        background: rgba(255, 255, 255, 0.7) !important;
+    }
+    
+    /* Responsive */
+    @media (max-width: 640px) {
+        .swal-custom-popup {
+            width: 95% !important;
+            max-width: 350px !important;
+            padding: 20px !important;
+        }
+        
+        .swal-custom-title {
+            font-size: 1.1rem !important;
+        }
+        
+        .swal2-html-container {
+            font-size: 0.9rem !important;
+        }
+        
+        .swal2-toast-container {
+            top: 10px !important;
+            right: 10px !important;
+        }
+        
+        .swal-toast-popup {
+            max-width: 300px !important;
+        }
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="container-fluid">
-    <!-- HEADER MEJORADO -->
-    <div style="background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%); border-radius: 12px; padding: 25px 30px; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(44, 62, 80, 0.2);">
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 20px;">
-            <!-- TÍTULO Y DESCRIPCIÓN -->
-            <div>
-                <h1 style="margin: 0 0 5px 0; font-size: 2rem; color: white; font-weight: 700;">📋 Cotizaciones</h1>
-                <p style="margin: 0; color: rgba(255,255,255,0.8); font-size: 0.9rem;">Gestiona tus cotizaciones y borradores</p>
+    <!-- HEADER PROFESIONAL -->
+    <div style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); border-radius: 12px; padding: 20px 30px; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(30, 58, 138, 0.2);">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 30px;">
+            <!-- TÍTULO CON ICONO -->
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <div style="background: rgba(255,255,255,0.15); padding: 10px 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                    <svg id="headerIcon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="12" y1="11" x2="12" y2="17"></line>
+                        <line x1="9" y1="14" x2="15" y2="14"></line>
+                    </svg>
+                </div>
+                <div>
+                    <h1 id="headerTitle" style="margin: 0; font-size: 1.5rem; color: white; font-weight: 700;">Cotizaciones</h1>
+                    <p style="margin: 0; color: rgba(255,255,255,0.7); font-size: 0.85rem;">Gestiona tus cotizaciones</p>
+                </div>
             </div>
-            
-            <!-- BUSCADOR MEJORADO -->
-            <div style="flex: 1; max-width: 350px; position: relative;">
-                <i class="fas fa-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #999; font-size: 0.9rem;"></i>
-                <input type="text" id="buscador" placeholder="Buscar por cliente..." style="width: 100%; padding: 12px 15px 12px 40px; border: none; border-radius: 8px; font-size: 0.9rem; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: all 0.3s;" onkeyup="filtrarCotizaciones()" onfocus="this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onblur="this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+
+            <!-- BUSCADOR Y BOTÓN -->
+            <div style="display: flex; gap: 12px; align-items: center; flex: 1; max-width: 600px;">
+                <div style="flex: 1; position: relative;">
+                    <svg style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #999; width: 18px; height: 18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                    </svg>
+                    <input type="text" id="buscador" placeholder="Buscar por cliente..." onkeyup="filtrarCotizaciones()" style="padding: 10px 12px 10px 35px; border: none; border-radius: 6px; width: 100%; font-size: 0.9rem; background: rgba(255,255,255,0.95); transition: all 0.3s;" onfocus="this.style.background='white'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'" onblur="this.style.background='rgba(255,255,255,0.95)'; this.style.boxShadow='none'">
+                </div>
+                
+                <!-- BOTÓN REGISTRAR -->
+                <a href="{{ route('asesores.pedidos.create') }}" style="background: white; color: #2c3e50; padding: 10px 18px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.1); white-space: nowrap;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Registrar
+                </a>
             </div>
-            
-            <!-- BOTÓN NUEVA -->
-            <a href="{{ route('asesores.pedidos.create') }}" style="background: white; color: #2c3e50; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'">
-                <i class="fas fa-plus"></i> Nueva
-            </a>
         </div>
     </div>
 
-    <!-- TABS -->
-    <div style="display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ecf0f1;">
-        <button class="tab-btn active" onclick="mostrarTab('cotizaciones')" style="padding: 10px 20px; background: none; border: none; border-bottom: 3px solid #3498db; cursor: pointer; font-weight: bold; color: #333;">
-            📤 Cotizaciones Enviadas
+    <!-- TABS PROFESIONALES -->
+    <div style="display: flex; gap: 0; margin-bottom: 25px;">
+        <button class="tab-btn active" onclick="mostrarTab('cotizaciones')" style="padding: 12px 24px; background: none; border: none; border-bottom: 3px solid #3498db; cursor: pointer; font-weight: 600; color: #333; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; transition: all 0.3s;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Cotizaciones
         </button>
-        <button class="tab-btn" onclick="mostrarTab('borradores')" style="padding: 10px 20px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-weight: bold; color: #999;">
-            📝 Borradores
+        <button class="tab-btn" onclick="mostrarTab('borradores')" style="padding: 12px 24px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-weight: 600; color: #999; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; transition: all 0.3s;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+            Borradores
         </button>
     </div>
 
@@ -67,13 +258,13 @@
             <!-- VISTA TABLA -->
             <div id="vista-tabla-cot" style="display: block; overflow-x: auto;">
                 <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
-                    <thead style="background: #f8f9fa; border-bottom: 2px solid #ecf0f1;">
+                    <thead style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); border-bottom: 3px solid #1e3a8a;">
                         <tr>
-                            <th style="padding: 12px; text-align: left; font-weight: bold; color: #333; font-size: 0.9rem;">ID</th>
-                            <th style="padding: 12px; text-align: left; font-weight: bold; color: #333; font-size: 0.9rem;">Cliente</th>
-                            <th style="padding: 12px; text-align: left; font-weight: bold; color: #333; font-size: 0.9rem;">Fecha</th>
-                            <th style="padding: 12px; text-align: left; font-weight: bold; color: #333; font-size: 0.9rem;">Estado</th>
-                            <th style="padding: 12px; text-align: center; font-weight: bold; color: #333; font-size: 0.9rem;">Acción</th>
+                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">ID</th>
+                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Cliente</th>
+                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Fecha</th>
+                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Estado</th>
+                            <th style="padding: 14px 12px; text-align: center; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Acción</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -88,7 +279,11 @@
                                     </span>
                                 </td>
                                 <td style="padding: 12px; text-align: center;">
-                                    <a href="{{ route('asesores.cotizaciones.show', $cot->id) }}" style="background: #3498db; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.85rem; font-weight: bold; display: inline-block;">
+                                    <a href="{{ route('asesores.cotizaciones.show', $cot->id) }}" style="background: #1e40af; color: white; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s; box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2);" onmouseover="this.style.background='#1e3a8a'; this.style.boxShadow='0 4px 8px rgba(30, 64, 175, 0.3)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='#1e40af'; this.style.boxShadow='0 2px 4px rgba(30, 64, 175, 0.2)'; this.style.transform='translateY(0)'">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                        </svg>
                                         Ver
                                     </a>
                                 </td>
@@ -186,12 +381,12 @@
             <!-- VISTA TABLA -->
             <div id="vista-tabla-bor" style="display: block; overflow-x: auto;">
                 <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
-                    <thead style="background: #f8f9fa; border-bottom: 2px solid #ecf0f1;">
+                    <thead style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); border-bottom: 3px solid #1e3a8a;">
                         <tr>
-                            <th style="padding: 12px; text-align: left; font-weight: bold; color: #333; font-size: 0.9rem;">ID</th>
-                            <th style="padding: 12px; text-align: left; font-weight: bold; color: #333; font-size: 0.9rem;">Cliente</th>
-                            <th style="padding: 12px; text-align: left; font-weight: bold; color: #333; font-size: 0.9rem;">Fecha</th>
-                            <th style="padding: 12px; text-align: center; font-weight: bold; color: #333; font-size: 0.9rem;">Acciones</th>
+                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">ID</th>
+                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Cliente</th>
+                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Fecha</th>
+                            <th style="padding: 14px 12px; text-align: center; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -200,11 +395,20 @@
                                 <td style="padding: 12px; color: #666; font-size: 0.9rem;">#{{ $borrador->id }}</td>
                                 <td style="padding: 12px; color: #333; font-size: 0.9rem; font-weight: 500;">{{ $borrador->cliente ?? 'Sin cliente' }}</td>
                                 <td style="padding: 12px; color: #666; font-size: 0.9rem;">{{ $borrador->created_at->format('d/m/Y H:i') }}</td>
-                                <td style="padding: 12px; text-align: center;">
-                                    <a href="{{ route('asesores.cotizaciones.edit-borrador', $borrador->id) }}" style="background: #f39c12; color: white; padding: 6px 10px; border-radius: 4px; text-decoration: none; font-size: 0.85rem; font-weight: bold; display: inline-block; margin-right: 5px;">
+                                <td style="padding: 12px; text-align: center; display: flex; gap: 8px; justify-content: center;">
+                                    <a href="{{ route('asesores.cotizaciones.edit-borrador', $borrador->id) }}" style="background: #f59e0b; color: white; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s; box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);" onmouseover="this.style.background='#d97706'; this.style.boxShadow='0 4px 8px rgba(245, 158, 11, 0.3)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='#f59e0b'; this.style.boxShadow='0 2px 4px rgba(245, 158, 11, 0.2)'; this.style.transform='translateY(0)'">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                        </svg>
                                         Editar
                                     </a>
-                                    <button onclick="eliminarBorrador({{ $borrador->id }})" style="background: #e74c3c; color: white; padding: 6px 10px; border-radius: 4px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: bold; display: inline-block;">
+                                    <button onclick="eliminarBorrador({{ $borrador->id }})" style="background: #ef4444; color: white; padding: 8px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);" onmouseover="this.style.background='#dc2626'; this.style.boxShadow='0 4px 8px rgba(239, 68, 68, 0.3)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='#ef4444'; this.style.boxShadow='0 2px 4px rgba(239, 68, 68, 0.2)'; this.style.transform='translateY(0)'">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="3 6 5 4 21 4 23 6 23 20a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V6"></polyline>
+                                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                                        </svg>
                                         Eliminar
                                     </button>
                                 </td>
@@ -271,11 +475,55 @@
 <script>
 let vistaActual = 'tarjetas';
 
+// Activar tab según el hash en la URL
+document.addEventListener('DOMContentLoaded', function() {
+    const hash = window.location.hash.substring(1); // Obtener hash sin el #
+    if (hash === 'borradores' || hash === 'cotizaciones') {
+        mostrarTabPorHash(hash);
+    }
+});
+
+function mostrarTabPorHash(tab) {
+    // Ocultar todos los tabs
+    document.getElementById('tab-cotizaciones').style.display = 'none';
+    document.getElementById('tab-borradores').style.display = 'none';
+    
+    // Desactivar todos los botones
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.style.borderBottomColor = 'transparent';
+        btn.style.color = '#999';
+    });
+    
+    // Mostrar tab seleccionado
+    document.getElementById('tab-' + tab).style.display = 'block';
+    
+    // Activar botón seleccionado
+    const buttons = document.querySelectorAll('.tab-btn');
+    if (tab === 'cotizaciones') {
+        buttons[0].style.borderBottomColor = '#3498db';
+        buttons[0].style.color = '#333';
+    } else if (tab === 'borradores') {
+        buttons[1].style.borderBottomColor = '#3498db';
+        buttons[1].style.color = '#333';
+    }
+    
+    // Actualizar título dinámicamente
+    const headerTitle = document.getElementById('headerTitle');
+    const headerDesc = document.querySelector('p[style*="rgba(255,255,255,0.7)"]');
+    
+    if (tab === 'cotizaciones') {
+        headerTitle.textContent = 'Cotizaciones';
+        headerDesc.textContent = 'Gestiona tus cotizaciones';
+    } else if (tab === 'borradores') {
+        headerTitle.textContent = 'Borradores';
+        headerDesc.textContent = 'Gestiona tus borradores';
+    }
+}
+
 function mostrarTab(tab) {
     // Ocultar todos los tabs
-    document.querySelectorAll('.tab-content').forEach(el => {
-        el.style.display = 'none';
-    });
+    document.getElementById('tab-cotizaciones').style.display = 'none';
+    document.getElementById('tab-borradores').style.display = 'none';
     
     // Desactivar todos los botones
     document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -289,6 +537,18 @@ function mostrarTab(tab) {
     // Activar botón seleccionado
     event.target.style.borderBottomColor = '#3498db';
     event.target.style.color = '#333';
+    
+    // Actualizar título dinámicamente
+    const headerTitle = document.getElementById('headerTitle');
+    const headerDesc = document.querySelector('p[style*="rgba(255,255,255,0.7)"]');
+    
+    if (tab === 'cotizaciones') {
+        headerTitle.textContent = 'Cotizaciones';
+        headerDesc.textContent = 'Gestiona tus cotizaciones';
+    } else if (tab === 'borradores') {
+        headerTitle.textContent = 'Borradores';
+        headerDesc.textContent = 'Gestiona tus borradores';
+    }
 }
 
 function cambiarVista(vista) {
@@ -362,23 +622,88 @@ function eliminarCotizacion(id) {
 }
 
 function eliminarBorrador(id) {
-    if (confirm('¿Estás seguro de que deseas eliminar este borrador?')) {
-        fetch(`/asesores/cotizaciones/${id}/borrador`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('✓ Borrador eliminado');
-                location.reload();
-            } else {
-                alert('✗ Error al eliminar');
-            }
-        });
-    }
+    Swal.fire({
+        title: '¿Eliminar borrador?',
+        text: 'Esta acción no se puede deshacer',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        customClass: {
+            popup: 'swal-custom-popup',
+            title: 'swal-custom-title',
+            confirmButton: 'swal-custom-confirm',
+            cancelButton: 'swal-custom-cancel'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/asesores/cotizaciones/${id}/borrador`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Encontrar la fila del borrador y eliminarla
+                    const filaTabla = document.querySelector(`#vista-tabla-bor tbody tr:has(button[onclick="eliminarBorrador(${id})"])`);
+                    if (filaTabla) {
+                        filaTabla.style.transition = 'opacity 0.3s ease';
+                        filaTabla.style.opacity = '0';
+                        setTimeout(() => filaTabla.remove(), 300);
+                    }
+                    
+                    // Mostrar toast de éxito
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: '¡Borrador eliminado!',
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.addEventListener('mouseenter', Swal.stopTimer)
+                            toast.addEventListener('mouseleave', Swal.resumeTimer)
+                        },
+                        customClass: {
+                            popup: 'swal-toast-popup',
+                            title: 'swal-toast-title'
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Error',
+                        text: data.message || 'No se pudo eliminar el borrador',
+                        icon: 'error',
+                        confirmButtonColor: '#1e40af',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm'
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Ocurrió un error al eliminar el borrador',
+                    icon: 'error',
+                    confirmButtonColor: '#1e40af',
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        title: 'swal-custom-title',
+                        confirmButton: 'swal-custom-confirm'
+                    }
+                });
+            });
+        }
+    });
 }
 </script>
 @endsection

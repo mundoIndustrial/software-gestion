@@ -4,6 +4,144 @@
 @section('page-title', 'Cotizaciones')
 
 @push('styles')
+<style>
+    /* Estilos personalizados para SweetAlert2 en create-friendly */
+    .swal-custom-popup {
+        width: 90% !important;
+        max-width: 380px !important;
+        padding: 24px !important;
+        border-radius: 12px !important;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    .swal-custom-title {
+        font-size: 1.25rem !important;
+        font-weight: 700 !important;
+        color: #1f2937 !important;
+        margin-bottom: 12px !important;
+    }
+    
+    .swal2-html-container {
+        font-size: 1rem !important;
+        color: #4b5563 !important;
+        line-height: 1.6 !important;
+    }
+    
+    .swal2-icon {
+        width: 40px !important;
+        height: 40px !important;
+        margin: 0 auto 16px !important;
+    }
+    
+    .swal2-icon.swal2-question {
+        border-color: #f59e0b !important;
+        color: #f59e0b !important;
+    }
+    
+    .swal2-icon.swal2-warning {
+        border-color: #f59e0b !important;
+        color: #f59e0b !important;
+    }
+    
+    .swal2-icon.swal2-success {
+        border-color: #10b981 !important;
+        color: #10b981 !important;
+    }
+    
+    .swal2-icon.swal2-error {
+        border-color: #ef4444 !important;
+        color: #ef4444 !important;
+    }
+    
+    .swal-custom-confirm,
+    .swal-custom-cancel {
+        padding: 10px 20px !important;
+        font-size: 0.9rem !important;
+        font-weight: 600 !important;
+        border-radius: 6px !important;
+        border: none !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .swal-custom-confirm {
+        background-color: #10b981 !important;
+        color: white !important;
+    }
+    
+    .swal-custom-confirm:hover {
+        background-color: #059669 !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+    }
+    
+    .swal-custom-cancel {
+        background-color: #d1d5db !important;
+        color: #374151 !important;
+        margin-right: 8px !important;
+    }
+    
+    .swal-custom-cancel:hover {
+        background-color: #9ca3af !important;
+        transform: translateY(-2px) !important;
+    }
+    
+    /* Estilos para Toast */
+    .swal-toast-popup {
+        width: auto !important;
+        max-width: 350px !important;
+        padding: 12px 16px !important;
+        border-radius: 8px !important;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15) !important;
+        background-color: #10b981 !important;
+        border: none !important;
+    }
+    
+    .swal-toast-title {
+        font-size: 0.95rem !important;
+        font-weight: 600 !important;
+        color: white !important;
+        margin: 0 !important;
+    }
+    
+    .swal2-toast-container {
+        top: 20px !important;
+        right: 20px !important;
+    }
+    
+    .swal2-toast .swal2-icon {
+        width: 32px !important;
+        height: 32px !important;
+        margin: 0 8px 0 0 !important;
+    }
+    
+    .swal2-toast .swal2-icon.swal2-success {
+        border-color: white !important;
+        color: white !important;
+    }
+    
+    .swal2-timer-progress-bar {
+        background: rgba(255, 255, 255, 0.7) !important;
+    }
+    
+    @media (max-width: 640px) {
+        .swal-custom-popup {
+            width: 95% !important;
+            max-width: 320px !important;
+            padding: 20px !important;
+        }
+        
+        .swal-custom-title {
+            font-size: 1.1rem !important;
+        }
+        
+        .swal2-html-container {
+            font-size: 0.95rem !important;
+        }
+    }
+</style>
+@endpush
+
+@push('styles')
 <link rel="stylesheet" href="{{ asset('css/asesores/create-friendly.css') }}">
 <style>
     .imagen-preview {
@@ -2061,6 +2199,25 @@ function recopilarDatos() {
 
 // Guardar cotización como borrador
 async function guardarCotizacion() {
+    // Deshabilitar botones para evitar múltiples clics
+    const btnGuardar = document.querySelector('button[onclick="guardarCotizacion()"]');
+    const btnEnviar = document.querySelector('button[onclick="enviarCotizacion()"]');
+    
+    if (btnGuardar) btnGuardar.disabled = true;
+    if (btnEnviar) btnEnviar.disabled = true;
+    
+    // Mostrar indicador de carga
+    Swal.fire({
+        title: 'Guardando...',
+        html: '<div style="display: flex; justify-content: center; align-items: center; gap: 10px;"><div style="width: 12px; height: 12px; border-radius: 50%; background: #1e40af; animation: pulse 1.5s infinite;"></div><div style="width: 12px; height: 12px; border-radius: 50%; background: #1e40af; animation: pulse 1.5s infinite 0.3s;"></div><div style="width: 12px; height: 12px; border-radius: 50%; background: #1e40af; animation: pulse 1.5s infinite 0.6s;"></div></div><style>@keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }</style>',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: (modal) => {
+            modal.style.pointerEvents = 'none';
+        }
+    });
+    
     const datos = recopilarDatos();
     
     console.log('🔵 guardarCotizacion() llamado');
@@ -2118,19 +2275,74 @@ async function guardarCotizacion() {
                     await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.general, 'general');
                 }
                 
-                alert('✓ Cotización guardada con imágenes');
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: '¡Cotización guardada en borradores!',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        toast.addEventListener('mouseenter', Swal.stopTimer)
+                        toast.addEventListener('mouseleave', Swal.resumeTimer)
+                    },
+                    customClass: {
+                        popup: 'swal-toast-popup',
+                        title: 'swal-toast-title'
+                    }
+                });
             } else {
                 console.log('⚠️ Sin imágenes para subir');
-                alert('✓ Cotización guardada en borradores');
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: '¡Cotización guardada en borradores!',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        toast.addEventListener('mouseenter', Swal.stopTimer)
+                        toast.addEventListener('mouseleave', Swal.resumeTimer)
+                    },
+                    customClass: {
+                        popup: 'swal-toast-popup',
+                        title: 'swal-toast-title'
+                    }
+                });
             }
             
-            window.location.href = '{{ route("asesores.cotizaciones.index") }}';
+            // Redirigir a la tabla de borradores en paralelo (sin esperar al toast)
+            setTimeout(() => {
+                window.location.href = '{{ route("asesores.cotizaciones.index") }}#borradores';
+            }, 2000);
         } else {
-            alert('✗ Error al guardar: ' + (data.message || 'Error desconocido'));
+            Swal.fire({
+                title: 'Error',
+                text: 'Error al guardar: ' + (data.message || 'Error desconocido'),
+                icon: 'error',
+                confirmButtonColor: '#1e40af',
+                customClass: {
+                    popup: 'swal-custom-popup',
+                    title: 'swal-custom-title',
+                    confirmButton: 'swal-custom-confirm'
+                }
+            });
         }
     } catch (error) {
         console.error('❌ Error:', error);
-        alert('✗ Error al guardar la cotización');
+        Swal.fire({
+            title: 'Error',
+            text: 'Error al guardar la cotización',
+            icon: 'error',
+            confirmButtonColor: '#1e40af',
+            customClass: {
+                popup: 'swal-custom-popup',
+                title: 'swal-custom-title',
+                confirmButton: 'swal-custom-confirm'
+            }
+        });
     }
 }
 
@@ -2170,14 +2382,78 @@ async function enviarCotizacion() {
     const datos = recopilarDatos();
     
     if (!datos.cliente.trim()) {
-        alert('✗ Por favor ingresa el nombre del cliente');
+        Swal.fire({
+            title: 'Campo requerido',
+            text: 'Por favor ingresa el nombre del cliente',
+            icon: 'warning',
+            confirmButtonColor: '#1e40af',
+            customClass: {
+                popup: 'swal-custom-popup',
+                title: 'swal-custom-title',
+                confirmButton: 'swal-custom-confirm'
+            }
+        });
         return;
     }
     
     if (datos.productos.length === 0) {
-        alert('✗ Por favor agrega al menos un producto');
+        Swal.fire({
+            title: 'Productos requeridos',
+            text: 'Por favor agrega al menos un producto',
+            icon: 'warning',
+            confirmButtonColor: '#1e40af',
+            customClass: {
+                popup: 'swal-custom-popup',
+                title: 'swal-custom-title',
+                confirmButton: 'swal-custom-confirm'
+            }
+        });
         return;
     }
+    
+    // Confirmación antes de enviar
+    Swal.fire({
+        title: '¿Listo para enviar?',
+        html: '<p style="margin: 0 0 14px 0; font-size: 0.95rem; color: #4b5563; line-height: 1.6;">Antes de continuar, ten en cuenta que una vez enviada la cotización <span style="color: #ef4444; font-weight: 700;">no podrá editarse ni eliminarse</span>.</p><p style="margin: 0 0 14px 0; font-size: 0.95rem; color: #4b5563; line-height: 1.6;">Solo será posible hacer cambios si <span style="color: #ef4444; font-weight: 700;">el contador la anula</span>.</p><p style="margin: 0; font-size: 0.95rem; color: #4b5563; line-height: 1.6;">¿Estás seguro/a de que todo está correcto?</p>',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#d1d5db',
+        confirmButtonText: 'Sí, enviar',
+        cancelButtonText: 'Revisar primero',
+        customClass: {
+            popup: 'swal-custom-popup',
+            title: 'swal-custom-title',
+            confirmButton: 'swal-custom-confirm',
+            cancelButton: 'swal-custom-cancel'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            procederEnviarCotizacion(datos);
+        }
+    });
+}
+
+// Función auxiliar para proceder con el envío
+async function procederEnviarCotizacion(datos) {
+    // Deshabilitar botones para evitar múltiples clics
+    const btnGuardar = document.querySelector('button[onclick="guardarCotizacion()"]');
+    const btnEnviar = document.querySelector('button[onclick="enviarCotizacion()"]');
+    
+    if (btnGuardar) btnGuardar.disabled = true;
+    if (btnEnviar) btnEnviar.disabled = true;
+    
+    // Mostrar indicador de carga
+    Swal.fire({
+        title: 'Enviando...',
+        html: '<div style="display: flex; justify-content: center; align-items: center; gap: 10px;"><div style="width: 12px; height: 12px; border-radius: 50%; background: #10b981; animation: pulse 1.5s infinite;"></div><div style="width: 12px; height: 12px; border-radius: 50%; background: #10b981; animation: pulse 1.5s infinite 0.3s;"></div><div style="width: 12px; height: 12px; border-radius: 50%; background: #10b981; animation: pulse 1.5s infinite 0.6s;"></div></div><style>@keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }</style>',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: false,
+        didOpen: (modal) => {
+            modal.style.pointerEvents = 'none';
+        }
+    });
     
     console.log('🔵 enviarCotizacion() llamado');
     console.log('📸 Imágenes en memoria:', {
@@ -2238,20 +2514,57 @@ async function enviarCotizacion() {
                 if (window.imagenesEnMemoria.general.length > 0) {
                     await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.general, 'general');
                 }
-                
-                alert('✓ Cotización enviada con imágenes');
-            } else {
-                console.log('⚠️ Sin imágenes para subir');
-                alert('✓ Cotización enviada correctamente');
             }
             
-            window.location.href = '{{ route("asesores.cotizaciones.index") }}';
+            // Mostrar mensaje de éxito
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: '¡Cotización enviada!',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer)
+                    toast.addEventListener('mouseleave', Swal.resumeTimer)
+                },
+                customClass: {
+                    popup: 'swal-toast-popup',
+                    title: 'swal-toast-title'
+                }
+            });
+            
+            // Redirigir a la tabla de cotizaciones en paralelo (sin esperar al toast)
+            setTimeout(() => {
+                window.location.href = '{{ route("asesores.cotizaciones.index") }}#cotizaciones';
+            }, 2000);
         } else {
-            alert('✗ Error al enviar: ' + (data.message || 'Error desconocido'));
+            Swal.fire({
+                title: 'Error',
+                text: 'Error al enviar: ' + (data.message || 'Error desconocido'),
+                icon: 'error',
+                confirmButtonColor: '#1e40af',
+                customClass: {
+                    popup: 'swal-custom-popup',
+                    title: 'swal-custom-title',
+                    confirmButton: 'swal-custom-confirm'
+                }
+            });
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('✗ Error al enviar la cotización');
+        Swal.fire({
+            title: 'Error',
+            text: 'Error al enviar la cotización',
+            icon: 'error',
+            confirmButtonColor: '#1e40af',
+            customClass: {
+                popup: 'swal-custom-popup',
+                title: 'swal-custom-title',
+                confirmButton: 'swal-custom-confirm'
+            }
+        });
     }
 }
 
