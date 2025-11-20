@@ -18,6 +18,7 @@
 
     <!-- CSS del Contador -->
     <link rel="stylesheet" href="{{ asset('css/contador/layout.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/contador/cotizacion-modal.css') }}">
 
     @stack('styles')
 

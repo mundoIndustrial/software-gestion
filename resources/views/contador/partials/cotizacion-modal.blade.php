@@ -1,26 +1,40 @@
 <div class="cotizacion-detail">
-    <!-- Encabezado Principal -->
-    <div class="detail-section">
-        <div class="detail-header">UNIFORMES MUNDO INDUSTRIAL</div>
-        <div class="detail-row">
-            <div class="detail-label">Asesora:</div>
-            <div class="detail-value">{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? 'N/A') }}</div>
+    <!-- Encabezado Principal - Estructura Profesional -->
+    <div class="cotizacion-header">
+        <!-- Fila 1: Empresa (izq) | Número y Fecha (der) -->
+        <div class="header-row-top">
+            <div class="header-left">
+                <h2 class="company-name">UNIFORMES MUNDO INDUSTRIAL</h2>
+            </div>
+            <div class="header-right">
+                <div class="header-number">
+                    <span class="label">COTIZACIÓN #</span>
+                    <span class="value">COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}</span>
+                </div>
+                <div class="header-date">
+                    <span class="label">FECHA</span>
+                    <span class="value">{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y') : 'N/A' }}</span>
+                </div>
+            </div>
         </div>
-        <div class="detail-row">
-            <div class="detail-label">NIT:</div>
-            <div class="detail-value">1.093.738.433-3 Régimen Común</div>
-        </div>
-        <div class="detail-row">
-            <div class="detail-label">Cliente:</div>
-            <div class="detail-value">{{ $cotizacion->cliente ?? 'N/A' }}</div>
-        </div>
-        <div class="detail-row">
-            <div class="detail-label">Fecha:</div>
-            <div class="detail-value">{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y H:i') : 'N/A' }}</div>
-        </div>
-        <div class="detail-row">
-            <div class="detail-label">Cotización:</div>
-            <div class="detail-value">COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}</div>
+
+        <!-- Línea divisora -->
+        <div class="header-divider"></div>
+
+        <!-- Fila 2: Cliente (izq) | Asesora (der) -->
+        <div class="header-row-bottom">
+            <div class="header-left">
+                <div class="info-block">
+                    <span class="label">CLIENTE</span>
+                    <span class="value">{{ $cotizacion->cliente ?? 'N/A' }}</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="info-block">
+                    <span class="label">ASESORA</span>
+                    <span class="value">{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? 'N/A') }}</span>
+                </div>
+            </div>
         </div>
     </div>
 

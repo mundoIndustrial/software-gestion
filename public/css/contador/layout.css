@@ -558,17 +558,26 @@ tbody tr:hover {
     padding: 2rem;
     border-bottom: 1px solid var(--border-color);
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
     color: var(--text-white);
     border-radius: 16px 16px 0 0;
+    position: relative;
 }
 
 .modal-header h2 {
     margin: 0;
     font-size: 1.5rem;
     font-weight: 700;
+}
+
+.modal-header-logo {
+    height: 70px;
+    width: auto;
+    object-fit: contain;
+    flex-shrink: 0;
+    filter: brightness(0) invert(1);
 }
 
 .modal-close {
@@ -584,6 +593,10 @@ tbody tr:hover {
     align-items: center;
     justify-content: center;
     border-radius: 8px;
+    position: absolute;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 .modal-close:hover {
