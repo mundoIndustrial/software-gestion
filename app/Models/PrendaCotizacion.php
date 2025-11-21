@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * DEPRECATED - Este modelo ya no se utiliza
+ * Fue reemplazado por PrendaCotizacionFriendly
+ * La tabla será eliminada por la migración 2025_11_21_drop_unused_tables.php
+ */
 class PrendaCotizacion extends Model
 {
     protected $table = 'prendas_cotizacion';

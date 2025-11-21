@@ -4,6 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * DEPRECATED - Este modelo ya no se utiliza
+ * El historial de cotizaciones no se registra actualmente
+ * La tabla será eliminada por la migración 2025_11_21_drop_unused_tables.php
+ */
 class HistorialCotizacion extends Model
 {
     protected $table = 'historial_cotizaciones';

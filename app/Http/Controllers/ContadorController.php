@@ -25,7 +25,6 @@ class ContadorController extends Controller
     public function getCotizacionDetail($id)
     {
         $cotizacion = Cotizacion::with([
-            'prendas',
             'prendasCotizaciones',
             'logoCotizacion'
         ])->findOrFail($id);

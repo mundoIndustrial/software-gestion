@@ -68,22 +68,6 @@ class Cotizacion extends Model
     }
 
     /**
-     * Relación con prendas de la cotización
-     */
-    public function prendas(): HasMany
-    {
-        return $this->hasMany(PrendaCotizacion::class);
-    }
-
-    /**
-     * Relación con formatos de cotización
-     */
-    public function formatos(): HasMany
-    {
-        return $this->hasMany(FormatoCotizacion::class);
-    }
-
-    /**
      * Relación con prendas de cotización (friendly)
      */
     public function prendasCotizaciones(): HasMany

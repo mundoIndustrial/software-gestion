@@ -86,8 +86,8 @@
                     </div>
                     @endif
                     
-                    <!-- Tallas y Precios -->
-                    <div style="display: flex; flex-direction: column; gap: 0.75rem; justify-content: center;">
+                    <!-- Tallas -->
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem; justify-content: center;" data-prenda-id="{{ $prenda->id }}">
                         @php
                             // Obtener tallas desde la relación (tabla prendas_cotizaciones_friendly)
                             $tallas = $prenda->tallas ?? [];
@@ -95,59 +95,16 @@
                                 $tallas = explode(',', $tallas);
                                 $tallas = array_map('trim', $tallas);
                             }
-                            // Los precios se guardan en window.preciosProductos en JavaScript
-                            $precios = $prenda->precios ?? [];
-                            $iva = $prenda->iva ?? 0;
-                            $tienePrecios = !empty($precios) && count($precios) > 0;
                         @endphp
                         
                         <!-- Mostrar Tallas -->
-                        <div>
-                            <div style="font-size: 0.85rem; font-weight: 600; color: #333; margin-bottom: 0.5rem;">Tallas:</div>
-                            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
-                                @if(count($tallas) > 0)
-                                    @foreach($tallas as $talla)
-                                        @if(!empty($talla))
-                                        <span style="color: #e74c3c; font-weight: 700; font-size: 0.9rem;">
-                                            {{ strtoupper($talla) }}
-                                        </span>
-                                        @endif
-                                    @endforeach
-                                @else
-                                    <span style="color: #999; font-size: 0.85rem;">Sin tallas</span>
-                                @endif
+                        @if(count($tallas) > 0)
+                            <div style="font-weight: bold; color: #e74c3c; font-size: 0.95rem;">
+                                TALLAS: ({{ implode('-', array_map('strtoupper', $tallas)) }})
                             </div>
-                        </div>
-                        
-                        <!-- Mostrar Precios si existen -->
-                        @if($tienePrecios)
-                        <div style="background: #f0f0f0; padding: 0.75rem; border-radius: 4px;">
-                            <div style="font-size: 0.8rem; color: #333; margin-bottom: 0.5rem;">
-                                <strong>Precios:</strong>
-                                @php
-                                    $preciosTexto = [];
-                                    foreach($precios as $talla => $precio) {
-                                        $precioConIva = $precio * (1 + $iva / 100);
-                                        $preciosTexto[] = strtoupper($talla) . ': $' . number_format($precio, 2, '.', ',');
-                                    }
-                                @endphp
-                                {{ implode(' | ', $preciosTexto) }}
-                            </div>
-                            @if($iva > 0)
-                            <div style="font-size: 0.8rem; color: #666;">
-                                <strong>IVA:</strong> {{ $iva }}%
-                            </div>
-                            @endif
-                        </div>
+                        @else
+                            <div style="color: #999; font-size: 0.85rem;">Sin tallas</div>
                         @endif
-                        
-                        <!-- Botón Digitar Precios -->
-                        <button type="button" onclick="abrirModalPrecios({{ $productoIndex }}, '{{ $prenda->nombre_producto ?? 'Producto' }}', {{ json_encode($tallas) }}, {{ json_encode($precios) }}, {{ $iva }})"
-                                style="background: linear-gradient(135deg, #27ae60 0%, #229954 100%); color: white; border: none; padding: 0.6rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s;"
-                                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'"
-                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
-                            💰 Digitar Precios
-                        </button>
                     </div>
                 </div>
             </div>
@@ -341,31 +298,5 @@
         @endforeach
     </div>
     @endif
-
-    <!-- MODAL: Digitar Precios -->
-    <div id="modalPreciosProducto" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 9000; align-items: center; justify-content: center;">
-        <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
-            <!-- Header -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 2px solid #27ae60; padding-bottom: 1rem;">
-                <h3 id="modalPreciosTitle" style="margin: 0; color: #333; font-size: 1.3rem;">💰 Digitar Precios</h3>
-                <button type="button" onclick="cerrarModalPrecios()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999;">✕</button>
-            </div>
-            
-            <!-- Contenido -->
-            <div id="modalPreciosContent" style="margin-bottom: 1.5rem;">
-                <!-- Se llena dinámicamente con JavaScript -->
-            </div>
-            
-            <!-- Footer -->
-            <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 2px solid #e0e0e0; display: flex; gap: 1rem; justify-content: flex-end;">
-                <button type="button" onclick="cerrarModalPrecios()" style="padding: 0.6rem 1.5rem; background: #f0f0f0; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; font-weight: 600; color: #333;">
-                    CANCELAR
-                </button>
-                <button type="button" onclick="guardarPrecios()" style="padding: 0.6rem 1.5rem; background: linear-gradient(135deg, #27ae60 0%, #229954 100%); border: none; border-radius: 6px; cursor: pointer; font-weight: 600; color: white;">
-                    GUARDAR PRECIOS
-                </button>
-            </div>
-        </div>
-    </div>
 
 </div>

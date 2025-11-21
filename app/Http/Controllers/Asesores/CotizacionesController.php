@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Cotizacion;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
+use App\Models\PrendaCotizacionFriendly;
 use App\Models\ProcesoPrenda;
 use App\Services\ImagenCotizacionService;
 use Illuminate\Http\Request;
@@ -779,6 +780,7 @@ class CotizacionesController extends Controller
             ], 500);
         }
     }
+
 
     /**
      * Generar número de pedido único

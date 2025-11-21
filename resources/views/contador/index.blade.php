@@ -36,14 +36,12 @@
                         <td>{{ $cotizacion->cliente ?? 'N/A' }}</td>
                         <td>{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? 'N/A') }}</td>
                         <td>
-                            <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                <button class="btn btn-primary" onclick="openCotizacionModal({{ $cotizacion->id }})" style="flex: 1;">
-                                    <span class="material-symbols-rounded">visibility</span>
-                                    Ver Detalles
+                            <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
+                                <button class="btn btn-primary" onclick="openCotizacionModal({{ $cotizacion->id }})" style="padding: 0.6rem 0.8rem; background: #1e5ba8; color: white; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Ver Detalles" onmouseover="this.style.background='#1e40af'" onmouseout="this.style.background='#1e5ba8'">
+                                    <span class="material-symbols-rounded" style="font-size: 1.2rem;">visibility</span>
                                 </button>
-                                <button class="btn btn-danger" onclick="eliminarCotizacion({{ $cotizacion->id }}, '{{ $cotizacion->cliente }}')" style="padding: 0.6rem 0.8rem; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 0.4rem; transition: all 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+                                <button class="btn btn-danger" onclick="eliminarCotizacion({{ $cotizacion->id }}, '{{ $cotizacion->cliente }}')" style="padding: 0.6rem 0.8rem; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Eliminar" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
                                     <span class="material-symbols-rounded" style="font-size: 1.2rem;">delete</span>
-                                    <span style="display: none;">Eliminar</span>
                                 </button>
                             </div>
                         </td>
@@ -154,6 +152,4 @@
     </div>
 </div>
 
-
-<script src="{{ asset('js/contador/contador.js') }}"></script>
 @endsection

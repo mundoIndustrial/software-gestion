@@ -11,8 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Eliminar columna precios_tallas si existe
         Schema::table('prendas_cotizaciones', function (Blueprint $table) {
-            //
+            if (Schema::hasColumn('prendas_cotizaciones', 'precios_tallas')) {
+                $table->dropColumn('precios_tallas');
+            }
         });
     }
 
@@ -21,8 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('prendas_cotizaciones', function (Blueprint $table) {
-            //
-        });
+        // No hacer nada en reverse
     }
 };
