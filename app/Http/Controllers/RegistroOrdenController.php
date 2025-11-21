@@ -90,9 +90,20 @@ class RegistroOrdenController extends Controller
         $query = TablaOriginal::query();
 
         // Filtro por defecto para supervisores: "En Ejecución" (pero puede cambiarse)
+        // IMPORTANTE: No aplicar filtro automático si hay búsqueda o filtros activos
         if (auth()->user() && auth()->user()->role && auth()->user()->role->name === 'supervisor') {
-            // Si no hay filtro de estado en la URL, aplicar "En Ejecución" por defecto
-            if (!$request->has('filter_estado')) {
+            // Verificar si hay búsqueda o filtros activos
+            $hasSearch = $request->has('search') && !empty($request->search);
+            $hasFilters = false;
+            foreach ($request->all() as $key => $value) {
+                if (str_starts_with($key, 'filter_') && !empty($value)) {
+                    $hasFilters = true;
+                    break;
+                }
+            }
+            
+            // Si no hay filtro de estado en la URL Y no hay búsqueda Y no hay otros filtros, aplicar "En Ejecución" por defecto
+            if (!$request->has('filter_estado') && !$hasSearch && !$hasFilters) {
                 $query->where('estado', 'En Ejecución');
             }
         }
@@ -113,7 +124,6 @@ class RegistroOrdenController extends Controller
         foreach ($request->all() as $key => $value) {
             if (str_starts_with($key, 'filter_') && !empty($value)) {
                 $column = str_replace('filter_', '', $key);
-                
                 // Usar separador especial para valores que pueden contener comas y saltos de línea
                 $separator = '|||FILTER_SEPARATOR|||';
                 $values = explode($separator, $value);

@@ -1185,10 +1185,25 @@ function clearFilters() {
     // Limpiar búsqueda
     document.getElementById('buscarOrden').value = '';
 
-    // Limpiar filtros aplicados (asumiendo que hay una variable global o manera de resetear)
-    // Aquí puedes agregar lógica para resetear filtros si es necesario
-
-    // Recargar la tabla
+    // Limpiar todos los parámetros de filtro de la URL
+    const url = new URL(window.location);
+    const params = new URLSearchParams(url.search);
+    
+    // Remover todos los parámetros que comienzan con 'filter_'
+    for (let key of params.keys()) {
+        if (key.startsWith('filter_')) {
+            params.delete(key);
+        }
+    }
+    
+    // También remover el parámetro de búsqueda
+    params.delete('search');
+    
+    // Resetear a página 1
+    params.set('page', 1);
+    
+    // Actualizar URL y recargar tabla
+    window.history.pushState({}, '', `${url.pathname}?${params}`);
     recargarTablaPedidos();
 }
 
