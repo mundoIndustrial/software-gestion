@@ -390,15 +390,16 @@ class ModernTable {
     setupEventListeners() {
         console.log('ModernTable: setupEventListeners called');
         
-        // Búsqueda en tiempo real con debounce
+        // Búsqueda en tiempo real con debounce y AbortController
         const searchInput = document.getElementById('buscarOrden');
         if (searchInput) {
             let searchTimeout;
+            this.searchAbortController = null; // Para cancelar requests anteriores
             searchInput.addEventListener('input', (e) => {
                 clearTimeout(searchTimeout);
                 searchTimeout = setTimeout(() => {
                     this.performAjaxSearch(e.target.value);
-                }, 300); // 300ms de delay para búsqueda en tiempo real
+                }, 500); // 500ms de delay para búsqueda en tiempo real (más tiempo para evitar race conditions)
             });
         }
 
@@ -1328,6 +1329,12 @@ class ModernTable {
     }
 
     async performAjaxSearch(term) {
+        // Cancelar request anterior si existe
+        if (this.searchAbortController) {
+            this.searchAbortController.abort();
+        }
+        this.searchAbortController = new AbortController();
+
         const url = new URL(window.location);
         const params = new URLSearchParams(url.search);
         term ? params.set('search', term) : params.delete('search');
@@ -1335,7 +1342,8 @@ class ModernTable {
 
         try {
             const response = await fetch(`${this.baseRoute}?${params}`, {
-                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                signal: this.searchAbortController.signal
             });
 
             const data = await response.json();
@@ -1367,7 +1375,7 @@ class ModernTable {
             
             this.updateTableWithData(data.orders, data.totalDiasCalculados);
             this.updatePaginationInfo(data.pagination);
-            this.updatePaginationControls(data.pagination_html);
+            this.updatePaginationControls(data.pagination_html, data.pagination);
             this.updateUrl(params.toString());
             this.initializeStatusDropdowns();
             this.initializeAreaDropdowns();
@@ -1378,6 +1386,11 @@ class ModernTable {
                 console.log('✅ Dropdowns de día de entrega reinicializados después de búsqueda');
             }
         } catch (error) {
+            // Si fue cancelado por AbortController, no hacer nada
+            if (error.name === 'AbortError') {
+                console.log('⚠️ Búsqueda anterior cancelada (nueva búsqueda en progreso)');
+                return;
+            }
             console.error('Error en búsqueda:', error);
             window.location.href = `${this.baseRoute}?${params}`;
         }
@@ -1484,13 +1497,104 @@ class ModernTable {
 }
 
     updatePaginationInfo(pagination) {
-        const info = document.querySelector('.pagination-info span');
-        if (info) info.textContent = `Mostrando ${pagination.from}-${pagination.to} de ${pagination.total} registros`;
+        // Buscar por ID primero, luego por clase
+        let info = document.getElementById('paginationInfo');
+        if (!info) {
+            info = document.querySelector('.pagination-info span');
+        }
+        if (info) {
+            const newText = `Mostrando ${pagination.from}-${pagination.to} de ${pagination.total} registros`;
+            info.textContent = newText;
+            console.log(`✅ Paginación actualizada: ${newText}`);
+        } else {
+            console.warn('⚠️ Elemento de paginación no encontrado');
+        }
     }
 
-    updatePaginationControls(html) {
+    updatePaginationControls(html, pagination) {
         const controls = document.querySelector('.pagination-controls');
-        if (controls && html) controls.innerHTML = html;
+        if (!controls) return;
+
+        // Si no hay datos de paginación, no hacer nada
+        if (!pagination) {
+            console.warn('⚠️ Datos de paginación no disponibles');
+            return;
+        }
+
+        const currentPage = pagination.current_page || 1;
+        const lastPage = pagination.last_page || 1;
+        const total = pagination.total || 0;
+
+        console.log(`📊 Actualizando paginación: Página ${currentPage} de ${lastPage} (Total: ${total})`);
+
+        // Usar el HTML del backend si existe, de lo contrario generar uno simple
+        if (html && html.trim().length > 0) {
+            // El HTML del backend ya tiene el diseño correcto, solo usarlo
+            controls.innerHTML = html;
+            console.log(`✅ Paginación del backend utilizada`);
+        } else {
+            // Si no hay HTML del backend, generar uno simple
+            console.warn('⚠️ HTML de paginación del backend no disponible, generando simple');
+            
+            let paginationHtml = '<nav aria-label="Page navigation"><ul class="pagination">';
+
+            // Botón anterior
+            if (currentPage > 1) {
+                const prevUrl = this.getPaginationUrl(currentPage - 1);
+                paginationHtml += `<li class="page-item"><a class="page-link" href="${prevUrl}">← Anterior</a></li>`;
+            } else {
+                paginationHtml += '<li class="page-item disabled"><span class="page-link">← Anterior</span></li>';
+            }
+
+            // Generar botones de página (máximo 10 páginas visibles)
+            let startPage = Math.max(1, currentPage - 4);
+            let endPage = Math.min(lastPage, currentPage + 5);
+
+            // Si hay muchas páginas, mostrar puntos suspensivos
+            if (startPage > 1) {
+                paginationHtml += '<li class="page-item"><a class="page-link" href="' + this.getPaginationUrl(1) + '">1</a></li>';
+                if (startPage > 2) {
+                    paginationHtml += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                if (i === currentPage) {
+                    paginationHtml += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
+                } else {
+                    const pageUrl = this.getPaginationUrl(i);
+                    paginationHtml += `<li class="page-item"><a class="page-link" href="${pageUrl}">${i}</a></li>`;
+                }
+            }
+
+            // Si hay más páginas, mostrar puntos suspensivos y última página
+            if (endPage < lastPage) {
+                if (endPage < lastPage - 1) {
+                    paginationHtml += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                }
+                paginationHtml += '<li class="page-item"><a class="page-link" href="' + this.getPaginationUrl(lastPage) + '">' + lastPage + '</a></li>';
+            }
+
+            // Botón siguiente
+            if (currentPage < lastPage) {
+                const nextUrl = this.getPaginationUrl(currentPage + 1);
+                paginationHtml += `<li class="page-item"><a class="page-link" href="${nextUrl}">Siguiente →</a></li>`;
+            } else {
+                paginationHtml += '<li class="page-item disabled"><span class="page-link">Siguiente →</span></li>';
+            }
+
+            paginationHtml += '</ul></nav>';
+
+            controls.innerHTML = paginationHtml;
+            console.log(`✅ Paginación simple generada: ${lastPage} página(s)`);
+        }
+    }
+
+    getPaginationUrl(page) {
+        const url = new URL(window.location);
+        const params = new URLSearchParams(url.search);
+        params.set('page', page);
+        return `${this.baseRoute}?${params}`;
     }
 
     updateUrl(queryString) {
@@ -1689,14 +1793,15 @@ initializeStatusDropdowns() {
         const params = new URLSearchParams(url.search);
 
         try {
-            const response = await fetch(`${this.baseRoute}?${params}`, {
+            // Usar el href completo para preservar todos los parámetros (búsqueda, filtros, página)
+            const response = await fetch(href, {
                 headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
             });
 
             const data = await response.json();
             this.updateTableWithData(data.orders, data.totalDiasCalculados);
             this.updatePaginationInfo(data.pagination);
-            this.updatePaginationControls(data.pagination_html);
+            this.updatePaginationControls(data.pagination_html, data.pagination);
             this.updateUrl(params.toString());
             this.initializeStatusDropdowns();
         } catch (error) {

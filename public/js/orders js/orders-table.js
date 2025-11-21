@@ -1205,6 +1205,8 @@ function clearFilters() {
     // Actualizar URL y recargar tabla
     window.history.pushState({}, '', `${url.pathname}?${params}`);
     recargarTablaPedidos();
+    
+    console.log('✅ Filtros limpiados correctamente');
 }
 
 // Función para abrir modal de registro de orden
