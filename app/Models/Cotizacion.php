@@ -64,12 +64,4 @@ class Cotizacion extends Model
     {
         return $this->hasMany(PrendaCotizacion::class);
     }
-
-    /**
-     * Relación con formatos de cotización
-     */
-    public function formatos(): HasMany
-    {
-        return $this->hasMany(FormatoCotizacion::class);
-    }
 }

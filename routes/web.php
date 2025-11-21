@@ -139,20 +139,6 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
 Route::middleware(['auth', 'role:contador'])->prefix('contador')->name('contador.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\ContadorController::class, 'index'])->name('index');
     Route::get('/cotizacion/{id}', [App\Http\Controllers\ContadorController::class, 'getCotizacionDetail'])->name('cotizacion.detail');
-    Route::get('/cotizacion/{id}/cotizar-prendas', [App\Http\Controllers\ContadorController::class, 'getCotizarPrendasModal'])->name('cotizar-prendas');
-    
-    // Rutas para costos de prendas
-    Route::get('/componentes', [App\Http\Controllers\CostoPrendaController::class, 'getComponentes'])->name('componentes');
-    Route::get('/costos/{prendaId}', [App\Http\Controllers\CostoPrendaController::class, 'getCostos'])->name('costos');
-    Route::post('/costo/guardar', [App\Http\Controllers\CostoPrendaController::class, 'guardarCosto'])->name('costo.guardar');
-    Route::delete('/costo/{costoId}', [App\Http\Controllers\CostoPrendaController::class, 'eliminarCosto'])->name('costo.eliminar');
-    Route::post('/componente/crear', [App\Http\Controllers\CostoPrendaController::class, 'crearComponente'])->name('componente.crear');
-    
-    // Rutas para formatos de cotización
-    Route::get('/formatos', [App\Http\Controllers\FormatoCotizacionController::class, 'index'])->name('formatos.index');
-    Route::post('/formato/guardar', [App\Http\Controllers\FormatoCotizacionController::class, 'guardar'])->name('formato.guardar');
-    Route::get('/formato/{id}', [App\Http\Controllers\FormatoCotizacionController::class, 'show'])->name('formato.show');
-    Route::delete('/formato/{id}', [App\Http\Controllers\FormatoCotizacionController::class, 'destroy'])->name('formato.destroy');
 });
 
 // ========================================

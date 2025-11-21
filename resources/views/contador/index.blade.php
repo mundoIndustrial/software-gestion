@@ -115,25 +115,32 @@
     </div>
 </section>
 
-<!-- Sección de Formatos -->
-<section id="formatos-section" class="section-content">
-    <div class="table-container">
-        <div class="table-header">
-            <h2>📄 Formatos de Cotización</h2>
-        </div>
-        <div id="formatos-list" style="padding: 2rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 2rem;">
-            <!-- Se cargará dinámicamente -->
-        </div>
-    </div>
-</section>
-
 <!-- Modal de Cotización -->
-<div id="cotizacionModal" class="modal" style="display: none;">
+<div id="cotizacionModal" class="modal fullscreen" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
             <img src="{{ asset('images/logo2.png') }}" alt="Logo Mundo Industrial" class="modal-header-logo">
-            <button class="modal-close" onclick="closeCotizacionModal()">
-                <span class="material-symbols-rounded">close</span>
+            <div style="display: flex; gap: 3rem; align-items: center; flex: 1; margin-left: 2rem; color: white; font-size: 0.85rem;">
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <span style="font-weight: 600; opacity: 0.9;">COTIZACIÓN #</span>
+                    <span style="font-size: 1rem; font-weight: 700;" id="modalHeaderNumber">-</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <span style="font-weight: 600; opacity: 0.9;">FECHA</span>
+                    <span style="font-size: 1rem; font-weight: 700;" id="modalHeaderDate">-</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <span style="font-weight: 600; opacity: 0.9;">CLIENTE</span>
+                    <span style="font-size: 1rem; font-weight: 700;" id="modalHeaderClient">-</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                    <span style="font-weight: 600; opacity: 0.9;">ASESORA</span>
+                    <span style="font-size: 1rem; font-weight: 700;" id="modalHeaderAdvisor">-</span>
+                </div>
+            </div>
+            <button class="modal-back-btn" onclick="closeCotizacionModal()">
+                <span class="material-symbols-rounded">arrow_back</span>
+                VOLVER
             </button>
         </div>
         <div class="modal-body" id="modalBody">

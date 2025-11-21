@@ -5,8 +5,29 @@ function openCotizacionModal(cotizacionId) {
         .then(html => {
             document.getElementById('modalBody').innerHTML = html;
             document.getElementById('cotizacionModal').style.display = 'flex';
+            
+            // Extraer datos de la tabla para el header
+            const row = document.querySelector(`tr:has(button[onclick*="${cotizacionId}"])`);
+            if (row) {
+                const cells = row.querySelectorAll('td');
+                if (cells.length >= 4) {
+                    document.getElementById('modalHeaderNumber').textContent = cells[0].textContent.trim();
+                    document.getElementById('modalHeaderDate').textContent = cells[1].textContent.trim();
+                    document.getElementById('modalHeaderClient').textContent = cells[2].textContent.trim();
+                    document.getElementById('modalHeaderAdvisor').textContent = cells[3].textContent.trim();
+                }
+            }
+            
+            // Extraer imágenes del HTML y guardarlas en variable global
+            extraerImagenesDelModal();
         })
         .catch(error => console.error('Error:', error));
+}
+
+function extraerImagenesDelModal() {
+    // Las imágenes ahora se pasan directamente en los atributos data-todas-imagenes
+    // Esta función se mantiene por compatibilidad pero no hace nada
+    console.log('✅ Modal cargado - imágenes disponibles en atributos data');
 }
 
 function closeCotizacionModal() {
@@ -18,6 +39,93 @@ document.addEventListener('click', function(event) {
     const modal = document.getElementById('cotizacionModal');
     if (event.target === modal) {
         closeCotizacionModal();
+    }
+});
+
+// ===== FUNCIONES PARA MODALES DE IMÁGENES =====
+function abrirModalImagenes(productoIndex, nombreProducto) {
+    // Buscar el contenedor con data-producto-index que coincida
+    const contenedorImagenes = document.querySelector(`[data-producto-index="${productoIndex}"]`);
+    
+    if (!contenedorImagenes) {
+        console.error('No se encontró el contenedor de imágenes para el producto:', productoIndex);
+        alert('No hay imágenes para este producto');
+        return;
+    }
+    
+    // Obtener las imágenes del atributo data
+    const imagenesJSON = contenedorImagenes.getAttribute('data-todas-imagenes');
+    let todasLasImagenes = [];
+    
+    try {
+        todasLasImagenes = JSON.parse(imagenesJSON) || [];
+    } catch (e) {
+        console.error('Error al parsear imágenes:', e);
+        todasLasImagenes = [];
+    }
+    
+    if (todasLasImagenes.length === 0) {
+        alert('No hay imágenes para este producto');
+        return;
+    }
+    
+    console.log(`📸 Abriendo modal para producto ${productoIndex} con ${todasLasImagenes.length} imágenes`);
+    
+    // Llenar el modal con las imágenes
+    const grid = document.getElementById('modalImagenesGrid');
+    grid.innerHTML = '';
+    
+    todasLasImagenes.forEach((imagen, index) => {
+        const div = document.createElement('div');
+        div.style.cssText = 'position: relative; cursor: pointer; overflow: hidden; border-radius: 4px;';
+        div.innerHTML = `
+            <img src="${imagen}" alt="Imagen ${index + 1}" 
+                 style="width: 100%; height: 250px; object-fit: cover; transition: all 0.2s; cursor: pointer;"
+                 onmouseover="this.style.transform='scale(1.05)'; this.style.opacity='0.9'"
+                 onmouseout="this.style.transform='scale(1)'; this.style.opacity='1'"
+                 ondblclick="abrirImagenFullscreen('${imagen}')">
+        `;
+        grid.appendChild(div);
+    });
+    
+    document.getElementById('modalImagenesTitle').textContent = `Imágenes - ${nombreProducto}`;
+    document.getElementById('modalImagenesProducto').style.display = 'block';
+}
+
+function cerrarModalImagenes() {
+    document.getElementById('modalImagenesProducto').style.display = 'none';
+}
+
+function abrirImagenFullscreen(src) {
+    const modal = document.getElementById('modalImagenFullscreen');
+    document.getElementById('imagenFullscreen').src = src;
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function cerrarImagenFullscreen() {
+    document.getElementById('modalImagenFullscreen').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+// Cerrar modales al hacer clic en el fondo
+document.addEventListener('click', function(event) {
+    const modalImagenes = document.getElementById('modalImagenesProducto');
+    const modalFullscreen = document.getElementById('modalImagenFullscreen');
+    
+    if (event.target === modalImagenes) {
+        cerrarModalImagenes();
+    }
+    if (event.target === modalFullscreen) {
+        cerrarImagenFullscreen();
+    }
+});
+
+// Tecla ESC para cerrar modales
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        cerrarModalImagenes();
+        cerrarImagenFullscreen();
     }
 });
 
@@ -34,17 +142,14 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
         this.classList.add('active');
         document.getElementById(section + '-section').classList.add('active');
         
-        // Cargar formatos si se hace clic en la sección de formatos
-        if (section === 'formatos') {
-            cargarFormatos();
-        }
+        // Formatos eliminados - no cargar
     });
 });
 
-// Cargar formatos al iniciar
-window.addEventListener('load', function() {
-    cargarFormatos();
-});
+// Cargar formatos al iniciar (comentado - ruta eliminada)
+// window.addEventListener('load', function() {
+//     cargarFormatos();
+// });
 
 // ===== FUNCIONES PARA COSTOS DE PRENDAS =====
 function cargarComponentes(prendaId) {

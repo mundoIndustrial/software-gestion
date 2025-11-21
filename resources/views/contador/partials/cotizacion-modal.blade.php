@@ -1,43 +1,4 @@
 <div class="cotizacion-detail">
-    <!-- Encabezado Principal - Estructura Profesional -->
-    <div class="cotizacion-header">
-        <!-- Fila 1: Empresa (izq) | Número y Fecha (der) -->
-        <div class="header-row-top">
-            <div class="header-left">
-                <h2 class="company-name">UNIFORMES MUNDO INDUSTRIAL</h2>
-            </div>
-            <div class="header-right">
-                <div class="header-number">
-                    <span class="label">COTIZACIÓN #</span>
-                    <span class="value">COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}</span>
-                </div>
-                <div class="header-date">
-                    <span class="label">FECHA</span>
-                    <span class="value">{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y') : 'N/A' }}</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Línea divisora -->
-        <div class="header-divider"></div>
-
-        <!-- Fila 2: Cliente (izq) | Asesora (der) -->
-        <div class="header-row-bottom">
-            <div class="header-left">
-                <div class="info-block">
-                    <span class="label">CLIENTE</span>
-                    <span class="value">{{ $cotizacion->cliente ?? 'N/A' }}</span>
-                </div>
-            </div>
-            <div class="header-right">
-                <div class="info-block">
-                    <span class="label">ASESORA</span>
-                    <span class="value">{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? 'N/A') }}</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Cotizar Según Indicaciones -->
     @if($cotizacion->cotizar_segun_indicaciones)
     <div class="detail-section">
@@ -53,27 +14,115 @@
     <!-- Productos de la Cotización (desde JSON) -->
     @if($cotizacion->productos && count($cotizacion->productos) > 0)
     <div class="detail-section">
-        <div class="detail-header">📦 Productos</div>
-        <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-                <tr style="background-color: #1e5ba8;">
-                    <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd; font-weight: 700; color: white;">Producto</th>
-                    <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd; font-weight: 700; color: white;">Descripción</th>
-                    <th style="padding: 0.75rem; text-align: center; border: 1px solid #ddd; font-weight: 700; color: white;">Cantidad</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach($cotizacion->productos as $producto)
-                <tr style="background-color: #ffffff;">
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; color: #333; font-weight: 500;">{{ $producto['nombre_producto'] ?? 'N/A' }}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; color: #333;">{{ $producto['descripcion'] ?? '-' }}</td>
-                    <td style="padding: 0.75rem; border: 1px solid #ddd; color: #333; text-align: center;">{{ $producto['cantidad'] ?? 1 }}</td>
-                </tr>
-                @endforeach
-            </tbody>
-        </table>
+        @foreach($cotizacion->productos as $productoIndex => $producto)
+            <!-- Nombre del Producto -->
+            <h3 style="color: #1e40af; font-size: 1rem; font-weight: 700; margin: 1.5rem 0 0.5rem 0;">
+                {{ strtoupper($producto['nombre_producto'] ?? 'N/A') }}:
+            </h3>
+            
+            <!-- Descripción (ancho completo) -->
+            <p style="color: #333; font-size: 0.9rem; line-height: 1.6; margin: 0 0 1rem 0; word-wrap: break-word;">
+                {{ $producto['descripcion'] ?? '-' }}
+            </p>
+            
+            <!-- Sección de Imágenes de Prenda -->
+            @php
+                // Obtener SOLO las imágenes de prenda de este producto
+                $imagenesPrenda = [];
+                if (is_array($cotizacion->imagenes ?? null) && isset($cotizacion->imagenes['prenda'])) {
+                    // Si es un array de imágenes para este producto
+                    if (is_array($cotizacion->imagenes['prenda'][$productoIndex] ?? null)) {
+                        $imagenesPrenda = $cotizacion->imagenes['prenda'][$productoIndex];
+                    } elseif (isset($cotizacion->imagenes['prenda'][$productoIndex])) {
+                        // Si es una sola imagen, convertir a array
+                        $imagenesPrenda = [$cotizacion->imagenes['prenda'][$productoIndex]];
+                    }
+                }
+                
+                $totalImagenes = count($imagenesPrenda);
+                $imagenesVisibles = array_slice($imagenesPrenda, 0, 2);
+                $tieneVerMas = $totalImagenes > 2;
+            @endphp
+            
+            @if($totalImagenes > 0)
+            <div style="margin-bottom: 1.5rem;">
+                <div style="font-size: 0.85rem; font-weight: 600; color: #333; margin-bottom: 0.75rem;">Imágenes:</div>
+                
+                <!-- Grid de imágenes -->
+                <div style="display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap;" data-producto-index="{{ $productoIndex }}" data-todas-imagenes="{{ json_encode($imagenesPrenda) }}">
+                    <!-- Imágenes visibles (máx 2) -->
+                    @foreach($imagenesVisibles as $imagen)
+                    <div style="position: relative; cursor: pointer;" ondblclick="abrirImagenFullscreen('{{ $imagen }}')">
+                        <img src="{{ $imagen }}" alt="Producto" 
+                             style="width: 150px; height: 150px; object-fit: cover; border: 1px solid #ddd; border-radius: 4px; transition: all 0.2s;"
+                             onmouseover="this.style.opacity='0.8'; this.style.transform='scale(1.02)'"
+                             onmouseout="this.style.opacity='1'; this.style.transform='scale(1)'"
+                             onclick="abrirModalImagenes({{ $productoIndex }}, '{{ $producto['nombre_producto'] ?? 'Producto' }}')">
+                    </div>
+                    @endforeach
+                    
+                    <!-- Botón VER MAS si hay más de 2 imágenes -->
+                    @if($tieneVerMas)
+                    <div style="width: 150px; height: 150px; background: #999; border: 1px solid #ddd; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;"
+                         onmouseover="this.style.backgroundColor='#777'; this.style.transform='scale(1.02)'"
+                         onmouseout="this.style.backgroundColor='#999'; this.style.transform='scale(1)'"
+                         onclick="abrirModalImagenes({{ $productoIndex }}, '{{ $producto['nombre_producto'] ?? 'Producto' }}')">
+                        <div style="text-align: center; color: white; font-weight: 700; font-size: 1rem;">
+                            VER MAS...
+                        </div>
+                    </div>
+                    @endif
+                    
+                    <!-- Tallas -->
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem; justify-content: center;">
+                        <div style="font-size: 0.85rem; font-weight: 600; color: #333;">Tallas:</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                            @php
+                                $tallas = $producto['tallas'] ?? [];
+                                if (is_string($tallas)) {
+                                    $tallas = explode(',', $tallas);
+                                    $tallas = array_map('trim', $tallas);
+                                }
+                            @endphp
+                            @if(count($tallas) > 0)
+                                @foreach($tallas as $talla)
+                                    @if(!empty($talla))
+                                    <span style="background: linear-gradient(135deg, #1e5ba8 0%, #2b7ec9 100%); color: white; padding: 0.5rem 0.85rem; border-radius: 4px; font-size: 0.85rem; font-weight: 700;">
+                                        {{ strtoupper($talla) }}
+                                    </span>
+                                    @endif
+                                @endforeach
+                            @else
+                                <span style="color: #999; font-size: 0.85rem;">Sin tallas</span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+        @endforeach
     </div>
     @endif
+    
+    <!-- Modal de Imágenes Completo -->
+    <div id="modalImagenesProducto" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 5000; overflow-y: auto;">
+        <div style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
+            <!-- Header del Modal -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; color: white;">
+                <h2 id="modalImagenesTitle" style="margin: 0; font-size: 1.5rem;"></h2>
+                <button onclick="cerrarModalImagenes()" style="background: none; border: none; color: white; font-size: 2rem; cursor: pointer; padding: 0;">✕</button>
+            </div>
+            
+            <!-- Grid de Imágenes -->
+            <div id="modalImagenesGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem;"></div>
+        </div>
+    </div>
+    
+    <!-- Modal Fullscreen para Imagen Individual -->
+    <div id="modalImagenFullscreen" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 6000; align-items: center; justify-content: center;">
+        <button onclick="cerrarImagenFullscreen()" style="position: absolute; top: 2rem; right: 2rem; background: none; border: none; color: white; font-size: 2rem; cursor: pointer; z-index: 6001;">✕</button>
+        <img id="imagenFullscreen" src="" alt="Imagen" style="max-width: 90vw; max-height: 90vh; object-fit: contain;">
+    </div>
 
     <!-- Técnicas -->
     @if($cotizacion->tecnicas && count($cotizacion->tecnicas) > 0)
@@ -166,12 +215,5 @@
         @endforeach
     </div>
     @endif
-
-    <!-- Botón Cotizar Prendas -->
-    <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 2px solid #e0e0e0; text-align: center;">
-        <button type="button" onclick="abrirModalCotizarPrendas({{ $cotizacion->id }})" style="padding: 0.75rem 2rem; background: linear-gradient(135deg, #1e5ba8 0%, #2b7ec9 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 1rem; box-shadow: 0 4px 12px rgba(30, 91, 168, 0.3); transition: all 0.3s ease;">
-            📋 COTIZAR PRENDAS
-        </button>
-    </div>
 
 </div>

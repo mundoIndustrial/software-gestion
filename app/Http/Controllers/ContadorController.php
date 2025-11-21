@@ -27,13 +27,4 @@ class ContadorController extends Controller
         return view('contador.partials.cotizacion-modal', compact('cotizacion'));
     }
 
-    /**
-     * Obtener modal para cotizar prendas
-     */
-    public function getCotizarPrendasModal($id)
-    {
-        $cotizacion = Cotizacion::with('prendas')->findOrFail($id);
-        
-        return view('contador.partials.cotizar-prendas-modal', compact('cotizacion'));
-    }
 }
