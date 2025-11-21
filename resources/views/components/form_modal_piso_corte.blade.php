@@ -1111,14 +1111,11 @@
                     if (response.success) {
                         this.onSuccess(response);
                     } else {
-                        if (typeof showErrorModal === 'function') {
-                            showErrorModal(response.message || 'Error al guardar el registro');
-                        } else {
-                            alert(`Error al guardar: ${response.message || 'Error desconocido'}`);
-                        }
+                        // Mostrar error descriptivo basado en el tipo de error
+                        this.handleErrorResponse(response);
                     }
                 } catch (error) {
-                    Utils.handleError(error, 'Error al procesar la solicitud');
+                    this.handleNetworkError(error);
                 }
             }
 
@@ -1146,6 +1143,80 @@
                 // No hacer nada - el sistema de WebSockets (Echo) actualizará automáticamente la tabla
                 // cuando el servidor emita el evento CorteRecordCreated
                 console.log('Registro guardado, esperando actualización en tiempo real via WebSocket');
+            }
+
+            handleErrorResponse(response) {
+                console.error('Error en respuesta del servidor:', response);
+                
+                let errorMessage = response.message || 'Error al guardar el registro';
+                
+                // Agregar contexto basado en el tipo de error
+                if (response.error_type === 'validation') {
+                    errorMessage = `❌ Error de Validación:\n\n${errorMessage}`;
+                    
+                    // Si hay errores específicos, mostrarlos
+                    if (response.errors && typeof response.errors === 'object') {
+                        const errorList = Object.entries(response.errors)
+                            .map(([field, messages]) => `• ${field}: ${messages[0]}`)
+                            .join('\n');
+                        errorMessage += `\n\nDetalles:\n${errorList}`;
+                    }
+                } else if (response.error_type === 'database') {
+                    errorMessage = `❌ Error de Base de Datos:\n\n${errorMessage}`;
+                } else if (response.error_type === 'system') {
+                    errorMessage = `❌ Error del Sistema:\n\n${errorMessage}`;
+                } else {
+                    errorMessage = `❌ Error:\n\n${errorMessage}`;
+                }
+                
+                // Mostrar el error
+                if (typeof showErrorModal === 'function') {
+                    showErrorModal(errorMessage);
+                } else {
+                    alert(errorMessage);
+                }
+                
+                // Log para debugging
+                console.warn('Error completo:', {
+                    message: response.message,
+                    type: response.error_type,
+                    errors: response.errors,
+                    details: response.details
+                });
+            }
+
+            handleNetworkError(error) {
+                console.error('Error de red:', error);
+                
+                let errorMessage = '❌ Error de Conexión:\n\n';
+                
+                if (error.message === 'Network request failed') {
+                    errorMessage += 'No se pudo conectar con el servidor. Verifica tu conexión a internet.';
+                } else if (error.message === 'Timeout') {
+                    errorMessage += 'La solicitud tardó demasiado tiempo. Intenta nuevamente.';
+                } else if (error.response && error.response.status === 422) {
+                    errorMessage = '❌ Error de Validación:\n\n';
+                    if (error.response.data && error.response.data.message) {
+                        errorMessage += error.response.data.message;
+                    } else {
+                        errorMessage += 'Hay errores en los datos enviados.';
+                    }
+                } else if (error.response && error.response.status === 500) {
+                    errorMessage = '❌ Error del Servidor:\n\n';
+                    if (error.response.data && error.response.data.message) {
+                        errorMessage += error.response.data.message;
+                    } else {
+                        errorMessage += 'Ocurrió un error en el servidor. Por favor, intenta nuevamente.';
+                    }
+                } else {
+                    errorMessage += error.message || 'Error desconocido al procesar la solicitud.';
+                }
+                
+                if (typeof showErrorModal === 'function') {
+                    showErrorModal(errorMessage);
+                } else {
+                    alert(errorMessage);
+                }
             }
         }
 
