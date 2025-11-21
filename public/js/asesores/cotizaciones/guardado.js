@@ -70,6 +70,8 @@ async function guardarCotizacion() {
                 tipo_cotizacion: tipoCotizacion,
                 productos: datos.productos,
                 tecnicas: datos.tecnicas,
+                observaciones_tecnicas: datos.observaciones_tecnicas,
+                ubicaciones: datos.ubicaciones,
                 observaciones_generales: datos.observaciones_generales,
                 especificaciones: especificaciones
             })
@@ -273,6 +275,8 @@ async function procederEnviarCotizacion(datos) {
                 tipo_cotizacion: tipoCotizacion,
                 productos: datos.productos,
                 tecnicas: datos.tecnicas,
+                observaciones_tecnicas: datos.observaciones_tecnicas,
+                ubicaciones: datos.ubicaciones,
                 observaciones_generales: datos.observaciones_generales,
                 especificaciones: especificaciones
             })

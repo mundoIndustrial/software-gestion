@@ -165,13 +165,33 @@ class CotizacionesController extends Controller
             }
 
             // Guardar datos de PASO 3 (Bordado/Estampado) en tabla logo_cotizaciones
+            // Procesar observaciones generales con su tipo (checkbox o texto)
+            $observacionesGenerales = [];
+            $observacionesTexto = $request->input('observaciones_generales', []);
+            $observacionesCheck = $request->input('observaciones_check', []);
+            $observacionesValor = $request->input('observaciones_valor', []);
+            
+            foreach ($observacionesTexto as $index => $obs) {
+                if (!empty($obs)) {
+                    // Determinar si es checkbox o texto
+                    $tipo = isset($observacionesCheck[$index]) ? 'checkbox' : 'texto';
+                    $valor = $tipo === 'texto' ? ($observacionesValor[$index] ?? '') : '';
+                    
+                    $observacionesGenerales[] = [
+                        'texto' => $obs,
+                        'tipo' => $tipo,
+                        'valor' => $valor
+                    ];
+                }
+            }
+            
             $logoCotizacionData = [
                 'cotizacion_id' => $cotizacion->id,
                 'imagenes' => $request->input('imagenes', []),
                 'tecnicas' => $request->input('tecnicas', []),
                 'observaciones_tecnicas' => $request->input('observaciones_tecnicas'),
                 'ubicaciones' => $request->input('ubicaciones', []),
-                'observaciones_generales' => $request->input('observaciones_generales', [])
+                'observaciones_generales' => $observacionesGenerales
             ];
             
             \App\Models\LogoCotizacion::create($logoCotizacionData);
@@ -218,7 +238,10 @@ class CotizacionesController extends Controller
             abort(403);
         }
 
-        return view('asesores.cotizaciones.show', compact('cotizacion'));
+        // Obtener datos de logo/bordado/estampado
+        $logo = $cotizacion->logoCotizacion;
+
+        return view('asesores.cotizaciones.show', compact('cotizacion', 'logo'));
     }
 
     /**

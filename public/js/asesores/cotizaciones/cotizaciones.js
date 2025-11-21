@@ -144,17 +144,42 @@ function recopilarDatos() {
     
     console.log('📦 Productos recopilados:', productos);
     
+    // ========== PASO 3: BORDADO/ESTAMPADO ==========
+    
+    // Recopilar técnicas
     const tecnicas = [];
     document.querySelectorAll('#tecnicas_seleccionadas div').forEach(tag => {
         const input = tag.querySelector('input[name="tecnicas[]"]');
         if (input) tecnicas.push(input.value);
     });
+    console.log('🎨 Técnicas recopiladas:', tecnicas);
     
+    // Recopilar observaciones técnicas
+    const observaciones_tecnicas = document.getElementById('observaciones_tecnicas')?.value || '';
+    console.log('📝 Observaciones técnicas:', observaciones_tecnicas);
+    
+    // Recopilar ubicaciones
+    const ubicaciones = [];
+    document.querySelectorAll('input[name="ubicaciones[]"]').forEach(input => {
+        const valor = input.value.trim();
+        if (valor) ubicaciones.push(valor);
+    });
+    console.log('📍 Ubicaciones recopiladas:', ubicaciones);
+    
+    // Recopilar observaciones generales
     const observaciones_generales = [];
     document.querySelectorAll('#observaciones_lista > div').forEach(obs => {
         const valor = obs.querySelector('input[name="observaciones_generales[]"]')?.value || '';
         if (valor.trim()) observaciones_generales.push(valor);
     });
+    console.log('💬 Observaciones generales recopiladas:', observaciones_generales);
     
-    return { cliente: clienteValue, productos, tecnicas, observaciones_generales };
+    return { 
+        cliente: clienteValue, 
+        productos, 
+        tecnicas, 
+        observaciones_tecnicas,
+        ubicaciones,
+        observaciones_generales 
+    };
 }
