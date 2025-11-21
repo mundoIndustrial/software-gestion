@@ -1,5 +1,13 @@
 let productosCount = 0;
 
+// Agregar prenda por defecto al cargar el formulario
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('productosContainer');
+    if (container && container.children.length === 0) {
+        agregarProductoFriendly();
+    }
+});
+
 // Ir al paso especificado (sin validación - libre navegación)
 function irAlPaso(paso) {
     // Ocultar todos los pasos
@@ -79,7 +87,17 @@ function agregarProductoFriendly() {
 // Eliminar producto
 function eliminarProductoFriendly(btn) {
     btn.closest('.producto-card').remove();
+    renumerarPrendas();
     actualizarResumenFriendly();
+}
+
+// Renumerar prendas después de eliminar
+function renumerarPrendas() {
+    const prendas = document.querySelectorAll('.producto-card');
+    prendas.forEach((prenda, index) => {
+        prenda.querySelector('.numero-producto').textContent = index + 1;
+    });
+    productosCount = prendas.length;
 }
 
 // Actualizar resumen

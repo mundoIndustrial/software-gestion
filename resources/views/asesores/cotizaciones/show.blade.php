@@ -339,62 +339,60 @@
             </div>
         </div>
         <div class="info-card">
-            <label><i class="fas fa-calendar"></i> Creada</label>
-            <div class="value" style="font-size: 1rem;">{{ $cotizacion->created_at->format('d/m/Y H:i') }}</div>
+            <label><i class="fas fa-calendar-plus"></i> Fecha Inicio</label>
+            <div class="value" style="font-size: 1rem;">{{ $cotizacion->fecha_inicio ? $cotizacion->fecha_inicio->format('d/m/Y H:i') : '-' }}</div>
         </div>
-        <div class="info-card">
-            <label><i class="fas fa-sync"></i> Actualizada</label>
-            <div class="value" style="font-size: 1rem;">{{ $cotizacion->updated_at->format('d/m/Y H:i') }}</div>
-        </div>
+        @if($cotizacion->fecha_envio)
+            <div class="info-card">
+                <label><i class="fas fa-calendar-check"></i> Fecha Envío</label>
+                <div class="value" style="font-size: 1rem;">{{ $cotizacion->fecha_envio->format('d/m/Y H:i') }}</div>
+            </div>
+        @endif
     </div>
 
     <!-- Prendas -->
     <div class="section-title">
         <i class="fas fa-box"></i> Prendas
     </div>
-    @if($cotizacion->productos && count($cotizacion->productos) > 0)
+    @if($cotizacion->prendasCotizaciones && count($cotizacion->prendasCotizaciones) > 0)
         <table class="productos-table">
             <thead>
                 <tr>
                     <th style="width: 20%;">Prenda</th>
-                    <th style="width: 35%;">Descripción</th>
-                    <th style="width: 10%; text-align: center;">Cantidad</th>
-                    <th style="width: 35%; text-align: center;">Imagen Prenda & Tela</th>
+                    <th style="width: 50%;">Descripción & Tallas</th>
+                    <th style="width: 30%; text-align: center;">Imagen Prenda & Tela</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($cotizacion->productos as $index => $producto)
+                @foreach($cotizacion->prendasCotizaciones as $index => $prenda)
                     <tr>
                         <td>
-                            <div class="producto-nombre">{{ $producto['nombre_producto'] ?? 'Sin nombre' }}</div>
+                            <div class="producto-nombre">{{ $prenda->nombre_producto ?? 'Sin nombre' }}</div>
                         </td>
                         <td>
                             <div class="producto-descripcion">
-                                {{ $producto['descripcion'] ?? '-' }}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="producto-cantidad">
-                                {{ $producto['cantidad'] ?? 1 }}
+                                <p style="margin: 0 0 8px 0; color: #475569; font-size: 0.95rem;">{{ $prenda->descripcion ?? '-' }}</p>
+                                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                    <span style="font-size: 0.85rem; font-weight: 600; color: #64748b;">Tallas:</span>
+                                    <span style="font-size: 0.9rem; color: #1e293b;">
+                                        @if($prenda->tallas && is_array($prenda->tallas) && count($prenda->tallas) > 0)
+                                            {{ implode(', ', $prenda->tallas) }}
+                                        @else
+                                            -
+                                        @endif
+                                    </span>
+                                </div>
                             </div>
                         </td>
                         <td style="text-align: center;">
                             <div style="display: flex; gap: 1rem; justify-content: center; align-items: center;">
                                 <!-- Imagen de Prenda -->
-                                @php
-                                    $imagenProducto = null;
-                                    if (is_array($cotizacion->imagenes)) {
-                                        if (isset($cotizacion->imagenes['prenda'][$index])) {
-                                            $imagenProducto = $cotizacion->imagenes['prenda'][$index];
-                                        }
-                                    }
-                                @endphp
                                 <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
                                     <small style="font-size: 0.75rem; color: #64748b; font-weight: 600;">PRENDA</small>
-                                    @if($imagenProducto)
-                                        <img src="{{ $imagenProducto }}" alt="Prenda" 
-                                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer;" 
-                                             onclick="abrirModalImagen('{{ $imagenProducto }}', '{{ $producto['nombre_producto'] ?? 'Prenda' }}')">
+                                    @if($prenda->fotos && is_array($prenda->fotos) && count($prenda->fotos) > 0)
+                                        <img src="{{ $prenda->fotos[0] }}" alt="Prenda"
+                                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer;"
+                                             onclick="abrirModalImagen('{{ $prenda->fotos[0] }}', '{{ $prenda->nombre_producto ?? 'Prenda' }}')">
                                     @else
                                         <div style="width: 60px; height: 60px; background: #f1f5f9; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #cbd5e1;">
                                             <i class="fas fa-image"></i>
@@ -403,20 +401,12 @@
                                 </div>
 
                                 <!-- Imagen de Tela -->
-                                @php
-                                    $imagenTela = null;
-                                    if (is_array($cotizacion->imagenes)) {
-                                        if (isset($cotizacion->imagenes['tela'][$index])) {
-                                            $imagenTela = $cotizacion->imagenes['tela'][$index];
-                                        }
-                                    }
-                                @endphp
                                 <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
                                     <small style="font-size: 0.75rem; color: #64748b; font-weight: 600;">TELA</small>
-                                    @if($imagenTela)
-                                        <img src="{{ $imagenTela }}" alt="Tela" 
-                                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer;" 
-                                             onclick="abrirModalImagen('{{ $imagenTela }}', 'Tela - {{ $producto['tela'] ?? 'Tela' }}')">
+                                    @if($prenda->imagen_tela)
+                                        <img src="{{ $prenda->imagen_tela }}" alt="Tela"
+                                             style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer;"
+                                             onclick="abrirModalImagen('{{ $prenda->imagen_tela }}', 'Tela - {{ $prenda->nombre_producto ?? 'Tela' }}')">
                                     @else
                                         <div style="width: 60px; height: 60px; background: #f1f5f9; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #cbd5e1;">
                                             <i class="fas fa-image"></i>
@@ -432,30 +422,61 @@
     @else
         <div class="sin-contenido">
             <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-            Sin productos agregados
+            Sin prendas agregadas
         </div>
     @endif
 
-    <!-- Especificaciones de la Orden -->
-    @if($cotizacion->especificaciones && count($cotizacion->especificaciones) > 0)
-        <div style="margin-top: 3rem;">
+    <!-- Especificaciones de la Orden (Tabla Modal) -->
+    @php
+        // Procesar especificaciones GENERALES del modal
+        $categoriasInfo = [
+            'disponibilidad' => ['emoji' => '📦', 'label' => 'DISPONIBILIDAD'],
+            'forma_pago' => ['emoji' => '💳', 'label' => 'FORMA DE PAGO'],
+            'regimen' => ['emoji' => '🏛️', 'label' => 'RÉGIMEN'],
+            'se_ha_vendido' => ['emoji' => '📊', 'label' => 'SE HA VENDIDO'],
+            'ultima_venta' => ['emoji' => '💰', 'label' => 'ÚLTIMA VENTA'],
+            'flete' => ['emoji' => '🚚', 'label' => 'FLETE DE ENVÍO']
+        ];
+        
+        $especificacionesExisten = false;
+        if($cotizacion->especificaciones && is_array($cotizacion->especificaciones)) {
+            $especificacionesExisten = count($cotizacion->especificaciones) > 0;
+        }
+    @endphp
+    
+    @if($especificacionesExisten)
+        <div style="margin-top: 2.5rem;">
             <div class="section-title">
                 <i class="fas fa-clipboard-check"></i> Especificaciones de la Orden
             </div>
-            <div style="background: white; border-radius: 8px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);">
+            <div style="background: white; border-radius: 8px; padding: 0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); overflow: hidden;">
                 <table style="width: 100%; border-collapse: collapse;">
                     <thead>
-                        <tr style="border-bottom: 2px solid #e2e8f0;">
-                            <th style="text-align: left; padding: 0.75rem; font-weight: 700; color: #1e40af;">ITEM</th>
-                            <th style="text-align: left; padding: 0.75rem; font-weight: 700; color: #1e40af;">OBSERVACIONES</th>
+                        <tr style="background: #1e40af; border-bottom: 2px solid #1e40af;">
+                            <th style="padding: 14px; text-align: left; font-weight: 700; color: white; width: 35%; border-right: 1px solid #163a8f;">CATEGORÍA</th>
+                            <th style="padding: 14px; text-align: center; font-weight: 700; color: white; width: 15%; border-right: 1px solid #163a8f;">ESTADO</th>
+                            <th style="padding: 14px; text-align: left; font-weight: 700; color: white; width: 50%;">OBSERVACIONES</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($cotizacion->especificaciones as $especificacion)
-                            <tr style="border-bottom: 1px solid #e2e8f0;">
-                                <td style="padding: 0.75rem; color: #333;">{{ $especificacion['item'] ?? '-' }}</td>
-                                <td style="padding: 0.75rem; color: #64748b;">{{ $especificacion['observaciones'] ?? '-' }}</td>
-                            </tr>
+                        @foreach($categoriasInfo as $categoriaKey => $info)
+                            @if(isset($cotizacion->especificaciones[$categoriaKey]) && !empty($cotizacion->especificaciones[$categoriaKey]))
+                                <!-- Encabezado de categoría -->
+                                <tr style="border-bottom: 1px solid #e2e8f0;">
+                                    <td colspan="3" style="font-weight: 600; background: #1e40af; padding: 12px; color: white;">
+                                        <span style="font-size: 1.1rem; margin-right: 8px;">{{ $info['emoji'] }}</span>
+                                        <span>{{ $info['label'] }}</span>
+                                    </td>
+                                </tr>
+                                <!-- Valores de la categoría -->
+                                @foreach($cotizacion->especificaciones[$categoriaKey] as $valor)
+                                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                                        <td style="padding: 12px; color: #333; font-weight: 500; border-right: 1px solid #e2e8f0;">{{ $valor }}</td>
+                                        <td style="padding: 12px; text-align: center; color: #1e40af; font-weight: 700; font-size: 1.2rem; border-right: 1px solid #e2e8f0;">✕</td>
+                                        <td style="padding: 12px; color: #64748b; font-size: 0.9rem;">Sin observaciones</td>
+                                    </tr>
+                                @endforeach
+                            @endif
                         @endforeach
                     </tbody>
                 </table>
@@ -463,55 +484,61 @@
         </div>
     @endif
 
-    <!-- Técnicas -->
-    @if($cotizacion->tecnicas && count($cotizacion->tecnicas) > 0)
-        <div class="section-title">
-            <i class="fas fa-tools"></i> Técnicas
-        </div>
-        <div class="tecnicas-list">
-            @foreach($cotizacion->tecnicas as $tecnica)
-                <span class="tecnica-badge">{{ $tecnica }}</span>
-            @endforeach
-        </div>
-    @endif
+    <!-- Logo/Bordado/Estampado -->
+    @if($cotizacion->logoCotizacion)
+        @php
+            $logo = $cotizacion->logoCotizacion;
+        @endphp
 
-
-    <!-- Observaciones Técnicas -->
-    @if($cotizacion->observaciones_tecnicas)
-        <div class="section-title">
-            <i class="fas fa-wrench"></i> Observaciones Técnicas
-        </div>
-        <div class="observaciones-box">
-            <p>{{ $cotizacion->observaciones_tecnicas }}</p>
-        </div>
-    @endif
-
-    <!-- Observaciones Generales -->
-    @if($cotizacion->observaciones_generales && count($cotizacion->observaciones_generales) > 0)
-        <div class="section-title">
-            <i class="fas fa-comment"></i> Observaciones Generales
-        </div>
-        @foreach($cotizacion->observaciones_generales as $obs)
-            <div class="observaciones-box">
-                <p>{{ $obs }}</p>
+        <!-- Técnicas -->
+        @if($logo->tecnicas && is_array($logo->tecnicas) && count($logo->tecnicas) > 0)
+            <div class="section-title">
+                <i class="fas fa-tools"></i> Técnicas
             </div>
-        @endforeach
-    @endif
+            <div class="tecnicas-list">
+                @foreach($logo->tecnicas as $tecnica)
+                    <span class="tecnica-badge">{{ $tecnica }}</span>
+                @endforeach
+            </div>
+        @endif
 
-    <!-- Imágenes de Bordado/Estampado -->
-    @if($cotizacion->imagenes && isset($cotizacion->imagenes['general']) && count($cotizacion->imagenes['general']) > 0)
-        <div class="section-title">
-            <i class="fas fa-image"></i> Imágenes de Bordado/Estampado
-        </div>
-        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-            @foreach($cotizacion->imagenes['general'] as $imagen)
-                <div style="position: relative; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); cursor: pointer; transition: transform 0.3s ease;">
-                    <img src="{{ $imagen }}" alt="Bordado/Estampado" 
-                         style="width: 100%; height: 150px; object-fit: cover;" 
-                         onclick="abrirModalImagen('{{ $imagen }}', 'Bordado/Estampado')">
+        <!-- Observaciones Técnicas -->
+        @if($logo->observaciones_tecnicas)
+            <div class="section-title">
+                <i class="fas fa-wrench"></i> Observaciones Técnicas
+            </div>
+            <div class="observaciones-box">
+                <p>{{ $logo->observaciones_tecnicas }}</p>
+            </div>
+        @endif
+
+        <!-- Observaciones Generales -->
+        @if($logo->observaciones_generales && is_array($logo->observaciones_generales) && count($logo->observaciones_generales) > 0)
+            <div class="section-title">
+                <i class="fas fa-comment"></i> Observaciones Generales
+            </div>
+            @foreach($logo->observaciones_generales as $obs)
+                <div class="observaciones-box">
+                    <p>{{ $obs }}</p>
                 </div>
             @endforeach
-        </div>
+        @endif
+
+        <!-- Imágenes de Bordado/Estampado -->
+        @if($logo->imagenes && is_array($logo->imagenes) && count($logo->imagenes) > 0)
+            <div class="section-title">
+                <i class="fas fa-image"></i> Imágenes de Bordado/Estampado
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                @foreach($logo->imagenes as $imagen)
+                    <div style="position: relative; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); cursor: pointer; transition: transform 0.3s ease;">
+                        <img src="{{ $imagen }}" alt="Bordado" 
+                             style="width: 100%; height: 150px; object-fit: cover;" 
+                             onclick="abrirModalImagen('{{ $imagen }}', 'Bordado/Estampado')">
+                    </div>
+                @endforeach
+            </div>
+        @endif
     @endif
 
     <!-- Acciones -->
@@ -584,9 +611,20 @@ function abrirModalImagen(src, titulo) {
     console.log('📸 Array de imágenes:', todasLasImagenes);
     
     // Encontrar el índice de la imagen clickeada
-    imagenActualIndex = todasLasImagenes.indexOf(src);
-    if (imagenActualIndex === -1) {
-        imagenActualIndex = 0;
+    // Buscar por coincidencia parcial (última parte de la URL) para evitar problemas con protocolo/dominio
+    imagenActualIndex = 0;
+    const srcParts = src.split('/');
+    const srcFileName = srcParts[srcParts.length - 1]; // Obtener nombre del archivo
+    
+    for (let i = 0; i < todasLasImagenes.length; i++) {
+        const imgParts = todasLasImagenes[i].split('/');
+        const imgFileName = imgParts[imgParts.length - 1];
+        
+        if (imgFileName === srcFileName) {
+            imagenActualIndex = i;
+            console.log('✅ Imagen encontrada en índice:', i);
+            break;
+        }
     }
     
     console.log('📍 Índice actual:', imagenActualIndex);

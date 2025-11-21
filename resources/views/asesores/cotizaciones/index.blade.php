@@ -176,12 +176,7 @@
             <!-- TÍTULO CON ICONO -->
             <div style="display: flex; align-items: center; gap: 12px;">
                 <div style="background: rgba(255,255,255,0.15); padding: 10px 12px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                    <svg id="headerIcon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                        <polyline points="14 2 14 8 20 8"></polyline>
-                        <line x1="12" y1="11" x2="12" y2="17"></line>
-                        <line x1="9" y1="14" x2="15" y2="14"></line>
-                    </svg>
+                    <i class="fas fa-file-alt" style="color: white; font-size: 24px;"></i>
                 </div>
                 <div>
                     <h1 id="headerTitle" style="margin: 0; font-size: 1.5rem; color: white; font-weight: 700;">Cotizaciones</h1>
@@ -214,16 +209,11 @@
     <!-- TABS PROFESIONALES -->
     <div style="display: flex; gap: 0; margin-bottom: 25px;">
         <button class="tab-btn active" onclick="mostrarTab('cotizaciones')" style="padding: 12px 24px; background: none; border: none; border-bottom: 3px solid #3498db; cursor: pointer; font-weight: 600; color: #333; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; transition: all 0.3s;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
+            <i class="fas fa-check" style="font-size: 16px;"></i>
             Cotizaciones
         </button>
         <button class="tab-btn" onclick="mostrarTab('borradores')" style="padding: 12px 24px; background: none; border: none; border-bottom: 3px solid transparent; cursor: pointer; font-weight: 600; color: #999; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; transition: all 0.3s;">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-            </svg>
+            <i class="fas fa-file" style="font-size: 16px;"></i>
             Borradores
         </button>
     </div>
@@ -404,11 +394,7 @@
                                         Editar
                                     </a>
                                     <button onclick="eliminarBorrador({{ $borrador->id }})" style="background: #ef4444; color: white; padding: 8px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);" onmouseover="this.style.background='#dc2626'; this.style.boxShadow='0 4px 8px rgba(239, 68, 68, 0.3)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='#ef4444'; this.style.boxShadow='0 2px 4px rgba(239, 68, 68, 0.2)'; this.style.transform='translateY(0)'">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <polyline points="3 6 5 4 21 4 23 6 23 20a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V6"></polyline>
-                                            <line x1="10" y1="11" x2="10" y2="17"></line>
-                                            <line x1="14" y1="11" x2="14" y2="17"></line>
-                                        </svg>
+                                        <i class="fas fa-trash" style="font-size: 14px;"></i>
                                         Eliminar
                                     </button>
                                 </td>

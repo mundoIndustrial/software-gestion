@@ -15,30 +15,32 @@ class Cotizacion extends Model
     protected $fillable = [
         'user_id',
         'numero_cotizacion',
-        'fecha',
+        'tipo_cotizacion_id',
+        'fecha_inicio',
+        'fecha_envio',
         'cliente',
         'asesora',
+        'es_borrador',
+        'estado',
         'productos',
         'especificaciones',
         'imagenes',
         'tecnicas',
         'observaciones_tecnicas',
         'ubicaciones',
-        'observaciones_generales',
-        'es_borrador',
-        'estado',
-        'cotizar_segun_indicaciones'
+        'observaciones_generales'
     ];
 
     protected $casts = [
+        'es_borrador' => 'boolean',
+        'fecha_inicio' => 'datetime',
+        'fecha_envio' => 'datetime',
         'productos' => 'array',
         'especificaciones' => 'array',
         'imagenes' => 'array',
         'tecnicas' => 'array',
         'ubicaciones' => 'array',
-        'observaciones_generales' => 'array',
-        'es_borrador' => 'boolean',
-        'fecha' => 'date'
+        'observaciones_generales' => 'array'
     ];
 
     /**
@@ -47,6 +49,14 @@ class Cotizacion extends Model
     public function usuario()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Relación: Una cotización pertenece a un tipo de cotización
+     */
+    public function tipoCotizacion()
+    {
+        return $this->belongsTo(TipoCotizacion::class, 'tipo_cotizacion_id');
     }
 
     /**
@@ -63,5 +73,37 @@ class Cotizacion extends Model
     public function prendas(): HasMany
     {
         return $this->hasMany(PrendaCotizacion::class);
+    }
+
+    /**
+     * Relación con formatos de cotización
+     */
+    public function formatos(): HasMany
+    {
+        return $this->hasMany(FormatoCotizacion::class);
+    }
+
+    /**
+     * Relación con prendas de cotización (friendly)
+     */
+    public function prendasCotizaciones(): HasMany
+    {
+        return $this->hasMany(PrendaCotizacionFriendly::class);
+    }
+
+    /**
+     * Relación con logo/bordado/estampado de cotización
+     */
+    public function logoCotizacion()
+    {
+        return $this->hasOne(LogoCotizacion::class);
+    }
+
+    /**
+     * Relación con historial de cambios
+     */
+    public function historial()
+    {
+        return $this->hasMany(HistorialCotizacion::class);
     }
 }

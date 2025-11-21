@@ -702,24 +702,40 @@ body.dark-theme .theme-toggle-indicator {
   }
 }
 
-/* Móviles (hasta 480px) */
+/* Móviles (hasta 480px) - Hamburguesa */
 @media (max-width: 480px) {
-  .site-nav {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  
+  /* Ocultar sidebar por defecto */
   .sidebar {
+    display: none;
     position: fixed;
-    left: -100%;
-    width: 240px;
-    z-index: 20;
-    transition: left 0.3s ease;
+    left: 0;
+    top: 0;
+    width: 280px;
+    height: 100vh;
+    z-index: 1001;
+    transition: all 0.3s ease;
+    overflow-y: auto;
   }
   
-  .sidebar.active {
+  /* Mostrar cuando tiene clase .show */
+  .sidebar.show {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .sidebar-overlay {
+    display: none;
+  }
+  
+  .sidebar-overlay.active {
+    display: block;
+    position: fixed;
+    top: 0;
     left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
   }
   
   .sidebar-header .header-logo {
@@ -743,11 +759,13 @@ body.dark-theme .theme-toggle-indicator {
     padding: 10px 16px 10px 32px;
   }
   
-  .container {
-    flex-direction: column;
+  /* Mostrar botón de cierre en móviles */
+  .sidebar-toggle {
+    display: flex !important;
   }
   
-  .container .main-content {
-    padding: 15px;
+  .mobile-toggle {
+    display: flex !important;
   }
 }
+

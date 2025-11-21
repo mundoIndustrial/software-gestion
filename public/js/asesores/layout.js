@@ -9,29 +9,46 @@ document.addEventListener('DOMContentLoaded', function() {
     // Toggle sidebar en desktop
     if (sidebarToggle) {
         sidebarToggle.addEventListener('click', function() {
-            sidebar.classList.toggle('collapsed');
-            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+            // En móviles, solo cerrar el sidebar sin colapso
+            if (window.innerWidth <= 480) {
+                sidebar.classList.remove('show');
+                document.body.classList.remove('sidebar-open');
+            } else {
+                // En desktop, aplicar colapso
+                sidebar.classList.toggle('collapsed');
+                localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+            }
         });
     }
     
     // Toggle sidebar en mobile
     if (mobileToggle) {
         mobileToggle.addEventListener('click', function() {
-            sidebar.classList.toggle('show');
+            // En móviles, NO usar collapsed, solo show
+            if (window.innerWidth <= 480) {
+                sidebar.classList.toggle('show');
+                document.body.classList.toggle('sidebar-open');
+            } else {
+                sidebar.classList.toggle('collapsed');
+                localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+            }
         });
     }
     
-    // Restaurar estado del sidebar
-    const sidebarCollapsed = localStorage.getItem('sidebarCollapsed');
-    if (sidebarCollapsed === 'true') {
-        sidebar.classList.add('collapsed');
+    // Restaurar estado del sidebar (solo en desktop)
+    if (window.innerWidth > 480) {
+        const sidebarCollapsed = localStorage.getItem('sidebarCollapsed');
+        if (sidebarCollapsed === 'true') {
+            sidebar.classList.add('collapsed');
+        }
     }
     
     // Cerrar sidebar al hacer click fuera en mobile
     document.addEventListener('click', function(event) {
-        if (window.innerWidth <= 1024) {
+        if (window.innerWidth <= 480) {
             if (!sidebar.contains(event.target) && !mobileToggle.contains(event.target)) {
                 sidebar.classList.remove('show');
+                document.body.classList.remove('sidebar-open');
             }
         }
     });

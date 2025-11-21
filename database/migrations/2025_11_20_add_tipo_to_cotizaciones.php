@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('horas', function (Blueprint $table) {
-            // Agregar índice ÚNICO para evitar duplicados y acelerar búsquedas
-            $table->unique('hora', 'idx_horas_hora_unique');
+        Schema::table('cotizaciones', function (Blueprint $table) {
+            // Agregar campo tipo después de numero_cotizacion
+            $table->string('tipo')->nullable()->after('numero_cotizacion');
         });
     }
 
@@ -22,8 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('horas', function (Blueprint $table) {
-            $table->dropUnique('idx_horas_hora_unique');
+        Schema::table('cotizaciones', function (Blueprint $table) {
+            $table->dropColumn('tipo');
         });
     }
 };
