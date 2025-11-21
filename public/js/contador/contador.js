@@ -658,3 +658,147 @@ function eliminarFormato(formatoId) {
         .catch(error => console.error('Error:', error));
     }
 }
+
+// ===== FUNCIONES PARA MODAL DE PRECIOS =====
+let preciosModalData = {
+    productoIndex: null,
+    nombreProducto: null,
+    tallas: [],
+    preciosActuales: {},
+    ivaActual: 0
+};
+
+function abrirModalPrecios(productoIndex, nombreProducto, tallas, precios, iva) {
+    preciosModalData = {
+        productoIndex: productoIndex,
+        nombreProducto: nombreProducto,
+        tallas: tallas || [],
+        preciosActuales: precios || {},
+        ivaActual: iva || 0
+    };
+    
+    // Actualizar título
+    document.getElementById('modalPreciosTitle').textContent = `💰 Precios - ${nombreProducto}`;
+    
+    // Generar contenido del modal
+    let html = `
+        <div style="margin-bottom: 1.5rem;">
+            <label style="font-weight: 600; color: #333; display: block; margin-bottom: 0.5rem;">Seleccionar Tallas:</label>
+            <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                <button type="button" onclick="seleccionarTodasLasTallas()" style="padding: 0.5rem 1rem; background: #3498db; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.9rem;">
+                    ✓ Seleccionar Todas
+                </button>
+                <button type="button" onclick="deseleccionarTodasLasTallas()" style="padding: 0.5rem 1rem; background: #95a5a6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.9rem;">
+                    ✗ Deseleccionar Todas
+                </button>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+    `;
+    
+    // Agregar checkboxes para cada talla
+    tallas.forEach((talla, index) => {
+        const tallaLimpia = talla.trim();
+        const precioActual = precios[tallaLimpia] || '';
+        const isChecked = precioActual ? 'checked' : '';
+        
+        html += `
+            <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: #f8f9fa; border-radius: 4px;">
+                <input type="checkbox" id="talla_${index}" class="checkbox-talla" data-talla="${tallaLimpia}" ${isChecked} 
+                       style="width: 20px; height: 20px; cursor: pointer; accent-color: #27ae60;">
+                <label for="talla_${index}" style="flex: 0 0 80px; font-weight: 600; color: #e74c3c; cursor: pointer;">
+                    ${tallaLimpia.toUpperCase()}
+                </label>
+                <input type="number" id="precio_${index}" class="input-precio" data-talla="${tallaLimpia}" 
+                       placeholder="Precio" value="${precioActual}" 
+                       style="flex: 1; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;" 
+                       ${isChecked ? '' : 'disabled'}>
+            </div>
+        `;
+    });
+    
+    html += `
+            </div>
+        </div>
+        
+        <div style="background: #f0f0f0; padding: 1rem; border-radius: 4px;">
+            <label style="font-weight: 600; color: #333; display: block; margin-bottom: 0.75rem;">IVA (%):</label>
+            <input type="number" id="inputIva" placeholder="Ej: 19" value="${iva}" min="0" max="100" step="0.1"
+                   style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
+        </div>
+    `;
+    
+    document.getElementById('modalPreciosContent').innerHTML = html;
+    
+    // Agregar event listeners a los checkboxes
+    document.querySelectorAll('.checkbox-talla').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const inputPrecio = document.querySelector(`input[data-talla="${this.dataset.talla}"][type="number"]`);
+            if (inputPrecio) {
+                inputPrecio.disabled = !this.checked;
+                if (this.checked && !inputPrecio.value) {
+                    inputPrecio.focus();
+                }
+            }
+        });
+    });
+    
+    // Mostrar modal
+    document.getElementById('modalPreciosProducto').style.display = 'flex';
+}
+
+function cerrarModalPrecios() {
+    document.getElementById('modalPreciosProducto').style.display = 'none';
+}
+
+function seleccionarTodasLasTallas() {
+    document.querySelectorAll('.checkbox-talla').forEach(checkbox => {
+        checkbox.checked = true;
+        checkbox.dispatchEvent(new Event('change'));
+    });
+}
+
+function deseleccionarTodasLasTallas() {
+    document.querySelectorAll('.checkbox-talla').forEach(checkbox => {
+        checkbox.checked = false;
+        checkbox.dispatchEvent(new Event('change'));
+    });
+}
+
+function guardarPrecios() {
+    const precios = {};
+    const iva = parseFloat(document.getElementById('inputIva').value) || 0;
+    
+    // Recopilar precios de tallas seleccionadas
+    document.querySelectorAll('.checkbox-talla:checked').forEach(checkbox => {
+        const talla = checkbox.dataset.talla;
+        const inputPrecio = document.querySelector(`input[data-talla="${talla}"][type="number"]`);
+        if (inputPrecio && inputPrecio.value) {
+            precios[talla] = parseFloat(inputPrecio.value);
+        }
+    });
+    
+    // Guardar en variable global (para luego enviar al servidor)
+    if (!window.preciosProductos) {
+        window.preciosProductos = {};
+    }
+    window.preciosProductos[preciosModalData.productoIndex] = {
+        precios: precios,
+        iva: iva
+    };
+    
+    console.log('✅ Precios guardados:', window.preciosProductos);
+    cerrarModalPrecios();
+    
+    // Aquí puedes agregar lógica para actualizar la vista o enviar al servidor
+}
+
+// Cerrar modal de precios al presionar ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('modalPreciosProducto');
+        if (modal && modal.style.display === 'flex') {
+            cerrarModalPrecios();
+        }
+    }
+});

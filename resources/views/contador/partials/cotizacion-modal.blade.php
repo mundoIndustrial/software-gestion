@@ -73,29 +73,66 @@
                     </div>
                     @endif
                     
-                    <!-- Tallas -->
-                    <div style="display: flex; flex-direction: column; gap: 0.5rem; justify-content: center;">
-                        <div style="font-size: 0.85rem; font-weight: 600; color: #333;">Tallas:</div>
-                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-                            @php
-                                $tallas = $producto['tallas'] ?? [];
-                                if (is_string($tallas)) {
-                                    $tallas = explode(',', $tallas);
-                                    $tallas = array_map('trim', $tallas);
-                                }
-                            @endphp
-                            @if(count($tallas) > 0)
-                                @foreach($tallas as $talla)
-                                    @if(!empty($talla))
-                                    <span style="background: linear-gradient(135deg, #1e5ba8 0%, #2b7ec9 100%); color: white; padding: 0.5rem 0.85rem; border-radius: 4px; font-size: 0.85rem; font-weight: 700;">
-                                        {{ strtoupper($talla) }}
-                                    </span>
-                                    @endif
-                                @endforeach
-                            @else
-                                <span style="color: #999; font-size: 0.85rem;">Sin tallas</span>
+                    <!-- Tallas y Precios -->
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem; justify-content: center;">
+                        @php
+                            $tallas = $producto['tallas'] ?? [];
+                            if (is_string($tallas)) {
+                                $tallas = explode(',', $tallas);
+                                $tallas = array_map('trim', $tallas);
+                            }
+                            $precios = $producto['precios'] ?? [];
+                            $iva = $producto['iva'] ?? 0;
+                            $tienePrecios = !empty($precios) && count($precios) > 0;
+                        @endphp
+                        
+                        <!-- Mostrar Tallas -->
+                        <div>
+                            <div style="font-size: 0.85rem; font-weight: 600; color: #333; margin-bottom: 0.5rem;">Tallas:</div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+                                @if(count($tallas) > 0)
+                                    @foreach($tallas as $talla)
+                                        @if(!empty($talla))
+                                        <span style="color: #e74c3c; font-weight: 700; font-size: 0.9rem;">
+                                            {{ strtoupper($talla) }}
+                                        </span>
+                                        @endif
+                                    @endforeach
+                                @else
+                                    <span style="color: #999; font-size: 0.85rem;">Sin tallas</span>
+                                @endif
+                            </div>
+                        </div>
+                        
+                        <!-- Mostrar Precios si existen -->
+                        @if($tienePrecios)
+                        <div style="background: #f0f0f0; padding: 0.75rem; border-radius: 4px;">
+                            <div style="font-size: 0.8rem; color: #333; margin-bottom: 0.5rem;">
+                                <strong>Precios:</strong>
+                                @php
+                                    $preciosTexto = [];
+                                    foreach($precios as $talla => $precio) {
+                                        $precioConIva = $precio * (1 + $iva / 100);
+                                        $preciosTexto[] = strtoupper($talla) . ': $' . number_format($precio, 2, '.', ',');
+                                    }
+                                @endphp
+                                {{ implode(' | ', $preciosTexto) }}
+                            </div>
+                            @if($iva > 0)
+                            <div style="font-size: 0.8rem; color: #666;">
+                                <strong>IVA:</strong> {{ $iva }}%
+                            </div>
                             @endif
                         </div>
+                        @endif
+                        
+                        <!-- Botón Digitar Precios -->
+                        <button type="button" onclick="abrirModalPrecios({{ $productoIndex }}, '{{ $producto['nombre_producto'] ?? 'Producto' }}', {{ json_encode($tallas) }}, {{ json_encode($precios) }}, {{ $iva }})"
+                                style="background: linear-gradient(135deg, #27ae60 0%, #229954 100%); color: white; border: none; padding: 0.6rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s;"
+                                onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'"
+                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                            💰 Digitar Precios
+                        </button>
                     </div>
                 </div>
             </div>
@@ -103,6 +140,97 @@
         @endforeach
     </div>
     @endif
+
+    <!-- ESPECIFICACIONES DE LA ORDEN -->
+    <div class="detail-section">
+        <div class="detail-header">📋 Especificaciones de la Orden</div>
+        
+        @php
+            // Mapear especificaciones a sus categorías - SIEMPRE mostrar todas las categorías
+            $especificacionesPorCategoria = [
+                'DISPONIBILIDAD' => ['items' => [], 'observaciones' => []],
+                'FORMA DE PAGO' => ['items' => [], 'observaciones' => []],
+                'RÉGIMEN' => ['items' => [], 'observaciones' => []],
+                'SE HA VENDIDO' => ['items' => [], 'observaciones' => []],
+                'ÚLTIMA VENTA' => ['items' => [], 'observaciones' => []],
+                'FLETE DE ENVÍO' => ['items' => [], 'observaciones' => []]
+            ];
+            
+            // Clasificar cada especificación si existen
+            if ($cotizacion->especificaciones && count($cotizacion->especificaciones) > 0) {
+                foreach($cotizacion->especificaciones as $spec) {
+                    $itemOriginal = $spec['item'] ?? '';
+                    $item = mb_strtoupper($itemOriginal, 'UTF-8');
+                    $observacion = $spec['observaciones'] ?? '';
+                    
+                    // Determinar la categoría basada en el item (usando búsqueda case-insensitive)
+                    if (stripos($item, 'BODEGA') !== false || stripos($item, 'CÚCUTA') !== false || 
+                        stripos($item, 'LAFAYETTE') !== false || stripos($item, 'FÁBRICA') !== false) {
+                        $especificacionesPorCategoria['DISPONIBILIDAD']['items'][] = $itemOriginal;
+                        if ($observacion) {
+                            $especificacionesPorCategoria['DISPONIBILIDAD']['observaciones'][] = $observacion;
+                        }
+                    } elseif (stripos($item, 'CONTADO') !== false || stripos($item, 'CREDITO') !== false || stripos($item, 'CRÉDITO') !== false) {
+                        $especificacionesPorCategoria['FORMA DE PAGO']['items'][] = $itemOriginal;
+                        if ($observacion) {
+                            $especificacionesPorCategoria['FORMA DE PAGO']['observaciones'][] = $observacion;
+                        }
+                    } elseif (stripos($item, 'COMUN') !== false || stripos($item, 'COMÚN') !== false || stripos($item, 'SIMPLIFICADO') !== false) {
+                        $especificacionesPorCategoria['RÉGIMEN']['items'][] = $itemOriginal;
+                        if ($observacion) {
+                            $especificacionesPorCategoria['RÉGIMEN']['observaciones'][] = $observacion;
+                        }
+                    } elseif (stripos($item, 'VENDIDO') !== false) {
+                        $especificacionesPorCategoria['SE HA VENDIDO']['items'][] = $itemOriginal;
+                        if ($observacion) {
+                            $especificacionesPorCategoria['SE HA VENDIDO']['observaciones'][] = $observacion;
+                        }
+                    } elseif (stripos($item, 'ÚLTIMA') !== false || stripos($item, 'ULTIMA') !== false || stripos($item, 'VENTA') !== false) {
+                        $especificacionesPorCategoria['ÚLTIMA VENTA']['items'][] = $itemOriginal;
+                        if ($observacion) {
+                            $especificacionesPorCategoria['ÚLTIMA VENTA']['observaciones'][] = $observacion;
+                        }
+                    } elseif (stripos($item, 'FLETE') !== false || stripos($item, 'ENVIO') !== false || stripos($item, 'ENVÍO') !== false) {
+                        $especificacionesPorCategoria['FLETE DE ENVÍO']['items'][] = $itemOriginal;
+                        if ($observacion) {
+                            $especificacionesPorCategoria['FLETE DE ENVÍO']['observaciones'][] = $observacion;
+                        }
+                    }
+                }
+            }
+        @endphp
+        
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+            <thead>
+                <tr style="background: linear-gradient(135deg, #1e5ba8 0%, #2b7ec9 100%); color: white;">
+                    <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd; font-weight: 700; width: 25%;">Especificación</th>
+                    <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd; font-weight: 700; width: 25%;">Opción Seleccionada</th>
+                    <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd; font-weight: 700; width: 50%;">Observaciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($especificacionesPorCategoria as $categoria => $datos)
+                    @php
+                        $items = $datos['items'] ?? [];
+                        $observaciones = $datos['observaciones'] ?? [];
+                        $itemsText = count($items) > 0 ? implode(', ', $items) : '-';
+                        $observacionesText = count($observaciones) > 0 ? implode(', ', $observaciones) : '-';
+                    @endphp
+                    <tr style="background-color: #ffffff; border-bottom: 1px solid #ddd;">
+                        <td style="padding: 0.75rem; border: 1px solid #ddd; color: #333; font-weight: 600;">
+                            {{ $categoria }}
+                        </td>
+                        <td style="padding: 0.75rem; border: 1px solid #ddd; color: {{ count($items) > 0 ? '#333' : '#999' }};">
+                            {{ $itemsText }}
+                        </td>
+                        <td style="padding: 0.75rem; border: 1px solid #ddd; color: {{ count($observaciones) > 0 ? '#333' : '#999' }};">
+                            {{ $observacionesText }}
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
     
     <!-- Modal de Imágenes Completo -->
     <div id="modalImagenesProducto" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 5000; overflow-y: auto;">
@@ -215,5 +343,31 @@
         @endforeach
     </div>
     @endif
+
+    <!-- MODAL: Digitar Precios -->
+    <div id="modalPreciosProducto" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 9000; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 2px solid #27ae60; padding-bottom: 1rem;">
+                <h3 id="modalPreciosTitle" style="margin: 0; color: #333; font-size: 1.3rem;">💰 Digitar Precios</h3>
+                <button type="button" onclick="cerrarModalPrecios()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999;">✕</button>
+            </div>
+            
+            <!-- Contenido -->
+            <div id="modalPreciosContent" style="margin-bottom: 1.5rem;">
+                <!-- Se llena dinámicamente con JavaScript -->
+            </div>
+            
+            <!-- Footer -->
+            <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 2px solid #e0e0e0; display: flex; gap: 1rem; justify-content: flex-end;">
+                <button type="button" onclick="cerrarModalPrecios()" style="padding: 0.6rem 1.5rem; background: #f0f0f0; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; font-weight: 600; color: #333;">
+                    CANCELAR
+                </button>
+                <button type="button" onclick="guardarPrecios()" style="padding: 0.6rem 1.5rem; background: linear-gradient(135deg, #27ae60 0%, #229954 100%); border: none; border-radius: 6px; cursor: pointer; font-weight: 600; color: white;">
+                    GUARDAR PRECIOS
+                </button>
+            </div>
+        </div>
+    </div>
 
 </div>
