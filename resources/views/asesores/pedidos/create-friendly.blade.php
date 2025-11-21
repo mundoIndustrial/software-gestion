@@ -76,7 +76,7 @@
             <div class="form-section">
                 <div class="form-group-large">
                     <label for="cliente"><i class="fas fa-user"></i> NOMBRE DEL CLIENTE *</label>
-                    <input type="text" id="cliente" name="cliente" class="input-large" placeholder="EJ: JUAN GARCÍA, EMPRESA ABC..." required>
+                    <input type="text" id="cliente" name="cliente" class="input-large" placeholder="EJ: JUAN GARCÍA, EMPRESA ABC..." value="{{ isset($esEdicion) && $esEdicion && isset($cotizacion) ? $cotizacion->cliente : '' }}" required>
                     <small class="help-text">EL NOMBRE DE TU CLIENTE O EMPRESA</small>
                 </div>
             </div>
@@ -92,7 +92,12 @@
         <div class="form-step" data-step="2">
             <div class="step-header">
                 <h2>PASO 2: PRENDAS DEL PEDIDO</h2>
-                <p>AGREGA LAS PRENDAS QUE TU CLIENTE QUIERE</p>
+                <p>AGREGA LAS PRENDAS QUE TU CLIENTE QUIERE (OPCIONAL)</p>
+            </div>
+            
+            <div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 12px 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: #856404; font-size: 0.9rem;"><i class="fas fa-info-circle"></i> Esta sección es opcional</span>
+                <button type="button" id="btnAplicaPaso2" onclick="toggleAplicaPaso(2, this)" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.3s;">APLICA</button>
             </div>
 
             <div style="background: linear-gradient(135deg, #0066cc, #0052a3); border: 2px solid #0052a3; border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);">
@@ -108,7 +113,46 @@
             </div>
 
             <div class="form-section">
-                <div class="productos-container" id="productosContainer"></div>
+                <div class="productos-container" id="productosContainer">
+                    @if(isset($esEdicion) && $esEdicion && isset($cotizacion) && $cotizacion->productos)
+                        <!-- Cargar productos guardados -->
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const productos = {!! json_encode($cotizacion->productos) !!};
+                                console.log('📦 Productos a cargar:', productos);
+                                
+                                productos.forEach((producto, idx) => {
+                                    agregarProductoFriendly();
+                                    
+                                    // Esperar a que se cree el elemento
+                                    setTimeout(() => {
+                                        const ultimoProducto = document.querySelectorAll('.producto-card')[document.querySelectorAll('.producto-card').length - 1];
+                                        
+                                        if (ultimoProducto) {
+                                            // Nombre
+                                            const inputNombre = ultimoProducto.querySelector('input[name*="nombre_producto"]');
+                                            if (inputNombre) inputNombre.value = producto.nombre_producto || '';
+                                            
+                                            // Descripción
+                                            const textareaDesc = ultimoProducto.querySelector('textarea[name*="descripcion"]');
+                                            if (textareaDesc) textareaDesc.value = producto.descripcion || '';
+                                            
+                                            // Tallas
+                                            if (producto.tallas && Array.isArray(producto.tallas)) {
+                                                producto.tallas.forEach(talla => {
+                                                    const tallaBtn = ultimoProducto.querySelector(`.talla-btn[data-talla="${talla}"]`);
+                                                    if (tallaBtn) tallaBtn.click();
+                                                });
+                                            }
+                                            
+                                            console.log('✅ Producto cargado:', producto.nombre_producto);
+                                        }
+                                    }, 500);
+                                });
+                            });
+                        </script>
+                    @endif
+                </div>
             </div>
 
             <!-- Botón flotante tipo WhatsApp - Solo en PASO 2 -->
@@ -145,7 +189,12 @@
         <div class="form-step" data-step="3">
             <div class="step-header">
                 <h2>PASO 3: BORDADO/ESTAMPADO</h2>
-                <p>ESPECIFICA LOS DETALLES DE BORDADO Y ESTAMPADO</p>
+                <p>ESPECIFICA LOS DETALLES DE BORDADO Y ESTAMPADO (OPCIONAL)</p>
+            </div>
+            
+            <div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 12px 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: #856404; font-size: 0.9rem;"><i class="fas fa-info-circle"></i> Esta sección es opcional</span>
+                <button type="button" id="btnAplicaPaso3" onclick="toggleAplicaPaso(3, this)" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.3s;">APLICA</button>
             </div>
 
             <div class="form-section">
@@ -1000,11 +1049,108 @@ function actualizarTallasHidden(container) {
 <script src="{{ asset('js/asesores/cotizaciones/guardado.js') }}"></script>
 <script src="{{ asset('js/asesores/cotizaciones/cargar-borrador.js') }}"></script>
 <script>
-    // Cargar borrador si existe
-    @if(isset($cotizacion))
+    // Cargar TODO el borrador (técnicas, observaciones, imágenes, etc.)
+    @if(isset($esEdicion) && $esEdicion && isset($cotizacion))
     document.addEventListener('DOMContentLoaded', function() {
         const cotizacion = {!! json_encode($cotizacion) !!};
-        cargarBorrador(cotizacion);
+        console.log('📂 Cargando borrador completo:', cotizacion);
+        
+        // Cargar técnicas
+        if (cotizacion.tecnicas && Array.isArray(cotizacion.tecnicas)) {
+            console.log('🔧 Cargando técnicas:', cotizacion.tecnicas);
+            cotizacion.tecnicas.forEach(tecnica => {
+                const selector = document.getElementById('selector_tecnicas');
+                if (selector) {
+                    selector.value = tecnica;
+                    agregarTecnica();
+                }
+            });
+        }
+        
+        // Cargar observaciones técnicas
+        if (cotizacion.observaciones_tecnicas) {
+            const textareaObs = document.getElementById('observaciones_tecnicas');
+            if (textareaObs) {
+                textareaObs.value = cotizacion.observaciones_tecnicas;
+                console.log('✅ Observaciones técnicas cargadas');
+            }
+        }
+        
+        // Cargar imágenes de bordado/estampado
+        if (cotizacion.imagenes && Array.isArray(cotizacion.imagenes)) {
+            console.log('📸 Cargando imágenes:', cotizacion.imagenes);
+            const galeriaImagenes = document.getElementById('galeria_imagenes');
+            if (galeriaImagenes) {
+                cotizacion.imagenes.forEach(imagen => {
+                    const div = document.createElement('div');
+                    div.style.cssText = 'position: relative; width: 100px; height: 100px; border-radius: 6px; overflow: hidden; border: 1px solid #ddd;';
+                    div.innerHTML = `
+                        <img src="${imagen}" style="width: 100%; height: 100%; object-fit: cover;">
+                        <button type="button" onclick="this.parentElement.remove()" style="position: absolute; top: 2px; right: 2px; background: #f44336; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 16px; padding: 0; line-height: 1;">✕</button>
+                    `;
+                    galeriaImagenes.appendChild(div);
+                });
+            }
+        }
+        
+        // Cargar observaciones generales
+        if (cotizacion.observaciones_generales && Array.isArray(cotizacion.observaciones_generales)) {
+            console.log('📝 Cargando observaciones generales:', cotizacion.observaciones_generales);
+            const contenedor = document.getElementById('observaciones_lista');
+            if (contenedor) {
+                cotizacion.observaciones_generales.forEach(obs => {
+                    let texto = '';
+                    let tipo = 'texto';
+                    let valor = '';
+                    
+                    if (typeof obs === 'string') {
+                        texto = obs;
+                    } else if (typeof obs === 'object' && obs.texto) {
+                        texto = obs.texto || '';
+                        tipo = obs.tipo || 'texto';
+                        valor = obs.valor || '';
+                    }
+                    
+                    if (!texto.trim()) return;
+                    
+                    const fila = document.createElement('div');
+                    fila.style.cssText = 'display: flex; gap: 10px; align-items: center; padding: 10px; background: white; border-radius: 6px; border: 1px solid #ddd;';
+                    fila.innerHTML = `
+                        <input type="text" name="observaciones_generales[]" class="input-large" value="${texto}" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
+                        <div style="display: flex; gap: 5px; align-items: center; flex-shrink: 0;">
+                            <div class="obs-checkbox-mode" style="display: flex; align-items: center; gap: 5px; ${tipo === 'checkbox' ? '' : 'display: none;'}">
+                                <input type="checkbox" name="observaciones_check[]" style="width: 20px; height: 20px; cursor: pointer;" ${tipo === 'checkbox' ? 'checked' : ''}>
+                            </div>
+                            <div class="obs-text-mode" style="display: ${tipo === 'texto' ? 'block' : 'none'}; flex: 1;">
+                                <input type="text" name="observaciones_valor[]" placeholder="Valor..." value="${valor}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
+                            </div>
+                            <button type="button" class="obs-toggle-btn" style="background: ${tipo === 'checkbox' ? '#3498db' : '#ff9800'}; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; flex-shrink: 0;">✓/✎</button>
+                        </div>
+                        <button type="button" onclick="this.closest('div').remove()" style="background: #f44336; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 1rem; flex-shrink: 0;">✕</button>
+                    `;
+                    contenedor.appendChild(fila);
+                    
+                    const toggleBtn = fila.querySelector('.obs-toggle-btn');
+                    const checkboxMode = fila.querySelector('.obs-checkbox-mode');
+                    const textMode = fila.querySelector('.obs-text-mode');
+                    toggleBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        if (checkboxMode.style.display === 'none') {
+                            checkboxMode.style.display = 'flex';
+                            textMode.style.display = 'none';
+                            toggleBtn.style.background = '#3498db';
+                        } else {
+                            checkboxMode.style.display = 'none';
+                            textMode.style.display = 'block';
+                            toggleBtn.style.background = '#ff9800';
+                        }
+                    });
+                });
+            }
+        }
+        
+        console.log('✅ Borrador cargado completamente');
+        actualizarResumenFriendly();
     });
     @endif
 </script>

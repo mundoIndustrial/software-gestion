@@ -148,31 +148,99 @@ function recopilarDatos() {
     
     // Recopilar técnicas
     const tecnicas = [];
-    document.querySelectorAll('#tecnicas_seleccionadas div').forEach(tag => {
+    document.querySelectorAll('#tecnicas_seleccionadas > div').forEach(tag => {
         const input = tag.querySelector('input[name="tecnicas[]"]');
         if (input) tecnicas.push(input.value);
     });
     console.log('🎨 Técnicas recopiladas:', tecnicas);
+    console.log('🎨 Elementos encontrados:', document.querySelectorAll('#tecnicas_seleccionadas > div').length);
     
     // Recopilar observaciones técnicas
     const observaciones_tecnicas = document.getElementById('observaciones_tecnicas')?.value || '';
     console.log('📝 Observaciones técnicas:', observaciones_tecnicas);
     
-    // Recopilar ubicaciones
+    // Recopilar ubicaciones por sección (solo las que estén checked)
     const ubicaciones = [];
-    document.querySelectorAll('input[name="ubicaciones[]"]').forEach(input => {
-        const valor = input.value.trim();
-        if (valor) ubicaciones.push(valor);
+    const seccionesAgregadas = {};
+    
+    document.querySelectorAll('#secciones_agregadas > div').forEach(seccionDiv => {
+        const seccionInput = seccionDiv.querySelector('input[name="ubicaciones_seccion[]"]');
+        if (seccionInput) {
+            const seccion = seccionInput.value;
+            
+            if (!seccionesAgregadas[seccion]) {
+                seccionesAgregadas[seccion] = {
+                    ubicaciones: [],
+                    observaciones: ''
+                };
+            }
+            
+            // Obtener todas las ubicaciones checked de esta sección
+            seccionDiv.querySelectorAll('input[name="ubicaciones_check[]"]').forEach((checkbox) => {
+                if (checkbox.checked) {
+                    const ubicacionInput = checkbox.closest('tr').querySelector('input[name="ubicaciones[]"]');
+                    if (ubicacionInput) {
+                        seccionesAgregadas[seccion].ubicaciones.push(ubicacionInput.value.trim());
+                    }
+                }
+            });
+            
+            // Obtener observaciones de esta sección
+            const obsInput = seccionDiv.querySelector('input[name="ubicaciones_observaciones[]"]');
+            if (obsInput) {
+                seccionesAgregadas[seccion].observaciones = obsInput.value.trim();
+            }
+        }
     });
+    
+    // Convertir a array de objetos
+    Object.keys(seccionesAgregadas).forEach(seccion => {
+        if (seccionesAgregadas[seccion].ubicaciones.length > 0) {
+            ubicaciones.push({
+                seccion: seccion,
+                ubicaciones_seleccionadas: seccionesAgregadas[seccion].ubicaciones,
+                observaciones: seccionesAgregadas[seccion].observaciones
+            });
+        }
+    });
+    
     console.log('📍 Ubicaciones recopiladas:', ubicaciones);
     
-    // Recopilar observaciones generales
+    // Recopilar observaciones generales CON TIPO Y VALOR
     const observaciones_generales = [];
+    const observaciones_check = [];
+    const observaciones_valor = [];
+    
     document.querySelectorAll('#observaciones_lista > div').forEach(obs => {
-        const valor = obs.querySelector('input[name="observaciones_generales[]"]')?.value || '';
-        if (valor.trim()) observaciones_generales.push(valor);
+        const textoInput = obs.querySelector('input[name="observaciones_generales[]"]');
+        const checkboxInput = obs.querySelector('input[name="observaciones_check[]"]');
+        const valorInput = obs.querySelector('input[name="observaciones_valor[]"]');
+        const textModeDiv = obs.querySelector('.obs-text-mode');
+        
+        const texto = textoInput?.value || '';
+        
+        if (texto.trim()) {
+            observaciones_generales.push(texto);
+            
+            // Verificar si está en modo texto (si el div de texto está visible)
+            const esModoTexto = textModeDiv && textModeDiv.style.display !== 'none';
+            
+            if (esModoTexto) {
+                // Modo texto: no hay checkbox, guardar el valor
+                observaciones_check.push(null);
+                observaciones_valor.push(valorInput?.value || '');
+                console.log('📝 Modo TEXTO:', texto, '=', valorInput?.value);
+            } else {
+                // Modo checkbox: guardar si está checked
+                observaciones_check.push(checkboxInput?.checked ? 'on' : null);
+                observaciones_valor.push('');
+                console.log('✓ Modo CHECK:', texto, '=', checkboxInput?.checked ? 'checked' : 'unchecked');
+            }
+        }
     });
     console.log('💬 Observaciones generales recopiladas:', observaciones_generales);
+    console.log('✓ Observaciones check:', observaciones_check);
+    console.log('📝 Observaciones valor:', observaciones_valor);
     
     return { 
         cliente: clienteValue, 
@@ -180,6 +248,8 @@ function recopilarDatos() {
         tecnicas, 
         observaciones_tecnicas,
         ubicaciones,
-        observaciones_generales 
+        observaciones_generales,
+        observaciones_check,
+        observaciones_valor
     };
 }

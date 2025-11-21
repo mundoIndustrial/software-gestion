@@ -39,6 +39,8 @@ class CotizacionesController extends Controller
     public function guardar(Request $request)
     {
         try {
+            \Log::info('🚀 MÉTODO GUARDAR LLAMADO');
+            
             $tipo = $request->input('tipo', 'borrador'); // 'borrador' o 'enviada'
             $cliente = $request->input('cliente');
             $cotizacionId = $request->input('cotizacion_id'); // ID si es actualización
@@ -73,16 +75,70 @@ class CotizacionesController extends Controller
                 ]);
             }
             
+            // Procesar productos, técnicas, ubicaciones, observaciones ANTES de crear la cotización
+            $productos = $request->input('productos', []);
+            $tecnicas = $request->input('tecnicas', []);
+            $ubicacionesRaw = $request->input('ubicaciones', []);
+            $imagenes = $request->input('imagenes', []);
+            $especificacionesGenerales = $request->input('especificaciones', []);
+            $observacionesTexto = $request->input('observaciones_generales', []);
+            $observacionesCheck = $request->input('observaciones_check', []);
+            $observacionesValor = $request->input('observaciones_valor', []);
+            
+            // Procesar observaciones generales con su tipo
+            $observacionesGenerales = [];
+            foreach ($observacionesTexto as $index => $obs) {
+                if (!empty($obs)) {
+                    $checkValue = $observacionesCheck[$index] ?? null;
+                    $tipo = ($checkValue === 'on') ? 'checkbox' : 'texto';
+                    $valor = ($tipo === 'texto') ? ($observacionesValor[$index] ?? '') : '';
+                    
+                    $observacionesGenerales[] = [
+                        'texto' => $obs,
+                        'tipo' => $tipo,
+                        'valor' => $valor
+                    ];
+                }
+            }
+            
+            // Procesar ubicaciones
+            $ubicaciones = [];
+            if (is_array($ubicacionesRaw)) {
+                foreach ($ubicacionesRaw as $item) {
+                    if (is_array($item) && isset($item['seccion'])) {
+                        $ubicaciones[] = $item;
+                    } else {
+                        $ubicaciones[] = [
+                            'seccion' => 'GENERAL',
+                            'ubicaciones_seleccionadas' => [$item]
+                        ];
+                    }
+                }
+            }
+            
+            // Convertir especificaciones a array si es necesario
+            if (!is_array($especificacionesGenerales)) {
+                $especificacionesGenerales = (array) $especificacionesGenerales;
+            }
+            
             $datos = [
                 'user_id' => Auth::id(),
                 'numero_cotizacion' => $request->input('numero_cotizacion'),
                 'tipo_cotizacion_id' => $tipoCotizacion ? $tipoCotizacion->id : null,
-                'fecha_inicio' => now(), // Fecha cuando se guarda en borradores
+                'fecha_inicio' => now(),
                 'cliente' => $cliente,
                 'asesora' => auth()->user()?->name ?? 'Sin nombre',
                 'es_borrador' => ($tipo === 'borrador'),
                 'estado' => 'enviada',
-                'fecha_envio' => ($tipo === 'enviada') ? now() : null, // Guardar fecha de envío si se envía
+                'fecha_envio' => ($tipo === 'enviada') ? now() : null,
+                // Guardar datos de PASO 2 y PASO 3 directamente en cotizaciones
+                'productos' => !empty($productos) ? $productos : null,
+                'especificaciones' => !empty($especificacionesGenerales) ? $especificacionesGenerales : null,
+                'imagenes' => !empty($imagenes) ? $imagenes : null,
+                'tecnicas' => !empty($tecnicas) ? $tecnicas : null,
+                'observaciones_tecnicas' => $request->input('observaciones_tecnicas'),
+                'ubicaciones' => !empty($ubicaciones) ? $ubicaciones : null,
+                'observaciones_generales' => !empty($observacionesGenerales) ? $observacionesGenerales : null
             ];
 
             \Log::info('Datos a guardar (nueva cotización)', $datos);
@@ -92,8 +148,6 @@ class CotizacionesController extends Controller
             \Log::info('Cotización guardada exitosamente', ['id' => $cotizacion->id]);
 
             // Guardar prendas en tabla prendas_cotizaciones
-            $productos = $request->input('productos', []);
-            
             \Log::info('Productos a guardar en prendas_cotizaciones', [
                 'cantidad' => count($productos),
                 'productos' => $productos
@@ -132,50 +186,37 @@ class CotizacionesController extends Controller
                 \Log::warning('No hay productos para guardar en prendas_cotizaciones');
             }
 
-            // Guardar especificaciones GENERALES (del modal, no por prenda)
-            $especificacionesGenerales = $request->input('especificaciones', []);
+            // Guardar datos de PASO 3 (Bordado/Estampado) en tabla logo_cotizaciones
+            $observacionesValor = $request->input('observaciones_valor', []);
+            $observacionesValor = $request->input('observaciones_valor', []);
             
-            \Log::info('=== ESPECIFICACIONES RECIBIDAS ===', [
-                'especificaciones_raw' => $especificacionesGenerales,
-                'tipo' => gettype($especificacionesGenerales),
-                'es_array' => is_array($especificacionesGenerales),
-                'es_vacio' => empty($especificacionesGenerales),
-                'count' => count($especificacionesGenerales)
+            \Log::info('🔍 DATOS RECIBIDOS DEL CLIENTE:', [
+                'observaciones_generales' => $observacionesTexto,
+                'observaciones_check' => $observacionesCheck,
+                'observaciones_check_type' => gettype($observacionesCheck),
+                'observaciones_check_count' => count($observacionesCheck),
+                'observaciones_valor' => $observacionesValor
             ]);
             
-            // Convertir a array si es necesario
-            if (!is_array($especificacionesGenerales)) {
-                $especificacionesGenerales = (array) $especificacionesGenerales;
+            // Debug: mostrar cada elemento
+            foreach ($observacionesCheck as $idx => $val) {
+                \Log::info("Check[$idx] = " . json_encode($val) . " (type: " . gettype($val) . ")");
             }
-            
-            if (!empty($especificacionesGenerales)) {
-                \Log::info('Guardando especificaciones en cotización', [
-                    'cotizacion_id' => $cotizacion->id,
-                    'especificaciones' => $especificacionesGenerales
-                ]);
-                
-                $cotizacion->update(['especificaciones' => $especificacionesGenerales]);
-                
-                \Log::info('✅ Especificaciones guardadas exitosamente', [
-                    'cotizacion_id' => $cotizacion->id,
-                    'especificaciones_guardadas' => $cotizacion->fresh()->especificaciones
-                ]);
-            } else {
-                \Log::warning('⚠️ Especificaciones vacías - no se guardan');
-            }
-
-            // Guardar datos de PASO 3 (Bordado/Estampado) en tabla logo_cotizaciones
-            // Procesar observaciones generales con su tipo (checkbox o texto)
-            $observacionesGenerales = [];
-            $observacionesTexto = $request->input('observaciones_generales', []);
-            $observacionesCheck = $request->input('observaciones_check', []);
-            $observacionesValor = $request->input('observaciones_valor', []);
             
             foreach ($observacionesTexto as $index => $obs) {
                 if (!empty($obs)) {
                     // Determinar si es checkbox o texto
-                    $tipo = isset($observacionesCheck[$index]) ? 'checkbox' : 'texto';
-                    $valor = $tipo === 'texto' ? ($observacionesValor[$index] ?? '') : '';
+                    // Si observaciones_check[$index] es 'on', es checkbox; si es null, es texto
+                    $checkValue = $observacionesCheck[$index] ?? null;
+                    $tipo = ($checkValue === 'on') ? 'checkbox' : 'texto';
+                    $valor = ($tipo === 'texto') ? ($observacionesValor[$index] ?? '') : '';
+                    
+                    \Log::info('📝 Procesando observación:', [
+                        'texto' => $obs,
+                        'checkValue' => $checkValue,
+                        'tipo' => $tipo,
+                        'valor' => $valor
+                    ]);
                     
                     $observacionesGenerales[] = [
                         'texto' => $obs,
@@ -185,14 +226,45 @@ class CotizacionesController extends Controller
                 }
             }
             
+            $tecnicas = $request->input('tecnicas', []);
+            $ubicacionesRaw = $request->input('ubicaciones', []);
+            $imagenes = $request->input('imagenes', []);
+            
+            // Procesar ubicaciones: si es array de objetos, mantener estructura; si es array simple, convertir
+            $ubicaciones = [];
+            if (is_array($ubicacionesRaw)) {
+                foreach ($ubicacionesRaw as $item) {
+                    if (is_array($item) && isset($item['seccion'])) {
+                        // Ya es estructura correcta
+                        $ubicaciones[] = $item;
+                    } else {
+                        // Es string simple, agregar como ubicación sin sección
+                        $ubicaciones[] = [
+                            'seccion' => 'GENERAL',
+                            'ubicaciones_seleccionadas' => [$item]
+                        ];
+                    }
+                }
+            }
+            
+            \Log::info('📝 Datos de PASO 3 recibidos:', [
+                'tecnicas' => $tecnicas,
+                'ubicaciones' => $ubicaciones,
+                'observaciones_tecnicas' => $request->input('observaciones_tecnicas'),
+                'observaciones_generales' => $observacionesGenerales,
+                'imagenes_count' => count($imagenes)
+            ]);
+            
             $logoCotizacionData = [
                 'cotizacion_id' => $cotizacion->id,
-                'imagenes' => $request->input('imagenes', []),
-                'tecnicas' => $request->input('tecnicas', []),
+                'imagenes' => $imagenes,
+                'tecnicas' => $tecnicas,
                 'observaciones_tecnicas' => $request->input('observaciones_tecnicas'),
-                'ubicaciones' => $request->input('ubicaciones', []),
+                'ubicaciones' => $ubicaciones,
                 'observaciones_generales' => $observacionesGenerales
             ];
+            
+            \Log::info('💾 Guardando LogoCotizacion:', $logoCotizacionData);
             
             \App\Models\LogoCotizacion::create($logoCotizacionData);
 
@@ -255,7 +327,10 @@ class CotizacionesController extends Controller
             abort(403);
         }
 
-        return view('asesores.pedidos.create-friendly', ['cotizacion' => $cotizacion]);
+        return view('asesores.pedidos.create-friendly', [
+            'cotizacion' => $cotizacion,
+            'esEdicion' => true
+        ]);
     }
 
     /**

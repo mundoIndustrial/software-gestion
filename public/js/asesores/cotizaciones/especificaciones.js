@@ -136,6 +136,7 @@ function agregarSeccion() {
     
     const seccionDiv = document.createElement('div');
     seccionDiv.style.cssText = 'background: #f9f9f9; border: 2px solid #3498db; border-radius: 8px; padding: 15px; position: relative;';
+    seccionDiv.dataset.seccion = seccion;
     
     const titulo = document.createElement('div');
     titulo.style.cssText = 'font-weight: bold; font-size: 1.1rem; margin-bottom: 10px;';
@@ -159,10 +160,11 @@ function agregarSeccion() {
         const fila = document.createElement('tr');
         fila.style.borderBottom = '1px solid #ddd';
         fila.innerHTML = `
-            <td style="padding: 10px;">
+            <td style="padding: 10px; display: flex; align-items: center; gap: 10px;">
+                <input type="checkbox" name="ubicaciones_check[]" class="ubicacion-checkbox" style="width: 18px; height: 18px; cursor: pointer;">
                 <input type="hidden" name="ubicaciones_seccion[]" value="${seccion}">
                 <input type="hidden" name="ubicaciones[]" value="${ubicacion}">
-                ${ubicacion}
+                <span>${ubicacion}</span>
             </td>
             <td style="padding: 10px; text-align: center;">
                 <button type="button" onclick="this.closest('tr').remove()" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">✕</button>
@@ -172,6 +174,16 @@ function agregarSeccion() {
     });
     tabla.appendChild(tbody);
     seccionDiv.appendChild(tabla);
+    
+    // Agregar campo de observaciones para esta sección
+    const obsDiv = document.createElement('div');
+    obsDiv.style.cssText = 'margin-top: 10px;';
+    obsDiv.innerHTML = `
+        <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem;">Observaciones de ${seccion}</label>
+        <input type="text" name="ubicaciones_observaciones[]" class="input-large" placeholder="Observaciones..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
+        <input type="hidden" name="ubicaciones_seccion_obs[]" value="${seccion}">
+    `;
+    seccionDiv.appendChild(obsDiv);
     
     const btnAgregar = document.createElement('button');
     btnAgregar.type = 'button';
@@ -200,16 +212,6 @@ function agregarSeccion() {
         seccionDiv.remove();
     };
     seccionDiv.appendChild(btnEliminar);
-    
-    const obsDiv = document.createElement('div');
-    obsDiv.style.marginTop = '10px';
-    obsDiv.innerHTML = `
-        <label style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem;">
-            <i class="fas fa-sticky-note"></i> Observación
-        </label>
-        <textarea name="observaciones_seccion[]" class="input-large" rows="2" placeholder="Observación..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;"></textarea>
-    `;
-    seccionDiv.appendChild(obsDiv);
     
     contenedor.appendChild(seccionDiv);
     document.getElementById('seccion_prenda').value = '';

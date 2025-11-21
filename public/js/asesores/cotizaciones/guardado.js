@@ -73,6 +73,8 @@ async function guardarCotizacion() {
                 observaciones_tecnicas: datos.observaciones_tecnicas,
                 ubicaciones: datos.ubicaciones,
                 observaciones_generales: datos.observaciones_generales,
+                observaciones_check: datos.observaciones_check,
+                observaciones_valor: datos.observaciones_valor,
                 especificaciones: especificaciones
             })
         });
@@ -278,6 +280,9 @@ async function procederEnviarCotizacion(datos) {
                 observaciones_tecnicas: datos.observaciones_tecnicas,
                 ubicaciones: datos.ubicaciones,
                 observaciones_generales: datos.observaciones_generales,
+                observaciones_check: datos.observaciones_check,
+                observaciones_valor: datos.observaciones_valor,
+                imagenes: datos.logo?.imagenes || [],
                 especificaciones: especificaciones
             })
         });
@@ -338,5 +343,30 @@ async function procederEnviarCotizacion(datos) {
             icon: 'error',
             confirmButtonColor: '#1e40af'
         });
+    }
+}
+
+// ============ TOGGLE APLICA/NO APLICA ============
+
+function toggleAplicaPaso(paso, btn) {
+    const isAplica = btn.textContent.trim() === 'APLICA';
+    
+    if (isAplica) {
+        // Cambiar a "NO APLICA"
+        btn.textContent = 'NO APLICA';
+        btn.style.background = '#ffc107';
+        btn.style.color = '#333';
+        
+        // Ir al siguiente paso
+        if (paso === 2) {
+            irAlPaso(3);
+        } else if (paso === 3) {
+            irAlPaso(4);
+        }
+    } else {
+        // Cambiar a "APLICA"
+        btn.textContent = 'APLICA';
+        btn.style.background = '#10b981';
+        btn.style.color = 'white';
     }
 }

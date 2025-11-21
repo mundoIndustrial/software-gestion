@@ -399,13 +399,18 @@ function toggleSeccion(btn) {
 // ============ TÉCNICAS ============
 
 function agregarTecnica() {
+    console.log('🔧 agregarTecnica() llamado');
     const selector = document.getElementById('selector_tecnicas');
     const tecnica = selector.value;
+    console.log('🔧 Técnica seleccionada:', tecnica);
+    
     if (!tecnica) {
         alert('Por favor selecciona una técnica');
         return;
     }
     const contenedor = document.getElementById('tecnicas_seleccionadas');
+    console.log('🔧 Contenedor encontrado:', !!contenedor);
+    
     if (Array.from(contenedor.children).some(tag => tag.textContent.includes(tecnica))) {
         alert('Esta técnica ya está agregada');
         return;
@@ -418,6 +423,7 @@ function agregarTecnica() {
         <button type="button" onclick="this.closest('div').remove()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.2rem; padding: 0; line-height: 1;">✕</button>
     `;
     contenedor.appendChild(tag);
+    console.log('✅ Técnica agregada:', tecnica);
     selector.value = '';
 }
 

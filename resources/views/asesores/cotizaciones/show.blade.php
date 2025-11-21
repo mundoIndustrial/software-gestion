@@ -582,7 +582,7 @@
                     </div>
                 @endif
 
-                <!-- 2. TÉCNICAS -->
+                <!-- 2. TÉCNICAS Y OBSERVACIONES TÉCNICAS -->
                 @if($logo->tecnicas && is_array($logo->tecnicas) && count($logo->tecnicas) > 0)
                     <div class="section-title" style="margin-top: 2rem;">
                         <i class="fas fa-tools"></i> Técnicas Disponibles
@@ -590,25 +590,30 @@
                     <table class="productos-table">
                         <thead>
                             <tr>
-                                <th style="width: 100%;">Técnica</th>
+                                <th style="width: 70%;">Técnica</th>
+                                <th style="width: 30%;">Observaciones</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($logo->tecnicas as $tecnica)
+                            @foreach($logo->tecnicas as $index => $tecnica)
                                 <tr>
                                     <td>
                                         <div class="producto-descripcion">
                                             <p style="margin: 0; color: #475569; font-size: 0.95rem;">{{ $tecnica }}</p>
                                         </div>
                                     </td>
+                                    <td>
+                                        @if($logo->observaciones_tecnicas && $index === 0)
+                                            <div class="producto-descripcion">
+                                                <p style="margin: 0; color: #666; font-size: 0.9rem;">{{ $logo->observaciones_tecnicas }}</p>
+                                            </div>
+                                        @endif
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>
                     </table>
-                @endif
-
-                <!-- 2.1 OBSERVACIONES TÉCNICAS -->
-                @if($logo->observaciones_tecnicas)
+                @elseif($logo->observaciones_tecnicas)
                     <div class="section-title" style="margin-top: 2rem;">
                         <i class="fas fa-wrench"></i> Observaciones Técnicas
                     </div>
@@ -625,16 +630,38 @@
                     <table class="productos-table">
                         <thead>
                             <tr>
-                                <th style="width: 100%;">Ubicación</th>
+                                <th style="width: 30%;">Sección</th>
+                                <th style="width: 40%;">Ubicaciones Seleccionadas</th>
+                                <th style="width: 30%;">Observaciones</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($logo->ubicaciones as $ubicacion)
+                            @foreach($logo->ubicaciones as $item)
+                                @php
+                                    // Manejar tanto formato antiguo (string) como nuevo (array con seccion)
+                                    $seccion = is_array($item) ? ($item['seccion'] ?? 'GENERAL') : 'GENERAL';
+                                    $ubicacionesSeleccionadas = is_array($item) ? ($item['ubicaciones_seleccionadas'] ?? [$item]) : [$item];
+                                    $observaciones = is_array($item) ? ($item['observaciones'] ?? '') : '';
+                                @endphp
                                 <tr>
-                                    <td>
+                                    <td style="font-weight: 600; color: #1e40af; vertical-align: top;">
+                                        <i class="fas fa-folder"></i> {{ $seccion }}
+                                    </td>
+                                    <td style="vertical-align: top;">
                                         <div class="producto-descripcion">
-                                            <p style="margin: 0; color: #475569; font-size: 0.95rem;">{{ $ubicacion }}</p>
+                                            @foreach($ubicacionesSeleccionadas as $ubicacion)
+                                                <p style="margin: 4px 0; color: #475569; font-size: 0.95rem;">• {{ $ubicacion }}</p>
+                                            @endforeach
                                         </div>
+                                    </td>
+                                    <td style="vertical-align: top;">
+                                        @if($observaciones)
+                                            <div class="producto-descripcion">
+                                                <p style="margin: 0; color: #666; font-size: 0.9rem;">{{ $observaciones }}</p>
+                                            </div>
+                                        @else
+                                            <p style="margin: 0; color: #999; font-size: 0.9rem; font-style: italic;">-</p>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach
@@ -643,7 +670,15 @@
                 @endif
 
                 <!-- 4. OBSERVACIONES GENERALES -->
-                @if($logo->observaciones_generales && is_array($logo->observaciones_generales) && count($logo->observaciones_generales) > 0)
+                @php
+                    \Log::info('🔍 DEBUG OBSERVACIONES:', [
+                        'logo_existe' => $logo ? 'sí' : 'no',
+                        'obs_generales' => $logo ? $logo->observaciones_generales : null,
+                        'es_array' => $logo && is_array($logo->observaciones_generales) ? 'sí' : 'no',
+                        'count' => $logo && is_array($logo->observaciones_generales) ? count($logo->observaciones_generales) : 0
+                    ]);
+                @endphp
+                @if($logo && $logo->observaciones_generales && is_array($logo->observaciones_generales) && count($logo->observaciones_generales) > 0)
                     <div class="section-title" style="margin-top: 2rem;">
                         <i class="fas fa-comment"></i> Observaciones Generales
                     </div>
@@ -670,9 +705,11 @@
                                     </td>
                                     <td style="text-align: center;">
                                         @if($tipo === 'checkbox')
-                                            <span style="color: #2e7d32; font-weight: 600; font-size: 1.2rem;">✓</span>
+                                            <span style="color: #2e7d32; font-weight: 600; font-size: 1.5rem; display: inline-block;">✓</span>
+                                        @elseif(!empty($valor))
+                                            <span style="background: #f5f5f5; padding: 8px 14px; border-radius: 4px; font-size: 0.9rem; color: #333; font-weight: 600; display: inline-block;">{{ $valor }}</span>
                                         @else
-                                            <span style="background: #f5f5f5; padding: 6px 12px; border-radius: 4px; font-size: 0.9rem; color: #333; font-weight: 500;">{{ $valor ?? '-' }}</span>
+                                            <span style="color: #999; font-size: 0.9rem; font-style: italic;">-</span>
                                         @endif
                                     </td>
                                 </tr>
