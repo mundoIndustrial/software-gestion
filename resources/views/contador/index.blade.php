@@ -19,15 +19,14 @@
             </thead>
             <tbody>
                 @php
-                    // Filtrar solo cotizaciones ENVIADAS (no borradores)
-                    $cotizacionesFiltradas = $cotizaciones->where('es_borrador', false)->values();
                     // Paginar manualmente: 25 por página
+                    // (El filtrado ya se hace en el controlador)
                     $perPage = 25;
                     $currentPage = request()->get('page', 1);
-                    $total = $cotizacionesFiltradas->count();
+                    $total = $cotizaciones->count();
                     $totalPages = ceil($total / $perPage);
                     $offset = ($currentPage - 1) * $perPage;
-                    $cotizacionesPaginadas = $cotizacionesFiltradas->slice($offset, $perPage);
+                    $cotizacionesPaginadas = $cotizaciones->slice($offset, $perPage);
                 @endphp
                 
                 @forelse($cotizacionesPaginadas as $cotizacion)
@@ -37,10 +36,16 @@
                         <td>{{ $cotizacion->cliente ?? 'N/A' }}</td>
                         <td>{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? 'N/A') }}</td>
                         <td>
-                            <button class="btn btn-primary" onclick="openCotizacionModal({{ $cotizacion->id }})">
-                                <span class="material-symbols-rounded">visibility</span>
-                                Ver Detalles
-                            </button>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <button class="btn btn-primary" onclick="openCotizacionModal({{ $cotizacion->id }})" style="flex: 1;">
+                                    <span class="material-symbols-rounded">visibility</span>
+                                    Ver Detalles
+                                </button>
+                                <button class="btn btn-danger" onclick="eliminarCotizacion({{ $cotizacion->id }}, '{{ $cotizacion->cliente }}')" style="padding: 0.6rem 0.8rem; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 0.4rem; transition: all 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+                                    <span class="material-symbols-rounded" style="font-size: 1.2rem;">delete</span>
+                                    <span style="display: none;">Eliminar</span>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 @empty

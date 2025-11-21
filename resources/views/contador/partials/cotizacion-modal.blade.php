@@ -11,62 +11,75 @@
     </div>
     @endif
 
-    <!-- Productos de la Cotización (desde JSON) -->
-    @if($cotizacion->productos && count($cotizacion->productos) > 0)
+    <!-- Productos de la Cotización (desde relación prendasCotizaciones) -->
+    @php
+        // Obtener prendas desde la relación (tabla prendas_cotizaciones_friendly)
+        $prendas = $cotizacion->prendasCotizaciones ?? [];
+        $tieneProductos = count($prendas) > 0;
+    @endphp
+    
+    @if($tieneProductos)
     <div class="detail-section">
-        @foreach($cotizacion->productos as $productoIndex => $producto)
+        @foreach($prendas as $productoIndex => $prenda)
             <!-- Nombre del Producto -->
             <h3 style="color: #1e40af; font-size: 1rem; font-weight: 700; margin: 1.5rem 0 0.5rem 0;">
-                {{ strtoupper($producto['nombre_producto'] ?? 'N/A') }}:
+                {{ strtoupper($prenda->nombre_producto ?? 'N/A') }}:
             </h3>
             
             <!-- Descripción (ancho completo) -->
             <p style="color: #333; font-size: 0.9rem; line-height: 1.6; margin: 0 0 1rem 0; word-wrap: break-word;">
-                {{ $producto['descripcion'] ?? '-' }}
+                {{ $prenda->descripcion ?? '-' }}
             </p>
             
-            <!-- Sección de Imágenes de Prenda -->
+            <!-- Sección de Imágenes de Prenda y Tela -->
             @php
-                // Obtener SOLO las imágenes de prenda de este producto
-                $imagenesPrenda = [];
-                if (is_array($cotizacion->imagenes ?? null) && isset($cotizacion->imagenes['prenda'])) {
-                    // Si es un array de imágenes para este producto
-                    if (is_array($cotizacion->imagenes['prenda'][$productoIndex] ?? null)) {
-                        $imagenesPrenda = $cotizacion->imagenes['prenda'][$productoIndex];
-                    } elseif (isset($cotizacion->imagenes['prenda'][$productoIndex])) {
-                        // Si es una sola imagen, convertir a array
-                        $imagenesPrenda = [$cotizacion->imagenes['prenda'][$productoIndex]];
-                    }
+                // Obtener imágenes desde la relación (tabla prendas_cotizaciones_friendly)
+                $imagenesPrenda = $prenda->fotos ?? [];
+                if (!is_array($imagenesPrenda)) {
+                    $imagenesPrenda = [];
                 }
+                
+                $imagenTela = $prenda->imagen_tela ?? null;
                 
                 $totalImagenes = count($imagenesPrenda);
                 $imagenesVisibles = array_slice($imagenesPrenda, 0, 2);
                 $tieneVerMas = $totalImagenes > 2;
             @endphp
             
-            @if($totalImagenes > 0)
+            @if($totalImagenes > 0 || $imagenTela)
             <div style="margin-bottom: 1.5rem;">
                 <div style="font-size: 0.85rem; font-weight: 600; color: #333; margin-bottom: 0.75rem;">Imágenes:</div>
                 
                 <!-- Grid de imágenes -->
                 <div style="display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap;" data-producto-index="{{ $productoIndex }}" data-todas-imagenes="{{ json_encode($imagenesPrenda) }}">
-                    <!-- Imágenes visibles (máx 2) -->
+                    <!-- Imágenes de prenda (máx 2) -->
                     @foreach($imagenesVisibles as $imagen)
                     <div style="position: relative; cursor: pointer;" ondblclick="abrirImagenFullscreen('{{ $imagen }}')">
-                        <img src="{{ $imagen }}" alt="Producto" 
+                        <img src="{{ $imagen }}" alt="Prenda" 
                              style="width: 150px; height: 150px; object-fit: cover; border: 1px solid #ddd; border-radius: 4px; transition: all 0.2s;"
                              onmouseover="this.style.opacity='0.8'; this.style.transform='scale(1.02)'"
                              onmouseout="this.style.opacity='1'; this.style.transform='scale(1)'"
-                             onclick="abrirModalImagenes({{ $productoIndex }}, '{{ $producto['nombre_producto'] ?? 'Producto' }}')">
+                             onclick="abrirModalImagenes({{ $productoIndex }}, '{{ $prenda->nombre_producto ?? 'Producto' }}')">
                     </div>
                     @endforeach
                     
-                    <!-- Botón VER MAS si hay más de 2 imágenes -->
+                    <!-- Imagen de tela si existe -->
+                    @if($imagenTela)
+                    <div style="position: relative; cursor: pointer;" ondblclick="abrirImagenFullscreen('{{ $imagenTela }}')">
+                        <img src="{{ $imagenTela }}" alt="Tela" 
+                             style="width: 150px; height: 150px; object-fit: cover; border: 2px solid #8B4513; border-radius: 4px; transition: all 0.2s;"
+                             title="Tela"
+                             onmouseover="this.style.opacity='0.8'; this.style.transform='scale(1.02)'"
+                             onmouseout="this.style.opacity='1'; this.style.transform='scale(1)'">
+                    </div>
+                    @endif
+                    
+                    <!-- Botón VER MAS si hay más de 2 imágenes de prenda -->
                     @if($tieneVerMas)
                     <div style="width: 150px; height: 150px; background: #999; border: 1px solid #ddd; border-radius: 4px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;"
                          onmouseover="this.style.backgroundColor='#777'; this.style.transform='scale(1.02)'"
                          onmouseout="this.style.backgroundColor='#999'; this.style.transform='scale(1)'"
-                         onclick="abrirModalImagenes({{ $productoIndex }}, '{{ $producto['nombre_producto'] ?? 'Producto' }}')">
+                         onclick="abrirModalImagenes({{ $productoIndex }}, '{{ $prenda->nombre_producto ?? 'Producto' }}')">
                         <div style="text-align: center; color: white; font-weight: 700; font-size: 1rem;">
                             VER MAS...
                         </div>
@@ -76,13 +89,15 @@
                     <!-- Tallas y Precios -->
                     <div style="display: flex; flex-direction: column; gap: 0.75rem; justify-content: center;">
                         @php
-                            $tallas = $producto['tallas'] ?? [];
+                            // Obtener tallas desde la relación (tabla prendas_cotizaciones_friendly)
+                            $tallas = $prenda->tallas ?? [];
                             if (is_string($tallas)) {
                                 $tallas = explode(',', $tallas);
                                 $tallas = array_map('trim', $tallas);
                             }
-                            $precios = $producto['precios'] ?? [];
-                            $iva = $producto['iva'] ?? 0;
+                            // Los precios se guardan en window.preciosProductos en JavaScript
+                            $precios = $prenda->precios ?? [];
+                            $iva = $prenda->iva ?? 0;
                             $tienePrecios = !empty($precios) && count($precios) > 0;
                         @endphp
                         
@@ -127,7 +142,7 @@
                         @endif
                         
                         <!-- Botón Digitar Precios -->
-                        <button type="button" onclick="abrirModalPrecios({{ $productoIndex }}, '{{ $producto['nombre_producto'] ?? 'Producto' }}', {{ json_encode($tallas) }}, {{ json_encode($precios) }}, {{ $iva }})"
+                        <button type="button" onclick="abrirModalPrecios({{ $productoIndex }}, '{{ $prenda->nombre_producto ?? 'Producto' }}', {{ json_encode($tallas) }}, {{ json_encode($precios) }}, {{ $iva }})"
                                 style="background: linear-gradient(135deg, #27ae60 0%, #229954 100%); color: white; border: none; padding: 0.6rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s;"
                                 onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.2)'"
                                 onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
@@ -146,85 +161,61 @@
         <div class="detail-header">📋 Especificaciones de la Orden</div>
         
         @php
-            // Mapear especificaciones a sus categorías - SIEMPRE mostrar todas las categorías
-            $especificacionesPorCategoria = [
-                'DISPONIBILIDAD' => ['items' => [], 'observaciones' => []],
-                'FORMA DE PAGO' => ['items' => [], 'observaciones' => []],
-                'RÉGIMEN' => ['items' => [], 'observaciones' => []],
-                'SE HA VENDIDO' => ['items' => [], 'observaciones' => []],
-                'ÚLTIMA VENTA' => ['items' => [], 'observaciones' => []],
-                'FLETE DE ENVÍO' => ['items' => [], 'observaciones' => []]
+            // Mapeo de claves de especificaciones a nombres legibles
+            $especificacionesMap = [
+                'disponibilidad' => 'DISPONIBILIDAD',
+                'forma_pago' => 'FORMA DE PAGO',
+                'regimen' => 'RÉGIMEN',
+                'se_ha_vendido' => 'SE HA VENDIDO',
+                'ultima_venta' => 'ÚLTIMA VENTA',
+                'flete' => 'FLETE DE ENVÍO'
             ];
             
-            // Clasificar cada especificación si existen
-            if ($cotizacion->especificaciones && count($cotizacion->especificaciones) > 0) {
-                foreach($cotizacion->especificaciones as $spec) {
-                    $itemOriginal = $spec['item'] ?? '';
-                    $item = mb_strtoupper($itemOriginal, 'UTF-8');
-                    $observacion = $spec['observaciones'] ?? '';
-                    
-                    // Determinar la categoría basada en el item (usando búsqueda case-insensitive)
-                    if (stripos($item, 'BODEGA') !== false || stripos($item, 'CÚCUTA') !== false || 
-                        stripos($item, 'LAFAYETTE') !== false || stripos($item, 'FÁBRICA') !== false) {
-                        $especificacionesPorCategoria['DISPONIBILIDAD']['items'][] = $itemOriginal;
-                        if ($observacion) {
-                            $especificacionesPorCategoria['DISPONIBILIDAD']['observaciones'][] = $observacion;
-                        }
-                    } elseif (stripos($item, 'CONTADO') !== false || stripos($item, 'CREDITO') !== false || stripos($item, 'CRÉDITO') !== false) {
-                        $especificacionesPorCategoria['FORMA DE PAGO']['items'][] = $itemOriginal;
-                        if ($observacion) {
-                            $especificacionesPorCategoria['FORMA DE PAGO']['observaciones'][] = $observacion;
-                        }
-                    } elseif (stripos($item, 'COMUN') !== false || stripos($item, 'COMÚN') !== false || stripos($item, 'SIMPLIFICADO') !== false) {
-                        $especificacionesPorCategoria['RÉGIMEN']['items'][] = $itemOriginal;
-                        if ($observacion) {
-                            $especificacionesPorCategoria['RÉGIMEN']['observaciones'][] = $observacion;
-                        }
-                    } elseif (stripos($item, 'VENDIDO') !== false) {
-                        $especificacionesPorCategoria['SE HA VENDIDO']['items'][] = $itemOriginal;
-                        if ($observacion) {
-                            $especificacionesPorCategoria['SE HA VENDIDO']['observaciones'][] = $observacion;
-                        }
-                    } elseif (stripos($item, 'ÚLTIMA') !== false || stripos($item, 'ULTIMA') !== false || stripos($item, 'VENTA') !== false) {
-                        $especificacionesPorCategoria['ÚLTIMA VENTA']['items'][] = $itemOriginal;
-                        if ($observacion) {
-                            $especificacionesPorCategoria['ÚLTIMA VENTA']['observaciones'][] = $observacion;
-                        }
-                    } elseif (stripos($item, 'FLETE') !== false || stripos($item, 'ENVIO') !== false || stripos($item, 'ENVÍO') !== false) {
-                        $especificacionesPorCategoria['FLETE DE ENVÍO']['items'][] = $itemOriginal;
-                        if ($observacion) {
-                            $especificacionesPorCategoria['FLETE DE ENVÍO']['observaciones'][] = $observacion;
-                        }
-                    }
+            // Obtener especificaciones desde la tabla cotizaciones
+            $especificacionesData = $cotizacion->especificaciones ?? [];
+            
+            // Convertir a array si es necesario
+            if (!is_array($especificacionesData)) {
+                $especificacionesData = (array) $especificacionesData;
+            }
+            
+            // Construir estructura para la tabla
+            $especificacionesPorCategoria = [];
+            foreach ($especificacionesMap as $clave => $nombreCategoria) {
+                $valores = $especificacionesData[$clave] ?? [];
+                
+                // Asegurar que sea un array
+                if (!is_array($valores)) {
+                    $valores = (array) $valores;
                 }
+                
+                $especificacionesPorCategoria[$nombreCategoria] = [
+                    'valores' => $valores,
+                    'cantidad' => count($valores)
+                ];
             }
         @endphp
         
         <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
             <thead>
                 <tr style="background: linear-gradient(135deg, #1e5ba8 0%, #2b7ec9 100%); color: white;">
-                    <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd; font-weight: 700; width: 25%;">Especificación</th>
-                    <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd; font-weight: 700; width: 25%;">Opción Seleccionada</th>
-                    <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd; font-weight: 700; width: 50%;">Observaciones</th>
+                    <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd; font-weight: 700; width: 30%;">Especificación</th>
+                    <th style="padding: 0.75rem; text-align: left; border: 1px solid #ddd; font-weight: 700; width: 70%;">Opciones Seleccionadas</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($especificacionesPorCategoria as $categoria => $datos)
                     @php
-                        $items = $datos['items'] ?? [];
-                        $observaciones = $datos['observaciones'] ?? [];
-                        $itemsText = count($items) > 0 ? implode(', ', $items) : '-';
-                        $observacionesText = count($observaciones) > 0 ? implode(', ', $observaciones) : '-';
+                        $valores = $datos['valores'] ?? [];
+                        $valoresText = count($valores) > 0 ? implode(', ', $valores) : '-';
+                        $tieneValores = count($valores) > 0;
                     @endphp
                     <tr style="background-color: #ffffff; border-bottom: 1px solid #ddd;">
                         <td style="padding: 0.75rem; border: 1px solid #ddd; color: #333; font-weight: 600;">
                             {{ $categoria }}
                         </td>
-                        <td style="padding: 0.75rem; border: 1px solid #ddd; color: {{ count($items) > 0 ? '#333' : '#999' }};">
-                            {{ $itemsText }}
-                        </td>
-                        <td style="padding: 0.75rem; border: 1px solid #ddd; color: {{ count($observaciones) > 0 ? '#333' : '#999' }};">
-                            {{ $observacionesText }}
+                        <td style="padding: 0.75rem; border: 1px solid #ddd; color: {{ $tieneValores ? '#333' : '#999' }};">
+                            {{ $valoresText }}
                         </td>
                     </tr>
                 @endforeach
@@ -252,12 +243,16 @@
         <img id="imagenFullscreen" src="" alt="Imagen" style="max-width: 90vw; max-height: 90vh; object-fit: contain;">
     </div>
 
-    <!-- Técnicas -->
-    @if($cotizacion->tecnicas && count($cotizacion->tecnicas) > 0)
+    <!-- Técnicas (desde logo_cotizaciones) -->
+    @php
+        $logoCotizacion = $cotizacion->logoCotizacion;
+        $tecnicas = $logoCotizacion->tecnicas ?? [];
+    @endphp
+    @if(!empty($tecnicas) && count($tecnicas) > 0)
     <div class="detail-section">
         <div class="detail-header">🎨 Técnicas</div>
         <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
-            @foreach($cotizacion->tecnicas as $tecnica)
+            @foreach($tecnicas as $tecnica)
             <span style="background: linear-gradient(135deg, #1e5ba8 0%, #2b7ec9 100%); color: white; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 700;">
                 {{ $tecnica }}
             </span>
@@ -266,24 +261,27 @@
     </div>
     @endif
 
-    <!-- Observaciones Técnicas -->
-    @if($cotizacion->observaciones_tecnicas)
+    <!-- Observaciones Técnicas (desde logo_cotizaciones) -->
+    @if($logoCotizacion && $logoCotizacion->observaciones_tecnicas)
     <div class="detail-section">
         <div class="detail-header">📝 Observaciones Técnicas</div>
         <div style="padding: 1rem; background-color: #f8f9fa; border-radius: 4px; border-left: 4px solid #1e5ba8;">
             <p style="color: #333; line-height: 1.6; margin: 0;">
-                {{ $cotizacion->observaciones_tecnicas }}
+                {{ $logoCotizacion->observaciones_tecnicas }}
             </p>
         </div>
     </div>
     @endif
 
-    <!-- Observaciones Generales -->
-    @if($cotizacion->observaciones_generales && count($cotizacion->observaciones_generales) > 0)
+    <!-- Observaciones Generales (desde logo_cotizaciones) -->
+    @php
+        $observacionesGenerales = $logoCotizacion->observaciones_generales ?? [];
+    @endphp
+    @if(!empty($observacionesGenerales) && count($observacionesGenerales) > 0)
     <div class="detail-section">
         <div class="detail-header">💬 Observaciones Generales</div>
         <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-            @foreach($cotizacion->observaciones_generales as $obs)
+            @foreach($observacionesGenerales as $obs)
             <div style="padding: 0.75rem; background-color: #f8f9fa; border-radius: 4px; border-left: 4px solid #1e5ba8; color: #333;">
                 • {{ $obs }}
             </div>

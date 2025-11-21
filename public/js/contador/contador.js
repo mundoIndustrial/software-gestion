@@ -802,3 +802,59 @@ document.addEventListener('keydown', function(e) {
         }
     }
 });
+
+// ===== FUNCIÓN PARA ELIMINAR COTIZACIÓN =====
+function eliminarCotizacion(cotizacionId, cliente) {
+    // Mostrar confirmación con SweetAlert
+    Swal.fire({
+        title: '¿Eliminar cotización?',
+        html: `<p style="margin: 0; font-size: 0.95rem; color: #4b5563;">¿Estás seguro de que deseas eliminar la cotización del cliente <strong>${cliente}</strong>?</p><p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #ef4444;"><strong>⚠️ Esta acción no se puede deshacer.</strong></p>`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#d1d5db',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Proceder con la eliminación
+            fetch(`/contador/cotizacion/${cotizacionId}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: '¡Eliminada!',
+                        text: 'La cotización ha sido eliminada correctamente.',
+                        icon: 'success',
+                        confirmButtonColor: '#1e5ba8'
+                    }).then(() => {
+                        // Recargar la página
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Error',
+                        text: data.message || 'No se pudo eliminar la cotización',
+                        icon: 'error',
+                        confirmButtonColor: '#ef4444'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Error al eliminar la cotización',
+                    icon: 'error',
+                    confirmButtonColor: '#ef4444'
+                });
+            });
+        }
+    });
+}

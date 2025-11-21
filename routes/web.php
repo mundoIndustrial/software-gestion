@@ -139,6 +139,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
 Route::middleware(['auth', 'role:contador'])->prefix('contador')->name('contador.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\ContadorController::class, 'index'])->name('index');
     Route::get('/cotizacion/{id}', [App\Http\Controllers\ContadorController::class, 'getCotizacionDetail'])->name('cotizacion.detail');
+    Route::delete('/cotizacion/{id}', [App\Http\Controllers\ContadorController::class, 'deleteCotizacion'])->name('cotizacion.delete');
 });
 
 // ========================================

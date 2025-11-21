@@ -16,6 +16,9 @@
     <!-- Google Fonts - Poppins -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
     <!-- CSS del Contador -->
     <link rel="stylesheet" href="{{ asset('css/contador/layout.css') }}">
     <link rel="stylesheet" href="{{ asset('css/contador/cotizacion-modal.css') }}">
@@ -104,6 +107,12 @@
             </div>
         </div>
     </div>
+
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+
+    <!-- JavaScript del Contador -->
+    <script src="{{ asset('js/contador/contador.js') }}"></script>
 
     <script>
         // Navegación del sidebar
