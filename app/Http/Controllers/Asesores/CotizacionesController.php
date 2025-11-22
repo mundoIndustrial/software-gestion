@@ -122,9 +122,40 @@ class CotizacionesController extends Controller
                 $especificacionesGenerales = (array) $especificacionesGenerales;
             }
             
+            // Generar numero_cotizacion SOLO si se envía (no si es borrador)
+            $numeroCotizacion = null;
+            
+            if ($tipo === 'enviada') {
+                // Obtener el último código enviado
+                $ultimaCotizacion = Cotizacion::where('es_borrador', false)
+                    ->whereNotNull('numero_cotizacion')
+                    ->orderBy('id', 'desc')
+                    ->first();
+                
+                // Extraer el número del último código (COT-00001 -> 1)
+                $ultimoNumero = 0;
+                if ($ultimaCotizacion && $ultimaCotizacion->numero_cotizacion) {
+                    preg_match('/\d+/', $ultimaCotizacion->numero_cotizacion, $matches);
+                    $ultimoNumero = isset($matches[0]) ? (int)$matches[0] : 0;
+                }
+                
+                // Generar siguiente código
+                $nuevoNumero = $ultimoNumero + 1;
+                $numeroCotizacion = 'COT-' . str_pad($nuevoNumero, 5, '0', STR_PAD_LEFT);
+                
+                \Log::info('✅ Generando código de cotización', [
+                    'tipo' => $tipo,
+                    'ultimo_numero' => $ultimoNumero,
+                    'nuevo_numero' => $nuevoNumero,
+                    'numero_cotizacion' => $numeroCotizacion
+                ]);
+            } else {
+                \Log::info('⚠️ NO se genera código (es borrador)', ['tipo' => $tipo]);
+            }
+
             $datos = [
                 'user_id' => Auth::id(),
-                'numero_cotizacion' => $request->input('numero_cotizacion'),
+                'numero_cotizacion' => $numeroCotizacion,
                 'tipo_cotizacion_id' => $tipoCotizacion ? $tipoCotizacion->id : null,
                 'fecha_inicio' => now(),
                 'cliente' => $cliente,
@@ -146,7 +177,11 @@ class CotizacionesController extends Controller
 
             $cotizacion = Cotizacion::create($datos);
 
-            \Log::info('Cotización guardada exitosamente', ['id' => $cotizacion->id]);
+            \Log::info('Cotización guardada exitosamente', [
+                'id' => $cotizacion->id,
+                'numero_cotizacion' => $cotizacion->numero_cotizacion,
+                'es_borrador' => $cotizacion->es_borrador
+            ]);
 
             // Guardar prendas en tabla prendas_cotizaciones
             \Log::info('Productos a guardar en prendas_cotizaciones', [
@@ -313,6 +348,25 @@ class CotizacionesController extends Controller
 
         // Obtener datos de logo/bordado/estampado
         $logo = $cotizacion->logoCotizacion;
+
+        // Si es una petición AJAX, retornar JSON
+        if (request()->wantsJson()) {
+            return response()->json([
+                'id' => $cotizacion->id,
+                'cliente' => $cotizacion->cliente,
+                'asesora' => $cotizacion->asesora,
+                'prendas' => $cotizacion->prendasCotizaciones->map(function($prenda) {
+                    return [
+                        'id' => $prenda->id,
+                        'nombre_producto' => $prenda->nombre_producto,
+                        'descripcion' => $prenda->descripcion,
+                        'tallas' => $prenda->tallas ?? [],
+                        'fotos' => $prenda->fotos ?? [],
+                        'imagen_tela' => $prenda->imagen_tela
+                    ];
+                })
+            ]);
+        }
 
         return view('asesores.cotizaciones.show', compact('cotizacion', 'logo'));
     }

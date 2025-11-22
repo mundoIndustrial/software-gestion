@@ -250,9 +250,9 @@
                 <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
                     <thead style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); border-bottom: 3px solid #1e3a8a;">
                         <tr>
-                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">ID</th>
-                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Cliente</th>
                             <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Fecha</th>
+                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Código</th>
+                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Cliente</th>
                             <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Estado</th>
                             <th style="padding: 14px 12px; text-align: center; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Acción</th>
                         </tr>
@@ -260,9 +260,9 @@
                     <tbody>
                         @foreach($cotizaciones as $cot)
                             <tr style="border-bottom: 1px solid #ecf0f1; transition: background 0.2s;">
-                                <td style="padding: 12px; color: #666; font-size: 0.9rem;">#{{ $cot->id }}</td>
+                                <td style="padding: 12px; color: #666; font-size: 0.9rem;">{{ $cot->created_at->format('d/m/Y') }}</td>
+                                <td style="padding: 12px; color: #1e40af; font-size: 0.9rem; font-weight: 700;">{{ $cot->numero_cotizacion ?? 'Por asignar' }}</td>
                                 <td style="padding: 12px; color: #333; font-size: 0.9rem; font-weight: 500;">{{ $cot->cliente ?? 'Sin cliente' }}</td>
-                                <td style="padding: 12px; color: #666; font-size: 0.9rem;">{{ $cot->created_at->format('d/m/Y H:i') }}</td>
                                 <td style="padding: 12px;">
                                     <span style="background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">
                                         {{ ucfirst($cot->estado) }}
@@ -373,18 +373,22 @@
                 <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
                     <thead style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); border-bottom: 3px solid #1e3a8a;">
                         <tr>
-                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">ID</th>
-                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Cliente</th>
                             <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Fecha</th>
+                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Cliente</th>
+                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Estado</th>
                             <th style="padding: 14px 12px; text-align: center; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($borradores as $borrador)
                             <tr style="border-bottom: 1px solid #ecf0f1; transition: background 0.2s;">
-                                <td style="padding: 12px; color: #666; font-size: 0.9rem;">#{{ $borrador->id }}</td>
+                                <td style="padding: 12px; color: #666; font-size: 0.9rem;">{{ $borrador->created_at->format('d/m/Y') }}</td>
                                 <td style="padding: 12px; color: #333; font-size: 0.9rem; font-weight: 500;">{{ $borrador->cliente ?? 'Sin cliente' }}</td>
-                                <td style="padding: 12px; color: #666; font-size: 0.9rem;">{{ $borrador->created_at->format('d/m/Y H:i') }}</td>
+                                <td style="padding: 12px;">
+                                    <span style="background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">
+                                        BORRADOR
+                                    </span>
+                                </td>
                                 <td style="padding: 12px; text-align: center; display: flex; gap: 8px; justify-content: center;">
                                     <a href="{{ route('asesores.cotizaciones.edit-borrador', $borrador->id) }}" style="background: #f59e0b; color: white; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s; box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);" onmouseover="this.style.background='#d97706'; this.style.boxShadow='0 4px 8px rgba(245, 158, 11, 0.3)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='#f59e0b'; this.style.boxShadow='0 2px 4px rgba(245, 158, 11, 0.2)'; this.style.transform='translateY(0)'">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

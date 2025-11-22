@@ -204,6 +204,15 @@ Route::middleware(['auth', 'role:asesor'])->prefix('asesores')->name('asesores.'
     Route::post('/cotizaciones/{id}/aceptar', [App\Http\Controllers\Asesores\CotizacionesController::class, 'aceptarCotizacion'])->name('cotizaciones.aceptar');
     
     // ========================================
+    // PEDIDOS DE PRODUCCIÓN - Gestión de pedidos desde cotizaciones
+    // ========================================
+    Route::get('/pedidos-produccion/crear', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'crearForm'])->name('pedidos-produccion.crear');
+    Route::get('/pedidos-produccion', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'index'])->name('pedidos-produccion.index');
+    Route::get('/pedidos-produccion/{id}', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'show'])->name('pedidos-produccion.show');
+    Route::get('/pedidos-produccion/{id}/plantilla', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'plantilla'])->name('pedidos-produccion.plantilla');
+    Route::post('/pedidos-produccion/crear-desde-cotizacion/{cotizacionId}', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'crearDesdeCotizacion'])->name('pedidos-produccion.crear-desde-cotizacion');
+    
+    // ========================================
     // CLIENTES - Gestión de clientes
     // ========================================
     Route::get('/clientes', [App\Http\Controllers\Asesores\ClientesController::class, 'index'])->name('clientes.index');

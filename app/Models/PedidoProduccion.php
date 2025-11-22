@@ -15,6 +15,7 @@ class PedidoProduccion extends Model
 
     protected $fillable = [
         'cotizacion_id',
+        'numero_cotizacion',
         'numero_pedido',
         'cliente',
         'novedades',

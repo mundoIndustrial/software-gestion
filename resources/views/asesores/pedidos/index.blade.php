@@ -26,6 +26,9 @@
         </div>
 
         <div class="header-actions">
+            <a href="{{ route('asesores.pedidos-produccion.crear') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Crear Pedido
+            </a>
         </div>
     </div>
 
