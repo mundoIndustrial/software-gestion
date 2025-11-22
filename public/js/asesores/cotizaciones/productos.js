@@ -374,6 +374,8 @@ function seleccionarPrenda(valor, element) {
     input.value = valor;
     input.closest('.prenda-search-container').querySelector('.prenda-suggestions').classList.remove('show');
     actualizarResumenFriendly();
+    // Mostrar variantes dinámicamente
+    mostrarSelectorVariantes(input);
 }
 
 document.addEventListener('click', function(e) {
@@ -463,4 +465,71 @@ function agregarObservacion() {
             toggleBtn.style.background = '#ff9800';
         }
     });
+}
+
+/**
+ * Previsualizar imagen de tela (máximo 3 imágenes)
+ */
+function previewTelaImagen(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = input.closest('.tela-preview');
+            if (preview) {
+                // Limpiar contenido anterior
+                preview.innerHTML = '';
+                
+                // Crear imagen
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'cover';
+                img.style.borderRadius = '4px';
+                
+                // Crear botón para eliminar
+                const btnEliminar = document.createElement('button');
+                btnEliminar.type = 'button';
+                btnEliminar.innerHTML = '<i class="fas fa-times"></i>';
+                btnEliminar.style.position = 'absolute';
+                btnEliminar.style.top = '4px';
+                btnEliminar.style.right = '4px';
+                btnEliminar.style.background = 'rgba(255, 0, 0, 0.8)';
+                btnEliminar.style.color = 'white';
+                btnEliminar.style.border = 'none';
+                btnEliminar.style.borderRadius = '50%';
+                btnEliminar.style.width = '28px';
+                btnEliminar.style.height = '28px';
+                btnEliminar.style.cursor = 'pointer';
+                btnEliminar.style.display = 'flex';
+                btnEliminar.style.alignItems = 'center';
+                btnEliminar.style.justifyContent = 'center';
+                btnEliminar.style.opacity = '0';
+                btnEliminar.style.transition = 'opacity 0.3s';
+                btnEliminar.style.fontSize = '1.2rem';
+                
+                btnEliminar.onclick = function(e) {
+                    e.preventDefault();
+                    input.value = '';
+                    preview.innerHTML = '<i class="fas fa-image" style="font-size: 2rem; color: #ccc;"></i>';
+                    console.log('✅ Imagen de tela eliminada');
+                };
+                
+                preview.appendChild(img);
+                preview.appendChild(btnEliminar);
+                
+                // Mostrar botón al pasar mouse
+                preview.onmouseover = function() {
+                    btnEliminar.style.opacity = '1';
+                };
+                preview.onmouseout = function() {
+                    btnEliminar.style.opacity = '0';
+                };
+                
+                const index = preview.dataset.index || '?';
+                console.log(`✅ Imagen de tela ${index} cargada`);
+            }
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
 }

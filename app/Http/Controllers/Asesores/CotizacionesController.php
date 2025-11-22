@@ -8,6 +8,8 @@ use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
 use App\Models\PrendaCotizacionFriendly;
 use App\Models\ProcesoPrenda;
+use App\Models\VariantePrenda;
+use App\Models\TipoPrenda;
 use App\Services\ImagenCotizacionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -192,18 +194,29 @@ class CotizacionesController extends Controller
             if (!empty($productos)) {
                 foreach ($productos as $index => $producto) {
                     $tallas = is_array($producto['tallas'] ?? []) ? $producto['tallas'] : [];
+                    $nombrePrenda = $producto['nombre_producto'] ?? '';
+                    
+                    // Detectar si es JEAN o PANTALÓN
+                    $nombreUpper = strtoupper(trim($nombrePrenda));
+                    $palabraPrincipal = explode(' ', $nombreUpper)[0];
+                    $esJeanPantalon = preg_match('/^JEAN|^PANTALÓ?N/', $palabraPrincipal) === 1;
+                    $tipoJeanPantalon = $esJeanPantalon ? ($producto['variantes']['tipo'] ?? null) : null;
                     
                     \Log::info('Guardando prenda individual', [
                         'index' => $index,
-                        'nombre' => $producto['nombre_producto'] ?? null,
+                        'nombre' => $nombrePrenda,
                         'descripcion' => $producto['descripcion'] ?? null,
-                        'tallas' => $tallas
+                        'tallas' => $tallas,
+                        'es_jean_pantalon' => $esJeanPantalon,
+                        'tipo_jean_pantalon' => $tipoJeanPantalon
                     ]);
                     
                     // Guardar prenda SIN fotos ni tela (se subirán después)
                     $prenda = \App\Models\PrendaCotizacionFriendly::create([
                         'cotizacion_id' => $cotizacion->id,
-                        'nombre_producto' => $producto['nombre_producto'] ?? null,
+                        'nombre_producto' => $nombrePrenda,
+                        'es_jean_pantalon' => $esJeanPantalon,
+                        'tipo_jean_pantalon' => $tipoJeanPantalon,
                         'descripcion' => $producto['descripcion'] ?? null,
                         'tallas' => $tallas,
                         'fotos' => [], // Array vacío, se llenará después
@@ -216,6 +229,9 @@ class CotizacionesController extends Controller
                         'nombre' => $prenda->nombre_producto,
                         'tallas_guardadas' => $prenda->tallas
                     ]);
+                    
+                    // GUARDAR VARIANTES DE LA PRENDA
+                    $this->guardarVariantesPrenda($prenda, $producto);
                 }
                 \Log::info('Prendas guardadas exitosamente', ['cantidad' => count($productos)]);
             } else {
@@ -437,10 +453,19 @@ class CotizacionesController extends Controller
             if (!empty($productos)) {
                 foreach ($productos as $index => $producto) {
                     $tallas = is_array($producto['tallas'] ?? []) ? $producto['tallas'] : [];
+                    $nombrePrenda = $producto['nombre_producto'] ?? '';
+                    
+                    // Detectar si es JEAN o PANTALÓN
+                    $nombreUpper = strtoupper(trim($nombrePrenda));
+                    $palabraPrincipal = explode(' ', $nombreUpper)[0];
+                    $esJeanPantalon = preg_match('/^JEAN|^PANTALÓ?N/', $palabraPrincipal) === 1;
+                    $tipoJeanPantalon = $esJeanPantalon ? ($producto['variantes']['tipo'] ?? null) : null;
                     
                     $prenda = \App\Models\PrendaCotizacionFriendly::create([
                         'cotizacion_id' => $cotizacion->id,
-                        'nombre_producto' => $producto['nombre_producto'] ?? null,
+                        'nombre_producto' => $nombrePrenda,
+                        'es_jean_pantalon' => $esJeanPantalon,
+                        'tipo_jean_pantalon' => $tipoJeanPantalon,
                         'descripcion' => $producto['descripcion'] ?? null,
                         'tallas' => $tallas,
                         'fotos' => [],
@@ -835,6 +860,93 @@ class CotizacionesController extends Controller
         }
     }
 
+
+    /**
+     * Guardar variantes de una prenda
+     */
+    private function guardarVariantesPrenda($prenda, $productoData)
+    {
+        try {
+            // Obtener nombre de la prenda
+            $nombrePrenda = $productoData['nombre_producto'] ?? '';
+            
+            // Reconocer tipo de prenda por nombre
+            $tipoPrenda = TipoPrenda::reconocerPorNombre($nombrePrenda);
+            
+            if (!$tipoPrenda) {
+                \Log::warning('⚠️ No se pudo reconocer tipo de prenda', [
+                    'nombre' => $nombrePrenda
+                ]);
+                return;
+            }
+            
+            \Log::info('✅ Tipo de prenda reconocido', [
+                'nombre' => $nombrePrenda,
+                'tipo_id' => $tipoPrenda->id,
+                'tipo_nombre' => $tipoPrenda->nombre
+            ]);
+            
+            // Obtener variaciones seleccionadas (si existen en los datos)
+            $variantes = $productoData['variantes'] ?? [];
+            
+            // Si no hay variantes en los datos, crear registro con solo tipo_prenda_id
+            if (empty($variantes)) {
+                \Log::info('ℹ️ Sin variantes específicas, creando registro básico', [
+                    'prenda_id' => $prenda->id,
+                    'tipo_prenda_id' => $tipoPrenda->id
+                ]);
+                
+                VariantePrenda::create([
+                    'prenda_cotizacion_id' => $prenda->id,
+                    'tipo_prenda_id' => $tipoPrenda->id,
+                    'cantidad_talla' => $prenda->tallas ? json_encode($prenda->tallas) : null
+                ]);
+                
+                return;
+            }
+            
+            // Crear registro de variante con todos los datos
+            $datosVariante = [
+                'prenda_cotizacion_id' => $prenda->id,
+                'tipo_prenda_id' => $tipoPrenda->id,
+                'cantidad_talla' => $prenda->tallas ? json_encode($prenda->tallas) : null
+            ];
+            
+            // Mapear variantes recibidas a campos de la tabla
+            $mapeoVariantes = [
+                'tipo_manga_id' => 'tipo_manga_id',
+                'tipo_broche_id' => 'tipo_broche_id',
+                'color_id' => 'color_id',
+                'tela_id' => 'tela_id',
+                'genero_id' => 'genero_id',
+                'tiene_bolsillos' => 'tiene_bolsillos',
+                'tiene_reflectivo' => 'tiene_reflectivo'
+            ];
+            
+            foreach ($mapeoVariantes as $clave => $campo) {
+                if (isset($variantes[$clave]) && !empty($variantes[$clave])) {
+                    $datosVariante[$campo] = $variantes[$clave];
+                }
+            }
+            
+            // Crear registro de variante
+            $variante = VariantePrenda::create($datosVariante);
+            
+            \Log::info('✅ Variante guardada exitosamente', [
+                'variante_id' => $variante->id,
+                'prenda_id' => $prenda->id,
+                'tipo_prenda_id' => $tipoPrenda->id,
+                'datos' => $datosVariante
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('❌ Error guardando variantes', [
+                'prenda_id' => $prenda->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
 
     /**
      * Generar número de pedido único

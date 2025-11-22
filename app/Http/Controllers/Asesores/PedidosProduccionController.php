@@ -7,6 +7,8 @@ use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
 use App\Models\ProcesoPrenda;
 use App\Models\Cotizacion;
+use App\Models\VariantePrenda;
+use App\Models\PrendaCotizacionFriendly;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -108,7 +110,7 @@ class PedidosProduccionController extends Controller
 
             // Crear prendas del pedido
             if ($cotizacion->productos) {
-                foreach ($cotizacion->productos as $producto) {
+                foreach ($cotizacion->productos as $index => $producto) {
                     $cantidadTotal = 0;
                     if (isset($producto['cantidades']) && is_array($producto['cantidades'])) {
                         $cantidadTotal = array_sum($producto['cantidades']);
@@ -131,6 +133,9 @@ class PedidosProduccionController extends Controller
                         'fecha_inicio' => now()->toDateString(),
                         'fecha_fin' => now()->toDateString(),
                     ]);
+                    
+                    // HEREDAR VARIANTES DE LA COTIZACIÓN
+                    $this->heredarVariantesDePrenda($cotizacion, $prenda, $index);
                 }
             }
 
@@ -158,6 +163,74 @@ class PedidosProduccionController extends Controller
                 'success' => false,
                 'message' => 'Error: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Heredar variantes de una prenda de cotización a pedido
+     */
+    private function heredarVariantesDePrenda($cotizacion, $prendaPedido, $index)
+    {
+        try {
+            // Obtener la prenda de cotización correspondiente
+            $prendasCotizacion = $cotizacion->prendasCotizaciones;
+            
+            if (!isset($prendasCotizacion[$index])) {
+                \Log::warning('⚠️ No se encontró prenda de cotización en índice', [
+                    'index' => $index,
+                    'total_prendas' => count($prendasCotizacion)
+                ]);
+                return;
+            }
+            
+            $prendaCotizacion = $prendasCotizacion[$index];
+            
+            // Obtener variantes de la prenda de cotización
+            $variantes = VariantePrenda::where('prenda_cotizacion_id', $prendaCotizacion->id)->get();
+            
+            if ($variantes->isEmpty()) {
+                \Log::info('ℹ️ Sin variantes para heredar', [
+                    'prenda_cotizacion_id' => $prendaCotizacion->id
+                ]);
+                return;
+            }
+            
+            // Copiar cada variante al pedido
+            foreach ($variantes as $variante) {
+                // Crear nueva variante vinculada a la prenda del pedido
+                // Nota: Aquí necesitaríamos una tabla similar para pedidos
+                // Por ahora, guardamos en un campo JSON en PrendaPedido
+                
+                $datosVariante = [
+                    'tipo_prenda_id' => $variante->tipo_prenda_id,
+                    'color_id' => $variante->color_id,
+                    'tela_id' => $variante->tela_id,
+                    'genero_id' => $variante->genero_id,
+                    'tipo_manga_id' => $variante->tipo_manga_id,
+                    'tipo_broche_id' => $variante->tipo_broche_id,
+                    'tiene_bolsillos' => $variante->tiene_bolsillos,
+                    'tiene_reflectivo' => $variante->tiene_reflectivo,
+                    'cantidad_talla' => $variante->cantidad_talla
+                ];
+                
+                // Guardar variantes en campo JSON de la prenda del pedido
+                $prendaPedido->update([
+                    'variantes' => json_encode($datosVariante)
+                ]);
+                
+                \Log::info('✅ Variantes heredadas exitosamente', [
+                    'prenda_pedido_id' => $prendaPedido->id,
+                    'variante_original_id' => $variante->id,
+                    'datos' => $datosVariante
+                ]);
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('❌ Error heredando variantes', [
+                'prenda_pedido_id' => $prendaPedido->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
         }
     }
 

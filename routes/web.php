@@ -228,6 +228,11 @@ Route::middleware(['auth', 'role:asesor'])->prefix('asesores')->name('asesores.'
     Route::patch('/reportes/{id}', [App\Http\Controllers\Asesores\ReportesController::class, 'update'])->name('reportes.update');
     Route::delete('/reportes/{id}', [App\Http\Controllers\Asesores\ReportesController::class, 'destroy'])->name('reportes.destroy');
     
+    // Agregar Prendas (Sistema de Variantes)
+    Route::get('/prendas/agregar', function () {
+        return view('asesores.prendas.agregar-prendas');
+    })->name('prendas.agregar');
+
     // Inventario de Telas
     Route::get('/inventario/telas', [App\Http\Controllers\AsesoresController::class, 'inventarioTelas'])->name('inventario.telas');
     Route::prefix('inventario-telas')->name('inventario-telas.')->group(function () {
@@ -235,6 +240,13 @@ Route::middleware(['auth', 'role:asesor'])->prefix('asesores')->name('asesores.'
         Route::post('/ajustar-stock', [App\Http\Controllers\AsesoresInventarioTelasController::class, 'ajustarStock'])->name('ajustar-stock');
         Route::get('/historial', [App\Http\Controllers\AsesoresInventarioTelasController::class, 'historial'])->name('historial');
     });
+});
+
+// API Routes para Prendas (Reconocimiento y Variaciones)
+Route::middleware('auth')->prefix('api')->name('api.')->group(function () {
+    Route::get('/tipos-prenda', [App\Http\Controllers\API\PrendaController::class, 'tiposPrenda'])->name('tipos-prenda');
+    Route::post('/prenda/reconocer', [App\Http\Controllers\API\PrendaController::class, 'reconocer'])->name('prenda.reconocer');
+    Route::get('/prenda-variaciones/{tipoPrendaId}', [App\Http\Controllers\API\PrendaController::class, 'variaciones'])->name('prenda.variaciones');
 });
 
 require __DIR__.'/auth.php';
