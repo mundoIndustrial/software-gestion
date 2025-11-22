@@ -40,6 +40,12 @@
                                 <button class="btn btn-primary" onclick="openCotizacionModal({{ $cotizacion->id }})" style="padding: 0.6rem 0.8rem; background: #1e5ba8; color: white; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Ver Detalles" onmouseover="this.style.background='#1e40af'" onmouseout="this.style.background='#1e5ba8'">
                                     <span class="material-symbols-rounded" style="font-size: 1.2rem;">visibility</span>
                                 </button>
+                                <button class="btn btn-edit" onclick="abrirModalCalculoCostos({{ $cotizacion->id }}, '{{ $cotizacion->cliente }}')" style="padding: 0.6rem 0.8rem; background: #f59e0b; color: white; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Calcular Costos" onmouseover="this.style.background='#d97706'" onmouseout="this.style.background='#f59e0b'">
+                                    <span class="material-symbols-rounded" style="font-size: 1.2rem;">edit</span>
+                                </button>
+                                <button class="btn btn-pdf" onclick="abrirModalPDF({{ $cotizacion->id }})" style="padding: 0.6rem 0.8rem; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Ver PDF" onmouseover="this.style.background='#991b1b'" onmouseout="this.style.background='#dc2626'">
+                                    <span class="material-symbols-rounded" style="font-size: 1.2rem;">picture_as_pdf</span>
+                                </button>
                                 <button class="btn btn-danger" onclick="eliminarCotizacion({{ $cotizacion->id }}, '{{ $cotizacion->cliente }}')" style="padding: 0.6rem 0.8rem; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Eliminar" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
                                     <span class="material-symbols-rounded" style="font-size: 1.2rem;">delete</span>
                                 </button>
@@ -118,6 +124,45 @@
     </div>
 </section>
 
+<!-- Modal de Cálculo de Costos por Prenda -->
+<div id="calculoCostosModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9998; justify-content: center; align-items: center;">
+    <div class="modal-content" style="width: 90%; max-width: 900px; max-height: 90vh; overflow-y: auto; background: white; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+        <!-- Header del Modal -->
+        <div style="background: linear-gradient(135deg, #1e5ba8 0%, #2b7ec9 100%); color: white; padding: 2rem; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2 style="margin: 0; font-size: 1.5rem; font-weight: 700;">💰 CÁLCULO DE PRECIOS POR PRENDA</h2>
+                <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; opacity: 0.9;" id="modalCostosCliente">Cliente: -</p>
+            </div>
+            <button onclick="cerrarModalCalculoCostos()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0.5rem 1rem; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                ✕
+            </button>
+        </div>
+
+        <!-- Contenido del Modal -->
+        <div style="padding: 2rem;">
+            <!-- Tabs de Prendas -->
+            <div id="prendasTabs" style="display: flex; gap: 0.5rem; margin-bottom: 2rem; border-bottom: 2px solid #e5e7eb; overflow-x: auto;">
+                <!-- Se llena dinámicamente -->
+            </div>
+
+            <!-- Contenido de Prendas -->
+            <div id="prendasContent">
+                <!-- Se llena dinámicamente -->
+            </div>
+
+            <!-- Botones de Acción -->
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #e5e7eb;">
+                <button onclick="cerrarModalCalculoCostos()" style="padding: 0.75rem 1.5rem; background: #e5e7eb; color: #374151; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='#d1d5db'" onmouseout="this.style.background='#e5e7eb'">
+                    Cancelar
+                </button>
+                <button onclick="guardarCalculoCostos()" style="padding: 0.75rem 1.5rem; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
+                    ✓ Guardar Costos
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Modal de Cotización -->
 <div id="cotizacionModal" class="modal fullscreen" style="display: none;">
     <div class="modal-content">
@@ -151,5 +196,77 @@
         </div>
     </div>
 </div>
+
+<!-- Modal PDF Fullscreen -->
+<div id="modalPDF" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 9999; padding: 0; margin: 0;">
+    <div style="position: absolute; top: 0; left: 0; right: 0; background: #1e5ba8; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; z-index: 10000;">
+        <h2 style="margin: 0; font-size: 1.3rem;">📄 Visualizar Cotización PDF</h2>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <button onclick="descargarPDF()" style="padding: 0.75rem 1.5rem; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
+                <span class="material-symbols-rounded" style="font-size: 1.2rem;">download</span>
+                Descargar PDF
+            </button>
+            <button onclick="cerrarModalPDF()" style="padding: 0.75rem 1.5rem; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+                <span class="material-symbols-rounded" style="font-size: 1.2rem;">close</span>
+                Cerrar
+            </button>
+        </div>
+    </div>
+    <iframe id="pdfViewer" style="position: absolute; top: 60px; left: 0; right: 0; bottom: 0; width: 100%; height: calc(100% - 60px); border: none; background: white;"></iframe>
+</div>
+
+<!-- Script para Modal de Cálculo de Costos -->
+<script src="{{ asset('js/contador/modal-calculo-costos.js') }}"></script>
+
+<!-- Script para Modal PDF -->
+<script>
+    let cotizacionIdActualPDF = null;
+
+    function abrirModalPDF(cotizacionId) {
+        cotizacionIdActualPDF = cotizacionId;
+        const modalPDF = document.getElementById('modalPDF');
+        const pdfViewer = document.getElementById('pdfViewer');
+        
+        // Mostrar modal
+        modalPDF.style.display = 'block';
+        
+        // Cargar PDF en iframe
+        pdfViewer.src = `/contador/cotizacion/${cotizacionId}/pdf`;
+    }
+
+    function cerrarModalPDF() {
+        const modalPDF = document.getElementById('modalPDF');
+        const pdfViewer = document.getElementById('pdfViewer');
+        
+        modalPDF.style.display = 'none';
+        pdfViewer.src = '';
+        cotizacionIdActualPDF = null;
+    }
+
+    function descargarPDF() {
+        if (cotizacionIdActualPDF) {
+            const link = document.createElement('a');
+            link.href = `/contador/cotizacion/${cotizacionIdActualPDF}/pdf?descargar=1`;
+            link.download = `Cotizacion_${cotizacionIdActualPDF}_${new Date().toISOString().split('T')[0]}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    }
+
+    // Cerrar modal al presionar ESC
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            cerrarModalPDF();
+        }
+    });
+
+    // Cerrar modal al hacer clic en el fondo
+    document.getElementById('modalPDF').addEventListener('click', function(event) {
+        if (event.target === this) {
+            cerrarModalPDF();
+        }
+    });
+</script>
 
 @endsection

@@ -140,6 +140,13 @@ Route::middleware(['auth', 'role:contador'])->prefix('contador')->name('contador
     Route::get('/dashboard', [App\Http\Controllers\ContadorController::class, 'index'])->name('index');
     Route::get('/cotizacion/{id}', [App\Http\Controllers\ContadorController::class, 'getCotizacionDetail'])->name('cotizacion.detail');
     Route::delete('/cotizacion/{id}', [App\Http\Controllers\ContadorController::class, 'deleteCotizacion'])->name('cotizacion.delete');
+    
+    // Rutas para costos de prendas
+    Route::post('/costos/guardar', [App\Http\Controllers\CostoPrendaController::class, 'guardar'])->name('costos.guardar');
+    Route::get('/costos/obtener/{cotizacion_id}', [App\Http\Controllers\CostoPrendaController::class, 'obtener'])->name('costos.obtener');
+    
+    // Rutas para PDF
+    Route::get('/cotizacion/{id}/pdf', [App\Http\Controllers\PDFCotizacionController::class, 'generarPDF'])->name('cotizacion.pdf');
 });
 
 // ========================================
