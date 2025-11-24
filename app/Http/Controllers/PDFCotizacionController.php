@@ -65,25 +65,26 @@ class PDFCotizacionController extends Controller
     <meta charset="UTF-8">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { width: 100%; height: 100%; }
-        body { font-family: Arial, sans-serif; font-size: 10px; line-height: 1.4; overflow-x: hidden; }
-        .container { width: 100%; padding: 8mm; min-width: 100%; }
+        html, body { width: 100%; margin: 0; padding: 0; height: auto; min-height: 100%; }
+        body { font-family: Arial, sans-serif; font-size: 10px; line-height: 1.4; overflow-x: hidden; margin: 0; padding: 0; height: auto; }
+        .container { width: 100%; max-width: 100%; padding: 10mm 12mm; box-sizing: border-box; margin: 0; }
         .header { text-align: center; margin-bottom: 12px; border-bottom: 2px solid #000; padding-bottom: 8px; }
         .header-logo { width: 50px; height: auto; margin-bottom: 3px; }
         .header-title { font-size: 14px; font-weight: bold; margin: 2px 0; }
         .header-subtitle { font-size: 10px; color: #666; margin: 1px 0; }
         .info-table { width: 100%; margin-bottom: 12px; border-collapse: collapse; table-layout: fixed; }
-        .info-table td { padding: 5px; border: 1px solid #000; word-wrap: break-word; }
+        .info-table td { padding: 5px; border: 1px solid #000; word-wrap: break-word; overflow-wrap: break-word; }
         .info-table .label { background: #f0f0f0; font-weight: bold; width: 15%; }
-        .prenda { margin-bottom: 15px; page-break-inside: avoid; }
+        table { width: 100%; }
+        .prenda { margin-bottom: 15px; page-break-inside: avoid; margin-left: -25; margin-right: 0; padding-left: -25; padding-right: 0; }
         .prenda-nombre { font-size: 11px; font-weight: bold; margin-bottom: 3px; }
-        .prenda-descripcion { font-size: 8px; margin-bottom: 3px; color: #333; line-height: 1.3; }
+        .prenda-descripcion { font-size: 8px; margin-bottom: 3px; color: #333; line-height: 1.3; word-wrap: break-word; overflow-wrap: break-word; max-width: 90%; white-space: normal; }
         .prenda-tallas { font-size: 8px; font-weight: bold; margin-bottom: 3px; }
-        .prenda-imagenes { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
-        .prenda-imagen { width: 100px; height: 100px; border: 1px solid #ddd; flex-shrink: 0; }
-        .spec-table { width: 100%; border-collapse: collapse; margin-top: 12px; table-layout: fixed; }
-        .spec-table th { background: #FFC107; padding: 6px; border: 1px solid #000; font-weight: bold; text-align: left; font-size: 9px; }
-        .spec-table td { padding: 5px; border: 1px solid #000; font-size: 8px; word-wrap: break-word; }
+        .prenda-imagenes { display: flex; gap: 20px; margin-bottom: 8px; flex-wrap: wrap; max-width: 100%; }
+        .prenda-imagen { width: 160px; height: 160px; border: 1px solid #ddd; flex-shrink: 0; object-fit: cover; }
+        .spec-table { width: 95%; border-collapse: collapse; margin-top: auto; table-layout: fixed; margin-left: -25; margin-right: 0; padding-left: -25; padding-right: 0; }
+        .spec-table th { background: #FFC107; padding: 6px; border: 1px solid #000; font-weight: bold; text-align: left; font-size: 9px; word-wrap: break-word; overflow-wrap: break-word; }
+        .spec-table td { padding: 5px; border: 1px solid #000; font-size: 8px; word-wrap: break-word; overflow-wrap: break-word; }
         .spec-table .label { background: #f9f9f9; font-weight: bold; width: 22%; }
     </style>
 </head>
@@ -115,12 +116,19 @@ class PDFCotizacionController extends Controller
     private function generarEncabezadoHTML($cotizacion)
     {
         return '
-        <div class="header">
-            <img src="' . public_path('images/logo2.png') . '" class="header-logo" alt="Logo">
-            <div class="header-title">Uniformes Mundo Industrial</div>
-            <div class="header-subtitle">Leonis Rulith Mahecha Acosta</div>
-            <div class="header-subtitle">NIT: 1.093.738.633-3 Régimen Común</div>
-            <div class="header-title" style="margin-top: 5px;">COTIZACIÓN</div>
+        <div style="width: 100%; background: #000; color: #fff; padding: 15px 12px; margin: -10mm -12mm 0 -12mm; display: flex; align-items: flex-start; gap: 15px;">
+            <!-- Logo a la izquierda -->
+            <div style="flex-shrink: 0;">
+                <img src="' . public_path('images/logo3.png') . '" style="width: 120px; height: auto;" alt="Logo">
+            </div>
+            
+            <!-- Texto a la derecha -->
+            <div style="flex: 1; text-align: center; padding-top: 0; margin-top: -45px;">
+                <div style="font-size: 14px; font-weight: bold; margin: 0;">Uniformes Mundo Industrial</div>
+                <div style="font-size: 10px; margin: 2px 0;">Leonis Ruth Mahecha Acosta</div>
+                <div style="font-size: 10px; margin: 2px 0;">NIT: 1.093.738.433-3 Régimen Común</div>
+                <div style="font-size: 12px; font-weight: bold; margin-top: 4px;">COTIZACIÓN</div>
+            </div>
         </div>';
     }
     
@@ -130,12 +138,12 @@ class PDFCotizacionController extends Controller
     private function generarInfoClienteHTML($cotizacion)
     {
         return '
-        <table class="info-table">
+        <table class="info-table" style="margin-top: 0; margin-bottom: 12px; margin-left: -12mm; margin-right: -12mm; width: calc(100% + 24mm); padding: 0;">
             <tr>
-                <td class="label">CLIENTE</td>
-                <td>' . ($cotizacion->cliente ?? 'N/A') . '</td>
-                <td class="label">Fecha</td>
-                <td>' . ($cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y') : 'N/A') . '</td>
+                <td class="label" style="background: #333; color: #fff; font-weight: bold; width: 20%; padding: 6px;">CLIENTE</td>
+                <td style="border: 1px solid #000; padding: 6px; color: #e74c3c; font-weight: bold; width: 30%;">' . ($cotizacion->cliente ?? 'N/A') . '</td>
+                <td class="label" style="background: #333; color: #fff; font-weight: bold; width: 20%; padding: 6px;">Fecha</td>
+                <td style="border: 1px solid #000; padding: 6px; color: #e74c3c; font-weight: bold; width: 30%;">' . ($cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y') : 'N/A') . '</td>
             </tr>
         </table>';
     }
@@ -185,19 +193,14 @@ class PDFCotizacionController extends Controller
                 $todasLasImagenes[] = $imagenTela;
             }
             
-            // Contenedor con tallas e imágenes lado a lado
-            $html .= '<div style="display: flex; gap: 10px; align-items: flex-start;">';
-            
-            // Columna izquierda: Tallas
-            $html .= '<div style="flex: 0 0 auto;">';
+            // Tallas (arriba)
             if ($tallasTexto) {
-                $html .= '<div class="prenda-tallas">Tallas:<br>' . $tallasTexto . '</div>';
+                $html .= '<div class="prenda-tallas" style="margin-bottom: 30px;">Tallas: ' . $tallasTexto . '</div>';
             }
-            $html .= '</div>';
             
-            // Columna derecha: Imágenes
+            // Imágenes (abajo, separadas)
             if (count($todasLasImagenes) > 0) {
-                $html .= '<div class="prenda-imagenes">';
+                $html .= '<div class="prenda-imagenes" style="margin-top: 40px;">';
                 foreach ($todasLasImagenes as $imagen) {
                     $rutaImagen = $imagen;
                     if (strpos($imagen, '/') === 0 && strpos($imagen, 'http') !== 0) {
@@ -210,8 +213,6 @@ class PDFCotizacionController extends Controller
                 }
                 $html .= '</div>';
             }
-            
-            $html .= '</div>';
             
             $html .= '</div>';
         }
@@ -263,12 +264,6 @@ class PDFCotizacionController extends Controller
                     <td class="label">ÚLTIMA VENTA</td>
                     <td></td>
                     <td></td>
-                </tr>
-                <tr>
-                    <th colspan="3" style="text-align: center; background: #FFC107;">Nombre asesor / Asesora Comercial</th>
-                </tr>
-                <tr>
-                    <td colspan="3">' . ($cotizacion->asesora ?? ($cotizacion->usuario->name ?? 'N/A')) . '</td>
                 </tr>
             </tbody>
         </table>';
