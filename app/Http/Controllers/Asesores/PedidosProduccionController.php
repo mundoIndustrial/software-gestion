@@ -23,7 +23,12 @@ class PedidosProduccionController extends Controller
         $cotizaciones = Cotizacion::where('user_id', Auth::id())
             ->where('es_borrador', false)
             ->where('estado', 'enviada')
-            ->with('prendasCotizaciones')
+            ->with([
+                'prendasCotizaciones.variantes.color',
+                'prendasCotizaciones.variantes.tela',
+                'prendasCotizaciones.variantes.tipoManga',
+                'prendasCotizaciones.variantes.tipoBroche'
+            ])
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -97,13 +102,14 @@ class PedidosProduccionController extends Controller
             DB::beginTransaction();
 
             // Crear pedido de producción
+            $especificaciones = is_array($cotizacion->especificaciones) ? $cotizacion->especificaciones : [];
             $pedido = PedidoProduccion::create([
                 'cotizacion_id' => $cotizacion->id,
                 'numero_cotizacion' => $cotizacion->numero_cotizacion,
                 'numero_pedido' => $this->generarNumeroPedido(),
                 'cliente' => $cotizacion->cliente,
                 'asesora' => auth()->user()?->name ?? 'Sin nombre',
-                'forma_de_pago' => $cotizacion->especificaciones['forma_pago'] ?? null,
+                'forma_de_pago' => $especificaciones['forma_pago'] ?? null,
                 'estado' => 'No iniciado',
                 'fecha_de_creacion_de_orden' => now()->toDateString(),
             ]);
@@ -197,31 +203,27 @@ class PedidosProduccionController extends Controller
             
             // Copiar cada variante al pedido
             foreach ($variantes as $variante) {
-                // Crear nueva variante vinculada a la prenda del pedido
-                // Nota: Aquí necesitaríamos una tabla similar para pedidos
-                // Por ahora, guardamos en un campo JSON en PrendaPedido
-                
-                $datosVariante = [
-                    'tipo_prenda_id' => $variante->tipo_prenda_id,
+                // Actualizar prenda del pedido con datos de variantes
+                $prendaPedido->update([
                     'color_id' => $variante->color_id,
                     'tela_id' => $variante->tela_id,
-                    'genero_id' => $variante->genero_id,
                     'tipo_manga_id' => $variante->tipo_manga_id,
                     'tipo_broche_id' => $variante->tipo_broche_id,
                     'tiene_bolsillos' => $variante->tiene_bolsillos,
                     'tiene_reflectivo' => $variante->tiene_reflectivo,
+                    'descripcion_variaciones' => $variante->descripcion_adicional,
                     'cantidad_talla' => $variante->cantidad_talla
-                ];
-                
-                // Guardar variantes en campo JSON de la prenda del pedido
-                $prendaPedido->update([
-                    'variantes' => json_encode($datosVariante)
                 ]);
                 
                 \Log::info('✅ Variantes heredadas exitosamente', [
                     'prenda_pedido_id' => $prendaPedido->id,
                     'variante_original_id' => $variante->id,
-                    'datos' => $datosVariante
+                    'color_id' => $variante->color_id,
+                    'tela_id' => $variante->tela_id,
+                    'tipo_manga_id' => $variante->tipo_manga_id,
+                    'tipo_broche_id' => $variante->tipo_broche_id,
+                    'tiene_bolsillos' => $variante->tiene_bolsillos,
+                    'tiene_reflectivo' => $variante->tiene_reflectivo
                 ]);
             }
             

@@ -1339,4 +1339,9 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 @endpush
 
+@push('scripts')
+<!-- SCRIPT DE PRUEBA RÁPIDA COMPLETO -->
+<script src="{{ asset('js/asesores/cotizaciones/test-rapido-completo.js') }}"></script>
+@endpush
+
 @endsection

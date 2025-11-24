@@ -28,12 +28,18 @@ class TiposCotizacionSeeder extends Seeder
             ');
         }
 
-        // Insertar datos
-        DB::table('tipos_cotizacion')->truncate();
-        DB::table('tipos_cotizacion')->insert([
-            ['codigo' => 'M', 'nombre' => 'Muestra', 'descripcion' => 'Cotización de muestra', 'activo' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['codigo' => 'P', 'nombre' => 'Prototipo', 'descripcion' => 'Cotización de prototipo', 'activo' => true, 'created_at' => now(), 'updated_at' => now()],
-            ['codigo' => 'G', 'nombre' => 'Grande', 'descripcion' => 'Cotización grande', 'activo' => true, 'created_at' => now(), 'updated_at' => now()],
-        ]);
+        // Insertar datos (sin truncate para evitar conflictos con claves foráneas)
+        $tipos = [
+            ['codigo' => 'M', 'nombre' => 'Muestra', 'descripcion' => 'Cotización de muestra', 'activo' => true],
+            ['codigo' => 'P', 'nombre' => 'Prototipo', 'descripcion' => 'Cotización de prototipo', 'activo' => true],
+            ['codigo' => 'G', 'nombre' => 'Grande', 'descripcion' => 'Cotización grande', 'activo' => true],
+        ];
+
+        foreach ($tipos as $tipo) {
+            DB::table('tipos_cotizacion')->updateOrInsert(
+                ['codigo' => $tipo['codigo']],
+                $tipo
+            );
+        }
     }
 }

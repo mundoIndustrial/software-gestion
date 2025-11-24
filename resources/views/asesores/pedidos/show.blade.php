@@ -109,6 +109,68 @@
                                     <p>{{ $producto->descripcion }}</p>
                                 </div>
                             @endif
+                            
+                            <!-- VARIACIONES -->
+                            @if($producto->color_id || $producto->tela_id || $producto->tipo_manga_id || $producto->tipo_broche_id)
+                                <div class="producto-variaciones" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee;">
+                                    <h4 style="margin: 0 0 0.5rem 0; color: #0066cc; font-size: 0.95rem; font-weight: 600;">
+                                        <i class="fas fa-sliders-h"></i> Variaciones
+                                    </h4>
+                                    
+                                    @if($producto->color_id && $producto->color)
+                                        <div style="margin-bottom: 0.5rem;">
+                                            <span style="font-weight: 600; color: #0066cc;">Color:</span>
+                                            <span>{{ $producto->color->nombre }}</span>
+                                        </div>
+                                    @endif
+                                    
+                                    @if($producto->tela_id && $producto->tela)
+                                        <div style="margin-bottom: 0.5rem;">
+                                            <span style="font-weight: 600; color: #0066cc;">Tela:</span>
+                                            <span>{{ $producto->tela->nombre }}</span>
+                                            @if($producto->tela->referencia)
+                                                <span style="color: #64748b; font-size: 0.85rem;">(Ref: {{ $producto->tela->referencia }})</span>
+                                            @endif
+                                        </div>
+                                    @endif
+                                    
+                                    @if($producto->tipo_manga_id && $producto->tipoManga)
+                                        <div style="margin-bottom: 0.5rem;">
+                                            <span style="font-weight: 600; color: #0066cc;">Manga:</span>
+                                            <span>{{ $producto->tipoManga->nombre }}</span>
+                                        </div>
+                                    @endif
+                                    
+                                    @if($producto->tipo_broche_id && $producto->tipoBroche)
+                                        <div style="margin-bottom: 0.5rem;">
+                                            <span style="font-weight: 600; color: #0066cc;">Broche:</span>
+                                            <span>{{ $producto->tipoBroche->nombre }}</span>
+                                        </div>
+                                    @endif
+                                    
+                                    @if($producto->tiene_bolsillos)
+                                        <div style="margin-bottom: 0.5rem;">
+                                            <span style="font-weight: 600; color: #0066cc;">Bolsillos:</span>
+                                            <span style="background: #10b981; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.8rem;">Sí</span>
+                                        </div>
+                                    @endif
+                                    
+                                    @if($producto->tiene_reflectivo)
+                                        <div style="margin-bottom: 0.5rem;">
+                                            <span style="font-weight: 600; color: #0066cc;">Reflectivo:</span>
+                                            <span style="background: #10b981; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.8rem;">Sí</span>
+                                        </div>
+                                    @endif
+                                    
+                                    @if($producto->descripcion_variaciones)
+                                        <div style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #eee;">
+                                            <span style="font-weight: 600; color: #0066cc;">Observaciones:</span>
+                                            <p style="margin: 0.25rem 0 0 0; color: #64748b; font-size: 0.9rem;">{{ $producto->descripcion_variaciones }}</p>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
+                            
                             <div class="producto-details">
                                 <div class="detail-item">
                                     <label>Cantidad:</label>

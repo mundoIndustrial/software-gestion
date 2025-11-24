@@ -130,6 +130,70 @@ function recopilarDatos() {
             productoId: productoId
         });
         
+        // Capturar variaciones (color, tela, manga, reflectivo, etc.)
+        const variantes = {};
+        const observacionesVariantes = [];
+        
+        // Color
+        const colorInput = item.querySelector('.color-input');
+        if (colorInput && colorInput.value) {
+            variantes.color = colorInput.value;
+        }
+        
+        // Tela
+        const telaInput = item.querySelector('.tela-input');
+        if (telaInput && telaInput.value) {
+            variantes.tela = telaInput.value;
+        }
+        
+        // Manga
+        const mangaCheckbox = item.querySelector('input[name*="aplica_manga"]');
+        const mangaIdInput = item.querySelector('input[name*="tipo_manga_id"]');
+        if (mangaCheckbox && mangaCheckbox.checked && mangaIdInput && mangaIdInput.value) {
+            variantes.tipo_manga_id = mangaIdInput.value;
+        }
+        
+        // Bolsillos
+        const bolsillosCheckbox = item.querySelector('input[name*="aplica_bolsillos"]');
+        if (bolsillosCheckbox && bolsillosCheckbox.checked) {
+            variantes.tiene_bolsillos = true;
+            // Capturar observación de bolsillos
+            const bolsillosObs = item.querySelector('input[name*="obs_bolsillos"]');
+            if (bolsillosObs && bolsillosObs.value) {
+                observacionesVariantes.push(`Bolsillos: ${bolsillosObs.value}`);
+            }
+        }
+        
+        // Broche/Botón
+        const brocheCheckbox = item.querySelector('input[name*="aplica_broche"]');
+        const brocheIdInput = item.querySelector('input[name*="tipo_broche_id"]');
+        if (brocheCheckbox && brocheCheckbox.checked && brocheIdInput && brocheIdInput.value) {
+            variantes.tipo_broche_id = brocheIdInput.value;
+            // Capturar observación de broche
+            const brocheObs = item.querySelector('input[name*="obs_broche"]');
+            if (brocheObs && brocheObs.value) {
+                observacionesVariantes.push(`Broche: ${brocheObs.value}`);
+            }
+        }
+        
+        // Reflectivo
+        const reflectivoCheckbox = item.querySelector('input[name*="aplica_reflectivo"]');
+        if (reflectivoCheckbox && reflectivoCheckbox.checked) {
+            variantes.tiene_reflectivo = true;
+            // Capturar observación de reflectivo
+            const reflectivoObs = item.querySelector('input[name*="obs_reflectivo"]');
+            if (reflectivoObs && reflectivoObs.value) {
+                observacionesVariantes.push(`Reflectivo: ${reflectivoObs.value}`);
+            }
+        }
+        
+        // Agregar todas las observaciones como descripción_adicional
+        if (observacionesVariantes.length > 0) {
+            variantes.descripcion_adicional = observacionesVariantes.join(' | ');
+        }
+        
+        console.log('📝 Variantes capturadas:', variantes);
+        
         if (nombre.trim()) {
             productos.push({
                 nombre_producto: nombre,
@@ -137,7 +201,8 @@ function recopilarDatos() {
                 cantidad: parseInt(cantidad) || 1,
                 tallas: tallasSeleccionadas,
                 fotos: fotos,
-                imagen_tela: imagenTela
+                imagen_tela: imagenTela,
+                variantes: variantes
             });
         }
     });

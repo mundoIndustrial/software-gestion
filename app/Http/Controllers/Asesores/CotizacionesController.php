@@ -200,7 +200,12 @@ class CotizacionesController extends Controller
                     $nombreUpper = strtoupper(trim($nombrePrenda));
                     $palabraPrincipal = explode(' ', $nombreUpper)[0];
                     $esJeanPantalon = preg_match('/^JEAN|^PANTALÓ?N/', $palabraPrincipal) === 1;
-                    $tipoJeanPantalon = $esJeanPantalon ? ($producto['variantes']['tipo'] ?? null) : null;
+                    
+                    // Obtener tipo de JEAN/PANTALÓN de forma segura
+                    $tipoJeanPantalon = null;
+                    if ($esJeanPantalon && is_array($producto['variantes'] ?? null)) {
+                        $tipoJeanPantalon = $producto['variantes']['tipo'] ?? null;
+                    }
                     
                     \Log::info('Guardando prenda individual', [
                         'index' => $index,
@@ -356,7 +361,12 @@ class CotizacionesController extends Controller
      */
     public function show($id)
     {
-        $cotizacion = Cotizacion::findOrFail($id);
+        $cotizacion = Cotizacion::with([
+            'prendasCotizaciones.variantes.color',
+            'prendasCotizaciones.variantes.tela',
+            'prendasCotizaciones.variantes.tipoManga',
+            'prendasCotizaciones.variantes.tipoBroche'
+        ])->findOrFail($id);
         
         if ($cotizacion->user_id !== Auth::id()) {
             abort(403);
@@ -372,13 +382,26 @@ class CotizacionesController extends Controller
                 'cliente' => $cotizacion->cliente,
                 'asesora' => $cotizacion->asesora,
                 'prendas' => $cotizacion->prendasCotizaciones->map(function($prenda) {
+                    $variante = $prenda->variantes->first();
+                    
                     return [
                         'id' => $prenda->id,
                         'nombre_producto' => $prenda->nombre_producto,
                         'descripcion' => $prenda->descripcion,
                         'tallas' => $prenda->tallas ?? [],
                         'fotos' => $prenda->fotos ?? [],
-                        'imagen_tela' => $prenda->imagen_tela
+                        'imagen_tela' => $prenda->imagen_tela,
+                        // Variaciones
+                        'variantes' => [
+                            'color' => $variante && $variante->color ? $variante->color->nombre : null,
+                            'tela' => $variante && $variante->tela ? $variante->tela->nombre : null,
+                            'tela_referencia' => $variante && $variante->tela && $variante->tela->referencia ? $variante->tela->referencia : null,
+                            'manga' => $variante && $variante->tipoManga ? $variante->tipoManga->nombre : null,
+                            'broche' => $variante && $variante->tipoBroche ? $variante->tipoBroche->nombre : null,
+                            'tiene_bolsillos' => $variante ? $variante->tiene_bolsillos : false,
+                            'tiene_reflectivo' => $variante ? $variante->tiene_reflectivo : false,
+                            'observaciones' => $variante ? $variante->descripcion_adicional : null
+                        ]
                     ];
                 })
             ]);
@@ -459,7 +482,12 @@ class CotizacionesController extends Controller
                     $nombreUpper = strtoupper(trim($nombrePrenda));
                     $palabraPrincipal = explode(' ', $nombreUpper)[0];
                     $esJeanPantalon = preg_match('/^JEAN|^PANTALÓ?N/', $palabraPrincipal) === 1;
-                    $tipoJeanPantalon = $esJeanPantalon ? ($producto['variantes']['tipo'] ?? null) : null;
+                    
+                    // Obtener tipo de JEAN/PANTALÓN de forma segura
+                    $tipoJeanPantalon = null;
+                    if ($esJeanPantalon && is_array($producto['variantes'] ?? null)) {
+                        $tipoJeanPantalon = $producto['variantes']['tipo'] ?? null;
+                    }
                     
                     $prenda = \App\Models\PrendaCotizacionFriendly::create([
                         'cotizacion_id' => $cotizacion->id,
@@ -819,7 +847,7 @@ class CotizacionesController extends Controller
 
             // Crear prendas del pedido
             if ($cotizacion->productos) {
-                foreach ($cotizacion->productos as $producto) {
+                foreach ($cotizacion->productos as $index => $producto) {
                     $prenda = PrendaPedido::create([
                         'pedido_produccion_id' => $pedido->id,
                         'nombre_prenda' => $producto['nombre_producto'] ?? 'Sin nombre',
@@ -835,6 +863,9 @@ class CotizacionesController extends Controller
                         'fecha_inicio' => now()->toDateString(),
                         'fecha_fin' => now()->toDateString(),
                     ]);
+                    
+                    // HEREDAR VARIANTES DE LA COTIZACIÓN
+                    $this->heredarVariantesDePrendaPedido($cotizacion, $prenda, $index);
                 }
             }
 
@@ -889,21 +920,7 @@ class CotizacionesController extends Controller
             // Obtener variaciones seleccionadas (si existen en los datos)
             $variantes = $productoData['variantes'] ?? [];
             
-            // Si no hay variantes en los datos, crear registro con solo tipo_prenda_id
-            if (empty($variantes)) {
-                \Log::info('ℹ️ Sin variantes específicas, creando registro básico', [
-                    'prenda_id' => $prenda->id,
-                    'tipo_prenda_id' => $tipoPrenda->id
-                ]);
-                
-                VariantePrenda::create([
-                    'prenda_cotizacion_id' => $prenda->id,
-                    'tipo_prenda_id' => $tipoPrenda->id,
-                    'cantidad_talla' => $prenda->tallas ? json_encode($prenda->tallas) : null
-                ]);
-                
-                return;
-            }
+            \Log::info('📝 Variantes recibidas del formulario:', $variantes);
             
             // Crear registro de variante con todos los datos
             $datosVariante = [
@@ -912,22 +929,86 @@ class CotizacionesController extends Controller
                 'cantidad_talla' => $prenda->tallas ? json_encode($prenda->tallas) : null
             ];
             
-            // Mapear variantes recibidas a campos de la tabla
-            $mapeoVariantes = [
-                'tipo_manga_id' => 'tipo_manga_id',
-                'tipo_broche_id' => 'tipo_broche_id',
-                'color_id' => 'color_id',
-                'tela_id' => 'tela_id',
-                'genero_id' => 'genero_id',
-                'tiene_bolsillos' => 'tiene_bolsillos',
-                'tiene_reflectivo' => 'tiene_reflectivo'
-            ];
+            // Procesar color (buscar o crear)
+            if (isset($variantes['color']) && !empty($variantes['color'])) {
+                $color = \App\Models\ColorPrenda::firstOrCreate(
+                    ['nombre' => $variantes['color']],
+                    ['nombre' => $variantes['color']]
+                );
+                $datosVariante['color_id'] = $color->id;
+                \Log::info('✅ Color encontrado/creado', ['color_id' => $color->id, 'nombre' => $variantes['color']]);
+            }
             
-            foreach ($mapeoVariantes as $clave => $campo) {
-                if (isset($variantes[$clave]) && !empty($variantes[$clave])) {
-                    $datosVariante[$campo] = $variantes[$clave];
+            // Procesar tela (buscar o crear)
+            if (isset($variantes['tela']) && !empty($variantes['tela'])) {
+                $tela = \App\Models\TelaPrenda::firstOrCreate(
+                    ['nombre' => $variantes['tela']],
+                    ['nombre' => $variantes['tela']]
+                );
+                $datosVariante['tela_id'] = $tela->id;
+                \Log::info('✅ Tela encontrada/creada', ['tela_id' => $tela->id, 'nombre' => $variantes['tela']]);
+            }
+            
+            // Procesar manga (si es ID, usarlo; si es nombre, buscar)
+            if (isset($variantes['tipo_manga_id']) && !empty($variantes['tipo_manga_id'])) {
+                $manga = \App\Models\TipoManga::where('nombre', $variantes['tipo_manga_id'])
+                    ->orWhere('id', $variantes['tipo_manga_id'])
+                    ->first();
+                if ($manga) {
+                    $datosVariante['tipo_manga_id'] = $manga->id;
+                    \Log::info('✅ Manga encontrada', ['manga_id' => $manga->id]);
                 }
             }
+            
+            // Procesar broche (si es ID, usarlo; si es nombre, buscar)
+            if (isset($variantes['tipo_broche_id']) && !empty($variantes['tipo_broche_id'])) {
+                $broche = \App\Models\TipoBroche::where('nombre', $variantes['tipo_broche_id'])
+                    ->orWhere('id', $variantes['tipo_broche_id'])
+                    ->first();
+                if ($broche) {
+                    $datosVariante['tipo_broche_id'] = $broche->id;
+                    \Log::info('✅ Broche encontrado', ['broche_id' => $broche->id]);
+                }
+            }
+            
+            // Procesar bolsillos
+            if (isset($variantes['tiene_bolsillos'])) {
+                $datosVariante['tiene_bolsillos'] = (bool)$variantes['tiene_bolsillos'];
+            }
+            
+            // Procesar reflectivo
+            if (isset($variantes['tiene_reflectivo'])) {
+                $datosVariante['tiene_reflectivo'] = (bool)$variantes['tiene_reflectivo'];
+            }
+            
+            // Procesar observaciones/descripción adicional
+            $observacionesArray = [];
+            
+            // Recopilar todas las observaciones
+            if (isset($variantes['obs_bolsillos']) && !empty($variantes['obs_bolsillos'])) {
+                $observacionesArray[] = "Bolsillos: {$variantes['obs_bolsillos']}";
+            }
+            if (isset($variantes['obs_broche']) && !empty($variantes['obs_broche'])) {
+                $observacionesArray[] = "Broche: {$variantes['obs_broche']}";
+            }
+            if (isset($variantes['obs_reflectivo']) && !empty($variantes['obs_reflectivo'])) {
+                $observacionesArray[] = "Reflectivo: {$variantes['obs_reflectivo']}";
+            }
+            
+            // Si viene descripcion_adicional directamente, usarla
+            if (isset($variantes['descripcion_adicional']) && !empty($variantes['descripcion_adicional'])) {
+                $datosVariante['descripcion_adicional'] = $variantes['descripcion_adicional'];
+            } elseif (!empty($observacionesArray)) {
+                // Si no, combinar todas las observaciones
+                $datosVariante['descripcion_adicional'] = implode(' | ', $observacionesArray);
+            }
+            
+            \Log::info('📝 Observaciones procesadas:', [
+                'obs_bolsillos' => $variantes['obs_bolsillos'] ?? null,
+                'obs_broche' => $variantes['obs_broche'] ?? null,
+                'obs_reflectivo' => $variantes['obs_reflectivo'] ?? null,
+                'descripcion_adicional' => $datosVariante['descripcion_adicional'] ?? null
+            ]);
             
             // Crear registro de variante
             $variante = VariantePrenda::create($datosVariante);

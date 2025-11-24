@@ -685,15 +685,70 @@ document.addEventListener('DOMContentLoaded', function() {
         prendas.forEach((prenda, index) => {
             const tallas = prenda.tallas || [];
             const imagen = prenda.fotos && prenda.fotos.length > 0 ? prenda.fotos[0] : null;
+            const variantes = prenda.variantes || {};
+            
+            // Construir descripción con variaciones organizadas
+            let descripcionCompleta = prenda.descripcion || '';
+            if (variantes.color || variantes.tela || variantes.manga || variantes.broche || variantes.tiene_bolsillos || variantes.tiene_reflectivo) {
+                descripcionCompleta += '<br><br><strong style="color: #0066cc; font-size: 0.95rem;">VARIACIONES:</strong><br>';
+                descripcionCompleta += '<div style="margin-left: 0.5rem; line-height: 1.8;">';
+                
+                // Parsear observaciones
+                const obsMap = {};
+                if (variantes.observaciones) {
+                    const obsArray = variantes.observaciones.split(' | ');
+                    obsArray.forEach(obs => {
+                        if (obs.trim()) {
+                            if (obs.includes('Bolsillos:')) {
+                                obsMap.bolsillos = obs.replace('Bolsillos:', '').trim();
+                            } else if (obs.includes('Broche:')) {
+                                obsMap.broche = obs.replace('Broche:', '').trim();
+                            } else if (obs.includes('Reflectivo:')) {
+                                obsMap.reflectivo = obs.replace('Reflectivo:', '').trim();
+                            }
+                        }
+                    });
+                }
+                
+                if (variantes.color) {
+                    descripcionCompleta += `<div><strong>Color:</strong> ${variantes.color}</div>`;
+                }
+                if (variantes.tela) {
+                    descripcionCompleta += `<div><strong>Tela:</strong> ${variantes.tela}${variantes.tela_referencia ? ` (Ref: ${variantes.tela_referencia})` : ''}</div>`;
+                }
+                if (variantes.manga) {
+                    descripcionCompleta += `<div><strong>Manga:</strong> ${variantes.manga}</div>`;
+                }
+                if (variantes.broche) {
+                    descripcionCompleta += `<div><strong>Broche:</strong> ${variantes.broche}</div>`;
+                    if (obsMap.broche) {
+                        descripcionCompleta += `<div style="color: #64748b; font-size: 0.9rem; margin-left: 1rem; margin-top: 0.25rem;">→ ${obsMap.broche}</div>`;
+                    }
+                }
+                if (variantes.tiene_bolsillos) {
+                    descripcionCompleta += `<div><strong>Bolsillos:</strong> Sí</div>`;
+                    if (obsMap.bolsillos) {
+                        descripcionCompleta += `<div style="color: #64748b; font-size: 0.9rem; margin-left: 1rem; margin-top: 0.25rem;">→ ${obsMap.bolsillos}</div>`;
+                    }
+                }
+                if (variantes.tiene_reflectivo) {
+                    descripcionCompleta += `<div><strong>Reflectivo:</strong> Sí</div>`;
+                    if (obsMap.reflectivo) {
+                        descripcionCompleta += `<div style="color: #64748b; font-size: 0.9rem; margin-left: 1rem; margin-top: 0.25rem;">→ ${obsMap.reflectivo}</div>`;
+                    }
+                }
+                
+                descripcionCompleta += '</div>';
+            }
             
             html += `
                 <div class="prenda-card">
                     <div style="display: flex; gap: 1rem; align-items: flex-start;">
                         <div style="flex: 1;">
                             <div class="prenda-titulo">
-                                ${prenda.nombre_producto}
+                                PRENDA ${index + 1}: ${prenda.nombre_producto}
                             </div>
-                            ${prenda.descripcion ? `<div class="prenda-descripcion">${prenda.descripcion}</div>` : ''}
+                            ${descripcionCompleta ? `<div class="prenda-descripcion">${descripcionCompleta}</div>` : ''}
                         </div>
                         ${imagen ? `
                             <div style="flex-shrink: 0;">

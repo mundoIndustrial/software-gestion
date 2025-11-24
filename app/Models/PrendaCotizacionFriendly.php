@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PrendaCotizacionFriendly extends Model
 {
@@ -33,5 +34,13 @@ class PrendaCotizacionFriendly extends Model
     public function cotizacion(): BelongsTo
     {
         return $this->belongsTo(Cotizacion::class);
+    }
+
+    /**
+     * Relación con VariantePrenda
+     */
+    public function variantes(): HasMany
+    {
+        return $this->hasMany(VariantePrenda::class, 'prenda_cotizacion_id');
     }
 }
