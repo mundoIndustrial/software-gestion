@@ -20,7 +20,8 @@ class PrendaCotizacionFriendly extends Model
         'tallas',
         'fotos',
         'telas',
-        'estado'
+        'estado',
+        'notas_tallas'
     ];
 
     protected $casts = [

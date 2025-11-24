@@ -11,6 +11,7 @@ use App\Http\Controllers\EntregaController;
 use App\Http\Controllers\TablerosController;
 use App\Http\Controllers\VistasController;
 use App\Http\Controllers\BalanceoController;
+use App\Http\Controllers\CotizacionesViewController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -134,6 +135,14 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
 });
 
 // ========================================
+// RUTAS PARA SUPERVISOR-ADMIN (COTIZACIONES)
+// ========================================
+Route::middleware(['auth', 'role:supervisor-admin'])->group(function () {
+    Route::get('/cotizaciones', [CotizacionesViewController::class, 'index'])->name('cotizaciones.index');
+    Route::get('/cotizaciones/{id}/detalle', [CotizacionesViewController::class, 'getCotizacionDetail'])->name('cotizaciones.detalle');
+});
+
+// ========================================
 // RUTAS PARA CONTADOR (MÓDULO INDEPENDIENTE)
 // ========================================
 Route::middleware(['auth', 'role:contador'])->prefix('contador')->name('contador.')->group(function () {
@@ -145,8 +154,14 @@ Route::middleware(['auth', 'role:contador'])->prefix('contador')->name('contador
     Route::post('/costos/guardar', [App\Http\Controllers\CostoPrendaController::class, 'guardar'])->name('costos.guardar');
     Route::get('/costos/obtener/{cotizacion_id}', [App\Http\Controllers\CostoPrendaController::class, 'obtener'])->name('costos.obtener');
     
+    // Rutas para notas de tallas
+    Route::post('/prenda/{prendaId}/notas-tallas', [App\Http\Controllers\ContadorController::class, 'guardarNotasTallas'])->name('prenda.guardar-notas-tallas');
+    
     // Rutas para PDF
     Route::get('/cotizacion/{id}/pdf', [App\Http\Controllers\PDFCotizacionController::class, 'generarPDF'])->name('cotizacion.pdf');
+    
+    // Ruta para cambiar estado de cotización
+    Route::patch('/cotizacion/{id}/estado', [App\Http\Controllers\ContadorController::class, 'cambiarEstado'])->name('cotizacion.cambiar-estado');
 });
 
 // ========================================

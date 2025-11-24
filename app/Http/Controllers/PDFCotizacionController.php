@@ -20,8 +20,9 @@ class PDFCotizacionController extends Controller
             $html = $this->generarHTML($cotizacion);
             
             // Crear PDF con DomPDF
+            // Tamaño personalizado: A4 con altura aumentada (297mm → 420mm)
             $pdf = Pdf::loadHTML($html)
-                ->setPaper('a4', 'portrait')
+                ->setPaper([0, 0, 595, 1190], 'portrait')  // Ancho A4 (595pt) x Altura aumentada (1190pt ≈ 420mm)
                 ->setOption('margin-top', 8)
                 ->setOption('margin-bottom', 8)
                 ->setOption('margin-left', 8)
@@ -67,24 +68,24 @@ class PDFCotizacionController extends Controller
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { width: 100%; margin: 0; padding: 0; height: auto; min-height: 100%; }
         body { font-family: Arial, sans-serif; font-size: 10px; line-height: 1.4; overflow-x: hidden; margin: 0; padding: 0; height: auto; }
-        .container { width: 100%; max-width: 100%; padding: 10mm 12mm; box-sizing: border-box; margin: 0; }
-        .header { text-align: center; margin-bottom: 12px; border-bottom: 2px solid #000; padding-bottom: 8px; }
+        .container { width: 100%; max-width: 100%; padding: 8mm 12mm; box-sizing: border-box; margin: 0; }
+        .header { text-align: center; margin-bottom: 8px; border-bottom: 2px solid #000; padding-bottom: 6px; }
         .header-logo { width: 50px; height: auto; margin-bottom: 3px; }
         .header-title { font-size: 14px; font-weight: bold; margin: 2px 0; }
         .header-subtitle { font-size: 10px; color: #666; margin: 1px 0; }
-        .info-table { width: 100%; margin-bottom: 12px; border-collapse: collapse; table-layout: fixed; }
+        .info-table { width: 100%; margin-bottom: 8px; border-collapse: collapse; table-layout: fixed; }
         .info-table td { padding: 5px; border: 1px solid #000; word-wrap: break-word; overflow-wrap: break-word; }
         .info-table .label { background: #f0f0f0; font-weight: bold; width: 15%; }
         table { width: 100%; }
-        .prenda { margin-bottom: 15px; page-break-inside: avoid; margin-left: -25; margin-right: 0; padding-left: -25; padding-right: 0; }
+        .prenda { margin-bottom: 10px; page-break-inside: avoid; margin-left: -25; margin-right: 0; padding-left: -25; padding-right: 0; }
         .prenda-nombre { font-size: 11px; font-weight: bold; margin-bottom: 3px; }
         .prenda-descripcion { font-size: 8px; margin-bottom: 3px; color: #333; line-height: 1.3; word-wrap: break-word; overflow-wrap: break-word; max-width: 90%; white-space: normal; }
-        .prenda-tallas { font-size: 8px; font-weight: bold; margin-bottom: 3px; }
+        .prenda-tallas { font-size: 11px; font-weight: bold; margin-bottom: 3px; color: #e74c3c; }
         .prenda-imagenes { display: flex; gap: 20px; margin-bottom: 8px; flex-wrap: wrap; max-width: 100%; }
         .prenda-imagen { width: 160px; height: 160px; border: 1px solid #ddd; flex-shrink: 0; object-fit: cover; }
-        .spec-table { width: 95%; border-collapse: collapse; margin-top: auto; table-layout: fixed; margin-left: -25; margin-right: 0; padding-left: -25; padding-right: 0; }
-        .spec-table th { background: #FFC107; padding: 6px; border: 1px solid #000; font-weight: bold; text-align: left; font-size: 9px; word-wrap: break-word; overflow-wrap: break-word; }
-        .spec-table td { padding: 5px; border: 1px solid #000; font-size: 8px; word-wrap: break-word; overflow-wrap: break-word; }
+        .spec-table { width: 95%; border-collapse: collapse; margin-top: 4px; table-layout: fixed; margin-left: -25; margin-right: 0; padding-left: -25; padding-right: 0; page-break-inside: avoid; }
+        .spec-table th { background: #FFC107; padding: 4px 3px; border: 1px solid #000; font-weight: bold; text-align: left; font-size: 8px; word-wrap: break-word; overflow-wrap: break-word; }
+        .spec-table td { padding: 3px; border: 1px solid #000; font-size: 7px; word-wrap: break-word; overflow-wrap: break-word; }
         .spec-table .label { background: #f9f9f9; font-weight: bold; width: 22%; }
     </style>
 </head>
@@ -179,6 +180,9 @@ class PDFCotizacionController extends Controller
                 $tallasTexto = implode(', ', array_filter($tallas));
             }
             
+            // Obtener notas de tallas si existen
+            $notasTallas = $prenda->notas_tallas ?? null;
+            
             // Imágenes
             $imagenes = $prenda->fotos ?? [];
             $imagenTela = $prenda->imagen_tela ?? null;
@@ -193,9 +197,11 @@ class PDFCotizacionController extends Controller
                 $todasLasImagenes[] = $imagenTela;
             }
             
-            // Tallas (arriba)
-            if ($tallasTexto) {
-                $html .= '<div class="prenda-tallas" style="margin-bottom: 30px;">Tallas: ' . $tallasTexto . '</div>';
+            // Tallas (arriba) - Mostrar notas si existen, sino mostrar tallas base
+            if ($notasTallas) {
+                $html .= '<div class="prenda-tallas" style="margin-bottom: 30px;">' . $notasTallas . '</div>';
+            } elseif ($tallasTexto) {
+                $html .= '<div class="prenda-tallas" style="margin-bottom: 30px;">TALLAS: (' . $tallasTexto . ')</div>';
             }
             
             // Imágenes (abajo, separadas)
@@ -225,46 +231,53 @@ class PDFCotizacionController extends Controller
      */
     private function generarTablaEspecificacionesHTML($cotizacion)
     {
+        // Mapeo de claves de especificaciones a nombres legibles
+        $especificacionesMap = [
+            'disponibilidad' => 'DISPONIBILIDAD',
+            'forma_pago' => 'FORMA DE PAGO',
+            'regimen' => 'RÉGIMEN',
+            'se_ha_vendido' => 'SE HA VENDIDO',
+            'ultima_venta' => 'ÚLTIMA VENTA',
+            'flete' => 'FLETE DE ENVÍO'
+        ];
+        
+        // Obtener especificaciones desde la tabla cotizaciones
+        $especificacionesData = $cotizacion->especificaciones ?? [];
+        
+        // Convertir a array si es necesario
+        if (!is_array($especificacionesData)) {
+            $especificacionesData = (array) $especificacionesData;
+        }
+        
         $html = '
         <table class="spec-table">
             <thead>
                 <tr>
                     <th>Especificación</th>
                     <th>Opciones Seleccionadas</th>
-                    <th>OBSERVACIONES</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody>';
+        
+        foreach ($especificacionesMap as $clave => $nombreCategoria) {
+            $valores = $especificacionesData[$clave] ?? [];
+            
+            // Asegurar que sea un array
+            if (!is_array($valores)) {
+                $valores = (array) $valores;
+            }
+            
+            // Convertir valores a string
+            $valoresText = count($valores) > 0 ? implode(', ', $valores) : '-';
+            
+            $html .= '
                 <tr>
-                    <td class="label">DISPONIBILIDAD DE LA PRENDA</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td class="label">FORMA DE PAGO</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td class="label">RÉGIMEN</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td class="label">FLETE DE ENVÍO</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td class="label">SE HA VENDIDO</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td class="label">ÚLTIMA VENTA</td>
-                    <td></td>
-                    <td></td>
-                </tr>
+                    <td class="label">' . $nombreCategoria . '</td>
+                    <td>' . $valoresText . '</td>
+                </tr>';
+        }
+        
+        $html .= '
             </tbody>
         </table>';
         

@@ -85,6 +85,70 @@ document.addEventListener('keydown', function(event) {
     }
 });
 
+// ===== CAMBIAR ESTADO DE COTIZACIÓN =====
+function cambiarEstadoCotizacion(selectElement) {
+    const cotizacionId = selectElement.getAttribute('data-cotizacion-id');
+    const nuevoEstado = selectElement.value;
+    
+    // Mostrar confirmación
+    Swal.fire({
+        title: '¿Cambiar estado?',
+        html: `<p>¿Estás seguro de que deseas cambiar el estado a <strong>${nuevoEstado.toUpperCase()}</strong>?</p>`,
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonColor: '#3b82f6',
+        cancelButtonColor: '#d1d5db',
+        confirmButtonText: 'Sí, cambiar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Enviar PATCH request
+            fetch(`/contador/cotizacion/${cotizacionId}/estado`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({
+                    estado: nuevoEstado
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({
+                        title: '¡Éxito!',
+                        text: data.message,
+                        icon: 'success',
+                        timer: 2000
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Error',
+                        text: data.message,
+                        icon: 'error'
+                    });
+                    // Revertir el select al estado anterior
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Error al cambiar el estado',
+                    icon: 'error'
+                });
+                // Revertir el select
+                location.reload();
+            });
+        } else {
+            // Revertir el select al estado anterior
+            location.reload();
+        }
+    });
+}
+
 // ===== NAVEGACIÓN ENTRE SECCIONES =====
 document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', function() {

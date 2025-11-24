@@ -14,6 +14,7 @@
                     <th>Fecha</th>
                     <th>Cliente</th>
                     <th>Asesora</th>
+                    <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -36,6 +37,13 @@
                         <td>{{ $cotizacion->cliente ?? 'N/A' }}</td>
                         <td>{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? 'N/A') }}</td>
                         <td>
+                            <select class="estado-dropdown" data-cotizacion-id="{{ $cotizacion->id }}" onchange="cambiarEstadoCotizacion(this)" style="padding: 0.5rem 0.8rem; border-radius: 4px; border: 2px solid #ddd; font-weight: 600; cursor: pointer; background: white; transition: all 0.2s;">
+                                <option value="enviada" {{ $cotizacion->estado === 'enviada' ? 'selected' : '' }} style="background: #3b82f6; color: white;">✓ Enviada</option>
+                                <option value="entregar" {{ $cotizacion->estado === 'entregar' ? 'selected' : '' }} style="background: #10b981; color: white;">📦 Entregar</option>
+                                <option value="anular" {{ $cotizacion->estado === 'anular' ? 'selected' : '' }} style="background: #ef4444; color: white;">✕ Anular</option>
+                            </select>
+                        </td>
+                        <td>
                             <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
                                 <button class="btn btn-primary" onclick="openCotizacionModal({{ $cotizacion->id }})" style="padding: 0.6rem 0.8rem; background: #1e5ba8; color: white; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Ver Detalles" onmouseover="this.style.background='#1e40af'" onmouseout="this.style.background='#1e5ba8'">
                                     <span class="material-symbols-rounded" style="font-size: 1.2rem;">visibility</span>
@@ -54,7 +62,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" style="text-align: center; padding: 2rem; color: #999;">
+                        <td colspan="6" style="text-align: center; padding: 2rem; color: #999;">
                             <span class="material-symbols-rounded" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;">inbox</span>
                             No hay cotizaciones disponibles
                         </td>

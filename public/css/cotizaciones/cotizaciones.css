@@ -1,0 +1,182 @@
+/* ===== CONTENEDOR PRINCIPAL ===== */
+.cotizaciones-container {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* ===== TABLA MODERNA ===== */
+.cotizaciones-wrapper {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.cotizaciones-scroll {
+    overflow-x: auto;
+}
+
+.cotizaciones-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.cotizaciones-table thead {
+    background: linear-gradient(to bottom, #f9fafb, #f3f4f6);
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.cotizaciones-table thead th {
+    padding: 16px;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    white-space: nowrap;
+}
+
+.cotizaciones-table tbody tr {
+    border-bottom: 1px solid #f3f4f6;
+    transition: background-color 0.2s;
+}
+
+.cotizaciones-table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+.cotizaciones-table tbody td {
+    padding: 16px;
+    color: #4b5563;
+}
+
+/* ===== BADGES ===== */
+.badge-entregar {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+/* ===== BOTONES DE ACCIÓN ===== */
+.cotizaciones-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.btn-view {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    font-size: 14px;
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.btn-view:hover {
+    background-color: #bfdbfe;
+    transform: scale(1.05);
+}
+
+.btn-pdf {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    font-size: 14px;
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.btn-pdf:hover {
+    background-color: #fecaca;
+    transform: scale(1.05);
+}
+
+/* ===== MENSAJE VACÍO ===== */
+.no-cotizaciones {
+    text-align: center;
+    padding: 60px 20px !important;
+    color: #9ca3af;
+}
+
+.no-cotizaciones .material-symbols-rounded {
+    font-size: 48px;
+    margin-bottom: 12px;
+    display: block;
+    opacity: 0.5;
+}
+
+.no-cotizaciones p {
+    margin: 0;
+    font-size: 16px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .cotizaciones-container {
+        padding: 12px;
+    }
+
+    .cotizaciones-table thead th,
+    .cotizaciones-table tbody td {
+        padding: 12px;
+        font-size: 13px;
+    }
+
+    .cotizaciones-actions {
+        gap: 6px;
+    }
+
+    .btn-view,
+    .btn-pdf {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+}
+
+/* ===== MODO OSCURO ===== */
+[data-theme="dark"] .cotizaciones-wrapper {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .cotizaciones-table thead {
+    background: rgba(255, 255, 255, 0.05);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .cotizaciones-table thead th {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .cotizaciones-table tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .cotizaciones-table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.95);
+}
+
+[data-theme="dark"] .cotizaciones-table tbody tr:hover td {
+    color: #000000;
+}
+
+[data-theme="dark"] .cotizaciones-table tbody td {
+    color: #e5e7eb;
+}

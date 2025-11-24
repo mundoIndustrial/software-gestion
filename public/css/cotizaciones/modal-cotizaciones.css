@@ -1,0 +1,343 @@
+/* Modal Styles */
+.cotizacion-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.cotizacion-modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 1000px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    animation: slideUp 0.3s ease-out;
+}
+
+.cotizacion-modal-header {
+    padding: 20px 24px;
+    border-bottom: 2px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+}
+
+.cotizacion-modal-header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.cotizacion-modal-logo {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+}
+
+.cotizacion-modal-header-left h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.cotizacion-modal-header-left p {
+    margin: 4px 0 0 0;
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.cotizacion-modal-close {
+    background: none;
+    border: none;
+    font-size: 28px;
+    color: #9ca3af;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.cotizacion-modal-close:hover {
+    background-color: #e5e7eb;
+    color: #374151;
+}
+
+.cotizacion-modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+}
+
+.cotizacion-modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    background: #f9fafb;
+}
+
+.btn-close {
+    background-color: #ff6b35;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-close:hover {
+    background-color: #e55a24;
+    transform: translateY(-2px);
+}
+
+/* Sections */
+.info-section {
+    margin-bottom: 24px;
+    padding: 16px;
+    background: #f9fafb;
+    border-radius: 8px;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.info-item label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.info-item p {
+    margin: 0;
+    font-size: 14px;
+    color: #1f2937;
+    font-weight: 500;
+}
+
+.section-title {
+    margin: 24px 0 16px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1f2937;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Products */
+.products-section {
+    margin-bottom: 24px;
+}
+
+.products-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 16px;
+}
+
+.product-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+    transition: all 0.2s;
+}
+
+.product-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.product-image {
+    width: 100%;
+    height: 180px;
+    background: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+    font-size: 12px;
+    overflow: hidden;
+}
+
+.product-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.product-info {
+    padding: 12px;
+}
+
+.product-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 8px;
+}
+
+.product-desc {
+    font-size: 12px;
+    color: #6b7280;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.product-tallas {
+    font-size: 12px;
+    color: #e74c3c;
+    font-weight: 600;
+}
+
+/* Especificaciones */
+.specs-section {
+    margin-bottom: 24px;
+}
+
+.specs-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.specs-table thead {
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+}
+
+.specs-table thead th {
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    font-size: 13px;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.specs-table tbody td {
+    padding: 12px;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 13px;
+    color: #4b5563;
+}
+
+.specs-table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+/* Técnicas */
+.tecnicas-section {
+    margin-bottom: 24px;
+}
+
+.tecnicas-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tecnica-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    background: #dbeafe;
+    color: #1e40af;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Observaciones */
+.obs-tecnicas-section,
+.obs-generales-section {
+    margin-bottom: 24px;
+}
+
+.obs-box {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 13px;
+    color: #4b5563;
+    line-height: 1.6;
+}
+
+.obs-list {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.obs-list li {
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: #4b5563;
+    line-height: 1.6;
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .cotizacion-modal-content {
+        width: 95%;
+        max-height: 95vh;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .products-container {
+        grid-template-columns: 1fr;
+    }
+
+    .specs-table thead th,
+    .specs-table tbody td {
+        padding: 8px;
+        font-size: 12px;
+    }
+}

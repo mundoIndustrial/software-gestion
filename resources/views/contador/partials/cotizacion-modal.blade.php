@@ -97,10 +97,20 @@
                             }
                         @endphp
                         
-                        <!-- Mostrar Tallas -->
+                        <!-- Mostrar Tallas con edición -->
                         @if(count($tallas) > 0)
-                            <div style="font-weight: bold; color: #e74c3c; font-size: 0.95rem;">
-                                TALLAS: ({{ implode('-', array_map('strtoupper', $tallas)) }})
+                            @php
+                                // Mostrar notas guardadas si existen, sino mostrar tallas base
+                                $tallasDisplay = $prenda->notas_tallas ?? ('TALLAS: (' . implode('-', array_map('strtoupper', $tallas)) . ')');
+                            @endphp
+                            <div style="font-weight: bold; color: #e74c3c; font-size: 0.95rem; cursor: pointer; padding: 0.5rem; border-radius: 4px; transition: all 0.2s;"
+                                 ondblclick="editarTallas(this, {{ $prenda->id }}, '{{ implode('-', array_map('strtoupper', $tallas)) }}')"
+                                 onmouseover="this.style.backgroundColor='rgba(231, 76, 60, 0.1)'"
+                                 onmouseout="this.style.backgroundColor='transparent'"
+                                 data-prenda-id="{{ $prenda->id }}"
+                                 data-tallas-base="{{ implode('-', array_map('strtoupper', $tallas)) }}"
+                                 id="tallas-display-{{ $prenda->id }}">
+                                {{ $tallasDisplay }}
                             </div>
                         @else
                             <div style="color: #999; font-size: 0.85rem;">Sin tallas</div>

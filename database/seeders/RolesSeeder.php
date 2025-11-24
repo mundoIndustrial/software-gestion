@@ -35,5 +35,17 @@ class RolesSeeder extends Seeder
             'description' => 'Supervisor de gestión de órdenes (solo lectura)',
             'requires_credentials' => true,
         ]);
+
+        \App\Models\Role::create([
+            'name' => 'supervisor-admin',
+            'description' => 'Supervisor Administrador - Gestión de cotizaciones y reportes',
+            'requires_credentials' => true,
+        ]);
+
+        \App\Models\Role::create([
+            'name' => 'admin',
+            'description' => 'Administrador del sistema',
+            'requires_credentials' => true,
+        ]);
     }
 }

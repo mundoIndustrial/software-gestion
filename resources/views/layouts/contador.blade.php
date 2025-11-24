@@ -112,6 +112,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 
     <!-- JavaScript del Contador -->
+    <script src="{{ asset('js/contador/editar-tallas.js') }}"></script>
     <script src="{{ asset('js/contador/cotizacion.js') }}"></script>
     <script src="{{ asset('js/contador/contador.js') }}"></script>
 

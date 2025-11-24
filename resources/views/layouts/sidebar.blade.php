@@ -117,6 +117,17 @@
         </a>
       </li>
 
+      @if(auth()->user()->role && auth()->user()->role->name === 'supervisor-admin')
+      <li class="menu-item">
+        <a href="{{ route('cotizaciones.index') }}"
+           class="menu-link {{ request()->routeIs('cotizaciones.*') ? 'active' : '' }}"
+           aria-label="Ver cotizaciones">
+          <span class="material-symbols-rounded" aria-hidden="true">receipt</span>
+          <span class="menu-label">Cotizaciones</span>
+        </a>
+      </li>
+      @endif
+
       <li class="menu-item">
         <button class="menu-link submenu-toggle"
                 aria-label="Ver vistas">
