@@ -232,7 +232,7 @@ class CotizacionesController extends Controller
                         'descripcion' => $producto['descripcion'] ?? null,
                         'tallas' => $tallas,
                         'fotos' => [], // Array vacío, se llenará después
-                        'imagen_tela' => null, // Se llenará después
+                        'telas' => [], // Array vacío, se llenará después
                         'estado' => 'Pendiente'
                     ]);
                     
@@ -397,7 +397,7 @@ class CotizacionesController extends Controller
                         'descripcion' => $prenda->descripcion,
                         'tallas' => $prenda->tallas ?? [],
                         'fotos' => $prenda->fotos ?? [],
-                        'imagen_tela' => $prenda->imagen_tela,
+                        'telas' => $prenda->telas ?? [],
                         // Variaciones
                         'variantes' => [
                             'color' => $variante && $variante->color ? $variante->color->nombre : null,
@@ -511,7 +511,7 @@ class CotizacionesController extends Controller
                         'descripcion' => $producto['descripcion'] ?? null,
                         'tallas' => $tallas,
                         'fotos' => [],
-                        'imagen_tela' => null,
+                        'telas' => [],
                         'estado' => 'Pendiente'
                     ]);
 
@@ -836,30 +836,92 @@ class CotizacionesController extends Controller
      */
     public function destroy($id)
     {
-        $cotizacion = Cotizacion::findOrFail($id);
-        
-        if ($cotizacion->user_id !== Auth::id()) {
-            abort(403);
-        }
+        try {
+            $cotizacion = Cotizacion::findOrFail($id);
+            
+            if ($cotizacion->user_id !== Auth::id()) {
+                abort(403);
+            }
 
-        // Solo permitir eliminar si es borrador
-        if (!$cotizacion->es_borrador) {
+            // Solo permitir eliminar si es borrador
+            if (!$cotizacion->es_borrador) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pueden eliminar cotizaciones enviadas. Solo se pueden eliminar borradores.'
+                ], 403);
+            }
+
+            \Log::info('Iniciando eliminación de cotización', ['cotizacion_id' => $id]);
+
+            // Usar transacción para asegurar que todo se elimina correctamente
+            DB::beginTransaction();
+
+            try {
+                // 1. Eliminar imágenes de almacenamiento (carpeta completa)
+                $imagenService = new ImagenCotizacionService();
+                $eliminadoImagenes = $imagenService->eliminarTodasLasImagenes($cotizacion->id);
+                
+                \Log::info('Imágenes eliminadas', [
+                    'cotizacion_id' => $id,
+                    'eliminado' => $eliminadoImagenes
+                ]);
+
+                // 2. Eliminar variantes de prendas (relación)
+                $prendasCotizaciones = $cotizacion->prendasCotizaciones;
+                foreach ($prendasCotizaciones as $prenda) {
+                    $prenda->variantes()->delete();
+                    \Log::info('Variantes de prenda eliminadas', ['prenda_id' => $prenda->id]);
+                }
+
+                // 3. Eliminar prendas de cotización
+                $cotizacion->prendasCotizaciones()->delete();
+                \Log::info('Prendas de cotización eliminadas', ['cotizacion_id' => $id]);
+
+                // 4. Eliminar logo/bordado/estampado
+                $cotizacion->logoCotizacion()->delete();
+                \Log::info('Logo cotización eliminado', ['cotizacion_id' => $id]);
+
+                // 5. Eliminar historial de cotización
+                $cotizacion->historial()->delete();
+                \Log::info('Historial de cotización eliminado', ['cotizacion_id' => $id]);
+
+                // 6. Eliminar la cotización
+                $cotizacion->delete();
+                \Log::info('Cotización eliminada', ['cotizacion_id' => $id]);
+
+                DB::commit();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Borrador eliminado completamente incluyendo todas las imágenes y datos asociados'
+                ]);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                \Log::error('Error al eliminar cotización', [
+                    'cotizacion_id' => $id,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al eliminar el borrador: ' . $e->getMessage()
+                ], 500);
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Error general en destroy', [
+                'cotizacion_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'No se pueden eliminar cotizaciones enviadas. Solo se pueden eliminar borradores.'
-            ], 403);
+                'message' => 'Error al eliminar el borrador'
+            ], 500);
         }
-
-        // Eliminar imágenes de almacenamiento
-        $imagenService = new ImagenCotizacionService();
-        $imagenService->eliminarTodasLasImagenes($cotizacion->id);
-
-        $cotizacion->delete();
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Borrador eliminado'
-        ]);
     }
 
     /**

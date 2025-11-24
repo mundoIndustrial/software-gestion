@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tipos_cotizacion', function (Blueprint $table) {
-            $table->id();
-            $table->string('codigo')->unique();
-            $table->string('nombre');
-            $table->longText('descripcion')->nullable();
-            $table->boolean('activo')->default(true);
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('tipos_cotizacion')) {
+            Schema::create('tipos_cotizacion', function (Blueprint $table) {
+                $table->id();
+                $table->string('codigo')->unique();
+                $table->string('nombre');
+                $table->longText('descripcion')->nullable();
+                $table->boolean('activo')->default(true);
+                $table->timestamps();
+            });
+        }
     }
 
     /**

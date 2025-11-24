@@ -16,13 +16,19 @@ class PDFCotizacionController extends Controller
         try {
             $cotizacion = Cotizacion::with(['prendasCotizaciones', 'usuario'])->findOrFail($cotizacionId);
             
+            // Verificar si se solicita recortar
+            $recortar = request()->query('recortar', false);
+            
             // Generar HTML del PDF
-            $html = $this->generarHTML($cotizacion);
+            $html = $this->generarHTML($cotizacion, $recortar);
             
             // Crear PDF con DomPDF
             // Tamaño personalizado: A4 con altura aumentada (297mm → 420mm)
+            // Si está recortado, usar altura menor
+            $altura = $recortar ? 600 : 1190; // 600pt ≈ 210mm (A4 + 2cm extra)
+            
             $pdf = Pdf::loadHTML($html)
-                ->setPaper([0, 0, 595, 1190], 'portrait')  // Ancho A4 (595pt) x Altura aumentada (1190pt ≈ 420mm)
+                ->setPaper([0, 0, 595, $altura], 'portrait')  // Ancho A4 (595pt) x Altura variable
                 ->setOption('margin-top', 8)
                 ->setOption('margin-bottom', 8)
                 ->setOption('margin-left', 8)
@@ -58,7 +64,7 @@ class PDFCotizacionController extends Controller
     /**
      * Genera el HTML del PDF
      */
-    private function generarHTML($cotizacion)
+    private function generarHTML($cotizacion, $recortar = false)
     {
         $html = '<!DOCTYPE html>
 <html>
@@ -103,6 +109,11 @@ class PDFCotizacionController extends Controller
         
         // Tabla de especificaciones
         $html .= $this->generarTablaEspecificacionesHTML($cotizacion);
+        
+        // Si está recortado, agregar espacio de 2cm
+        if ($recortar) {
+            $html .= '<div style="margin-top: 20px; height: 20px;"></div>';
+        }
         
         $html .= '</div>
 </body>
@@ -185,7 +196,7 @@ class PDFCotizacionController extends Controller
             
             // Imágenes
             $imagenes = $prenda->fotos ?? [];
-            $imagenTela = $prenda->imagen_tela ?? null;
+            $imagenesTela = $prenda->telas ?? [];
             
             $todasLasImagenes = [];
             if (is_array($imagenes) && count($imagenes) > 0) {
@@ -193,8 +204,10 @@ class PDFCotizacionController extends Controller
                     $todasLasImagenes[] = $img;
                 }
             }
-            if ($imagenTela) {
-                $todasLasImagenes[] = $imagenTela;
+            if (is_array($imagenesTela) && count($imagenesTela) > 0) {
+                foreach ($imagenesTela as $img) {
+                    $todasLasImagenes[] = $img;
+                }
             }
             
             // Tallas (arriba) - Mostrar notas si existen, sino mostrar tallas base

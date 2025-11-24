@@ -210,6 +210,10 @@
     <div style="position: absolute; top: 0; left: 0; right: 0; background: #1e5ba8; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; z-index: 10000;">
         <h2 style="margin: 0; font-size: 1.3rem;">📄 Visualizar Cotización PDF</h2>
         <div style="display: flex; gap: 1rem; align-items: center;">
+            <button onclick="recortarAlContenido()" style="padding: 0.75rem 1.5rem; background: #f59e0b; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='#d97706'" onmouseout="this.style.background='#f59e0b'" title="Recortar la altura al contenido">
+                <span class="material-symbols-rounded" style="font-size: 1.2rem;">crop</span>
+                Recortar
+            </button>
             <button onclick="descargarPDF()" style="padding: 0.75rem 1.5rem; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
                 <span class="material-symbols-rounded" style="font-size: 1.2rem;">download</span>
                 Descargar PDF
@@ -229,6 +233,7 @@
 <!-- Script para Modal PDF -->
 <script>
     let cotizacionIdActualPDF = null;
+    let pdfRecortado = false;
 
     function abrirModalPDF(cotizacionId) {
         cotizacionIdActualPDF = cotizacionId;
@@ -237,9 +242,10 @@
         
         // Mostrar modal
         modalPDF.style.display = 'block';
+        pdfRecortado = false;
         
-        // Cargar PDF en iframe
-        pdfViewer.src = `/contador/cotizacion/${cotizacionId}/pdf`;
+        // Cargar PDF en iframe con zoom 125%
+        pdfViewer.src = `/contador/cotizacion/${cotizacionId}/pdf#zoom=125`;
     }
 
     function cerrarModalPDF() {
@@ -249,12 +255,31 @@
         modalPDF.style.display = 'none';
         pdfViewer.src = '';
         cotizacionIdActualPDF = null;
+        pdfRecortado = false;
+    }
+
+    function recortarAlContenido() {
+        if (cotizacionIdActualPDF) {
+            const pdfViewer = document.getElementById('pdfViewer');
+            pdfRecortado = !pdfRecortado;
+            
+            if (pdfRecortado) {
+                // Cargar PDF recortado
+                pdfViewer.src = `/contador/cotizacion/${cotizacionIdActualPDF}/pdf?recortar=1#zoom=125`;
+            } else {
+                // Cargar PDF completo
+                pdfViewer.src = `/contador/cotizacion/${cotizacionIdActualPDF}/pdf#zoom=125`;
+            }
+        }
     }
 
     function descargarPDF() {
         if (cotizacionIdActualPDF) {
             const link = document.createElement('a');
-            link.href = `/contador/cotizacion/${cotizacionIdActualPDF}/pdf?descargar=1`;
+            const url = pdfRecortado 
+                ? `/contador/cotizacion/${cotizacionIdActualPDF}/pdf?descargar=1&recortar=1`
+                : `/contador/cotizacion/${cotizacionIdActualPDF}/pdf?descargar=1`;
+            link.href = url;
             link.download = `Cotizacion_${cotizacionIdActualPDF}_${new Date().toISOString().split('T')[0]}.pdf`;
             document.body.appendChild(link);
             link.click();

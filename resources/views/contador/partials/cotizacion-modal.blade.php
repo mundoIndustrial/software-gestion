@@ -39,14 +39,18 @@
                     $imagenesPrenda = [];
                 }
                 
-                $imagenTela = $prenda->imagen_tela ?? null;
+                // Obtener imágenes de tela desde el JSON array
+                $imagenesTela = $prenda->telas ?? [];
+                if (!is_array($imagenesTela)) {
+                    $imagenesTela = [];
+                }
                 
                 $totalImagenes = count($imagenesPrenda);
                 $imagenesVisibles = array_slice($imagenesPrenda, 0, 2);
                 $tieneVerMas = $totalImagenes > 2;
             @endphp
             
-            @if($totalImagenes > 0 || $imagenTela)
+            @if($totalImagenes > 0 || count($imagenesTela) > 0)
             <div style="margin-bottom: 1.5rem;">
                 <div style="font-size: 0.85rem; font-weight: 600; color: #333; margin-bottom: 0.75rem;">Imágenes:</div>
                 
@@ -63,8 +67,8 @@
                     </div>
                     @endforeach
                     
-                    <!-- Imagen de tela si existe -->
-                    @if($imagenTela)
+                    <!-- Imágenes de tela si existen -->
+                    @foreach($imagenesTela as $imagenTela)
                     <div style="position: relative; cursor: pointer;" ondblclick="abrirImagenFullscreen('{{ $imagenTela }}')">
                         <img src="{{ $imagenTela }}" alt="Tela" 
                              style="width: 150px; height: 150px; object-fit: cover; border: 2px solid #8B4513; border-radius: 4px; transition: all 0.2s;"
@@ -72,7 +76,7 @@
                              onmouseover="this.style.opacity='0.8'; this.style.transform='scale(1.02)'"
                              onmouseout="this.style.opacity='1'; this.style.transform='scale(1)'">
                     </div>
-                    @endif
+                    @endforeach
                     
                     <!-- Botón VER MAS si hay más de 2 imágenes de prenda -->
                     @if($tieneVerMas)
