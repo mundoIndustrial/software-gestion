@@ -40,9 +40,20 @@ function reconocerTipoPrenda(nombrePrenda) {
     for (let tipo of tiposPrendaCache) {
         if (!tipo.palabras_clave) continue;
         
-        const palabras = Array.isArray(tipo.palabras_clave) 
-            ? tipo.palabras_clave 
-            : JSON.parse(tipo.palabras_clave);
+        let palabras = [];
+        
+        // Manejar diferentes formatos de palabras_clave
+        if (Array.isArray(tipo.palabras_clave)) {
+            palabras = tipo.palabras_clave;
+        } else if (typeof tipo.palabras_clave === 'string') {
+            // Intentar parsear como JSON primero
+            try {
+                palabras = JSON.parse(tipo.palabras_clave);
+            } catch (e) {
+                // Si falla, separar por coma
+                palabras = tipo.palabras_clave.split(',').map(p => p.trim());
+            }
+        }
         
         for (let palabra of palabras) {
             if (nombreUpper.includes(palabra.toUpperCase())) {

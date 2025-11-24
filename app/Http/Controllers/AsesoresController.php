@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\TablaOriginal;
 use App\Models\ProductoPedido;
+use App\Models\PedidoProduccion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -118,9 +119,17 @@ class AsesoresController extends Controller
      */
     public function index(Request $request)
     {
-        $asesoraNombre = Auth::user()->name;
-        
-        $query = TablaOriginal::delAsesor($asesoraNombre)->with('productos');
+        // DEBUG: Ver usuario autenticado
+        $userId = Auth::id();
+        $userName = Auth::user()->name ?? 'Sin nombre';
+        \Log::info('AsesoresController@index - Usuario ID: ' . $userId . ', Nombre: ' . $userName);
+
+        // Usar pedidos_produccion en lugar de tabla_original
+        // Filtrar por asesora (nombre del usuario autenticado)
+        $query = PedidoProduccion::where('asesora', $userName)
+            ->with(['prendas' => function ($q) {
+                $q->with('procesos');
+            }]);
 
         // Filtros
         if ($request->filled('estado')) {
@@ -130,15 +139,22 @@ class AsesoresController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('pedido', 'LIKE', "%{$search}%")
+                $q->where('numero_pedido', 'LIKE', "%{$search}%")
                   ->orWhere('cliente', 'LIKE', "%{$search}%");
             });
         }
 
-        $pedidos = $query->orderBy('fecha_de_creacion_de_orden', 'desc')->paginate(20);
+        $pedidos = $query->orderBy('created_at', 'desc')->paginate(20);
+
+        // DEBUG LOG
+        \Log::info('Pedidos encontrados: ' . $pedidos->count());
+        \Log::info('Total de pedidos: ' . $pedidos->total());
+        foreach ($pedidos as $pedido) {
+            \Log::info('Pedido: #' . $pedido->numero_pedido . ' - Cliente: ' . $pedido->cliente . ' - Asesora: ' . $pedido->asesora . ' - Prendas: ' . $pedido->prendas->count());
+        }
 
         // Obtener valores únicos para filtros
-        $estados = TablaOriginal::select('estado')
+        $estados = PedidoProduccion::select('estado')
             ->whereNotNull('estado')
             ->distinct()
             ->pluck('estado');
@@ -287,7 +303,8 @@ class AsesoresController extends Controller
             ->where('asesora', $asesoraNombre)
             ->firstOrFail();
 
-        return view('asesores.pedidos.show', compact('pedidoData'));
+        // Usar plantilla-erp para mostrar en formato de recibo
+        return view('asesores.pedidos.plantilla-erp-antigua', compact('pedidoData'));
     }
 
     /**

@@ -39,8 +39,8 @@ async function guardarCotizacion() {
     
     console.log('🔵 guardarCotizacion() llamado');
     console.log('📸 Imágenes en memoria:', {
-        prenda: window.imagenesEnMemoria.prenda.length,
-        tela: window.imagenesEnMemoria.tela.length,
+        prendaConIndice: window.imagenesEnMemoria.prendaConIndice ? window.imagenesEnMemoria.prendaConIndice.length : 0,
+        telaConIndice: window.imagenesEnMemoria.telaConIndice ? window.imagenesEnMemoria.telaConIndice.length : 0,
         general: window.imagenesEnMemoria.general.length
     });
     
@@ -84,8 +84,8 @@ async function guardarCotizacion() {
         if (data.success && data.cotizacion_id) {
             console.log('✅ Cotización creada con ID:', data.cotizacion_id);
             
-            // Contar imágenes: prenda, telaConIndice (no tela), y general
-            const cantPrenda = window.imagenesEnMemoria.prenda ? window.imagenesEnMemoria.prenda.length : 0;
+            // Contar imágenes: prendaConIndice, telaConIndice, y general
+            const cantPrenda = window.imagenesEnMemoria.prendaConIndice ? window.imagenesEnMemoria.prendaConIndice.length : 0;
             const cantTela = window.imagenesEnMemoria.telaConIndice ? window.imagenesEnMemoria.telaConIndice.length : 0;
             const cantGeneral = window.imagenesEnMemoria.general ? window.imagenesEnMemoria.general.length : 0;
             const totalImagenes = cantPrenda + cantTela + cantGeneral;
@@ -96,12 +96,10 @@ async function guardarCotizacion() {
                 console.log('📸 Subiendo', totalImagenes, 'imágenes...');
                 
                 if (cantPrenda > 0) {
-                    await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.prenda, 'prenda');
+                    await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.prendaConIndice, 'prenda');
                 }
                 if (cantTela > 0) {
-                    // Extraer solo los archivos de telaConIndice
-                    const archivosTelaConIndice = window.imagenesEnMemoria.telaConIndice.map(t => t.file);
-                    await subirImagenesAlServidor(data.cotizacion_id, archivosTelaConIndice, 'tela');
+                    await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.telaConIndice, 'tela');
                 }
                 if (cantGeneral > 0) {
                     await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.general, 'general');
@@ -147,15 +145,24 @@ async function subirImagenesAlServidor(cotizacionId, archivos, tipo) {
     
     const formData = new FormData();
     
-    // Si es tela y tenemos información de índice, usar eso
-    if (tipo === 'tela' && window.imagenesEnMemoria.telaConIndice && window.imagenesEnMemoria.telaConIndice.length > 0) {
-        window.imagenesEnMemoria.telaConIndice.forEach((item, index) => {
+    // Si es prenda y tenemos información de índice, usar eso
+    if (tipo === 'prenda' && Array.isArray(archivos) && archivos.length > 0 && archivos[0].prendaIndex !== undefined) {
+        archivos.forEach((item, index) => {
             formData.append('imagenes[]', item.file);
             formData.append(`prendaIndex[${index}]`, item.prendaIndex);
         });
-        console.log('📤 Enviando telas con índices de prenda:', window.imagenesEnMemoria.telaConIndice.map(t => t.prendaIndex));
-    } else {
-        // Para otros tipos, enviar normalmente
+        console.log('📤 Enviando prendas con índices:', archivos.map(p => p.prendaIndex));
+    } 
+    // Si es tela y tenemos información de índice, usar eso
+    else if (tipo === 'tela' && Array.isArray(archivos) && archivos.length > 0 && archivos[0].prendaIndex !== undefined) {
+        archivos.forEach((item, index) => {
+            formData.append('imagenes[]', item.file);
+            formData.append(`prendaIndex[${index}]`, item.prendaIndex);
+        });
+        console.log('📤 Enviando telas con índices de prenda:', archivos.map(t => t.prendaIndex));
+    } 
+    // Para otros tipos, enviar normalmente
+    else {
         archivos.forEach((file) => {
             formData.append('imagenes[]', file);
         });
@@ -292,8 +299,8 @@ async function procederEnviarCotizacion(datos) {
         if (data.success && data.cotizacion_id) {
             console.log('✅ Cotización creada con ID:', data.cotizacion_id);
             
-            // Contar imágenes: prenda, telaConIndice (no tela), y general
-            const cantPrenda = window.imagenesEnMemoria.prenda ? window.imagenesEnMemoria.prenda.length : 0;
+            // Contar imágenes: prendaConIndice, telaConIndice, y general
+            const cantPrenda = window.imagenesEnMemoria.prendaConIndice ? window.imagenesEnMemoria.prendaConIndice.length : 0;
             const cantTela = window.imagenesEnMemoria.telaConIndice ? window.imagenesEnMemoria.telaConIndice.length : 0;
             const cantGeneral = window.imagenesEnMemoria.general ? window.imagenesEnMemoria.general.length : 0;
             const totalImagenes = cantPrenda + cantTela + cantGeneral;
@@ -302,12 +309,10 @@ async function procederEnviarCotizacion(datos) {
             
             if (totalImagenes > 0) {
                 if (cantPrenda > 0) {
-                    await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.prenda, 'prenda');
+                    await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.prendaConIndice, 'prenda');
                 }
                 if (cantTela > 0) {
-                    // Extraer solo los archivos de telaConIndice
-                    const archivosTelaConIndice = window.imagenesEnMemoria.telaConIndice.map(t => t.file);
-                    await subirImagenesAlServidor(data.cotizacion_id, archivosTelaConIndice, 'tela');
+                    await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.telaConIndice, 'tela');
                 }
                 if (cantGeneral > 0) {
                     await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.general, 'general');

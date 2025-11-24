@@ -216,10 +216,17 @@ class CotizacionesController extends Controller
                         'tipo_jean_pantalon' => $tipoJeanPantalon
                     ]);
                     
+                    // Obtener género de las variantes
+                    $genero = null;
+                    if (is_array($producto['variantes'] ?? null) && isset($producto['variantes']['genero'])) {
+                        $genero = $producto['variantes']['genero'];
+                    }
+                    
                     // Guardar prenda SIN fotos ni tela (se subirán después)
                     $prenda = \App\Models\PrendaCotizacionFriendly::create([
                         'cotizacion_id' => $cotizacion->id,
                         'nombre_producto' => $nombrePrenda,
+                        'genero' => $genero,
                         'es_jean_pantalon' => $esJeanPantalon,
                         'tipo_jean_pantalon' => $tipoJeanPantalon,
                         'descripcion' => $producto['descripcion'] ?? null,
@@ -489,9 +496,16 @@ class CotizacionesController extends Controller
                         $tipoJeanPantalon = $producto['variantes']['tipo'] ?? null;
                     }
                     
+                    // Obtener género de las variantes
+                    $genero = null;
+                    if (is_array($producto['variantes'] ?? null) && isset($producto['variantes']['genero'])) {
+                        $genero = $producto['variantes']['genero'];
+                    }
+                    
                     $prenda = \App\Models\PrendaCotizacionFriendly::create([
                         'cotizacion_id' => $cotizacion->id,
                         'nombre_producto' => $nombrePrenda,
+                        'genero' => $genero,
                         'es_jean_pantalon' => $esJeanPantalon,
                         'tipo_jean_pantalon' => $tipoJeanPantalon,
                         'descripcion' => $producto['descripcion'] ?? null,
@@ -596,59 +610,73 @@ class CotizacionesController extends Controller
 
             foreach ($archivos as $index => $archivo) {
                 try {
-                    // Generar nombre con extensión WebP
+                    // Obtener extensión original
+                    $extensionOriginal = strtolower($archivo->getClientOriginalExtension());
+                    
+                    // Generar nombre - mantener extensión original si WebP falla
                     $nombreRenombrado = "{$id}_{$tipo}_{$index}.webp";
+                    $nombreFallback = "{$id}_{$tipo}_{$index}.{$extensionOriginal}";
 
                     // Asegurar que la carpeta existe
                     if (!Storage::disk('public')->exists($carpeta)) {
-                        Storage::disk('public')->makeDirectory($carpeta);
+                        Storage::disk('public')->makeDirectory($carpeta, 0755, true);
                     }
 
                     $rutaTemporal = storage_path("app/public/{$carpeta}/{$nombreRenombrado}");
                     $rutaOriginal = $archivo->getRealPath();
+                    $archivoGuardado = false;
+                    $nombreFinal = $nombreRenombrado;
 
                     // Intentar usar cwebp si está disponible
-                    $usoCwebp = false;
                     if (shell_exec('where cwebp 2>nul') || shell_exec('which cwebp 2>/dev/null')) {
                         $comando = "cwebp -q 80 \"{$rutaOriginal}\" -o \"{$rutaTemporal}\"";
-                        shell_exec($comando . " 2>&1");
-                        if (file_exists($rutaTemporal)) {
-                            $usoCwebp = true;
+                        @shell_exec($comando . " 2>&1");
+                        if (file_exists($rutaTemporal) && filesize($rutaTemporal) > 0) {
+                            $archivoGuardado = true;
                         }
                     }
 
                     // Si cwebp no funcionó, intentar con GD
-                    if (!$usoCwebp && extension_loaded('gd')) {
-                        $contenidoOriginal = file_get_contents($rutaOriginal);
-                        $imagen = imagecreatefromstring($contenidoOriginal);
+                    if (!$archivoGuardado && extension_loaded('gd')) {
+                        try {
+                            $contenidoOriginal = file_get_contents($rutaOriginal);
+                            $imagen = @imagecreatefromstring($contenidoOriginal);
 
-                        if ($imagen !== false) {
-                            imagewebp($imagen, $rutaTemporal, 80);
-                            imagedestroy($imagen);
-                            $usoCwebp = true;
+                            if ($imagen !== false) {
+                                @imagewebp($imagen, $rutaTemporal, 80);
+                                @imagedestroy($imagen);
+                                if (file_exists($rutaTemporal) && filesize($rutaTemporal) > 0) {
+                                    $archivoGuardado = true;
+                                }
+                            }
+                        } catch (\Exception $e) {
+                            \Log::warning("Error al convertir con GD: " . $e->getMessage());
                         }
                     }
 
-                    // Si nada funcionó, guardar como está (comprimido por el servidor)
-                    if (!$usoCwebp) {
-                        $archivo->storeAs($carpeta, $nombreRenombrado, 'public');
+                    // Si nada funcionó, guardar en formato original
+                    if (!$archivoGuardado) {
+                        $rutaTemporal = storage_path("app/public/{$carpeta}/{$nombreFallback}");
+                        $archivo->storeAs($carpeta, $nombreFallback, 'public');
+                        $nombreFinal = $nombreFallback;
+                        $archivoGuardado = true;
                     }
 
-                    $rutaCompleta = '/storage/' . $carpeta . '/' . $nombreRenombrado;
+                    $rutaCompleta = '/storage/' . $carpeta . '/' . $nombreFinal;
                     $rutasGuardadas[] = $rutaCompleta;
 
                     $tamanoOriginal = $archivo->getSize();
-                    $tamanoFinal = filesize($rutaTemporal);
-                    $reduccion = round((1 - $tamanoFinal / $tamanoOriginal) * 100, 2);
+                    $tamanoFinal = file_exists($rutaTemporal) ? filesize($rutaTemporal) : 0;
+                    $reduccion = $tamanoFinal > 0 ? round((1 - $tamanoFinal / $tamanoOriginal) * 100, 2) : 0;
 
                     \Log::info("Imagen guardada", [
                         'nombre_original' => $archivo->getClientOriginalName(),
-                        'nombre_renombrado' => $nombreRenombrado,
+                        'nombre_renombrado' => $nombreFinal,
                         'ruta' => $rutaCompleta,
                         'tamano_original_kb' => round($tamanoOriginal / 1024, 2),
                         'tamano_final_kb' => round($tamanoFinal / 1024, 2),
                         'reduccion_porcentaje' => $reduccion . '%',
-                        'metodo' => $usoCwebp ? 'WebP' : 'Original'
+                        'metodo' => str_ends_with($nombreFinal, '.webp') ? 'WebP' : 'Original'
                     ]);
 
                 } catch (\Exception $e) {
@@ -666,42 +694,96 @@ class CotizacionesController extends Controller
                 $prendas = $cotizacion->prendasCotizaciones;
                 
                 if ($tipo === 'prenda') {
-                    // Para fotos de prenda, asignar secuencialmente
-                    $prendaIndex = 0;
-                    foreach ($prendas as $prenda) {
-                        if (isset($rutasGuardadas[$prendaIndex])) {
-                            $fotos = $prenda->fotos ?? [];
-                            if (!is_array($fotos)) {
-                                $fotos = [];
+                    // Para fotos de prenda, usar el índice enviado desde el frontend
+                    $prendaIndexes = $request->input('prendaIndex', []);
+                    
+                    \Log::info("Procesando fotos de prenda", [
+                        'rutasGuardadas' => $rutasGuardadas,
+                        'prendaIndexes' => $prendaIndexes,
+                        'total_prendas' => count($prendas)
+                    ]);
+                    
+                    // Agrupar fotos por índice de prenda
+                    $fotosPorPrenda = [];
+                    foreach ($rutasGuardadas as $index => $rutaFoto) {
+                        $prendaIndex = isset($prendaIndexes[$index]) ? intval($prendaIndexes[$index]) : $index;
+                        if (!isset($fotosPorPrenda[$prendaIndex])) {
+                            $fotosPorPrenda[$prendaIndex] = [];
+                        }
+                        $fotosPorPrenda[$prendaIndex][] = $rutaFoto;
+                        
+                        \Log::info("Foto agrupada", [
+                            'foto_index' => $index,
+                            'ruta' => $rutaFoto,
+                            'prenda_index' => $prendaIndex
+                        ]);
+                    }
+                    
+                    \Log::info("Fotos agrupadas por prenda", [
+                        'fotosPorPrenda' => $fotosPorPrenda
+                    ]);
+                    
+                    // Actualizar cada prenda con sus fotos
+                    foreach ($fotosPorPrenda as $prendaIndex => $fotos) {
+                        \Log::info("Actualizando prenda", [
+                            'prenda_index' => $prendaIndex,
+                            'existe_en_array' => isset($prendas[$prendaIndex]),
+                            'total_prendas_array' => count($prendas)
+                        ]);
+                        
+                        if (isset($prendas[$prendaIndex])) {
+                            $prenda = $prendas[$prendaIndex];
+                            $fotosActuales = $prenda->fotos ?? [];
+                            if (!is_array($fotosActuales)) {
+                                $fotosActuales = [];
                             }
-                            $fotos[] = $rutasGuardadas[$prendaIndex];
-                            $prenda->update(['fotos' => $fotos]);
-
-                            \Log::info("Prenda actualizada con foto", [
+                            
+                            \Log::info("Fotos actuales en prenda", [
                                 'prenda_id' => $prenda->id,
-                                'foto_ruta' => $rutasGuardadas[$prendaIndex]
+                                'fotos_actuales' => $fotosActuales,
+                                'fotos_nuevas' => $fotos
                             ]);
-                            $prendaIndex++;
+                            
+                            $fotosActuales = array_merge($fotosActuales, $fotos);
+                            $prenda->update(['fotos' => $fotosActuales]);
+
+                            \Log::info("Prenda actualizada con fotos", [
+                                'prenda_id' => $prenda->id,
+                                'cantidad_fotos' => count($fotos),
+                                'fotos_rutas' => $fotos,
+                                'fotos_totales' => count($fotosActuales)
+                            ]);
                         }
                     }
                 } elseif ($tipo === 'tela') {
                     // Para telas, usar el índice enviado desde el frontend
                     $prendaIndexes = $request->input('prendaIndex', []);
                     
+                    // Agrupar telas por índice de prenda
+                    $telasPorPrenda = [];
                     foreach ($rutasGuardadas as $index => $rutaTela) {
-                        // Obtener el índice de prenda para esta tela
                         $prendaIndex = isset($prendaIndexes[$index]) ? intval($prendaIndexes[$index]) : $index;
-                        
-                        // Obtener la prenda en ese índice
-                        $prendas_array = $prendas->toArray();
-                        if (isset($prendas_array[$prendaIndex])) {
+                        if (!isset($telasPorPrenda[$prendaIndex])) {
+                            $telasPorPrenda[$prendaIndex] = [];
+                        }
+                        $telasPorPrenda[$prendaIndex][] = $rutaTela;
+                    }
+                    
+                    // Actualizar cada prenda con sus telas
+                    foreach ($telasPorPrenda as $prendaIndex => $telas) {
+                        if (isset($prendas[$prendaIndex])) {
                             $prenda = $prendas[$prendaIndex];
-                            $prenda->update(['imagen_tela' => $rutaTela]);
+                            $telasActuales = $prenda->telas ?? [];
+                            if (!is_array($telasActuales)) {
+                                $telasActuales = [];
+                            }
+                            $telasActuales = array_merge($telasActuales, $telas);
+                            $prenda->update(['telas' => $telasActuales]);
 
-                            \Log::info("Prenda actualizada con tela (índice correcto)", [
+                            \Log::info("Prenda actualizada con telas", [
                                 'prenda_id' => $prenda->id,
-                                'prenda_index' => $prendaIndex,
-                                'tela_ruta' => $rutaTela
+                                'cantidad_telas' => count($telas),
+                                'telas_rutas' => $telas
                             ]);
                         }
                     }

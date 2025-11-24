@@ -391,7 +391,7 @@ function agregarCampoImagen(btn) {
     imagenDiv.innerHTML = `
         <div class="tela-preview" data-numero="${numeroImagen}" style="width: 80px; height: 80px; border: 2px dashed #0066cc; border-radius: 4px; display: flex; align-items: center; justify-content: center; background-color: #f9f9f9; cursor: pointer; position: relative; overflow: hidden;">
             <i class="fas fa-image" style="font-size: 2rem; color: #ccc;"></i>
-            <input type="file" name="productos_friendly[][tela_imagen_${numeroImagen}]" accept="image/*" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="previewTelaImagen(this)">
+            <input type="file" name="productos_friendly[][tela_imagen_${numeroImagen}]" accept="image/*" style="position: absolute; width: 100%; height: 100%; opacity: 0; cursor: pointer;" onchange="previewTelaImagen(this); agregarFotoTela(this);">
         </div>
         <small style="color: #666; font-size: 0.75rem; display: block; text-align: center; margin-top: 4px; numero-label">${numeroImagen}/3</small>
     `;

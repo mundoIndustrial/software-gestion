@@ -4,117 +4,404 @@
 @section('page-title', 'Mis Pedidos')
 
 @section('content')
-<div class="pedidos-list-container">
-    <!-- Barra de Acciones -->
-    <div class="list-header">
-        <div class="header-left">
-            <div class="search-box">
-                <i class="fas fa-search"></i>
-                <input type="text" id="searchInput" placeholder="Buscar por número o cliente..." value="{{ request('search') }}">
-            </div>
-            
-            <div class="filter-group">
-                <select id="filterEstado" class="filter-select">
-                    <option value="">Todos los Estados</option>
-                    @foreach($estados as $estado)
-                        <option value="{{ $estado }}" {{ request('estado') == $estado ? 'selected' : '' }}>
-                            {{ $estado }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
+    <!-- Agregar referencia a FontAwesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+        integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="{{ asset('css/orders styles/modern-table.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/orders styles/dropdown-styles.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/viewButtonDropdown.css') }}">
 
-        <div class="header-actions">
-            <a href="{{ route('asesores.pedidos-produccion.crear') }}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> Crear Pedido
-            </a>
-        </div>
-    </div>
+    <script>
+        console.log('📋 ASESORES PEDIDOS - Cargando CSS');
+        console.log('CSS modern-table.css:', document.querySelector('link[href*="modern-table.css"]') ? 'CARGADO' : 'NO CARGADO');
+        console.log('CSS dropdown-styles.css:', document.querySelector('link[href*="dropdown-styles.css"]') ? 'CARGADO' : 'NO CARGADO');
+        console.log('CSS viewButtonDropdown.css:', document.querySelector('link[href*="viewButtonDropdown.css"]') ? 'CARGADO' : 'NO CARGADO');
+    </script>
 
-    <!-- Tabla de Pedidos -->
+    <style>
+        /* Override AGRESIVO de estilos de asesores.layout para que use modern-table */
+        
+        /* TABLA */
+        .modern-table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            background: white !important;
+            border: 1px solid #ddd !important;
+            font-size: 13px !important;
+        }
+        
+        .modern-table thead {
+            background: #2a2a2a !important;
+            color: white !important;
+        }
+        
+        .modern-table thead th {
+            padding: 10px 8px !important;
+            text-align: left !important;
+            font-weight: 600 !important;
+            border: 1px solid #ddd !important;
+            background: #2a2a2a !important;
+            color: white !important;
+            white-space: nowrap !important;
+            font-size: 12px !important;
+        }
+        
+        .modern-table tbody td {
+            padding: 8px 6px !important;
+            border: 1px solid #ddd !important;
+            background: white !important;
+            font-size: 12px !important;
+        }
+        
+        .modern-table tbody tr:hover {
+            background: #f9f9f9 !important;
+        }
+        
+        /* ANCHO DE COLUMNAS */
+        .acciones-column {
+            width: 120px !important;
+            min-width: 120px !important;
+        }
+        
+        .modern-table th:nth-child(2),
+        .modern-table td:nth-child(2) {
+            width: 80px !important;
+            min-width: 80px !important;
+        }
+        
+        .modern-table th:nth-child(3),
+        .modern-table td:nth-child(3) {
+            width: 90px !important;
+            min-width: 90px !important;
+        }
+        
+        .modern-table th:nth-child(4),
+        .modern-table td:nth-child(4) {
+            width: 100px !important;
+            min-width: 100px !important;
+        }
+        
+        .modern-table th:nth-child(5),
+        .modern-table td:nth-child(5) {
+            width: 70px !important;
+            min-width: 70px !important;
+        }
+        
+        /* CONTAINER */
+        .table-container {
+            background: #f5f5f5 !important;
+            padding: 20px !important;
+            border-radius: 8px !important;
+        }
+        
+        /* HEADER */
+        .table-header {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            margin-bottom: 20px !important;
+            background: white !important;
+            padding: 15px !important;
+            border-radius: 6px !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        }
+        
+        .table-title {
+            margin: 0 !important;
+            font-size: 1.5rem !important;
+            color: #333 !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            font-weight: 700 !important;
+        }
+        
+        /* SEARCH */
+        .search-container {
+            flex: 1 !important;
+            margin: 0 20px !important;
+        }
+        
+        .search-input-wrapper {
+            display: flex !important;
+            align-items: center !important;
+            background: #f9f9f9 !important;
+            border: 1px solid #ddd !important;
+            border-radius: 6px !important;
+            padding: 8px 12px !important;
+        }
+        
+        .search-icon {
+            color: #999 !important;
+            margin-right: 8px !important;
+        }
+        
+        .search-input {
+            border: none !important;
+            background: transparent !important;
+            flex: 1 !important;
+            outline: none !important;
+            font-size: 14px !important;
+            width: 100% !important;
+        }
+        
+        /* ACTIONS */
+        .table-actions {
+            display: flex !important;
+            gap: 10px !important;
+        }
+        
+        .btn {
+            padding: 10px 20px !important;
+            border-radius: 6px !important;
+            text-decoration: none !important;
+            font-weight: 600 !important;
+            cursor: pointer !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+        }
+        
+        .btn-primary {
+            background: #0066cc !important;
+            color: white !important;
+            border: none !important;
+        }
+        
+        .btn-primary:hover {
+            background: #0052a3 !important;
+        }
+        
+        /* WRAPPER */
+        .modern-table-wrapper {
+            background: white !important;
+            border-radius: 6px !important;
+            overflow: hidden !important;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        }
+        
+        .table-scroll-container {
+            overflow-x: auto !important;
+        }
+        
+        /* PAGINATION */
+        .table-pagination {
+            background: #f5f5f5 !important;
+            padding: 15px !important;
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            border-top: 1px solid #ddd !important;
+        }
+        
+        .pagination-info {
+            color: #666 !important;
+            font-size: 14px !important;
+        }
+    </style>
+
     <div class="table-container">
-        @if($pedidos->count() > 0)
-            <table class="pedidos-table">
-                <thead>
-                    <tr>
-                        <th>Pedido</th>
-                        <th>Cliente</th>
-                        <th>Productos</th>
-                        <th>Cantidad</th>
-                        <th>Estado</th>
-                        <th>Fecha</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($pedidos as $pedido)
+        <div class="table-header" id="tableHeader">
+            <h1 class="table-title">
+                <i class="fas fa-list"></i>
+                Mis Pedidos de Producción
+            </h1>
+
+            <div class="search-container">
+                <div class="search-input-wrapper">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="buscarOrden" placeholder="Buscar por pedido o cliente..." class="search-input">
+                </div>
+            </div>
+
+            <!-- llamada de botones de la  tabla -->
+            <div class="table-actions"></div>
+        </div>
+
+    <div class="modern-table-wrapper">
+        <div class="table-scroll-container">
+            <table id="tablaOrdenes" class="modern-table">
+                <thead class="table-head">
+                    @if($pedidos->isNotEmpty())
                         <tr>
-                            <td>
-                                <strong>#{{ $pedido->pedido }}</strong>
-                            </td>
-                            <td>{{ $pedido->cliente }}</td>
-                            <td>
-                                <span class="badge badge-info">
-                                    {{ $pedido->productos->count() }} productos
-                                </span>
-                            </td>
-                            <td>{{ $pedido->cantidad ?? 0 }}</td>
-                            <td>
-                                <span class="badge badge-{{ 
-                                    $pedido->estado == 'Entregado' ? 'success' : 
-                                    ($pedido->estado == 'En Ejecución' ? 'warning' : 
-                                    ($pedido->estado == 'Anulada' ? 'danger' : 'secondary'))
-                                }}">
-                                    {{ $pedido->estado ?? 'Sin estado' }}
-                                </span>
-                            </td>
-                            <td>
-                                {{ $pedido->fecha_de_creacion_de_orden ? \Carbon\Carbon::parse($pedido->fecha_de_creacion_de_orden)->format('d/m/Y') : '-' }}
-                            </td>
-                            <td>
-                                <div class="action-buttons">
-                                    <a href="{{ route('asesores.pedidos.show', $pedido->pedido) }}" 
-                                       class="btn-action btn-view" 
-                                       title="Ver detalles">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="{{ route('asesores.pedidos.edit', $pedido->pedido) }}" 
-                                       class="btn-action btn-edit" 
-                                       title="Editar">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <button type="button" 
-                                            class="btn-action btn-delete" 
-                                            data-pedido="{{ $pedido->pedido }}"
-                                            data-cliente="{{ $pedido->cliente }}"
-                                            title="Eliminar">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                            <th class="table-header-cell acciones-column">
+                                <div class="header-content">
+                                    <span class="header-text">Acciones</span>
                                 </div>
+                            </th>
+                            <th class="table-header-cell">
+                                <div class="header-content">
+                                    <span class="header-text">Estado</span>
+                                </div>
+                            </th>
+                            <th class="table-header-cell">
+                                <div class="header-content">
+                                    <span class="header-text">Área</span>
+                                </div>
+                            </th>
+                            <th class="table-header-cell">
+                                <div class="header-content">
+                                    <span class="header-text">Día De Entrega</span>
+                                </div>
+                            </th>
+                            <th class="table-header-cell">
+                                <div class="header-content">
+                                    <span class="header-text">Pedido</span>
+                                </div>
+                            </th>
+                            <th class="table-header-cell">
+                                <div class="header-content">
+                                    <span class="header-text">Cliente</span>
+                                </div>
+                            </th>
+                            <th class="table-header-cell">
+                                <div class="header-content">
+                                    <span class="header-text">Descripción</span>
+                                </div>
+                            </th>
+                            <th class="table-header-cell">
+                                <div class="header-content">
+                                    <span class="header-text">Cantidad</span>
+                                </div>
+                            </th>
+                            <th class="table-header-cell">
+                                <div class="header-content">
+                                    <span class="header-text">Forma De Pago</span>
+                                </div>
+                            </th>
+                            <th class="table-header-cell">
+                                <div class="header-content">
+                                    <span class="header-text">Fecha Creación</span>
+                                </div>
+                            </th>
+                            <th class="table-header-cell">
+                                <div class="header-content">
+                                    <span class="header-text">Fecha Estimada</span>
+                                </div>
+                            </th>
+                        </tr>
+                    @endif
+                </thead>
+                <tbody id="tablaOrdenesBody" class="table-body">
+                    @if($pedidos->isEmpty())
+                        <tr class="table-row">
+                            <td colspan="11" class="no-results" style="text-align: center; padding: 20px; color: #6c757d;">
+                                No hay resultados que coincidan con los filtros aplicados.
                             </td>
                         </tr>
-                    @endforeach
+                    @else
+                        @foreach($pedidos as $pedido)
+                            <tr class="table-row" data-order-id="{{ $pedido->numero_pedido }}">
+                                <td class="table-cell acciones-column" style="min-width: 220px !important;">
+                                    <div class="cell-content" style="display: flex; gap: 8px; flex-wrap: nowrap; align-items: center; justify-content: flex-start; padding: 4px 0;">
+                                        <button class="action-btn detail-btn" onclick="verFactura({{ $pedido->id }})"
+                                            title="Ver Factura"
+                                            style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
+                                            <i class="fas fa-eye"></i> Ver
+                                        </button>
+                                        <button class="action-btn detail-btn" onclick="verSeguimiento({{ $pedido->id }})"
+                                            title="Ver Seguimiento"
+                                            style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
+                                            <i class="fas fa-tasks"></i> Seguimiento
+                                        </button>
+                                    </div>
+                                </td>
+                                <td class="table-cell">
+                                    <div class="cell-content">
+                                        <span style="background: #ff8c00; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600;">
+                                            {{ $pedido->estado ?? 'Sin estado' }}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="table-cell">
+                                    <div class="cell-content">
+                                        <span style="color: #fff;">{{ $pedido->getAreaActual() }}</span>
+                                    </div>
+                                </td>
+                                <td class="table-cell">
+                                    <div class="cell-content">
+                                        <span style="color: #fff;">{{ $pedido->dia_de_entrega ?? '-' }}</span>
+                                    </div>
+                                </td>
+                                <td class="table-cell">
+                                    <div class="cell-content">
+                                        <span style="color: #fff; font-weight: 600;">#{{ $pedido->numero_pedido }}</span>
+                                    </div>
+                                </td>
+                                <td class="table-cell">
+                                    <div class="cell-content">
+                                        <span style="color: #fff;">{{ $pedido->cliente }}</span>
+                                    </div>
+                                </td>
+                                <td class="table-cell">
+                                    <div class="cell-content">
+                                        <span style="color: #999;">
+                                            @if($pedido->prendas->first())
+                                                {{ $pedido->prendas->first()->nombre_prenda }}
+                                            @else
+                                                -
+                                            @endif
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="table-cell">
+                                    <div class="cell-content">
+                                        <span style="color: #fff;">
+                                            @if($pedido->prendas->first())
+                                                {{ $pedido->prendas->first()->cantidad }}
+                                            @else
+                                                -
+                                            @endif
+                                        </span>
+                                    </div>
+                                </td>
+                                <td class="table-cell">
+                                    <div class="cell-content">
+                                        <span style="color: #fff;">{{ $pedido->forma_de_pago ?? '-' }}</span>
+                                    </div>
+                                </td>
+                                <td class="table-cell">
+                                    <div class="cell-content">
+                                        <span style="color: #fff;">{{ $pedido->fecha_de_creacion_de_orden ? $pedido->fecha_de_creacion_de_orden->format('d/m/Y') : '-' }}</span>
+                                    </div>
+                                </td>
+                                <td class="table-cell">
+                                    <div class="cell-content">
+                                        <span style="color: #fff;">{{ $pedido->fecha_estimada_de_entrega ? $pedido->fecha_estimada_de_entrega->format('d/m/Y') : '-' }}</span>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    @endif
                 </tbody>
             </table>
+        </div>
 
-            <!-- Paginación -->
-            <div class="pagination-container">
-                {{ $pedidos->links() }}
+        <div class="table-pagination" id="tablePagination">
+            <div class="pagination-info">
+                <span id="paginationInfo">Mostrando {{ $pedidos->firstItem() ?? 0 }}-{{ $pedidos->lastItem() ?? 0 }} de {{ $pedidos->total() }} registros</span>
             </div>
-        @else
-            <div class="empty-state">
-                <i class="fas fa-inbox"></i>
-                <h3>No hay pedidos</h3>
-                <p>Aún no has creado ningún pedido. ¡Crea tu primer pedido ahora!</p>
-                <button onclick="abrirModalCrearPedido()" class="btn btn-primary">
-                    <i class="fas fa-plus"></i>
-                    Crear Primer Pedido
-                </button>
+            <div class="pagination-controls" id="paginationControls">
+                @if($pedidos->hasPages())
+                    {{ $pedidos->links() }}
+                @endif
             </div>
-        @endif
+        </div>
     </div>
 </div>
+
+<script>
+function verFactura(pedidoId) {
+    alert('Ver Factura - Pedido ID: ' + pedidoId);
+    // Aquí irá el código para abrir el modal de factura
+}
+
+function verSeguimiento(pedidoId) {
+    alert('Ver Seguimiento - Pedido ID: ' + pedidoId);
+    // Aquí irá el código para abrir el modal de seguimiento
+}
+</script>
 
 <!-- MODAL CREAR PEDIDO - SISTEMA DE TABS/PESTAÑAS -->
 <div id="modalCrearPedido" class="modal-overlay" style="display: none;">
@@ -328,9 +615,191 @@
                     <input type="number" name="productos_modal[][precio_unitario]" class="form-control" placeholder="0.00" step="0.01" min="0">
                 </div>
             </div>
-        </div>
+
+            <!-- TAB 2: PRODUCTOS -->
+            <div id="tab-productos" class="tab-content">
+                <div class="tab-header">
+                    <button type="button" onclick="agregarProductoModal()" class="btn-add-product">
+                        <i class="fas fa-plus"></i>
+                        Agregar Producto
+                    </button>
+                </div>
+                <div class="tab-body">
+                    <div id="productosModalContainer" class="productos-modal-list">
+                        <!-- Productos se agregan aquí -->
+                    </div>
+                </div>
+
+                <div class="tab-actions">
+                    <button type="button" onclick="mostrarTabModal('info-general')" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i>
+                        Anterior
+                    </button>
+                    <button type="button" onclick="mostrarTabModal('resumen')" class="btn btn-primary">
+                        <i class="fas fa-arrow-right"></i>
+                        Siguiente
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB 3: RESUMEN -->
+            <div id="tab-resumen" class="tab-content">
+                <div class="tab-body">
+                    <div class="resumen-card">
+                        <h4>Resumen del Pedido</h4>
+                        <div class="resumen-item">
+                            <span>Total de Productos:</span>
+                            <strong id="resumenTotalProductos">0</strong>
+                        </div>
+                        <div class="resumen-item">
+                            <span>Cantidad Total:</span>
+                            <strong id="resumenCantidadTotal">0</strong>
+                        </div>
+                    </div>
+
+                    <div class="resumen-info">
+                        <i class="fas fa-check-circle"></i>
+                        <p>Revisa que toda la información esté correcta antes de crear el pedido.</p>
+                    </div>
+
+                    <div class="resumen-detalles">
+                        <div class="detalle-item">
+                            <span>Cliente:</span>
+                            <strong id="resumenCliente">-</strong>
+                        </div>
+                        <div class="detalle-item">
+                            <span>Forma de Pago:</span>
+                            <strong id="resumenFormaPago">-</strong>
+                        </div>
+                        <div class="detalle-item">
+                            <span>Estado Inicial:</span>
+                            <strong id="resumenEstado">No iniciado</strong>
+                            <span style="font-size: 0.85rem; color: #666;">(asignado automáticamente)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-actions">
+                    <button type="button" onclick="mostrarTabModal('productos')" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i>
+                        Anterior
+                    </button>
+                    <button type="button" onclick="guardarPedidoModal()" class="btn btn-primary">
+                        <i class="fas fa-check"></i>
+                        Crear Pedido
+                    </button>
+                </div>
+            </div>
+        </form>
     </div>
-</template>
+
+    <!-- Template para producto en modal -->
+    <template id="productoModalTemplate">
+        <div class="producto-modal-item">
+            <div class="producto-modal-header">
+                <h4 class="prenda-numero">Prenda <span class="numero-prenda">1</span></h4>
+                <button type="button" onclick="eliminarProductoModal(this)" class="btn-remove">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            <div class="producto-modal-body">
+                <div class="form-row">
+                    <div class="form-col">
+                        <label>Nombre de Prenda *</label>
+                        <input type="text" name="productos_modal[][nombre_producto]" class="form-control" placeholder="Ej: Polo, Camiseta..." required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <label>Descripción</label>
+                        <input type="text" name="productos_modal[][descripcion]" class="form-control" placeholder="Detalles adicionales">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-col">
+                        <label>Talla *</label>
+                        <input type="text" name="productos_modal[][talla]" class="form-control" placeholder="Ej: S, M, L, XL" required>
+                    </div>
+                    <div class="form-col">
+                        <label>Cantidad *</label>
+                        <input type="number" name="productos_modal[][cantidad]" class="form-control producto-modal-cantidad" placeholder="1" min="1" value="1" onchange="actualizarResumenModal()" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-col">
+                        <label>Color</label>
+                        <input type="text" name="productos_modal[][color]" class="form-control" placeholder="Ej: Blanco, Negro">
+                    </div>
+                    <div class="form-col">
+                        <label>Tela</label>
+                        <input type="text" name="productos_modal[][tella]" class="form-control" placeholder="Ej: Algodón 100%">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-col">
+                        <label>Tipo de Manga</label>
+                        <select name="productos_modal[][tipo_manga]" class="form-control">
+                            <option value="">Seleccionar...</option>
+                            <option value="Manga Corta">Manga Corta</option>
+                            <option value="Manga Larga">Manga Larga</option>
+                            <option value="Sin Manga">Sin Manga</option>
+                        </select>
+                    </div>
+                    <div class="form-col">
+                        <label>Género</label>
+                        <select name="productos_modal[][genero]" class="form-control">
+                            <option value="">Seleccionar...</option>
+                            <option value="Hombre">Hombre</option>
+                            <option value="Mujer">Mujer</option>
+                            <option value="Niño">Niño</option>
+                            <option value="Unisex">Unisex</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-col">
+                        <label>Referencia de Hilo</label>
+                        <input type="text" name="productos_modal[][ref_hilo]" class="form-control" placeholder="Código de hilo">
+                    </div>
+                    <div class="form-col">
+                        <label>Precio Unitario</label>
+                        <input type="number" name="productos_modal[][precio_unitario]" class="form-control" placeholder="0.00" step="0.01" min="0">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('TABLA CARGADA');
+            const tabla = document.querySelector('.modern-table');
+            const container = document.querySelector('.table-container');
+            const header = document.querySelector('.table-header');
+            
+            console.log('Tabla .modern-table existe:', tabla ? 'SÍ' : 'NO');
+            console.log('Container .table-container existe:', container ? 'SÍ' : 'NO');
+            console.log('Header .table-header existe:', header ? 'SÍ' : 'NO');
+            
+            if (tabla) {
+                console.log('Tabla clases:', tabla.className);
+                console.log('Tabla estilos computados:', window.getComputedStyle(tabla).display);
+            }
+            
+            if (container) {
+                console.log('Container estilos:', window.getComputedStyle(container).background);
+            }
+            
+            if (header) {
+                console.log('Header estilos:', window.getComputedStyle(header).display);
+            }
+        });
+    </script>
 
 @endsection
 
@@ -1448,4 +1917,3 @@ function crearPedidoFromBorrador(borradorId) {
         });
 }
 </script>
-@endpush

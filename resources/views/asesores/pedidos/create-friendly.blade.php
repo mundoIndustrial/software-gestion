@@ -425,17 +425,15 @@
                                         <input type="text" name="productos_friendly[][variantes][referencia]" class="referencia-input" placeholder="Ej: REF-NAP-001" style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px; font-size: 0.9rem;">
                                     </td>
                                     <td style="padding: 12px; text-align: center;">
-                                        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                                            <div class="tela-imagenes-container" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center;">
-                                                <!-- Las imágenes se agregan aquí dinámicamente -->
+                                        <label style="display: block; min-height: 60px; padding: 0.5rem; border: 2px dashed #0066cc; border-radius: 6px; cursor: pointer; text-align: center; background: #f0f7ff;" ondrop="manejarDrop(event)" ondragover="event.preventDefault()" ondragleave="this.classList.remove('drag-over')">
+                                            <input type="file" name="productos_friendly[][telas][]" class="input-file-tela" accept="image/*" multiple onchange="agregarFotoTela(this)" style="display: none;">
+                                            <div class="drop-zone-content" style="font-size: 0.7rem;">
+                                                <i class="fas fa-cloud-upload-alt" style="font-size: 0.9rem; color: #0066cc;"></i>
+                                                <p style="margin: 0.25rem 0; color: #0066cc; font-weight: 500;">ARRASTRA O CLIC</p>
+                                                <small style="color: #666;">(Máx. 3)</small>
                                             </div>
-                                            <div style="display: flex; gap: 4px; align-items: center;">
-                                                <button type="button" class="btn-agregar-imagen" style="padding: 6px 12px; background: #0066cc; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem;" onclick="agregarCampoImagen(this)">
-                                                    <i class="fas fa-plus"></i> Agregar Imagen
-                                                </button>
-                                                <small style="color: #666; font-size: 0.75rem;">(Máx. 3)</small>
-                                            </div>
-                                        </div>
+                                        </label>
+                                        <div class="foto-tela-preview" style="display: grid; grid-template-columns: repeat(3, 50px); gap: 0.4rem; margin-top: 0.5rem; justify-content: center;"></div>
                                     </td>
                                 </tr>
                             </tbody>
@@ -548,7 +546,7 @@
                                 <option value="caballero">CABALLERO</option>
                             </select>
                             
-                            <select class="talla-modo-select" onchange="actualizarModoTallas(this)" style="padding: 0.6rem 0.8rem; border: 2px solid #0066cc; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; color: #0066cc; font-weight: 600; max-width: 200px; display: none;">
+                            <select class="talla-modo-select" style="padding: 0.6rem 0.8rem; border: 2px solid #0066cc; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; color: #0066cc; font-weight: 600; max-width: 200px; display: none;">
                                 <option value="">Selecciona modo</option>
                                 <option value="manual">Manual</option>
                                 <option value="rango">Rango (Desde-Hasta)</option>
@@ -809,6 +807,8 @@ const tallasDama = ['6', '8', '10', '12', '14', '16', '18', '20', '22', '24', '2
 const tallasCaballero = ['28', '30', '32', '34', '36', '38', '40', '42', '44', '46', '48', '50'];
 
 function actualizarSelectTallas(select) {
+    console.log('🔵 actualizarSelectTallas() llamado');
+    
     const container = select.closest('.producto-section');
     const tallaBotones = container.querySelector('.talla-botones');
     const botonesDiv = container.querySelector('.talla-botones-container');
@@ -817,41 +817,73 @@ function actualizarSelectTallas(select) {
     const tallaRangoSelectors = container.querySelector('.talla-rango-selectors');
     const tipo = select.value;
     
+    console.log('📋 Tipo seleccionado:', tipo);
+    console.log('📋 Elementos encontrados:', {
+        tallaBotones: !!tallaBotones,
+        botonesDiv: !!botonesDiv,
+        generoSelect: !!generoSelect,
+        modoSelect: !!modoSelect,
+        tallaRangoSelectors: !!tallaRangoSelectors
+    });
+    
+    // LIMPIAR COMPLETAMENTE TODO ANTES DE CAMBIAR
     botonesDiv.innerHTML = '';
+    tallaBotones.style.display = 'none';
+    tallaRangoSelectors.style.display = 'none';
+    if (generoSelect) generoSelect.style.display = 'none';
+    modoSelect.style.display = 'none';
+    // NO RESETEAR modoSelect.value - mantener el valor anterior
+    if (generoSelect) generoSelect.value = '';
+    console.log('✅ Todo limpiado y ocultado (modoSelect.value preservado)');
     
     if (tipo === 'letra') {
-        // Mostrar selector de modo para letras
-        if (generoSelect) generoSelect.style.display = 'none';
-        modoSelect.style.display = 'block';
-        modoSelect.value = '';
-        tallaBotones.style.display = 'none';
-        tallaRangoSelectors.style.display = 'none';
+        console.log('📝 Mostrando selector de GÉNERO para LETRAS');
+        // Mostrar selector de género TAMBIÉN para letras
+        if (generoSelect) {
+            generoSelect.style.display = 'block';
+            console.log('✅ generoSelect mostrado para LETRAS');
+        }
         
-        // Agregar evento al selector de modo
-        modoSelect.onchange = function() {
-            actualizarModoLetras(container, this.value);
-        };
+        // REMOVER evento anterior de NÚMEROS si existe
+        if (modoSelect._handlerNumeros) {
+            modoSelect.removeEventListener('change', modoSelect._handlerNumeros);
+            modoSelect._handlerNumeros = null;
+        }
+        
+        // Agregar evento al selector de género para LETRAS
+        if (generoSelect) {
+            console.log('📝 Agregando evento onchange para GÉNERO (LETRAS)');
+            generoSelect.removeEventListener('change', generoSelect._handlerLetras);
+            generoSelect._handlerLetras = function() {
+                console.log('📝 Género seleccionado (LETRAS):', this.value);
+                actualizarBotonesPorGeneroLetras(container, this.value);
+            };
+            generoSelect.addEventListener('change', generoSelect._handlerLetras);
+        }
+        
     } else if (tipo === 'numero') {
+        console.log('🔢 Mostrando selector de GÉNERO para NÚMEROS');
         // Mostrar selector de género
         if (generoSelect) {
             generoSelect.style.display = 'block';
-            generoSelect.value = '';
         }
-        modoSelect.style.display = 'none';
-        tallaBotones.style.display = 'none';
-        tallaRangoSelectors.style.display = 'none';
+        
+        // REMOVER evento anterior de LETRAS si existe
+        if (modoSelect._handlerLetras) {
+            modoSelect.removeEventListener('change', modoSelect._handlerLetras);
+            modoSelect._handlerLetras = null;
+        }
         
         // Agregar evento al selector de género
         if (generoSelect) {
-            generoSelect.onchange = function() {
+            console.log('🔢 Agregando evento onchange para GÉNERO');
+            generoSelect.removeEventListener('change', generoSelect._handler);
+            generoSelect._handler = function() {
+                console.log('🔢 Género seleccionado:', this.value);
                 actualizarBotonesPorGenero(container, this.value);
             };
+            generoSelect.addEventListener('change', generoSelect._handler);
         }
-    } else {
-        if (generoSelect) generoSelect.style.display = 'none';
-        modoSelect.style.display = 'none';
-        tallaBotones.style.display = 'none';
-        tallaRangoSelectors.style.display = 'none';
     }
 }
 
@@ -919,36 +951,84 @@ function actualizarSelectoresRangoLetras(container) {
 }
 
 function actualizarModoTallas(select) {
+    console.log('🎯 actualizarModoTallas() llamado');
+    console.log('🎯 select.value:', select.value);
+    
     const container = select.closest('.producto-section');
     const tallaBotones = container.querySelector('.talla-botones');
     const tallaRangoSelectors = container.querySelector('.talla-rango-selectors');
+    const botonesDiv = container.querySelector('.talla-botones-container');
     const modo = select.value;
     
+    console.log('🎯 Modo:', modo);
+    console.log('🎯 Elementos:', {
+        tallaBotones: !!tallaBotones,
+        tallaRangoSelectors: !!tallaRangoSelectors,
+        botonesDiv: !!botonesDiv
+    });
+    
     if (modo === 'manual') {
+        console.log('✅ Mostrando BOTONES (manual)');
         tallaBotones.style.display = 'block';
         tallaRangoSelectors.style.display = 'none';
+        
+        // LOG DE LAS TALLAS QUE SE ESTÁN MOSTRANDO
+        const botones = botonesDiv.querySelectorAll('.talla-btn');
+        const tallasMostradas = Array.from(botones).map(btn => btn.textContent);
+        console.log('📍 TALLAS MOSTRADAS EN MANUAL:', tallasMostradas);
+        console.log('📍 Total de botones:', botones.length);
+        
     } else if (modo === 'rango') {
+        console.log('✅ Mostrando RANGO');
         tallaBotones.style.display = 'none';
         tallaRangoSelectors.style.display = 'flex';
+        
+        // LOG ANTES DE ACTUALIZAR RANGO
+        console.log('📊 Antes de actualizarSelectoresRango()');
         actualizarSelectoresRango(container);
+        
+        // LOG DESPUÉS DE ACTUALIZAR RANGO
+        const desdeSelect = container.querySelector('.talla-desde');
+        const hastaSelect = container.querySelector('.talla-hasta');
+        const optionsDesde = Array.from(desdeSelect.querySelectorAll('option')).map(opt => opt.value).filter(v => v);
+        const optionsHasta = Array.from(hastaSelect.querySelectorAll('option')).map(opt => opt.value).filter(v => v);
+        console.log('📍 TALLAS EN RANGO DESDE:', optionsDesde);
+        console.log('📍 TALLAS EN RANGO HASTA:', optionsHasta);
+        
     } else {
+        console.log('⚠️ Modo no reconocido, ocultando todo');
         tallaBotones.style.display = 'none';
         tallaRangoSelectors.style.display = 'none';
     }
 }
 
 function actualizarSelectoresRango(container) {
+    console.log('📊 actualizarSelectoresRango() llamado');
+    
     const generoSelect = container.querySelector('.talla-genero-select');
     const desdeSelect = container.querySelector('.talla-desde');
     const hastaSelect = container.querySelector('.talla-hasta');
     const genero = generoSelect.value;
     
+    console.log('📊 Género en rango:', genero);
+    console.log('📊 Elementos encontrados:', {
+        generoSelect: !!generoSelect,
+        desdeSelect: !!desdeSelect,
+        hastaSelect: !!hastaSelect
+    });
+    
     let tallas = [];
     if (genero === 'dama') {
+        console.log('📊 Usando tallas DAMA para rango');
         tallas = tallasDama;
     } else if (genero === 'caballero') {
+        console.log('📊 Usando tallas CABALLERO para rango');
         tallas = tallasCaballero;
+    } else {
+        console.log('⚠️ Género no reconocido en rango:', genero);
     }
+    
+    console.log('📊 Tallas a mostrar en rango:', tallas);
     
     desdeSelect.innerHTML = '<option value="">Desde</option>';
     hastaSelect.innerHTML = '<option value="">Hasta</option>';
@@ -964,6 +1044,8 @@ function actualizarSelectoresRango(container) {
         optHasta.textContent = talla;
         hastaSelect.appendChild(optHasta);
     });
+    
+    console.log('✅ Rango actualizado con', tallas.length, 'tallas');
 }
 
 function agregarTallasRango(btn) {
@@ -1032,23 +1114,40 @@ function agregarTallasRango(btn) {
 }
 
 function actualizarBotonesPorGenero(container, genero) {
+    console.log('🔍 actualizarBotonesPorGenero() llamado con genero:', genero);
+    
     const tallaBotones = container.querySelector('.talla-botones');
     const botonesDiv = container.querySelector('.talla-botones-container');
     const modoSelect = container.querySelector('.talla-modo-select');
     const tallaRangoSelectors = container.querySelector('.talla-rango-selectors');
     
-    botonesDiv.innerHTML = '';
+    console.log('🔍 Elementos encontrados:', {
+        tallaBotones: !!tallaBotones,
+        botonesDiv: !!botonesDiv,
+        modoSelect: !!modoSelect,
+        tallaRangoSelectors: !!tallaRangoSelectors
+    });
+    console.log('🔍 Valor actual de modoSelect:', modoSelect.value);
     
-    // Mostrar selector de modo
+    // LIMPIAR COMPLETAMENTE EL CONTENEDOR ANTES DE AGREGAR NUEVOS BOTONES
+    botonesDiv.innerHTML = '';
+    console.log('✅ botonesDiv limpiado');
+    
+    // Mostrar selector de modo (SIN RESETEAR SU VALOR)
     modoSelect.style.display = 'block';
-    modoSelect.value = '';
+    console.log('✅ modoSelect mostrado (valor actual:', modoSelect.value, ')');
     
     // Ocultar botones y rango hasta que se seleccione modo
     tallaBotones.style.display = 'none';
     tallaRangoSelectors.style.display = 'none';
+    console.log('✅ tallaBotones y tallaRangoSelectors ocultados');
     
     if (genero === 'dama') {
+        console.log('👩 DAMA seleccionado');
         tallaBotones.style.display = 'block';
+        // LIMPIAR NUEVAMENTE ANTES DE AGREGAR BOTONES DE DAMA
+        botonesDiv.innerHTML = '';
+        console.log('👩 Agregando botones de DAMA:', tallasDama);
         tallasDama.forEach(talla => {
             const btn = document.createElement('button');
             btn.type = 'button';
@@ -1071,8 +1170,22 @@ function actualizarBotonesPorGenero(container, genero) {
             };
             botonesDiv.appendChild(btn);
         });
+        
+        // AGREGAR EVENTO AL SELECTOR DE MODO PARA DAMA
+        console.log('👩 Agregando evento onchange al modoSelect para DAMA');
+        modoSelect.removeEventListener('change', modoSelect._handler);
+        modoSelect._handler = function() {
+            console.log('👩 DAMA: Modo cambiado a:', this.value);
+            actualizarModoTallas(this);
+        };
+        modoSelect.addEventListener('change', modoSelect._handler);
+        
     } else if (genero === 'caballero') {
+        console.log('👨 CABALLERO seleccionado');
         tallaBotones.style.display = 'block';
+        // LIMPIAR NUEVAMENTE ANTES DE AGREGAR BOTONES DE CABALLERO
+        botonesDiv.innerHTML = '';
+        console.log('👨 Agregando botones de CABALLERO:', tallasCaballero);
         tallasCaballero.forEach(talla => {
             const btn = document.createElement('button');
             btn.type = 'button';
@@ -1095,9 +1208,44 @@ function actualizarBotonesPorGenero(container, genero) {
             };
             botonesDiv.appendChild(btn);
         });
+        
+        // AGREGAR EVENTO AL SELECTOR DE MODO PARA CABALLERO
+        console.log('👨 Agregando evento onchange al modoSelect para CABALLERO');
+        modoSelect.removeEventListener('change', modoSelect._handler);
+        modoSelect._handler = function() {
+            console.log('👨 CABALLERO: Modo cambiado a:', this.value);
+            actualizarModoTallas(this);
+        };
+        modoSelect.addEventListener('change', modoSelect._handler);
+        
     } else {
         tallaBotones.style.display = 'none';
     }
+}
+
+/**
+ * Función para actualizar botones cuando se selecciona GÉNERO en LETRAS
+ * Similar a actualizarBotonesPorGenero pero para LETRAS
+ */
+function actualizarBotonesPorGeneroLetras(container, genero) {
+    console.log('📝 actualizarBotonesPorGeneroLetras() llamado con genero:', genero);
+    
+    const modoSelect = container.querySelector('.talla-modo-select');
+    
+    console.log('📝 Valor actual de modoSelect:', modoSelect.value);
+    
+    // Mostrar selector de modo (SIN RESETEAR SU VALOR)
+    modoSelect.style.display = 'block';
+    console.log('📝 modoSelect mostrado (valor actual:', modoSelect.value, ')');
+    
+    // Agregar evento al selector de modo para LETRAS
+    console.log('📝 Agregando evento onchange al modoSelect para LETRAS');
+    modoSelect.removeEventListener('change', modoSelect._handlerLetras);
+    modoSelect._handlerLetras = function() {
+        console.log('📝 LETRAS: Modo cambiado a:', this.value);
+        actualizarModoLetras(container, this.value);
+    };
+    modoSelect.addEventListener('change', modoSelect._handlerLetras);
 }
 
 function agregarTallasSeleccionadas(btn) {

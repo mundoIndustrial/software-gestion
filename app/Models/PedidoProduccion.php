@@ -47,4 +47,22 @@ class PedidoProduccion extends Model
     {
         return $this->hasMany(PrendaPedido::class);
     }
+
+    /**
+     * Obtener el área actual del pedido basado en el último proceso registrado
+     */
+    public function getAreaActual()
+    {
+        // Obtener el último proceso de cualquiera de las prendas del pedido
+        $ultimoProceso = ProcesoPrenda::whereIn('prenda_pedido_id', $this->prendas()->pluck('id'))
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if ($ultimoProceso) {
+            return $ultimoProceso->proceso;
+        }
+
+        // Si no hay procesos, retornar "Creación Orden"
+        return 'Creación Orden';
+    }
 }

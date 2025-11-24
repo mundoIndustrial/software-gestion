@@ -65,7 +65,7 @@ class PedidosProduccionController extends Controller
         $cotizacion = $pedido->cotizacion;
         $prendasCotizacion = $cotizacion->prendasCotizaciones;
 
-        return view('asesores.pedidos.show', compact('pedido', 'prendas', 'cotizacion', 'prendasCotizacion'));
+        return view('asesores.pedidos.plantilla-erp', compact('pedido', 'prendas', 'cotizacion', 'prendasCotizacion'));
     }
 
     /**
@@ -115,8 +115,15 @@ class PedidosProduccionController extends Controller
             ]);
 
             // Crear prendas del pedido
-            if ($cotizacion->productos) {
-                foreach ($cotizacion->productos as $index => $producto) {
+            $productos = $cotizacion->productos;
+            
+            // Si productos es un string JSON, decodificarlo
+            if (is_string($productos)) {
+                $productos = json_decode($productos, true) ?? [];
+            }
+            
+            if ($productos && is_array($productos)) {
+                foreach ($productos as $index => $producto) {
                     $cantidadTotal = 0;
                     if (isset($producto['cantidades']) && is_array($producto['cantidades'])) {
                         $cantidadTotal = array_sum($producto['cantidades']);

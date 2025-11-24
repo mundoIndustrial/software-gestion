@@ -13,18 +13,20 @@ class PrendaCotizacionFriendly extends Model
     protected $fillable = [
         'cotizacion_id',
         'nombre_producto',
+        'genero',
         'es_jean_pantalon',
         'tipo_jean_pantalon',
         'descripcion',
         'tallas',
         'fotos',
-        'imagen_tela',
+        'telas',
         'estado'
     ];
 
     protected $casts = [
         'tallas' => 'array',
         'fotos' => 'array',
+        'telas' => 'array',
         'es_jean_pantalon' => 'boolean'
     ];
 

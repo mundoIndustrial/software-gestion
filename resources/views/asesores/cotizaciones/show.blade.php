@@ -474,6 +474,12 @@
                                 <td>
                                     <div class="producto-descripcion">
                                         <p style="margin: 0 0 8px 0; color: #475569; font-size: 0.95rem;">{{ $prenda->descripcion ?? '-' }}</p>
+                                        @if($prenda->genero)
+                                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+                                                <span style="font-size: 0.85rem; font-weight: 600; color: #64748b;">Género:</span>
+                                                <span style="font-size: 0.9rem; color: #1e293b; background: #f0f4f8; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">{{ $prenda->genero }}</span>
+                                            </div>
+                                        @endif
                                         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                                             <span style="font-size: 0.85rem; font-weight: 600; color: #64748b;">Tallas:</span>
                                             <span style="font-size: 0.9rem; color: #1e293b;">
@@ -575,11 +581,15 @@
                                     <div style="display: flex; gap: 1rem; justify-content: center; align-items: center;">
                                         <!-- Imagen de Prenda -->
                                         <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
-                                            <small style="font-size: 0.75rem; color: #64748b; font-weight: 600;">PRENDA</small>
+                                            <small style="font-size: 0.75rem; color: #64748b; font-weight: 600;">PRENDA ({{ $prenda->fotos && is_array($prenda->fotos) ? count($prenda->fotos) : 0 }})</small>
                                             @if($prenda->fotos && is_array($prenda->fotos) && count($prenda->fotos) > 0)
-                                                <img src="{{ $prenda->fotos[0] }}" alt="Prenda"
-                                                     style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer;"
-                                                     onclick="abrirModalImagen('{{ $prenda->fotos[0] }}', '{{ $prenda->nombre_producto ?? 'Prenda' }}')">
+                                                <div style="display: flex; gap: 0.3rem; flex-wrap: wrap; justify-content: center;">
+                                                    @foreach($prenda->fotos as $index => $foto)
+                                                        <img src="{{ $foto }}" alt="Prenda {{ $index + 1 }}"
+                                                             style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid #e2e8f0;"
+                                                             onclick="abrirModalImagen('{{ $foto }}', '{{ $prenda->nombre_producto ?? 'Prenda' }} - Foto {{ $index + 1 }}', {{ json_encode($prenda->fotos) }}, {{ $index }})">
+                                                    @endforeach
+                                                </div>
                                             @else
                                                 <div style="width: 60px; height: 60px; background: #f1f5f9; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #cbd5e1;">
                                                     <i class="fas fa-image"></i>
@@ -589,11 +599,15 @@
 
                                         <!-- Imagen de Tela -->
                                         <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
-                                            <small style="font-size: 0.75rem; color: #64748b; font-weight: 600;">TELA</small>
-                                            @if($prenda->imagen_tela)
-                                                <img src="{{ $prenda->imagen_tela }}" alt="Tela"
-                                                     style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer;"
-                                                     onclick="abrirModalImagen('{{ $prenda->imagen_tela }}', 'Tela - {{ $prenda->nombre_producto ?? 'Tela' }}')">
+                                            <small style="font-size: 0.75rem; color: #64748b; font-weight: 600;">TELA ({{ $prenda->telas && is_array($prenda->telas) ? count($prenda->telas) : 0 }})</small>
+                                            @if($prenda->telas && is_array($prenda->telas) && count($prenda->telas) > 0)
+                                                <div style="display: flex; gap: 0.3rem; flex-wrap: wrap; justify-content: center;">
+                                                    @foreach($prenda->telas as $index => $tela)
+                                                        <img src="{{ $tela }}" alt="Tela {{ $index + 1 }}"
+                                                             style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid #e2e8f0;"
+                                                             onclick="abrirModalImagen('{{ $tela }}', '{{ $prenda->nombre_producto ?? 'Tela' }} - Tela {{ $index + 1 }}', {{ json_encode($prenda->telas) }}, {{ $index }})">
+                                                    @endforeach
+                                                </div>
                                             @else
                                                 <div style="width: 60px; height: 60px; background: #f1f5f9; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #cbd5e1;">
                                                     <i class="fas fa-image"></i>
@@ -915,8 +929,18 @@ window.addEventListener('beforeunload', function() {
     }
 });
 
-function abrirModalImagen(src, titulo) {
+function abrirModalImagen(src, titulo, imagenes = null, indiceActual = 0) {
     console.log('Abriendo imagen:', src);
+    console.log('Imágenes disponibles:', imagenes, 'Índice:', indiceActual);
+    
+    // Guardar imágenes en window para navegación
+    if (imagenes && Array.isArray(imagenes)) {
+        window.imagenesModal = imagenes;
+        window.indiceImagenModal = indiceActual;
+    } else {
+        window.imagenesModal = [src];
+        window.indiceImagenModal = 0;
+    }
     
     // Crear modal si no existe
     let modal = document.getElementById('modalImagen');
@@ -1019,7 +1043,7 @@ function abrirModalImagen(src, titulo) {
                     <img id="imagenModal" src="" alt="Imagen ampliada" style="
                         width: 600px;
                         height: 400px;
-                        object-fit: cover;
+                        object-fit: contain;
                         border-radius: 8px;
                         box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
                         cursor: grab;
@@ -1027,6 +1051,49 @@ function abrirModalImagen(src, titulo) {
                         position: relative;
                     ">
                 </div>
+                
+                <!-- Botones de navegación -->
+                <button onclick="imagenAnterior()" style="
+                    position: absolute;
+                    left: 20px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    background: rgba(255, 255, 255, 0.9);
+                    border: none;
+                    width: 50px;
+                    height: 50px;
+                    border-radius: 50%;
+                    cursor: pointer;
+                    font-size: 24px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 10001;
+                    transition: all 0.3s;
+                " onmouseover="this.style.background='white'" onmouseout="this.style.background='rgba(255, 255, 255, 0.9)'">
+                    ◀
+                </button>
+                
+                <button onclick="imagenSiguiente()" style="
+                    position: absolute;
+                    right: 20px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    background: rgba(255, 255, 255, 0.9);
+                    border: none;
+                    width: 50px;
+                    height: 50px;
+                    border-radius: 50%;
+                    cursor: pointer;
+                    font-size: 24px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 10001;
+                    transition: all 0.3s;
+                " onmouseover="this.style.background='white'" onmouseout="this.style.background='rgba(255, 255, 255, 0.9)'">
+                    ▶
+                </button>
                 
                 <!-- Información -->
                 <div style="
@@ -1068,10 +1135,14 @@ function abrirModalImagen(src, titulo) {
             }
         });
         
-        // Cerrar con tecla ESC
+        // Cerrar con tecla ESC y navegar con flechas
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 cerrarModalImagen();
+            } else if (e.key === 'ArrowLeft') {
+                imagenAnterior();
+            } else if (e.key === 'ArrowRight') {
+                imagenSiguiente();
             }
         });
         
@@ -1167,6 +1238,38 @@ function zoomOut() {
     const offsetY = translateMatch ? parseFloat(translateMatch[2]) : 0;
     
     imagenModal.style.transform = `scale(${window.zoomActual / 100}) translate(${offsetX}px, ${offsetY}px)`;
+}
+
+function imagenAnterior() {
+    if (!window.imagenesModal || window.imagenesModal.length <= 1) return;
+    
+    window.indiceImagenModal = (window.indiceImagenModal - 1 + window.imagenesModal.length) % window.imagenesModal.length;
+    const imagen = window.imagenesModal[window.indiceImagenModal];
+    
+    document.getElementById('imagenModal').src = imagen;
+    
+    // Resetear zoom y posición
+    window.zoomActual = 100;
+    window.offsetX = 0;
+    window.offsetY = 0;
+    document.getElementById('zoomLevel').textContent = '100%';
+    document.getElementById('imagenModal').style.transform = 'scale(1)';
+}
+
+function imagenSiguiente() {
+    if (!window.imagenesModal || window.imagenesModal.length <= 1) return;
+    
+    window.indiceImagenModal = (window.indiceImagenModal + 1) % window.imagenesModal.length;
+    const imagen = window.imagenesModal[window.indiceImagenModal];
+    
+    document.getElementById('imagenModal').src = imagen;
+    
+    // Resetear zoom y posición
+    window.zoomActual = 100;
+    window.offsetX = 0;
+    window.offsetY = 0;
+    document.getElementById('zoomLevel').textContent = '100%';
+    document.getElementById('imagenModal').style.transform = 'scale(1)';
 }
 
 function cerrarModalImagen() {

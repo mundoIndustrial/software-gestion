@@ -87,7 +87,10 @@ function recopilarDatos() {
     const clienteValue = cliente.value;
     const productos = [];
     
+    console.log('📦 Total de prendas encontradas:', document.querySelectorAll('.producto-card').length);
+    
     document.querySelectorAll('.producto-card').forEach((item, index) => {
+        console.log(`📦 Procesando prenda ${index + 1}...`);
         const nombre = item.querySelector('input[name*="nombre_producto"]')?.value || '';
         const descripcion = item.querySelector('textarea[name*="descripcion"]')?.value || '';
         const cantidad = item.querySelector('input[name*="cantidad"]')?.value || 1;
@@ -113,12 +116,12 @@ function recopilarDatos() {
         const productoId = item.dataset.productoId;
         const fotos = fotosSeleccionadas[productoId] ? fotosSeleccionadas[productoId].map(f => f.name) : [];
         
-        // Obtener imagen de tela de esta prenda (desde telaConIndice)
-        let imagenTela = null;
+        // Obtener telas de esta prenda (desde telaConIndice) - TODAS las telas, no solo 1
+        let telas = [];
         if (window.imagenesEnMemoria && window.imagenesEnMemoria.telaConIndice) {
-            const telaEncontrada = window.imagenesEnMemoria.telaConIndice.find(t => t.prendaIndex === index);
-            if (telaEncontrada) {
-                imagenTela = telaEncontrada.file.name;
+            const telasEncontradas = window.imagenesEnMemoria.telaConIndice.filter(t => t.prendaIndex === index);
+            if (telasEncontradas.length > 0) {
+                telas = telasEncontradas.map(t => t.file.name);
             }
         }
         
@@ -126,13 +129,19 @@ function recopilarDatos() {
             nombre: nombre,
             tallas: tallasSeleccionadas,
             fotos: fotos,
-            imagenTela: imagenTela,
+            telas: telas,
             productoId: productoId
         });
         
         // Capturar variaciones (color, tela, manga, reflectivo, etc.)
         const variantes = {};
         const observacionesVariantes = [];
+        
+        // Género
+        const generoSelect = item.querySelector('.talla-genero-select');
+        if (generoSelect && generoSelect.value) {
+            variantes.genero = generoSelect.value;
+        }
         
         // Color
         const colorInput = item.querySelector('.color-input');
@@ -201,7 +210,7 @@ function recopilarDatos() {
                 cantidad: parseInt(cantidad) || 1,
                 tallas: tallasSeleccionadas,
                 fotos: fotos,
-                imagen_tela: imagenTela,
+                telas: telas,
                 variantes: variantes
             });
         }

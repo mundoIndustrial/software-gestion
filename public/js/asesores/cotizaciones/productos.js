@@ -69,12 +69,35 @@ function agregarFotos(files, dropZone) {
     const productoId = productoCard ? productoCard.dataset.productoId : 'default';
     if (!fotosSeleccionadas[productoId]) fotosSeleccionadas[productoId] = [];
     
+    // Obtener índice de prenda (posición en la lista de productos)
+    // Usar querySelectorAll con el índice real
+    const allProductos = document.querySelectorAll('.producto-card');
+    let prendaIndex = -1;
+    for (let i = 0; i < allProductos.length; i++) {
+        if (allProductos[i] === productoCard) {
+            prendaIndex = i;
+            break;
+        }
+    }
+    
     console.log('📁 Agregando fotos de prenda a memoria');
-    Array.from(files).forEach(file => {
+    console.log('📁 Producto ID:', productoId);
+    console.log('📁 Índice de prenda:', prendaIndex);
+    
+    Array.from(files).forEach((file, fileIndex) => {
         if (fotosSeleccionadas[productoId].length < 3) {
             fotosSeleccionadas[productoId].push(file);
-            window.imagenesEnMemoria.prenda.push(file);
-            console.log(`✅ Foto de prenda guardada: ${file.name}`);
+            
+            // Guardar con índice de prenda (similar a telaConIndice)
+            if (!window.imagenesEnMemoria.prendaConIndice) {
+                window.imagenesEnMemoria.prendaConIndice = [];
+            }
+            window.imagenesEnMemoria.prendaConIndice.push({
+                file: file,
+                prendaIndex: prendaIndex
+            });
+            
+            console.log(`✅ Foto ${fileIndex + 1} de prenda guardada: ${file.name} (Prenda ${prendaIndex})`);
         }
     });
     actualizarPreviewFotos(dropZone);
@@ -225,16 +248,27 @@ function agregarFotoTela(input) {
     const productoId = productoCard.dataset.productoId;
     if (!telasSeleccionadas[productoId]) telasSeleccionadas[productoId] = [];
     
-    // Obtener el índice de la prenda (número de prenda en el formulario)
-    const numeroPrenda = productoCard.querySelector('.numero-producto')?.textContent || '1';
-    const prendaIndex = parseInt(numeroPrenda) - 1; // Convertir a índice (0-based)
+    // Obtener índice de prenda (posición en la lista de productos)
+    // Usar querySelectorAll con el índice real
+    const allProductos = document.querySelectorAll('.producto-card');
+    let prendaIndex = -1;
+    for (let i = 0; i < allProductos.length; i++) {
+        if (allProductos[i] === productoCard) {
+            prendaIndex = i;
+            break;
+        }
+    }
     
-    console.log('📁 Agregando foto de tela a memoria para prenda índice:', prendaIndex);
+    console.log('📁 Agregando foto de tela a memoria');
+    console.log('📁 Producto ID:', productoId);
+    console.log('📁 Índice de prenda:', prendaIndex);
+    
     Array.from(input.files).forEach((file, fileIndex) => {
-        telasSeleccionadas[productoId].push(file);
-        // Agregar al global con información del índice de prenda
-        // IMPORTANTE: Solo guardar la PRIMERA tela por prenda (imagen_tela es un campo singular)
-        if (fileIndex === 0) {
+        // Máximo 3 telas por prenda
+        if (telasSeleccionadas[productoId].length < 3) {
+            telasSeleccionadas[productoId].push(file);
+            
+            // Agregar al global con información del índice de prenda
             if (!window.imagenesEnMemoria.telaConIndice) {
                 window.imagenesEnMemoria.telaConIndice = [];
             }
@@ -242,7 +276,7 @@ function agregarFotoTela(input) {
                 file: file,
                 prendaIndex: prendaIndex
             });
-            console.log(`✅ Foto de tela guardada para prenda ${prendaIndex}: ${file.name}`);
+            console.log(`✅ Foto ${fileIndex + 1} de tela guardada: ${file.name} (Prenda ${prendaIndex})`);
         }
     });
     const container = productoCard.querySelector('.foto-tela-preview');
