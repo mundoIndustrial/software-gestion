@@ -304,118 +304,6 @@
     cursor: pointer;
 }
 
-/* ========================================
-   TABLA DE PEDIDOS
-   ======================================== */
-
-.table-container {
-    background: var(--bg-card);
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: var(--shadow-md);
-}
-
-.pedidos-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.pedidos-table thead {
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
-    color: white;
-}
-
-.pedidos-table th {
-    padding: 1rem;
-    text-align: left;
-    font-weight: 600;
-    font-size: 0.875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.pedidos-table td {
-    padding: 1rem;
-    border-bottom: 1px solid var(--border-color);
-    color: var(--text-primary);
-}
-
-.pedidos-table tbody tr:hover {
-    background: var(--bg-hover);
-}
-
-.badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 500;
-}
-
-.badge-success {
-    background: #d1fae5;
-    color: #065f46;
-}
-
-.badge-warning {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-.badge-danger {
-    background: #fee2e2;
-    color: #991b1b;
-}
-
-.badge-secondary {
-    background: #e5e7eb;
-    color: #374151;
-}
-
-.badge-info {
-    background: #dbeafe;
-    color: #1e40af;
-}
-
-.badge-light {
-    background: var(--bg-hover);
-    color: var(--text-secondary);
-}
-
-.action-buttons {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.btn-action {
-    padding: 0.5rem;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-    transition: all var(--transition-fast);
-    background: transparent;
-    color: var(--text-secondary);
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.btn-action:hover {
-    background: var(--bg-hover);
-}
-
-.btn-view:hover {
-    color: #3b82f6;
-}
-
-.btn-edit:hover {
-    color: var(--primary-color);
-}
-
-.btn-delete:hover {
-    color: #ef4444;
-}
 
 /* ========================================
    VISTA DE DETALLES
@@ -580,6 +468,57 @@
 /* ========================================
    RESPONSIVE
    ======================================== */
+
+/* ========================================
+   DROPDOWN MENU
+   ======================================== */
+
+.dropdown-menu {
+    position: absolute !important;
+    z-index: 10000 !important;
+    overflow: visible !important;
+    pointer-events: auto !important;
+}
+
+/* ========================================
+   SCROLL HORIZONTAL PERSONALIZADO
+   ======================================== */
+
+/* Contenedor con scroll horizontal */
+.table-scroll-container {
+    overflow-x: auto;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Estilos para la barra de scroll horizontal - WebKit (Chrome, Safari, Edge) */
+.table-scroll-container::-webkit-scrollbar {
+    height: 10px;
+}
+
+.table-scroll-container::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 10px;
+    margin: 0 5px;
+}
+
+.table-scroll-container::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    border-radius: 10px;
+    transition: background 0.3s ease;
+    box-shadow: 0 0 6px rgba(37, 99, 235, 0.3);
+}
+
+.table-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #1d4ed8, #1e40af);
+    box-shadow: 0 0 8px rgba(37, 99, 235, 0.5);
+}
+
+/* Firefox */
+.table-scroll-container {
+    scrollbar-color: #2563eb #f1f5f9;
+    scrollbar-width: thin;
+}
 
 @media (max-width: 768px) {
     .pedidos-container,
