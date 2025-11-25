@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="{{ asset('css/orders styles/modern-table.css') }}">
     <link rel="stylesheet" href="{{ asset('css/orders styles/dropdown-styles.css') }}">
     <link rel="stylesheet" href="{{ asset('css/viewButtonDropdown.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/pagination.css') }}">
 
     <div class="table-container">
         <div class="table-header" id="tableHeader">
