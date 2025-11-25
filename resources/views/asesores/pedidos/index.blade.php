@@ -476,8 +476,12 @@
                 </div>
             </div>
 
-            <!-- llamada de botones de la  tabla -->
-            <div class="table-actions"></div>
+            <!-- Botones de acciones principales -->
+            <div class="table-actions">
+                <a href="{{ route('asesores.pedidos-produccion.crear') }}" class="btn btn-primary" title="Crear nuevo pedido">
+                    <i class="fas fa-plus-circle"></i> Registrar Pedido
+                </a>
+            </div>
         </div>
 
     <div class="modern-table-wrapper">
