@@ -227,7 +227,9 @@ class PDFCotizacionController extends Controller
                     }
                     
                     if (file_exists($rutaImagen)) {
-                        $html .= '<img src="' . $rutaImagen . '" class="prenda-imagen" alt="Imagen">';
+                        // Convertir WebP a JPG en memoria para mejor rendimiento en PDF
+                        $rutaFinal = $this->convertirWebPaJPGParaPDF($rutaImagen);
+                        $html .= '<img src="' . $rutaFinal . '" class="prenda-imagen" alt="Imagen">';
                     }
                 }
                 $html .= '</div>';
@@ -237,6 +239,73 @@ class PDFCotizacionController extends Controller
         }
         
         return $html;
+    }
+    
+    /**
+     * Convierte WebP a JPG en memoria (base64) para optimizar el PDF
+     * Si no es WebP, retorna la ruta original
+     * 
+     * @param string $rutaImagen Ruta de la imagen
+     * @return string Ruta de la imagen o data URI base64 si era WebP
+     */
+    private function convertirWebPaJPGParaPDF($rutaImagen)
+    {
+        // Si no es WebP, retornar la ruta original
+        if (!str_ends_with(strtolower($rutaImagen), '.webp')) {
+            return $rutaImagen;
+        }
+        
+        // Verificar que GD está disponible
+        if (!extension_loaded('gd')) {
+            \Log::warning('Extensión GD no disponible, usando WebP original', ['ruta' => $rutaImagen]);
+            return $rutaImagen;
+        }
+        
+        try {
+            // Verificar que el archivo existe
+            if (!file_exists($rutaImagen)) {
+                \Log::warning('Archivo WebP no existe', ['ruta' => $rutaImagen]);
+                return $rutaImagen;
+            }
+            
+            // Cargar imagen WebP
+            $imagenWebP = @imagecreatefromwebp($rutaImagen);
+            
+            if ($imagenWebP === false) {
+                \Log::warning('No se pudo cargar imagen WebP', ['ruta' => $rutaImagen]);
+                return $rutaImagen;
+            }
+            
+            // Convertir a JPG en memoria (buffer)
+            ob_start();
+            @imagejpeg($imagenWebP, null, 85);
+            $jpgData = ob_get_clean();
+            @imagedestroy($imagenWebP);
+            
+            if (!$jpgData) {
+                \Log::warning('Error al convertir WebP a JPG en memoria', ['ruta' => $rutaImagen]);
+                return $rutaImagen;
+            }
+            
+            // Crear data URI base64
+            $base64 = base64_encode($jpgData);
+            $dataUri = 'data:image/jpeg;base64,' . $base64;
+            
+            \Log::info('WebP convertido a JPG en memoria para PDF', [
+                'original' => $rutaImagen,
+                'tamaño_original_kb' => round(filesize($rutaImagen) / 1024, 2),
+                'tamaño_jpg_kb' => round(strlen($jpgData) / 1024, 2)
+            ]);
+            
+            return $dataUri;
+            
+        } catch (\Exception $e) {
+            \Log::error('Excepción al convertir WebP a JPG en memoria', [
+                'ruta' => $rutaImagen,
+                'error' => $e->getMessage()
+            ]);
+            return $rutaImagen;
+        }
     }
     
     /**
