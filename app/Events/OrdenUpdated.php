@@ -37,13 +37,25 @@ class OrdenUpdated implements ShouldBroadcastNow
      */
     public function broadcastWith()
     {
+        $pedido = $this->orden->numero_pedido ?? $this->orden->pedido ?? $this->orden['numero_pedido'] ?? $this->orden['pedido'] ?? null;
+        
         \Log::info('Broadcasting OrdenUpdated event', [
-            'pedido' => $this->orden->pedido ?? $this->orden['pedido'] ?? null,
+            'pedido' => $pedido,
             'action' => $this->action,
         ]);
 
+        // Asegurar que el objeto orden tenga el atributo correcto para el frontend
+        $ordenData = $this->orden instanceof \Illuminate\Database\Eloquent\Model 
+            ? $this->orden->toArray() 
+            : $this->orden;
+        
+        // Añadir ambos campos para compatibilidad
+        if (!isset($ordenData['pedido']) && isset($ordenData['numero_pedido'])) {
+            $ordenData['pedido'] = $ordenData['numero_pedido'];
+        }
+
         return [
-            'orden' => $this->orden,
+            'orden' => $ordenData,
             'action' => $this->action
         ];
     }

@@ -77,7 +77,7 @@ class EntregaController extends Controller
         $pedido = $request->route('pedido');
 
         if ($tipo === 'pedido') {
-            $order = \App\Models\TablaOriginal::where('pedido', $pedido)->first();
+            $order = \App\Models\PedidoProduccion::where('numero_pedido', $pedido)->first();
         } elseif ($tipo === 'bodega') {
             $order = \App\Models\TablaOriginalBodega::where('pedido', $pedido)->first();
         }

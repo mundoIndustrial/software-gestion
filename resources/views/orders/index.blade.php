@@ -38,18 +38,63 @@
                                         <span class="header-text">Acciones</span>
                                     </div>
                                 </th>
-                                @php $columnIndex = 0; @endphp
-                                @foreach(array_keys($ordenes->first()->getAttributes()) as $index => $columna)
-                                    @if($columna !== 'id' && $columna !== 'tiempo')
-                                        {{-- Ocultar columna "día de entrega" para supervisores --}}
-                                        @if($columna === 'dia_de_entrega' && auth()->user()->role && auth()->user()->role->name === 'supervisor')
+                                @php 
+                                    // Definir orden de columnas base (antes de procesos)
+                                    $columnasBase = [
+                                        'estado',
+                                        'area',
+                                        'dia_de_entrega',
+                                        'total_de_dias_',
+                                        'numero_pedido',
+                                        'cliente',
+                                        'descripcion_prendas',
+                                        'cantidad_total',
+                                        'novedades',
+                                        'asesora',
+                                        'forma_de_pago',
+                                        'fecha_de_creacion_de_orden',
+                                        'fecha_estimada_de_entrega',
+                                        'encargado_orden',
+                                    ];
+                                    
+                                    $columnIndex = 0;
+                                @endphp
+                                
+                                {{-- Columnas base --}}
+                                @foreach($columnasBase as $colName)
+                                    @if($colName !== 'acciones')
+                                        {{-- Ocultar columnas de administración --}}
+                                        @if(in_array($colName, ['created_at', 'updated_at', 'deleted_at', 'asesor_id', 'cliente_id']))
+                                            {{-- Columnas ocultas --}}
+                                        {{-- Ocultar día de entrega para supervisores --}}
+                                        @elseif($colName === 'dia_de_entrega' && auth()->user()->role && auth()->user()->role->name === 'supervisor')
                                             {{-- Columna oculta para supervisores --}}
                                         @else
-                                            <th class="table-header-cell" data-column="{{ $columna }}">
+                                            @php 
+                                                $columnLabels = [
+                                                    'acciones' => 'Acciones',
+                                                    'estado' => 'Estado',
+                                                    'area' => 'Área',
+                                                    'dia_de_entrega' => 'Día de entrega',
+                                                    'total_de_dias_' => 'Total de días',
+                                                    'numero_pedido' => 'Pedido',
+                                                    'cliente' => 'Cliente',
+                                                    'descripcion_prendas' => 'Descripción',
+                                                    'cantidad_total' => 'Cantidad',
+                                                    'novedades' => 'Novedades',
+                                                    'asesora' => 'Asesor',
+                                                    'forma_de_pago' => 'Forma de pago',
+                                                    'fecha_de_creacion_de_orden' => 'Fecha de creación de orden',
+                                                    'fecha_estimada_de_entrega' => 'Fecha estimada de entrega',
+                                                    'encargado_orden' => 'Encargado orden',
+                                                ];
+                                                $colLabel = $columnLabels[$colName] ?? $colName;
+                                            @endphp
+                                            <th class="table-header-cell" data-column="{{ $colName }}">
                                                 <div class="header-content">
-                                                    <span class="header-text">{{ ucfirst(str_replace('_', ' ', $columna)) }}</span>
-                                                    @if($columna !== 'acciones')
-                                                        <button class="filter-btn" data-column="{{ $columnIndex }}" data-column-name="{{ $columna }}">
+                                                    <span class="header-text">{{ $colLabel }}</span>
+                                                    @if($colName !== 'acciones' && $colName !== 'descripcion_prendas' && $colName !== 'cantidad_total')
+                                                        <button class="filter-btn" data-column="{{ $columnIndex }}" data-column-name="{{ $colName }}">
                                                             <i class="fas fa-filter"></i>
                                                         </button>
                                                     @endif
@@ -57,6 +102,13 @@
                                             </th>
                                             @php $columnIndex++; @endphp
                                         @endif
+                                    @else
+                                        <th class="table-header-cell" data-column="acciones">
+                                            <div class="header-content">
+                                                <span class="header-text">Acciones</span>
+                                            </div>
+                                        </th>
+                                        @php $columnIndex++; @endphp
                                     @endif
                                 @endforeach
                             </tr>
@@ -67,34 +119,31 @@
                             <tr class="table-row">
                                 <td colspan="51" class="no-results" style="text-align: center; padding: 20px; color: #6c757d;">
                                     No hay resultados que coincidan con los filtros aplicados.
+                                    <br><small style="color: #999;">Debug: Total órdenes = {{ $ordenes->count() }}, CurrentPage = {{ $ordenes->currentPage() }}, LastPage = {{ $ordenes->lastPage() }}</small>
                                 </td>
                             </tr>
                         @else
+                            <!-- DEBUG: Total órdenes = {{ $ordenes->count() }}, CurrentPage = {{ $ordenes->currentPage() }}, LastPage = {{ $ordenes->lastPage() }} -->
                             @foreach($ordenes as $orden)
                                 @php
-                                    $totalDias = intval($totalDiasCalculados[$orden->pedido] ?? 0);
+                                    $totalDias = intval($totalDiasCalculados[$orden->numero_pedido] ?? 0);
                                     $estado = $orden->estado ?? '';
                                     $diaDeEntrega = $orden->dia_de_entrega ? intval($orden->dia_de_entrega) : null;
                                     $conditionalClass = '';
                                     
-                                    // PRIORIDAD 1: Estados especiales
                                     if ($estado === 'Entregado') {
                                         $conditionalClass = 'row-delivered';
                                     } elseif ($estado === 'Anulada') {
                                         $conditionalClass = 'row-anulada';
-                                    }
-                                    // PRIORIDAD 2: NUEVA LÓGICA - Día de entrega (si existe)
-                                    elseif ($diaDeEntrega !== null && $diaDeEntrega > 0) {
+                                    } elseif ($diaDeEntrega !== null && $diaDeEntrega > 0) {
                                         if ($totalDias >= 15) {
-                                            $conditionalClass = 'row-dia-entrega-critical'; // Negro (15+)
+                                            $conditionalClass = 'row-dia-entrega-critical';
                                         } elseif ($totalDias >= 10 && $totalDias <= 14) {
-                                            $conditionalClass = 'row-dia-entrega-danger'; // Rojo (10-14)
+                                            $conditionalClass = 'row-dia-entrega-danger';
                                         } elseif ($totalDias >= 5 && $totalDias <= 9) {
-                                            $conditionalClass = 'row-dia-entrega-warning'; // Amarillo (5-9)
+                                            $conditionalClass = 'row-dia-entrega-warning';
                                         }
-                                    }
-                                    // PRIORIDAD 3: LÓGICA ORIGINAL - Solo si NO hay día de entrega
-                                    else {
+                                    } else {
                                         if ($totalDias > 20) {
                                             $conditionalClass = 'row-secondary';
                                         } elseif ($totalDias == 20) {
@@ -103,128 +152,115 @@
                                             $conditionalClass = 'row-warning';
                                         }
                                     }
+                                    
+                                    // Definir columnas base en orden
+                                    $columnasBase = [
+                                        'estado', 'area', 'dia_de_entrega', 'total_de_dias_', 'numero_pedido', 'cliente',
+                                        'descripcion_prendas', 'cantidad_total', 'novedades', 'asesora', 'forma_de_pago',
+                                        'fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega', 'encargado_orden'
+                                    ];
+                                    
+                                    // Campos de proceso
+                                    $procesosOrdenados = [
+                                        'insumos_y_telas', 'encargados_insumos',
+                                        'corte', 'encargados_de_corte',
+                                        'bordado', 'codigo_de_bordado',
+                                        'estampado', 'encargados_estampado',
+                                        'costura', 'modulo',
+                                        'reflectivo', 'encargado_reflectivo',
+                                        'lavanderia', 'encargado_lavanderia',
+                                        'arreglos', 'encargado_arreglos',
+                                        'control_de_calidad', 'encargados_calidad',
+                                        'entrega', 'encargados_entrega',
+                                        'despacho'
+                                    ];
                                 @endphp
-                                <tr class="table-row {{ $conditionalClass }}" data-order-id="{{ $orden->pedido }}">
+                                <tr class="table-row {{ $conditionalClass }}" data-order-id="{{ $orden->id }}" data-numero-pedido="{{ $orden->numero_pedido }}">
+                                    <!-- DEBUG: Pedido={{ $orden->numero_pedido }}, Estado={{ $orden->estado }}, Area={{ $orden->area ?? 'NULL' }}, Cliente={{ $orden->cliente }}, Prendas={{ $orden->prendas->count() }}, DescripcionLength={{ strlen($orden->descripcion_prendas) }}, CantidadTotal={{ $orden->cantidad_total }} -->
+                                    {{-- Columna de Acciones --}}
                                     <td class="table-cell acciones-column" style="min-width: 220px !important;">
                                         <div class="cell-content" style="display: flex; gap: 8px; flex-wrap: nowrap; align-items: center; justify-content: flex-start; padding: 4px 0;">
-                                            @if(auth()->user()->role && auth()->user()->role->name === 'supervisor')
-                                                <!-- Solo botón Ver para supervisores, usando el dropdown de opciones -->
-                                                <button class="action-btn detail-btn" onclick="createViewButtonDropdown({{ $orden->pedido }})"
-                                                    title="Ver opciones"
-                                                    style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; flex: 1; min-width: 60px; height: 38px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3); transition: all 0.2s ease;">
+                                            @if($context === 'registros')
+                                                <button class="action-btn detail-btn" onclick="createViewButtonDropdown({{ $orden->numero_pedido }})" title="Ver opciones" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; flex: 1; min-width: 60px; height: 38px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3); transition: all 0.2s ease;">
+                                                    <i class="fas fa-eye" style="margin-right: 6px;"></i> Ver
+                                                </button>
+                                            @elseif(auth()->user()->role && auth()->user()->role->name === 'supervisor')
+                                                <button class="action-btn detail-btn" onclick="createViewButtonDropdown({{ $orden->numero_pedido }})" title="Ver opciones" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; flex: 1; min-width: 60px; height: 38px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3); transition: all 0.2s ease;">
                                                     <i class="fas fa-eye" style="margin-right: 6px;"></i> Ver
                                                 </button>
                                             @else
-                                                <!-- Botones completos para otros roles con dropdown de opciones -->
-                                                <button class="action-btn edit-btn" onclick="openEditModal({{ $orden->pedido }})"
-                                                    title="Editar orden"
-                                                    style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
-                                                    Editar
-                                                </button>
-                                                <button class="action-btn detail-btn" onclick="createViewButtonDropdown({{ $orden->pedido }})"
-                                                    title="Ver opciones"
-                                                    style="background-color: green; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
-                                                    Ver
-                                                </button>
-                                                <button class="action-btn delete-btn" onclick="deleteOrder({{ $orden->pedido }})"
-                                                    title="Eliminar orden"
-                                                    style="background-color:#f84c4cff ; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
-                                                    Borrar
-                                                </button>
+                                                <button class="action-btn edit-btn" onclick="openEditModal({{ $orden->numero_pedido }})" title="Editar orden" style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">Editar</button>
+                                                <button class="action-btn detail-btn" onclick="createViewButtonDropdown({{ $orden->numero_pedido }})" title="Ver opciones" style="background-color: green; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">Ver</button>
+                                                <button class="action-btn delete-btn" onclick="deleteOrder({{ $orden->numero_pedido }})" title="Eliminar orden" style="background-color:#f84c4cff ; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">Borrar</button>
                                             @endif
                                         </div>
                                     </td>
-                                    @foreach($orden->getAttributes() as $key => $valor)
-                                        @if($key !== 'id' && $key !== 'tiempo')
-                                            {{-- Ocultar celda "día de entrega" para supervisores --}}
-                                            @if($key === 'dia_de_entrega' && auth()->user()->role && auth()->user()->role->name === 'supervisor')
-                                                {{-- Celda oculta para supervisores --}}
-                                            @else
-                                            <td class="table-cell" data-column="{{ $key }}">
-                                                <div class="cell-content" title="{{ $valor }}">
-                                                    @if($key === 'estado')
+                                    
+                                    @foreach($columnasBase as $colName)
+                                        @if($colName === 'dia_de_entrega' && auth()->user()->role && auth()->user()->role->name === 'supervisor')
+                                            {{-- Ocultar para supervisores --}}
+                                        @else
+                                            <td class="table-cell" data-column="{{ $colName }}">
+                                                <div class="cell-content" title="{{ $orden->{$colName} ?? '' }}">
+                                                    @if($colName === 'estado')
                                                         @if(auth()->user()->role && auth()->user()->role->name === 'supervisor')
-                                                            <!-- Selector deshabilitado para supervisores -->
-                                                            <select class="estado-dropdown" data-id="{{ $orden->pedido }}"
-                                                                data-value="{{ $valor }}" disabled style="cursor: not-allowed; opacity: 0.8;">
+                                                            <select class="estado-dropdown" data-id="{{ $orden->numero_pedido }}" data-value="{{ $orden->$colName }}" disabled style="cursor: not-allowed; opacity: 0.8;">
                                                                 @foreach(['Entregado', 'En Ejecución', 'No iniciado', 'Anulada'] as $estado)
-                                                                    <option value="{{ $estado }}" {{ $valor === $estado ? 'selected' : '' }}>{{ $estado }}
-                                                                    </option>
+                                                                    <option value="{{ $estado }}" {{ $orden->$colName === $estado ? 'selected' : '' }}>{{ $estado }}</option>
                                                                 @endforeach
                                                             </select>
                                                         @else
-                                                            <!-- Selector editable para otros roles -->
-                                                            <select class="estado-dropdown" data-id="{{ $orden->pedido }}"
-                                                                data-value="{{ $valor }}">
+                                                            <select class="estado-dropdown" data-id="{{ $orden->numero_pedido }}" data-value="{{ $orden->$colName }}">
                                                                 @foreach(['Entregado', 'En Ejecución', 'No iniciado', 'Anulada'] as $estado)
-                                                                    <option value="{{ $estado }}" {{ $valor === $estado ? 'selected' : '' }}>{{ $estado }}
-                                                                    </option>
+                                                                    <option value="{{ $estado }}" {{ $orden->$colName === $estado ? 'selected' : '' }}>{{ $estado }}</option>
                                                                 @endforeach
                                                             </select>
                                                         @endif
-                                                    @elseif($key === 'area')
+                                                    @elseif($colName === 'area')
                                                         @if(auth()->user()->role && auth()->user()->role->name === 'supervisor')
-                                                            <!-- Selector deshabilitado para supervisores -->
-                                                            <select class="area-dropdown" data-id="{{ $orden->pedido }}" data-value="{{ $valor }}" disabled style="cursor: not-allowed; opacity: 0.8;">
+                                                            <select class="area-dropdown" data-id="{{ $orden->numero_pedido }}" data-value="{{ $orden->$colName }}" disabled style="cursor: not-allowed; opacity: 0.8;">
                                                                 @foreach($areaOptions as $areaOption)
-                                                                    <option value="{{ $areaOption }}" {{ $valor === $areaOption ? 'selected' : '' }}>
-                                                                        {{ $areaOption }}</option>
+                                                                    <option value="{{ $areaOption }}" {{ $orden->$colName === $areaOption ? 'selected' : '' }}>{{ $areaOption }}</option>
                                                                 @endforeach
                                                             </select>
                                                         @else
-                                                            <!-- Selector editable para otros roles -->
-                                                            <select class="area-dropdown" data-id="{{ $orden->pedido }}" data-value="{{ $valor }}">
+                                                            <select class="area-dropdown" data-id="{{ $orden->numero_pedido }}" data-value="{{ $orden->$colName }}">
                                                                 @foreach($areaOptions as $areaOption)
-                                                                    <option value="{{ $areaOption }}" {{ $valor === $areaOption ? 'selected' : '' }}>
-                                                                        {{ $areaOption }}</option>
+                                                                    <option value="{{ $areaOption }}" {{ $orden->$colName === $areaOption ? 'selected' : '' }}>{{ $areaOption }}</option>
                                                                 @endforeach
                                                             </select>
                                                         @endif
-                                                    @elseif($key === 'dia_de_entrega' && $context === 'registros')
-                                                        <!-- Selector editable para otros roles (supervisores no llegan aquí) -->
-                                                        <select class="dia-entrega-dropdown" data-id="{{ $orden->pedido }}" data-value="{{ $valor ?? '' }}">
-                                                            <option value="" {{ is_null($valor) ? 'selected' : '' }}>Seleccionar</option>
-                                                            <option value="15" {{ $valor == 15 ? 'selected' : '' }}>15 días</option>
-                                                            <option value="20" {{ $valor == 20 ? 'selected' : '' }}>20 días</option>
-                                                            <option value="25" {{ $valor == 25 ? 'selected' : '' }}>25 días</option>
-                                                            <option value="30" {{ $valor == 30 ? 'selected' : '' }}>30 días</option>
+                                                    @elseif($colName === 'dia_de_entrega' && $context === 'registros')
+                                                        <select class="dia-entrega-dropdown" data-id="{{ $orden->numero_pedido }}" data-value="{{ $orden->$colName ?? '' }}">
+                                                            <option value="" {{ is_null($orden->$colName) ? 'selected' : '' }}>Seleccionar</option>
+                                                            <option value="15" {{ $orden->$colName == 15 ? 'selected' : '' }}>15 días</option>
+                                                            <option value="20" {{ $orden->$colName == 20 ? 'selected' : '' }}>20 días</option>
+                                                            <option value="25" {{ $orden->$colName == 25 ? 'selected' : '' }}>25 días</option>
+                                                            <option value="30" {{ $orden->$colName == 30 ? 'selected' : '' }}>30 días</option>
                                                         </select>
                                                     @else
                                                         <span class="cell-text">
-                                                            @if($key === 'total_de_dias_')
-                                                                {{ $totalDiasCalculados[$orden->pedido] ?? 'N/A' }}
-                                                            @elseif(in_array($key, ['fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega', 'inventario', 'insumos_y_telas', 'corte', 'bordado', 'estampado', 'costura', 'reflectivo', 'lavanderia', 'arreglos', 'marras', 'control_de_calidad', 'entrega']))
-                                                                {{-- Formatear TODAS las columnas de fecha a DD/MM/YYYY --}}
+                                                            @if($colName === 'total_de_dias_')
+                                                                {{ $totalDias }}
+                                                            @elseif($colName === 'asesora')
+                                                                {{ $orden->asesora->name ?? ($orden->$colName ?? '') }}
+                                                            @elseif($colName === 'numero_pedido')
+                                                                {{ $orden->numero_pedido }}
+                                                            @elseif($colName === 'descripcion_prendas')
+                                                                {{ $orden->descripcion_prendas }}
+                                                            @elseif($colName === 'cantidad_total')
+                                                                {{ $orden->cantidad_total }}
+                                                            @elseif(in_array($colName, ['fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega']))
                                                                 @php
-                                                                    try {
-                                                                        $fechaFormateada = !empty($valor) ? \Carbon\Carbon::parse($valor)->format('d/m/Y') : '';
-                                                                        echo $fechaFormateada;
-                                                                        // Log para debugging
-                                                                        if ($key === 'fecha_de_creacion_de_orden' || $key === 'fecha_estimada_de_entrega') {
-                                                                            \Log::info("BLADE: Formateando fecha", [
-                                                                                'pedido' => $orden->pedido,
-                                                                                'columna' => $key,
-                                                                                'valor_original' => $valor,
-                                                                                'valor_formateado' => $fechaFormateada
-                                                                            ]);
-                                                                        }
-                                                                    } catch (\Exception $e) {
-                                                                        echo $valor;
-                                                                        \Log::warning("BLADE: Error formateando fecha", [
-                                                                            'columna' => $key,
-                                                                            'valor' => $valor,
-                                                                            'error' => $e->getMessage()
-                                                                        ]);
-                                                                    }
+                                                                    echo !empty($orden->$colName) ? \Carbon\Carbon::parse($orden->$colName)->format('d/m/Y') : '';
                                                                 @endphp
                                                             @else
-                                                                {{ $valor }}
+                                                                {{ $orden->$colName ?? '' }}
                                                             @endif
                                                         </span>
                                                     @endif
                                                 </div>
                                             </td>
-                                            @endif
                                         @endif
                                     @endforeach
                                 </tr>
@@ -331,6 +367,7 @@
         // Pasar opciones de area a JS
         window.areaOptions = @json($areaOptions);
         window.modalContext = '{{ $modalContext }}';
+        window.context = '{{ $context ?? '' }}';
         window.fetchUrl = '{{ $fetchUrl }}';
         window.updateUrl = '{{ $updateUrl }}';
         
@@ -388,6 +425,33 @@
 
     <!-- Modal de Edición de Orden -->
     @include('components.orders-components.order-edit-modal')
+
+    <script>
+        // DEBUG: Verificar estado de la tabla antes de cargar scripts
+        console.log('%c=== DEBUG: ESTADO INICIAL DE LA TABLA ===', 'color: #ff0000; font-weight: bold; font-size: 16px;');
+        console.log('Total órdenes en HTML: {{ $ordenes->count() }}');
+        console.log('Órdenes vacías: {{ $ordenes->isEmpty() ? "SI" : "NO" }}');
+        console.log('Página actual: {{ $ordenes->currentPage() }}');
+        console.log('Total páginas: {{ $ordenes->lastPage() }}');
+        
+        setTimeout(() => {
+            const tabla = document.getElementById('tablaOrdenes');
+            const tbody = tabla ? tabla.querySelector('tbody') : null;
+            const filas = tbody ? tbody.querySelectorAll('tr:not(.no-results)') : [];
+            
+            console.log('%c=== DEBUG: VERIFICACIÓN DEL DOM ===', 'color: #0000ff; font-weight: bold; font-size: 16px;');
+            console.log('Tabla encontrada:', !!tabla);
+            console.log('tbody encontrado:', !!tbody);
+            console.log('Total filas (excluye no-results):', filas.length);
+            console.log('Total celdas en primera fila:', filas.length > 0 ? filas[0].querySelectorAll('td').length : 0);
+            
+            if (filas.length > 0) {
+                const primeraFila = filas[0];
+                console.log('Primera fila data-order-id:', primeraFila.dataset.orderId);
+                console.log('Primera fila HTML (primeros 200 chars):', primeraFila.innerHTML.substring(0, 200));
+            }
+        }, 100);
+    </script>
 
     <script src="{{ asset('js/orders js/modern-table.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/orders-table.js') }}?v={{ time() }}"></script>

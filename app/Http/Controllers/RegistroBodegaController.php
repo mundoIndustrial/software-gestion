@@ -33,7 +33,7 @@ class RegistroBodegaController extends Controller
             $column = $request->column;
         $allowedColumns = [
             'pedido', 'estado', 'area', 'total_de_dias_', 'cliente',
-            'descripcion', 'cantidad', 'novedades', 'asesora', 'forma_de_pago',
+            'descripcion', 'cantidad', 'novedades', 'forma_de_pago',
             'fecha_de_creacion_de_orden', 'encargado_orden', 'dias_orden', 'inventario',
             'encargados_inventario', 'dias_inventario', 'insumos_y_telas', 'encargados_insumos',
             'dias_insumos', 'corte', 'encargados_de_corte', 'dias_corte', 'bordado',
@@ -352,7 +352,6 @@ class RegistroBodegaController extends Controller
                 'area' => 'nullable|string',
                 'fecha_creacion' => 'required|date',
                 'encargado' => 'nullable|string|max:255',
-                'asesora' => 'nullable|string|max:255',
                 'forma_pago' => 'nullable|string|max:255',
                 'prendas' => 'required|array',
                 'prendas.*.prenda' => 'required|string|max:255',
@@ -412,7 +411,6 @@ class RegistroBodegaController extends Controller
                 'area' => $area,
                 'fecha_de_creacion_de_orden' => $request->fecha_creacion,
                 'encargado_orden' => $request->encargado,
-                'asesora' => $request->asesora,
                 'forma_de_pago' => $request->forma_pago,
                 'descripcion' => $descripcionCompleta,
                 'cantidad' => $totalCantidad,
@@ -480,7 +478,7 @@ class RegistroBodegaController extends Controller
             // Whitelist de columnas permitidas para edición
             $allowedColumns = [
                 'estado', 'area', '_pedido', 'cliente', 'descripcion', 'cantidad',
-                'novedades', 'asesora', 'forma_de_pago', 'fecha_de_creacion_de_orden',
+                'novedades', 'forma_de_pago', 'fecha_de_creacion_de_orden',
                 'encargado_orden', 'dias_orden', 'inventario', 'encargados_inventario',
                 'dias_inventario', 'insumos_y_telas', 'encargados_insumos', 'dias_insumos',
                 'corte', 'encargados_de_corte', 'dias_corte', 'bordado', 'codigo_de_bordado',
@@ -830,7 +828,6 @@ class RegistroBodegaController extends Controller
                 'cliente' => 'required|string|max:255',
                 'fecha_creacion' => 'required|date',
                 'encargado' => 'nullable|string|max:255',
-                'asesora' => 'nullable|string|max:255',
                 'forma_pago' => 'nullable|string|max:255',
                 'prendas' => 'required|array|min:1',
                 'prendas.*.prenda' => 'required|string|max:255',
@@ -878,7 +875,6 @@ class RegistroBodegaController extends Controller
                 'cliente' => $request->cliente,
                 'fecha_de_creacion_de_orden' => $request->fecha_creacion,
                 'encargado_orden' => $request->encargado,
-                'asesora' => $request->asesora,
                 'forma_de_pago' => $request->forma_pago,
                 'descripcion' => $descripcionCompleta,
                 'cantidad' => $totalCantidad,

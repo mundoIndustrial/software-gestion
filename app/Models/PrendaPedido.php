@@ -18,6 +18,7 @@ class PrendaPedido extends Model
         'nombre_prenda',
         'cantidad',
         'descripcion',
+        'cantidad_talla',
     ];
 
     /**

@@ -637,7 +637,7 @@
                                 </td>
                                 <td class="table-cell">
                                     <div class="cell-content">
-                                        <span style="color: var(--gray-700); font-weight: 500;">{{ $pedido->getAreaActual() }}</span>
+                                        <span style="color: var(--gray-700); font-weight: 500;">{{ $pedido->procesoActualOptimizado() }}</span>
                                     </div>
                                 </td>
                                 <td class="table-cell">

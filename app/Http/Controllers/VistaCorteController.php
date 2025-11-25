@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\EntregaPedidoCorte;
-use App\Models\TablaOriginal;
 use Illuminate\Http\Request;
 
 class VistaCorteController extends Controller

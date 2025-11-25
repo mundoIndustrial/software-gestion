@@ -9,7 +9,9 @@
             <table class="cotizaciones-table">
                 <thead>
                     <tr>
-                        <th>Número</th>
+                        @if(auth()->user() && auth()->user()->role && auth()->user()->role->name === 'asesor')
+                            <th>Número</th>
+                        @endif
                         <th>Fecha</th>
                         <th>Cliente</th>
                         <th>Asesora</th>
@@ -20,7 +22,9 @@
                 <tbody>
                     @forelse($cotizaciones as $cotizacion)
                         <tr>
-                            <td><strong>COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}</strong></td>
+                            @if(auth()->user() && auth()->user()->role && auth()->user()->role->name === 'asesor')
+                                <td><strong>COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}</strong></td>
+                            @endif
                             <td>{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y H:i') : 'N/A' }}</td>
                             <td>{{ $cotizacion->cliente ?? 'N/A' }}</td>
                             <td>{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? 'N/A') }}</td>
@@ -40,7 +44,11 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="no-cotizaciones">
+                            @if(auth()->user() && auth()->user()->role && auth()->user()->role->name === 'asesor')
+                                <td colspan="6" class="no-cotizaciones">
+                            @else
+                                <td colspan="5" class="no-cotizaciones">
+                            @endif
                                 <span class="material-symbols-rounded">inbox</span>
                                 <p>No hay cotizaciones para entregar</p>
                             </td>

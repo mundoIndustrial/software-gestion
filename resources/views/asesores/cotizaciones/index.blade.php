@@ -228,7 +228,9 @@
                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
                             <div style="flex: 1; min-width: 0;">
                                 <h4 style="margin: 0; color: #333; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ $cot->cliente ?? 'Sin cliente' }}</h4>
-                                <p style="margin: 2px 0 0 0; color: #999; font-size: 0.8rem;">ID: #{{ $cot->id }}</p>
+                                @if(auth()->user() && auth()->user()->role && auth()->user()->role->name === 'asesor')
+                                    <p style="margin: 2px 0 0 0; color: #999; font-size: 0.8rem;">ID: #{{ $cot->id }}</p>
+                                @endif
                             </div>
                             <span style="background: #d4edda; color: #155724; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; white-space: nowrap; margin-left: 5px;">
                                 {{ ucfirst($cot->estado) }}
@@ -251,7 +253,9 @@
                     <thead style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); border-bottom: 3px solid #1e3a8a;">
                         <tr>
                             <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Fecha</th>
-                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Código</th>
+                            @if(auth()->user() && auth()->user()->role && auth()->user()->role->name === 'asesor')
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Código</th>
+                            @endif
                             <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Cliente</th>
                             <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Estado</th>
                             <th style="padding: 14px 12px; text-align: center; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Acción</th>
@@ -261,7 +265,9 @@
                         @foreach($cotizaciones as $cot)
                             <tr style="border-bottom: 1px solid #ecf0f1; transition: background 0.2s;">
                                 <td style="padding: 12px; color: #666; font-size: 0.9rem;">{{ $cot->created_at->format('d/m/Y') }}</td>
-                                <td style="padding: 12px; color: #1e40af; font-size: 0.9rem; font-weight: 700;">{{ $cot->numero_cotizacion ?? 'Por asignar' }}</td>
+                                @if(auth()->user() && auth()->user()->role && auth()->user()->role->name === 'asesor')
+                                    <td style="padding: 12px; color: #1e40af; font-size: 0.9rem; font-weight: 700;">{{ $cot->numero_cotizacion ?? 'Por asignar' }}</td>
+                                @endif
                                 <td style="padding: 12px; color: #333; font-size: 0.9rem; font-weight: 500;">{{ $cot->cliente ?? 'Sin cliente' }}</td>
                                 <td style="padding: 12px;">
                                     <span style="background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">

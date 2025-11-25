@@ -24,12 +24,12 @@ class DashboardController extends Controller
 
     public function getKPIs()
     {
-        $totalOrders = DB::table('tabla_original')->count();
-        $ordersByStatus = DB::table('tabla_original')
+        $totalOrders = DB::table('pedidos_produccion')->count();
+        $ordersByStatus = DB::table('pedidos_produccion')
             ->select('estado', DB::raw('count(*) as count'))
             ->groupBy('estado')
             ->get();
-        $ordersByArea = DB::table('tabla_original')
+        $ordersByArea = DB::table('pedidos_produccion')
             ->select('area', DB::raw('count(*) as count'))
             ->groupBy('area')
             ->get();
@@ -49,9 +49,9 @@ class DashboardController extends Controller
 
     public function getRecentOrders()
     {
-        $recentOrders = DB::table('tabla_original')
-            ->select('pedido', 'cliente', 'estado', 'area', 'fecha_de_creacion_de_orden')
-            ->orderBy('fecha_de_creacion_de_orden', 'desc')
+        $recentOrders = DB::table('pedidos_produccion')
+            ->select('numero_pedido', 'cliente', 'estado', 'area', 'created_at')
+            ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
 

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\TablaOriginal;
 use App\Models\PedidoProduccion;
 use App\Models\News;
 use App\Models\Festivo;
@@ -38,7 +37,7 @@ class RegistroOrdenController extends Controller
             $column = $request->column;
         $allowedColumns = [
             'pedido', 'estado', 'area', 'total_de_dias_', 'dia_de_entrega', 'fecha_estimada_de_entrega', 'cliente',
-            'descripcion', 'cantidad', 'novedades', 'asesora', 'forma_de_pago',
+            'descripcion', 'cantidad', 'novedades', 'forma_de_pago',
             'fecha_de_creacion_de_orden', 'encargado_orden', 'dias_orden', 'inventario',
             'encargados_inventario', 'dias_inventario', 'insumos_y_telas', 'encargados_insumos',
             'dias_insumos', 'corte', 'encargados_de_corte', 'dias_corte', 'bordado',
@@ -55,7 +54,7 @@ class RegistroOrdenController extends Controller
                 // Si es la columna calculada total_de_dias_, obtener todos los registros y calcular
                 if ($column === 'total_de_dias_') {
                     $festivos = \App\Models\Festivo::pluck('fecha')->toArray();
-                    $ordenes = TablaOriginal::all();
+                    $ordenes = PedidoProduccion::all();
                     foreach ($ordenes as $orden) {
                         $orden->setFestivos($festivos);
                     }
@@ -63,7 +62,7 @@ class RegistroOrdenController extends Controller
                         return $orden->total_de_dias;
                     })->unique()->sort()->values()->toArray();
                 } else {
-                    $uniqueValues = TablaOriginal::distinct()->pluck($column)->filter()->values()->toArray();
+                    $uniqueValues = PedidoProduccion::distinct()->pluck($column)->filter()->values()->toArray();
                 }
                 
                 // Si es una columna de fecha, formatear los valores a d/m/Y
@@ -88,7 +87,10 @@ class RegistroOrdenController extends Controller
             return response()->json(['error' => 'Invalid column'], 400);
         }
 
-        $query = TablaOriginal::query();
+        $query = PedidoProduccion::query()
+            ->with(['asesora', 'prendas' => function($q) {
+                $q->select('id', 'pedido_produccion_id', 'nombre_prenda', 'cantidad', 'descripcion', 'cantidad_talla');
+            }]);
 
         // Filtro por defecto para supervisores: "En Ejecución" (pero puede cambiarse)
         if (auth()->user() && auth()->user()->role && auth()->user()->role->name === 'supervisor') {
@@ -98,11 +100,11 @@ class RegistroOrdenController extends Controller
             }
         }
 
-        // Apply search filter - search by 'pedido' or 'cliente'
+        // Apply search filter - search by 'numero_pedido' or 'cliente'
         if ($request->has('search') && !empty($request->search)) {
             $searchTerm = $request->search;
             $query->where(function($q) use ($searchTerm) {
-                $q->where('pedido', 'LIKE', '%' . $searchTerm . '%')
+                $q->where('numero_pedido', 'LIKE', '%' . $searchTerm . '%')
                   ->orWhere('cliente', 'LIKE', '%' . $searchTerm . '%');
             });
         }
@@ -125,7 +127,7 @@ class RegistroOrdenController extends Controller
                 // Whitelist de columnas permitidas para seguridad
                 $allowedColumns = [
                     'id', 'estado', 'area', 'total_de_dias_', 'dia_de_entrega', 'fecha_estimada_de_entrega', 'pedido', 'cliente',
-                    'descripcion', 'cantidad', 'novedades', 'asesora', 'forma_de_pago',
+                    'descripcion', 'cantidad', 'novedades', 'forma_de_pago',
                     'fecha_de_creacion_de_orden', 'encargado_orden', 'dias_orden', 'inventario',
                     'encargados_inventario', 'dias_inventario', 'insumos_y_telas', 'encargados_insumos',
                     'dias_insumos', 'corte', 'encargados_de_corte', 'dias_corte', 'bordado',
@@ -228,8 +230,53 @@ class RegistroOrdenController extends Controller
         $areaOptions = $this->getEnumOptions('tabla_original', 'area');
 
         if ($request->wantsJson()) {
+            // Filtrar campos sensibles según el rol del usuario
+            $ordenesFiltered = array_map(function($orden) {
+                $ordenArray = is_object($orden) ? $orden->toArray() : (array) $orden;
+                
+                // Campos que se ocultan para todos los usuarios
+                $camposOcultosGlobal = ['created_at', 'updated_at', 'deleted_at', 'asesor_id', 'cliente_id'];
+                
+                // Campos que se ocultan para no-asesores
+                $camposOcultosNoAsesor = ['cotizacion_id', 'numero_cotizacion'];
+                
+                // Agregar nombres en lugar de IDs
+                if ($orden->asesora) {
+                    $ordenArray['asesor'] = $orden->asesora->name ?? '';
+                } else {
+                    $ordenArray['asesor'] = '';
+                }
+                
+                // Para cliente, usar el campo 'cliente' directo (que es el nombre del cliente en la tabla)
+                // Si existe cliente_id, intentar obtener el nombre de la tabla clientes
+                if (!empty($ordenArray['cliente_id'])) {
+                    try {
+                        $cliente = \App\Models\Cliente::find($ordenArray['cliente_id']);
+                        $ordenArray['cliente_nombre'] = $cliente ? $cliente->nombre : ($ordenArray['cliente'] ?? '');
+                    } catch (\Exception $e) {
+                        $ordenArray['cliente_nombre'] = $ordenArray['cliente'] ?? '';
+                    }
+                } else {
+                    $ordenArray['cliente_nombre'] = $ordenArray['cliente'] ?? '';
+                }
+                
+                // Eliminar campos ocultos globales
+                foreach ($camposOcultosGlobal as $campo) {
+                    unset($ordenArray[$campo]);
+                }
+                
+                // Eliminar campos sensibles para no-asesores
+                if (!auth()->user() || !auth()->user()->role || auth()->user()->role->name !== 'asesor') {
+                    foreach ($camposOcultosNoAsesor as $campo) {
+                        unset($ordenArray[$campo]);
+                    }
+                }
+                
+                return $ordenArray;
+            }, $ordenes->items());
+            
             return response()->json([
-                'orders' => $ordenes->items(),
+                'orders' => $ordenesFiltered,
                 'totalDiasCalculados' => $totalDiasCalculados,
                 'areaOptions' => $areaOptions,
                 'pagination' => [
@@ -255,26 +302,70 @@ class RegistroOrdenController extends Controller
 
     public function show($pedido)
     {
-        // Primero intentar buscar en TablaOriginal por 'pedido' (producción)
-        $order = TablaOriginal::where('pedido', $pedido)->first();
-        
-        // Si no encuentra en TablaOriginal, buscar en PedidoProduccion por 'numero_pedido' (asesores)
-        if (!$order) {
-            $order = PedidoProduccion::where('numero_pedido', $pedido)->firstOrFail();
-        }
+        // Buscar en PedidoProduccion por 'numero_pedido'
+        $order = PedidoProduccion::with(['asesora', 'prendas'])->where('numero_pedido', $pedido)->firstOrFail();
 
-        $totalCantidad = DB::table('registros_por_orden')
-            ->where('pedido', $order->pedido ?? $order->numero_pedido)
+        $totalCantidad = DB::table('prendas_pedido')
+            ->where('pedido_produccion_id', $order->id)
             ->sum('cantidad');
 
-        $totalEntregado = DB::table('registros_por_orden')
-            ->where('pedido', $order->pedido ?? $order->numero_pedido)
-            ->sum('total_producido_por_talla');
+        // $totalEntregado se calcula solo si la tabla procesos_prenda existe y tiene datos
+        $totalEntregado = 0;
+        try {
+            $totalEntregado = DB::table('procesos_prenda')
+                ->whereIn('prenda_pedido_id', DB::table('prendas_pedido')->where('pedido_produccion_id', $order->id)->pluck('id'))
+                ->sum('cantidad_completada');
+        } catch (\Exception $e) {
+            \Log::warning('Error al calcular totalEntregado', ['error' => $e->getMessage()]);
+            $totalEntregado = 0;
+        }
 
         $order->total_cantidad = $totalCantidad;
         $order->total_entregado = $totalEntregado;
 
-        return response()->json($order);
+        // Filtrar datos sensibles
+        $orderArray = $order->toArray();
+        
+        // Campos que se ocultan para todos
+        $camposOcultosGlobal = ['created_at', 'updated_at', 'deleted_at', 'asesor_id', 'cliente_id'];
+        
+        // Campos que se ocultan para no-asesores
+        $camposOcultosNoAsesor = ['cotizacion_id', 'numero_cotizacion'];
+        
+        // Agregar nombres en lugar de IDs
+        if ($order->asesora) {
+            $orderArray['asesor'] = $order->asesora->name ?? '';
+            $orderArray['asesora'] = $order->asesora->name ?? '';
+        } else {
+            $orderArray['asesor'] = '';
+            $orderArray['asesora'] = '';
+        }
+        
+        // Para cliente, usar el campo 'cliente' directo (que es el nombre del cliente en la tabla)
+        if (!empty($orderArray['cliente_id'])) {
+            try {
+                $cliente = \App\Models\Cliente::find($orderArray['cliente_id']);
+                $orderArray['cliente_nombre'] = $cliente ? $cliente->nombre : ($orderArray['cliente'] ?? '');
+            } catch (\Exception $e) {
+                $orderArray['cliente_nombre'] = $orderArray['cliente'] ?? '';
+            }
+        } else {
+            $orderArray['cliente_nombre'] = $orderArray['cliente'] ?? '';
+        }
+        
+        // Eliminar campos ocultos globales
+        foreach ($camposOcultosGlobal as $campo) {
+            unset($orderArray[$campo]);
+        }
+        
+        // Eliminar campos sensibles para no-asesores
+        if (!auth()->user() || !auth()->user()->role || auth()->user()->role->name !== 'asesor') {
+            foreach ($camposOcultosNoAsesor as $campo) {
+                unset($orderArray[$campo]);
+            }
+        }
+        
+        return response()->json($orderArray);
     }
 
     public function getNextPedido()
@@ -312,7 +403,6 @@ class RegistroOrdenController extends Controller
                 'area' => 'nullable|string',
                 'fecha_creacion' => 'required|date',
                 'encargado' => 'nullable|string|max:255',
-                'asesora' => 'nullable|string|max:255',
                 'forma_pago' => 'nullable|string|max:255',
                 'prendas' => 'required|array',
                 'prendas.*.prenda' => 'required|string|max:255',
@@ -372,7 +462,6 @@ class RegistroOrdenController extends Controller
                 'area' => $area,
                 'fecha_de_creacion_de_orden' => $request->fecha_creacion,
                 'encargado_orden' => $request->encargado,
-                'asesora' => $request->asesora,
                 'forma_de_pago' => $request->forma_pago,
                 'descripcion' => $descripcionCompleta,
                 'cantidad' => $totalCantidad,
@@ -405,7 +494,7 @@ class RegistroOrdenController extends Controller
             ]);
 
             // Broadcast event for real-time updates
-            $ordenCreada = TablaOriginal::where('pedido', $request->pedido)->first();
+            $ordenCreada = PedidoProduccion::where('numero_pedido', $request->pedido)->first();
             broadcast(new \App\Events\OrdenUpdated($ordenCreada, 'created'));
 
             return response()->json(['success' => true, 'message' => 'Orden registrada correctamente']);
@@ -445,9 +534,9 @@ class RegistroOrdenController extends Controller
     public function update(Request $request, $pedido)
     {
         try {
-            $orden = TablaOriginal::where('pedido', $pedido)->firstOrFail();
+            $orden = PedidoProduccion::where('numero_pedido', $pedido)->firstOrFail();
 
-            $areaOptions = $this->getEnumOptions('tabla_original', 'area');
+            $areaOptions = ['Creación Orden', 'Corte', 'Costura', 'Bordado', 'Estampado', 'Control-Calidad', 'Entrega', 'Polos', 'Taller', 'Insumos', 'Lavandería', 'Arreglos', 'Despachos'];
             $estadoOptions = ['Entregado', 'En Ejecución', 'No iniciado', 'Anulada'];
 
             // Whitelist de columnas permitidas para edición
@@ -518,9 +607,13 @@ class RegistroOrdenController extends Controller
             }
             if (array_key_exists('dia_de_entrega', $validatedData)) {
                 $updates['dia_de_entrega'] = $validatedData['dia_de_entrega'];
-            }
-            if (array_key_exists('dia_de_entrega', $validatedData)) {
-                $updates['dia_de_entrega'] = $validatedData['dia_de_entrega'];
+                
+                // Recalcular fecha_estimada_de_entrega si se actualiza dia_de_entrega
+                $orden->dia_de_entrega = $validatedData['dia_de_entrega'];
+                $fechaEstimada = $orden->calcularFechaEstimada();
+                if ($fechaEstimada) {
+                    $updates['fecha_estimada_de_entrega'] = $fechaEstimada->format('Y-m-d');
+                }
             }
 
             // Agregar otras columnas permitidas y convertir fechas si es necesario
@@ -593,7 +686,7 @@ class RegistroOrdenController extends Controller
             }
 
             // Obtener la orden actualizada para retornar todos los campos
-            $ordenActualizada = TablaOriginal::where('pedido', $pedido)->first();
+            $ordenActualizada = PedidoProduccion::where('numero_pedido', $pedido)->first();
             
             // Preparar datos de la orden para retornar
             $ordenData = $ordenActualizada->toArray();
@@ -751,7 +844,7 @@ class RegistroOrdenController extends Controller
         $resultados = [];
 
         foreach ($ordenes as $orden) {
-            $ordenPedido = $orden->pedido;
+            $ordenPedido = $orden->numero_pedido;
 
             // Verificar si fecha_de_creacion_de_orden existe
             if (!$orden->fecha_de_creacion_de_orden) {
@@ -889,7 +982,7 @@ class RegistroOrdenController extends Controller
             $newPedido = $validatedData['new_pedido'];
 
             // Verificar que la orden antigua existe
-            $orden = TablaOriginal::where('pedido', $oldPedido)->first();
+            $orden = PedidoProduccion::where('numero_pedido', $oldPedido)->first();
             if (!$orden) {
                 return response()->json([
                     'success' => false,
@@ -898,7 +991,7 @@ class RegistroOrdenController extends Controller
             }
 
             // Verificar que el nuevo pedido no existe ya
-            $existingOrder = TablaOriginal::where('pedido', $newPedido)->first();
+            $existingOrder = PedidoProduccion::where('numero_pedido', $newPedido)->first();
             if ($existingOrder) {
                 return response()->json([
                     'success' => false,
@@ -954,7 +1047,7 @@ class RegistroOrdenController extends Controller
             ]);
 
             // Broadcast event for real-time updates
-            $ordenActualizada = TablaOriginal::where('pedido', $newPedido)->first();
+            $ordenActualizada = PedidoProduccion::where('numero_pedido', $newPedido)->first();
             broadcast(new \App\Events\OrdenUpdated($ordenActualizada, 'updated'));
 
             return response()->json([
@@ -1028,7 +1121,6 @@ class RegistroOrdenController extends Controller
                 'cliente' => 'required|string|max:255',
                 'fecha_creacion' => 'required|date',
                 'encargado' => 'nullable|string|max:255',
-                'asesora' => 'nullable|string|max:255',
                 'forma_pago' => 'nullable|string|max:255',
                 'prendas' => 'required|array',
                 'prendas.*.prenda' => 'required|string|max:255',
@@ -1073,7 +1165,6 @@ class RegistroOrdenController extends Controller
                 'cliente' => $request->cliente,
                 'fecha_de_creacion_de_orden' => $request->fecha_creacion,
                 'encargado_orden' => $request->encargado,
-                'asesora' => $request->asesora,
                 'forma_de_pago' => $request->forma_pago,
                 'descripcion' => $descripcionCompleta,
                 'cantidad' => $totalCantidad,
@@ -1118,11 +1209,11 @@ class RegistroOrdenController extends Controller
             DB::commit();
 
             // Obtener la orden actualizada para retornar y broadcast
-            $ordenActualizada = TablaOriginal::where('pedido', $pedido)->first();
+            $ordenActualizada = PedidoProduccion::where('numero_pedido', $pedido)->first();
 
             // Obtener los registros por orden actualizados
-            $registrosActualizados = DB::table('registros_por_orden')
-                ->where('pedido', $pedido)
+            $registrosActualizados = DB::table('prendas_pedido')
+                ->where('pedido_produccion_id', $ordenActualizada->id)
                 ->get();
 
             // Broadcast event for real-time updates
@@ -1180,8 +1271,8 @@ class RegistroOrdenController extends Controller
 
             DB::beginTransaction();
 
-            // Actualizar la descripción en tabla_original
-            $orden = TablaOriginal::where('pedido', $pedido)->firstOrFail();
+            // Actualizar la descripción en PedidoProduccion
+            $orden = PedidoProduccion::where('numero_pedido', $pedido)->firstOrFail();
             $orden->update(['descripcion' => $nuevaDescripcion]);
 
             // Parsear la nueva descripción para extraer prendas y tallas
@@ -1249,8 +1340,8 @@ class RegistroOrdenController extends Controller
             DB::commit();
 
             // Broadcast events
-            $ordenActualizada = TablaOriginal::where('pedido', $pedido)->first();
-            $registrosActualizados = DB::table('registros_por_orden')->where('pedido', $pedido)->get();
+            $ordenActualizada = PedidoProduccion::where('numero_pedido', $pedido)->first();
+            $registrosActualizados = DB::table('prendas_pedido')->where('pedido_produccion_id', $ordenActualizada->id)->get();
             
             broadcast(new \App\Events\OrdenUpdated($ordenActualizada, 'updated'));
             broadcast(new \App\Events\RegistrosPorOrdenUpdated($pedido, $registrosActualizados, 'updated'));
@@ -1351,13 +1442,8 @@ class RegistroOrdenController extends Controller
     public function getImages($pedido)
     {
         try {
-            // Primero buscar en TablaOriginal
-            $orden = TablaOriginal::where('pedido', $pedido)->first();
-            
-            // Si no existe en TablaOriginal, buscar en PedidoProduccion
-            if (!$orden) {
-                $orden = PedidoProduccion::where('numero_pedido', $pedido)->first();
-            }
+            // Buscar en PedidoProduccion
+            $orden = PedidoProduccion::where('numero_pedido', $pedido)->first();
             
             if (!$orden) {
                 return response()->json(['images' => []], 404);

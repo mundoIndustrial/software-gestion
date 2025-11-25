@@ -327,7 +327,7 @@ function openOrderTracking(orderId) {
     })
     .then(response => response.json())
     .then(data => {
-        if (data.pedido) {
+        if (data.numero_pedido || data.pedido) {
             displayOrderTracking(data);
         } else {
             console.error('No se encontró la orden');
@@ -349,7 +349,7 @@ async function displayOrderTracking(order) {
     }
     
     // Llenar información del pedido
-    document.getElementById('trackingOrderNumber').textContent = `#${order.pedido}`;
+    document.getElementById('trackingOrderNumber').textContent = `#${order.numero_pedido || order.pedido}`;
     
     // Usar parseLocalDate para evitar problemas de zona horaria
     let fechaCreacion = order.fecha_de_creacion_de_orden;

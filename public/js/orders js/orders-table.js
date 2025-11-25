@@ -967,15 +967,15 @@ async function viewDetail(pedido) {
         }
         const asesoraValue = document.getElementById('asesora-value');
         if (asesoraValue) {
-            asesoraValue.textContent = order.asesora || '';
+            asesoraValue.textContent = order.asesora || order.asesor || '---';
         }
         const formaPagoValue = document.getElementById('forma-pago-value');
         if (formaPagoValue) {
-            formaPagoValue.textContent = order.forma_de_pago || '';
+            formaPagoValue.textContent = order.forma_de_pago || '---';
         }
         const clienteValue = document.getElementById('cliente-value');
         if (clienteValue) {
-            clienteValue.textContent = order.cliente || '';
+            clienteValue.textContent = order.cliente_nombre || order.cliente || '---';
         }
 
         const encargadoValue = document.getElementById('encargado-value');
@@ -1128,8 +1128,8 @@ async function viewDetail(pedido) {
                 }
             } else {
                 // Restore description
-                if (order.descripcion) {
-                    const prendas = order.descripcion.split(/\n\s*\n/).filter(p => p.trim());
+                if (order.descripcion_prendas) {
+                    const prendas = order.descripcion_prendas.split(/\n\s*\n/).filter(p => p.trim());
                     let currentIndex = 0;
                     function updateDescripcion() {
                         if (prendas.length <= 2) {
@@ -1187,8 +1187,8 @@ async function viewDetail(pedido) {
         let currentIndex = 0;
         let prendas = [];
 
-        if (descripcionText && order.descripcion) {
-            prendas = order.descripcion.split(/\n\s*\n/).filter(p => p.trim());
+        if (descripcionText && order.descripcion_prendas) {
+            prendas = order.descripcion_prendas.split(/\n\s*\n/).filter(p => p.trim());
 
             function updateDescripcion() {
                 if (prendas.length <= 2) {
@@ -1291,55 +1291,6 @@ function openOrderRegistration() {
 // Los dropdowns ya se inicializan en DOMContentLoaded
 
 
-
-// Handle orden updates (created, updated, deleted)
-function handleOrdenUpdate(orden, action) {
-    const pedido = orden.pedido;
-    const updateKey = `${pedido}-${action}`;
-
-    // Debounce: ignore if same update happened in last 500ms
-    if (updateDebounceMap.has(updateKey)) {
-        const lastUpdate = updateDebounceMap.get(updateKey);
-        if (Date.now() - lastUpdate < 500) {
-            console.log(`⏭️ Ignorando actualización duplicada para orden ${pedido}`);
-            return;
-        }
-    }
-    updateDebounceMap.set(updateKey, Date.now());
-
-    console.log(`Procesando acción: ${action} para orden:`, orden);
-
-    const table = document.querySelector('.modern-table tbody');
-    if (!table) {
-        console.warn('Tabla de órdenes no encontrada');
-        return;
-    }
-
-    if (action === 'deleted') {
-        // Remove row - usar data-order-id
-        const row = table.querySelector(`tr[data-order-id="${pedido}"]`);
-        if (row) {
-            row.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
-            setTimeout(() => {
-                row.remove();
-                console.log(`✅ Orden ${pedido} eliminada de la tabla`);
-            }, 500);
-        }
-        return;
-    }
-
-    if (action === 'created') {
-        // Reload table to show new order in correct position
-        recargarTablaPedidos();
-        return;
-    }
-
-    if (action === 'updated') {
-        // Update existing row
-        actualizarOrdenEnTabla(orden);
-        return;
-    }
-}
 
 // Add new orden to table
 function agregarOrdenATabla(orden) {
@@ -1741,106 +1692,28 @@ function executeDiaEntregaUpdate(orderId, newDias, oldDias, dropdown) {
                 }
                 
                 // IMPORTANTE: Actualizar el color de la fila inmediatamente
-                const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
-                if (row && data.totalDiasCalculados) {
-                    const totalDias = data.totalDiasCalculados[orderId] || 0;
-                    const estado = data.order?.estado || '';
-                    
-                    console.log(`\n[executeDiaEntregaUpdate] ========== DATOS PARA COLOR ==========`);
-                    console.log(`[executeDiaEntregaUpdate] totalDiasCalculados:`, data.totalDiasCalculados);
-                    console.log(`[executeDiaEntregaUpdate] totalDias para orden ${orderId}: ${totalDias}`);
-                    console.log(`[executeDiaEntregaUpdate] estado: ${estado}`);
-                    console.log(`[executeDiaEntregaUpdate] valorAEnviar: ${valorAEnviar}`);
-                    
-                    // ACTUALIZAR FECHA ESTIMADA DE ENTREGA (SOLO esta fecha, NO fecha_de_creacion_de_orden)
-                    console.log(`\n[executeDiaEntregaUpdate] ========== ACTUALIZANDO FECHAS ==========`);
-                    console.log(`[executeDiaEntregaUpdate] data.order:`, data.order);
-                    console.log(`[executeDiaEntregaUpdate] fecha_estimada_de_entrega (BD): ${data.order?.fecha_estimada_de_entrega}`);
-                    console.log(`[executeDiaEntregaUpdate] fecha_de_creacion_de_orden (BD): ${data.order?.fecha_de_creacion_de_orden}`);
-                    
-                    if (data.order && data.order.fecha_estimada_de_entrega) {
-                        const fechaEstimadaCell = row.querySelector('td[data-column="fecha_estimada_de_entrega"] .cell-text');
-                        if (fechaEstimadaCell) {
-                            console.log(`[executeDiaEntregaUpdate] Buscando celda fecha_estimada_de_entrega...`);
-                            // El servidor ya retorna la fecha formateada en DD/MM/YYYY
-                            const fechaFormateada = asegurarFormatoFecha(data.order.fecha_estimada_de_entrega);
-                            console.log(`[executeDiaEntregaUpdate] Celda encontrada, actualizando con: ${fechaFormateada}`);
-                            fechaEstimadaCell.textContent = fechaFormateada;
-                            console.log(`📅 Fecha estimada actualizada: ${data.order.fecha_estimada_de_entrega} → ${fechaFormateada}`);
-                        } else {
-                            console.log(`[executeDiaEntregaUpdate] ❌ Celda fecha_estimada_de_entrega NO encontrada`);
+                const row = document.querySelector(`tr[data-numero-pedido="${orderId}"]`);
+                if (!row) {
+                    console.log(`⚠️ Row no encontrada con data-numero-pedido="${orderId}", buscando alternativas...`);
+                    // Buscar por otra forma
+                    const allRows = document.querySelectorAll('tr.table-row');
+                    let foundRow = null;
+                    allRows.forEach(r => {
+                        // Buscar el numero pedido en alguna celda
+                        const numeroCell = r.querySelector('td[data-column="numero_pedido"]');
+                        if (numeroCell && numeroCell.textContent.trim() == orderId) {
+                            foundRow = r;
                         }
+                    });
+                    if (foundRow) {
+                        console.log(`✅ Row encontrada por búsqueda alternativa`);
+                        executeRowUpdate(foundRow, data, orderId, valorAEnviar);
                     } else {
-                        // Si no hay fecha estimada, limpiar la celda
-                        const fechaEstimadaCell = row.querySelector('td[data-column="fecha_estimada_de_entrega"] .cell-text');
-                        if (fechaEstimadaCell) {
-                            fechaEstimadaCell.textContent = '-';
-                            console.log(`📅 Fecha estimada limpiada (sin valor)`);
-                        }
+                        console.log(`❌ No se pudo encontrar la row`);
                     }
-                    
-                    // PROTECCIÓN: Asegurar que fecha_de_creacion_de_orden NO se modifica
-                    const fechaCreacionCell = row.querySelector('td[data-column="fecha_de_creacion_de_orden"] .cell-text');
-                    if (fechaCreacionCell) {
-                        console.log(`[executeDiaEntregaUpdate] Fecha creación actual en tabla: ${fechaCreacionCell.textContent}`);
-                        console.log(`🔒 Protección: fecha_de_creacion_de_orden NO se modifica (${data.order?.fecha_de_creacion_de_orden})`);
-                        
-                        // Asegurar que la celda tenga el formato correcto DD/MM/YYYY
-                        const fechaActual = fechaCreacionCell.textContent;
-                        if (fechaActual && fechaActual.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                            // Si está en YYYY-MM-DD, convertir a DD/MM/YYYY
-                            const partes = fechaActual.split('-');
-                            const fechaFormateada = `${partes[2]}/${partes[1]}/${partes[0]}`;
-                            fechaCreacionCell.textContent = fechaFormateada;
-                            console.log(`✅ Fecha de creación formateada: ${fechaActual} → ${fechaFormateada}`);
-                        }
-                    }
-                    // NO tocar la celda de fecha_de_creacion_de_orden
-                    
-                    // Remover todas las clases condicionales
-                    row.classList.remove('row-delivered', 'row-anulada', 'row-warning', 'row-danger-light', 'row-secondary', 'row-dia-entrega-warning', 'row-dia-entrega-danger', 'row-dia-entrega-critical');
-                    
-                    // Aplicar nueva clase según la lógica
-                    if (estado === 'Entregado') {
-                        row.classList.add('row-delivered');
-                    } else if (estado === 'Anulada') {
-                        row.classList.add('row-anulada');
-                    } else if (valorAEnviar !== null && valorAEnviar > 0) {
-                        // Nueva lógica con día de entrega
-                        if (totalDias >= 15) {
-                            row.classList.add('row-dia-entrega-critical');
-                        } else if (totalDias >= 10 && totalDias <= 14) {
-                            row.classList.add('row-dia-entrega-danger');
-                        } else if (totalDias >= 5 && totalDias <= 9) {
-                            row.classList.add('row-dia-entrega-warning');
-                        }
-                    } else {
-                        // Lógica original sin día de entrega
-                        if (totalDias > 20) {
-                            row.classList.add('row-secondary');
-                        } else if (totalDias === 20) {
-                            row.classList.add('row-danger-light');
-                        } else if (totalDias > 14 && totalDias < 20) {
-                            row.classList.add('row-warning');
-                        }
-                    }
-                    
-                    console.log(`✅ Color de fila actualizado para orden ${orderId}: totalDias=${totalDias}, diaEntrega=${valorAEnviar}`);
+                } else {
+                    executeRowUpdate(row, data, orderId, valorAEnviar);
                 }
-                
-                // Enviar mensaje a otras pestañas usando localStorage para sincronización en tiempo real
-                const timestamp = Date.now();
-                localStorage.setItem('orders-updates', JSON.stringify({
-                    type: 'dia_entrega_update',
-                    orderId: orderId,
-                    field: 'dia_de_entrega',
-                    newValue: newDias || null,
-                    oldValue: oldDias,
-                    order: data.order,
-                    totalDiasCalculados: data.totalDiasCalculados,
-                    timestamp: timestamp
-                }));
-                localStorage.setItem('last-orders-update-timestamp', timestamp.toString());
             } else {
                 console.error('❌ Error al actualizar día de entrega:', data.message);
                 // Revertir cambio en caso de error
@@ -1877,6 +1750,112 @@ function executeDiaEntregaUpdate(orderId, newDias, oldDias, dropdown) {
                 }
             }
         });
+}
+
+// Función auxiliar para actualizar los datos de una fila después del PATCH
+function executeRowUpdate(row, data, orderId, valorAEnviar) {
+    if (!row) {
+        console.log(`❌ Row es null, no se puede actualizar`);
+        return;
+    }
+    
+    console.log(`\n[executeRowUpdate] ========== ACTUALIZANDO ROW PARA ORDEN ${orderId} ==========`);
+    console.log(`[executeRowUpdate] data.order disponible:`, data.order ? 'SÍ' : 'NO');
+    console.log(`[executeRowUpdate] fecha_estimada_de_entrega:`, data.order?.fecha_estimada_de_entrega);
+    
+    if (data.totalDiasCalculados) {
+        const totalDias = data.totalDiasCalculados[orderId] || 0;
+        const estado = data.order?.estado || '';
+        
+        console.log(`[executeRowUpdate] Datos: estado=${estado}, totalDias=${totalDias}, diaEntrega=${valorAEnviar}`);
+        
+        // ACTUALIZAR FECHA ESTIMADA DE ENTREGA
+        if (data.order && data.order.fecha_estimada_de_entrega) {
+            console.log(`[executeRowUpdate] Buscando celda de fecha_estimada_de_entrega...`);
+            
+            // Log de todas las celdas disponibles
+            const allCells = row.querySelectorAll('td[data-column]');
+            console.log(`[executeRowUpdate] Total de celdas con data-column: ${allCells.length}`);
+            
+            // Buscar específicamente la celda
+            const tdFecha = row.querySelector('td[data-column="fecha_estimada_de_entrega"]');
+            console.log(`[executeRowUpdate] ¿Celda encontrada? ${tdFecha ? 'SÍ' : 'NO'}`);
+            
+            if (tdFecha) {
+                console.log(`[executeRowUpdate] HTML de la celda antes:`, tdFecha.innerHTML);
+                
+                let cellTextSpan = tdFecha.querySelector('.cell-text');
+                
+                if (cellTextSpan) {
+                    const fechaFormateada = asegurarFormatoFecha(data.order.fecha_estimada_de_entrega);
+                    console.log(`[executeRowUpdate] Actualizando span con: ${fechaFormateada}`);
+                    cellTextSpan.textContent = fechaFormateada;
+                    // Forzar repaint para que se vea inmediatamente
+                    void cellTextSpan.offsetHeight;
+                    console.log(`✅ Fecha estimada actualizada: ${fechaFormateada}`);
+                    console.log(`[executeRowUpdate] Valor en DOM después: ${cellTextSpan.textContent}`);
+                    console.log(`[executeRowUpdate] HTML de la celda después:`, tdFecha.innerHTML);
+                } else {
+                    console.log(`[executeRowUpdate] ⚠️ No existe .cell-text, buscando spans...`);
+                    // Buscar cualquier span
+                    const allSpans = tdFecha.querySelectorAll('span');
+                    console.log(`[executeRowUpdate] Spans encontrados: ${allSpans.length}`);
+                    if (allSpans.length > 0) {
+                        const fechaFormateada = asegurarFormatoFecha(data.order.fecha_estimada_de_entrega);
+                        allSpans[0].textContent = fechaFormateada;
+                        void allSpans[0].offsetHeight;
+                        console.log(`✅ Fecha estimada actualizada en span encontrado: ${fechaFormateada}`);
+                    }
+                }
+            } else {
+                console.log(`⚠️ No se encontró td[data-column="fecha_estimada_de_entrega"]`);
+                console.log(`[executeRowUpdate] Celdas disponibles en row:`, Array.from(allCells).map(c => c.getAttribute('data-column')));
+            }
+        } else {
+            console.log(`[executeRowUpdate] ⚠️ No hay fecha_estimada_de_entrega en data.order`);
+        }
+        
+        // ACTUALIZAR COLOR DE FILA
+        row.classList.remove('row-delivered', 'row-anulada', 'row-warning', 'row-danger-light', 'row-secondary', 'row-dia-entrega-warning', 'row-dia-entrega-danger', 'row-dia-entrega-critical');
+        
+        if (estado === 'Entregado') {
+            row.classList.add('row-delivered');
+        } else if (estado === 'Anulada') {
+            row.classList.add('row-anulada');
+        } else if (valorAEnviar !== null && valorAEnviar > 0) {
+            // Nueva lógica con día de entrega
+            if (totalDias >= 15) {
+                row.classList.add('row-dia-entrega-critical');
+            } else if (totalDias >= 10 && totalDias <= 14) {
+                row.classList.add('row-dia-entrega-danger');
+            } else if (totalDias >= 5 && totalDias <= 9) {
+                row.classList.add('row-dia-entrega-warning');
+            }
+        } else {
+            // Lógica original sin día de entrega
+            if (totalDias > 20) {
+                row.classList.add('row-secondary');
+            } else if (totalDias === 20) {
+                row.classList.add('row-danger-light');
+            } else if (totalDias > 14 && totalDias < 20) {
+                row.classList.add('row-warning');
+            }
+        }
+        
+        console.log(`✅ Color de fila actualizado: totalDias=${totalDias}, diaEntrega=${valorAEnviar}`);
+    }
+    
+    // Enviar mensaje a otras pestañas usando localStorage
+    const timestamp = Date.now();
+    localStorage.setItem('orders-updates', JSON.stringify({
+        type: 'dia_entrega_update',
+        orderId: orderId,
+        field: 'dia_de_entrega',
+        order: data.order,
+        totalDiasCalculados: data.totalDiasCalculados,
+        timestamp: timestamp
+    }));
+    localStorage.setItem('last-orders-update-timestamp', timestamp.toString());
 }
 
 // Inicializar dropdowns de día de entrega al cargar la página

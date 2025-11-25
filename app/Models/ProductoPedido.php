@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ProductoPedido extends Model
 {
@@ -54,10 +56,21 @@ class ProductoPedido extends Model
 
     /**
      * Relación con el pedido (tabla_original)
+     * NOTA: Este modelo sigue usando tabla_original. Si quieres actualizarlo a PedidoProduccion,
+     * asegúrate de actualizar la migración y las referencias en controladores.
      */
     public function pedidoOriginal()
     {
         return $this->belongsTo(TablaOriginal::class, 'pedido', 'pedido');
+    }
+
+    /**
+     * Relación alternativa con pedidos_produccion
+     * Usa esta si necesitas vincular con el nuevo sistema
+     */
+    public function pedidoProduccion()
+    {
+        return $this->belongsTo(PedidoProduccion::class, 'pedido', 'numero_pedido');
     }
 
     /**

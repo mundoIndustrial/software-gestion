@@ -18,6 +18,10 @@ class Cliente extends Model
         'notas'
     ];
 
+    protected $casts = [
+        'user_id' => 'integer',
+    ];
+
     // Relación con usuario
     public function usuario()
     {

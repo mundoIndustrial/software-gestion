@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\TablaOriginal;
 use App\Models\ProductoPedido;
 use App\Models\PedidoProduccion;
 use Illuminate\Http\Request;
@@ -38,14 +37,18 @@ class AsesoresController extends Controller
      */
     public function dashboard()
     {
-        $asesoraNombre = Auth::user()->name;
+        $userId = Auth::id();
         
-        // Estadísticas generales
+        // Estadísticas generales usando PedidoProduccion con asesor_id
         $stats = [
-            'pedidos_dia' => TablaOriginal::delAsesor($asesoraNombre)->delDia()->count(),
-            'pedidos_mes' => TablaOriginal::delAsesor($asesoraNombre)->delMes()->count(),
-            'pedidos_anio' => TablaOriginal::delAsesor($asesoraNombre)->delAnio()->count(),
-            'pedidos_pendientes' => TablaOriginal::delAsesor($asesoraNombre)
+            'pedidos_dia' => PedidoProduccion::where('asesor_id', $userId)
+                ->whereDate('created_at', today())->count(),
+            'pedidos_mes' => PedidoProduccion::where('asesor_id', $userId)
+                ->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)->count(),
+            'pedidos_anio' => PedidoProduccion::where('asesor_id', $userId)
+                ->whereYear('created_at', now()->year)->count(),
+            'pedidos_pendientes' => PedidoProduccion::where('asesor_id', $userId)
                 ->whereIn('estado', ['No iniciado', 'En Ejecución'])
                 ->count(),
         ];
@@ -58,46 +61,47 @@ class AsesoresController extends Controller
      */
     public function getDashboardData(Request $request)
     {
-        $asesoraNombre = Auth::user()->name;
+        $userId = Auth::id();
         $dias = $request->get('tipo', 30);
 
         // Datos para gráfica de pedidos por día
-        $pedidosUltimos30Dias = TablaOriginal::delAsesor($asesoraNombre)
-            ->select(DB::raw('DATE(fecha_de_creacion_de_orden) as fecha'), DB::raw('COUNT(*) as total'))
-            ->where('fecha_de_creacion_de_orden', '>=', now()->subDays($dias))
+        $pedidosUltimos30Dias = PedidoProduccion::where('asesor_id', $userId)
+            ->select(DB::raw('DATE(created_at) as fecha'), DB::raw('COUNT(*) as total'))
+            ->where('created_at', '>=', now()->subDays($dias))
             ->groupBy('fecha')
             ->orderBy('fecha')
             ->get();
 
         // Datos para gráfica de pedidos por asesor (comparativa - todos los asesores)
-        $pedidosPorAsesor = TablaOriginal::select('asesora', DB::raw('COUNT(*) as total'))
-            ->whereNotNull('asesora')
-            ->where('fecha_de_creacion_de_orden', '>=', now()->subDays(30))
-            ->groupBy('asesora')
+        $pedidosPorAsesor = PedidoProduccion::select('asesor_id', DB::raw('COUNT(*) as total'))
+            ->whereNotNull('asesor_id')
+            ->where('created_at', '>=', now()->subDays(30))
+            ->groupBy('asesor_id')
             ->orderBy('total', 'desc')
             ->limit(10)
+            ->with('asesora')
             ->get()
             ->map(function($item) {
                 return [
-                    'name' => $item->asesora,
+                    'name' => $item->asesora ? $item->asesora->name : 'Desconocido',
                     'total' => $item->total
                 ];
             });
 
         // Datos para gráfica de estados
-        $pedidosPorEstado = TablaOriginal::delAsesor($asesoraNombre)
+        $pedidosPorEstado = PedidoProduccion::where('asesor_id', $userId)
             ->select('estado', DB::raw('COUNT(*) as total'))
             ->whereNotNull('estado')
             ->groupBy('estado')
             ->get();
 
         // Tendencia semanal
-        $semanaActual = TablaOriginal::delAsesor($asesoraNombre)
-            ->whereBetween('fecha_de_creacion_de_orden', [now()->startOfWeek(), now()->endOfWeek()])
+        $semanaActual = PedidoProduccion::where('asesor_id', $userId)
+            ->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])
             ->count();
         
-        $semanaAnterior = TablaOriginal::delAsesor($asesoraNombre)
-            ->whereBetween('fecha_de_creacion_de_orden', [now()->subWeek()->startOfWeek(), now()->subWeek()->endOfWeek()])
+        $semanaAnterior = PedidoProduccion::where('asesor_id', $userId)
+            ->whereBetween('created_at', [now()->subWeek()->startOfWeek(), now()->subWeek()->endOfWeek()])
             ->count();
 
         $tendencia = $semanaAnterior > 0 
@@ -125,11 +129,16 @@ class AsesoresController extends Controller
         \Log::info('AsesoresController@index - Usuario ID: ' . $userId . ', Nombre: ' . $userName);
 
         // Usar pedidos_produccion en lugar de tabla_original
-        // Filtrar por asesora (nombre del usuario autenticado)
-        $query = PedidoProduccion::where('asesora', $userName)
-            ->with(['prendas' => function ($q) {
-                $q->with('procesos');
-            }]);
+        // Filtrar por asesor_id (Foreign Key del usuario autenticado)
+        $query = PedidoProduccion::where('asesor_id', $userId)
+            ->with([
+                'prendas' => function ($q) {
+                    $q->with(['procesos' => function ($q2) {
+                        $q2->orderBy('created_at', 'desc'); // Últimos primero
+                    }]);
+                },
+                'asesora' // Eager load la relación de usuario
+            ]);
 
         // Filtros
         if ($request->filled('estado')) {
@@ -200,33 +209,23 @@ class AsesoresController extends Controller
             // Calcular cantidad total de productos
             $cantidadTotal = collect($validated[$productosKey])->sum('cantidad');
 
-            // Guardar como borrador SIN ASIGNAR ID AÚN
-            // Usar pedido = 0 como placeholder - se asignará al confirmar
-            $pedidoBorrador = TablaOriginal::create([
-                'pedido' => 0, // Placeholder - se asignará al confirmar
+            // Crear pedido en PedidoProduccion
+            $pedidoBorrador = PedidoProduccion::create([
+                'numero_pedido' => null, // Se asignará luego
                 'cliente' => $validated['cliente'],
                 'asesora' => Auth::user()->name,
                 'forma_de_pago' => $validated['forma_de_pago'] ?? null,
-                'cantidad' => $cantidadTotal,
-                'estado' => 'No iniciado', // SE ASIGNA AUTOMÁTICAMENTE
-                'area' => $validated['area'] ?? 'Creación Orden',
-                'fecha_de_creacion_de_orden' => now()->toDateString(),
+                'estado' => 'No iniciado',
+                'user_id' => Auth::id(),
             ]);
 
-            // Crear los productos del pedido borrador
+            // Crear los productos del pedido usando PrendaPedido
             foreach ($validated[$productosKey] as $productoData) {
-                $subtotal = null;
-                if (isset($productoData['precio_unitario']) && isset($productoData['cantidad'])) {
-                    $subtotal = $productoData['precio_unitario'] * $productoData['cantidad'];
-                }
-
-                ProductoPedido::create([
-                    'pedido' => 0, // Placeholder
-                    'nombre_producto' => $productoData['nombre_producto'],
+                $pedidoBorrador->prendas()->create([
+                    'nombre_prenda' => $productoData['nombre_producto'],
                     'talla' => $productoData['talla'] ?? null,
                     'cantidad' => $productoData['cantidad'],
                     'precio_unitario' => $productoData['precio_unitario'] ?? null,
-                    'subtotal' => $subtotal,
                 ]);
             }
 
@@ -253,33 +252,26 @@ class AsesoresController extends Controller
     public function confirm(Request $request)
     {
         $validated = $request->validate([
-            'borrador_id' => 'required|integer|exists:tabla_original,id',
-            'pedido' => 'required|integer|unique:tabla_original,pedido',
+            'borrador_id' => 'required|integer|exists:pedidos_produccion,id',
+            'numero_pedido' => 'required|integer|unique:pedidos_produccion,numero_pedido',
         ]);
 
         DB::beginTransaction();
         try {
-            // Obtener el borrador
-            $borrador = TablaOriginal::findOrFail($validated['borrador_id']);
+            // Obtener el pedido
+            $pedido = PedidoProduccion::findOrFail($validated['borrador_id']);
             
-            // Actualizar el borrador con el ID real
-            $borrador->update([
-                'pedido' => $validated['pedido']
+            // Actualizar con el número de pedido real
+            $pedido->update([
+                'numero_pedido' => $validated['numero_pedido']
             ]);
-
-            // Actualizar también los productos con el nuevo ID de pedido
-            ProductoPedido::where('pedido', 0)
-                ->where('nombre_producto', $borrador->productos->pluck('nombre_producto')->first())
-                ->update([
-                    'pedido' => $validated['pedido']
-                ]);
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Pedido creado exitosamente con ID: ' . $validated['pedido'],
-                'pedido' => $validated['pedido']
+                'message' => 'Pedido creado exitosamente con ID: ' . $validated['numero_pedido'],
+                'pedido' => $validated['numero_pedido']
             ]);
 
         } catch (\Exception $e) {
@@ -296,11 +288,11 @@ class AsesoresController extends Controller
      */
     public function show($pedido)
     {
-        $asesoraNombre = Auth::user()->name;
+        $userId = Auth::id();
         
-        $pedidoData = TablaOriginal::with('productos')
-            ->where('pedido', $pedido)
-            ->where('asesora', $asesoraNombre)
+        $pedidoData = PedidoProduccion::where('numero_pedido', $pedido)
+            ->where('asesor_id', $userId)
+            ->with('prendas')
             ->firstOrFail();
 
         // Usar plantilla-erp para mostrar en formato de recibo
@@ -312,11 +304,11 @@ class AsesoresController extends Controller
      */
     public function edit($pedido)
     {
-        $asesoraNombre = Auth::user()->name;
+        $userId = Auth::id();
         
-        $pedidoData = TablaOriginal::with('productos')
-            ->where('pedido', $pedido)
-            ->where('asesora', $asesoraNombre)
+        $pedidoData = PedidoProduccion::where('numero_pedido', $pedido)
+            ->where('asesor_id', $userId)
+            ->with('prendas')
             ->firstOrFail();
 
         $estados = ['No iniciado', 'En Ejecución', 'Entregado', 'Anulada'];
@@ -334,10 +326,10 @@ class AsesoresController extends Controller
      */
     public function update(Request $request, $pedido)
     {
-        $asesoraNombre = Auth::user()->name;
+        $userId = Auth::id();
         
-        $pedidoData = TablaOriginal::where('pedido', $pedido)
-            ->where('asesora', $asesoraNombre)
+        $pedidoData = PedidoProduccion::where('numero_pedido', $pedido)
+            ->where('asesor_id', $userId)
             ->firstOrFail();
 
         $validated = $request->validate([
@@ -347,47 +339,32 @@ class AsesoresController extends Controller
             'forma_de_pago' => 'nullable|string|max:69',
             'estado' => 'nullable|string',
             'area' => 'nullable|string',
-            'productos' => 'sometimes|array',
-            'productos.*.id' => 'nullable|exists:productos_pedido,id',
-            'productos.*.nombre_producto' => 'required_with:productos|string',
-            'productos.*.descripcion' => 'nullable|string',
-            'productos.*.talla' => 'nullable|string',
-            'productos.*.cantidad' => 'required_with:productos|integer|min:1',
-            'productos.*.precio_unitario' => 'nullable|numeric|min:0',
+            'prendas' => 'sometimes|array',
+            'prendas.*.id' => 'nullable|exists:prendas_pedido,id',
+            'prendas.*.nombre_prenda' => 'required_with:prendas|string',
+            'prendas.*.talla' => 'nullable|string',
+            'prendas.*.cantidad' => 'required_with:prendas|integer|min:1',
+            'prendas.*.precio_unitario' => 'nullable|numeric|min:0',
         ]);
 
         DB::beginTransaction();
         try {
             // Actualizar datos del pedido
-            $updateData = collect($validated)->except('productos')->toArray();
-            
-            if (isset($validated['productos'])) {
-                $cantidadTotal = collect($validated['productos'])->sum('cantidad');
-                $updateData['cantidad'] = $cantidadTotal;
-            }
-
+            $updateData = collect($validated)->except('prendas')->toArray();
             $pedidoData->update($updateData);
 
-            // Actualizar productos si se enviaron
-            if (isset($validated['productos'])) {
-                // Eliminar productos antiguos
-                ProductoPedido::where('pedido', $pedido)->delete();
+            // Actualizar prendas si se enviaron
+            if (isset($validated['prendas'])) {
+                // Eliminar prendas antiguas
+                $pedidoData->prendas()->delete();
 
-                // Crear nuevos productos
-                foreach ($validated['productos'] as $productoData) {
-                    $subtotal = null;
-                    if (isset($productoData['precio_unitario']) && isset($productoData['cantidad'])) {
-                        $subtotal = $productoData['precio_unitario'] * $productoData['cantidad'];
-                    }
-
-                    ProductoPedido::create([
-                        'pedido' => $pedido,
-                        'nombre_producto' => $productoData['nombre_producto'],
-                        'descripcion' => $productoData['descripcion'] ?? null,
-                        'talla' => $productoData['talla'] ?? null,
-                        'cantidad' => $productoData['cantidad'],
-                        'precio_unitario' => $productoData['precio_unitario'] ?? null,
-                        'subtotal' => $subtotal,
+                // Crear nuevas prendas
+                foreach ($validated['prendas'] as $prendaData) {
+                    $pedidoData->prendas()->create([
+                        'nombre_prenda' => $prendaData['nombre_prenda'],
+                        'talla' => $prendaData['talla'] ?? null,
+                        'cantidad' => $prendaData['cantidad'],
+                        'precio_unitario' => $prendaData['precio_unitario'] ?? null,
                     ]);
                 }
             }
@@ -413,15 +390,15 @@ class AsesoresController extends Controller
      */
     public function destroy($pedido)
     {
-        $asesoraNombre = Auth::user()->name;
+        $userId = Auth::id();
         
-        $pedidoData = TablaOriginal::where('pedido', $pedido)
-            ->where('asesora', $asesoraNombre)
+        $pedidoData = PedidoProduccion::where('numero_pedido', $pedido)
+            ->where('asesor_id', $userId)
             ->firstOrFail();
 
         DB::beginTransaction();
         try {
-            // Los productos se eliminan automáticamente por la foreign key cascade
+            // Las prendas se eliminan automáticamente por la foreign key cascade
             $pedidoData->delete();
 
             DB::commit();
@@ -445,7 +422,7 @@ class AsesoresController extends Controller
      */
     public function getNextPedido()
     {
-        $ultimoPedido = TablaOriginal::max('pedido');
+        $ultimoPedido = PedidoProduccion::max('numero_pedido');
         $siguientePedido = $ultimoPedido ? $ultimoPedido + 1 : 1;
 
         return response()->json([
@@ -458,18 +435,17 @@ class AsesoresController extends Controller
      */
     public function getNotifications()
     {
-        $asesoraNombre = Auth::user()->name;
+        $userId = Auth::id();
         
         // Pedidos próximos a entregar (próximos 7 días)
-        $pedidosProximosEntregar = TablaOriginal::delAsesor($asesoraNombre)
+        $pedidosProximosEntregar = PedidoProduccion::where('asesor_id', $userId)
             ->whereIn('estado', ['No iniciado', 'En Ejecución'])
-            ->whereNotNull('entrega')
-            ->whereBetween('entrega', [now(), now()->addDays(7)])
-            ->orderBy('entrega')
+            ->where('created_at', '<=', now()->addDays(7))
+            ->orderBy('created_at')
             ->get();
 
         // Pedidos en ejecución
-        $pedidosEnEjecucion = TablaOriginal::delAsesor($asesoraNombre)
+        $pedidosEnEjecucion = PedidoProduccion::where('asesor_id', $userId)
             ->where('estado', 'En Ejecución')
             ->count();
 

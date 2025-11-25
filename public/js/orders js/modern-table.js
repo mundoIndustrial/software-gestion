@@ -1,8 +1,10 @@
 class ModernTable {
     constructor() {
-        console.log('ModernTable: Constructor called');
+        console.log('🚀 ModernTable: Constructor iniciado');
+        console.log('📍 URL:', window.location.pathname);
         this.headers = [];
         this.baseRoute = this.getBaseRoute();
+        console.log('📍 Base route:', this.baseRoute);
         this.isLoadingFilter = false; // Prevenir doble clic en filtros
         this.storage = {
             rowHeight: parseInt(this.getStorage('table_rowHeight')) || 50,
@@ -38,6 +40,7 @@ class ModernTable {
     removeStorage(key) { localStorage.removeItem(key); }
 
     init() {
+        console.log('🔧 ModernTable.init() - Inicializando tabla...');
         this.extractTableData();
         this.applySavedSettings();
         this.setupEventListeners();
@@ -45,9 +48,7 @@ class ModernTable {
         this.markActiveFilters();
         this.initializeStatusDropdowns();
         this.initializeAreaDropdowns();
-
-        // Apply dragging settings based on saved preferences
-        // Note: Dragging is disabled by default, user must enable it manually
+        console.log('✅ ModernTable.init() - Tabla inicializada completamente');
     }
 
     applySavedSettings() {
@@ -212,12 +213,37 @@ class ModernTable {
                 originalName: filterBtn ? filterBtn.dataset.columnName : headerText.toLowerCase().replace(/\s+/g, '_')
             };
         });
+        
+        console.log('✅ TABLA CARGADA');
+        console.log('Total headers:', this.headers.length);
+        console.log('Headers:', this.headers.map(h => h.name));
+        
+        // Log de filas de datos
+        const tbody = table.querySelector('tbody');
+        const rows = tbody.querySelectorAll('tr:not(.no-results)');
+        console.log('Total rows:', rows.length);
+        
+        if (rows.length > 0) {
+            console.log('First row cells:', rows[0].querySelectorAll('td').length);
+            console.log('Primer pedido:', rows[0].dataset.orderId);
+        } else {
+            console.log('⚠️ No hay filas de datos en la tabla');
+        }
     }
 
     createCellElement(key, value, orden) {
         const td = document.createElement('td');
         td.className = 'table-cell';
         td.dataset.column = key;
+        
+        // Establecer ancho mínimo para columnas multi-línea
+        if (key === 'descripcion_prendas' || key === 'novedades') {
+            td.style.minWidth = '400px';
+            td.style.maxWidth = '600px';
+            td.style.whiteSpace = 'normal';
+            td.style.wordWrap = 'break-word';
+            td.style.overflowWrap = 'break-word';
+        }
 
         const content = document.createElement('div');
         content.className = 'cell-content';
@@ -345,9 +371,18 @@ class ModernTable {
                 displayValue = value ?? '';
             }
             
-            span.textContent = this.wrapText(displayValue, 20);
-            span.style.whiteSpace = 'nowrap';
-            span.style.overflow = 'visible';
+            // Para descripcion_prendas y novedades, mostrar el valor completo preservando saltos de línea
+            if (key === 'descripcion_prendas' || key === 'novedades') {
+                span.textContent = displayValue;
+                span.style.whiteSpace = 'pre-wrap';
+                span.style.wordWrap = 'break-word';
+                span.style.overflowWrap = 'break-word';
+                span.style.overflow = 'visible';
+            } else {
+                span.textContent = this.wrapText(displayValue, 20);
+                span.style.whiteSpace = 'nowrap';
+                span.style.overflow = 'visible';
+            }
             content.appendChild(span);
         }
 
@@ -1916,7 +1951,7 @@ initializeStatusDropdowns() {
      * Actualizar una orden existente en la tabla (para WebSocket updates)
      */
     actualizarOrdenEnTabla(orden) {
-        const row = document.querySelector(`tr[data-order-id="${orden.pedido}"]`);
+        const row = document.querySelector(`tr[data-numero-pedido="${orden.pedido}"]`) || document.querySelector(`tr[data-order-id="${orden.pedido}"]`);
         if (!row) {
             console.log(`Orden ${orden.pedido} no encontrada en la tabla actual`);
             return;
@@ -2084,7 +2119,7 @@ initializeStatusDropdowns() {
         console.log(`📡 Procesando acción: ${action} para orden ${pedido}`);
 
         if (action === 'deleted') {
-            const row = document.querySelector(`tr[data-order-id="${pedido}"]`);
+            const row = document.querySelector(`tr[data-numero-pedido="${pedido}"]`) || document.querySelector(`tr[data-order-id="${pedido}"]`);
             if (row) {
                 row.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
                 setTimeout(() => {
@@ -2110,11 +2145,15 @@ initializeStatusDropdowns() {
 
 // Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('ModernTable: DOMContentLoaded fired, checking for tablaOrdenes...');
-    if (document.getElementById('tablaOrdenes')) {
-        console.log('ModernTable: tablaOrdenes found, initializing...');
+    console.log('%c🔍 DOMContentLoaded - Buscando tabla...', 'color: #00aa00; font-weight: bold; font-size: 14px;');
+    const tabla = document.getElementById('tablaOrdenes');
+    console.log('tabla encontrada:', !!tabla);
+    
+    if (tabla) {
+        console.log('%c✅ TABLA ENCONTRADA - Inicializando ModernTable', 'color: #00aa00; font-weight: bold; font-size: 14px;');
         const modernTable = new ModernTable();
         window.modernTable = modernTable;
+        console.log('%c✅ ModernTable instancia lista', 'color: #00aa00; font-weight: bold; font-size: 14px;');
 
         // Add clear filters button
         const clearBtn = Object.assign(document.createElement('button'), {
@@ -2124,9 +2163,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         clearBtn.addEventListener('click', () => modernTable.clearAllFilters());
 
-        // Add register orders button (solo para no supervisores)
+        // Add register orders button (solo para no supervisores y no en Registro de Órdenes)
         const isSupervisor = document.body.dataset.userRole === 'supervisor';
-        if (!isSupervisor) {
+        const isRegistros = window.context === 'registros';
+        if (!isSupervisor && !isRegistros) {
             const registerBtn = Object.assign(document.createElement('button'), {
                 textContent: 'Registrar Órdenes',
                 className: 'btn btn-primary ml-2',
