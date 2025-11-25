@@ -103,13 +103,26 @@ class PedidosProduccionController extends Controller
 
             // Crear pedido de producción
             $especificaciones = is_array($cotizacion->especificaciones) ? $cotizacion->especificaciones : [];
+            
+            // Sanitizar numero_cotizacion (convertir a string si es array)
+            $numeroCotizacion = $cotizacion->numero_cotizacion;
+            if (is_array($numeroCotizacion)) {
+                $numeroCotizacion = implode(',', $numeroCotizacion);
+            }
+            
+            // Sanitizar forma_de_pago (convertir a string si es array)
+            $formaPago = $especificaciones['forma_pago'] ?? null;
+            if (is_array($formaPago)) {
+                $formaPago = implode(',', $formaPago);
+            }
+            
             $pedido = PedidoProduccion::create([
                 'cotizacion_id' => $cotizacion->id,
-                'numero_cotizacion' => $cotizacion->numero_cotizacion,
+                'numero_cotizacion' => $numeroCotizacion,
                 'numero_pedido' => $this->generarNumeroPedido(),
                 'cliente' => $cotizacion->cliente,
                 'asesora' => auth()->user()?->name ?? 'Sin nombre',
-                'forma_de_pago' => $especificaciones['forma_pago'] ?? null,
+                'forma_de_pago' => $formaPago,
                 'estado' => 'No iniciado',
                 'fecha_de_creacion_de_orden' => now()->toDateString(),
             ]);
