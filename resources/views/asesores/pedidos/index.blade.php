@@ -12,6 +12,68 @@
     <link rel="stylesheet" href="{{ asset('css/orders styles/dropdown-styles.css') }}">
     <link rel="stylesheet" href="{{ asset('css/viewButtonDropdown.css') }}">
 
+    <style>
+        /* ========================================
+           VARIABLES DE COLORES - PALETA ERP
+           ======================================== */
+        :root {
+            /* Colores Primarios */
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #3b82f6;
+            --secondary-color: #0ea5e9;
+            
+            /* Estados */
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #0066cc;
+            
+            /* Grises profesionales */
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+            
+            /* Bordes */
+            --border-light: #e5e7eb;
+            --border-dark: #d1d5db;
+        }
+        
+        /* Estilos para modales de orden */
+        [x-cloak] { display: none; }
+        
+        /* Container modales - dejar que Alpine lo controle */
+        .order-detail-modal {
+            /* Vacío - Alpine controla el display */
+        }
+        
+        /* Asegurar que los modales sean visibles */
+        x-modal, [x-data*="modal"] {
+            display: block;
+        }
+        
+        /* Overlay modales */
+        .modal-overlay {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            background: rgba(0, 0, 0, 0.5) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            z-index: 9999 !important;
+        }
+    </style>
+
     <script>
         console.log('📋 ASESORES PEDIDOS - Cargando CSS');
         console.log('CSS modern-table.css:', document.querySelector('link[href*="modern-table.css"]') ? 'CARGADO' : 'NO CARGADO');
@@ -20,54 +82,212 @@
     </script>
 
     <style>
-        /* Override AGRESIVO de estilos de asesores.layout para que use modern-table */
+        /* ========================================
+           ESTILOS DE TABLA PROFESIONAL ERP
+           ======================================== */
         
-        /* TABLA */
+        /* TABLA PRINCIPAL */
         .modern-table {
             width: 100% !important;
             border-collapse: collapse !important;
             background: white !important;
-            border: 1px solid #ddd !important;
+            border: none !important;
             font-size: 13px !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
         }
         
+        /* ENCABEZADO */
         .modern-table thead {
-            background: #2a2a2a !important;
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%) !important;
             color: white !important;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
         
         .modern-table thead th {
-            padding: 10px 8px !important;
+            padding: 14px 12px !important;
             text-align: left !important;
-            font-weight: 600 !important;
-            border: 1px solid #ddd !important;
-            background: #2a2a2a !important;
+            font-weight: 700 !important;
+            border: none !important;
+            background: transparent !important;
             color: white !important;
             white-space: nowrap !important;
             font-size: 12px !important;
+            letter-spacing: 0.5px !important;
+            text-transform: uppercase !important;
         }
         
+        /* BODY DE TABLA */
         .modern-table tbody td {
-            padding: 8px 6px !important;
-            border: 1px solid #ddd !important;
+            padding: 12px !important;
+            border: none !important;
+            border-bottom: 1px solid var(--border-light) !important;
             background: white !important;
-            font-size: 12px !important;
+            font-size: 13px !important;
+            color: var(--gray-700) !important;
+        }
+        
+        /* FILAS */
+        .modern-table tbody tr {
+            transition: all 0.2s ease !important;
         }
         
         .modern-table tbody tr:hover {
-            background: #f9f9f9 !important;
+            background: var(--gray-50) !important;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+        }
+        
+        /* ALTERNANCIA DE FILAS */
+        .modern-table tbody tr:nth-child(even) {
+            background: var(--gray-50) !important;
+        }
+        
+        .modern-table tbody tr:nth-child(even):hover {
+            background: var(--gray-100) !important;
+        }
+        
+        /* ÚLTIMA FILA */
+        .modern-table tbody tr:last-child td {
+            border-bottom: 2px solid var(--border-dark) !important;
+        }
+        
+        /* ========================================
+           ESTRUCTURA Y LAYOUT
+           ======================================== */
+        
+        /* CONTAINER PRINCIPAL */
+        .table-container {
+            background: var(--gray-100) !important;
+            padding: 24px !important;
+            border-radius: 12px !important;
+        }
+        
+        /* HEADER DE TABLA */
+        .table-header {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            margin-bottom: 24px !important;
+            background: white !important;
+            padding: 20px 24px !important;
+            border-radius: 10px !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+            gap: 20px !important;
+        }
+        
+        .table-title {
+            margin: 0 !important;
+            font-size: 1.75rem !important;
+            color: var(--gray-900) !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 12px !important;
+            font-weight: 800 !important;
+            letter-spacing: -0.5px !important;
+            min-width: fit-content !important;
+        }
+        
+        .table-title i {
+            color: var(--primary-color) !important;
+            font-size: 1.75rem !important;
+        }
+        
+        /* BUSCADOR */
+        .search-container {
+            flex: 1 !important;
+            min-width: 250px !important;
+        }
+        
+        .search-input-wrapper {
+            display: flex !important;
+            align-items: center !important;
+            background: var(--gray-50) !important;
+            border: 2px solid var(--border-light) !important;
+            border-radius: 8px !important;
+            padding: 10px 16px !important;
+            transition: all 0.3s ease !important;
+        }
+        
+        .search-input-wrapper:focus-within {
+            border-color: var(--primary-color) !important;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+        }
+        
+        .search-icon {
+            color: var(--gray-400) !important;
+            margin-right: 12px !important;
+            font-size: 14px !important;
+        }
+        
+        .search-input {
+            border: none !important;
+            background: transparent !important;
+            flex: 1 !important;
+            outline: none !important;
+            font-size: 14px !important;
+            width: 100% !important;
+            color: var(--gray-700) !important;
+        }
+        
+        .search-input::placeholder {
+            color: var(--gray-400) !important;
+        }
+        
+        /* ACCIONES */
+        .table-actions {
+            display: flex !important;
+            gap: 12px !important;
+            min-width: fit-content !important;
+        }
+        
+        .btn {
+            padding: 10px 20px !important;
+            border-radius: 8px !important;
+            text-decoration: none !important;
+            font-weight: 600 !important;
+            cursor: pointer !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            transition: all 0.2s ease !important;
+            border: none !important;
+            font-size: 13px !important;
+        }
+        
+        .btn-primary {
+            background: var(--primary-color) !important;
+            color: white !important;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
+        }
+        
+        /* WRAPPER */
+        .modern-table-wrapper {
+            background: white !important;
+            border-radius: 10px !important;
+            overflow: hidden !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        .table-scroll-container {
+            overflow-x: auto !important;
         }
         
         /* ANCHO DE COLUMNAS */
         .acciones-column {
-            width: 120px !important;
-            min-width: 120px !important;
+            width: 140px !important;
+            min-width: 140px !important;
         }
         
         .modern-table th:nth-child(2),
         .modern-table td:nth-child(2) {
-            width: 80px !important;
-            min-width: 80px !important;
+            width: 100px !important;
+            min-width: 100px !important;
         }
         
         .modern-table th:nth-child(3),
@@ -78,126 +298,167 @@
         
         .modern-table th:nth-child(4),
         .modern-table td:nth-child(4) {
-            width: 100px !important;
-            min-width: 100px !important;
-        }
-        
-        .modern-table th:nth-child(5),
-        .modern-table td:nth-child(5) {
-            width: 70px !important;
-            min-width: 70px !important;
-        }
-        
-        /* CONTAINER */
-        .table-container {
-            background: #f5f5f5 !important;
-            padding: 20px !important;
-            border-radius: 8px !important;
-        }
-        
-        /* HEADER */
-        .table-header {
-            display: flex !important;
-            justify-content: space-between !important;
-            align-items: center !important;
-            margin-bottom: 20px !important;
-            background: white !important;
-            padding: 15px !important;
-            border-radius: 6px !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-        }
-        
-        .table-title {
-            margin: 0 !important;
-            font-size: 1.5rem !important;
-            color: #333 !important;
-            display: flex !important;
-            align-items: center !important;
-            gap: 10px !important;
-            font-weight: 700 !important;
-        }
-        
-        /* SEARCH */
-        .search-container {
-            flex: 1 !important;
-            margin: 0 20px !important;
-        }
-        
-        .search-input-wrapper {
-            display: flex !important;
-            align-items: center !important;
-            background: #f9f9f9 !important;
-            border: 1px solid #ddd !important;
-            border-radius: 6px !important;
-            padding: 8px 12px !important;
-        }
-        
-        .search-icon {
-            color: #999 !important;
-            margin-right: 8px !important;
-        }
-        
-        .search-input {
-            border: none !important;
-            background: transparent !important;
-            flex: 1 !important;
-            outline: none !important;
-            font-size: 14px !important;
-            width: 100% !important;
-        }
-        
-        /* ACTIONS */
-        .table-actions {
-            display: flex !important;
-            gap: 10px !important;
-        }
-        
-        .btn {
-            padding: 10px 20px !important;
-            border-radius: 6px !important;
-            text-decoration: none !important;
-            font-weight: 600 !important;
-            cursor: pointer !important;
-            display: inline-flex !important;
-            align-items: center !important;
-            gap: 8px !important;
-        }
-        
-        .btn-primary {
-            background: #0066cc !important;
-            color: white !important;
-            border: none !important;
-        }
-        
-        .btn-primary:hover {
-            background: #0052a3 !important;
-        }
-        
-        /* WRAPPER */
-        .modern-table-wrapper {
-            background: white !important;
-            border-radius: 6px !important;
-            overflow: hidden !important;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-        }
-        
-        .table-scroll-container {
-            overflow-x: auto !important;
+            width: 110px !important;
+            min-width: 110px !important;
         }
         
         /* PAGINATION */
         .table-pagination {
-            background: #f5f5f5 !important;
-            padding: 15px !important;
+            background: var(--gray-50) !important;
+            padding: 16px 24px !important;
             display: flex !important;
             justify-content: space-between !important;
             align-items: center !important;
-            border-top: 1px solid #ddd !important;
+            border-top: 1px solid var(--border-light) !important;
         }
         
         .pagination-info {
-            color: #666 !important;
+            color: var(--gray-600) !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
+        }
+        
+        /* ========================================
+           ESTILOS DE CELDAS Y CONTENIDO
+           ======================================== */
+        
+        .cell-content {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        /* BADGES Y ETIQUETAS */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        
+        .badge-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .badge-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning-color);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+        
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger-color);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .badge-info {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary-color);
+            border: 1px solid rgba(37, 99, 235, 0.3);
+        }
+        
+        /* ESTADO SIN RESULTADOS */
+        .no-results {
+            text-align: center !important;
+            padding: 40px 20px !important;
+            color: var(--gray-500) !important;
             font-size: 14px !important;
+        }
+        
+        .no-results i {
+            font-size: 2.5rem !important;
+            margin-bottom: 12px !important;
+            color: var(--gray-300) !important;
+            display: block !important;
+        }
+        
+        /* ========================================
+           EFECTOS Y TRANSICIONES
+           ======================================== */
+        
+        .action-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* RESPONSIVE */
+        @media (max-width: 1200px) {
+            .table-header {
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+            
+            .search-container {
+                flex: 1 1 100%;
+                min-width: 100%;
+            }
+            
+            .table-title {
+                font-size: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .table-container {
+                padding: 12px;
+            }
+            
+            .table-header {
+                padding: 12px 16px;
+                margin-bottom: 16px;
+            }
+            
+            .table-title {
+                font-size: 1.25rem;
+            }
+            
+            .search-input-wrapper {
+                padding: 8px 12px;
+            }
+            
+            .modern-table {
+                font-size: 11px;
+            }
+            
+            .modern-table thead th {
+                padding: 10px 8px;
+                font-size: 11px;
+            }
+            
+            .modern-table tbody td {
+                padding: 10px 8px;
+                font-size: 11px;
+            }
+            
+            .acciones-column {
+                width: 100px !important;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .table-title {
+                font-size: 1.1rem;
+            }
+            
+            .table-title i {
+                font-size: 1.3rem;
+            }
+            
+            .search-input {
+                font-size: 12px;
+            }
+            
+            .action-btn {
+                font-size: 9px !important;
+                padding: 6px 10px !important;
+                height: 32px !important;
+            }
         }
     </style>
 
@@ -295,80 +556,136 @@
                             <tr class="table-row" data-order-id="{{ $pedido->numero_pedido }}">
                                 <td class="table-cell acciones-column" style="min-width: 220px !important;">
                                     <div class="cell-content" style="display: flex; gap: 8px; flex-wrap: nowrap; align-items: center; justify-content: flex-start; padding: 4px 0;">
-                                        <button class="action-btn detail-btn" onclick="verFactura({{ $pedido->id }})"
+                                        <button class="action-btn detail-btn" onclick="verFactura({{ $pedido->numero_pedido }})"
                                             title="Ver Factura"
-                                            style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
+                                            style="
+                                                background: linear-gradient(135deg, var(--success-color) 0%, #059669 100%);
+                                                color: white;
+                                                border: none;
+                                                padding: 8px 12px;
+                                                border-radius: 6px;
+                                                cursor: pointer;
+                                                font-size: 11px;
+                                                font-weight: 700;
+                                                flex: 1;
+                                                min-width: 65px;
+                                                height: 36px;
+                                                text-align: center;
+                                                display: flex;
+                                                align-items: center;
+                                                justify-content: center;
+                                                white-space: nowrap;
+                                                transition: all 0.2s ease;
+                                                box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+                                            "
+                                            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.3)'"
+                                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.2)'"
+                                        >
                                             <i class="fas fa-eye"></i> Ver
                                         </button>
-                                        <button class="action-btn detail-btn" onclick="verSeguimiento({{ $pedido->id }})"
+                                        <button class="action-btn detail-btn" onclick="verSeguimiento({{ $pedido->numero_pedido }})"
                                             title="Ver Seguimiento"
-                                            style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
+                                            style="
+                                                background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+                                                color: white;
+                                                border: none;
+                                                padding: 8px 12px;
+                                                border-radius: 6px;
+                                                cursor: pointer;
+                                                font-size: 11px;
+                                                font-weight: 700;
+                                                flex: 1;
+                                                min-width: 65px;
+                                                height: 36px;
+                                                text-align: center;
+                                                display: flex;
+                                                align-items: center;
+                                                justify-content: center;
+                                                white-space: nowrap;
+                                                transition: all 0.2s ease;
+                                                box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+                                            "
+                                            onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 8px rgba(37, 99, 235, 0.3)'"
+                                            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(37, 99, 235, 0.2)'"
+                                        >
                                             <i class="fas fa-tasks"></i> Seguimiento
                                         </button>
                                     </div>
                                 </td>
                                 <td class="table-cell">
                                     <div class="cell-content">
-                                        <span style="background: #ff8c00; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 600;">
+                                        <span style="
+                                            background: linear-gradient(135deg, var(--warning-color) 0%, #d97706 100%);
+                                            color: white;
+                                            padding: 6px 12px;
+                                            border-radius: 6px;
+                                            font-size: 12px;
+                                            font-weight: 700;
+                                            display: inline-flex;
+                                            align-items: center;
+                                            gap: 6px;
+                                            white-space: nowrap;
+                                        ">
+                                            <i class="fas fa-circle-notch" style="font-size: 8px;"></i>
                                             {{ $pedido->estado ?? 'Sin estado' }}
                                         </span>
                                     </div>
                                 </td>
                                 <td class="table-cell">
                                     <div class="cell-content">
-                                        <span style="color: #fff;">{{ $pedido->getAreaActual() }}</span>
+                                        <span style="color: var(--gray-700); font-weight: 500;">{{ $pedido->getAreaActual() }}</span>
                                     </div>
                                 </td>
                                 <td class="table-cell">
                                     <div class="cell-content">
-                                        <span style="color: #fff;">{{ $pedido->dia_de_entrega ?? '-' }}</span>
+                                        <span style="color: var(--gray-700); font-weight: 500;">{{ $pedido->dia_de_entrega ?? '-' }}</span>
                                     </div>
                                 </td>
                                 <td class="table-cell">
                                     <div class="cell-content">
-                                        <span style="color: #fff; font-weight: 600;">#{{ $pedido->numero_pedido }}</span>
+                                        <span style="color: var(--primary-color); font-weight: 700; font-size: 13px;">#{{ $pedido->numero_pedido }}</span>
                                     </div>
                                 </td>
                                 <td class="table-cell">
                                     <div class="cell-content">
-                                        <span style="color: #fff;">{{ $pedido->cliente }}</span>
+                                        <span style="color: var(--gray-700); font-weight: 600;">{{ $pedido->cliente }}</span>
                                     </div>
                                 </td>
                                 <td class="table-cell">
                                     <div class="cell-content">
-                                        <span style="color: #999;">
+                                        <span style="color: var(--gray-600);">
                                             @if($pedido->prendas->first())
                                                 {{ $pedido->prendas->first()->nombre_prenda }}
                                             @else
-                                                -
+                                                <span style="color: var(--gray-400);">-</span>
                                             @endif
                                         </span>
                                     </div>
                                 </td>
                                 <td class="table-cell">
                                     <div class="cell-content">
-                                        <span style="color: #fff;">
+                                        <span style="color: var(--gray-700); font-weight: 700;">
                                             @if($pedido->prendas->first())
-                                                {{ $pedido->prendas->first()->cantidad }}
+                                                {{ $pedido->prendas->first()->cantidad }} <small style="color: var(--gray-500);">und</small>
                                             @else
-                                                -
+                                                <span style="color: var(--gray-400);">-</span>
                                             @endif
                                         </span>
                                     </div>
                                 </td>
                                 <td class="table-cell">
                                     <div class="cell-content">
-                                        <span style="color: #fff;">{{ $pedido->forma_de_pago ?? '-' }}</span>
+                                        <span style="color: var(--gray-700); font-weight: 500;">{{ $pedido->forma_de_pago ?? '-' }}</span>
                                     </div>
                                 </td>
                                 <td class="table-cell">
                                     <div class="cell-content">
-                                        <span style="color: #fff;">{{ $pedido->fecha_de_creacion_de_orden ? $pedido->fecha_de_creacion_de_orden->format('d/m/Y') : '-' }}</span>
+                                        <span style="color: var(--gray-600); font-size: 12px;">{{ $pedido->fecha_de_creacion_de_orden ? $pedido->fecha_de_creacion_de_orden->format('d/m/Y') : '-' }}</span>
                                     </div>
                                 </td>
                                 <td class="table-cell">
                                     <div class="cell-content">
-                                        <span style="color: #fff;">{{ $pedido->fecha_estimada_de_entrega ? $pedido->fecha_estimada_de_entrega->format('d/m/Y') : '-' }}</span>
+                                        <span style="color: var(--gray-600); font-size: 12px;">{{ $pedido->fecha_estimada_de_entrega ? $pedido->fecha_estimada_de_entrega->format('d/m/Y') : '-' }}</span>
                                     </div>
                                 </td>
                             </tr>
@@ -392,554 +709,187 @@
 </div>
 
 <script>
-function verFactura(pedidoId) {
-    alert('Ver Factura - Pedido ID: ' + pedidoId);
-    // Aquí irá el código para abrir el modal de factura
+// Función para obtener datos de la orden y abrir modal de detalle
+async function verFactura(numeroPedido) {
+    console.log('🔵 verFactura INICIADA - numeroPedido:', numeroPedido);
+    
+    try {
+        console.log('📡 Haciendo fetch a /registros/' + numeroPedido);
+        const response = await fetch(`/registros/${numeroPedido}`);
+        
+        console.log('✅ Response status:', response.status);
+        console.log('✅ Response ok:', response.ok);
+        
+        if (!response.ok) throw new Error('Error fetching order');
+        
+        const order = await response.json();
+        console.log('📦 Orden obtenida:', order);
+        
+        // Actualizar la orden actual para navegación
+        setCurrentOrder(numeroPedido);
+        console.log('✅ Orden actual establecida:', numeroPedido);
+        
+        // Cargar imágenes de la orden
+        if (typeof loadOrderImages === 'function') {
+            console.log('🖼️ Cargando imágenes...');
+            loadOrderImages(numeroPedido);
+        } else {
+            console.log('⚠️ loadOrderImages no existe');
+        }
+        
+        const fechaCreacion = new Date(order.fecha_de_creacion_de_orden);
+        const day = fechaCreacion.getDate().toString().padStart(2, '0');
+        const month = fechaCreacion.toLocaleDateString('es-ES', { month: 'short' }).toUpperCase();
+        const year = fechaCreacion.getFullYear().toString().slice(-2);
+        
+        console.log('📅 Fecha:', day + '/' + month + '/' + year);
+        
+        const orderDate = document.getElementById('order-date');
+        console.log('🔍 order-date element:', orderDate ? '✅ ENCONTRADO' : '❌ NO ENCONTRADO');
+        
+        if (orderDate) {
+            const dayBox = orderDate.querySelector('.day-box');
+            const monthBox = orderDate.querySelector('.month-box');
+            const yearBox = orderDate.querySelector('.year-box');
+            console.log('📦 dayBox:', dayBox ? '✅' : '❌', 'monthBox:', monthBox ? '✅' : '❌', 'yearBox:', yearBox ? '✅' : '❌');
+            
+            if (dayBox) dayBox.textContent = day;
+            if (monthBox) monthBox.textContent = month;
+            if (yearBox) yearBox.textContent = year;
+        }
+        
+        const pedidoDiv = document.getElementById('order-pedido');
+        console.log('🔍 order-pedido element:', pedidoDiv ? '✅ ENCONTRADO' : '❌ NO ENCONTRADO');
+        if (pedidoDiv) {
+            pedidoDiv.textContent = `N° ${numeroPedido}`;
+        }
+        
+        const asesoraValue = document.getElementById('asesora-value');
+        console.log('🔍 asesora-value element:', asesoraValue ? '✅ ENCONTRADO' : '❌ NO ENCONTRADO');
+        if (asesoraValue) {
+            asesoraValue.textContent = order.asesora || '';
+        }
+        
+        const formaPagoValue = document.getElementById('forma-pago-value');
+        console.log('🔍 forma-pago-value element:', formaPagoValue ? '✅ ENCONTRADO' : '❌ NO ENCONTRADO');
+        if (formaPagoValue) {
+            formaPagoValue.textContent = order.forma_de_pago || '';
+        }
+        
+        const clienteValue = document.getElementById('cliente-value');
+        console.log('🔍 cliente-value element:', clienteValue ? '✅ ENCONTRADO' : '❌ NO ENCONTRADO');
+        if (clienteValue) {
+            clienteValue.textContent = order.cliente || '';
+        }
+
+        const encargadoValue = document.getElementById('encargado-value');
+        console.log('🔍 encargado-value element:', encargadoValue ? '✅ ENCONTRADO' : '❌ NO ENCONTRADO');
+        if (encargadoValue) {
+            encargadoValue.textContent = order.encargado_orden || '';
+        }
+
+        const prendasEntregadasValue = document.getElementById('prendas-entregadas-value');
+        console.log('🔍 prendas-entregadas-value element:', prendasEntregadasValue ? '✅ ENCONTRADO' : '❌ NO ENCONTRADO');
+        if (prendasEntregadasValue) {
+            const totalEntregado = order.total_entregado || 0;
+            const totalCantidad = order.total_cantidad || 0;
+            prendasEntregadasValue.textContent = `${totalEntregado} de ${totalCantidad}`;
+        }
+        
+        // Abrir el modal usando evento Alpine
+        console.log('🎭 Intentando abrir modal order-detail...');
+        console.log('⏱️ Esperando 100ms para que Alpine esté listo...');
+        
+        setTimeout(() => {
+            console.log('🔊 Disparando evento open-modal con detail: order-detail');
+            console.log('📍 window.dispatchEvent:', typeof window.dispatchEvent);
+            
+            const event = new CustomEvent('open-modal', { detail: 'order-detail' });
+            console.log('📌 Evento creado:', event);
+            
+            window.dispatchEvent(event);
+            console.log('✅ Evento disparado');
+        }, 100);
+    } catch (error) {
+        console.error('❌ Error en verFactura:', error);
+        console.error('📋 Stack:', error.stack);
+        alert('Error al cargar los detalles de la orden: ' + error.message);
+    }
 }
 
+// Función para abrir modal de seguimiento
 function verSeguimiento(pedidoId) {
-    alert('Ver Seguimiento - Pedido ID: ' + pedidoId);
-    // Aquí irá el código para abrir el modal de seguimiento
+    console.log('🔵 verSeguimiento INICIADA - pedidoId:', pedidoId);
+    
+    try {
+        // Establecer la orden actual
+        setCurrentOrder(pedidoId);
+        console.log('✅ Orden actual establecida:', pedidoId);
+        
+        // Cargar datos de seguimiento
+        if (typeof loadOrderImages === 'function') {
+            console.log('🖼️ Cargando imágenes para seguimiento...');
+            loadOrderImages(pedidoId);
+        } else {
+            console.log('⚠️ loadOrderImages no existe');
+        }
+        
+        // Abrir el modal usando evento Alpine
+        console.log('🎭 Intentando abrir modal order-tracking...');
+        console.log('⏱️ Esperando 100ms para que Alpine esté listo...');
+        
+        setTimeout(() => {
+            console.log('🔊 Disparando evento open-modal con detail: order-tracking');
+            
+            const event = new CustomEvent('open-modal', { detail: 'order-tracking' });
+            console.log('📌 Evento creado:', event);
+            
+            window.dispatchEvent(event);
+            console.log('✅ Evento disparado');
+        }, 100);
+    } catch (error) {
+        console.error('❌ Error en verSeguimiento:', error);
+        console.error('📋 Stack:', error.stack);
+        alert('Error al abrir el seguimiento: ' + error.message);
+    }
+}
+
+// Función auxiliar para establecer la orden actual
+function setCurrentOrder(pedido) {
+    console.log('💾 setCurrentOrder llamada con:', pedido);
+    window.currentOrder = pedido;
+    localStorage.setItem('currentOrder', pedido);
+    console.log('✅ currentOrder guardada en window y localStorage');
 }
 </script>
 
-<!-- MODAL CREAR PEDIDO - SISTEMA DE TABS/PESTAÑAS -->
-<div id="modalCrearPedido" class="modal-overlay" style="display: none;">
-    <!-- Header del Modal -->
-    <div class="modal-header">
-        <h2>Crear Nuevo Pedido</h2>
-        <button onclick="cerrarModalCrearPedido()" class="btn-close" title="Cerrar">
-            ✕
-        </button>
-    </div>
+<!-- Modal de Detalle de Orden (igual al de producción) -->
+<x-orders-components.order-detail-modal />
 
-    <!-- TABS NAVIGATION -->
-    <div class="tabs-navigation">
-        <button type="button" class="tab-button active" onclick="mostrarTabModal('info-general')">
-            <i class="fas fa-info-circle"></i>
-            <span>Información</span>
-        </button>
-        <button type="button" class="tab-button" onclick="mostrarTabModal('productos')">
-            <i class="fas fa-box"></i>
-            <span>Productos</span>
-        </button>
-        <button type="button" class="tab-button" onclick="mostrarTabModal('resumen')">
-            <i class="fas fa-clipboard-list"></i>
-            <span>Resumen</span>
-        </button>
-    </div>
+<!-- Modal de Seguimiento del Pedido (igual al de producción) -->
+<x-orders-components.order-tracking-modal />
 
-    <form id="formCrearPedidoModal" class="form-modal-tabs">
-        @csrf
+<script src="{{ asset('js/orders js/order-navigation.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/orderTracking.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/orders-scripts/image-gallery-zoom.js') }}?v={{ time() }}"></script>
 
-        <!-- TAB 1: INFORMACIÓN GENERAL -->
-        <div id="tab-info-general" class="tab-content active">
-            <div class="tab-body">
-                <div class="form-group">
-                    <label>Cliente *</label>
-                    <input type="text" id="nuevoCliente" name="cliente" class="form-control" placeholder="Nombre cliente" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Forma de Pago</label>
-                    <input type="text" id="nuevoFormaPago" name="forma_de_pago" class="form-control" placeholder="Escribir o seleccionar..." list="formasPagoList" autocomplete="off">
-                    <datalist id="formasPagoList">
-                        <option value="CRÉDITO"></option>
-                        <option value="CONTADO"></option>
-                        <option value="50/50"></option>
-                        <option value="ANTICIPO"></option>
-                    </datalist>
-                </div>
-            </div>
-
-            <div class="tab-actions">
-                <button type="button" onclick="mostrarTabModal('productos')" class="btn btn-primary">
-                    <i class="fas fa-arrow-right"></i>
-                    Siguiente
-                </button>
-            </div>
-        </div>
-
-        <!-- TAB 2: PRODUCTOS -->
-        <div id="tab-productos" class="tab-content">
-            <div class="tab-header">
-                <button type="button" onclick="agregarProductoModal()" class="btn-add-product">
-                    <i class="fas fa-plus"></i>
-                    Agregar Producto
-                </button>
-            </div>
-            <div class="tab-body">
-                <div id="productosModalContainer" class="productos-modal-list">
-                    <!-- Productos se agregan aquí -->
-                </div>
-            </div>
-
-            <div class="tab-actions">
-                <button type="button" onclick="mostrarTabModal('info-general')" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i>
-                    Anterior
-                </button>
-                <button type="button" onclick="mostrarTabModal('resumen')" class="btn btn-primary">
-                    <i class="fas fa-arrow-right"></i>
-                    Siguiente
-                </button>
-            </div>
-        </div>
-
-        <!-- TAB 3: RESUMEN -->
-        <div id="tab-resumen" class="tab-content">
-            <div class="tab-body">
-                <div class="resumen-card">
-                    <h4>Resumen del Pedido</h4>
-                    <div class="resumen-item">
-                        <span>Total de Productos:</span>
-                        <strong id="resumenTotalProductos">0</strong>
-                    </div>
-                    <div class="resumen-item">
-                        <span>Cantidad Total:</span>
-                        <strong id="resumenCantidadTotal">0</strong>
-                    </div>
-                </div>
-
-                <div class="resumen-info">
-                    <i class="fas fa-check-circle"></i>
-                    <p>Revisa que toda la información esté correcta antes de crear el pedido.</p>
-                </div>
-
-                <div class="resumen-detalles">
-                    <div class="detalle-item">
-                        <span>Cliente:</span>
-                        <strong id="resumenCliente">-</strong>
-                    </div>
-                    <div class="detalle-item">
-                        <span>Forma de Pago:</span>
-                        <strong id="resumenFormaPago">-</strong>
-                    </div>
-                    <div class="detalle-item">
-                        <span>Estado Inicial:</span>
-                        <strong id="resumenEstado">No iniciado</strong>
-                        <span style="font-size: 0.85rem; color: #666;">(asignado automáticamente)</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="tab-actions">
-                <button type="button" onclick="mostrarTabModal('productos')" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i>
-                    Anterior
-                </button>
-                <button type="button" onclick="guardarPedidoModal()" class="btn btn-primary">
-                    <i class="fas fa-check"></i>
-                    Crear Pedido
-                </button>
-            </div>
-        </div>
-    </form>
-</div>
-
-<!-- Template para producto en modal -->
-<template id="productoModalTemplate">
-    <div class="producto-modal-item">
-        <div class="producto-modal-header">
-            <h4 class="prenda-numero">Prenda <span class="numero-prenda">1</span></h4>
-            <button type="button" onclick="eliminarProductoModal(this)" class="btn-remove">
-                <i class="fas fa-trash"></i>
-            </button>
-        </div>
-        <div class="producto-modal-body">
-            <div class="form-row">
-                <div class="form-col">
-                    <label>Nombre de Prenda *</label>
-                    <input type="text" name="productos_modal[][nombre_producto]" class="form-control" placeholder="Ej: Polo, Camiseta..." required>
-                </div>
-            </div>
-            
-            <div class="form-row">
-                <div class="form-col">
-                    <label>Descripción</label>
-                    <input type="text" name="productos_modal[][descripcion]" class="form-control" placeholder="Detalles adicionales">
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-col">
-                    <label>Talla *</label>
-                    <input type="text" name="productos_modal[][talla]" class="form-control" placeholder="Ej: S, M, L, XL" required>
-                </div>
-                <div class="form-col">
-                    <label>Cantidad *</label>
-                    <input type="number" name="productos_modal[][cantidad]" class="form-control producto-modal-cantidad" placeholder="1" min="1" value="1" onchange="actualizarResumenModal()" required>
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-col">
-                    <label>Color</label>
-                    <input type="text" name="productos_modal[][color]" class="form-control" placeholder="Ej: Blanco, Negro">
-                </div>
-                <div class="form-col">
-                    <label>Tela</label>
-                    <input type="text" name="productos_modal[][tella]" class="form-control" placeholder="Ej: Algodón 100%">
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-col">
-                    <label>Tipo de Manga</label>
-                    <select name="productos_modal[][tipo_manga]" class="form-control">
-                        <option value="">Seleccionar...</option>
-                        <option value="Manga Corta">Manga Corta</option>
-                        <option value="Manga Larga">Manga Larga</option>
-                        <option value="Sin Manga">Sin Manga</option>
-                    </select>
-                </div>
-                <div class="form-col">
-                    <label>Género</label>
-                    <select name="productos_modal[][genero]" class="form-control">
-                        <option value="">Seleccionar...</option>
-                        <option value="Hombre">Hombre</option>
-                        <option value="Mujer">Mujer</option>
-                        <option value="Niño">Niño</option>
-                        <option value="Unisex">Unisex</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-col">
-                    <label>Referencia de Hilo</label>
-                    <input type="text" name="productos_modal[][ref_hilo]" class="form-control" placeholder="Código de hilo">
-                </div>
-                <div class="form-col">
-                    <label>Precio Unitario</label>
-                    <input type="number" name="productos_modal[][precio_unitario]" class="form-control" placeholder="0.00" step="0.01" min="0">
-                </div>
-            </div>
-
-            <!-- TAB 2: PRODUCTOS -->
-            <div id="tab-productos" class="tab-content">
-                <div class="tab-header">
-                    <button type="button" onclick="agregarProductoModal()" class="btn-add-product">
-                        <i class="fas fa-plus"></i>
-                        Agregar Producto
-                    </button>
-                </div>
-                <div class="tab-body">
-                    <div id="productosModalContainer" class="productos-modal-list">
-                        <!-- Productos se agregan aquí -->
-                    </div>
-                </div>
-
-                <div class="tab-actions">
-                    <button type="button" onclick="mostrarTabModal('info-general')" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i>
-                        Anterior
-                    </button>
-                    <button type="button" onclick="mostrarTabModal('resumen')" class="btn btn-primary">
-                        <i class="fas fa-arrow-right"></i>
-                        Siguiente
-                    </button>
-                </div>
-            </div>
-
-            <!-- TAB 3: RESUMEN -->
-            <div id="tab-resumen" class="tab-content">
-                <div class="tab-body">
-                    <div class="resumen-card">
-                        <h4>Resumen del Pedido</h4>
-                        <div class="resumen-item">
-                            <span>Total de Productos:</span>
-                            <strong id="resumenTotalProductos">0</strong>
-                        </div>
-                        <div class="resumen-item">
-                            <span>Cantidad Total:</span>
-                            <strong id="resumenCantidadTotal">0</strong>
-                        </div>
-                    </div>
-
-                    <div class="resumen-info">
-                        <i class="fas fa-check-circle"></i>
-                        <p>Revisa que toda la información esté correcta antes de crear el pedido.</p>
-                    </div>
-
-                    <div class="resumen-detalles">
-                        <div class="detalle-item">
-                            <span>Cliente:</span>
-                            <strong id="resumenCliente">-</strong>
-                        </div>
-                        <div class="detalle-item">
-                            <span>Forma de Pago:</span>
-                            <strong id="resumenFormaPago">-</strong>
-                        </div>
-                        <div class="detalle-item">
-                            <span>Estado Inicial:</span>
-                            <strong id="resumenEstado">No iniciado</strong>
-                            <span style="font-size: 0.85rem; color: #666;">(asignado automáticamente)</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="tab-actions">
-                    <button type="button" onclick="mostrarTabModal('productos')" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i>
-                        Anterior
-                    </button>
-                    <button type="button" onclick="guardarPedidoModal()" class="btn btn-primary">
-                        <i class="fas fa-check"></i>
-                        Crear Pedido
-                    </button>
-                </div>
-            </div>
-        </form>
-    </div>
-
-    <!-- Template para producto en modal -->
-    <template id="productoModalTemplate">
-        <div class="producto-modal-item">
-            <div class="producto-modal-header">
-                <h4 class="prenda-numero">Prenda <span class="numero-prenda">1</span></h4>
-                <button type="button" onclick="eliminarProductoModal(this)" class="btn-remove">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </div>
-            <div class="producto-modal-body">
-                <div class="form-row">
-                    <div class="form-col">
-                        <label>Nombre de Prenda *</label>
-                        <input type="text" name="productos_modal[][nombre_producto]" class="form-control" placeholder="Ej: Polo, Camiseta..." required>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-col">
-                        <label>Descripción</label>
-                        <input type="text" name="productos_modal[][descripcion]" class="form-control" placeholder="Detalles adicionales">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-col">
-                        <label>Talla *</label>
-                        <input type="text" name="productos_modal[][talla]" class="form-control" placeholder="Ej: S, M, L, XL" required>
-                    </div>
-                    <div class="form-col">
-                        <label>Cantidad *</label>
-                        <input type="number" name="productos_modal[][cantidad]" class="form-control producto-modal-cantidad" placeholder="1" min="1" value="1" onchange="actualizarResumenModal()" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-col">
-                        <label>Color</label>
-                        <input type="text" name="productos_modal[][color]" class="form-control" placeholder="Ej: Blanco, Negro">
-                    </div>
-                    <div class="form-col">
-                        <label>Tela</label>
-                        <input type="text" name="productos_modal[][tella]" class="form-control" placeholder="Ej: Algodón 100%">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-col">
-                        <label>Tipo de Manga</label>
-                        <select name="productos_modal[][tipo_manga]" class="form-control">
-                            <option value="">Seleccionar...</option>
-                            <option value="Manga Corta">Manga Corta</option>
-                            <option value="Manga Larga">Manga Larga</option>
-                            <option value="Sin Manga">Sin Manga</option>
-                        </select>
-                    </div>
-                    <div class="form-col">
-                        <label>Género</label>
-                        <select name="productos_modal[][genero]" class="form-control">
-                            <option value="">Seleccionar...</option>
-                            <option value="Hombre">Hombre</option>
-                            <option value="Mujer">Mujer</option>
-                            <option value="Niño">Niño</option>
-                            <option value="Unisex">Unisex</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-col">
-                        <label>Referencia de Hilo</label>
-                        <input type="text" name="productos_modal[][ref_hilo]" class="form-control" placeholder="Código de hilo">
-                    </div>
-                    <div class="form-col">
-                        <label>Precio Unitario</label>
-                        <input type="number" name="productos_modal[][precio_unitario]" class="form-control" placeholder="0.00" step="0.01" min="0">
-                    </div>
-                </div>
-            </div>
-        </div>
-    </template>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('TABLA CARGADA');
-            const tabla = document.querySelector('.modern-table');
-            const container = document.querySelector('.table-container');
-            const header = document.querySelector('.table-header');
-            
-            console.log('Tabla .modern-table existe:', tabla ? 'SÍ' : 'NO');
-            console.log('Container .table-container existe:', container ? 'SÍ' : 'NO');
-            console.log('Header .table-header existe:', header ? 'SÍ' : 'NO');
-            
-            if (tabla) {
-                console.log('Tabla clases:', tabla.className);
-                console.log('Tabla estilos computados:', window.getComputedStyle(tabla).display);
-            }
-            
-            if (container) {
-                console.log('Container estilos:', window.getComputedStyle(container).background);
-            }
-            
-            if (header) {
-                console.log('Header estilos:', window.getComputedStyle(header).display);
-            }
-        });
-    </script>
 
 @endsection
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/asesores/pedidos.css') }}">
 <style>
-    /* MODAL OVERLAY - AHORA ES EL CONTENEDOR PRINCIPAL */
-    .modal-overlay {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        background: rgba(0, 0, 0, 0.5);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start;
-        z-index: 99999 !important;
-        padding: 2rem;
-        overflow-y: auto;
-        overflow-x: hidden;
-        width: 100% !important;
-        max-width: 100% !important;
-        height: 100% !important;
-        margin: 0 !important;
-        box-sizing: border-box !important;
-    }
-
-    /* HEADER MODAL */
-    .modal-overlay .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1rem 1.5rem;
-        border-bottom: 2px solid #e0e0e0;
-        background: linear-gradient(135deg, #f5f5f5, #fafafa);
-        flex-shrink: 0;
-        min-height: 60px;
-        width: 100%;
-        max-width: 800px;
-        border-radius: 8px 8px 0 0;
-        margin-bottom: -2px;
-    }
-
-    /* TABS NAVIGATION */
-    .modal-overlay .tabs-navigation {
-        display: flex;
-        border-bottom: 2px solid #e0e0e0;
-        background: #fafafa;
-        padding: 0 1.5rem;
-        gap: 0.5rem;
-        overflow-x: auto;
-        flex-shrink: 0;
-        width: 100%;
-        max-width: 800px;
-    }
-
-    /* FORM MODAL TABS */
-    .modal-overlay .form-modal-tabs {
-        flex: 0 1 auto;
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        max-width: 800px;
-        background: white;
-        border-radius: 0 0 8px 8px;
-        overflow: visible;
-        margin: 0;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-    }
-
-    /* HEADER H2 Y BOTÓN CERRAR */
-    .modal-overlay .modal-header h2 {
-        margin: 0;
-        color: #333;
-        font-size: 1.3rem;
-        font-weight: 700;
-    }
-
-    .modal-overlay .btn-close {
-        width: 36px;
-        height: 36px;
-        border: none;
-        background: #ff4444;
-        border-radius: 50%;
-        cursor: pointer;
-        font-size: 1.2rem;
-        color: white;
-        transition: all 0.3s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        box-shadow: 0 2px 8px rgba(255, 68, 68, 0.3);
-        font-weight: bold;
-        line-height: 1;
-        padding: 0;
-    }
-
-    .modal-overlay .btn-close:hover {
-        background: #e63333;
-        transform: scale(1.1) rotate(90deg);
-        box-shadow: 0 4px 12px rgba(255, 68, 68, 0.5);
-    }
-
-    .modal-overlay .btn-close:active {
-        transform: scale(0.95);
-    }
-
-    /* TAB BUTTONS */
-    .modal-overlay .tab-button {
-        padding: 0.75rem 1.2rem;
-        background: transparent;
-        border: none;
-        color: #666;
-        font-weight: 600;
-        cursor: pointer;
-        border-bottom: 3px solid transparent;
-        transition: all 0.3s;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.9rem;
-        white-space: nowrap;
-        flex-shrink: 0;
-    }
-
-    .modal-overlay .tab-button i {
-        font-size: 1rem;
-    }
+    /* NO SOBRESCRIBIR ESTILOS DEL MODAL - USAR LOS DEL COMPONENTE */
+    /* El modal de asesores usa exactamente el mismo componente y CSS que producción */
 
     .modal-overlay .tab-button:hover {
-        color: #0066cc;
-        background: rgba(0, 102, 204, 0.05);
+        color: var(--primary-color);
+        background: rgba(37, 99, 235, 0.05);
     }
 
     .modal-overlay .tab-button.active {
-        color: #0066cc;
-        border-bottom-color: #0066cc;
+        color: var(--primary-color);
+        border-bottom-color: var(--primary-color);
     }
 
     /* CONTENIDO TABS */
@@ -958,11 +908,12 @@ function verSeguimiento(pedidoId) {
     .modal-overlay .tab-body {
         padding: 1.5rem;
         flex: 0 1 auto;
+        background: white;
     }
 
     .modal-overlay .tab-header {
         padding: 0.75rem 1.5rem 0 1.5rem;
-        border-bottom: 1px solid #e0e0e0;
+        border-bottom: 1px solid var(--border-light);
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -976,26 +927,30 @@ function verSeguimiento(pedidoId) {
 
     .modal-overlay .form-group label {
         display: block;
-        font-weight: 600;
-        margin-bottom: 0.4rem;
-        color: #333;
-        font-size: 0.9rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: var(--gray-700);
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .modal-overlay .form-control {
         width: 100%;
-        padding: 0.6rem;
-        border: 1px solid #ddd;
+        padding: 0.75rem;
+        border: 2px solid var(--border-light);
         border-radius: 6px;
-        font-size: 0.9rem;
+        font-size: 0.95rem;
         font-family: inherit;
-        transition: border-color 0.3s, box-shadow 0.3s;
+        transition: all 0.3s ease;
+        background: var(--gray-50);
     }
 
     .modal-overlay .form-control:focus {
         outline: none;
-        border-color: #0066cc;
-        box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        background: white;
     }
 
     /* TODO EN MAYÚSCULA EN EL MODAL DE PEDIDOS */
@@ -1016,23 +971,24 @@ function verSeguimiento(pedidoId) {
     /* BOTÓN AGREGAR PRODUCTO */
     .btn-add-product {
         padding: 0.75rem 1.25rem;
-        background: #0066cc;
+        background: var(--primary-color);
         color: white;
         border: none;
         border-radius: 6px;
         cursor: pointer;
-        font-weight: 600;
-        font-size: 0.9rem;
+        font-weight: 700;
+        font-size: 0.95rem;
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        transition: all 0.3s;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
     }
 
     .btn-add-product:hover {
-        background: #0052a3;
+        background: var(--primary-dark);
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
     }
 
     /* PRODUCTOS MODAL */
@@ -1044,17 +1000,17 @@ function verSeguimiento(pedidoId) {
 
     .producto-modal-item {
         background: white;
-        border: 2px solid #e0e0e0;
+        border: 2px solid var(--border-light);
         border-radius: 8px;
         overflow: hidden;
         margin-bottom: 1.5rem;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        transition: all 0.3s;
+        transition: all 0.3s ease;
     }
 
     .producto-modal-item:hover {
-        box-shadow: 0 4px 12px rgba(0, 102, 204, 0.1);
-        border-color: #0066cc;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+        border-color: var(--primary-color);
     }
 
     .producto-modal-header {
@@ -1062,9 +1018,9 @@ function verSeguimiento(pedidoId) {
         justify-content: space-between;
         align-items: center;
         padding: 1rem 1.5rem;
-        background: linear-gradient(135deg, #0066cc, #0052a3);
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
         color: white;
-        border-bottom: 2px solid #0052a3;
+        border-bottom: 2px solid var(--primary-dark);
     }
 
     .prenda-numero {
@@ -1076,7 +1032,7 @@ function verSeguimiento(pedidoId) {
 
     .numero-prenda {
         font-weight: 700;
-        color: #fff;
+        color: white;
     }
 
     .btn-remove {
@@ -1092,12 +1048,12 @@ function verSeguimiento(pedidoId) {
         align-items: center;
         justify-content: center;
         font-size: 1rem;
-        transition: all 0.3s;
+        transition: all 0.3s ease;
         flex-shrink: 0;
     }
 
     .btn-remove:hover {
-        background: #f44336;
+        background: var(--danger-color);
     }
 
     .producto-modal-body {
@@ -1121,30 +1077,34 @@ function verSeguimiento(pedidoId) {
     }
 
     .form-col label {
-        font-weight: 600;
+        font-weight: 700;
         margin-bottom: 0.5rem;
-        color: #333;
-        font-size: 0.9rem;
+        color: var(--gray-700);
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .producto-modal-body .form-control {
         padding: 0.75rem;
         font-size: 0.95rem;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        transition: all 0.3s;
+        border: 2px solid var(--border-light);
+        border-radius: 6px;
+        transition: all 0.3s ease;
+        background: var(--gray-50);
     }
 
     .producto-modal-body .form-control:focus {
         outline: none;
-        border-color: #0066cc;
-        box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        background: white;
     }
 
     /* RESUMEN */
     .resumen-card {
-        background: #e3f2fd;
-        border-left: 4px solid #0066cc;
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(14, 165, 233, 0.05));
+        border-left: 4px solid var(--primary-color);
         border-radius: 8px;
         padding: 1.5rem;
         margin-bottom: 1.5rem;
@@ -1152,8 +1112,11 @@ function verSeguimiento(pedidoId) {
 
     .resumen-card h4 {
         margin: 0 0 1rem 0;
-        color: #0066cc;
+        color: var(--primary-color);
         font-size: 1.1rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .resumen-item {
@@ -1162,7 +1125,7 @@ function verSeguimiento(pedidoId) {
         align-items: center;
         padding: 0.75rem 0;
         font-weight: 600;
-        border-bottom: 1px solid rgba(0, 102, 204, 0.2);
+        border-bottom: 1px solid rgba(37, 99, 235, 0.2);
     }
 
     .resumen-item:last-child {
@@ -1170,18 +1133,18 @@ function verSeguimiento(pedidoId) {
     }
 
     .resumen-item span {
-        color: #666;
+        color: var(--gray-600);
     }
 
     .resumen-item strong {
-        color: #0066cc;
+        color: var(--primary-color);
         font-size: 1.2rem;
     }
 
     .resumen-info {
-        background: #fff3cd;
-        border-left: 4px solid #ffc107;
-        border-radius: 6px;
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(252, 191, 73, 0.1));
+        border-left: 4px solid var(--warning-color);
+        border-radius: 8px;
         padding: 1rem;
         margin-bottom: 1.5rem;
         display: flex;
@@ -1190,7 +1153,7 @@ function verSeguimiento(pedidoId) {
     }
 
     .resumen-info i {
-        color: #856404;
+        color: var(--warning-color);
         font-size: 1.2rem;
         margin-top: 0.2rem;
         flex-shrink: 0;
@@ -1198,15 +1161,15 @@ function verSeguimiento(pedidoId) {
 
     .resumen-info p {
         margin: 0;
-        color: #856404;
+        color: var(--gray-700);
         font-size: 0.95rem;
         line-height: 1.5;
     }
 
     .resumen-detalles {
         background: white;
-        border: 1px solid #e0e0e0;
-        border-radius: 6px;
+        border: 2px solid var(--border-light);
+        border-radius: 8px;
         padding: 1.5rem;
     }
 
@@ -1215,7 +1178,7 @@ function verSeguimiento(pedidoId) {
         justify-content: space-between;
         align-items: center;
         padding: 0.75rem 0;
-        border-bottom: 1px solid #f0f0f0;
+        border-bottom: 1px solid var(--gray-100);
     }
 
     .detalle-item:last-child {
@@ -1223,12 +1186,13 @@ function verSeguimiento(pedidoId) {
     }
 
     .detalle-item span {
-        color: #666;
+        color: var(--gray-600);
         font-weight: 500;
     }
 
     .detalle-item strong {
-        color: #333;
+        color: var(--gray-800);
+        font-weight: 700;
     }
 
     /* ACCIONES TAB */
@@ -1236,45 +1200,48 @@ function verSeguimiento(pedidoId) {
         display: flex;
         gap: 1rem;
         padding: 1rem 1.5rem;
-        border-top: 1px solid #e0e0e0;
-        background: #fafafa;
+        border-top: 1px solid var(--border-light);
+        background: var(--gray-50);
         flex-shrink: 0;
     }
 
     .tab-actions .btn {
         flex: 1;
         min-height: 40px;
-        padding: 0.6rem 1.2rem;
+        padding: 0.75rem 1.2rem;
         border: none;
         border-radius: 6px;
-        font-weight: 600;
+        font-weight: 700;
         cursor: pointer;
-        transition: all 0.3s;
+        transition: all 0.3s ease;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 0.5rem;
         font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .btn-secondary {
-        background: #f0f0f0;
-        color: #333;
+        background: var(--gray-200);
+        color: var(--gray-700);
     }
 
     .btn-secondary:hover {
-        background: #e0e0e0;
+        background: var(--gray-300);
     }
 
     .btn-primary {
-        background: #0066cc;
+        background: var(--primary-color);
         color: white;
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
     }
 
     .btn-primary:hover {
-        background: #0052a3;
+        background: var(--primary-dark);
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
     }
 
     /* RESPONSIVE - TABLETS Y PANTALLAS MEDIANAS */
@@ -1915,5 +1882,52 @@ function crearPedidoFromBorrador(borradorId) {
                 }
             });
         });
+}
+
+// Inicializar componentes de modales cuando el DOM está listo
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('✅ Asesores Pedidos - Modales cargados');
+    
+    // Establecer contexto modal para asesores
+    window.modalContext = 'registros';
+    window.fetchUrl = '{{ route("registros.show", ":id") }}'.replace(':id', '');
+    
+    // Configurar cierres de modales
+    const closeDetailBtn = document.getElementById('closeDetailModal');
+    if (closeDetailBtn) {
+        closeDetailBtn.addEventListener('click', closeOrderDetailModal);
+    }
+    
+    const closeTrackingBtn = document.getElementById('closeTrackingModal');
+    if (closeTrackingBtn) {
+        closeTrackingBtn.addEventListener('click', closeOrderTrackingModal);
+    }
+    
+    // Cerrar modales al hacer click en overlay
+    const detailOverlay = document.getElementById('detailModalOverlay');
+    if (detailOverlay) {
+        detailOverlay.addEventListener('click', closeOrderDetailModal);
+    }
+    
+    const trackingOverlay = document.getElementById('trackingModalOverlay');
+    if (trackingOverlay) {
+        trackingOverlay.addEventListener('click', closeOrderTrackingModal);
+    }
+});
+
+// Función para cerrar modal de detalles
+function closeOrderDetailModal() {
+    const modal = document.querySelector('.order-detail-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Función para cerrar modal de seguimiento
+function closeOrderTrackingModal() {
+    const modal = document.getElementById('orderTrackingModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
 }
 </script>

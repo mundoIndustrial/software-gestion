@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\TablaOriginal;
+use App\Models\PedidoProduccion;
 use App\Models\News;
 use App\Models\Festivo;
 use Illuminate\Support\Facades\DB;
@@ -254,14 +255,20 @@ class RegistroOrdenController extends Controller
 
     public function show($pedido)
     {
-        $order = TablaOriginal::where('pedido', $pedido)->firstOrFail();
+        // Primero intentar buscar en TablaOriginal por 'pedido' (producción)
+        $order = TablaOriginal::where('pedido', $pedido)->first();
+        
+        // Si no encuentra en TablaOriginal, buscar en PedidoProduccion por 'numero_pedido' (asesores)
+        if (!$order) {
+            $order = PedidoProduccion::where('numero_pedido', $pedido)->firstOrFail();
+        }
 
         $totalCantidad = DB::table('registros_por_orden')
-            ->where('pedido', $pedido)
+            ->where('pedido', $order->pedido ?? $order->numero_pedido)
             ->sum('cantidad');
 
         $totalEntregado = DB::table('registros_por_orden')
-            ->where('pedido', $pedido)
+            ->where('pedido', $order->pedido ?? $order->numero_pedido)
             ->sum('total_producido_por_talla');
 
         $order->total_cantidad = $totalCantidad;
@@ -1344,8 +1351,13 @@ class RegistroOrdenController extends Controller
     public function getImages($pedido)
     {
         try {
-            // Obtener la orden
+            // Primero buscar en TablaOriginal
             $orden = TablaOriginal::where('pedido', $pedido)->first();
+            
+            // Si no existe en TablaOriginal, buscar en PedidoProduccion
+            if (!$orden) {
+                $orden = PedidoProduccion::where('numero_pedido', $pedido)->first();
+            }
             
             if (!$orden) {
                 return response()->json(['images' => []], 404);

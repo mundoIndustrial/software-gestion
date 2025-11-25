@@ -30,15 +30,25 @@ async function loadOrderImages(pedido) {
         const data = await response.json();
         allImages = data.images || [];
 
+        // Verificar que el elemento existe antes de acceder a su propiedad style
+        const imagenesSection = document.getElementById('imagenes-section');
+        if (!imagenesSection) {
+            console.warn('⚠️ El elemento imagenes-section no existe en el DOM');
+            return;
+        }
+
         if (allImages.length > 0) {
             renderImageGallery();
-            document.getElementById('imagenes-section').style.display = 'block';
+            imagenesSection.style.display = 'block';
         } else {
-            document.getElementById('imagenes-section').style.display = 'none';
+            imagenesSection.style.display = 'none';
         }
     } catch (error) {
         console.error('Error al cargar imágenes:', error);
-        document.getElementById('imagenes-section').style.display = 'none';
+        const imagenesSection = document.getElementById('imagenes-section');
+        if (imagenesSection) {
+            imagenesSection.style.display = 'none';
+        }
     }
 }
 
