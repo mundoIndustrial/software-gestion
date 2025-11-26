@@ -969,7 +969,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const cotizacionId = document.getElementById('cotizacion_id').value;
         
         if (!cotizacionId) {
-            alert('Por favor selecciona una cotización');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Selecciona una cotización',
+                text: 'Por favor selecciona una cotización antes de continuar',
+                confirmButtonText: 'OK'
+            });
             return;
         }
 
@@ -1055,15 +1060,35 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             console.log('✅ Respuesta del servidor:', data);
             if (data.success) {
-                alert('✓ Pedido creado exitosamente');
-                window.location.href = `{{ route('asesores.pedidos-produccion.show', ':id') }}`.replace(':id', data.pedido_id);
+                // Mostrar toast de éxito
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Creado exitosamente',
+                    text: 'El pedido ha sido creado correctamente',
+                    timer: 1500,
+                    timerProgressBar: true,
+                    showConfirmButton: false
+                }).then(() => {
+                    // Redirigir a lista de pedidos
+                    window.location.href = '{{ route('asesores.pedidos-produccion.index') }}';
+                });
             } else {
-                alert('Error: ' + data.message);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: data.message || 'Error al crear el pedido',
+                    confirmButtonText: 'OK'
+                });
             }
         })
         .catch(error => {
             console.error('❌ Error:', error);
-            alert('Error al crear el pedido');
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de conexión',
+                text: 'Error al crear el pedido: ' + error.message,
+                confirmButtonText: 'OK'
+            });
         });
     });
 });
