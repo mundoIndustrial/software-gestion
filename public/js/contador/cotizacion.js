@@ -65,16 +65,71 @@ document.addEventListener('keydown', function(event) {
 function eliminarCotizacion(cotizacionId, cliente) {
     // Mostrar confirmación con SweetAlert
     Swal.fire({
-        title: '¿Eliminar cotización?',
-        html: `<p style="margin: 0; font-size: 0.95rem; color: #4b5563;">¿Estás seguro de que deseas eliminar la cotización del cliente <strong>${cliente}</strong>?</p><p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #ef4444;"><strong>⚠️ Esta acción no se puede deshacer.</strong></p>`,
+        title: '¿Eliminar cotización completamente?',
+        html: `
+            <div style="text-align: left; margin: 1rem 0;">
+                <p style="margin: 0 0 0.75rem 0; font-size: 0.95rem; color: #4b5563;">
+                    ¿Estás seguro de que deseas eliminar la cotización del cliente <strong>${cliente}</strong>?
+                </p>
+                <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 0.75rem; border-radius: 4px; margin: 0.75rem 0;">
+                    <p style="margin: 0; font-size: 0.85rem; color: #92400e; font-weight: 600;">
+                        ⚠️ Se eliminarán PERMANENTEMENTE:
+                    </p>
+                    <ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem; font-size: 0.85rem; color: #92400e;">
+                        <li><strong>Base de datos:</strong>
+                            <ul style="margin: 0.25rem 0 0 0; padding-left: 1.25rem;">
+                                <li>Registro de cotización</li>
+                                <li>Todas las prendas relacionadas</li>
+                                <li>Información de bordado/estampado</li>
+                                <li>Pedidos de producción asociados</li>
+                                <li>Historial de cambios</li>
+                            </ul>
+                        </li>
+                        <li style="margin-top: 0.5rem;"><strong>Servidor:</strong>
+                            <ul style="margin: 0.25rem 0 0 0; padding-left: 1.25rem;">
+                                <li>Carpeta: <code style="background: #fff3cd; padding: 0.2rem 0.4rem; border-radius: 2px;">/storage/cotizaciones/${cotizacionId}</code></li>
+                                <li>Todas las imágenes de prendas</li>
+                                <li>Todas las imágenes de telas</li>
+                                <li>Todas las imágenes de bordado/estampado</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+                <p style="margin: 0.75rem 0 0 0; font-size: 0.85rem; color: #ef4444; font-weight: 600;">
+                    ❌ Esta acción NO se puede deshacer. Se eliminarán todos los datos y archivos.
+                </p>
+            </div>
+        `,
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#ef4444',
         cancelButtonColor: '#d1d5db',
-        confirmButtonText: 'Sí, eliminar',
-        cancelButtonText: 'Cancelar'
+        confirmButtonText: 'Sí, eliminar TODO',
+        cancelButtonText: 'Cancelar',
+        width: '550px'
     }).then((result) => {
         if (result.isConfirmed) {
+            // Mostrar loading
+            Swal.fire({
+                title: 'Eliminando...',
+                html: `
+                    <div style="text-align: left; color: #666;">
+                        <p style="margin: 0 0 0.75rem 0; font-weight: 600;">Por favor espera mientras se elimina:</p>
+                        <ul style="margin: 0; padding-left: 1.5rem; font-size: 0.9rem;">
+                            <li>Registros de la base de datos</li>
+                            <li>Carpeta de imágenes del servidor</li>
+                            <li>Todos los archivos relacionados</li>
+                        </ul>
+                    </div>
+                `,
+                icon: 'info',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
             // Proceder con la eliminación
             fetch(`/contador/cotizacion/${cotizacionId}`, {
                 method: 'DELETE',
@@ -87,8 +142,21 @@ function eliminarCotizacion(cotizacionId, cliente) {
             .then(data => {
                 if (data.success) {
                     Swal.fire({
-                        title: 'Éxito',
-                        text: 'La cotización ha sido eliminada correctamente.',
+                        title: '✓ Eliminado Completamente',
+                        html: `
+                            <div style="text-align: left; color: #4b5563;">
+                                <p style="margin: 0 0 0.75rem 0; font-weight: 600;">✅ Se eliminaron:</p>
+                                <ul style="margin: 0; padding-left: 1.5rem; font-size: 0.9rem;">
+                                    <li>Cotización de la base de datos</li>
+                                    <li>Todas las prendas relacionadas</li>
+                                    <li>Información de bordado/estampado</li>
+                                    <li>Pedidos de producción</li>
+                                    <li>Historial de cambios</li>
+                                    <li>Carpeta <code style="background: #f0f0f0; padding: 0.2rem 0.4rem; border-radius: 2px;">/storage/cotizaciones/${cotizacionId}</code></li>
+                                    <li>Todas las imágenes almacenadas</li>
+                                </ul>
+                            </div>
+                        `,
                         icon: 'success',
                         confirmButtonColor: '#1e5ba8'
                     }).then(() => {
@@ -108,7 +176,7 @@ function eliminarCotizacion(cotizacionId, cliente) {
                 console.error('Error:', error);
                 Swal.fire({
                     title: 'Error',
-                    text: 'Error al eliminar la cotización',
+                    text: 'Error al eliminar la cotización. Por favor intenta de nuevo.',
                     icon: 'error',
                     confirmButtonColor: '#ef4444'
                 });

@@ -59,7 +59,7 @@
                 <div>Acciones</div>
                 <div>Estado</div>
                 <div>Área</div>
-                <div>Día Entrega</div>
+                <div>Fecha Estimada</div>
                 <div>Pedido</div>
                 <div>Cliente</div>
                 <div>Descripción</div>
@@ -92,7 +92,7 @@
                     
                     <!-- Acciones -->
                     <div style="position: relative; display: inline-block;">
-                        <button onclick="toggleDropdown(event)" style="
+                        <button onclick="toggleDropdown(event)" data-menu-id="menu-{{ $pedido->numero_pedido }}" style="
                             background: linear-gradient(135deg, #10b981, #059669);
                             color: white;
                             border: none;
@@ -109,18 +109,15 @@
                         " onmouseover="this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.3)'; this.style.transform='translateY(-1px)'" onmouseout="this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.2)'; this.style.transform='translateY(0)'">
                             <i class="fas fa-eye"></i> Ver
                         </button>
-                        <div class="dropdown-menu" style="
-                            position: absolute;
-                            top: 100%;
-                            left: 0;
+                        <div class="dropdown-menu" id="menu-{{ $pedido->numero_pedido }}" style="
+                            position: fixed;
                             background: white;
                             border: 2px solid #e5e7eb;
                             border-radius: 8px;
                             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
                             min-width: 160px;
                             display: none;
-                            z-index: 9999 !important;
-                            margin-top: 0.5rem;
+                            z-index: 99999 !important;
                             overflow: visible !important;
                         ">
                             <button onclick="verFactura({{ $pedido->numero_pedido }}); closeDropdown()" style="
@@ -181,9 +178,9 @@
                         {{ $pedido->procesoActualOptimizado() ?? '-' }}
                     </div>
 
-                    <!-- Día Entrega -->
+                    <!-- Fecha Estimada de Entrega -->
                     <div style="color: #374151; font-size: 0.875rem;">
-                        {{ $pedido->dia_de_entrega ?? '-' }}
+                        {{ $pedido->fecha_estimada_de_entrega ?? '-' }}
                     </div>
 
                     <!-- Pedido -->
