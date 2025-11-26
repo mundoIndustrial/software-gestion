@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\OrdenAsesor;
 use App\Models\ProductoPedido;
+use App\Models\PedidoProduccion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -373,5 +374,429 @@ class OrdenController extends Controller
         ];
 
         return response()->json($stats);
+    }
+
+    /**
+     * API: Obtener procesos de una orden (para tracking)
+     */
+    public function getProcesos($id)
+    {
+        try {
+            // Buscar por numero_pedido (que es lo que envía el frontend)
+            $orden = PedidoProduccion::where('numero_pedido', $id)->orWhere('id', $id)->firstOrFail();
+
+            // Obtener festivos (sin filtrar por año, la tabla ya tiene las fechas)
+            $festivos = \App\Models\Festivo::pluck('fecha')->toArray();
+
+            // Obtener los procesos ordenados por fecha_inicio
+            // Ahora usa numero_pedido como relación
+            $procesos = DB::table('procesos_prenda')
+                ->where('numero_pedido', $orden->numero_pedido)
+                ->orderBy('fecha_inicio', 'asc')
+                ->select('proceso', 'fecha_inicio', 'encargado', 'estado_proceso')
+                ->get()
+                ->groupBy('proceso')
+                ->map(function($grupo) {
+                    // Tomar el primer registro de cada grupo de procesos
+                    return $grupo->first();
+                })
+                ->values();
+
+            // Calcular días hábiles totales
+            $totalDiasHabiles = 0;
+            if ($procesos->count() > 0) {
+                $fechaInicio = \Carbon\Carbon::parse($procesos->first()->fecha_inicio);
+                
+                // Determinar la fecha final:
+                // 1. Si hay proceso "Despachos" o "Entrega", usar esa fecha
+                // 2. Si la orden está entregada, usar la última fecha de proceso
+                // 3. Si hay solo un proceso, contar hasta hoy
+                // 4. Si hay múltiples procesos, contar hasta el último
+                
+                $procesoDespachos = $procesos->firstWhere('proceso', 'Despachos') 
+                    ?? $procesos->firstWhere('proceso', 'Entrega')
+                    ?? $procesos->firstWhere('proceso', 'Despacho');
+                
+                if ($procesoDespachos) {
+                    // Hay proceso de despacho/entrega, usar esa fecha
+                    $fechaFin = \Carbon\Carbon::parse($procesoDespachos->fecha_inicio);
+                } elseif ($procesos->count() > 1) {
+                    // Hay múltiples procesos pero sin despacho, usar el último
+                    $fechaFin = \Carbon\Carbon::parse($procesos->last()->fecha_inicio);
+                } else {
+                    // Solo hay un proceso, contar hasta hoy
+                    $fechaFin = \Carbon\Carbon::now();
+                }
+                
+                $totalDiasHabiles = $this->calcularDiasHabilesBatch($fechaInicio, $fechaFin, $festivos);
+            }
+
+            return response()->json([
+                'numero_pedido' => $orden->numero_pedido,
+                'cliente' => $orden->cliente,
+                'fecha_inicio' => $orden->fecha_de_creacion_de_orden,
+                'fecha_estimada_de_entrega' => $orden->fecha_estimada_de_entrega,
+                'procesos' => $procesos,
+                'total_dias_habiles' => $totalDiasHabiles,
+                'festivos' => $festivos
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en getProcesos: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'No se encontró la orden o no tiene permiso para verla'
+            ], 404);
+        }
+    }
+
+    /**
+     * Calcula días hábiles entre dos fechas (mismo método que en RegistroOrdenController)
+     */
+    private function calcularDiasHabilesBatch(\Carbon\Carbon $inicio, \Carbon\Carbon $fin, array $festivos): int
+    {
+        // El contador inicia desde el PRIMER DÍA HÁBIL DESPUÉS de la fecha de inicio
+        $current = $inicio->copy()->addDay();
+        
+        $totalDays = 0;
+        $weekends = 0;
+        $holidaysCount = 0;
+        
+        while ($current <= $fin) {
+            $dateString = $current->format('Y-m-d');
+            $isWeekend = $current->dayOfWeek === 0 || $current->dayOfWeek === 6;
+            $isFestivo = in_array($dateString, array_map(fn($f) => \Carbon\Carbon::parse($f)->format('Y-m-d'), $festivos));
+            
+            $totalDays++;
+            if ($isWeekend) $weekends++;
+            if ($isFestivo) $holidaysCount++;
+            
+            $current->addDay();
+        }
+
+        $businessDays = $totalDays - $weekends - $holidaysCount;
+
+        return max(0, $businessDays);
+    }
+
+    /**
+     * API: Editar un proceso (solo para admin)
+     */
+    public function editarProceso(Request $request, $id)
+    {
+        try {
+            // Verificar que es admin
+            if (!auth()->user()->role || auth()->user()->role->name !== 'admin') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Solo administradores pueden editar procesos'
+                ], 403);
+            }
+
+            $validated = $request->validate([
+                'numero_pedido' => 'required|integer',
+                'proceso' => 'required|string|max:255',
+                'fecha_inicio' => 'required|date',
+                'encargado' => 'nullable|string|max:255',
+                'estado_proceso' => 'required|in:Pendiente,En Progreso,Completado,Pausado',
+                'observaciones' => 'nullable|string',
+            ]);
+
+            // Buscar el proceso
+            $proceso = DB::table('procesos_prenda')
+                ->where('id', $id)
+                ->where('numero_pedido', $validated['numero_pedido'])
+                ->first();
+
+            if (!$proceso) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Proceso no encontrado'
+                ], 404);
+            }
+
+            // Actualizar
+            DB::table('procesos_prenda')
+                ->where('id', $id)
+                ->update([
+                    'proceso' => $validated['proceso'],
+                    'fecha_inicio' => $validated['fecha_inicio'],
+                    'encargado' => $validated['encargado'],
+                    'estado_proceso' => $validated['estado_proceso'],
+                    'observaciones' => $validated['observaciones'] ?? null,
+                    'updated_at' => now(),
+                ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Proceso actualizado correctamente'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validación fallida',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Error al editar proceso: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al editar proceso: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * API: Eliminar un proceso (solo para admin)
+     */
+    public function eliminarProceso(Request $request, $id)
+    {
+        try {
+            // Verificar que es admin
+            if (!auth()->user()->role || auth()->user()->role->name !== 'admin') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Solo administradores pueden eliminar procesos'
+                ], 403);
+            }
+
+            $validated = $request->validate([
+                'numero_pedido' => 'required|integer',
+            ]);
+
+            // Buscar el proceso
+            $proceso = DB::table('procesos_prenda')
+                ->where('id', $id)
+                ->where('numero_pedido', $validated['numero_pedido'])
+                ->first();
+
+            if (!$proceso) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Proceso no encontrado'
+                ], 404);
+            }
+
+            // Verificar que no sea el último proceso (debe haber al menos 1)
+            $totalProcesos = DB::table('procesos_prenda')
+                ->where('numero_pedido', $validated['numero_pedido'])
+                ->count();
+
+            if ($totalProcesos <= 1) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se puede eliminar el último proceso de una orden'
+                ], 422);
+            }
+
+            // Eliminar
+            DB::table('procesos_prenda')
+                ->where('id', $id)
+                ->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Proceso eliminado correctamente'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validación fallida',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Error al eliminar proceso: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar proceso: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * API: Buscar un proceso por numero_pedido y nombre
+     */
+    public function buscarProceso(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'numero_pedido' => 'required|integer',
+                'proceso' => 'required|string',
+            ]);
+
+            $proceso = DB::table('procesos_prenda')
+                ->where('numero_pedido', $validated['numero_pedido'])
+                ->where('proceso', $validated['proceso'])
+                ->first();
+
+            if (!$proceso) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Proceso no encontrado'
+                ], 404);
+            }
+
+            return response()->json([
+                'id' => $proceso->id,
+                'numero_pedido' => $proceso->numero_pedido,
+                'proceso' => $proceso->proceso,
+                'fecha_inicio' => $proceso->fecha_inicio,
+                'encargado' => $proceso->encargado,
+                'estado_proceso' => $proceso->estado_proceso,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al buscar proceso: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al buscar proceso'
+            ], 500);
+        }
+    }
+
+    /**
+     * API: Crear un nuevo proceso en procesos_prenda
+     */
+    public function crearProceso(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'numero_pedido' => 'required|integer',
+                'proceso' => 'required|string',
+                'fecha_inicio' => 'required|date',
+                'encargado' => 'nullable|string',
+                'estado_proceso' => 'required|in:Pendiente,En Progreso,Completado,Pausado',
+            ]);
+
+            $numeroPedido = $validated['numero_pedido'];
+            $nombreProceso = $validated['proceso'];
+
+            // Verificar si ya existe este MISMO proceso (del mismo tipo) para este pedido
+            $procesoDuplicado = DB::table('procesos_prenda')
+                ->where('numero_pedido', $numeroPedido)
+                ->where('proceso', $nombreProceso)
+                ->first();
+
+            if ($procesoDuplicado) {
+                // Guardar cambio ANTERIOR en historial antes de actualizar
+                DB::table('procesos_historial')->insert([
+                    'numero_pedido' => $procesoDuplicado->numero_pedido,
+                    'proceso' => $procesoDuplicado->proceso,
+                    'fecha_inicio' => $procesoDuplicado->fecha_inicio,
+                    'encargado' => $procesoDuplicado->encargado,
+                    'estado_proceso' => $procesoDuplicado->estado_proceso,
+                    'created_at' => $procesoDuplicado->created_at,
+                    'updated_at' => $procesoDuplicado->updated_at
+                ]);
+
+                // Ahora actualizar el proceso
+                DB::table('procesos_prenda')
+                    ->where('id', $procesoDuplicado->id)
+                    ->update([
+                        'fecha_inicio' => $validated['fecha_inicio'],
+                        'encargado' => $validated['encargado'],
+                        'estado_proceso' => $validated['estado_proceso'],
+                        'updated_at' => now()
+                    ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Proceso actualizado correctamente',
+                    'id' => $procesoDuplicado->id,
+                    'proceso' => $nombreProceso,
+                    'duplicado' => true
+                ]);
+            }
+
+            // Si no existe este proceso, crear uno nuevo
+            $id = DB::table('procesos_prenda')->insertGetId([
+                'numero_pedido' => $numeroPedido,
+                'proceso' => $nombreProceso,
+                'fecha_inicio' => $validated['fecha_inicio'],
+                'encargado' => $validated['encargado'],
+                'estado_proceso' => $validated['estado_proceso'],
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            // Guardar en historial
+            DB::table('procesos_historial')->insert([
+                'numero_pedido' => $numeroPedido,
+                'proceso' => $nombreProceso,
+                'fecha_inicio' => $validated['fecha_inicio'],
+                'encargado' => $validated['encargado'],
+                'estado_proceso' => $validated['estado_proceso'],
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Proceso creado correctamente',
+                'id' => $id,
+                'proceso' => $nombreProceso
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al crear proceso: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear el proceso: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener todos los procesos actuales de una orden
+     */
+    public function obtenerProcesosPorPedido($numero_pedido)
+    {
+        try {
+            // Obtener todos los procesos actuales (en procesos_prenda) de este pedido
+            $procesos = DB::table('procesos_prenda')
+                ->where('numero_pedido', $numero_pedido)
+                ->orderBy('updated_at', 'desc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'numero_pedido' => $numero_pedido,
+                'procesos' => $procesos,
+                'total' => $procesos->count()
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener procesos: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener los procesos'
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener historial de procesos de una orden
+     */
+    public function obtenerHistorial($numero_pedido)
+    {
+        try {
+            // Obtener todos los procesos actuales
+            $procesosActuales = DB::table('procesos_prenda')
+                ->where('numero_pedido', $numero_pedido)
+                ->get();
+
+            // Obtener el historial de procesos
+            $historial = DB::table('procesos_historial')
+                ->where('numero_pedido', $numero_pedido)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'procesos_actuales' => $procesosActuales,
+                'historial' => $historial
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener historial: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener el historial'
+            ], 500);
+        }
     }
 }

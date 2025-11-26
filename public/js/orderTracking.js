@@ -155,16 +155,39 @@ async function obtenerFestivos() {
  */
 function parseLocalDate(dateString) {
     if (!dateString) return null;
-    const [year, month, day] = dateString.split('T')[0].split('-');
-    const date = new Date(year, month - 1, day);
+    
+    // Soportar múltiples formatos de fecha
+    let parts;
+    
+    // Formato YYYY-MM-DD (ISO)
+    if (dateString.includes('-') && dateString.split('-')[0].length === 4) {
+        parts = dateString.split('T')[0].split('-');
+        const date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        date.setHours(0, 0, 0, 0);
+        return date;
+    }
+    
+    // Formato DD/MM/YYYY
+    if (dateString.includes('/')) {
+        parts = dateString.split('/');
+        if (parts.length === 3) {
+            const date = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+            date.setHours(0, 0, 0, 0);
+            return date;
+        }
+    }
+    
+    // Fallback: intentar parseo automático
+    const date = new Date(dateString);
     date.setHours(0, 0, 0, 0);
     return date;
 }
 
 /**
  * Calcula los días entre dos fechas (excluyendo fines de semana y festivos)
- * Lógica: Si entra y sale el mismo día = 0 días
- * Si entra el 20 y sale el 25 = 3 días (21, 22, 23, 24 no se cuentan, solo los días completos después del primero)
+ * Lógica: El contador inicia desde el PRIMER DÍA HÁBIL DESPUÉS de la fecha de inicio
+ * Si creación es sábado 22/11, el contador empieza lunes 24/11 (día 1)
+ * Si creación es lunes 24/11, el contador empieza martes 25/11 (día 1)
  */
 function calculateBusinessDays(startDate, endDate, festivos = []) {
     if (!startDate || !endDate) return 0;
@@ -189,8 +212,11 @@ function calculateBusinessDays(startDate, endDate, festivos = []) {
 
     let days = 0;
     const current = new Date(start);
+    
+    // Saltar al próximo día (contador inicia DESPUÉS de la fecha de creación)
     current.setDate(current.getDate() + 1);
 
+    // Contar desde el próximo día hasta el final
     while (current <= end) {
         const dayOfWeek = current.getDay();
         const dateString = current.toISOString().split('T')[0];
@@ -308,8 +334,8 @@ async function getOrderTrackingPath(order) {
         });
     }
     
-    // IMPORTANTE: El backend resta 1 al final porque no cuenta el día de creación como día 0
-    // El modal debe hacer lo mismo para coincidir
+    // IMPORTANTE: El contador inicia un día DESPUÉS de la creación
+    // Por eso restamos 1 al final: no cuenta el día de creación
     path.totalDiasCalculado = totalDiasModal > 0 ? totalDiasModal - 1 : 0;
     
     return path;
@@ -319,27 +345,249 @@ async function getOrderTrackingPath(order) {
  * Abre el modal de seguimiento del pedido
  */
 function openOrderTracking(orderId) {
-    // Obtener datos de la orden
-    fetch(`${window.fetchUrl}/${orderId}`, {
+    // Obtener datos de los procesos directamente
+    fetch(`/api/ordenes/${orderId}/procesos`, {
         headers: {
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
         }
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.numero_pedido || data.pedido) {
-            displayOrderTracking(data);
-        } else {
-            console.error('No se encontró la orden');
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('No se encontraron los procesos de la orden');
         }
+        return response.json();
+    })
+    .then(data => {
+        displayOrderTrackingWithProcesos(data);
     })
     .catch(error => {
-        console.error('Error al obtener datos de la orden:', error);
+        console.error('Error al obtener procesos:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error al cargar el seguimiento de la orden',
+            confirmButtonColor: '#ef4444',
+            didOpen: (modal) => {
+                const backdrop = document.querySelector('.swal2-container');
+                if (backdrop) backdrop.style.zIndex = '100000';
+                modal.style.zIndex = '100001';
+            }
+        });
     });
 }
 
 /**
- * Muestra el modal de seguimiento con los datos del pedido
+ * Mapeo de procesos a sus iconos emoji
+ */
+const processoIconMap = {
+    'Pedido Recibido': '📋',
+    'Creación Orden': '📋',
+    'Insumos': '🧵',
+    'Insumos y Telas': '🧵',
+    'Corte': '✂️',
+    'Bordado': '🎨',
+    'Estampado': '🖨️',
+    'Costura': '👗',
+    'Polos': '👕',
+    'Taller': '🔧',
+    'Lavandería': '🧺',
+    'Lavanderia': '🧺',
+    'Arreglos': '🪡',
+    'Control de Calidad': '✅',
+    'Control-Calidad': '✅',
+    'Entrega': '📦',
+    'Despacho': '🚚',
+    'Despachos': '🚚',
+    'Reflectivo': '✨',
+    'Marras': '🔍'
+};
+
+function getProcessIcon(proceso) {
+    return processoIconMap[proceso] || '⚙️';
+}
+
+/**
+ * Muestra el modal de seguimiento con la nueva estructura de procesos
+ */
+async function displayOrderTrackingWithProcesos(orderData) {
+    const modal = document.getElementById('orderTrackingModal');
+    if (!modal) {
+        console.error('Modal de seguimiento no encontrado');
+        return;
+    }
+    
+    // Llenar información del pedido
+    document.getElementById('trackingOrderNumber').textContent = `#${orderData.numero_pedido || '-'}`;
+    document.getElementById('trackingOrderClient').textContent = orderData.cliente || '-';
+    document.getElementById('trackingOrderDate').textContent = formatDate(orderData.fecha_inicio);
+    document.getElementById('trackingEstimatedDate').textContent = formatDate(orderData.fecha_estimada_de_entrega);
+    
+    // Procesos del API
+    const procesos = orderData.procesos || [];
+    
+    if (!procesos || procesos.length === 0) {
+        document.getElementById('trackingTotalDays').textContent = 0;
+        document.getElementById('trackingTimelineContainer').innerHTML = '<p class="text-center text-gray-500">No hay procesos registrados</p>';
+        modal.style.display = 'flex';
+        return;
+    }
+    
+    // Usar el total de días hábiles calculado por el backend
+    const totalDias = orderData.total_dias_habiles || 0;
+    const festivos = orderData.festivos || [];
+    
+    document.getElementById('trackingTotalDays').textContent = totalDias;
+    
+    // Llenar timeline de procesos
+    const timelineContainer = document.getElementById('trackingTimelineContainer');
+    timelineContainer.innerHTML = '';
+    
+    let fechaAnterior = null;
+    
+    procesos.forEach((proceso, index) => {
+        const timelineItem = document.createElement('div');
+        timelineItem.className = `tracking-timeline-item ${proceso.estado_proceso === 'Completado' ? 'completed' : 'pending'}`;
+        
+        const areaCard = document.createElement('div');
+        areaCard.className = `tracking-area-card ${proceso.estado_proceso === 'Completado' ? 'completed' : 'pending'}`;
+        
+        // Calcular días en esta área
+        let diasEnArea = 0;
+        if (index === procesos.length - 1) {
+            // Es el último proceso: contar hasta hoy
+            const fecha1 = parseLocalDate(proceso.fecha_inicio);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (!isNaN(fecha1.getTime())) {
+                diasEnArea = calculateBusinessDays(fecha1, today, festivos);
+            }
+        } else if (fechaAnterior) {
+            // No es el primer proceso: contar desde el anterior
+            diasEnArea = calculateBusinessDays(fechaAnterior, proceso.fecha_inicio, festivos);
+        } else {
+            // Es el primer proceso: contar desde él hasta hoy
+            const fecha1 = parseLocalDate(proceso.fecha_inicio);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (!isNaN(fecha1.getTime())) {
+                diasEnArea = calculateBusinessDays(fecha1, today, festivos);
+            }
+        }
+        
+        // Agregar botones de editar y eliminar solo para admin
+        const isAdmin = document.body.getAttribute('data-is-admin') === 'true';
+        let topRightButtons = '';
+        if (isAdmin) {
+            // Guardar datos en un atributo data- seguro
+            const procesoId = `proceso-${orderData.numero_pedido}-${index}`;
+            
+            topRightButtons = `
+                <div style="display: flex; gap: 6px; align-items: center;">
+                    <button class="btn-editar-proceso" data-index="${index}" data-orden="${orderData.numero_pedido}"
+                            style="background: #3b82f6; color: white; border: none; border-radius: 5px; padding: 7px 12px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);"
+                            onmouseover="this.style.background='#2563eb'; this.style.boxShadow='0 4px 12px rgba(59, 130, 246, 0.5)';"
+                            onmouseout="this.style.background='#3b82f6'; this.style.boxShadow='0 2px 4px rgba(59, 130, 246, 0.3)';"
+                            title="Editar proceso">
+                        ✏️ Editar
+                    </button>
+                    <button class="btn-eliminar-proceso" data-index="${index}" data-orden="${orderData.numero_pedido}"
+                            style="background: #ef4444; color: white; border: none; border-radius: 5px; padding: 7px 12px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);"
+                            onmouseover="this.style.background='#dc2626'; this.style.boxShadow='0 4px 12px rgba(239, 68, 68, 0.5)';"
+                            onmouseout="this.style.background='#ef4444'; this.style.boxShadow='0 2px 4px rgba(239, 68, 68, 0.3)';"
+                            title="Eliminar proceso">
+                        🗑️ Eliminar
+                    </button>
+                </div>
+            `;
+        }
+        
+        let detailsHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
+                <div class="tracking-area-name" style="display: flex; align-items: center; gap: 10px; flex: 1;">
+                    <span style="font-size: 28px; flex-shrink: 0;">${getProcessIcon(proceso.proceso)}</span>
+                    <span style="font-size: 16px; font-weight: 600; color: #1f2937;">${proceso.proceso}</span>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    ${topRightButtons}
+                </div>            </div>
+            <div class="tracking-area-details">
+                <div class="tracking-detail-row">
+                    <span class="tracking-detail-label">Fecha</span>
+                    <span class="tracking-detail-value">${formatDate(proceso.fecha_inicio)}</span>
+                </div>
+        `;
+        
+        if (proceso.encargado) {
+            detailsHTML += `
+                <div class="tracking-detail-row">
+                    <span class="tracking-detail-label">Encargado</span>
+                    <span class="tracking-detail-value" style="font-weight: 500; color: #059669;">${proceso.encargado}</span>
+                </div>
+            `;
+        }
+        
+        // Mostrar días en área
+        const badgeClass = diasEnArea === 0 ? 'tracking-days-badge-zero' : 'tracking-days-badge';
+        detailsHTML += `
+            <div class="tracking-detail-row">
+                <span class="tracking-detail-label">Días en Área</span>
+                <span class="tracking-detail-value">
+                    <span class="${badgeClass}">${diasEnArea} día${diasEnArea !== 1 ? 's' : ''}</span>
+                </span>
+            </div>
+        `;
+        
+        detailsHTML += `
+            <div class="tracking-detail-row">
+                <span class="tracking-detail-label">Estado</span>
+                <span class="tracking-detail-value" style="font-weight: 500; color: ${proceso.estado_proceso === 'Completado' ? '#059669' : proceso.estado_proceso === 'En Progreso' ? '#d97706' : '#dc2626'};">${proceso.estado_proceso}</span>
+            </div>
+            </div>
+        `;
+        
+        areaCard.innerHTML = detailsHTML;
+        timelineItem.appendChild(areaCard);
+        timelineContainer.appendChild(timelineItem);
+        
+        fechaAnterior = proceso.fecha_inicio;
+    });
+    
+    // Agregar event listeners a los botones
+    document.querySelectorAll('.btn-editar-proceso').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const index = parseInt(this.getAttribute('data-index'));
+            const procesoData = procesos[index];
+            editarProceso(JSON.stringify({
+                numero_pedido: orderData.numero_pedido,
+                proceso: procesoData.proceso,
+                fecha_inicio: procesoData.fecha_inicio,
+                encargado: procesoData.encargado,
+                estado_proceso: procesoData.estado_proceso
+            }));
+        });
+    });
+    
+    document.querySelectorAll('.btn-eliminar-proceso').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const index = parseInt(this.getAttribute('data-index'));
+            const procesoData = procesos[index];
+            eliminarProceso(JSON.stringify({
+                numero_pedido: orderData.numero_pedido,
+                proceso: procesoData.proceso,
+                fecha_inicio: procesoData.fecha_inicio,
+                encargado: procesoData.encargado,
+                estado_proceso: procesoData.estado_proceso
+            }));
+        });
+    });
+    
+    // Mostrar modal
+    modal.style.display = 'flex';
+}
+
+/**
+ * Muestra el modal de seguimiento con los datos del pedido (función antigua, mantener para compatibilidad)
  */
 async function displayOrderTracking(order) {
     const modal = document.getElementById('orderTrackingModal');
@@ -567,6 +815,427 @@ function createViewButtonDropdown(orderId) {
         }, 0);
     } else {
         console.warn('⚠️ No se encontró el botón Ver para la orden:', orderId);
+    }
+}
+
+/**
+ * Editar un proceso (solo admin)
+ */
+async function editarProceso(procesoJsonStr) {
+    try {
+        // Desencriptar el JSON
+        const proceso = JSON.parse(procesoJsonStr);
+        
+        // Convertir fecha a formato yyyy-mm-dd
+        const fechaParts = proceso.fecha_inicio.split('-');
+        const fechaISO = fechaParts.length === 3 ? proceso.fecha_inicio : new Date(proceso.fecha_inicio).toISOString().split('T')[0];
+        
+        // Crear modal de edición
+        const modalHTML = `
+            <div id="editProcesoModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;">
+                <div style="background: white; border-radius: 8px; padding: 24px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                    <h2 style="margin: 0 0 20px 0; font-size: 20px; font-weight: 600; color: #1f2937;">Editar Proceso</h2>
+                    
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px; color: #374151;">Nombre del Proceso</label>
+                        <input type="text" id="editProceso" value="${proceso.proceso}" 
+                               style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; box-sizing: border-box; font-size: 14px;">
+                    </div>
+                    
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px; color: #374151;">Fecha Inicio</label>
+                        <input type="date" id="editFecha" value="${fechaISO}" 
+                               style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; box-sizing: border-box; font-size: 14px;">
+                    </div>
+                    
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px; color: #374151;">Encargado</label>
+                        <input type="text" id="editEncargado" value="${proceso.encargado || ''}" 
+                               style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; box-sizing: border-box; font-size: 14px;">
+                    </div>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px; color: #374151;">Estado</label>
+                        <select id="editEstado" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; box-sizing: border-box; font-size: 14px;">
+                            <option value="Pendiente" ${proceso.estado_proceso === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
+                            <option value="En Progreso" ${proceso.estado_proceso === 'En Progreso' ? 'selected' : ''}>En Progreso</option>
+                            <option value="Completado" ${proceso.estado_proceso === 'Completado' ? 'selected' : ''}>Completado</option>
+                            <option value="Pausado" ${proceso.estado_proceso === 'Pausado' ? 'selected' : ''}>Pausado</option>
+                        </select>
+                    </div>
+                    
+                    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                        <button id="btnCancelarProceso"
+                                style="padding: 10px 20px; background: #e5e7eb; color: #374151; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">
+                            Cancelar
+                        </button>
+                        <button id="btnGuardarProceso"
+                                style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">
+                            Guardar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Agregar event listeners
+        document.getElementById('btnCancelarProceso').addEventListener('click', function() {
+            const editModal = document.getElementById('editProcesoModal');
+            if (editModal) {
+                editModal.remove();
+            }
+        });
+        
+        document.getElementById('btnGuardarProceso').addEventListener('click', function() {
+            guardarProcesoEditado(procesoJsonStr);
+        });
+    } catch (error) {
+        console.error('Error al editar:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error al abrir el formulario de edición',
+            confirmButtonColor: '#ef4444',
+            didOpen: (modal) => {
+                const backdrop = document.querySelector('.swal2-container');
+                if (backdrop) backdrop.style.zIndex = '100000';
+                modal.style.zIndex = '100001';
+            }
+        });
+    }
+}
+
+/**
+ * Guardar cambios del proceso editado
+ */
+async function guardarProcesoEditado(procesoJsonStr) {
+    console.log('⏱️ [1] Iniciando guardarProcesoEditado...');
+    const inicio = performance.now();
+    
+    // Prevenir clicks múltiples
+    const btnGuardar = document.getElementById('btnGuardarProceso');
+    if (btnGuardar.disabled || btnGuardar.dataset.saving === 'true') {
+        console.log('❌ Botón ya estaba guardando, bloqueando click duplicado');
+        return;
+    }
+    
+    // Marcar como guardando
+    btnGuardar.disabled = true;
+    btnGuardar.dataset.saving = 'true';
+    const textOriginal = btnGuardar.textContent;
+    btnGuardar.textContent = 'Guardando...';
+    console.log('⏱️ [2] Botón deshabilitado, estado "guardando"');
+    
+    const procesoOriginal = JSON.parse(procesoJsonStr);
+    
+    const proceso = document.getElementById('editProceso').value;
+    const fecha_inicio = document.getElementById('editFecha').value;
+    const encargado = document.getElementById('editEncargado').value;
+    const estado_proceso = document.getElementById('editEstado').value;
+    console.log('⏱️ [3] Validando campos:', {proceso, fecha_inicio, encargado, estado_proceso});
+    
+    if (!proceso || !fecha_inicio) {
+        console.log('❌ Campos requeridos incompletos');
+        Swal.fire({
+            icon: 'warning',
+            title: 'Campos requeridos',
+            text: 'Por favor completa todos los campos',
+            confirmButtonColor: '#3b82f6',
+            didOpen: (modal) => {
+                const backdrop = document.querySelector('.swal2-container');
+                if (backdrop) backdrop.style.zIndex = '100000';
+                modal.style.zIndex = '100001';
+            }
+        });
+        // Restaurar estado del botón
+        btnGuardar.disabled = false;
+        btnGuardar.dataset.saving = 'false';
+        btnGuardar.textContent = textOriginal;
+        return;
+    }
+    
+    try {
+        // Buscar el ID del proceso
+        console.log('⏱️ [4] Buscando ID del proceso...');
+        const buscarResponse = await fetch(`/api/procesos/buscar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+                numero_pedido: procesoOriginal.numero_pedido,
+                proceso: procesoOriginal.proceso
+            })
+        });
+        console.log('⏱️ [5] Respuesta búsqueda recibida:', buscarResponse.status);
+        
+        if (!buscarResponse.ok) {
+            console.log('❌ Proceso no encontrado en búsqueda');
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Proceso no encontrado',
+                confirmButtonColor: '#ef4444',
+                didOpen: (modal) => {
+                    const backdrop = document.querySelector('.swal2-container');
+                    if (backdrop) backdrop.style.zIndex = '100000';
+                    modal.style.zIndex = '100001';
+                }
+            });
+            return;
+        }
+        
+        const buscarData = await buscarResponse.json();
+        const procesoId = buscarData.id;
+        console.log('⏱️ [6] ID del proceso obtenido:', procesoId);
+        
+        // Actualizar el proceso
+        console.log('⏱️ [7] Enviando actualización...');
+        const updateResponse = await fetch(`/api/procesos/${procesoId}/editar`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+                numero_pedido: procesoOriginal.numero_pedido,
+                proceso,
+                fecha_inicio,
+                encargado,
+                estado_proceso
+            })
+        });
+        console.log('⏱️ [8] Respuesta actualización recibida:', updateResponse.status);
+        
+        const result = await updateResponse.json();
+        console.log('⏱️ [9] Resultado:', result);
+        
+        if (result.success) {
+            console.log('✅ [10] Proceso actualizado correctamente');
+            // Cerrar modal de edición inmediatamente
+            console.log('⏱️ [11] Cerrando modal de edición...');
+            const editModal = document.getElementById('editProcesoModal');
+            if (editModal) {
+                editModal.remove();
+            }
+            
+            // Mostrar notificación breve
+            Swal.fire({
+                icon: 'success',
+                title: 'Guardado',
+                text: 'Proceso actualizado correctamente',
+                timer: 1500,
+                timerProgressBar: true,
+                confirmButtonColor: '#10b981',
+                didOpen: (modal) => {
+                    const backdrop = document.querySelector('.swal2-container');
+                    if (backdrop) backdrop.style.zIndex = '100000';
+                    modal.style.zIndex = '100001';
+                },
+                didClose: async () => {
+                    // Recargar datos en background
+                    const modal = document.getElementById('orderTrackingModal');
+                    if (modal && modal.style.display === 'flex') {
+                        const numeroOrden = document.getElementById('trackingOrderNumber').textContent.replace('#', '');
+                        console.log('⏱️ [12] Recargando tracking para orden:', numeroOrden);
+                        try {
+                            const response = await fetch(`/api/ordenes/${numeroOrden}/procesos`);
+                            const data = await response.json();
+                            console.log('⏱️ [13] Datos de tracking recibidos, actualizando modal...');
+                            displayOrderTrackingWithProcesos(data);
+                            const fin = performance.now();
+                            console.log(`⏱️ [14] ✅ COMPLETADO EN ${(fin - inicio).toFixed(2)}ms`);
+                        } catch (e) {
+                            console.error('Error recargando tracking:', e);
+                        }
+                    }
+                }
+            });
+        } else {
+            console.log('❌ [10] Error en respuesta:', result.message);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: result.message,
+                confirmButtonColor: '#ef4444',
+                didOpen: (modal) => {
+                    const backdrop = document.querySelector('.swal2-container');
+                    if (backdrop) backdrop.style.zIndex = '100000';
+                    modal.style.zIndex = '100001';
+                }
+            });
+            // Restaurar estado del botón en caso de error
+            btnGuardar.disabled = false;
+            btnGuardar.dataset.saving = 'false';
+            btnGuardar.textContent = textOriginal;
+        }
+    } catch (error) {
+        console.error('❌ [ERROR]', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error al guardar el proceso',
+            confirmButtonColor: '#ef4444',
+            didOpen: (modal) => {
+                const backdrop = document.querySelector('.swal2-container');
+                if (backdrop) backdrop.style.zIndex = '100000';
+                modal.style.zIndex = '100001';
+            }
+        });
+        // Restaurar estado del botón en caso de error
+        btnGuardar.disabled = false;
+        btnGuardar.dataset.saving = 'false';
+        btnGuardar.textContent = textOriginal;
+    }
+}
+
+/**
+ * Eliminar un proceso (solo admin)
+ */
+async function eliminarProceso(procesoJsonStr) {
+    console.log('🗑️ [1] Iniciando eliminarProceso...');
+    const proceso = JSON.parse(procesoJsonStr);
+    
+    // Mostrar confirmación
+    console.log('🗑️ [2] Mostrando modal de confirmación...');
+    const resultado = await Swal.fire({
+        icon: 'warning',
+        title: 'Confirmar eliminación',
+        text: `¿Está seguro de que desea eliminar el proceso "${proceso.proceso}"?`,
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        didOpen: (modal) => {
+            const backdrop = document.querySelector('.swal2-container');
+            if (backdrop) backdrop.style.zIndex = '100000';
+            modal.style.zIndex = '100001';
+        }
+    });
+    
+    console.log('🗑️ [3] Resultado confirmación:', resultado.isConfirmed);
+    if (!resultado.isConfirmed) {
+        console.log('❌ Usuario canceló la eliminación');
+        return;
+    }
+    
+    try {
+        // Primero buscar el ID del proceso
+        console.log('🗑️ [4] Buscando ID del proceso...');
+        const buscarResponse = await fetch(`/api/procesos/buscar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+                numero_pedido: proceso.numero_pedido,
+                proceso: proceso.proceso
+            })
+        });
+        console.log('🗑️ [5] Respuesta búsqueda:', buscarResponse.status);
+        
+        if (!buscarResponse.ok) {
+            console.log('❌ Proceso no encontrado');
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Proceso no encontrado',
+                confirmButtonColor: '#ef4444',
+                didOpen: (modal) => {
+                    const backdrop = document.querySelector('.swal2-container');
+                    if (backdrop) backdrop.style.zIndex = '100000';
+                    modal.style.zIndex = '100001';
+                }
+            });
+            return;
+        }
+        
+        const buscarData = await buscarResponse.json();
+        const procesoId = buscarData.id;
+        console.log('🗑️ [6] ID del proceso:', procesoId);
+        
+        // Eliminar el proceso
+        console.log('🗑️ [7] Enviando solicitud de eliminación...');
+        const deleteResponse = await fetch(`/api/procesos/${procesoId}/eliminar`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+                numero_pedido: proceso.numero_pedido
+            })
+        });
+        
+        const result = await deleteResponse.json();
+        console.log('🗑️ [9] Resultado:', result);
+        
+        if (result.success) {
+            console.log('✅ [10] Proceso eliminado correctamente');
+            // Cerrar modal y mostrar notificación breve
+            Swal.fire({
+                icon: 'success',
+                title: 'Eliminado',
+                text: 'Proceso eliminado correctamente',
+                timer: 1500,
+                timerProgressBar: true,
+                confirmButtonColor: '#10b981',
+                didOpen: (modal) => {
+                    const backdrop = document.querySelector('.swal2-container');
+                    if (backdrop) backdrop.style.zIndex = '100000';
+                    modal.style.zIndex = '100001';
+                },
+                didClose: async () => {
+                    console.log('⏱️ [11] Recargando tracking...');
+                    // Recargar en background
+                    const modal = document.getElementById('orderTrackingModal');
+                    if (modal && modal.style.display === 'flex') {
+                        // Obtener el número de orden del modal
+                        const numeroOrden = document.getElementById('trackingOrderNumber').textContent.replace('#', '');
+                        console.log('⏱️ [12] Recargando para orden:', numeroOrden);
+                        try {
+                            const response = await fetch(`/api/ordenes/${numeroOrden}/procesos`);
+                            const data = await response.json();
+                            displayOrderTrackingWithProcesos(data);
+                            console.log('✅ [13] Tracking actualizado');
+                        } catch (e) {
+                            console.error('Error recargando tracking:', e);
+                        }
+                    }
+                }
+            });
+        } else {
+            console.log('❌ [10] Error en respuesta:', result.message);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: result.message,
+                confirmButtonColor: '#ef4444',
+                didOpen: (modal) => {
+                    const backdrop = document.querySelector('.swal2-container');
+                    if (backdrop) backdrop.style.zIndex = '100000';
+                    modal.style.zIndex = '100001';
+                }
+            });
+        }
+    } catch (error) {
+        console.error('❌ [ERROR]', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Error al eliminar el proceso',
+            confirmButtonColor: '#ef4444',
+            didOpen: (modal) => {
+                const backdrop = document.querySelector('.swal2-container');
+                if (backdrop) backdrop.style.zIndex = '100000';
+                modal.style.zIndex = '100001';
+            }
+        });
     }
 }
 

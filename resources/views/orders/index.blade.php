@@ -181,16 +181,16 @@
                                     <td class="table-cell acciones-column" style="min-width: 220px !important;">
                                         <div class="cell-content" style="display: flex; gap: 8px; flex-wrap: nowrap; align-items: center; justify-content: flex-start; padding: 4px 0;">
                                             @if($context === 'registros')
-                                                <button class="action-btn detail-btn" onclick="createViewButtonDropdown({{ $orden->numero_pedido }})" title="Ver opciones" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; flex: 1; min-width: 60px; height: 38px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3); transition: all 0.2s ease;">
+                                                <button class="action-btn detail-btn" onclick="createViewButtonDropdown({{ $orden->id }})" title="Ver opciones" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; flex: 1; min-width: 60px; height: 38px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3); transition: all 0.2s ease;">
                                                     <i class="fas fa-eye" style="margin-right: 6px;"></i> Ver
                                                 </button>
                                             @elseif(auth()->user()->role && auth()->user()->role->name === 'supervisor')
-                                                <button class="action-btn detail-btn" onclick="createViewButtonDropdown({{ $orden->numero_pedido }})" title="Ver opciones" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; flex: 1; min-width: 60px; height: 38px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3); transition: all 0.2s ease;">
+                                                <button class="action-btn detail-btn" onclick="createViewButtonDropdown({{ $orden->id }})" title="Ver opciones" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700; flex: 1; min-width: 60px; height: 38px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3); transition: all 0.2s ease;">
                                                     <i class="fas fa-eye" style="margin-right: 6px;"></i> Ver
                                                 </button>
                                             @else
                                                 <button class="action-btn edit-btn" onclick="openEditModal({{ $orden->numero_pedido }})" title="Editar orden" style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">Editar</button>
-                                                <button class="action-btn detail-btn" onclick="createViewButtonDropdown({{ $orden->numero_pedido }})" title="Ver opciones" style="background-color: green; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">Ver</button>
+                                                <button class="action-btn detail-btn" onclick="createViewButtonDropdown({{ $orden->id }})" title="Ver opciones" style="background-color: green; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">Ver</button>
                                                 <button class="action-btn delete-btn" onclick="deleteOrder({{ $orden->numero_pedido }})" title="Eliminar orden" style="background-color:#f84c4cff ; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 10px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">Borrar</button>
                                             @endif
                                         </div>
@@ -217,16 +217,20 @@
                                                             </select>
                                                         @endif
                                                     @elseif($colName === 'area')
+                                                        @php
+                                                            $areaValue = $areasMap[$orden->numero_pedido] ?? $orden->$colName ?? '';
+                                                        @endphp
                                                         @if(auth()->user()->role && auth()->user()->role->name === 'supervisor')
-                                                            <select class="area-dropdown" data-id="{{ $orden->numero_pedido }}" data-value="{{ $orden->$colName }}" disabled style="cursor: not-allowed; opacity: 0.8;">
+                                                            <select class="area-dropdown" data-id="{{ $orden->numero_pedido }}" data-value="{{ $areaValue }}" disabled style="cursor: not-allowed; opacity: 0.8;">
                                                                 @foreach($areaOptions as $areaOption)
-                                                                    <option value="{{ $areaOption }}" {{ $orden->$colName === $areaOption ? 'selected' : '' }}>{{ $areaOption }}</option>
+                                                                    <option value="{{ $areaOption }}" {{ $areaValue === $areaOption ? 'selected' : '' }}>{{ $areaOption }}</option>
                                                                 @endforeach
                                                             </select>
                                                         @else
-                                                            <select class="area-dropdown" data-id="{{ $orden->numero_pedido }}" data-value="{{ $orden->$colName }}">
+                                                            <select class="area-dropdown" data-id="{{ $orden->numero_pedido }}" data-value="{{ $areaValue }}">
+                                                                <option value="">Seleccionar área</option>
                                                                 @foreach($areaOptions as $areaOption)
-                                                                    <option value="{{ $areaOption }}" {{ $orden->$colName === $areaOption ? 'selected' : '' }}>{{ $areaOption }}</option>
+                                                                    <option value="{{ $areaOption }}" {{ $areaValue === $areaOption ? 'selected' : '' }}>{{ $areaOption }}</option>
                                                                 @endforeach
                                                             </select>
                                                         @endif
@@ -241,7 +245,7 @@
                                                     @else
                                                         <span class="cell-text">
                                                             @if($colName === 'total_de_dias_')
-                                                                {{ $totalDias }}
+                                                                {{ $totalDiasCalculados[$orden->numero_pedido] ?? 0 }}
                                                             @elseif($colName === 'asesora')
                                                                 {{ $orden->asesora->name ?? ($orden->$colName ?? '') }}
                                                             @elseif($colName === 'numero_pedido')
@@ -457,6 +461,7 @@
     <script src="{{ asset('js/orders js/orders-table.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/order-navigation.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/pagination.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/orders js/historial-procesos.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/realtime-listeners.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orderTracking.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders-scripts/image-gallery-zoom.js') }}?v={{ time() }}"></script>

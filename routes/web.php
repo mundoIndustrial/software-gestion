@@ -69,6 +69,20 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/registros/{pedido}/images', [RegistroOrdenController::class, 'getImages'])->name('registros.images');
     Route::get('/api/registros-por-orden/{pedido}', [RegistroOrdenController::class, 'getRegistrosPorOrden'])->name('api.registros-por-orden');
     Route::post('/registros/{pedido}/edit-full', [RegistroOrdenController::class, 'editFullOrder'])->name('registros.editFull');
+    
+    // API - Procesos de una orden (para tracking)
+    Route::get('/api/ordenes/{id}/procesos', [App\Http\Controllers\OrdenController::class, 'getProcesos'])->name('api.ordenes.procesos');
+    Route::post('/api/procesos/buscar', [App\Http\Controllers\OrdenController::class, 'buscarProceso'])->name('api.procesos.buscar');
+    Route::post('/api/procesos/crear', [App\Http\Controllers\OrdenController::class, 'crearProceso'])->name('api.procesos.crear');
+    Route::get('/api/procesos/obtener/{numero_pedido}', [App\Http\Controllers\OrdenController::class, 'obtenerProcesosPorPedido'])->name('api.procesos.obtener');
+    Route::get('/api/procesos/historial/{numero_pedido}', [App\Http\Controllers\OrdenController::class, 'obtenerHistorial'])->name('api.procesos.historial');
+    
+    // API - Editar y eliminar procesos (solo admin)
+    Route::middleware('role:admin')->group(function () {
+        Route::put('/api/procesos/{id}/editar', [App\Http\Controllers\OrdenController::class, 'editarProceso'])->name('api.procesos.editar');
+        Route::delete('/api/procesos/{id}/eliminar', [App\Http\Controllers\OrdenController::class, 'eliminarProceso'])->name('api.procesos.eliminar');
+    });
+    
     Route::get('/bodega', [RegistroBodegaController::class, 'index'])->name('bodega.index');
     Route::get('/bodega/next-pedido', [RegistroBodegaController::class, 'getNextPedido'])->name('bodega.next-pedido');
     Route::get('/bodega/{pedido}', [RegistroBodegaController::class, 'show'])->name('bodega.show');

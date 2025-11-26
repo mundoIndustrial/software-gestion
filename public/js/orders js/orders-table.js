@@ -470,13 +470,27 @@ function updateOrderArea(orderId, newArea) {
 
 // Función auxiliar para ejecutar la actualización de área
 function executeAreaUpdate(orderId, newArea, oldArea, dropdown) {
-    fetch(`${window.updateUrl}/${orderId}`, {
-        method: 'PATCH',
+    console.log(`📍 executeAreaUpdate - orderId: ${orderId}, newArea: ${newArea}`);
+    
+    // orderId ya ES el numero_pedido (viene desde this.dataset.id del dropdown)
+    const numeroPedido = orderId;
+    
+    console.log(`📍 Creando proceso: Pedido ${numeroPedido}, Área: ${newArea}`);
+    
+    // Enviar solicitud para crear/actualizar proceso en procesos_prenda
+    fetch(`/api/procesos/crear`, {
+        method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
         },
-        body: JSON.stringify({ area: newArea })
+        body: JSON.stringify({
+            numero_pedido: parseInt(numeroPedido),
+            proceso: newArea,
+            fecha_inicio: new Date().toISOString().split('T')[0], // Fecha actual
+            encargado: null,
+            estado_proceso: 'En Progreso'
+        })
     })
         .then(response => {
             // Verificar errores de servidor
@@ -496,22 +510,71 @@ function executeAreaUpdate(orderId, newArea, oldArea, dropdown) {
         })
         .then(data => {
             if (data.success) {
-                console.log('Area actualizada correctamente');
+                console.log('✅ Proceso creado correctamente en procesos_prenda');
                 window.consecutiveErrors = 0; // Resetear contador
                 
-                // Actualizar las celdas con las fechas actualizadas y otros campos
-                if (data.updated_fields) {
-                    const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
-                    if (row) {
-                        for (const [field, value] of Object.entries(data.updated_fields)) {
-                            const cell = row.querySelector(`td[data-column="${field}"] .cell-text`);
-                            if (cell) {
-                                cell.textContent = value;
-                                cell.closest('.cell-content').title = value;
+                if (dropdown) {
+                    // Actualizar el valor del dropdown inmediatamente
+                    dropdown.value = newArea;
+                    dropdown.dataset.value = newArea;
+                    dropdown.classList.add('updated');
+                    console.log(`✅ Dropdown actualizado a: ${newArea}`);
+                    console.log(`✅ data-value seteado a: ${dropdown.dataset.value}`);
+                    
+                    // Remover la clase de actualización después de 2 segundos
+                    setTimeout(() => {
+                        dropdown.classList.remove('updated');
+                    }, 2000);
+                }
+
+                // Buscar la fila en la tabla y actualizar el dropdown
+                console.log(`📍 Buscando fila con numero_pedido: ${orderId}`);
+                const row = document.querySelector(`tr[data-numero-pedido="${orderId}"]`);
+                if (row) {
+                    console.log(`✅ Fila encontrada para numero_pedido: ${orderId}`);
+                    // Buscar el dropdown en la celda de área
+                    const areaDropdown = row.querySelector('.area-dropdown');
+                    if (areaDropdown) {
+                        console.log(`✅ Dropdown encontrado, valor actual: ${areaDropdown.value}`);
+                        // El dropdown ya fue actualizado arriba, solo añadir animación
+                        areaDropdown.classList.add('updated');
+                        setTimeout(() => {
+                            areaDropdown.classList.remove('updated');
+                        }, 2000);
+                    } else {
+                        console.warn('⚠️ Dropdown de área no encontrado en la fila');
+                    }
+                } else {
+                    console.warn(`⚠️ Fila no encontrada para numero_pedido: ${orderId}`);
+                }
+
+                // Hacer una petición GET para obtener los datos actualizados de esta orden
+                // para asegurar que el dropdown se mantiene con el valor correcto
+                setTimeout(() => {
+                    console.log(`📍 Verificando datos actualizados para pedido: ${orderId}`);
+                    fetch(`/api/procesos/obtener/${orderId}`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success && result.procesos.length > 0) {
+                            const ultimoProceso = result.procesos[0];
+                            console.log(`✅ Último proceso en BD: ${ultimoProceso.proceso}`);
+                            
+                            // Asegurar que el dropdown tiene el valor correcto
+                            if (dropdown && ultimoProceso.proceso !== dropdown.value) {
+                                dropdown.value = ultimoProceso.proceso;
+                                dropdown.dataset.value = ultimoProceso.proceso;
+                                console.log(`✅ Dropdown re-sincronizado a: ${ultimoProceso.proceso}`);
                             }
                         }
-                    }
-                }
+                    })
+                    .catch(err => console.error('Error al verificar datos:', err));
+                }, 500);
 
                 // Enviar mensaje a otras pestañas
                 const timestamp = Date.now();
@@ -521,15 +584,24 @@ function executeAreaUpdate(orderId, newArea, oldArea, dropdown) {
                     field: 'area',
                     newValue: newArea,
                     oldValue: oldArea,
-                    updatedFields: data.updated_fields || {},
-                    order: data.order,
-                    totalDiasCalculados: data.totalDiasCalculados || {},
                     timestamp: timestamp
                 }));
                 localStorage.setItem('last-orders-update-timestamp', timestamp.toString());
             } else {
-                console.error('Error al actualizar el area:', data.message);
+                console.error('Error al crear el proceso:', data.message);
                 if (dropdown) dropdown.value = oldArea;
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: data.message || 'Error al crear el proceso',
+                    confirmButtonColor: '#ef4444',
+                    didOpen: (modal) => {
+                        const backdrop = document.querySelector('.swal2-container');
+                        if (backdrop) backdrop.style.zIndex = '100000';
+                        modal.style.zIndex = '100001';
+                    }
+                });
             }
         })
         .catch(error => {

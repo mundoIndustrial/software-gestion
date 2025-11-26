@@ -15,8 +15,12 @@ return new class extends Migration
         Schema::create('pedidos_produccion', function (Blueprint $table) {
             $table->id();
             
-            // RELACIÓN CON COTIZACIÓN
-            $table->foreignId('cotizacion_id')->constrained('cotizaciones')->onDelete('cascade');
+            // RELACIÓN CON COTIZACIÓN (nullable)
+            $table->foreignId('cotizacion_id')->nullable()->constrained('cotizaciones')->onDelete('cascade');
+            
+            // IDs de usuario y cliente (para vincular con asesor y cliente)
+            $table->foreignId('asesor_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('cliente_id')->nullable()->constrained('clientes')->onDelete('set null');
             
             // INFORMACIÓN BÁSICA
             $table->unsignedInteger('numero_pedido')->unique();
@@ -45,39 +49,43 @@ return new class extends Migration
             // RELACIÓN CON PEDIDO
             $table->foreignId('pedido_produccion_id')->constrained('pedidos_produccion')->onDelete('cascade');
             
-            // INFORMACIÓN DE LA PRENDA
-            $table->string('nombre_prenda', 100)->nullable(); // CAMISA, POLO, CAMISETA, etc.
+            // INFORMACIÓN BÁSICA DE LA PRENDA
+            $table->string('nombre_prenda', 100)->nullable();
             $table->string('cantidad', 56)->nullable();
             $table->text('descripcion')->nullable();
+            
+            // VARIACIONES DE LA PRENDA (opcionales, según cotización)
+            $table->foreignId('color_id')->nullable()->constrained('colores')->onDelete('set null');
+            $table->foreignId('tela_id')->nullable()->constrained('telas')->onDelete('set null');
+            $table->foreignId('tipo_manga_id')->nullable()->constrained('tipo_mangas')->onDelete('set null');
+            $table->foreignId('tipo_broche_id')->nullable()->constrained('tipo_broches')->onDelete('set null');
+            
+            // DETALLES BOOLEANOS
+            $table->boolean('tiene_bolsillos')->default(false);
+            $table->boolean('tiene_reflectivo')->default(false);
+            
+            // DETALLES DE VARIACIONES
+            $table->longText('descripcion_variaciones')->nullable();
+            
+            // TALLAS Y CANTIDADES (JSON)
+            // Ejemplo: {"XS": 5, "S": 10, "M": 15, "L": 8, "XL": 2}
+            $table->json('cantidad_talla')->nullable();
             
             // METADATA
             $table->timestamps();
             $table->softDeletes();
         });
 
-        // TABLA: PROCESOS_PRENDA (cada proceso que pasa una prenda)
+        // TABLA: PROCESOS_PRENDA (cada proceso que pasa un pedido)
         Schema::create('procesos_prenda', function (Blueprint $table) {
             $table->id();
             
-            // RELACIÓN CON PRENDA
-            $table->foreignId('prenda_pedido_id')->constrained('prendas_pedido')->onDelete('cascade');
+            // RELACIÓN CON PEDIDO VÍA numero_pedido
+            $table->unsignedInteger('numero_pedido');
+            $table->foreign('numero_pedido')->references('numero_pedido')->on('pedidos_produccion')->onDelete('cascade');
             
             // TIPO DE PROCESO
-            $table->enum('proceso', [
-                'Creación Orden',
-                'Inventario',
-                'Insumos y Telas',
-                'Corte',
-                'Bordado',
-                'Estampado',
-                'Costura',
-                'Reflectivo',
-                'Lavandería',
-                'Arreglos',
-                'Control Calidad',
-                'Entrega',
-                'Despacho'
-            ]);
+            $table->string('proceso', 255);  // Cambiar de ENUM a VARCHAR para más flexibilidad
             
             // INFORMACIÓN DEL PROCESO
             $table->date('fecha_inicio')->nullable();
@@ -93,6 +101,12 @@ return new class extends Migration
             // METADATA
             $table->timestamps();
             $table->softDeletes();
+            
+            // ÍNDICES
+            $table->index('numero_pedido');
+            $table->index('proceso');
+            $table->index('fecha_inicio');
+            $table->index(['numero_pedido', 'proceso']);
         });
     }
 

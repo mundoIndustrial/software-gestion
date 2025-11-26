@@ -42,6 +42,10 @@
       <!-- Fuentes y estilos -->
       <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" rel="stylesheet">
       <link rel="stylesheet" href="{{ asset('css/sidebar.css') }}">
+      
+      <!-- SweetAlert2 CSS -->
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+      
       @vite(['resources/css/app.css', 'resources/js/app.js'])
       <link rel="stylesheet" href="{{ asset('css/orders styles/registros.css') }}">
       
@@ -50,8 +54,13 @@
 
       <!-- Alpine.js -->
       <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+      
+      <!-- SweetAlert2 JS -->
+      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
   </head>
-  <body class="{{ isset($_COOKIE['theme']) && $_COOKIE['theme'] === 'dark' ? 'dark-theme' : '' }}" data-user-role="{{ auth()->user()->role?->name ?? 'guest' }}">
+  <body class="{{ isset($_COOKIE['theme']) && $_COOKIE['theme'] === 'dark' ? 'dark-theme' : '' }}" 
+        data-user-role="{{ auth()->user()->role?->name ?? 'guest' }}"
+        data-is-admin="{{ auth()->check() && auth()->user()->role?->name === 'admin' ? 'true' : 'false' }}">
       <script>
           // Sincronizar con localStorage inmediatamente
           (function() {

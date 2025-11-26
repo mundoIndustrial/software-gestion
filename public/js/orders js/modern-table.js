@@ -1702,48 +1702,14 @@ initializeStatusDropdowns() {
         const oldArea = dropdown.dataset.value;
 
         try {
-            const response = await fetch(`${this.baseRoute}/${orderId}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify({ area: newArea })
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Error HTTP:', response.status, errorText);
-                throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 200)}`);
-            }
-
-            const data = await response.json();
-            if (data.success) {
-                // Actualizar data-value del dropdown
-                dropdown.dataset.value = newArea;
-                // Actualizar las celdas con las fechas actualizadas según la respuesta del servidor
-                if (data.updated_fields) {
-                    const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
-                    if (row) {
-                        for (const [field, date] of Object.entries(data.updated_fields)) {
-                            const cell = row.querySelector(`td[data-column="${field}"] .cell-text`);
-                            if (cell) {
-                                cell.textContent = date;
-                            }
-                        }
-                    }
-                }
-            } else {
-                console.error('Error actualizando área:', data.message);
-                alert(`Error al actualizar: ${data.message}`);
-                // Revertir cambio en caso de error
-                dropdown.value = oldArea;
-            }
+            // Las áreas se manejan ahora a través de procesos_prenda desde orders-table.js
+            // Este dropdown solo es de visualización
+            console.log('📍 Área seleccionada (visualización):', newArea);
+            
+            // No hacer nada más aquí - la actualización se maneja en orders-table.js
+            return;
         } catch (error) {
-            console.error('Error completo:', error);
-            alert(`Error al actualizar el área: ${error.message}`);
-            // Revertir cambio en caso de error
-            dropdown.value = oldArea;
+            console.error('Error:', error);
         }
     }
 

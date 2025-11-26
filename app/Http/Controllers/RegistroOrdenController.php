@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\PedidoProduccion;
+use App\Models\ProcesosPrenda;
 use App\Models\News;
 use App\Models\Festivo;
 use Illuminate\Support\Facades\DB;
@@ -89,7 +90,7 @@ class RegistroOrdenController extends Controller
 
         $query = PedidoProduccion::query()
             ->with(['asesora', 'prendas' => function($q) {
-                $q->select('id', 'pedido_produccion_id', 'nombre_prenda', 'cantidad', 'descripcion', 'cantidad_talla');
+                $q->select('id', 'pedido_produccion_id', 'nombre_prenda', 'cantidad', 'descripcion', 'cantidad_talla', 'color_id', 'tela_id', 'tipo_manga_id', 'tipo_broche_id', 'tiene_bolsillos', 'tiene_reflectivo', 'descripcion_variaciones');
             }]);
 
         // Filtro por defecto para supervisores: "En Ejecución" (pero puede cambiarse)
@@ -226,12 +227,15 @@ class RegistroOrdenController extends Controller
             $totalDiasCalculados = $this->calcularTotalDiasBatchConCache($ordenes->items(), $festivos);
         }
 
+        // Obtener el último proceso (área) para cada orden desde procesos_prenda
+        $areasMap = $this->getLastProcessByOrder($ordenes->items());
+
         // Obtener opciones del enum 'area'
         $areaOptions = $this->getEnumOptions('tabla_original', 'area');
 
         if ($request->wantsJson()) {
             // Filtrar campos sensibles según el rol del usuario
-            $ordenesFiltered = array_map(function($orden) {
+            $ordenesFiltered = array_map(function($orden) use ($areasMap) {
                 $ordenArray = is_object($orden) ? $orden->toArray() : (array) $orden;
                 
                 // Campos que se ocultan para todos los usuarios
@@ -259,6 +263,9 @@ class RegistroOrdenController extends Controller
                 } else {
                     $ordenArray['cliente_nombre'] = $ordenArray['cliente'] ?? '';
                 }
+                
+                // Agregar el área (último proceso) desde procesos_prenda
+                $ordenArray['area'] = $areasMap[$orden->numero_pedido] ?? 'Creación Orden';
                 
                 // Eliminar campos ocultos globales
                 foreach ($camposOcultosGlobal as $campo) {
@@ -297,7 +304,7 @@ class RegistroOrdenController extends Controller
         $fetchUrl = '/registros';
         $updateUrl = '/registros';
         $modalContext = 'orden';
-        return view('orders.index', compact('ordenes', 'totalDiasCalculados', 'areaOptions', 'context', 'title', 'icon', 'fetchUrl', 'updateUrl', 'modalContext'));
+        return view('orders.index', compact('ordenes', 'totalDiasCalculados', 'areaOptions', 'areasMap', 'context', 'title', 'icon', 'fetchUrl', 'updateUrl', 'modalContext'));
     }
 
     public function show($pedido)
@@ -855,15 +862,25 @@ class RegistroOrdenController extends Controller
             // DESACTIVADO: Caché deshabilitado para pruebas
             // Calcular directamente sin caché
             try {
-                $fechaCreacion = \Carbon\Carbon::parse($orden->fecha_de_creacion_de_orden);
+                // Obtener fechas de procesos_prenda (nueva arquitectura)
+                $procesosPrenda = \App\Models\ProcesosPrenda::where('numero_pedido', $orden->numero_pedido)
+                    ->whereNotNull('fecha_inicio')
+                    ->orderBy('fecha_inicio', 'asc')
+                    ->get();
 
-                if ($orden->estado === 'Entregado') {
-                    // Usar la fecha de DESPACHO cuando el estado es Entregado
-                    $fechaDespacho = $orden->despacho ? \Carbon\Carbon::parse($orden->despacho) : null;
-                    $dias = $fechaDespacho ? $this->calcularDiasHabilesBatch($fechaCreacion, $fechaDespacho, $festivos) : 0;
+                if ($procesosPrenda->isEmpty()) {
+                    $dias = 0;
                 } else {
-                    // Para órdenes en ejecución, contar hasta hoy
-                    $dias = $this->calcularDiasHabilesBatch($fechaCreacion, \Carbon\Carbon::now(), $festivos);
+                    $fechaInicio = \Carbon\Carbon::parse($procesosPrenda->first()->fecha_inicio);
+                    
+                    if ($orden->estado === 'Entregado') {
+                        // Para órdenes entregadas, usar última fecha de proceso
+                        $fechaFin = \Carbon\Carbon::parse($procesosPrenda->last()->fecha_inicio);
+                        $dias = $this->calcularDiasHabilesBatch($fechaInicio, $fechaFin, $festivos);
+                    } else {
+                        // Para órdenes en ejecución, contar hasta hoy
+                        $dias = $this->calcularDiasHabilesBatch($fechaInicio, \Carbon\Carbon::now(), $festivos);
+                    }
                 }
 
                 $resultados[$ordenPedido] = max(0, $dias);
@@ -889,27 +906,30 @@ class RegistroOrdenController extends Controller
      */
     private function calcularDiasHabilesBatch(\Carbon\Carbon $inicio, \Carbon\Carbon $fin, array $festivos): int
     {
-        $totalDays = $inicio->diffInDays($fin);
-
-        // Contar fines de semana de forma vectorizada
-        $weekends = $this->contarFinesDeSemanaBatch($inicio, $fin);
-
-        // Contar festivos en el rango (eliminar duplicados)
-        $festivosEnRango = array_filter($festivos, function ($festivo) use ($inicio, $fin) {
-            $fechaFestivo = \Carbon\Carbon::parse($festivo);
-            return $fechaFestivo->between($inicio, $fin);
-        });
-
-        // Eliminar duplicados de festivos
-        $festivosUnicos = [];
-        foreach ($festivosEnRango as $festivo) {
-            $fecha = \Carbon\Carbon::parse($festivo)->format('Y-m-d');
-            $festivosUnicos[$fecha] = $festivo;
-        }
+        // El contador inicia desde el PRIMER DÍA HÁBIL DESPUÉS de la fecha de inicio
+        // Si creación es sábado, el contador empieza desde el lunes
         
-        $holidaysInRange = count($festivosUnicos);
+        // Avanzar al día siguiente
+        $current = $inicio->copy()->addDay();
+        
+        // Contar solo desde el primer día hábil después
+        $totalDays = 0;
+        $weekends = 0;
+        $holidaysCount = 0;
+        
+        while ($current <= $fin) {
+            $dateString = $current->format('Y-m-d');
+            $isWeekend = $current->dayOfWeek === 0 || $current->dayOfWeek === 6;
+            $isFestivo = in_array($dateString, array_map(fn($f) => \Carbon\Carbon::parse($f)->format('Y-m-d'), $festivos));
+            
+            $totalDays++;
+            if ($isWeekend) $weekends++;
+            if ($isFestivo) $holidaysCount++;
+            
+            $current->addDay();
+        }
 
-        $businessDays = $totalDays - $weekends - $holidaysInRange;
+        $businessDays = $totalDays - $weekends - $holidaysCount;
 
         return max(0, $businessDays);
     }
@@ -1458,5 +1478,68 @@ class RegistroOrdenController extends Controller
             \Log::error('Error al obtener imágenes:', ['error' => $e->getMessage()]);
             return response()->json(['images' => []], 500);
         }
+    }
+
+    /**
+     * Obtener el último proceso (área) para cada orden desde procesos_prenda y procesos_historial
+     * Obtiene el proceso más reciente (por updated_at) de cada pedido
+     */
+    private function getLastProcessByOrder($ordenes)
+    {
+        $areasMap = [];
+        
+        if (empty($ordenes)) {
+            return $areasMap;
+        }
+        
+        // Obtener números de pedido
+        $numeroPedidos = array_map(function($orden) {
+            return $orden->numero_pedido ?? $orden['numero_pedido'];
+        }, $ordenes);
+        
+        // Filtrar valores null y eliminar duplicados
+        $numeroPedidos = array_filter(array_unique($numeroPedidos));
+        
+        if (empty($numeroPedidos)) {
+            return $areasMap;
+        }
+        
+        // Obtener procesos actuales (procesos_prenda) ordenados por updated_at DESC
+        $procesosActuales = DB::table('procesos_prenda')
+            ->whereIn('numero_pedido', $numeroPedidos)
+            ->orderBy('numero_pedido', 'asc')
+            ->orderBy('updated_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->select('numero_pedido', 'proceso', 'updated_at', 'id')
+            ->get();
+        
+        // Agrupar por numero_pedido - tomar el primero (más reciente)
+        foreach ($procesosActuales as $p) {
+            if (!isset($areasMap[$p->numero_pedido])) {
+                $areasMap[$p->numero_pedido] = $p->proceso;
+            }
+        }
+        
+        // Para los pedidos que NO tienen proceso actual, buscar en historial
+        $pedidosSinArea = array_diff($numeroPedidos, array_keys($areasMap));
+        
+        if (!empty($pedidosSinArea)) {
+            $procesosHistorial = DB::table('procesos_historial')
+                ->whereIn('numero_pedido', $pedidosSinArea)
+                ->orderBy('numero_pedido', 'asc')
+                ->orderBy('updated_at', 'desc')
+                ->orderBy('id', 'desc')
+                ->select('numero_pedido', 'proceso', 'updated_at', 'id')
+                ->get();
+            
+            // Agrupar por numero_pedido - tomar el primero (más reciente)
+            foreach ($procesosHistorial as $p) {
+                if (!isset($areasMap[$p->numero_pedido])) {
+                    $areasMap[$p->numero_pedido] = $p->proceso;
+                }
+            }
+        }
+        
+        return $areasMap;
     }
 }
