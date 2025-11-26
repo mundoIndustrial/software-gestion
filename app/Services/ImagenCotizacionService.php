@@ -18,6 +18,67 @@ class ImagenCotizacionService
     private const TIPOS_PERMITIDOS = ['bordado', 'estampado', 'tela', 'prenda', 'general'];
 
     /**
+     * Procesar imagen para almacenamiento (convertir a WebP si es posible)
+     * 
+     * @param int $cotizacionId
+     * @param UploadedFile $archivo
+     * @param string $tipo
+     * @return array [exito => bool, rutaTemporal => string, nombreFinal => string]
+     */
+    public function procesarImagenParaAlmacenamiento(int $cotizacionId, UploadedFile $archivo, string $tipo): array
+    {
+        $extensionOriginal = strtolower($archivo->getClientOriginalExtension());
+        $nombreWebP = "{$cotizacionId}_{$tipo}_" . uniqid() . ".webp";
+        $nombreFallback = "{$cotizacionId}_{$tipo}_" . uniqid() . ".{$extensionOriginal}";
+
+        $carpeta = $this->getCarpetaTipo($cotizacionId, $tipo);
+        $rutaTemporal = storage_path("app/public/{$carpeta}/{$nombreWebP}");
+        $rutaOriginal = $archivo->getRealPath();
+        $archivoGuardado = false;
+        $nombreFinal = $nombreWebP;
+
+        try {
+            // Asegurar que la carpeta existe
+            if (!Storage::disk('public')->exists($carpeta)) {
+                Storage::disk('public')->makeDirectory($carpeta);
+            }
+
+            // Intentar usar cwebp si está disponible
+            if ($this->comandoDisponible('cwebp')) {
+                $archivoGuardado = $this->convertirImagenAWebP($rutaOriginal, $rutaTemporal);
+            }
+
+            // Si cwebp no funcionó, intentar con GD
+            if (!$archivoGuardado && extension_loaded('gd')) {
+                $archivoGuardado = $this->convertirConGD($rutaOriginal, $rutaTemporal);
+            }
+
+            // Si nada funcionó, guardar en formato original
+            if (!$archivoGuardado) {
+                $rutaTemporal = storage_path("app/public/{$carpeta}/{$nombreFallback}");
+                $archivo->storeAs($carpeta, $nombreFallback, 'public');
+                $nombreFinal = $nombreFallback;
+                $archivoGuardado = true;
+            }
+
+            return [
+                'exito' => $archivoGuardado,
+                'rutaTemporal' => $rutaTemporal,
+                'nombreFinal' => $nombreFinal
+            ];
+        } catch (\Exception $e) {
+            \Log::error("Error procesando imagen para almacenamiento", [
+                'error' => $e->getMessage()
+            ]);
+            return [
+                'exito' => false,
+                'rutaTemporal' => '',
+                'nombreFinal' => ''
+            ];
+        }
+    }
+
+    /**
      * Guardar imagen de cotización
      * 
      * @param int $cotizacionId
@@ -46,7 +107,7 @@ class ImagenCotizacionService
 
             if (!Storage::disk('public')->exists($carpeta)) {
                 \Log::info('Creando carpeta', ['carpeta' => $carpeta]);
-                Storage::disk('public')->makeDirectory($carpeta, 0755, true);
+                Storage::disk('public')->makeDirectory($carpeta);
             }
 
             // Generar nombre único
@@ -150,7 +211,7 @@ class ImagenCotizacionService
             if (Storage::disk('public')->exists($carpeta)) {
                 $archivos = Storage::disk('public')->files($carpeta);
                 $imagenes[$tipo] = array_map(function ($archivo) {
-                    return Storage::disk('public')->url($archivo);
+                    return '/storage/' . $archivo;
                 }, $archivos);
             } else {
                 $imagenes[$tipo] = [];
@@ -181,7 +242,7 @@ class ImagenCotizacionService
 
         $archivos = Storage::disk('public')->files($carpeta);
         return array_map(function ($archivo) {
-            return Storage::disk('public')->url($archivo);
+            return '/storage/' . $archivo;
         }, $archivos);
     }
 
@@ -321,6 +382,166 @@ class ImagenCotizacionService
             'imagenes_por_tipo' => array_map('count', $imagenes),
             'existe_carpeta' => Storage::disk('public')->exists($carpetaPrincipal)
         ];
+    }
+
+    /**
+     * Verificar si un comando está disponible en el servidor
+     * 
+     * @param string $comando
+     * @return bool
+     */
+    public function comandoDisponible(string $comando): bool
+    {
+        try {
+            $output = [];
+            $return = 0;
+            
+            if (stripos(PHP_OS, 'WIN') === 0) {
+                // Windows
+                exec("where $comando", $output, $return);
+            } else {
+                // Linux/Mac
+                exec("which $comando", $output, $return);
+            }
+            
+            return $return === 0;
+        } catch (\Exception $e) {
+            \Log::warning("Error verificando disponibilidad de comando: $comando", [
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Convertir imagen a WebP usando cwebp
+     * 
+     * @param string $rutaOrigen
+     * @param string $rutaDestino
+     * @return bool
+     */
+    public function convertirImagenAWebP(string $rutaOrigen, string $rutaDestino): bool
+    {
+        try {
+            if (!file_exists($rutaOrigen)) {
+                \Log::error("Archivo origen no existe: $rutaOrigen");
+                return false;
+            }
+
+            $comando = "cwebp \"$rutaOrigen\" -o \"$rutaDestino\" -q 80";
+            
+            $output = [];
+            $return = 0;
+            exec($comando, $output, $return);
+
+            if ($return !== 0) {
+                \Log::warning("Error al ejecutar cwebp", [
+                    'comando' => $comando,
+                    'salida' => implode("\n", $output),
+                    'codigo_retorno' => $return
+                ]);
+                return false;
+            }
+
+            if (!file_exists($rutaDestino)) {
+                \Log::error("Archivo destino no se creó", [
+                    'destino' => $rutaDestino
+                ]);
+                return false;
+            }
+
+            \Log::info("Imagen convertida a WebP exitosamente", [
+                'origen' => $rutaOrigen,
+                'destino' => $rutaDestino,
+                'tamanio_kb' => round(filesize($rutaDestino) / 1024, 2)
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            \Log::error("Excepción al convertir a WebP", [
+                'origen' => $rutaOrigen,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Convertir imagen usando GD library
+     * 
+     * @param string $rutaOrigen
+     * @param string $rutaDestino
+     * @return bool
+     */
+    public function convertirConGD(string $rutaOrigen, string $rutaDestino): bool
+    {
+        try {
+            if (!extension_loaded('gd')) {
+                \Log::error("Extensión GD no está disponible");
+                return false;
+            }
+
+            if (!file_exists($rutaOrigen)) {
+                \Log::error("Archivo origen no existe: $rutaOrigen");
+                return false;
+            }
+
+            $info = @getimagesize($rutaOrigen);
+            if (!$info) {
+                \Log::error("No se pudo obtener información de la imagen", [
+                    'origen' => $rutaOrigen
+                ]);
+                return false;
+            }
+
+            $tipo = $info[2];
+            $imagen = null;
+
+            switch ($tipo) {
+                case IMAGETYPE_JPEG:
+                    $imagen = @imagecreatefromjpeg($rutaOrigen);
+                    if (!$imagen) return false;
+                    imagejpeg($imagen, $rutaDestino, 80);
+                    break;
+                case IMAGETYPE_PNG:
+                    $imagen = @imagecreatefrompng($rutaOrigen);
+                    if (!$imagen) return false;
+                    imagepng($imagen, $rutaDestino, 8);
+                    break;
+                case IMAGETYPE_GIF:
+                    $imagen = @imagecreatefromgif($rutaOrigen);
+                    if (!$imagen) return false;
+                    imagegif($imagen, $rutaDestino);
+                    break;
+                default:
+                    return false;
+            }
+
+            if ($imagen) {
+                @imagedestroy($imagen);
+            }
+
+            if (!file_exists($rutaDestino)) {
+                \Log::error("No se pudo guardar imagen con GD", [
+                    'destino' => $rutaDestino
+                ]);
+                return false;
+            }
+
+            \Log::info("Imagen procesada con GD exitosamente", [
+                'origen' => $rutaOrigen,
+                'destino' => $rutaDestino,
+                'tamanio_kb' => round(filesize($rutaDestino) / 1024, 2)
+            ]);
+
+            return true;
+        } catch (\Exception $e) {
+            \Log::error("Excepción al convertir con GD", [
+                'origen' => $rutaOrigen,
+                'error' => $e->getMessage()
+            ]);
+            return false;
+        }
     }
 
     /**

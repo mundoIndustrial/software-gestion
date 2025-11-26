@@ -42,6 +42,11 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Throwable $e): Response
     {
+        // Manejar excepciones personalizadas del dominio
+        if ($this->isDomainException($e)) {
+            return $this->renderDomainException($request, $e);
+        }
+
         // Si usuario no está autenticado y accede a ruta protegida o no existe, redirigir a login
         if (!auth()->check() && ($e instanceof NotFoundHttpException || $e instanceof AccessDeniedHttpException)) {
             return redirect()->route('login')->with('error', 'No puedes acceder a esta página. Debes estar autenticado.');
@@ -64,6 +69,41 @@ class Handler extends ExceptionHandler
         }
 
         // Renderizar nuestra vista personalizada de error
+        return $this->renderCustomErrorPage($request, $e);
+    }
+
+    /**
+     * Verifica si es una excepción personalizada del dominio
+     */
+    protected function isDomainException(Throwable $e): bool
+    {
+        return $e instanceof CotizacionException ||
+               $e instanceof PrendaException ||
+               $e instanceof ImagenException ||
+               $e instanceof PedidoException;
+    }
+
+    /**
+     * Renderiza excepción del dominio
+     */
+    protected function renderDomainException(Request $request, Throwable $e): Response
+    {
+        // Log con contexto
+        \Log::warning('Excepción de dominio', [
+            'exception' => get_class($e),
+            'message' => $e->getMessage(),
+            'context' => method_exists($e, 'getContext') ? $e->getContext() : []
+        ]);
+
+        // Si espera JSON, responder con el array del error
+        if ($request->expectsJson()) {
+            if (method_exists($e, 'toArray')) {
+                $statusCode = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 400;
+                return response()->json($e->toArray(), $statusCode);
+            }
+        }
+
+        // Para HTML, mostrar error amigable
         return $this->renderCustomErrorPage($request, $e);
     }
 
@@ -98,6 +138,12 @@ class Handler extends ExceptionHandler
     protected function getFriendlyMessage(Throwable $e): string
     {
         switch (true) {
+            case $e instanceof CotizacionException:
+            case $e instanceof PrendaException:
+            case $e instanceof ImagenException:
+            case $e instanceof PedidoException:
+                return $e->getMessage();
+
             case $e instanceof NotFoundHttpException:
                 return 'La página que buscas no existe o ha sido movida. Verifica que la dirección esté correcta.';
                 
@@ -229,3 +275,4 @@ class Handler extends ExceptionHandler
         ], $this->getStatusCode($e));
     }
 }
+

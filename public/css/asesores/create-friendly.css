@@ -10,12 +10,13 @@
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     padding: 0;
     margin: 0;
+    font-size: 12px;
 }
 
 /* ============ STEPPER ============ */
 .stepper-container {
     background: white;
-    padding: 0.35rem 1rem;
+    padding: 0.28rem 0.8rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
     flex-shrink: 0;
 }
@@ -24,7 +25,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.9rem;
+    gap: 0.72rem;
     max-width: 1200px;
     margin: 0 auto;
 }
@@ -33,11 +34,11 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.1rem;
+    gap: 0.08rem;
     opacity: 0.5;
     transition: all 0.3s ease;
     cursor: pointer;
-    padding: 0.35rem;
+    padding: 0.28rem;
     border-radius: 6px;
 }
 
@@ -51,8 +52,8 @@
 }
 
 .step-number {
-    width: 24px;
-    height: 24px;
+    width: 19.2px;
+    height: 19.2px;
     border-radius: 50%;
     background: #e0e0e0;
     color: #666;
@@ -60,7 +61,7 @@
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    font-size: 0.65rem;
+    font-size: 0.52rem;
     transition: all 0.3s ease;
 }
 
@@ -72,11 +73,11 @@
 }
 
 .step-label {
-    font-size: 0.65rem;
+    font-size: 0.52rem;
     font-weight: 600;
     color: #666;
     text-align: center;
-    min-width: 50px;
+    min-width: 40px;
 }
 
 .step.active .step-label {
@@ -87,7 +88,7 @@
     flex: 1;
     height: 1.5px;
     background: #e0e0e0;
-    max-width: 80px;
+    max-width: 64px;
 }
 
 /* ============ FORMULARIO ============ */
@@ -97,20 +98,20 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    margin: 0.75rem;
-    font-size: 0.9rem;
+    margin: 0.6rem;
+    font-size: 0.72rem;
     border-radius: 8px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* Aplicar font-size 0.9rem globalmente a todos los elementos */
+/* Aplicar font-size 0.72rem globalmente a todos los elementos (80% de 0.9rem) */
 .friendly-form-fullscreen * {
-    font-size: 0.9rem;
+    font-size: 0.72rem;
 }
 
 .form-step {
     display: none;
-    padding: 1.5rem 1.9rem;
+    padding: 1.2rem 1.52rem;
     animation: fadeIn 0.3s ease;
     flex: 1;
     overflow: visible;
@@ -134,16 +135,16 @@
 }
 
 .step-header {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.2rem;
     text-align: left;
-    padding-bottom: 1.1rem;
+    padding-bottom: 0.88rem;
     border-bottom: 3px solid #0066cc;
 }
 
 .step-header h2 {
-    margin: 0 0 0.35rem 0;
+    margin: 0 0 0.28rem 0;
     color: #0066cc;
-    font-size: 1.05rem;
+    font-size: 0.84rem;
     font-weight: 800;
     letter-spacing: -0.5px;
 }
@@ -151,13 +152,13 @@
 .step-header p {
     margin: 0;
     color: #666;
-    font-size: 0.7rem;
+    font-size: 0.56rem;
     font-weight: 500;
 }
 
 /* ============ FORM SECTION ============ */
 .form-section {
-    margin-bottom: 1rem;
+    margin-bottom: 0.8rem;
     flex: 1;
     overflow: visible;
     min-height: 0;
@@ -166,37 +167,37 @@
 }
 
 .form-group-large {
-    margin-bottom: 1rem;
+    margin-bottom: 0.8rem;
 }
 
 .form-group-large label {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.3rem;
     font-weight: 700;
-    margin-bottom: 0.35rem;
+    margin-bottom: 0.2625rem;
     color: #333;
-    font-size: 0.8rem;
+    font-size: 0.72rem;
 }
 
 .form-group-large label i {
     color: #0066cc;
-    font-size: 0.95rem;
+    font-size: 0.76rem;
 }
 
 .input-large,
 .input-medium {
     width: 100%;
-    padding: 0.6rem;
+    padding: 0.48rem;
     border: 2px solid #e0e0e0;
     border-radius: 6px;
-    font-size: 0.85rem;
+    font-size: 0.68rem;
     font-family: inherit;
     transition: all 0.3s ease;
 }
 
 .input-large {
-    font-size: 0.85rem;
+    font-size: 0.68rem;
 }
 
 .input-large:focus,
@@ -210,7 +211,7 @@
     display: block;
     margin-top: 0.2rem;
     color: #999;
-    font-size: 0.7rem;
+    font-size: 0.56rem;
 }
 
 /* ============ PRODUCTOS ============ */
@@ -225,7 +226,7 @@
     background: #f9f9f9;
     border: 2px solid #e0e0e0;
     border-radius: 6px;
-    margin-bottom: 0.8rem;
+    margin-bottom: 0.64rem;
     overflow: hidden;
     transition: all 0.3s ease;
 }
@@ -239,16 +240,16 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1rem;
+    padding: 0.8rem;
     background: linear-gradient(135deg, #0066cc, #0052a3);
     color: white;
     border-radius: 8px 8px 0 0;
-    gap: 1rem;
+    gap: 0.8rem;
 }
 
 .producto-titulo {
     margin: 0;
-    font-size: 0.8rem;
+    font-size: 0.72rem;
     font-weight: 700;
 }
 
@@ -297,7 +298,7 @@
 }
 
 .producto-body {
-    padding: 1rem;
+    padding: 0.8rem;
 }
 
 /* ============ SECCIONES DE PRODUCTO ============ */
@@ -317,7 +318,7 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    font-size: 0.95rem;
+    font-size: 0.76rem;
     font-weight: 700;
     color: #0066cc;
     margin-bottom: 1rem;
@@ -328,12 +329,12 @@
 }
 
 .section-title i {
-    font-size: 1.1rem;
+    font-size: 0.88rem;
 }
 
 .selector-prenda {
-    font-size: 0.9rem !important;
-    padding: 0.7rem 0.8rem !important;
+    font-size: 0.72rem !important;
+    padding: 0.56rem 0.64rem !important;
 }
 
 /* ============ CAMPO BÚSQUEDA PRENDA ============ */
@@ -343,8 +344,8 @@
 
 .prenda-search-input {
     width: 100%;
-    padding: 0.7rem 0.8rem;
-    font-size: 0.9rem;
+    padding: 0.56rem 0.64rem;
+    font-size: 0.72rem;
     border: 2px solid #e0e0e0;
     border-radius: 6px;
     transition: all 0.3s ease;
@@ -400,17 +401,17 @@
 .btn-toggle-images {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
+    gap: 0.4rem;
+    padding: 0.4rem 0.8rem;
     background: #e3f2fd;
     border: 2px solid #0066cc;
     border-radius: 6px;
     color: #0066cc;
     font-weight: 600;
-    font-size: 0.8rem;
+    font-size: 0.64rem;
     cursor: pointer;
     transition: all 0.3s ease;
-    margin-bottom: 1rem;
+    margin-bottom: 0.8rem;
 }
 
 .btn-toggle-images:hover {
@@ -439,13 +440,13 @@
     align-items: center;
     gap: 0.5rem;
     font-weight: 600;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.8rem;
     color: #0066cc;
-    font-size: 0.9rem;
+    font-size: 0.72rem;
 }
 
 .image-upload-label i {
-    font-size: 1rem;
+    font-size: 0.88rem;
 }
 
 /* ============ CHECKBOX NO APLICA ============ */
@@ -481,10 +482,10 @@
 }
 
 .tallas-table th {
-    padding: 0.75rem 0.5rem;
+    padding: 0.6rem 0.4rem;
     text-align: left;
     font-weight: 700;
-    font-size: 0.8rem;
+    font-size: 0.64rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     border-right: 1px solid rgba(255, 255, 255, 0.2);
@@ -508,13 +509,13 @@
 }
 
 .tallas-table td {
-    padding: 0.5rem;
+    padding: 0.4rem;
 }
 
 .input-small {
     width: 100%;
-    padding: 0.4rem;
-    font-size: 0.75rem;
+    padding: 0.32rem;
+    font-size: 0.6rem;
     border: 1px solid #e0e0e0;
     border-radius: 4px;
     font-family: inherit;
@@ -528,21 +529,20 @@
 }
 
 .btn-remove-talla {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     border: none;
     background: #f44336;
     color: white;
-    border-radius: 4px;
-    cursor: pointer;
+    border-radius: 50%;
+    padding: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.4rem;
+    font-size: 1.12rem;
     line-height: 1;
     font-weight: bold;
     transition: all 0.2s ease;
-    padding: 0;
 }
 
 .btn-remove-talla:hover {
@@ -552,18 +552,18 @@
 
 .btn-add-talla {
     width: 100%;
-    padding: 0.6rem;
+    padding: 0.48rem;
     background: #f0f0f0;
     border: 2px dashed #0066cc;
     border-radius: 6px;
     color: #0066cc;
     font-weight: 700;
-    font-size: 0.8rem;
+    font-size: 0.64rem;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.4rem;
+    gap: 0.32rem;
     transition: all 0.3s ease;
 }
 
@@ -584,21 +584,20 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    padding: 1rem;
-    background: #f9f9f9;
+    padding: 0.75rem;
+    background: white;
     border: 2px solid #e0e0e0;
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.3s ease;
     font-weight: 600;
     color: #333;
-    font-size: 0.9rem;
+    font-size: 0.72rem;
 }
 
 .checkbox-caracteristica:hover {
-    background: #f0f7ff;
     border-color: #0066cc;
-    transform: translateY(-2px);
+    background: #f0f7ff;
 }
 
 .checkbox-caracteristica input[type="checkbox"] {
@@ -608,8 +607,8 @@
     accent-color: #0066cc;
 }
 
-.checkbox-caracteristica input[type="checkbox"]:checked + span {
-    color: #0066cc;
+.checkbox-caracteristica i {
+    font-size: 0.88rem;
 }
 
 .checkbox-caracteristica span {
@@ -618,8 +617,8 @@
     gap: 0.5rem;
 }
 
-.checkbox-caracteristica i {
-    font-size: 1.1rem;
+.checkbox-caracteristica input[type="checkbox"]:checked + span {
+    color: #0066cc;
 }
 
 /* ============ BOTONES DE SECCIÓN COLAPSABLES ============ */
@@ -637,7 +636,7 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    font-size: 1rem;
+    font-size: 0.8rem;
     font-weight: 700;
     color: #0066cc;
     margin-bottom: 1rem;
@@ -684,25 +683,28 @@
 .form-col label {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.375rem;
     font-weight: 600;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.375rem;
     color: #0066cc;
-    font-size: 0.8rem;
+    font-size: 0.72rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
 .form-col label i {
     color: #0066cc;
-    font-size: 0.85rem;
+    font-size: 0.6375rem;
 }
 
 .input-medium {
-    padding: 0.5rem 0.6rem;
-    font-size: 0.75rem;
+    padding: 0.48rem 0.56rem;
+    font-size: 0.68rem;
     line-height: 1.2;
     min-width: 100%;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 textarea.input-medium {
@@ -713,16 +715,17 @@ textarea.input-medium {
 /* ============ BOTÓN AGREGAR PRODUCTO ============ */
 .btn-add-product-friendly {
     width: 100%;
-    padding: 0.6rem;
+    padding: 0.64rem 0.96rem;
     background: #3498db;
     color: white;
     border: none;
     border-radius: 8px;
-    font-size: 0.95rem;
+    font-size: 0.76rem;
     font-weight: 600;
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
     transition: all 0.3s ease;
+    margin-top: 1rem;
 }
 
 .btn-add-product-friendly:hover {
@@ -732,7 +735,7 @@ textarea.input-medium {
 }
 
 .btn-add-product-friendly i {
-    font-size: 0.95rem;
+    font-size: 0.76rem;
 }
 
 /* ============ BOTÓN ESPECIFICACIONES ============ */
@@ -858,9 +861,9 @@ button[onclick="abrirModalEspecificaciones()"]:hover {
 /* ============ BOTONES DE ACCIÓN ============ */
 .form-actions {
     display: flex;
-    gap: 0.75rem;
+    gap: 0.6rem;
     justify-content: flex-end;
-    padding: 1rem 2.5rem 1rem 2.5rem;
+    padding: 0.8rem 2rem 0.8rem 2rem;
     border-top: 1px solid #e0e0e0;
     margin-top: auto;
     flex-shrink: 0;
@@ -870,17 +873,17 @@ button[onclick="abrirModalEspecificaciones()"]:hover {
 .btn-prev,
 .btn-next,
 .btn-submit {
-    padding: 0.6rem 1.2rem;
+    padding: 0.48rem 0.96rem;
     border: none;
     border-radius: 6px;
     font-weight: 700;
-    font-size: 0.8rem;
+    font-size: 0.64rem;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.32rem;
     transition: all 0.3s ease;
-    min-width: 100px;
+    min-width: 80px;
     justify-content: center;
 }
 
@@ -1536,7 +1539,7 @@ body:has(.friendly-form-fullscreen) .top-nav {
 }
 
 .imagen-label {
-    font-size: 0.85rem;
+    font-size: 0.6375rem;
     font-weight: 700;
     color: #333;
     text-align: center;
@@ -1595,7 +1598,7 @@ body:has(.friendly-form-fullscreen) .top-nav {
 }
 
 .resumen-label {
-    font-size: 0.8rem;
+    font-size: 0.6rem;
     font-weight: 700;
     text-transform: uppercase;
     color: #666;
@@ -1679,18 +1682,18 @@ body:has(.friendly-form-fullscreen) .top-nav {
 /* ============ TABLA DE CONTROL COMPACTA ============ */
 
 .tabla-control-compacta {
-    width: 100%;
-    border-collapse: collapse;
-    background: white;
-    margin-bottom: 0.75rem;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
-    border-radius: 4px;
-    overflow: hidden;
-    font-size: 0.85rem;
+width: 100%;
+border-collapse: collapse;
+background: white;
+border: 1px solid #e0e0e0;
+box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+border-radius: 4px;
+overflow: hidden;
+font-size: 0.6375rem;
 }
 
 .tabla-control-compacta thead {
-    background: #ffc107;
+background: #ffc107;
 }
 
 .tabla-control-compacta th {
@@ -1733,8 +1736,8 @@ body:has(.friendly-form-fullscreen) .top-nav {
 }
 
 .tabla-control-compacta td {
-    padding: 0.4rem 0.5rem;
-    font-size: 0.8rem;
+    padding: 0.3rem 0.375rem;
+    font-size: 0.6rem;
     color: #333;
     vertical-align: middle;
 }
@@ -1886,4 +1889,62 @@ body:has(.friendly-form-fullscreen) .top-nav {
 
 .modal-especificaciones::-webkit-scrollbar-thumb:hover {
     background: #555;
+}
+
+/* ============ ESCALADO AL 80% - ESTILOS INLINE ============ */
+
+/* Reducir estilos inline de PASO 2, 3 y 4 */
+.form-step[data-step="2"] div[style*="padding"],
+.form-step[data-step="3"] div[style*="padding: 12px"],
+.form-step[data-step="3"] div[style*="padding: 15px"],
+.form-step[data-step="3"] div[style*="padding: 30px"],
+.form-step[data-step="4"] div[style*="padding: 15px"],
+.form-step[data-step="4"] div[style*="padding: 20px"] {
+    padding: 9.6px 12px !important;
+}
+
+.form-step[data-step="2"] span[style*="font-size"],
+.form-step[data-step="2"] label[style*="font-size"],
+.form-step[data-step="2"] p[style*="font-size"],
+.form-step[data-step="3"] span[style*="font-size: 0.9rem"],
+.form-step[data-step="3"] label[style*="font-size"],
+.form-step[data-step="3"] p[style*="font-size"],
+.form-step[data-step="4"] span[style*="font-size"],
+.form-step[data-step="4"] p[style*="font-size"] {
+    font-size: 0.72rem !important;
+}
+
+.form-step[data-step="2"] button[style*="padding"],
+.form-step[data-step="3"] button[style*="padding"],
+.form-step[data-step="4"] button[style*="padding"] {
+    padding: 4.8px 9.6px !important;
+    font-size: 0.68rem !important;
+}
+
+.form-step[data-step="2"] input[style*="padding"],
+.form-step[data-step="2"] textarea[style*="padding"],
+.form-step[data-step="3"] input[style*="padding"],
+.form-step[data-step="3"] textarea[style*="padding"],
+.form-step[data-step="4"] input[style*="padding"] {
+    padding: 6.4px !important;
+    font-size: 0.68rem !important;
+}
+
+.form-step[data-step="2"] div[style*="margin-bottom"],
+.form-step[data-step="3"] div[style*="margin-bottom"],
+.form-step[data-step="4"] div[style*="margin-bottom"] {
+    margin-bottom: 8px !important;
+}
+
+.form-step[data-step="2"] label[style*="font-size: 1.1rem"],
+.form-step[data-step="3"] label[style*="font-size: 1.1rem"],
+.form-step[data-step="4"] label[style*="font-size: 1.1rem"] {
+    font-size: 0.88rem !important;
+}
+
+.form-step[data-step="2"] i[style*="font-size"],
+.form-step[data-step="3"] i[style*="font-size: 2.5rem"],
+.form-step[data-step="3"] i[style*="font-size: 1.5rem"],
+.form-step[data-step="4"] i[style*="font-size: 1.5rem"] {
+    font-size: 1.2rem !important;
 }

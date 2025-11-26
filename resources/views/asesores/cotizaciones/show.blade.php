@@ -512,6 +512,18 @@
                                             <div style="margin-bottom: 8px;">
                                                 <span style="font-weight: 600; color: #0066cc;">Manga:</span>
                                                 <span style="color: #1e293b;">{{ $variante->tipoManga ? $variante->tipoManga->nombre : '-' }}</span>
+                                                @php
+                                                    $obsArray = $variante->descripcion_adicional ? explode(' | ', $variante->descripcion_adicional) : [];
+                                                    $obsManga = null;
+                                                    foreach ($obsArray as $obs) {
+                                                        if (strpos($obs, 'Manga:') === 0) {
+                                                            $obsManga = trim(str_replace('Manga:', '', $obs));
+                                                        }
+                                                    }
+                                                @endphp
+                                                @if($obsManga)
+                                                    <div style="color: #64748b; font-size: 0.8rem; margin-top: 2px;">{{ $obsManga }}</div>
+                                                @endif
                                             </div>
                                             <!-- Bolsillos -->
                                             <div style="margin-bottom: 8px;">

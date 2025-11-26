@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Asesores;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreCotizacionRequest;
 use App\Models\Cotizacion;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
@@ -11,385 +12,238 @@ use App\Models\ProcesoPrenda;
 use App\Models\VariantePrenda;
 use App\Models\TipoPrenda;
 use App\Services\ImagenCotizacionService;
+use App\Services\CotizacionService;
+use App\Services\PrendaService;
+use App\Services\PedidoService;
+use App\Services\FormatterService;
+use App\DTOs\CotizacionDTO;
+use App\Exceptions\CotizacionException;
+use App\Exceptions\PrendaException;
+use App\Exceptions\ImagenException;
+use App\Exceptions\PedidoException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class CotizacionesController extends Controller
 {
+    public function __construct(
+        private CotizacionService $cotizacionService,
+        private PrendaService $prendaService,
+        private ImagenCotizacionService $imagenService,
+        private PedidoService $pedidoService,
+        private FormatterService $formatterService,
+    ) {}
+
     /**
      * Mostrar lista de cotizaciones y borradores
+     * 
+     * Optimizado con eager loading y índices de base de datos
      */
     public function index()
     {
+        \App\Services\QueryOptimizerService::iniciarAuditoria();
+
+        // Query 1: Cotizaciones enviadas (con eager loading)
         $cotizaciones = Cotizacion::where('user_id', Auth::id())
             ->where('es_borrador', false)
+            ->with('tipoCotizacion', 'usuario')  // Eager load relaciones comunes
             ->orderBy('created_at', 'desc')
             ->paginate(15);
         
+        // Query 2: Borradores (con eager loading)
         $borradores = Cotizacion::where('user_id', Auth::id())
             ->where('es_borrador', true)
+            ->with('tipoCotizacion', 'usuario')
             ->orderBy('created_at', 'desc')
             ->paginate(15);
         
+        \App\Services\QueryOptimizerService::finalizarYReportar('CotizacionesController@index');
+
         return view('asesores.cotizaciones.index', compact('cotizaciones', 'borradores'));
     }
 
     /**
      * Guardar cotización o borrador (nueva o actualización)
+     * 
+     * Delega completamente a los servicios:
+     * - FormatterService: procesa inputs
+     * - CotizacionService: crea/actualiza cotización
+     * - PrendaService: crea prendas
+     * - ImagenCotizacionService: procesa imágenes
+     * 
+     * Las excepciones se manejan centralmente en Handler.php
+     * 
+     * @param StoreCotizacionRequest $request
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function guardar(Request $request)
+    public function guardar(StoreCotizacionRequest $request)
     {
         try {
-            \Log::info('🚀 MÉTODO GUARDAR LLAMADO');
-            
-            $tipo = $request->input('tipo', 'borrador'); // 'borrador' o 'enviada'
-            $cliente = $request->input('cliente');
-            $cotizacionId = $request->input('cotizacion_id'); // ID si es actualización
-
-            // Log para debugging
-            \Log::info('Guardando cotización', [
-                'tipo' => $tipo,
-                'cliente' => $cliente,
-                'cotizacion_id' => $cotizacionId,
-                'user_id' => Auth::id()
+            \Log::info('Iniciando guardar cotización', [
+                'request_headers' => $request->headers->all(),
+                'request_method' => $request->method(),
+                'request_wants_json' => $request->wantsJson()
             ]);
-
-            // Si tiene cotizacion_id, es una actualización de borrador
+            
+            $validado = $request->validated();
+            
+            \Log::info('Datos validados en guardar', [
+                'keys' => array_keys($validado),
+                'tipo' => $validado['tipo'] ?? null,
+                'cliente' => $validado['cliente'] ?? null
+            ]);
+            
+            // Procesar inputs usando FormatterService
+            $datosFormulario = $this->formatterService->procesarInputsFormulario($validado);
+            
+            \Log::info('Datos procesados por FormatterService', [
+                'keys' => array_keys($datosFormulario)
+            ]);
+            
+            $tipo = $validado['tipo'] ?? 'borrador';
+            $cotizacionId = $validado['cotizacion_id'] ?? null;
+            
+            // ACTUALIZAR: Si existe ID
             if ($cotizacionId) {
-                return $this->actualizarBorrador($request, $cotizacionId);
-            }
-
-            // Recopilar datos del formulario para NUEVA cotización
-            // NOTA: productos, especificaciones, imagenes, tecnicas, observaciones_tecnicas, 
-            // ubicaciones, observaciones_generales se guardan como JSON
-            
-            // Obtener el tipo de cotización (M, D, X)
-            $tipoCodigo = $request->input('tipo_cotizacion');
-            \Log::info('Tipo de cotización recibido', ['tipo_codigo' => $tipoCodigo]);
-            
-            $tipoCotizacion = null;
-            if ($tipoCodigo) {
-                $tipoCotizacion = \App\Models\TipoCotizacion::where('codigo', $tipoCodigo)->first();
-                \Log::info('Tipo de cotización encontrado', [
-                    'tipo_codigo' => $tipoCodigo,
-                    'tipo_id' => $tipoCotizacion ? $tipoCotizacion->id : null
+                \Log::info('Actualizando cotización existente', ['id' => $cotizacionId]);
+                
+                $cotizacion = Cotizacion::findOrFail($cotizacionId);
+                $this->validarAutorizacionCotizacion($cotizacion);
+                $this->validarEsBorrador($cotizacion);
+                
+                $this->cotizacionService->actualizarBorrador($cotizacion, $datosFormulario);
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Cotización actualizada correctamente',
+                    'cotizacion_id' => $cotizacion->id
                 ]);
             }
-            
-            // Procesar productos, técnicas, ubicaciones, observaciones ANTES de crear la cotización
-            $productos = $request->input('productos', []);
-            $tecnicas = $request->input('tecnicas', []);
-            $ubicacionesRaw = $request->input('ubicaciones', []);
-            $imagenes = $request->input('imagenes', []);
-            $especificacionesGenerales = $request->input('especificaciones', []);
-            $observacionesTexto = $request->input('observaciones_generales', []);
-            $observacionesCheck = $request->input('observaciones_check', []);
-            $observacionesValor = $request->input('observaciones_valor', []);
-            
-            // Procesar observaciones generales con su tipo
-            $observacionesGenerales = [];
-            foreach ($observacionesTexto as $index => $obs) {
-                if (!empty($obs)) {
-                    $checkValue = $observacionesCheck[$index] ?? null;
-                    $tipo = ($checkValue === 'on') ? 'checkbox' : 'texto';
-                    $valor = ($tipo === 'texto') ? ($observacionesValor[$index] ?? '') : '';
-                    
-                    $observacionesGenerales[] = [
-                        'texto' => $obs,
-                        'tipo' => $tipo,
-                        'valor' => $valor
-                    ];
-                }
-            }
-            
-            // Procesar ubicaciones
-            $ubicaciones = [];
-            if (is_array($ubicacionesRaw)) {
-                foreach ($ubicacionesRaw as $item) {
-                    if (is_array($item) && isset($item['seccion'])) {
-                        $ubicaciones[] = $item;
-                    } else {
-                        $ubicaciones[] = [
-                            'seccion' => 'GENERAL',
-                            'ubicaciones_seleccionadas' => [$item]
-                        ];
-                    }
-                }
-            }
-            
-            // Convertir especificaciones a array si es necesario
-            if (!is_array($especificacionesGenerales)) {
-                $especificacionesGenerales = (array) $especificacionesGenerales;
-            }
-            
-            // Generar numero_cotizacion SOLO si se envía (no si es borrador)
-            $numeroCotizacion = null;
-            
-            if ($tipo === 'enviada') {
-                // Obtener el último código enviado
-                $ultimaCotizacion = Cotizacion::where('es_borrador', false)
-                    ->whereNotNull('numero_cotizacion')
-                    ->orderBy('id', 'desc')
-                    ->first();
-                
-                // Extraer el número del último código (COT-00001 -> 1)
-                $ultimoNumero = 0;
-                if ($ultimaCotizacion && $ultimaCotizacion->numero_cotizacion) {
-                    preg_match('/\d+/', $ultimaCotizacion->numero_cotizacion, $matches);
-                    $ultimoNumero = isset($matches[0]) ? (int)$matches[0] : 0;
-                }
-                
-                // Generar siguiente código
-                $nuevoNumero = $ultimoNumero + 1;
-                $numeroCotizacion = 'COT-' . str_pad($nuevoNumero, 5, '0', STR_PAD_LEFT);
-                
-                \Log::info('✅ Generando código de cotización', [
-                    'tipo' => $tipo,
-                    'ultimo_numero' => $ultimoNumero,
-                    'nuevo_numero' => $nuevoNumero,
-                    'numero_cotizacion' => $numeroCotizacion
-                ]);
-            } else {
-                \Log::info('⚠️ NO se genera código (es borrador)', ['tipo' => $tipo]);
-            }
 
-            $datos = [
-                'user_id' => Auth::id(),
-                'numero_cotizacion' => $numeroCotizacion,
-                'tipo_cotizacion_id' => $tipoCotizacion ? $tipoCotizacion->id : null,
-                'fecha_inicio' => now(),
-                'cliente' => $cliente,
-                'asesora' => auth()->user()?->name ?? 'Sin nombre',
-                'es_borrador' => ($tipo === 'borrador'),
-                'estado' => 'enviada',
-                'fecha_envio' => ($tipo === 'enviada') ? now() : null,
-                // Guardar datos de PASO 2 y PASO 3 directamente en cotizaciones
-                'productos' => !empty($productos) ? $productos : null,
-                'especificaciones' => !empty($especificacionesGenerales) ? $especificacionesGenerales : null,
-                'imagenes' => !empty($imagenes) ? $imagenes : null,
-                'tecnicas' => !empty($tecnicas) ? $tecnicas : null,
-                'observaciones_tecnicas' => $request->input('observaciones_tecnicas'),
-                'ubicaciones' => !empty($ubicaciones) ? $ubicaciones : null,
-                'observaciones_generales' => !empty($observacionesGenerales) ? $observacionesGenerales : null
-            ];
-
-            \Log::info('Datos a guardar (nueva cotización)', $datos);
-
-            $cotizacion = Cotizacion::create($datos);
-
-            \Log::info('Cotización guardada exitosamente', [
-                'id' => $cotizacion->id,
-                'numero_cotizacion' => $cotizacion->numero_cotizacion,
-                'es_borrador' => $cotizacion->es_borrador
+            \Log::info('Creando nueva cotización', [
+                'tipo' => $tipo,
+                'cliente' => $datosFormulario['cliente'] ?? null
             ]);
 
-            // Guardar prendas en tabla prendas_cotizaciones
-            \Log::info('Productos a guardar en prendas_cotizaciones', [
-                'cantidad' => count($productos),
-                'productos' => $productos
-            ]);
+            // CREAR: Nueva cotización
+            $cotizacion = $this->cotizacionService->crear(
+                $datosFormulario,
+                $tipo,
+                $datosFormulario['tipo_cotizacion']
+            );
             
-            if (!empty($productos)) {
-                foreach ($productos as $index => $producto) {
-                    $tallas = is_array($producto['tallas'] ?? []) ? $producto['tallas'] : [];
-                    $nombrePrenda = $producto['nombre_producto'] ?? '';
-                    
-                    // Detectar si es JEAN o PANTALÓN
-                    $nombreUpper = strtoupper(trim($nombrePrenda));
-                    $palabraPrincipal = explode(' ', $nombreUpper)[0];
-                    $esJeanPantalon = preg_match('/^JEAN|^PANTALÓ?N/', $palabraPrincipal) === 1;
-                    
-                    // Obtener tipo de JEAN/PANTALÓN de forma segura
-                    $tipoJeanPantalon = null;
-                    if ($esJeanPantalon && is_array($producto['variantes'] ?? null)) {
-                        $tipoJeanPantalon = $producto['variantes']['tipo'] ?? null;
-                    }
-                    
-                    \Log::info('Guardando prenda individual', [
-                        'index' => $index,
-                        'nombre' => $nombrePrenda,
-                        'descripcion' => $producto['descripcion'] ?? null,
-                        'tallas' => $tallas,
-                        'es_jean_pantalon' => $esJeanPantalon,
-                        'tipo_jean_pantalon' => $tipoJeanPantalon
-                    ]);
-                    
-                    // Obtener género de las variantes
-                    $genero = null;
-                    if (is_array($producto['variantes'] ?? null) && isset($producto['variantes']['genero'])) {
-                        $genero = $producto['variantes']['genero'];
-                    }
-                    
-                    // Guardar prenda SIN fotos ni tela (se subirán después)
-                    $prenda = \App\Models\PrendaCotizacionFriendly::create([
-                        'cotizacion_id' => $cotizacion->id,
-                        'nombre_producto' => $nombrePrenda,
-                        'genero' => $genero,
-                        'es_jean_pantalon' => $esJeanPantalon,
-                        'tipo_jean_pantalon' => $tipoJeanPantalon,
-                        'descripcion' => $producto['descripcion'] ?? null,
-                        'tallas' => $tallas,
-                        'fotos' => [], // Array vacío, se llenará después
-                        'telas' => [], // Array vacío, se llenará después
-                        'estado' => 'Pendiente'
-                    ]);
-                    
-                    \Log::info('Prenda guardada exitosamente', [
-                        'id' => $prenda->id,
-                        'nombre' => $prenda->nombre_producto,
-                        'tallas_guardadas' => $prenda->tallas
-                    ]);
-                    
-                    // GUARDAR VARIANTES DE LA PRENDA
-                    $this->guardarVariantesPrenda($prenda, $producto);
-                }
-                \Log::info('Prendas guardadas exitosamente', ['cantidad' => count($productos)]);
-            } else {
-                \Log::warning('No hay productos para guardar en prendas_cotizaciones');
-            }
-
-            // Guardar datos de PASO 3 (Bordado/Estampado) en tabla logo_cotizaciones
-            $observacionesValor = $request->input('observaciones_valor', []);
-            $observacionesValor = $request->input('observaciones_valor', []);
+            \Log::info('Cotización creada', ['id' => $cotizacion->id]);
             
-            \Log::info('🔍 DATOS RECIBIDOS DEL CLIENTE:', [
-                'observaciones_generales' => $observacionesTexto,
-                'observaciones_check' => $observacionesCheck,
-                'observaciones_check_type' => gettype($observacionesCheck),
-                'observaciones_check_count' => count($observacionesCheck),
-                'observaciones_valor' => $observacionesValor
-            ]);
-            
-            // Debug: mostrar cada elemento
-            foreach ($observacionesCheck as $idx => $val) {
-                \Log::info("Check[$idx] = " . json_encode($val) . " (type: " . gettype($val) . ")");
+            // Crear prendas
+            if (!empty($datosFormulario['productos'])) {
+                \Log::info('Creando prendas', ['cantidad' => count($datosFormulario['productos'])]);
+                $this->prendaService->crearPrendasCotizacion($cotizacion, $datosFormulario['productos']);
             }
             
-            foreach ($observacionesTexto as $index => $obs) {
-                if (!empty($obs)) {
-                    // Determinar si es checkbox o texto
-                    // Si observaciones_check[$index] es 'on', es checkbox; si es null, es texto
-                    $checkValue = $observacionesCheck[$index] ?? null;
-                    $tipo = ($checkValue === 'on') ? 'checkbox' : 'texto';
-                    $valor = ($tipo === 'texto') ? ($observacionesValor[$index] ?? '') : '';
-                    
-                    \Log::info('📝 Procesando observación:', [
-                        'texto' => $obs,
-                        'checkValue' => $checkValue,
-                        'tipo' => $tipo,
-                        'valor' => $valor
-                    ]);
-                    
-                    $observacionesGenerales[] = [
-                        'texto' => $obs,
-                        'tipo' => $tipo,
-                        'valor' => $valor
-                    ];
-                }
-            }
+            \Log::info('Creando logo/bordado/estampado');
             
-            $tecnicas = $request->input('tecnicas', []);
-            $ubicacionesRaw = $request->input('ubicaciones', []);
-            $imagenes = $request->input('imagenes', []);
+            // Crear logo/bordado/estampado
+            $this->cotizacionService->crearLogoCotizacion($cotizacion, $datosFormulario);
             
-            // Procesar ubicaciones: si es array de objetos, mantener estructura; si es array simple, convertir
-            $ubicaciones = [];
-            if (is_array($ubicacionesRaw)) {
-                foreach ($ubicacionesRaw as $item) {
-                    if (is_array($item) && isset($item['seccion'])) {
-                        // Ya es estructura correcta
-                        $ubicaciones[] = $item;
-                    } else {
-                        // Es string simple, agregar como ubicación sin sección
-                        $ubicaciones[] = [
-                            'seccion' => 'GENERAL',
-                            'ubicaciones_seleccionadas' => [$item]
-                        ];
-                    }
-                }
-            }
+            \Log::info('Cotización completada', ['id' => $cotizacion->id, 'tipo' => $tipo]);
             
-            \Log::info('📝 Datos de PASO 3 recibidos:', [
-                'tecnicas' => $tecnicas,
-                'ubicaciones' => $ubicaciones,
-                'observaciones_tecnicas' => $request->input('observaciones_tecnicas'),
-                'observaciones_generales' => $observacionesGenerales,
-                'imagenes_count' => count($imagenes)
-            ]);
-            
-            $logoCotizacionData = [
-                'cotizacion_id' => $cotizacion->id,
-                'imagenes' => $imagenes,
-                'tecnicas' => $tecnicas,
-                'observaciones_tecnicas' => $request->input('observaciones_tecnicas'),
-                'ubicaciones' => $ubicaciones,
-                'observaciones_generales' => $observacionesGenerales
-            ];
-            
-            \Log::info('💾 Guardando LogoCotizacion:', $logoCotizacionData);
-            
-            \App\Models\LogoCotizacion::create($logoCotizacionData);
-
-            // Registrar en historial
-            \App\Models\HistorialCotizacion::create([
-                'cotizacion_id' => $cotizacion->id,
-                'tipo_cambio' => 'creacion',
-                'descripcion' => 'Cotización creada',
-                'usuario_id' => Auth::id(),
-                'usuario_nombre' => auth()->user()?->name ?? 'Sin nombre',
-                'ip_address' => request()->ip()
-            ]);
-
             return response()->json([
                 'success' => true,
-                'message' => ($tipo === 'borrador') ? 'Cotización guardada en borradores' : 'Cotización enviada correctamente',
+                'message' => ($tipo === 'borrador') 
+                    ? 'Cotización guardada en borradores' 
+                    : 'Cotización enviada correctamente',
                 'cotizacion_id' => $cotizacion->id
             ]);
+        } catch (\Illuminate\Validation\ValidationException $ve) {
+            \Log::error('Error de validación en guardar cotización', [
+                'errors' => $ve->errors(),
+                'file' => $ve->getFile(),
+                'line' => $ve->getLine()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'validation_errors' => $ve->errors()
+            ], 422);
         } catch (\Exception $e) {
-            \Log::error('Error al guardar cotización', [
+            \Log::error('Error en guardar cotización', [
                 'error' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'class' => get_class($e)
             ]);
-
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Error: ' . $e->getMessage(),
-                'debug' => config('app.debug') ? $e->getTraceAsString() : null
+                'message' => 'Error al guardar la cotización: ' . $e->getMessage(),
+                'error_class' => get_class($e),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine()
             ], 500);
         }
     }
 
     /**
-     * Ver detalle de cotización
+     * Endpoint de prueba sin FormRequest para diagnosticar problemas
+     */
+    public function guardarTest(Request $request)
+    {
+        return response()->json([
+            'success' => true,
+            'message' => 'Endpoint de prueba funcionando',
+            'received_data' => [
+                'tipo' => $request->input('tipo'),
+                'cliente' => $request->input('cliente'),
+                'productos_count' => count($request->input('productos', [])),
+                'headers' => ['Content-Type' => $request->header('Content-Type')],
+                'wants_json' => $request->wantsJson(),
+                'all_keys' => array_keys($request->all())
+            ]
+        ]);
+    }
+
+    /**
+     * Ver detalle de cotización con eager loading optimizado
      */
     public function show($id)
     {
+        \App\Services\QueryOptimizerService::iniciarAuditoria();
+
+        // Eager loading completo de relaciones necesarias
         $cotizacion = Cotizacion::with([
+            'usuario',
+            'tipoCotizacion',
             'prendasCotizaciones.variantes.color',
             'prendasCotizaciones.variantes.tela',
             'prendasCotizaciones.variantes.tipoManga',
-            'prendasCotizaciones.variantes.tipoBroche'
+            'prendasCotizaciones.variantes.tipoBroche',
+            'logoCotizacion'
         ])->findOrFail($id);
         
         if ($cotizacion->user_id !== Auth::id()) {
-            abort(403);
+            throw new CotizacionException(
+                'No tienes autorización para ver esta cotización',
+                CotizacionException::UNAUTHORIZED,
+                ['cotizacion_id' => $id]
+            );
         }
 
-        // Obtener datos de logo/bordado/estampado
+        // Obtener datos de logo/bordado/estampado (ya cargado con eager loading)
         $logo = $cotizacion->logoCotizacion;
 
         // Si es una petición AJAX, retornar JSON
         if (request()->wantsJson()) {
-            return response()->json([
+            $prendas = $cotizacion->prendasCotizaciones ?? collect();
+            
+            $respuesta = response()->json([
                 'id' => $cotizacion->id,
                 'cliente' => $cotizacion->cliente,
                 'asesora' => $cotizacion->asesora,
-                'prendas' => $cotizacion->prendasCotizaciones->map(function($prenda) {
-                    $variante = $prenda->variantes->first();
+                'prendas' => $prendas->map(function($prenda) {
+                    $variante = $prenda->variantes?->first();
                     
                     return [
                         'id' => $prenda->id,
@@ -400,20 +254,25 @@ class CotizacionesController extends Controller
                         'telas' => $prenda->telas ?? [],
                         // Variaciones
                         'variantes' => [
-                            'color' => $variante && $variante->color ? $variante->color->nombre : null,
-                            'tela' => $variante && $variante->tela ? $variante->tela->nombre : null,
-                            'tela_referencia' => $variante && $variante->tela && $variante->tela->referencia ? $variante->tela->referencia : null,
-                            'manga' => $variante && $variante->tipoManga ? $variante->tipoManga->nombre : null,
-                            'broche' => $variante && $variante->tipoBroche ? $variante->tipoBroche->nombre : null,
-                            'tiene_bolsillos' => $variante ? $variante->tiene_bolsillos : false,
-                            'tiene_reflectivo' => $variante ? $variante->tiene_reflectivo : false,
-                            'observaciones' => $variante ? $variante->descripcion_adicional : null
+                            'color' => $variante?->color?->nombre ?? null,
+                            'tela' => $variante?->tela?->nombre ?? null,
+                            'tela_referencia' => $variante?->tela?->referencia ?? null,
+                            'manga' => $variante?->tipoManga?->nombre ?? null,
+                            'broche' => $variante?->tipoBroche?->nombre ?? null,
+                            'tiene_bolsillos' => $variante?->tiene_bolsillos ?? false,
+                            'tiene_reflectivo' => $variante?->tiene_reflectivo ?? false,
+                            'observaciones' => $variante?->descripcion_adicional ?? null
                         ]
                     ];
                 })
             ]);
+
+            \App\Services\QueryOptimizerService::finalizarYReportar('CotizacionesController@show (JSON)');
+            return $respuesta;
         }
 
+        // Pasar logo null-safe a vista
+        \App\Services\QueryOptimizerService::finalizarYReportar('CotizacionesController@show (HTML)');
         return view('asesores.cotizaciones.show', compact('cotizacion', 'logo'));
     }
 
@@ -422,10 +281,16 @@ class CotizacionesController extends Controller
      */
     public function editarBorrador($id)
     {
-        $cotizacion = Cotizacion::findOrFail($id);
+        $cotizacion = Cotizacion::with([
+            'logoCotizacion'
+        ])->findOrFail($id);
         
         if ($cotizacion->user_id !== Auth::id() || !$cotizacion->es_borrador) {
-            abort(403);
+            throw new CotizacionException(
+                'No tienes autorización para editar este borrador',
+                CotizacionException::UNAUTHORIZED,
+                ['cotizacion_id' => $id]
+            );
         }
 
         return view('asesores.pedidos.create-friendly', [
@@ -435,750 +300,278 @@ class CotizacionesController extends Controller
     }
 
     /**
-     * Actualizar borrador (sin cambiar fecha_inicio)
-     */
-    private function actualizarBorrador(Request $request, $cotizacionId)
-    {
-        try {
-            $cotizacion = Cotizacion::findOrFail($cotizacionId);
-            
-            if ($cotizacion->user_id !== Auth::id() || !$cotizacion->es_borrador) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No tienes permiso para actualizar este borrador'
-                ], 403);
-            }
-
-            \Log::info('Actualizando borrador', ['cotizacion_id' => $cotizacionId]);
-
-            // Actualizar datos de la cotización (SIN cambiar fecha_inicio)
-            $tipoCodigo = $request->input('tipo_cotizacion');
-            \Log::info('Actualizando borrador - Tipo de cotización recibido', ['tipo_codigo' => $tipoCodigo]);
-            
-            $tipoCotizacion = null;
-            if ($tipoCodigo) {
-                $tipoCotizacion = \App\Models\TipoCotizacion::where('codigo', $tipoCodigo)->first();
-                \Log::info('Actualizando borrador - Tipo de cotización encontrado', [
-                    'tipo_codigo' => $tipoCodigo,
-                    'tipo_id' => $tipoCotizacion ? $tipoCotizacion->id : null
-                ]);
-            }
-            
-            $datosActualizar = [
-                'numero_cotizacion' => $request->input('numero_cotizacion'),
-                'tipo_cotizacion_id' => $tipoCotizacion ? $tipoCotizacion->id : null,
-                'cliente' => $request->input('cliente'),
-                'asesora' => auth()->user()?->name ?? 'Sin nombre',
-            ];
-
-            $cotizacion->update($datosActualizar);
-
-            // Eliminar prendas anteriores
-            $cotizacion->prendasCotizaciones()->delete();
-
-            // Guardar nuevas prendas
-            $productos = $request->input('productos', []);
-            $especificaciones = [];
-            
-            if (!empty($productos)) {
-                foreach ($productos as $index => $producto) {
-                    $tallas = is_array($producto['tallas'] ?? []) ? $producto['tallas'] : [];
-                    $nombrePrenda = $producto['nombre_producto'] ?? '';
-                    
-                    // Detectar si es JEAN o PANTALÓN
-                    $nombreUpper = strtoupper(trim($nombrePrenda));
-                    $palabraPrincipal = explode(' ', $nombreUpper)[0];
-                    $esJeanPantalon = preg_match('/^JEAN|^PANTALÓ?N/', $palabraPrincipal) === 1;
-                    
-                    // Obtener tipo de JEAN/PANTALÓN de forma segura
-                    $tipoJeanPantalon = null;
-                    if ($esJeanPantalon && is_array($producto['variantes'] ?? null)) {
-                        $tipoJeanPantalon = $producto['variantes']['tipo'] ?? null;
-                    }
-                    
-                    // Obtener género de las variantes
-                    $genero = null;
-                    if (is_array($producto['variantes'] ?? null) && isset($producto['variantes']['genero'])) {
-                        $genero = $producto['variantes']['genero'];
-                    }
-                    
-                    $prenda = \App\Models\PrendaCotizacionFriendly::create([
-                        'cotizacion_id' => $cotizacion->id,
-                        'nombre_producto' => $nombrePrenda,
-                        'genero' => $genero,
-                        'es_jean_pantalon' => $esJeanPantalon,
-                        'tipo_jean_pantalon' => $tipoJeanPantalon,
-                        'descripcion' => $producto['descripcion'] ?? null,
-                        'tallas' => $tallas,
-                        'fotos' => [],
-                        'telas' => [],
-                        'estado' => 'Pendiente'
-                    ]);
-
-                    $especificaciones[] = [
-                        'nombre_producto' => $producto['nombre_producto'] ?? null,
-                        'disponibilidad' => $producto['disponibilidad'] ?? null,
-                        'forma_pago' => $producto['forma_pago'] ?? null,
-                        'regimen' => $producto['regimen'] ?? null,
-                        'se_ha_vendido' => $producto['se_ha_vendido'] ?? null,
-                        'ultima_venta' => $producto['ultima_venta'] ?? null,
-                        'observacion' => $producto['observacion'] ?? null
-                    ];
-                }
-            }
-
-            // Actualizar especificaciones
-            if (!empty($especificaciones)) {
-                $cotizacion->update(['especificaciones' => $especificaciones]);
-            }
-
-            // Actualizar logo_cotizaciones
-            $logo = $cotizacion->logoCotizacion;
-            if ($logo) {
-                $logo->update([
-                    'imagenes' => $request->input('imagenes', []),
-                    'tecnicas' => $request->input('tecnicas', []),
-                    'observaciones_tecnicas' => $request->input('observaciones_tecnicas'),
-                    'ubicaciones' => $request->input('ubicaciones', []),
-                    'observaciones_generales' => $request->input('observaciones_generales', [])
-                ]);
-            }
-
-            // Registrar en historial
-            \App\Models\HistorialCotizacion::create([
-                'cotizacion_id' => $cotizacionId,
-                'tipo_cambio' => 'actualizacion',
-                'descripcion' => 'Borrador actualizado',
-                'usuario_id' => Auth::id(),
-                'usuario_nombre' => auth()->user()?->name ?? 'Sin nombre',
-                'ip_address' => request()->ip()
-            ]);
-
-            \Log::info('Borrador actualizado exitosamente', ['cotizacion_id' => $cotizacionId]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Borrador actualizado correctamente',
-                'cotizacion_id' => $cotizacion->id
-            ]);
-
-        } catch (\Exception $e) {
-            \Log::error('Error al actualizar borrador', [
-                'cotizacion_id' => $cotizacionId,
-                'error' => $e->getMessage()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Error: ' . $e->getMessage(),
-                'debug' => config('app.debug') ? $e->getTraceAsString() : null
-            ], 500);
-        }
-    }
-
-    /**
-     * Subir imágenes a una cotización y guardar rutas en prendas_cotizaciones
+     * Subir imágenes a una cotización
+     * 
+     * Delega completamente a ImagenCotizacionService:
+     * - Procesamiento de imágenes (WebP/GD)
+     * - Almacenamiento en Storage
+     * - Actualización de prendas_cotizaciones/logo_cotizaciones
+     * 
+     * Las excepciones se manejan centralmente en Handler.php
      */
     public function subirImagenes(Request $request, $id)
     {
-        \Log::info('=== INICIO SUBIR IMAGENES ===', ['cotizacion_id' => $id]);
-
-        $cotizacion = Cotizacion::findOrFail($id);
-
-        if ($cotizacion->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $this->validarAutorizacionCotizacion(
+            $cotizacion = Cotizacion::findOrFail($id)
+        );
 
         $request->validate([
             'imagenes.*' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
             'tipo' => 'required|in:bordado,estampado,tela,prenda,general'
         ]);
 
-        try {
-            $tipo = $request->input('tipo');
-            $archivos = $request->file('imagenes', []);
+        $tipo = $request->input('tipo');
+        $archivos = $request->file('imagenes', []);
 
-            if (empty($archivos)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No hay imágenes para subir'
-                ], 400);
+        if (empty($archivos)) {
+            throw new ImagenException(
+                'No hay imágenes para subir',
+                ImagenException::FILE_NOT_FOUND
+            );
+        }
+
+        // Procesar todas las imágenes con el servicio
+        $rutasGuardadas = $this->imagenService->guardarMultiples($id, $archivos, $tipo);
+
+        if (empty($rutasGuardadas)) {
+            throw new ImagenException(
+                'Error al procesar las imágenes',
+                ImagenException::CONVERSION_ERROR
+            );
+        }
+
+        // Actualizar referencias en modelos
+        $this->actualizarReferenciasPrendas($cotizacion, $rutasGuardadas, $tipo, $request);
+
+        return response()->json([
+            'success' => true,
+            'message' => count($rutasGuardadas) . " imágenes de tipo '{$tipo}' guardadas",
+            'rutas' => $rutasGuardadas
+        ]);
+    }
+
+    /**
+     * Actualizar referencias de imágenes en prendas y logo
+     * 
+     * @param Cotizacion $cotizacion
+     * @param array $rutas
+     * @param string $tipo
+     * @param Request $request
+     */
+    private function actualizarReferenciasPrendas(Cotizacion $cotizacion, array $rutas, string $tipo, Request $request): void
+    {
+        if ($tipo === 'prenda' || $tipo === 'tela') {
+            $prendas = $cotizacion->prendasCotizaciones;
+            
+            // Verificar que prendasCotizaciones no sea null
+            if (!$prendas) {
+                \Log::warning('prendasCotizaciones es null', [
+                    'cotizacion_id' => $cotizacion->id
+                ]);
+                return;
             }
-
-            $rutasGuardadas = [];
-            $carpeta = "cotizaciones/{$id}/{$tipo}";
-
-            foreach ($archivos as $index => $archivo) {
-                try {
-                    // Obtener extensión original
-                    $extensionOriginal = strtolower($archivo->getClientOriginalExtension());
+            
+            $prendaIndexes = $request->input('prendaIndex', []);
+            
+            // Agrupar rutas por índice de prenda
+            $arregloPorPrenda = [];
+            foreach ($rutas as $index => $ruta) {
+                $prendaIndex = isset($prendaIndexes[$index]) ? intval($prendaIndexes[$index]) : $index;
+                if (!isset($arregloPorPrenda[$prendaIndex])) {
+                    $arregloPorPrenda[$prendaIndex] = [];
+                }
+                $arregloPorPrenda[$prendaIndex][] = $ruta;
+            }
+            
+            // Actualizar cada prenda
+            foreach ($arregloPorPrenda as $prendaIndex => $rutasPrenda) {
+                if (isset($prendas[$prendaIndex])) {
+                    $prenda = $prendas[$prendaIndex];
+                    $campo = ($tipo === 'prenda') ? 'fotos' : 'telas';
                     
-                    // Generar nombre - mantener extensión original si WebP falla
-                    $nombreRenombrado = "{$id}_{$tipo}_{$index}.webp";
-                    $nombreFallback = "{$id}_{$tipo}_{$index}.{$extensionOriginal}";
-
-                    // Asegurar que la carpeta existe
-                    if (!Storage::disk('public')->exists($carpeta)) {
-                        Storage::disk('public')->makeDirectory($carpeta, 0755, true);
+                    // Null-safe property access
+                    $valoresActuales = [];
+                    if (property_exists($prenda, $campo)) {
+                        $valoresActuales = $prenda->$campo ?? [];
                     }
-
-                    $rutaTemporal = storage_path("app/public/{$carpeta}/{$nombreRenombrado}");
-                    $rutaOriginal = $archivo->getRealPath();
-                    $archivoGuardado = false;
-                    $nombreFinal = $nombreRenombrado;
-
-                    // Intentar usar cwebp si está disponible
-                    if (shell_exec('where cwebp 2>nul') || shell_exec('which cwebp 2>/dev/null')) {
-                        $comando = "cwebp -q 80 \"{$rutaOriginal}\" -o \"{$rutaTemporal}\"";
-                        @shell_exec($comando . " 2>&1");
-                        if (file_exists($rutaTemporal) && filesize($rutaTemporal) > 0) {
-                            $archivoGuardado = true;
-                        }
+                    
+                    if (!is_array($valoresActuales)) {
+                        $valoresActuales = [];
                     }
-
-                    // Si cwebp no funcionó, intentar con GD
-                    if (!$archivoGuardado && extension_loaded('gd')) {
-                        try {
-                            $contenidoOriginal = file_get_contents($rutaOriginal);
-                            $imagen = @imagecreatefromstring($contenidoOriginal);
-
-                            if ($imagen !== false) {
-                                @imagewebp($imagen, $rutaTemporal, 80);
-                                @imagedestroy($imagen);
-                                if (file_exists($rutaTemporal) && filesize($rutaTemporal) > 0) {
-                                    $archivoGuardado = true;
-                                }
-                            }
-                        } catch (\Exception $e) {
-                            \Log::warning("Error al convertir con GD: " . $e->getMessage());
-                        }
-                    }
-
-                    // Si nada funcionó, guardar en formato original
-                    if (!$archivoGuardado) {
-                        $rutaTemporal = storage_path("app/public/{$carpeta}/{$nombreFallback}");
-                        $archivo->storeAs($carpeta, $nombreFallback, 'public');
-                        $nombreFinal = $nombreFallback;
-                        $archivoGuardado = true;
-                    }
-
-                    $rutaCompleta = '/storage/' . $carpeta . '/' . $nombreFinal;
-                    $rutasGuardadas[] = $rutaCompleta;
-
-                    $tamanoOriginal = $archivo->getSize();
-                    $tamanoFinal = file_exists($rutaTemporal) ? filesize($rutaTemporal) : 0;
-                    $reduccion = $tamanoFinal > 0 ? round((1 - $tamanoFinal / $tamanoOriginal) * 100, 2) : 0;
-
-                    \Log::info("Imagen guardada", [
-                        'nombre_original' => $archivo->getClientOriginalName(),
-                        'nombre_renombrado' => $nombreFinal,
-                        'ruta' => $rutaCompleta,
-                        'tamano_original_kb' => round($tamanoOriginal / 1024, 2),
-                        'tamano_final_kb' => round($tamanoFinal / 1024, 2),
-                        'reduccion_porcentaje' => $reduccion . '%',
-                        'metodo' => str_ends_with($nombreFinal, '.webp') ? 'WebP' : 'Original'
-                    ]);
-
-                } catch (\Exception $e) {
-                    \Log::error("Error al procesar imagen", [
-                        'archivo' => $archivo->getClientOriginalName(),
-                        'error' => $e->getMessage()
-                    ]);
-                    // Continuar con la siguiente imagen
-                    continue;
+                    
+                    $prenda->update([$campo => array_merge($valoresActuales, $rutasPrenda)]);
                 }
             }
-
-            // Actualizar prendas_cotizaciones o logo_cotizaciones con las rutas
-            if ($tipo === 'prenda' || $tipo === 'tela') {
-                $prendas = $cotizacion->prendasCotizaciones;
-                
-                if ($tipo === 'prenda') {
-                    // Para fotos de prenda, usar el índice enviado desde el frontend
-                    $prendaIndexes = $request->input('prendaIndex', []);
-                    
-                    \Log::info("Procesando fotos de prenda", [
-                        'rutasGuardadas' => $rutasGuardadas,
-                        'prendaIndexes' => $prendaIndexes,
-                        'total_prendas' => count($prendas)
-                    ]);
-                    
-                    // Agrupar fotos por índice de prenda
-                    $fotosPorPrenda = [];
-                    foreach ($rutasGuardadas as $index => $rutaFoto) {
-                        $prendaIndex = isset($prendaIndexes[$index]) ? intval($prendaIndexes[$index]) : $index;
-                        if (!isset($fotosPorPrenda[$prendaIndex])) {
-                            $fotosPorPrenda[$prendaIndex] = [];
-                        }
-                        $fotosPorPrenda[$prendaIndex][] = $rutaFoto;
-                        
-                        \Log::info("Foto agrupada", [
-                            'foto_index' => $index,
-                            'ruta' => $rutaFoto,
-                            'prenda_index' => $prendaIndex
-                        ]);
-                    }
-                    
-                    \Log::info("Fotos agrupadas por prenda", [
-                        'fotosPorPrenda' => $fotosPorPrenda
-                    ]);
-                    
-                    // Actualizar cada prenda con sus fotos
-                    foreach ($fotosPorPrenda as $prendaIndex => $fotos) {
-                        \Log::info("Actualizando prenda", [
-                            'prenda_index' => $prendaIndex,
-                            'existe_en_array' => isset($prendas[$prendaIndex]),
-                            'total_prendas_array' => count($prendas)
-                        ]);
-                        
-                        if (isset($prendas[$prendaIndex])) {
-                            $prenda = $prendas[$prendaIndex];
-                            $fotosActuales = $prenda->fotos ?? [];
-                            if (!is_array($fotosActuales)) {
-                                $fotosActuales = [];
-                            }
-                            
-                            \Log::info("Fotos actuales en prenda", [
-                                'prenda_id' => $prenda->id,
-                                'fotos_actuales' => $fotosActuales,
-                                'fotos_nuevas' => $fotos
-                            ]);
-                            
-                            $fotosActuales = array_merge($fotosActuales, $fotos);
-                            $prenda->update(['fotos' => $fotosActuales]);
-
-                            \Log::info("Prenda actualizada con fotos", [
-                                'prenda_id' => $prenda->id,
-                                'cantidad_fotos' => count($fotos),
-                                'fotos_rutas' => $fotos,
-                                'fotos_totales' => count($fotosActuales)
-                            ]);
-                        }
-                    }
-                } elseif ($tipo === 'tela') {
-                    // Para telas, usar el índice enviado desde el frontend
-                    $prendaIndexes = $request->input('prendaIndex', []);
-                    
-                    // Agrupar telas por índice de prenda
-                    $telasPorPrenda = [];
-                    foreach ($rutasGuardadas as $index => $rutaTela) {
-                        $prendaIndex = isset($prendaIndexes[$index]) ? intval($prendaIndexes[$index]) : $index;
-                        if (!isset($telasPorPrenda[$prendaIndex])) {
-                            $telasPorPrenda[$prendaIndex] = [];
-                        }
-                        $telasPorPrenda[$prendaIndex][] = $rutaTela;
-                    }
-                    
-                    // Actualizar cada prenda con sus telas
-                    foreach ($telasPorPrenda as $prendaIndex => $telas) {
-                        if (isset($prendas[$prendaIndex])) {
-                            $prenda = $prendas[$prendaIndex];
-                            $telasActuales = $prenda->telas ?? [];
-                            if (!is_array($telasActuales)) {
-                                $telasActuales = [];
-                            }
-                            $telasActuales = array_merge($telasActuales, $telas);
-                            $prenda->update(['telas' => $telasActuales]);
-
-                            \Log::info("Prenda actualizada con telas", [
-                                'prenda_id' => $prenda->id,
-                                'cantidad_telas' => count($telas),
-                                'telas_rutas' => $telas
-                            ]);
-                        }
-                    }
+        } elseif ($tipo === 'general') {
+            $logo = $cotizacion->logoCotizacion;
+            // Null-safe logo access
+            if ($logo) {
+                $imagenes = $logo->imagenes ?? [];
+                if (!is_array($imagenes)) {
+                    $imagenes = [];
                 }
-            } elseif ($tipo === 'general') {
-                // Actualizar logo_cotizaciones con imágenes generales
-                $logo = $cotizacion->logoCotizacion;
-                if ($logo) {
-                    $imagenes = $logo->imagenes ?? [];
-                    if (!is_array($imagenes)) {
-                        $imagenes = [];
-                    }
-                    $imagenes = array_merge($imagenes, $rutasGuardadas);
-                    $logo->update(['imagenes' => $imagenes]);
-
-                    \Log::info("Logo actualizado con imágenes", [
-                        'logo_id' => $logo->id,
-                        'cantidad_imagenes' => count($imagenes)
-                    ]);
-                }
+                $logo->update(['imagenes' => array_merge($imagenes, $rutas)]);
+            } else {
+                \Log::info('Logo no encontrado para cotización', [
+                    'cotizacion_id' => $cotizacion->id
+                ]);
             }
-
-            \Log::info('Imágenes subidas exitosamente', [
-                'cotizacion_id' => $id,
-                'tipo' => $tipo,
-                'cantidad' => count($rutasGuardadas)
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => count($rutasGuardadas) . " imágenes de tipo '{$tipo}' guardadas",
-                'rutas' => $rutasGuardadas
-            ]);
-
-        } catch (\Exception $e) {
-            \Log::error('Error al subir imágenes', [
-                'cotizacion_id' => $id,
-                'error' => $e->getMessage()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al subir imágenes: ' . $e->getMessage()
-            ], 500);
         }
     }
 
     /**
      * Eliminar cotización (solo si es borrador)
+     * 
+     * Las excepciones se manejan centralmente en Handler.php
      */
     public function destroy($id)
     {
-        try {
-            $cotizacion = Cotizacion::findOrFail($id);
-            
-            if ($cotizacion->user_id !== Auth::id()) {
-                abort(403);
-            }
-
-            // Solo permitir eliminar si es borrador
-            if (!$cotizacion->es_borrador) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No se pueden eliminar cotizaciones enviadas. Solo se pueden eliminar borradores.'
-                ], 403);
-            }
-
-            \Log::info('Iniciando eliminación de cotización', ['cotizacion_id' => $id]);
-
-            // Usar transacción para asegurar que todo se elimina correctamente
-            DB::beginTransaction();
-
-            try {
-                // 1. Eliminar imágenes de almacenamiento (carpeta completa)
-                $imagenService = new ImagenCotizacionService();
-                $eliminadoImagenes = $imagenService->eliminarTodasLasImagenes($cotizacion->id);
-                
-                \Log::info('Imágenes eliminadas', [
-                    'cotizacion_id' => $id,
-                    'eliminado' => $eliminadoImagenes
-                ]);
-
-                // 2. Eliminar variantes de prendas (relación)
-                $prendasCotizaciones = $cotizacion->prendasCotizaciones;
-                foreach ($prendasCotizaciones as $prenda) {
-                    $prenda->variantes()->delete();
-                    \Log::info('Variantes de prenda eliminadas', ['prenda_id' => $prenda->id]);
-                }
-
-                // 3. Eliminar prendas de cotización
-                $cotizacion->prendasCotizaciones()->delete();
-                \Log::info('Prendas de cotización eliminadas', ['cotizacion_id' => $id]);
-
-                // 4. Eliminar logo/bordado/estampado
-                $cotizacion->logoCotizacion()->delete();
-                \Log::info('Logo cotización eliminado', ['cotizacion_id' => $id]);
-
-                // 5. Eliminar historial de cotización
-                $cotizacion->historial()->delete();
-                \Log::info('Historial de cotización eliminado', ['cotizacion_id' => $id]);
-
-                // 6. Eliminar la cotización
-                $cotizacion->delete();
-                \Log::info('Cotización eliminada', ['cotizacion_id' => $id]);
-
-                DB::commit();
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Borrador eliminado completamente incluyendo todas las imágenes y datos asociados'
-                ]);
-
-            } catch (\Exception $e) {
-                DB::rollBack();
-                \Log::error('Error al eliminar cotización', [
-                    'cotizacion_id' => $id,
-                    'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ]);
-
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Error al eliminar el borrador: ' . $e->getMessage()
-                ], 500);
-            }
-
-        } catch (\Exception $e) {
-            \Log::error('Error general en destroy', [
-                'cotizacion_id' => $id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al eliminar el borrador'
-            ], 500);
+        $cotizacion = Cotizacion::findOrFail($id);
+        
+        if ($cotizacion->user_id !== Auth::id()) {
+            throw new CotizacionException(
+                'No tienes autorización para eliminar esta cotización',
+                CotizacionException::UNAUTHORIZED,
+                ['cotizacion_id' => $id]
+            );
         }
+
+        // Solo permitir eliminar si es borrador
+        if (!$cotizacion->es_borrador) {
+            throw new CotizacionException(
+                'No se pueden eliminar cotizaciones enviadas. Solo se pueden eliminar borradores.',
+                CotizacionException::INVALID_STATE,
+                ['cotizacion_id' => $id]
+            );
+        }
+
+        // Usar servicio para eliminar con transacción
+        $this->cotizacionService->eliminar($cotizacion);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Borrador eliminado completamente incluyendo todas las imágenes y datos asociados'
+        ]);
     }
 
     /**
      * Cambiar estado de cotización (borrador → enviada, enviada → aceptada, etc.)
+     * 
+     * Las excepciones se manejan centralmente en Handler.php
      */
     public function cambiarEstado($id, $estado)
     {
         $cotizacion = Cotizacion::findOrFail($id);
         
         if ($cotizacion->user_id !== Auth::id()) {
-            abort(403);
+            throw new CotizacionException(
+                'No tienes autorización para cambiar el estado de esta cotización',
+                CotizacionException::UNAUTHORIZED,
+                ['cotizacion_id' => $id]
+            );
         }
 
-        $datosActualizar = [
-            'estado' => $estado,
-            'es_borrador' => false // Cuando cambia estado, ya no es borrador
-        ];
-        
-        // Si se envía (estado = 'enviada'), guardar fecha_envio
-        if ($estado === 'enviada' && !$cotizacion->fecha_envio) {
-            $datosActualizar['fecha_envio'] = now();
-        }
-        
-        $cotizacion->update($datosActualizar);
-        
-        // Registrar en historial
-        $tipoHistorial = ($estado === 'enviada') ? 'envio' : $estado;
-        \App\Models\HistorialCotizacion::create([
-            'cotizacion_id' => $id,
-            'tipo_cambio' => $tipoHistorial,
-            'descripcion' => 'Estado cambiado a: ' . ucfirst($estado),
-            'usuario_id' => Auth::id(),
-            'usuario_nombre' => auth()->user()?->name ?? 'Sin nombre',
-            'ip_address' => request()->ip()
-        ]);
+        // Usar servicio para cambiar estado
+        $this->cotizacionService->cambiarEstado($cotizacion, $estado);
         
         return response()->json([
             'success' => true,
-            'message' => 'Estado actualizado'
+            'message' => 'Estado actualizado correctamente'
         ]);
     }
 
     /**
      * Aceptar cotización y crear pedido de producción
+     * 
+     * Delega completamente a PedidoService
+     * Las excepciones se manejan centralmente en Handler.php
      */
     public function aceptarCotizacion($id)
     {
         $cotizacion = Cotizacion::findOrFail($id);
+        $this->validarAutorizacionCotizacion($cotizacion);
+
+        $pedido = $this->pedidoService->aceptarCotizacion($cotizacion);
         
-        if ($cotizacion->user_id !== Auth::id()) {
-            abort(403);
+        return response()->json([
+            'success' => true,
+            'message' => 'Cotización aceptada y pedido creado',
+            'pedido_id' => $pedido->id
+        ]);
+    }
+
+
+    /**
+     * Validar que la cotización sea borrador
+     */
+    private function validarEsBorrador(Cotizacion $cotizacion): void
+    {
+        if (!$cotizacion->es_borrador) {
+            throw new CotizacionException(
+                'No se pueden actualizar cotizaciones enviadas',
+                CotizacionException::INVALID_STATE,
+                ['cotizacion_id' => $cotizacion->id, 'estado' => $cotizacion->estado]
+            );
         }
+    }
 
+    /**
+     * Validar que el usuario sea propietario de la cotización
+     */
+    private function validarAutorizacionCotizacion(Cotizacion $cotizacion): void
+    {
+        if ($cotizacion->user_id !== Auth::id()) {
+            throw new CotizacionException(
+                'No tienes autorización para acceder a esta cotización',
+                CotizacionException::UNAUTHORIZED,
+                ['cotizacion_id' => $cotizacion->id, 'user_id' => Auth::id()]
+            );
+        }
+    }
+
+    /**
+     * Eliminar una imagen específica de una cotización
+     * 
+     * @param Request $request
+     * @param $id ID de la cotización
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function eliminarImagen(Request $request, $id)
+    {
+        $cotizacion = Cotizacion::findOrFail($id);
+        
+        $this->validarAutorizacionCotizacion($cotizacion);
+
+        $request->validate([
+            'ruta' => 'required|string'
+        ]);
+
+        $ruta = $request->input('ruta');
+        
         try {
-            DB::beginTransaction();
-
-            // Crear pedido de producción
-            $pedido = PedidoProduccion::create([
-                'cotizacion_id' => $cotizacion->id,
-                'numero_pedido' => $this->generarNumeroPedido(),
-                'cliente' => $cotizacion->cliente,
-                'asesora' => auth()->user()?->name ?? 'Sin nombre',
-                'forma_de_pago' => $cotizacion->especificaciones['forma_pago'] ?? null,
-                'estado' => 'No iniciado',
-                'fecha_de_creacion_de_orden' => now()->toDateString(),
-            ]);
-
-            // Crear prendas del pedido
-            if ($cotizacion->productos) {
-                foreach ($cotizacion->productos as $index => $producto) {
-                    $prenda = PrendaPedido::create([
-                        'pedido_produccion_id' => $pedido->id,
-                        'nombre_prenda' => $producto['nombre_producto'] ?? 'Sin nombre',
-                        'cantidad' => $producto['cantidad'] ?? 1,
-                        'descripcion' => $producto['descripcion'] ?? null,
-                    ]);
-
-                    // Crear proceso inicial para cada prenda
-                    ProcesoPrenda::create([
-                        'prenda_pedido_id' => $prenda->id,
-                        'proceso' => 'Creación Orden',
-                        'estado_proceso' => 'Completado',
-                        'fecha_inicio' => now()->toDateString(),
-                        'fecha_fin' => now()->toDateString(),
-                    ]);
-                    
-                    // HEREDAR VARIANTES DE LA COTIZACIÓN
-                    $this->heredarVariantesDePrendaPedido($cotizacion, $prenda, $index);
-                }
+            // Eliminar de Storage
+            $rutaRelativa = str_replace('/storage/', '', $ruta);
+            if (Storage::disk('public')->exists($rutaRelativa)) {
+                Storage::disk('public')->delete($rutaRelativa);
+                \Log::info('Imagen eliminada de storage', ['ruta' => $rutaRelativa]);
             }
-
-            // Actualizar cotización
-            $cotizacion->update([
-                'estado' => 'aceptada',
-                'es_borrador' => false
-            ]);
-
-            DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Cotización aceptada y pedido creado',
-                'pedido_id' => $pedido->id
+                'message' => 'Imagen eliminada correctamente'
             ]);
         } catch (\Exception $e) {
-            DB::rollBack();
+            \Log::error('Error al eliminar imagen', [
+                'cotizacion_id' => $id,
+                'ruta' => $ruta,
+                'error' => $e->getMessage()
+            ]);
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Error: ' . $e->getMessage()
+                'message' => 'Error al eliminar la imagen: ' . $e->getMessage()
             ], 500);
         }
     }
-
-
-    /**
-     * Guardar variantes de una prenda
-     */
-    private function guardarVariantesPrenda($prenda, $productoData)
-    {
-        try {
-            // Obtener nombre de la prenda
-            $nombrePrenda = $productoData['nombre_producto'] ?? '';
-            
-            // Reconocer tipo de prenda por nombre
-            $tipoPrenda = TipoPrenda::reconocerPorNombre($nombrePrenda);
-            
-            if (!$tipoPrenda) {
-                \Log::warning('⚠️ No se pudo reconocer tipo de prenda', [
-                    'nombre' => $nombrePrenda
-                ]);
-                return;
-            }
-            
-            \Log::info('✅ Tipo de prenda reconocido', [
-                'nombre' => $nombrePrenda,
-                'tipo_id' => $tipoPrenda->id,
-                'tipo_nombre' => $tipoPrenda->nombre
-            ]);
-            
-            // Obtener variaciones seleccionadas (si existen en los datos)
-            $variantes = $productoData['variantes'] ?? [];
-            
-            \Log::info('📝 Variantes recibidas del formulario:', $variantes);
-            
-            // Crear registro de variante con todos los datos
-            $datosVariante = [
-                'prenda_cotizacion_id' => $prenda->id,
-                'tipo_prenda_id' => $tipoPrenda->id,
-                'cantidad_talla' => $prenda->tallas ? json_encode($prenda->tallas) : null
-            ];
-            
-            // Procesar color (buscar o crear)
-            if (isset($variantes['color']) && !empty($variantes['color'])) {
-                $color = \App\Models\ColorPrenda::firstOrCreate(
-                    ['nombre' => $variantes['color']],
-                    ['nombre' => $variantes['color']]
-                );
-                $datosVariante['color_id'] = $color->id;
-                \Log::info('✅ Color encontrado/creado', ['color_id' => $color->id, 'nombre' => $variantes['color']]);
-            }
-            
-            // Procesar tela (buscar o crear)
-            if (isset($variantes['tela']) && !empty($variantes['tela'])) {
-                $tela = \App\Models\TelaPrenda::firstOrCreate(
-                    ['nombre' => $variantes['tela']],
-                    ['nombre' => $variantes['tela']]
-                );
-                $datosVariante['tela_id'] = $tela->id;
-                \Log::info('✅ Tela encontrada/creada', ['tela_id' => $tela->id, 'nombre' => $variantes['tela']]);
-            }
-            
-            // Procesar manga (si es ID, usarlo; si es nombre, buscar)
-            if (isset($variantes['tipo_manga_id']) && !empty($variantes['tipo_manga_id'])) {
-                $manga = \App\Models\TipoManga::where('nombre', $variantes['tipo_manga_id'])
-                    ->orWhere('id', $variantes['tipo_manga_id'])
-                    ->first();
-                if ($manga) {
-                    $datosVariante['tipo_manga_id'] = $manga->id;
-                    \Log::info('✅ Manga encontrada', ['manga_id' => $manga->id]);
-                }
-            }
-            
-            // Procesar broche (si es ID, usarlo; si es nombre, buscar)
-            if (isset($variantes['tipo_broche_id']) && !empty($variantes['tipo_broche_id'])) {
-                $broche = \App\Models\TipoBroche::where('nombre', $variantes['tipo_broche_id'])
-                    ->orWhere('id', $variantes['tipo_broche_id'])
-                    ->first();
-                if ($broche) {
-                    $datosVariante['tipo_broche_id'] = $broche->id;
-                    \Log::info('✅ Broche encontrado', ['broche_id' => $broche->id]);
-                }
-            }
-            
-            // Procesar bolsillos
-            if (isset($variantes['tiene_bolsillos'])) {
-                $datosVariante['tiene_bolsillos'] = (bool)$variantes['tiene_bolsillos'];
-            }
-            
-            // Procesar reflectivo
-            if (isset($variantes['tiene_reflectivo'])) {
-                $datosVariante['tiene_reflectivo'] = (bool)$variantes['tiene_reflectivo'];
-            }
-            
-            // Procesar observaciones/descripción adicional
-            $observacionesArray = [];
-            
-            // Recopilar todas las observaciones
-            if (isset($variantes['obs_bolsillos']) && !empty($variantes['obs_bolsillos'])) {
-                $observacionesArray[] = "Bolsillos: {$variantes['obs_bolsillos']}";
-            }
-            if (isset($variantes['obs_broche']) && !empty($variantes['obs_broche'])) {
-                $observacionesArray[] = "Broche: {$variantes['obs_broche']}";
-            }
-            if (isset($variantes['obs_reflectivo']) && !empty($variantes['obs_reflectivo'])) {
-                $observacionesArray[] = "Reflectivo: {$variantes['obs_reflectivo']}";
-            }
-            
-            // Si viene descripcion_adicional directamente, usarla
-            if (isset($variantes['descripcion_adicional']) && !empty($variantes['descripcion_adicional'])) {
-                $datosVariante['descripcion_adicional'] = $variantes['descripcion_adicional'];
-            } elseif (!empty($observacionesArray)) {
-                // Si no, combinar todas las observaciones
-                $datosVariante['descripcion_adicional'] = implode(' | ', $observacionesArray);
-            }
-            
-            \Log::info('📝 Observaciones procesadas:', [
-                'obs_bolsillos' => $variantes['obs_bolsillos'] ?? null,
-                'obs_broche' => $variantes['obs_broche'] ?? null,
-                'obs_reflectivo' => $variantes['obs_reflectivo'] ?? null,
-                'descripcion_adicional' => $datosVariante['descripcion_adicional'] ?? null
-            ]);
-            
-            // Crear registro de variante
-            $variante = VariantePrenda::create($datosVariante);
-            
-            \Log::info('✅ Variante guardada exitosamente', [
-                'variante_id' => $variante->id,
-                'prenda_id' => $prenda->id,
-                'tipo_prenda_id' => $tipoPrenda->id,
-                'datos' => $datosVariante
-            ]);
-            
-        } catch (\Exception $e) {
-            \Log::error('❌ Error guardando variantes', [
-                'prenda_id' => $prenda->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-        }
-    }
-
-    /**
-     * Generar número de pedido único
-     */
-    private function generarNumeroPedido()
-    {
-        $ultimoPedido = PedidoProduccion::max('numero_pedido') ?? 0;
-        return $ultimoPedido + 1;
-    }
 }
+

@@ -155,11 +155,37 @@ function recopilarDatos() {
             variantes.tela = telaInput.value;
         }
         
+        // Referencia de tela
+        const referenciaInput = item.querySelector('.referencia-input');
+        if (referenciaInput && referenciaInput.value) {
+            variantes.tela_referencia = referenciaInput.value;
+        }
+        
         // Manga
         const mangaCheckbox = item.querySelector('input[name*="aplica_manga"]');
         const mangaIdInput = item.querySelector('input[name*="tipo_manga_id"]');
-        if (mangaCheckbox && mangaCheckbox.checked && mangaIdInput && mangaIdInput.value) {
-            variantes.tipo_manga_id = mangaIdInput.value;
+        const mangaInput = item.querySelector('.manga-input');
+        if (mangaCheckbox && mangaCheckbox.checked) {
+            if (mangaIdInput && mangaIdInput.value) {
+                variantes.tipo_manga_id = mangaIdInput.value;
+                // También enviar el nombre legible si está disponible
+                if (mangaInput && mangaInput.value) {
+                    variantes.manga_nombre = mangaInput.value;
+                }
+            }
+            // Capturar observación de manga
+            const mangaObs = item.querySelector('input[name*="obs_manga"]');
+            console.log('🔍 obs_manga input:', {
+                elemento: !!mangaObs,
+                valor: mangaObs?.value,
+                nombre: mangaObs?.name
+            });
+            if (mangaObs && mangaObs.value) {
+                observacionesVariantes.push(`Manga: ${mangaObs.value}`);
+                console.log('✅ obs_manga capturada:', mangaObs.value);
+            } else {
+                console.log('⚠️ obs_manga NO CAPTURADA - valor vacío o elemento no encontrado');
+            }
         }
         
         // Bolsillos
@@ -199,6 +225,13 @@ function recopilarDatos() {
         // Agregar todas las observaciones como descripción_adicional
         if (observacionesVariantes.length > 0) {
             variantes.descripcion_adicional = observacionesVariantes.join(' | ');
+            console.log('📝 descripcion_adicional construida:', {
+                observacionesCount: observacionesVariantes.length,
+                observaciones: observacionesVariantes,
+                descripcion_adicional: variantes.descripcion_adicional
+            });
+        } else {
+            console.log('ℹ️ Sin observaciones de variantes para agregar a descripcion_adicional');
         }
         
         console.log('📝 Variantes capturadas:', variantes);
@@ -221,10 +254,20 @@ function recopilarDatos() {
     // ========== PASO 3: BORDADO/ESTAMPADO ==========
     
     // Recopilar técnicas
+    const contenedorTecnicas = document.getElementById('tecnicas_seleccionadas');
+    console.log('🎨 Contenedor técnicas encontrado:', !!contenedorTecnicas);
+    if (contenedorTecnicas) {
+        console.log('🎨 innerHTML del contenedor:', contenedorTecnicas.innerHTML);
+        console.log('🎨 Número de children:', contenedorTecnicas.children.length);
+    }
+    
     const tecnicas = [];
     document.querySelectorAll('#tecnicas_seleccionadas > div').forEach(tag => {
         const input = tag.querySelector('input[name="tecnicas[]"]');
-        if (input) tecnicas.push(input.value);
+        if (input) {
+            console.log('🎨 Input encontrado:', input.value);
+            tecnicas.push(input.value);
+        }
     });
     console.log('🎨 Técnicas recopiladas:', tecnicas);
     console.log('🎨 Elementos encontrados:', document.querySelectorAll('#tecnicas_seleccionadas > div').length);
@@ -324,6 +367,8 @@ function recopilarDatos() {
         ubicaciones,
         observaciones_generales,
         observaciones_check,
-        observaciones_valor
+        observaciones_valor,
+        especificaciones: window.especificacionesSeleccionadas || {}
+    };
     };
 }

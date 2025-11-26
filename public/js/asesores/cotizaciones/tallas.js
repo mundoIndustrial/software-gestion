@@ -33,7 +33,9 @@ function actualizarSelectTallas(select) {
     if (generoSelect) generoSelect.style.display = 'none';
     modoSelect.style.display = 'none';
     if (generoSelect) generoSelect.value = '';
-    console.log('✅ Todo limpiado y ocultado (modoSelect.value preservado)');
+    // IMPORTANTE: Resetear el modoSelect para evitar conflictos entre tipos
+    modoSelect.value = '';
+    console.log('✅ Todo limpiado y ocultado (modoSelect reseteado)');
     
     if (tipo === 'letra') {
         console.log('📝 Mostrando selector de GÉNERO para LETRAS');
@@ -430,6 +432,8 @@ function actualizarBotonesPorGeneroLetras(container, genero) {
     
     const modoSelect = container.querySelector('.talla-modo-select');
     
+    // Resetear el modoSelect al cambiar de género en LETRAS
+    modoSelect.value = '';
     console.log('📝 Valor actual de modoSelect:', modoSelect.value);
     
     modoSelect.style.display = 'block';

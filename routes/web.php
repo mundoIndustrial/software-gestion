@@ -216,7 +216,9 @@ Route::middleware(['auth', 'role:asesor'])->prefix('asesores')->name('asesores.'
     // ========================================
     Route::get('/cotizaciones', [App\Http\Controllers\Asesores\CotizacionesController::class, 'index'])->name('cotizaciones.index');
     Route::post('/cotizaciones/guardar', [App\Http\Controllers\Asesores\CotizacionesController::class, 'guardar'])->name('cotizaciones.guardar');
+    Route::post('/cotizaciones/guardar-test', [App\Http\Controllers\Asesores\CotizacionesController::class, 'guardarTest'])->name('cotizaciones.guardar-test');
     Route::post('/cotizaciones/{id}/imagenes', [App\Http\Controllers\Asesores\CotizacionesController::class, 'subirImagenes'])->name('cotizaciones.subir-imagenes');
+    Route::delete('/cotizaciones/{id}/imagenes', [App\Http\Controllers\Asesores\CotizacionesController::class, 'eliminarImagen'])->name('cotizaciones.eliminar-imagen');
     Route::post('/cotizaciones/{id}/precios', [App\Http\Controllers\Asesores\CotizacionesController::class, 'guardarPrecios'])->name('cotizaciones.guardar-precios');
     Route::get('/cotizaciones/{id}', [App\Http\Controllers\Asesores\CotizacionesController::class, 'show'])->name('cotizaciones.show');
     Route::get('/cotizaciones/{id}/editar-borrador', [App\Http\Controllers\Asesores\CotizacionesController::class, 'editarBorrador'])->name('cotizaciones.edit-borrador');

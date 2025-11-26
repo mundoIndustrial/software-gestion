@@ -20,6 +20,11 @@ async function loadNotifications() {
         updateNotificationBadge(data.total_notificaciones);
         renderNotifications(data);
     } catch (error) {
+        // Ignorar error 401 (no autenticado)
+        if (error.message && error.message.includes('Unauthenticated')) {
+            console.debug('Usuario no autenticado, notificaciones deshabilitadas');
+            return;
+        }
         console.error('Error cargando notificaciones:', error);
     }
 }

@@ -121,11 +121,15 @@ class PedidosProduccionController extends Controller
                 'numero_cotizacion' => $numeroCotizacion,
                 'numero_pedido' => $this->generarNumeroPedido(),
                 'cliente' => $cotizacion->cliente,
-                'asesora' => auth()->user()?->name ?? 'Sin nombre',
+                'asesor_id' => auth()->id(),
                 'forma_de_pago' => $formaPago,
                 'estado' => 'No iniciado',
                 'fecha_de_creacion_de_orden' => now()->toDateString(),
             ]);
+
+            // Obtener cantidades del request
+            $cantidades = request()->input('cantidades', []);
+            \Log::info('📊 Cantidades recibidas del frontend:', $cantidades);
 
             // Crear prendas del pedido
             $productos = $cotizacion->productos;
@@ -137,18 +141,35 @@ class PedidosProduccionController extends Controller
             
             if ($productos && is_array($productos)) {
                 foreach ($productos as $index => $producto) {
-                    $cantidadTotal = 0;
-                    if (isset($producto['cantidades']) && is_array($producto['cantidades'])) {
-                        $cantidadTotal = array_sum($producto['cantidades']);
-                    } else {
-                        $cantidadTotal = $producto['cantidad'] ?? 1;
+                    // Obtener cantidades para este producto
+                    $productosCantidades = $cantidades[$index] ?? [];
+                    
+                    // Filtrar solo las cantidades > 0
+                    $cantidadesFiltradasPorTalla = [];
+                    foreach ($productosCantidades as $talla => $cantidad) {
+                        $cantidadInt = (int)$cantidad;
+                        if ($cantidadInt > 0) {
+                            $cantidadesFiltradasPorTalla[$talla] = $cantidadInt;
+                        }
                     }
+                    
+                    // Calcular cantidad total solo de las cantidades > 0
+                    $cantidadTotal = array_sum($cantidadesFiltradasPorTalla);
+
+                    \Log::info('✅ Prenda creada', [
+                        'index' => $index,
+                        'nombre' => $producto['nombre_producto'] ?? 'Sin nombre',
+                        'cantidades_por_talla_original' => $productosCantidades,
+                        'cantidades_por_talla_filtradas' => $cantidadesFiltradasPorTalla,
+                        'cantidad_total' => $cantidadTotal
+                    ]);
 
                     $prenda = PrendaPedido::create([
                         'pedido_produccion_id' => $pedido->id,
                         'nombre_prenda' => $producto['nombre_producto'] ?? 'Sin nombre',
                         'cantidad' => $cantidadTotal,
                         'descripcion' => $producto['descripcion'] ?? null,
+                        'cantidad_talla' => json_encode($cantidadesFiltradasPorTalla) // Solo guardar las tallas con cantidad > 0
                     ]);
 
                     // Crear proceso inicial para cada prenda

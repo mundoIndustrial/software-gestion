@@ -444,6 +444,48 @@
         border-radius: 4px;
         font-size: 0.75rem;
     }
+
+    /* Estilos para el buscador de cotizaciones */
+    #cotizacion_search {
+        font-size: 0.875rem !important;
+        padding: 0.625rem 0.75rem !important;
+    }
+
+    #cotizacion_search:focus {
+        box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1) !important;
+    }
+
+    #cotizacion_dropdown {
+        border: 1px solid #e5e7eb;
+        border-top: none;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    #cotizacion_dropdown > div {
+        font-size: 0.875rem;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #f3f4f6;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+
+    #cotizacion_dropdown > div:hover {
+        background-color: #f0f9ff;
+    }
+
+    #cotizacion_dropdown > div:last-child {
+        border-bottom: none;
+    }
+
+    #cotizacion_selected {
+        margin-top: 0.75rem;
+        padding: 0.75rem;
+        background: #f0f9ff;
+        border-left: 3px solid #0066cc;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        color: #1e40af;
+    }
 </style>
 @endpush
 
@@ -465,35 +507,66 @@
             </h2>
 
             <div class="form-group">
-                <label for="cotizacion_id" class="block text-sm font-medium text-gray-700 mb-2">
+                <label for="cotizacion_search" class="block text-sm font-medium text-gray-700 mb-2">
                     Cotización <span class="text-red-500">*</span>
                 </label>
-                <select id="cotizacion_id" name="cotizacion_id" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
-                    <option value="">-- Seleccionar cotización --</option>
-                    @foreach($cotizaciones as $cot)
-                        @php
-                            $formaPago = '';
-                            $cliente = $cot->cliente ?? '';
-                            $asesora = $cot->asesora ?? '';
-                            $numeroCotizacion = $cot->numero_cotizacion ?? '';
-                            
-                            if (is_array($cot->especificaciones)) {
-                                $formaPago = $cot->especificaciones['forma_pago'] ?? '';
-                            }
-                            
-                            // Asegurar que todos sean strings
-                            $formaPago = is_string($formaPago) ? $formaPago : '';
-                            $cliente = is_string($cliente) ? $cliente : '';
-                            $asesora = is_string($asesora) ? $asesora : '';
-                            $numeroCotizacion = is_string($numeroCotizacion) ? $numeroCotizacion : '';
-                        @endphp
-                        <option value="{{ $cot->id }}" data-cliente="{{ $cliente }}" data-asesora="{{ $asesora }}" data-forma-pago="{{ $formaPago }}" data-numero-cotizacion="{{ $numeroCotizacion }}">
-                            {{ $numeroCotizacion ?: '#' . $cot->id }} - {{ $cliente }} ({{ $cot->prendasCotizaciones->count() }} prendas)
-                        </option>
-                    @endforeach
-                </select>
+                <div style="position: relative;">
+                    <input type="text" id="cotizacion_search" placeholder="🔍 Buscar por número, cliente o asesora..." class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" autocomplete="off">
+                    <input type="hidden" id="cotizacion_id" name="cotizacion_id" required>
+                    <div id="cotizacion_dropdown" style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #d1d5db; border-top: none; border-radius: 0 0 8px 8px; max-height: 300px; overflow-y: auto; display: none; z-index: 1000; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                    </div>
+                </div>
+                <div id="cotizacion_selected" style="margin-top: 0.75rem; padding: 0.75rem; background: #f0f9ff; border-left: 3px solid #0066cc; border-radius: 4px; display: none;">
+                    <div style="font-size: 0.875rem; color: #1e40af;"><strong>Seleccionada:</strong> <span id="cotizacion_selected_text"></span></div>
+                </div>
             </div>
         </div>
+
+        <!-- Array de cotizaciones para JavaScript -->
+        <script>
+            // Obtener el ID del asesor actual desde la sesión/usuario
+            const asesorActualNombre = '{{ Auth::user()->name ?? '' }}';
+            
+            const cotizacionesData = {!! json_encode($cotizaciones->map(function($cot) {
+                $formaPago = '';
+                $cliente = $cot->cliente ?? '';
+                $asesora = $cot->asesora ?? '';
+                $numeroCotizacion = $cot->numero_cotizacion ?? '';
+                
+                // Acceder a forma_pago desde especificaciones
+                if (is_array($cot->especificaciones)) {
+                    $formaPagoArray = $cot->especificaciones['forma_pago'] ?? null;
+                    // Si es un array, tomar el primer elemento
+                    $formaPago = is_array($formaPagoArray) && count($formaPagoArray) > 0 ? $formaPagoArray[0] : ($formaPagoArray ?? '');
+                } elseif (is_object($cot->especificaciones)) {
+                    $formaPagoArray = $cot->especificaciones->forma_pago ?? null;
+                    // Si es un array, tomar el primer elemento
+                    $formaPago = is_array($formaPagoArray) && count($formaPagoArray) > 0 ? $formaPagoArray[0] : ($formaPagoArray ?? '');
+                }
+                
+                // Si es null o vacío, intentar desde el campo específico
+                if (empty($formaPago)) {
+                    $formaPago = $cot->forma_pago ?? '';
+                }
+                
+                return [
+                    'id' => $cot->id,
+                    'numero' => $numeroCotizacion ?: '#' . $cot->id,
+                    'cliente' => is_string($cliente) ? $cliente : '',
+                    'asesora' => is_string($asesora) ? $asesora : '',
+                    'formaPago' => is_string($formaPago) ? $formaPago : '',
+                    'prendasCount' => $cot->prendasCotizaciones->count()
+                ];
+            })->toArray()) !!};
+            
+            // Filtrar solo las cotizaciones del asesor actual
+            const misCotizaciones = cotizacionesData.filter(cot => cot.asesora === asesorActualNombre);
+            
+            // Debug: mostrar datos en consola
+            console.log('🔍 Asesor actual:', asesorActualNombre);
+            console.log('🔍 Todas las cotizaciones:', cotizacionesData);
+            console.log('🔍 Mis cotizaciones (filtradas):', misCotizaciones);
+        </script>
 
         <!-- PASO 2: Información del Pedido -->
         <div class="form-section">
@@ -617,7 +690,12 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const cotizacionSelect = document.getElementById('cotizacion_id');
+    const searchInput = document.getElementById('cotizacion_search');
+    const hiddenInput = document.getElementById('cotizacion_id');
+    const dropdown = document.getElementById('cotizacion_dropdown');
+    const selectedDiv = document.getElementById('cotizacion_selected');
+    const selectedText = document.getElementById('cotizacion_selected_text');
+    
     const prendasContainer = document.getElementById('prendas-container');
     const clienteInput = document.getElementById('cliente');
     const asesoraInput = document.getElementById('asesora');
@@ -632,28 +710,71 @@ document.addEventListener('DOMContentLoaded', function() {
             numeroPedidoInput.value = data.siguiente_pedido;
         });
 
-    // Cuando se selecciona una cotización
-    cotizacionSelect.addEventListener('change', function() {
-        const cotizacionId = this.value;
-        
-        if (!cotizacionId) {
-            prendasContainer.innerHTML = '<p class="text-gray-500 text-center py-8">Selecciona una cotización para ver las prendas</p>';
-            document.getElementById('numero_cotizacion').value = '';
-            clienteInput.value = '';
-            asesoraInput.value = '';
-            formaPagoInput.value = '';
-            return;
+    // Función para mostrar las opciones filtradas
+    function mostrarOpciones(filtro = '') {
+        const filtroLower = filtro.toLowerCase();
+        const opciones = misCotizaciones.filter(cot => {
+            return cot.numero.toLowerCase().includes(filtroLower) ||
+                   cot.cliente.toLowerCase().includes(filtroLower);
+        });
+
+        if (opciones.length === 0) {
+            dropdown.innerHTML = '<div style="padding: 1rem; color: #9ca3af; text-align: center;">No se encontraron cotizaciones</div>';
+        } else {
+            dropdown.innerHTML = opciones.map(cot => `
+                <div onclick="seleccionarCotizacion(${cot.id}, '${cot.numero.replace(/'/g, "\\'")}', '${cot.cliente.replace(/'/g, "\\'")}', '${cot.asesora.replace(/'/g, "\\'")}', '${cot.formaPago.replace(/'/g, "\\'")}', ${cot.prendasCount})" 
+                     style="padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid #f3f4f6; transition: background 0.2s;" 
+                     onmouseover="this.style.background = '#f0f9ff'" 
+                     onmouseout="this.style.background = 'white'">
+                    <div style="font-weight: 600; color: #1f2937;">${cot.numero}</div>
+                    <div style="font-size: 0.875rem; color: #6b7280;">
+                        Cliente: <strong>${cot.cliente}</strong> | ${cot.prendasCount} prendas
+                    </div>
+                    ${cot.formaPago ? `<div style="font-size: 0.75rem; color: #9ca3af;">Forma de pago: ${cot.formaPago}</div>` : ''}
+                </div>
+            `).join('');
         }
 
-        // Obtener datos de la opción seleccionada
-        const option = this.options[this.selectedIndex];
-        document.getElementById('numero_cotizacion').value = option.dataset.numeroCotizacion || 'Por asignar';
-        clienteInput.value = option.dataset.cliente;
-        asesoraInput.value = option.dataset.asesora;
-        formaPagoInput.value = option.dataset.formaPago;
+        dropdown.style.display = 'block';
+    }
+
+    // Evento de búsqueda
+    searchInput.addEventListener('input', function() {
+        mostrarOpciones(this.value);
+    });
+
+    // Mostrar dropdown al hacer click
+    searchInput.addEventListener('focus', function() {
+        if (this.value === '') {
+            mostrarOpciones();
+        }
+    });
+
+    // Cerrar dropdown al hacer click afuera
+    document.addEventListener('click', function(e) {
+        if (e.target !== searchInput && e.target !== dropdown) {
+            dropdown.style.display = 'none';
+        }
+    });
+
+    // Función global para seleccionar cotización
+    window.seleccionarCotizacion = function(id, numero, cliente, asesora, formaPago, prendasCount) {
+        hiddenInput.value = id;
+        searchInput.value = `${numero} - ${cliente}`;
+        dropdown.style.display = 'none';
+        
+        // Mostrar resumen
+        selectedDiv.style.display = 'block';
+        selectedText.textContent = `${numero} - ${cliente} (${prendasCount} prendas)`;
+        
+        // Actualizar campos de información
+        document.getElementById('numero_cotizacion').value = numero;
+        clienteInput.value = cliente;
+        asesoraInput.value = asesora;
+        formaPagoInput.value = formaPago;
 
         // Cargar prendas de la cotización
-        fetch(`/asesores/cotizaciones/${cotizacionId}`, {
+        fetch(`/asesores/cotizaciones/${id}`, {
             headers: {
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
@@ -672,7 +793,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Error:', error);
                 prendasContainer.innerHTML = '<p class="text-red-500">Error al cargar las prendas: ' + error.message + '</p>';
             });
-    });
+    };
 
     function cargarPrendas(prendas) {
         if (!prendas || prendas.length === 0) {
@@ -687,68 +808,90 @@ document.addEventListener('DOMContentLoaded', function() {
             const imagen = prenda.fotos && prenda.fotos.length > 0 ? prenda.fotos[0] : null;
             const variantes = prenda.variantes || {};
             
-            // Construir descripción con variaciones organizadas
-            let descripcionCompleta = prenda.descripcion || '';
-            if (variantes.color || variantes.tela || variantes.manga || variantes.broche || variantes.tiene_bolsillos || variantes.tiene_reflectivo) {
-                descripcionCompleta += '<br><br><strong style="color: #0066cc; font-size: 0.95rem;">VARIACIONES:</strong><br>';
-                descripcionCompleta += '<div style="margin-left: 0.5rem; line-height: 1.8;">';
-                
-                // Parsear observaciones
-                const obsMap = {};
-                if (variantes.observaciones) {
-                    const obsArray = variantes.observaciones.split(' | ');
-                    obsArray.forEach(obs => {
-                        if (obs.trim()) {
-                            if (obs.includes('Bolsillos:')) {
-                                obsMap.bolsillos = obs.replace('Bolsillos:', '').trim();
-                            } else if (obs.includes('Broche:')) {
-                                obsMap.broche = obs.replace('Broche:', '').trim();
-                            } else if (obs.includes('Reflectivo:')) {
-                                obsMap.reflectivo = obs.replace('Reflectivo:', '').trim();
-                            }
-                        }
-                    });
-                }
-                
-                if (variantes.color) {
-                    descripcionCompleta += `<div><strong>Color:</strong> ${variantes.color}</div>`;
-                }
-                if (variantes.tela) {
-                    descripcionCompleta += `<div><strong>Tela:</strong> ${variantes.tela}${variantes.tela_referencia ? ` (Ref: ${variantes.tela_referencia})` : ''}</div>`;
-                }
-                if (variantes.manga) {
-                    descripcionCompleta += `<div><strong>Manga:</strong> ${variantes.manga}</div>`;
-                }
-                if (variantes.broche) {
-                    descripcionCompleta += `<div><strong>Broche:</strong> ${variantes.broche}</div>`;
-                    if (obsMap.broche) {
-                        descripcionCompleta += `<div style="color: #64748b; font-size: 0.9rem; margin-left: 1rem; margin-top: 0.25rem;">→ ${obsMap.broche}</div>`;
-                    }
-                }
-                if (variantes.tiene_bolsillos) {
-                    descripcionCompleta += `<div><strong>Bolsillos:</strong> Sí</div>`;
-                    if (obsMap.bolsillos) {
-                        descripcionCompleta += `<div style="color: #64748b; font-size: 0.9rem; margin-left: 1rem; margin-top: 0.25rem;">→ ${obsMap.bolsillos}</div>`;
-                    }
-                }
-                if (variantes.tiene_reflectivo) {
-                    descripcionCompleta += `<div><strong>Reflectivo:</strong> Sí</div>`;
-                    if (obsMap.reflectivo) {
-                        descripcionCompleta += `<div style="color: #64748b; font-size: 0.9rem; margin-left: 1rem; margin-top: 0.25rem;">→ ${obsMap.reflectivo}</div>`;
-                    }
-                }
-                
-                descripcionCompleta += '</div>';
+            console.log(`📦 Prenda ${index + 1}:`, {
+                nombre: prenda.nombre_producto,
+                tallas: tallas,
+                tallasLength: tallas.length
+            });
+            
+            // Construir descripción en el nuevo formato
+            let descripcionTexto = '';
+            
+            // Línea 1: Nombre de la prenda + variantes principales
+            let linea1 = prenda.nombre_producto || '';
+            
+            // Agregar variantes principales a la primera línea
+            const variacionesPrincipales = [];
+            if (variantes.tela) {
+                variacionesPrincipales.push(variantes.tela);
             }
+            if (variantes.color) {
+                variacionesPrincipales.push(variantes.color);
+            }
+            if (variantes.genero) {
+                variacionesPrincipales.push(variantes.genero);
+            }
+            
+            if (variacionesPrincipales.length > 0) {
+                linea1 += ' ' + variacionesPrincipales.join(' ');
+            }
+            
+            // Línea 2: Descripción
+            let linea2 = prenda.descripcion || '';
+            
+            // Agregar detalles de variaciones
+            const detalles = [];
+            if (variantes.manga) {
+                detalles.push(`MANGA ${variantes.manga.toUpperCase()}`);
+            }
+            if (variantes.tiene_bolsillos) {
+                detalles.push('CON BOLSILLO');
+            }
+            if (variantes.broche) {
+                detalles.push(`BROCHE ${variantes.broche.toUpperCase()}`);
+            }
+            if (variantes.tiene_reflectivo) {
+                detalles.push('CON REFLECTIVO');
+            }
+            
+            if (detalles.length > 0) {
+                if (linea2) {
+                    linea2 += ' ' + detalles.join(' ');
+                } else {
+                    linea2 = detalles.join(' ');
+                }
+            }
+            
+            // Línea 3: Tallas con cantidades
+            let linea3 = 'TALLAS: ';
+            if (tallas && tallas.length > 0) {
+                linea3 += tallas.map(t => `${t}:0`).join(', ');
+            } else {
+                linea3 += 'N/A: 0';
+            }
+            
+            // Construir HTML de descripción
+            let descripcionCompleta = `
+                <div style="font-size: 0.9rem; line-height: 1.6; color: #1f2937;">
+                    <div style="font-weight: 600; margin-bottom: 0.5rem;">
+                        Prenda ${index + 1}: ${linea1}
+                    </div>
+                    <div style="margin-bottom: 0.5rem; color: #4b5563;">
+                        <strong>Descripción:</strong> ${linea2}
+                    </div>
+                    <div style="color: #374151;">
+                        ${linea3}
+                    </div>
+                </div>
+            `;
             
             html += `
                 <div class="prenda-card">
                     <div style="display: flex; gap: 1rem; align-items: flex-start;">
                         <div style="flex: 1;">
-                            <div class="prenda-titulo">
-                                PRENDA ${index + 1}: ${prenda.nombre_producto}
+                            <div class="prenda-descripcion" style="font-size: 0.9rem;">
+                                ${descripcionCompleta}
                             </div>
-                            ${descripcionCompleta ? `<div class="prenda-descripcion">${descripcionCompleta}</div>` : ''}
                         </div>
                         ${imagen ? `
                             <div style="flex-shrink: 0;">
@@ -768,29 +911,39 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="tallas-grid">
             `;
 
-            tallas.forEach((talla, tallaIndex) => {
-                html += `
-                    <div class="talla-group" data-talla="${talla}" data-prenda="${index}">
-                        <div class="talla-header">
-                            <label class="talla-label">${talla}</label>
-                            <button type="button" class="btn-eliminar-talla" onclick="eliminarTalla(this)" title="Eliminar talla">
-                                ✕
-                            </button>
+            // Mostrar tallas con sus inputs de cantidad
+            if (tallas && tallas.length > 0) {
+                tallas.forEach((talla, tallaIndex) => {
+                    html += `
+                        <div class="talla-group" data-talla="${talla}" data-prenda="${index}">
+                            <div class="talla-header">
+                                <label class="talla-label">${talla}</label>
+                                <button type="button" class="btn-eliminar-talla" onclick="eliminarTalla(this)" title="Eliminar talla">
+                                    ✕
+                                </button>
+                            </div>
+                            <input type="number" 
+                                   name="cantidades[${index}][${talla}]" 
+                                   class="talla-input" 
+                                   min="0" 
+                                   value="0" 
+                                   placeholder="0">
                         </div>
-                        <input type="number" 
-                               name="cantidades[${index}][${talla}]" 
-                               class="talla-input" 
-                               min="0" 
-                               value="0" 
-                               placeholder="0">
+                    `;
+                });
+            } else {
+                // Si no hay tallas predefinidas, mostrar placeholder
+                html += `
+                    <div style="grid-column: 1 / -1; padding: 1rem; background: #f0f9ff; border-radius: 4px; text-align: center; color: #0066cc; font-size: 0.85rem;">
+                        <strong>Sin tallas definidas</strong> - Agrega una talla abajo
                     </div>
                 `;
-            });
+            }
 
             html += `
                     </div>
                     <div class="tallas-actions">
-                        <input type="text" class="input-nueva-talla" placeholder="Nueva talla (ej: XS, 3XL)" data-prenda="${index}">
+                        <input type="text" class="input-nueva-talla" placeholder="Nueva talla (ej: XS, 3XL, XL)" data-prenda="${index}">
                         <button type="button" class="btn-agregar-talla" onclick="agregarTalla(this)" title="Agregar talla">
                             + Agregar
                         </button>
@@ -800,6 +953,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         prendasContainer.innerHTML = html;
+        console.log('✅ Prendas cargadas exitosamente');
     }
 
     // Enviar formulario
@@ -813,9 +967,34 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Recopilar datos
+        // Recopilar datos de cantidades por talla
+        const cantidadesPorTalla = {};
+        
+        // Buscar todos los inputs de talla
+        document.querySelectorAll('.talla-input').forEach(input => {
+            const nombre = input.getAttribute('name'); // ej: cantidades[0][XS]
+            const valor = parseInt(input.value) || 0;
+            
+            // Solo guardar si la cantidad es mayor a 0
+            if (valor > 0) {
+                cantidadesPorTalla[nombre] = valor;
+                console.log(`📊 Talla guardada: ${nombre} = ${valor}`);
+            }
+        });
+        
+        console.log('📦 Todas las cantidades:', cantidadesPorTalla);
+
+        // Recopilar datos del formulario
         const formData = new FormData(this);
         formData.append('cotizacion_id', cotizacionId);
+        
+        // Las cantidades ya están en FormData por los inputs, pero vamos a logearlas
+        console.log('📋 FormData antes de enviar:');
+        for (let [key, value] of formData.entries()) {
+            if (key.startsWith('cantidades')) {
+                console.log(`  ${key} = ${value}`);
+            }
+        }
 
         // Enviar al servidor
         fetch('{{ route("asesores.pedidos-produccion.crear-desde-cotizacion", ":id") }}'.replace(':id', cotizacionId), {
@@ -828,6 +1007,7 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
+            console.log('✅ Respuesta del servidor:', data);
             if (data.success) {
                 alert('✓ Pedido creado exitosamente');
                 window.location.href = `{{ route('asesores.pedidos-produccion.show', ':id') }}`.replace(':id', data.pedido_id);
@@ -836,7 +1016,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(error => {
-            console.error('Error:', error);
+            console.error('❌ Error:', error);
             alert('Error al crear el pedido');
         });
     });

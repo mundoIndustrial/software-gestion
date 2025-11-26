@@ -24,7 +24,6 @@ class PedidoProduccion extends Model
         'cliente',
         'cliente_id',
         'novedades',
-        'asesora',
         'asesor_id',
         'forma_de_pago',
         'estado',

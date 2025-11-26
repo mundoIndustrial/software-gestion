@@ -436,21 +436,35 @@ function toggleSeccion(btn) {
 
 function agregarTecnica() {
     console.log('🔧 agregarTecnica() llamado');
+    console.log('⏰ Timestamp:', new Date().toISOString());
+    
     const selector = document.getElementById('selector_tecnicas');
+    console.log('🔧 Selector encontrado:', !!selector);
+    
+    if (!selector) {
+        console.error('🔧 ERROR: No se encontró selector_tecnicas');
+        return;
+    }
+    
     const tecnica = selector.value;
     console.log('🔧 Técnica seleccionada:', tecnica);
+    console.log('🔧 Value del selector:', selector.value);
+    console.log('🔧 Options disponibles:', Array.from(selector.options).map(o => o.value));
     
     if (!tecnica) {
         alert('Por favor selecciona una técnica');
         return;
     }
+    
     const contenedor = document.getElementById('tecnicas_seleccionadas');
     console.log('🔧 Contenedor encontrado:', !!contenedor);
+    console.log('🔧 innerHTML del contenedor ANTES:', contenedor.innerHTML);
     
     if (Array.from(contenedor.children).some(tag => tag.textContent.includes(tecnica))) {
         alert('Esta técnica ya está agregada');
         return;
     }
+    
     const tag = document.createElement('div');
     tag.style.cssText = 'background: #3498db; color: white; padding: 6px 12px; border-radius: 20px; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: 600;';
     tag.innerHTML = `
@@ -458,8 +472,12 @@ function agregarTecnica() {
         <span>${tecnica}</span>
         <button type="button" onclick="this.closest('div').remove()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.2rem; padding: 0; line-height: 1;">✕</button>
     `;
+    
     contenedor.appendChild(tag);
     console.log('✅ Técnica agregada:', tecnica);
+    console.log('✅ innerHTML del contenedor DESPUÉS:', contenedor.innerHTML);
+    console.log('✅ Total técnicas:', contenedor.children.length);
+    
     selector.value = '';
 }
 

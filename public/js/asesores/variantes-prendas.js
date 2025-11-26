@@ -73,17 +73,28 @@ function cargarVariacionesPrenda(tipoPrendaId) {
         return Promise.resolve(variacionesCache[tipoPrendaId]);
     }
 
-    return fetch(`/api/prenda-variaciones/${tipoPrendaId}`)
-        .then(res => res.json())
+    // Endpoint - usar la ruta correcta sin /api/
+    // Nota: Es normal que retorne 404 si no existen variaciones predefinidas
+    // El sistema creará automáticamente lo que sea necesario
+    return fetch(`/prenda-variaciones/${tipoPrendaId}`)
+        .then(res => {
+            // Si el endpoint no existe (404) o hay error, es OK
+            // El sistema crea automáticamente lo que falta
+            if (!res.ok) {
+                return Promise.resolve(null);
+            }
+            return res.json();
+        })
         .then(data => {
-            if (data.success) {
+            if (data && data.success) {
                 variacionesCache[tipoPrendaId] = data.variaciones;
                 return data.variaciones;
             }
-            throw new Error('Error cargando variaciones');
+            return null;
         })
         .catch(err => {
-            console.error('❌ Error:', err);
+            // Ignorar el error - es esperado si el endpoint no existe
+            // console.debug() no muestra en consola por defecto
             return null;
         });
 }
@@ -98,19 +109,26 @@ function mostrarSelectorVariantes(inputElement) {
     // Mostrar selector de JEAN/PANTALÓN incluso si no se reconoce el tipo
     mostrarSelectorJeanPantalon(inputElement, nombrePrenda);
     
+    // Si no se reconoce el tipo, mostrar campos básicos
     if (!tipoPrenda) {
-        ocultarSelectorVariantes(inputElement);
+        console.log('⚠️ Tipo de prenda no reconocido, mostrando campos básicos de variantes');
+        crearSelectorVariantesBasico(inputElement, nombrePrenda);
         return;
     }
 
     console.log('✅ Tipo reconocido:', tipoPrenda.nombre);
     
-    // Cargar variaciones
+    // IMPORTANTE: Mostrar campos de variantes PRIMERO (siempre)
+    // Luego intentar cargar variaciones específicas si existen
+    crearSelectorVariantesBasico(inputElement, nombrePrenda);
+    
+    // Cargar variaciones específicas (opcional)
     cargarVariacionesPrenda(tipoPrenda.id).then(variaciones => {
-        if (!variaciones) return;
-        
-        // Crear o actualizar selector en la sección de variantes
-        crearSelectorVariantesEnSeccion(inputElement, tipoPrenda, variaciones);
+        // Las variaciones específicas se cargarían aquí si fueran necesarias
+        // Por ahora, los campos básicos ya están visibles
+        if (variaciones) {
+            console.log('✅ Variaciones cargadas para:', tipoPrenda.nombre);
+        }
     });
 }
 
@@ -152,20 +170,24 @@ function mostrarSelectorJeanPantalon(inputElement, nombrePrenda) {
     if (esJean || esPantalon) {
         const tipoLabel = esJean ? 'JEAN' : 'PANTALÓN';
         tipoJeanPantalon_inline_container.innerHTML = `
-            <label style="font-weight: 600; color: #0066cc; font-size: 0.9rem; white-space: nowrap;">
+            <label style="font-weight: 600; color: #0066cc; font-size: 0.8rem; white-space: nowrap; margin-bottom: 2px; display: block;">
                 <i class="fas fa-link"></i> Tipo de ${tipoLabel}
             </label>
-            <select name="productos_friendly[][variantes][tipo]" style="padding: 8px 12px; border: 1px solid #0066cc; border-radius: 4px; width: 100%; font-size: 1rem; height: 38px; box-sizing: border-box;">
-                <option value="">Seleccionar...</option>
-                <option value="1">Metálico</option>
-                <option value="2">Plástico</option>
+            <select name="productos_friendly[][variantes][tipo]" style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%; font-size: 0.9rem; height: 36px; box-sizing: border-box; background-color: white; cursor: pointer; font-weight: 500;">
+                <option value="" style="color: #999;">Seleccionar...</option>
+                <option value="1" style="color: #1e293b;">Metálico</option>
+                <option value="2" style="color: #1e293b;">Plástico</option>
             </select>
         `;
-        tipoJeanPantalon_inline.style.display = 'block';
+        // Asegurar que el contenedor sea visible
+        tipoJeanPantalon_inline.style.display = 'flex';
+        tipoJeanPantalon_inline.style.visibility = 'visible';
+        tipoJeanPantalon_inline.style.opacity = '1';
         console.log('✅ Selector Tipo de JEAN/PANTALÓN mostrado para:', nombrePrenda);
     } else {
         tipoJeanPantalon_inline.style.display = 'none';
         tipoJeanPantalon_inline.style.visibility = 'hidden';
+        tipoJeanPantalon_inline.style.opacity = '0';
         tipoJeanPantalon_inline_container.innerHTML = '';
         console.log('❌ Selector Tipo de JEAN/PANTALÓN ocultado para:', nombrePrenda);
     }
@@ -375,6 +397,48 @@ function crearSelectorVariantesEnSeccion(inputElement, tipoPrenda, variaciones) 
     }
     
     console.log('✅ Tabla de variaciones lista para:', tipoPrenda.nombre);
+}
+
+/**
+ * Crear selector básico de variantes (para prendas no reconocidas)
+ * Muestra los mismos campos pero sin dependencias de tipos específicos
+ */
+function crearSelectorVariantesBasico(inputElement, nombrePrenda) {
+    const productoCard = inputElement.closest('.producto-card');
+    if (!productoCard) return;
+    
+    // Mostrar la sección de variantes
+    const variantesSection = productoCard.querySelector('.variantes-section');
+    if (variantesSection) {
+        variantesSection.style.display = 'block';
+    }
+    
+    // Mostrar selector de JEAN/PANTALÓN si aplica (JEAN/JEANS)
+    const nombreUpper = nombrePrenda.toUpperCase().trim();
+    const esJean = /^JEAN/.test(nombreUpper.split(/\s+/)[0]);
+    const esPantalon = /^PANTALÓ?N/.test(nombreUpper.split(/\s+/)[0]);
+    
+    const tipoJeanPantalon_inline = productoCard.querySelector('.tipo-jean-pantalon-inline');
+    
+    if (esJean || esPantalon) {
+        const tipoLabel = esJean ? 'JEAN' : 'PANTALÓN';
+        const tipoJeanPantalon_inline_container = productoCard.querySelector('.tipo-jean-pantalon-inline-container');
+        tipoJeanPantalon_inline_container.innerHTML = `
+            <label style="font-weight: 600; color: #0066cc; font-size: 0.9rem; white-space: nowrap;">
+                <i class="fas fa-link"></i> Tipo de ${tipoLabel}
+            </label>
+            <select name="productos_friendly[][variantes][tipo]" style="padding: 8px 12px; border: 1px solid #0066cc; border-radius: 4px; width: 100%; font-size: 1rem; height: 38px; box-sizing: border-box;">
+                <option value="">Seleccionar...</option>
+                <option value="1">Metálico</option>
+                <option value="2">Plástico</option>
+            </select>
+        `;
+        tipoJeanPantalon_inline.style.display = 'block';
+    } else {
+        tipoJeanPantalon_inline.style.display = 'none';
+    }
+    
+    console.log('✅ Tabla de variaciones básica mostrada para:', nombrePrenda);
 }
 
 /**

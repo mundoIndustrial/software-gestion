@@ -90,14 +90,12 @@
 
         <!-- PASO 2 -->
         <div class="form-step" data-step="2">
-            <div class="step-header">
-                <h2>PASO 2: PRENDAS DEL PEDIDO</h2>
-                <p>AGREGA LAS PRENDAS QUE TU CLIENTE QUIERE (OPCIONAL)</p>
-            </div>
-            
-            <div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 12px 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
-                <span style="color: #856404; font-size: 0.9rem;"><i class="fas fa-info-circle"></i> Esta sección es opcional</span>
-                <button type="button" id="btnAplicaPaso2" onclick="toggleAplicaPaso(2, this)" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.3s;">APLICA</button>
+            <div class="step-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2>PASO 2: PRENDAS DEL PEDIDO</h2>
+                    <p>AGREGA LAS PRENDAS QUE TU CLIENTE QUIERE (OPCIONAL)</p>
+                </div>
+                <button type="button" id="btnAplicaPaso2" onclick="toggleAplicaPaso(2, this)" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.3s; white-space: nowrap; margin-left: 20px;">APLICA</button>
             </div>
 
             <div style="background: linear-gradient(135deg, #0066cc, #0052a3); border: 2px solid #0052a3; border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);">
@@ -338,8 +336,8 @@
                         <small class="help-text">PUEDES BUSCAR, SELECCIONAR O ESCRIBIR UNA PRENDA PERSONALIZADA</small>
                     </div>
                     <!-- Selector de Tipo de JEAN/PANTALÓN - Oculto por defecto -->
-                    <div class="tipo-jean-pantalon-inline" style="display: none; flex: 1; min-width: 250px;">
-                        <div class="tipo-jean-pantalon-inline-container" style="display: flex; flex-direction: column; gap: 6px;">
+                    <div class="tipo-jean-pantalon-inline" style="display: none; width: 280px; padding: 0; background: transparent; border: none; border-radius: 0; margin-left: 12px; flex-shrink: 0;">
+                        <div class="tipo-jean-pantalon-inline-container" style="display: flex; flex-direction: column; gap: 4px;">
                             <!-- El selector se inserta aquí dinámicamente -->
                         </div>
                     </div>
@@ -470,10 +468,15 @@
                                     <td style="padding: 14px 12px; border-right: 1px solid #eee; font-weight: 600; color: #0066cc; white-space: nowrap;">
                                         <i class="fas fa-shirt"></i> Manga
                                     </td>
-                                    <td style="padding: 14px 12px; position: relative;">
-                                        <input type="text" class="manga-input" placeholder="Buscar o crear..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; transition: border-color 0.2s; opacity: 0.5; pointer-events: none;" onkeyup="buscarManga(this)" onkeypress="if(event.key==='Enter') crearMangaDesdeInput(this)" disabled>
-                                        <input type="hidden" name="productos_friendly[][variantes][tipo_manga_id]" class="manga-id-input" value="">
-                                        <div class="manga-suggestions" style="position: absolute; background: white; border: 1px solid #ddd; border-radius: 4px; max-height: 150px; overflow-y: auto; z-index: 1000; width: calc(100% - 16px); display: none; margin-top: 2px; top: 100%; left: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
+                                    <td style="padding: 14px 12px;">
+                                        <div style="display: flex; gap: 8px; align-items: flex-start;">
+                                            <div style="position: relative; flex: 1;">
+                                                <input type="text" class="manga-input" placeholder="Buscar tipo..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; transition: border-color 0.2s; opacity: 0.5; pointer-events: none;" onkeyup="buscarManga(this)" onkeypress="if(event.key==='Enter') crearMangaDesdeInput(this)" disabled>
+                                                <input type="hidden" name="productos_friendly[][variantes][tipo_manga_id]" class="manga-id-input" value="">
+                                                <div class="manga-suggestions" style="position: absolute; background: white; border: 1px solid #ddd; border-radius: 4px; max-height: 150px; overflow-y: auto; z-index: 1000; width: 100%; display: none; margin-top: 2px; top: 100%; left: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
+                                            </div>
+                                            <input type="text" name="productos_friendly[][variantes][obs_manga]" placeholder="Ej: manga larga..." style="flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; transition: border-color 0.2s;">
+                                        </div>
                                     </td>
                                 </tr>
                                 

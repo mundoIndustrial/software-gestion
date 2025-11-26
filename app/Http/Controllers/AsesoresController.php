@@ -213,10 +213,9 @@ class AsesoresController extends Controller
             $pedidoBorrador = PedidoProduccion::create([
                 'numero_pedido' => null, // Se asignará luego
                 'cliente' => $validated['cliente'],
-                'asesora' => Auth::user()->name,
+                'asesor_id' => Auth::id(),
                 'forma_de_pago' => $validated['forma_de_pago'] ?? null,
                 'estado' => 'No iniciado',
-                'user_id' => Auth::id(),
             ]);
 
             // Crear los productos del pedido usando PrendaPedido

@@ -134,7 +134,6 @@ class MigrateTablaOriginalToPedidosProduccion extends Command
             'numero_pedido' => $numeroPedido,
             'cliente' => $orden->cliente,
             'novedades' => $orden->novedades,
-            'asesora' => $orden->asesora,
             'forma_de_pago' => $orden->forma_de_pago,
             'estado' => $orden->estado ?? 'No iniciado',
             'fecha_de_creacion_de_orden' => $orden->fecha_de_creacion_de_orden,

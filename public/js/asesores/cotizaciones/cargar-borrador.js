@@ -8,6 +8,18 @@ function cargarBorrador(cotizacion) {
     
     console.log('📂 Cargando borrador:', cotizacion);
     
+    // Guardar ID de cotización en variable global para usarlo en funciones de foto
+    window.cotizacionIdActual = cotizacion.id;
+    
+    // Cargar tipo de cotización
+    if (cotizacion.tipoCotizacion && cotizacion.tipoCotizacion.codigo) {
+        const tipoCotizacionSelect = document.getElementById('tipo_cotizacion');
+        if (tipoCotizacionSelect) {
+            tipoCotizacionSelect.value = cotizacion.tipoCotizacion.codigo;
+            console.log('✅ Tipo de cotización cargado:', cotizacion.tipoCotizacion.codigo);
+        }
+    }
+    
     // Cargar productos
     if (cotizacion.productos && Array.isArray(cotizacion.productos)) {
         console.log('📦 Cargando', cotizacion.productos.length, 'productos');
@@ -160,13 +172,150 @@ function cargarBorrador(cotizacion) {
         });
     }
     
-    // Cargar imágenes guardadas en window.imagenesEnMemoria
-    if (cotizacion.imagenes && Array.isArray(cotizacion.imagenes)) {
-        console.log('📸 Cargando imágenes guardadas:', cotizacion.imagenes);
-        // Las imágenes se mostrarán en el preview cuando se cargue la página
-        // (se manejan en el backend con las rutas de storage)
+    // Cargar imágenes guardadas
+    if (cotizacion.prendasCotizaciones && Array.isArray(cotizacion.prendasCotizaciones)) {
+        console.log('📸 Cargando imágenes de prendas:', cotizacion.prendasCotizaciones.length);
+        
+        cotizacion.prendasCotizaciones.forEach((prenda, prendaIdx) => {
+            // Esperar a que se cree la tarjeta de producto
+            setTimeout(() => {
+                const productosCards = document.querySelectorAll('.producto-card');
+                if (productosCards[prendaIdx]) {
+                    const card = productosCards[prendaIdx];
+                    const fotosPreview = card.querySelector('.fotos-preview');
+                    
+                    // Cargar fotos de prenda (son arrays JSON en el modelo)
+                    if (fotosPreview && prenda.fotos && Array.isArray(prenda.fotos)) {
+                        prenda.fotos.forEach(fotoData => {
+                            const img = document.createElement('img');
+                            // Las fotos pueden tener estructura {nombre: '...', ruta: '...'} o ser strings
+                            const rutaFoto = (typeof fotoData === 'string') ? fotoData : (fotoData.ruta || fotoData.nombre || '');
+                            img.src = rutaFoto.startsWith('http') ? rutaFoto : `/storage/${rutaFoto}`;
+                            img.style.cssText = 'width: 100%; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;';
+                            img.alt = 'Foto de prenda';
+                            img.title = 'Haz clic para eliminar';
+                            img.dataset.ruta = rutaFoto.startsWith('http') ? rutaFoto : `/storage/${rutaFoto}`;
+                            img.onclick = function() {
+                                eliminarFotoCotizacion(this, window.cotizacionIdActual);
+                            };
+                            fotosPreview.appendChild(img);
+                            console.log('✅ Foto de prenda cargada:', rutaFoto);
+                        });
+                    }
+                    
+                    // Cargar fotos de telas
+                    const fotoTelaPreview = card.querySelector('.foto-tela-preview');
+                    if (fotoTelaPreview && prenda.telas && Array.isArray(prenda.telas)) {
+                        prenda.telas.forEach(tela => {
+                            // Las telas también pueden ser arrays de fotos
+                            const fotosDelaTela = (typeof tela === 'object' && tela.fotos) ? tela.fotos : (Array.isArray(tela) ? tela : []);
+                            
+                            fotosDelaTela.forEach(fotoData => {
+                                const img = document.createElement('img');
+                                const rutaFoto = (typeof fotoData === 'string') ? fotoData : (fotoData.ruta || fotoData.nombre || '');
+                                img.src = rutaFoto.startsWith('http') ? rutaFoto : `/storage/${rutaFoto}`;
+                                img.style.cssText = 'width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;';
+                                img.alt = 'Foto de tela';
+                                img.title = 'Haz clic para eliminar';
+                                img.dataset.ruta = rutaFoto.startsWith('http') ? rutaFoto : `/storage/${rutaFoto}`;
+                                img.onclick = function() {
+                                    eliminarFotoCotizacion(this, window.cotizacionIdActual);
+                                };
+                                fotoTelaPreview.appendChild(img);
+                                console.log('✅ Foto de tela cargada:', rutaFoto);
+                            });
+                        });
+                    }
+                }
+            }, 1000 + (prendaIdx * 200));
+        });
+    }
+    
+    // Cargar imágenes generales (del logo cotización)
+    if (cotizacion.logo_cotizacion && cotizacion.logo_cotizacion.fotos) {
+        console.log('📸 Cargando imágenes generales:', cotizacion.logo_cotizacion.fotos);
+        
+        const galeriaImagenes = document.getElementById('galeria_imagenes');
+        if (galeriaImagenes) {
+            const fotos = cotizacion.logo_cotizacion.fotos;
+            (Array.isArray(fotos) ? fotos : [fotos]).forEach(fotoData => {
+                const rutaFoto = (typeof fotoData === 'string') ? fotoData : (fotoData.ruta || fotoData.nombre || '');
+                if (!rutaFoto) return;
+                
+                const div = document.createElement('div');
+                div.style.cssText = 'position: relative; width: 100px; height: 100px; background: #f0f0f0; border-radius: 4px; overflow: hidden;';
+                div.innerHTML = `
+                    <img src="${rutaFoto.startsWith('http') ? rutaFoto : `/storage/${rutaFoto}`}" 
+                         style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;" 
+                         alt="Imagen general"
+                         title="Haz clic para eliminar"
+                         data-ruta="${rutaFoto.startsWith('http') ? rutaFoto : `/storage/${rutaFoto}`}">
+                    <button type="button" 
+                            style="position: absolute; top: 0; right: 0; background: rgba(0,0,0,0.7); color: white; border: none; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold;">✕</button>
+                `;
+                
+                // Agregar evento para eliminar
+                const img = div.querySelector('img');
+                img.onclick = function() {
+                    eliminarFotoCotizacion(this, window.cotizacionIdActual);
+                };
+                
+                galeriaImagenes.appendChild(div);
+                console.log('✅ Imagen general cargada:', rutaFoto);
+            });
+        }
     }
     
     console.log('✅ Borrador cargado correctamente');
     actualizarResumenFriendly();
 }
+
+/**
+ * Eliminar foto de cotización (tanto del DOM como del servidor)
+ */
+async function eliminarFotoCotizacion(element, cotizacionId) {
+    if (!confirm('¿Estás seguro de que deseas eliminar esta foto?')) {
+        return;
+    }
+    
+    const ruta = element.dataset.ruta;
+    if (!ruta) {
+        console.error('No se pudo obtener la ruta de la imagen');
+        return;
+    }
+    
+    try {
+        // Llamar al servidor para eliminar la imagen
+        const response = await fetch(`/asesores/cotizaciones/${cotizacionId}/imagenes`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            },
+            body: JSON.stringify({
+                ruta: ruta
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Eliminar del DOM
+            const container = element.closest('div') || element.parentElement;
+            if (container) {
+                container.remove();
+            } else {
+                element.remove();
+            }
+            console.log('✅ Foto eliminada correctamente:', ruta);
+            window.showToast('Foto eliminada correctamente', 'success');
+        } else {
+            console.error('Error al eliminar foto:', data.message);
+            window.showToast('Error al eliminar la foto: ' + data.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error en eliminarFotoCotizacion:', error);
+        window.showToast('Error al eliminar la foto', 'error');
+    }
+}
+
