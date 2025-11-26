@@ -127,54 +127,80 @@ class PedidosProduccionController extends Controller
                 'fecha_de_creacion_de_orden' => now()->toDateString(),
             ]);
 
-            // Obtener cantidades del request
-            $cantidades = request()->input('cantidades', []);
-            \Log::info('📊 Cantidades recibidas del frontend:', $cantidades);
+            // Obtener datos del request (JSON o Form Data)
+            $prendas = request()->input('prendas', []);
+            
+            // Si no hay prendas en el request, usar las de la cotización
+            if (empty($prendas)) {
+                $productos = $cotizacion->productos;
+                
+                // Si productos es un string JSON, decodificarlo
+                if (is_string($productos)) {
+                    $productos = json_decode($productos, true) ?? [];
+                }
+                
+                // Obtener cantidades del request
+                $cantidades = request()->input('cantidades', []);
+                \Log::info('📊 Cantidades recibidas del frontend:', $cantidades);
+                
+                // Convertir productos al formato esperado
+                if ($productos && is_array($productos)) {
+                    foreach ($productos as $index => $producto) {
+                        // Obtener cantidades para este producto
+                        $productosCantidades = $cantidades[$index] ?? [];
+                        
+                        // Filtrar solo las cantidades > 0
+                        $cantidadesFiltradasPorTalla = [];
+                        foreach ($productosCantidades as $talla => $cantidad) {
+                            $cantidadInt = (int)$cantidad;
+                            if ($cantidadInt > 0) {
+                                $cantidadesFiltradasPorTalla[$talla] = $cantidadInt;
+                            }
+                        }
+                        
+                        $prendas[] = array_merge($producto, [
+                            'index' => $index,
+                            'cantidades' => $cantidadesFiltradasPorTalla
+                        ]);
+                    }
+                }
+            }
 
             // Crear prendas del pedido
-            $productos = $cotizacion->productos;
-            
-            // Si productos es un string JSON, decodificarlo
-            if (is_string($productos)) {
-                $productos = json_decode($productos, true) ?? [];
-            }
-            
-            if ($productos && is_array($productos)) {
-                foreach ($productos as $index => $producto) {
-                    // Obtener cantidades para este producto
-                    $productosCantidades = $cantidades[$index] ?? [];
+            if (!empty($prendas)) {
+                foreach ($prendas as $prenda) {
+                    $index = $prenda['index'] ?? 0;
+                    $cantidadesPorTalla = $prenda['cantidades'] ?? [];
                     
-                    // Filtrar solo las cantidades > 0
-                    $cantidadesFiltradasPorTalla = [];
-                    foreach ($productosCantidades as $talla => $cantidad) {
-                        $cantidadInt = (int)$cantidad;
-                        if ($cantidadInt > 0) {
-                            $cantidadesFiltradasPorTalla[$talla] = $cantidadInt;
-                        }
-                    }
-                    
-                    // Calcular cantidad total solo de las cantidades > 0
-                    $cantidadTotal = array_sum($cantidadesFiltradasPorTalla);
+                    // Calcular cantidad total
+                    $cantidadTotal = array_sum($cantidadesPorTalla);
+
+                    // CONSTRUIR DESCRIPCIÓN EN EL FORMATO REQUERIDO
+                    $descripcionPrenda = $this->construirDescripcionPrenda(
+                        $index + 1,
+                        $prenda,
+                        $cantidadesPorTalla
+                    );
 
                     \Log::info('✅ Prenda creada', [
                         'index' => $index,
-                        'nombre' => $producto['nombre_producto'] ?? 'Sin nombre',
-                        'cantidades_por_talla_original' => $productosCantidades,
-                        'cantidades_por_talla_filtradas' => $cantidadesFiltradasPorTalla,
-                        'cantidad_total' => $cantidadTotal
+                        'nombre' => $prenda['nombre_producto'] ?? 'Sin nombre',
+                        'cantidades_por_talla' => $cantidadesPorTalla,
+                        'cantidad_total' => $cantidadTotal,
+                        'descripcion_construida' => $descripcionPrenda
                     ]);
 
-                    $prenda = PrendaPedido::create([
+                    $prendaPedido = PrendaPedido::create([
                         'pedido_produccion_id' => $pedido->id,
-                        'nombre_prenda' => $producto['nombre_producto'] ?? 'Sin nombre',
+                        'nombre_prenda' => $prenda['nombre_producto'] ?? 'Sin nombre',
                         'cantidad' => $cantidadTotal,
-                        'descripcion' => $producto['descripcion'] ?? null,
-                        'cantidad_talla' => json_encode($cantidadesFiltradasPorTalla) // Solo guardar las tallas con cantidad > 0
+                        'descripcion' => $descripcionPrenda,
+                        'cantidad_talla' => json_encode($cantidadesPorTalla)
                     ]);
 
                     // Crear proceso inicial para cada prenda
                     ProcesoPrenda::create([
-                        'prenda_pedido_id' => $prenda->id,
+                        'prenda_pedido_id' => $prendaPedido->id,
                         'proceso' => 'Creación Orden',
                         'estado_proceso' => 'Completado',
                         'fecha_inicio' => now()->toDateString(),
@@ -182,7 +208,7 @@ class PedidosProduccionController extends Controller
                     ]);
                     
                     // HEREDAR VARIANTES DE LA COTIZACIÓN
-                    $this->heredarVariantesDePrenda($cotizacion, $prenda, $index);
+                    $this->heredarVariantesDePrenda($cotizacion, $prendaPedido, $index);
                 }
             }
 
@@ -284,5 +310,80 @@ class PedidosProduccionController extends Controller
     {
         $ultimoPedido = PedidoProduccion::max('numero_pedido') ?? 0;
         return $ultimoPedido + 1;
+    }
+
+    /**
+     * Construir descripción de prenda en el formato requerido
+     * 
+     * Formato:
+     * Prenda 1: CAMISA TIPO POLO TELA PIQUE AZUL MARINO DAMA
+     * Descripción: MANGA CORTA CUELLO Y PUÑOS EN HILO SIN BOLSILLO
+     * Tallas: S:1, M:4, L:3, XL:1
+     */
+    private function construirDescripcionPrenda($numeroPrenda, $producto, $cantidadesPorTalla)
+    {
+        $lineas = [];
+        
+        // Línea 1: Nombre de la prenda + variantes principales
+        $linea1 = 'Prenda ' . $numeroPrenda . ': ' . ($producto['nombre_producto'] ?? 'Sin nombre');
+        
+        // Agregar variantes principales al nombre
+        $variacionesPrincipales = [];
+        if (!empty($producto['tela'])) {
+            $variacionesPrincipales[] = $producto['tela'];
+        }
+        if (!empty($producto['color'])) {
+            $variacionesPrincipales[] = $producto['color'];
+        }
+        if (!empty($producto['genero'])) {
+            $variacionesPrincipales[] = $producto['genero'];
+        }
+        
+        if (!empty($variacionesPrincipales)) {
+            $linea1 .= ' ' . implode(' ', $variacionesPrincipales);
+        }
+        
+        $lineas[] = $linea1;
+        
+        // Línea 2: Descripción
+        $linea2 = 'Descripción: ' . ($producto['descripcion'] ?? '');
+        
+        // Agregar detalles de variaciones a la descripción
+        $detalles = [];
+        if (!empty($producto['manga'])) {
+            $detalles[] = 'MANGA ' . strtoupper($producto['manga']);
+        }
+        if (!empty($producto['tiene_bolsillos'])) {
+            $detalles[] = 'CON BOLSILLO';
+        }
+        if (!empty($producto['broche'])) {
+            $detalles[] = 'BROCHE ' . strtoupper($producto['broche']);
+        }
+        if (!empty($producto['tiene_reflectivo'])) {
+            $detalles[] = 'CON REFLECTIVO';
+        }
+        
+        if (!empty($detalles)) {
+            $linea2 .= ' ' . implode(' ', $detalles);
+        }
+        
+        $lineas[] = $linea2;
+        
+        // Línea 3: Tallas con cantidades
+        $linea3 = 'Tallas: ';
+        if (!empty($cantidadesPorTalla)) {
+            $tallasFormatoado = [];
+            foreach ($cantidadesPorTalla as $talla => $cantidad) {
+                $tallasFormatoado[] = $talla . ':' . $cantidad;
+            }
+            $linea3 .= implode(', ', $tallasFormatoado);
+        } else {
+            $linea3 .= 'N/A: 0';
+        }
+        
+        $lineas[] = $linea3;
+        
+        // Retornar descripción completa con saltos de línea
+        return implode("\n", $lineas);
     }
 }

@@ -795,11 +795,17 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     };
 
+    // Variable global para almacenar prendas cargadas
+    let prendasCargadas = [];
+
     function cargarPrendas(prendas) {
         if (!prendas || prendas.length === 0) {
             prendasContainer.innerHTML = '<p class="text-gray-500 text-center py-8">Esta cotización no tiene prendas</p>';
             return;
         }
+
+        // Guardar prendas en variable global para usarlas al enviar
+        prendasCargadas = prendas;
 
         let html = '';
 
@@ -967,43 +973,60 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // Recopilar datos de cantidades por talla
-        const cantidadesPorTalla = {};
+        // Construir datos de prendas con cantidades
+        const prendas = [];
         
-        // Buscar todos los inputs de talla
-        document.querySelectorAll('.talla-input').forEach(input => {
-            const nombre = input.getAttribute('name'); // ej: cantidades[0][XS]
-            const valor = parseInt(input.value) || 0;
+        prendasCargadas.forEach((prenda, index) => {
+            // Obtener los inputs de talla para esta prenda
+            const prendasCard = document.querySelectorAll('.prenda-card')[index];
+            if (!prendasCard) return;
             
-            // Solo guardar si la cantidad es mayor a 0
-            if (valor > 0) {
-                cantidadesPorTalla[nombre] = valor;
-                console.log(`📊 Talla guardada: ${nombre} = ${valor}`);
+            const tallasInputs = prendasCard.querySelectorAll('.talla-input');
+            const cantidadesPorTalla = {};
+            
+            tallasInputs.forEach(input => {
+                const talla = input.closest('.talla-group')?.getAttribute('data-talla');
+                const cantidad = parseInt(input.value) || 0;
+                if (talla && cantidad > 0) {
+                    cantidadesPorTalla[talla] = cantidad;
+                }
+            });
+            
+            // Si tiene cantidades, agregar la prenda
+            if (Object.keys(cantidadesPorTalla).length > 0) {
+                prendas.push({
+                    index: index,
+                    nombre_producto: prenda.nombre_producto,
+                    descripcion: prenda.descripcion,
+                    tela: prenda.variantes?.tela,
+                    color: prenda.variantes?.color,
+                    genero: prenda.variantes?.genero,
+                    manga: prenda.variantes?.manga,
+                    broche: prenda.variantes?.broche,
+                    tiene_bolsillos: prenda.variantes?.tiene_bolsillos,
+                    tiene_reflectivo: prenda.variantes?.tiene_reflectivo,
+                    cantidades: cantidadesPorTalla
+                });
             }
         });
-        
-        console.log('📦 Todas las cantidades:', cantidadesPorTalla);
 
-        // Recopilar datos del formulario
-        const formData = new FormData(this);
-        formData.append('cotizacion_id', cotizacionId);
-        
-        // Las cantidades ya están en FormData por los inputs, pero vamos a logearlas
-        console.log('📋 FormData antes de enviar:');
-        for (let [key, value] of formData.entries()) {
-            if (key.startsWith('cantidades')) {
-                console.log(`  ${key} = ${value}`);
-            }
-        }
+        // Enviar al servidor como JSON
+        const dataToSend = {
+            cotizacion_id: cotizacionId,
+            prendas: prendas,
+            _token: document.querySelector('input[name="_token"]').value
+        };
 
-        // Enviar al servidor
+        console.log('📤 Enviando datos:', dataToSend);
+
         fetch('{{ route("asesores.pedidos-produccion.crear-desde-cotizacion", ":id") }}'.replace(':id', cotizacionId), {
             method: 'POST',
             headers: {
+                'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
                 'Accept': 'application/json'
             },
-            body: formData
+            body: JSON.stringify(dataToSend)
         })
         .then(response => response.json())
         .then(data => {

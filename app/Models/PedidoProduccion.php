@@ -94,9 +94,9 @@ class PedidoProduccion extends Model
     /**
      * Obtener descripción de prendas (concatenadas con detalles)
      * Formato:
-     * PRENDA 1: NOMBRE
-     * DESCRIPCIÓN: descripcion completa
-     * TALLAS: XS: 1, S: 4, M: 2, ...
+     * Prenda 1: NOMBRE TELA COLOR GENERO
+     * Descripción: descripcion completa
+     * Tallas: S:1, M:4, L:3, ...
      */
     public function getDescripcionPrendasAttribute()
     {
@@ -105,15 +105,21 @@ class PedidoProduccion extends Model
         }
 
         $prendas = $this->prendas->map(function($prenda, $index) {
+            // Si la descripción ya está formateada (contiene saltos de línea), retornarla tal cual
+            if ($prenda->descripcion && strpos($prenda->descripcion, "\n") !== false) {
+                return $prenda->descripcion;
+            }
+            
+            // Si no está formateada, intentar construirla desde cantidad_talla
             $numero = $index + 1;
             $lineas = [];
             
-            // Línea 1: PRENDA N: NOMBRE
-            $lineas[] = "PRENDA {$numero}: {$prenda->nombre_prenda}";
+            // Línea 1: Prenda N: NOMBRE
+            $lineas[] = "Prenda {$numero}: {$prenda->nombre_prenda}";
             
             // Línea 2: DESCRIPCIÓN (si existe)
             if ($prenda->descripcion) {
-                $lineas[] = "DESCRIPCIÓN: {$prenda->descripcion}";
+                $lineas[] = "Descripción: {$prenda->descripcion}";
             }
             
             // Línea 3: TALLAS (desde JSON)
@@ -123,12 +129,22 @@ class PedidoProduccion extends Model
                     : $prenda->cantidad_talla;
                 
                 if (is_array($tallas) && !empty($tallas)) {
-                    $tallasArray = array_map(function($item) {
-                        $talla = $item['talla'] ?? 'N/A';
-                        $cantidad = $item['cantidad'] ?? 0;
-                        return "{$talla}: {$cantidad}";
-                    }, $tallas);
-                    $lineas[] = "TALLAS: " . implode(', ', $tallasArray);
+                    // Si tallas es un array asociativo de talla => cantidad
+                    if (!isset($tallas[0])) {
+                        $tallasArray = [];
+                        foreach ($tallas as $talla => $cantidad) {
+                            $tallasArray[] = "{$talla}:{$cantidad}";
+                        }
+                        $lineas[] = "Tallas: " . implode(', ', $tallasArray);
+                    } else {
+                        // Si tallas es un array de objetos
+                        $tallasArray = array_map(function($item) {
+                            $talla = $item['talla'] ?? 'N/A';
+                            $cantidad = $item['cantidad'] ?? 0;
+                            return "{$talla}:{$cantidad}";
+                        }, $tallas);
+                        $lineas[] = "Tallas: " . implode(', ', $tallasArray);
+                    }
                 }
             }
             
