@@ -204,11 +204,14 @@
             top: 240px;
             left: 50%;
             transform: translateX(-50%);
-            text-align: flex;
-            font-size: 14px;
+            text-align: left;
+            font-size: 11px;
             color: #000;
-            width: 80%;
+            width: 85%;
             white-space: pre-line;
+            line-height: 1.5;
+            overflow: hidden;
+            max-height: 320px;
         }
 
         .arrow-btn {

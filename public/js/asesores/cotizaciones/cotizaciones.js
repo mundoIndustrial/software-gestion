@@ -370,5 +370,4 @@ function recopilarDatos() {
         observaciones_valor,
         especificaciones: window.especificacionesSeleccionadas || {}
     };
-    };
 }

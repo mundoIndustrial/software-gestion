@@ -271,6 +271,7 @@ class PedidosProduccionController extends Controller
             // Copiar cada variante al pedido
             foreach ($variantes as $variante) {
                 // Actualizar prenda del pedido con datos de variantes
+                // NOTA: NO sobrescribir cantidad_talla, ya que tiene el mapeo correcto talla:cantidad
                 $prendaPedido->update([
                     'color_id' => $variante->color_id,
                     'tela_id' => $variante->tela_id,
@@ -278,8 +279,7 @@ class PedidosProduccionController extends Controller
                     'tipo_broche_id' => $variante->tipo_broche_id,
                     'tiene_bolsillos' => $variante->tiene_bolsillos,
                     'tiene_reflectivo' => $variante->tiene_reflectivo,
-                    'descripcion_variaciones' => $variante->descripcion_adicional,
-                    'cantidad_talla' => $variante->cantidad_talla
+                    'descripcion_variaciones' => $variante->descripcion_adicional
                 ]);
                 
                 \Log::info('✅ Variantes heredadas exitosamente', [
@@ -315,75 +315,91 @@ class PedidosProduccionController extends Controller
     /**
      * Construir descripción de prenda en el formato requerido
      * 
-     * Formato:
-     * Prenda 1: CAMISA TIPO POLO TELA PIQUE AZUL MARINO DAMA
-     * Descripción: MANGA CORTA CUELLO Y PUÑOS EN HILO SIN BOLSILLO
-     * Tallas: S:1, M:4, L:3, XL:1
+     * Formato: Un párrafo único con descripción + todas las variaciones + observaciones
+     * Ejemplo: "MANGA CORTA CUELLO Y PUÑOS TELA PIQUE REF:123 AZUL MARINO DAMA MANGA CORTA CON BOLSILLO BOTON OBSERVACION"
      */
     private function construirDescripcionPrenda($numeroPrenda, $producto, $cantidadesPorTalla)
     {
         $lineas = [];
         
-        // Línea 1: Nombre de la prenda + variantes principales
-        $linea1 = 'Prenda ' . $numeroPrenda . ': ' . ($producto['nombre_producto'] ?? 'Sin nombre');
+        // 1. Prenda número y nombre
+        $nombrePrenda = strtoupper($producto['nombre_producto'] ?? 'PRENDA');
+        $lineas[] = "Prenda $numeroPrenda: $nombrePrenda";
         
-        // Agregar variantes principales al nombre
-        $variacionesPrincipales = [];
+        // 2. Descripción
+        if (!empty($producto['descripcion'])) {
+            $lineas[] = "Descripción: " . strtoupper($producto['descripcion']);
+        }
+        
+        // 3. Tela con referencia
         if (!empty($producto['tela'])) {
-            $variacionesPrincipales[] = $producto['tela'];
-        }
-        if (!empty($producto['color'])) {
-            $variacionesPrincipales[] = $producto['color'];
-        }
-        if (!empty($producto['genero'])) {
-            $variacionesPrincipales[] = $producto['genero'];
-        }
-        
-        if (!empty($variacionesPrincipales)) {
-            $linea1 .= ' ' . implode(' ', $variacionesPrincipales);
-        }
-        
-        $lineas[] = $linea1;
-        
-        // Línea 2: Descripción
-        $linea2 = 'Descripción: ' . ($producto['descripcion'] ?? '');
-        
-        // Agregar detalles de variaciones a la descripción
-        $detalles = [];
-        if (!empty($producto['manga'])) {
-            $detalles[] = 'MANGA ' . strtoupper($producto['manga']);
-        }
-        if (!empty($producto['tiene_bolsillos'])) {
-            $detalles[] = 'CON BOLSILLO';
-        }
-        if (!empty($producto['broche'])) {
-            $detalles[] = 'BROCHE ' . strtoupper($producto['broche']);
-        }
-        if (!empty($producto['tiene_reflectivo'])) {
-            $detalles[] = 'CON REFLECTIVO';
-        }
-        
-        if (!empty($detalles)) {
-            $linea2 .= ' ' . implode(' ', $detalles);
-        }
-        
-        $lineas[] = $linea2;
-        
-        // Línea 3: Tallas con cantidades
-        $linea3 = 'Tallas: ';
-        if (!empty($cantidadesPorTalla)) {
-            $tallasFormatoado = [];
-            foreach ($cantidadesPorTalla as $talla => $cantidad) {
-                $tallasFormatoado[] = $talla . ':' . $cantidad;
+            $tela = strtoupper($producto['tela']);
+            if (!empty($producto['tela_referencia'])) {
+                $tela .= ' REF:' . strtoupper($producto['tela_referencia']);
             }
-            $linea3 .= implode(', ', $tallasFormatoado);
-        } else {
-            $linea3 .= 'N/A: 0';
+            $lineas[] = "Tela: " . $tela;
         }
         
-        $lineas[] = $linea3;
+        // 4. Color
+        if (!empty($producto['color'])) {
+            $lineas[] = "Color: " . strtoupper($producto['color']);
+        }
         
-        // Retornar descripción completa con saltos de línea
+        // 5. Género
+        if (!empty($producto['genero'])) {
+            $lineas[] = "Genero: " . strtoupper($producto['genero']);
+        }
+        
+        // 6. Manga + observación
+        if (!empty($producto['manga'])) {
+            $manga = "Manga: " . strtoupper($producto['manga']);
+            if (!empty($producto['manga_obs'])) {
+                $manga .= ' - ' . strtoupper($producto['manga_obs']);
+            }
+            $lineas[] = $manga;
+        }
+        
+        // 7. Bolsillos + observación
+        if (!empty($producto['tiene_bolsillos']) && $producto['tiene_bolsillos']) {
+            $bolsillos = "Bolsillos: SI";
+            if (!empty($producto['bolsillos_obs'])) {
+                $bolsillos .= ' - ' . strtoupper($producto['bolsillos_obs']);
+            }
+            $lineas[] = $bolsillos;
+        }
+        
+        // 8. Broche + observación
+        if (!empty($producto['broche'])) {
+            $broche = "Broche: " . strtoupper($producto['broche']);
+            if (!empty($producto['broche_obs'])) {
+                $broche .= ' - ' . strtoupper($producto['broche_obs']);
+            }
+            $lineas[] = $broche;
+        }
+        
+        // 9. Reflectivo + observación
+        if (!empty($producto['tiene_reflectivo']) && $producto['tiene_reflectivo']) {
+            $reflectivo = "Reflectivo: SI";
+            if (!empty($producto['reflectivo_obs'])) {
+                $reflectivo .= ' - ' . strtoupper($producto['reflectivo_obs']);
+            }
+            $lineas[] = $reflectivo;
+        }
+        
+        // 10. Talla con cantidades (AL FINAL)
+        if (!empty($cantidadesPorTalla) && is_array($cantidadesPorTalla)) {
+            $tallas = [];
+            foreach ($cantidadesPorTalla as $talla => $cantidad) {
+                if ($cantidad > 0) {
+                    $tallas[] = "{$talla}:{$cantidad}";
+                }
+            }
+            if (!empty($tallas)) {
+                $lineas[] = "Tallas: " . implode(', ', $tallas);
+            }
+        }
+        
+        // Retornar con saltos de línea entre cada elemento
         return implode("\n", $lineas);
     }
 }

@@ -93,10 +93,8 @@ class PedidoProduccion extends Model
 
     /**
      * Obtener descripción de prendas (concatenadas con detalles)
-     * Formato:
-     * Prenda 1: NOMBRE TELA COLOR GENERO
-     * Descripción: descripcion completa
-     * Tallas: S:1, M:4, L:3, ...
+     * Retorna un párrafo único con descripción + variaciones para cada prenda
+     * Utiliza el formato dinámico del accessor getFormattedDescriptionAttribute
      */
     public function getDescripcionPrendasAttribute()
     {
@@ -105,50 +103,13 @@ class PedidoProduccion extends Model
         }
 
         $prendas = $this->prendas->map(function($prenda, $index) {
-            // Si la descripción ya está formateada (contiene saltos de línea), retornarla tal cual
-            if ($prenda->descripcion && strpos($prenda->descripcion, "\n") !== false) {
-                return $prenda->descripcion;
-            }
-            
-            // Si no está formateada, intentar construirla desde cantidad_talla
-            $numero = $index + 1;
-            $lineas = [];
-            
-            // Línea 1: Prenda N: NOMBRE
-            $lineas[] = "Prenda {$numero}: {$prenda->nombre_prenda}";
-            
-            // Línea 2: DESCRIPCIÓN (si existe)
+            // Usar el método accessor para generar descripción dinámicamente
             if ($prenda->descripcion) {
-                $lineas[] = "Descripción: {$prenda->descripcion}";
+                return $prenda->formatted_description;
             }
             
-            // Línea 3: TALLAS (desde JSON)
-            if ($prenda->cantidad_talla) {
-                $tallas = is_string($prenda->cantidad_talla) 
-                    ? json_decode($prenda->cantidad_talla, true) 
-                    : $prenda->cantidad_talla;
-                
-                if (is_array($tallas) && !empty($tallas)) {
-                    // Si tallas es un array asociativo de talla => cantidad
-                    if (!isset($tallas[0])) {
-                        $tallasArray = [];
-                        foreach ($tallas as $talla => $cantidad) {
-                            $tallasArray[] = "{$talla}:{$cantidad}";
-                        }
-                        $lineas[] = "Tallas: " . implode(', ', $tallasArray);
-                    } else {
-                        // Si tallas es un array de objetos
-                        $tallasArray = array_map(function($item) {
-                            $talla = $item['talla'] ?? 'N/A';
-                            $cantidad = $item['cantidad'] ?? 0;
-                            return "{$talla}:{$cantidad}";
-                        }, $tallas);
-                        $lineas[] = "Tallas: " . implode(', ', $tallasArray);
-                    }
-                }
-            }
-            
-            return implode("\n", $lineas);
+            // Fallback: construir desde el nombre si no hay descripción
+            return "Prenda " . ($index + 1) . ": " . $prenda->nombre_prenda;
         })->join("\n\n");
 
         return $prendas;

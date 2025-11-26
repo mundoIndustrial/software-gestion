@@ -994,17 +994,40 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Si tiene cantidades, agregar la prenda
             if (Object.keys(cantidadesPorTalla).length > 0) {
+                // Parsear observaciones generales
+                const observacionesMap = {};
+                if (prenda.variantes?.observaciones) {
+                    const obsArray = prenda.variantes.observaciones.split('|').map(o => o.trim());
+                    obsArray.forEach(obs => {
+                        if (obs.includes('Manga:')) {
+                            observacionesMap.manga_obs = obs.replace('Manga:', '').trim();
+                        } else if (obs.includes('Bolsillos:')) {
+                            observacionesMap.bolsillos_obs = obs.replace('Bolsillos:', '').trim();
+                        } else if (obs.includes('Broche:')) {
+                            observacionesMap.broche_obs = obs.replace('Broche:', '').trim();
+                        } else if (obs.includes('Reflectivo:')) {
+                            observacionesMap.reflectivo_obs = obs.replace('Reflectivo:', '').trim();
+                        }
+                    });
+                }
+                
                 prendas.push({
                     index: index,
                     nombre_producto: prenda.nombre_producto,
                     descripcion: prenda.descripcion,
                     tela: prenda.variantes?.tela,
+                    tela_referencia: prenda.variantes?.tela_referencia,
                     color: prenda.variantes?.color,
                     genero: prenda.variantes?.genero,
                     manga: prenda.variantes?.manga,
                     broche: prenda.variantes?.broche,
                     tiene_bolsillos: prenda.variantes?.tiene_bolsillos,
                     tiene_reflectivo: prenda.variantes?.tiene_reflectivo,
+                    manga_obs: observacionesMap.manga_obs,
+                    bolsillos_obs: observacionesMap.bolsillos_obs,
+                    broche_obs: observacionesMap.broche_obs,
+                    reflectivo_obs: observacionesMap.reflectivo_obs,
+                    observaciones: prenda.variantes?.observaciones,
                     cantidades: cantidadesPorTalla
                 });
             }

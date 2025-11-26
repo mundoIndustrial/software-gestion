@@ -143,8 +143,52 @@ class PedidoService
                 return;
             }
             
+            // Cargar prendas_cotizaciones para obtener variantes
+            $prendasCotizaciones = $cotizacion->prendasCotizaciones()
+                ->with('variantes')
+                ->get();
+            
             foreach ($cotizacion->productos as $index => $producto) {
-                $prenda = $this->crearPrendaPedido($pedido, $producto);
+                // Obtener la prenda_cotizacion correspondiente para las variantes
+                $prendaCotizacion = $prendasCotizaciones->get($index);
+                $variante = $prendaCotizacion?->variantes?->first();
+                
+                // Preparar datos para construir descripción
+                $datosProducto = array_merge($producto, [
+                    'tela' => $variante?->tela?->nombre,
+                    'tela_referencia' => $variante?->tela?->referencia,
+                    'color' => $variante?->color?->nombre,
+                    'manga' => $variante?->tipoManga?->nombre,
+                    'broche' => $variante?->tipoBroche?->nombre,
+                    'tiene_bolsillos' => $variante?->tiene_bolsillos ?? false,
+                    'tiene_reflectivo' => $variante?->tiene_reflectivo ?? false,
+                    // Parsear observaciones del formato "Manga: xxx | Bolsillos: xxx"
+                    'manga_obs' => $this->extraerObservacion($variante?->descripcion_adicional, 'Manga'),
+                    'bolsillos_obs' => $this->extraerObservacion($variante?->descripcion_adicional, 'Bolsillos'),
+                    'broche_obs' => $this->extraerObservacion($variante?->descripcion_adicional, 'Broche'),
+                    'reflectivo_obs' => $this->extraerObservacion($variante?->descripcion_adicional, 'Reflectivo'),
+                ]);
+                
+                // Obtener cantidades por talla desde la variante
+                $cantidadesPorTalla = $this->extraerCantidadesPorTalla($variante);
+                
+                // Construir descripción formateada
+                $descripcionPrenda = $this->construirDescripcionPrenda(
+                    $index + 1,
+                    $datosProducto,
+                    $cantidadesPorTalla
+                );
+                
+                // Calcular cantidad total
+                $cantidadTotal = array_sum($cantidadesPorTalla);
+                
+                $prenda = $this->crearPrendaPedidoConDescripcion(
+                    $pedido,
+                    $datosProducto,
+                    $descripcionPrenda,
+                    $cantidadTotal,
+                    $cantidadesPorTalla
+                );
                 
                 // Crear proceso inicial
                 $this->crearProcesoPrendaInicial($prenda);
@@ -173,21 +217,30 @@ class PedidoService
     }
 
     /**
-     * Crear una prenda del pedido
+     * Crear una prenda del pedido con descripción ya formateada
      * 
      * @param PedidoProduccion $pedido
      * @param array $producto
+     * @param string $descripcion
+     * @param int $cantidadTotal
+     * @param array $cantidadesPorTalla
      * @return PrendaPedido
      * @throws PedidoException
      */
-    private function crearPrendaPedido(PedidoProduccion $pedido, array $producto): PrendaPedido
-    {
+    private function crearPrendaPedidoConDescripcion(
+        PedidoProduccion $pedido,
+        array $producto,
+        string $descripcion,
+        int $cantidadTotal,
+        array $cantidadesPorTalla
+    ): PrendaPedido {
         try {
             $prenda = PrendaPedido::create([
                 'pedido_produccion_id' => $pedido->id,
                 'nombre_prenda' => $producto['nombre_producto'] ?? 'Sin nombre',
-                'cantidad' => $producto['cantidad'] ?? 1,
-                'descripcion' => $producto['descripcion'] ?? null,
+                'cantidad' => $cantidadTotal,
+                'descripcion' => $descripcion,
+                'cantidad_talla' => json_encode($cantidadesPorTalla)
             ]);
 
             \Log::info('Prenda del pedido creada', [
@@ -322,5 +375,173 @@ class PedidoService
     private function generarNumeroPedido(): int
     {
         return (PedidoProduccion::max('numero_pedido') ?? 0) + 1;
+    }
+
+    /**
+     * Construir descripción formateada de prenda
+     * 
+     * @param int $numeroPrenda
+     * @param array $producto
+     * @param array $cantidadesPorTalla
+     * @return string
+     */
+    private function construirDescripcionPrenda($numeroPrenda, $producto, $cantidadesPorTalla)
+    {
+        $lineas = [];
+        
+        // 1. Prenda número y nombre
+        $nombrePrenda = strtoupper($producto['nombre_producto'] ?? 'PRENDA');
+        $lineas[] = "Prenda $numeroPrenda: $nombrePrenda";
+        
+        // 2. Descripción
+        if (!empty($producto['descripcion'])) {
+            $lineas[] = "Descripción: " . strtoupper($producto['descripcion']);
+        }
+        
+        // 3. Tela con referencia
+        if (!empty($producto['tela'])) {
+            $tela = strtoupper($producto['tela']);
+            if (!empty($producto['tela_referencia'])) {
+                $tela .= ' REF:' . strtoupper($producto['tela_referencia']);
+            }
+            $lineas[] = "Tela: " . $tela;
+        }
+        
+        // 4. Color
+        if (!empty($producto['color'])) {
+            $lineas[] = "Color: " . strtoupper($producto['color']);
+        }
+        
+        // 5. Género
+        if (!empty($producto['genero'])) {
+            $lineas[] = "Genero: " . strtoupper($producto['genero']);
+        }
+        
+        // 6. Manga + observación
+        if (!empty($producto['manga'])) {
+            $manga = "Manga: " . strtoupper($producto['manga']);
+            if (!empty($producto['manga_obs'])) {
+                $manga .= ' - ' . strtoupper($producto['manga_obs']);
+            }
+            $lineas[] = $manga;
+        }
+        
+        // 7. Bolsillos + observación
+        if (!empty($producto['tiene_bolsillos']) && $producto['tiene_bolsillos']) {
+            $bolsillos = "Bolsillos: SI";
+            if (!empty($producto['bolsillos_obs'])) {
+                $bolsillos .= ' - ' . strtoupper($producto['bolsillos_obs']);
+            }
+            $lineas[] = $bolsillos;
+        }
+        
+        // 8. Broche + observación
+        if (!empty($producto['broche'])) {
+            $broche = "Broche: " . strtoupper($producto['broche']);
+            if (!empty($producto['broche_obs'])) {
+                $broche .= ' - ' . strtoupper($producto['broche_obs']);
+            }
+            $lineas[] = $broche;
+        }
+        
+        // 9. Reflectivo + observación
+        if (!empty($producto['tiene_reflectivo']) && $producto['tiene_reflectivo']) {
+            $reflectivo = "Reflectivo: SI";
+            if (!empty($producto['reflectivo_obs'])) {
+                $reflectivo .= ' - ' . strtoupper($producto['reflectivo_obs']);
+            }
+            $lineas[] = $reflectivo;
+        }
+        
+        // 10. Talla con cantidades (AL FINAL)
+        if (!empty($cantidadesPorTalla) && is_array($cantidadesPorTalla)) {
+            $tallas = [];
+            foreach ($cantidadesPorTalla as $talla => $cantidad) {
+                if ($cantidad > 0) {
+                    $tallas[] = "{$talla}:{$cantidad}";
+                }
+            }
+            if (!empty($tallas)) {
+                $lineas[] = "Tallas: " . implode(', ', $tallas);
+            }
+        }
+        
+        // Retornar con saltos de línea entre cada elemento
+        return implode("\n", $lineas);
+    }
+
+    /**
+     * Extraer observación específica del campo de observaciones formateadas
+     * Formato esperado: "Manga: obs1 | Bolsillos: obs2 | Broche: obs3 | Reflectivo: obs4"
+     * 
+     * @param string|null $observaciones
+     * @param string $tipo
+     * @return string|null
+     */
+    private function extraerObservacion($observaciones, $tipo): ?string
+    {
+        if (empty($observaciones)) {
+            return null;
+        }
+        
+        // Buscar el patrón "Tipo: contenido"
+        if (preg_match("/{$tipo}:\s*(.+?)(?:\||$)/i", $observaciones, $matches)) {
+            return trim($matches[1]);
+        }
+        
+        return null;
+    }
+
+    /**
+     * Extraer cantidades por talla desde prendas_cotizaciones
+     * 
+     * @param mixed $prendaCotizacion
+     * @return array
+     */
+    /**
+     * Extraer cantidades por talla desde una variante
+     * Puede retornar un array asociativo {talla => cantidad} o un array simple de tallas
+     * 
+     * @param mixed $variante La variante prenda
+     * @return array {talla => cantidad}
+     */
+    private function extraerCantidadesPorTalla($variante): array
+    {
+        if (!$variante) {
+            return [];
+        }
+        
+        // Obtener cantidad_talla (puede ser array o JSON string)
+        $cantidadTalla = $variante->cantidad_talla ?? $variante->tallas ?? null;
+        
+        if (is_string($cantidadTalla)) {
+            $cantidadTalla = json_decode($cantidadTalla, true) ?? [];
+        }
+        
+        if (!is_array($cantidadTalla)) {
+            return [];
+        }
+        
+        // Si el array está indexado numéricamente, asumir que son solo nombres de tallas sin cantidades
+        if (!empty($cantidadTalla) && isset($cantidadTalla[0]) && is_string($cantidadTalla[0])) {
+            // Array de tallas sin cantidades: ["S", "M", "L"] 
+            // Retornar vacío para que se maneje en otro lugar
+            return [];
+        }
+        
+        // Si es un array asociativo, asumir que está en formato {talla => cantidad}
+        // o {talla => {cantidad: X}} dependiendo de la estructura
+        $resultado = [];
+        foreach ($cantidadTalla as $key => $value) {
+            if (is_array($value) && isset($value['cantidad'])) {
+                // Formato: {talla => {cantidad: X}}
+                $resultado[$key] = (int) $value['cantidad'];
+            } elseif (is_int($value) || is_numeric($value)) {
+                // Formato: {talla => cantidad}
+                $resultado[$key] = (int) $value;
+            }
+        }
+        
+        return $resultado;
     }
 }
