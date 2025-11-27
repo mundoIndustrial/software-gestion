@@ -7,363 +7,503 @@ use Illuminate\Support\Facades\DB;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
 use App\Models\ProcesoPrenda;
+use App\Models\User;
+use App\Models\Cliente;
+use Carbon\Carbon;
 
+/**
+ * 🚀 COMANDO ÚNICO DE MIGRACIÓN COMPLETA
+ * 
+ * Migra TODA la información de tabla_original + registros_por_orden
+ * a la nueva arquitectura normalizada en 6 pasos:
+ * 1. Crear usuarios (asesoras)
+ * 2. Crear clientes
+ * 3. Migrar pedidos
+ * 4. Migrar prendas
+ * 5. Migrar procesos
+ * 6. Calcular área y fecha_ultimo_proceso
+ * 
+ * Uso:
+ * php artisan migrate:tabla-original-completo
+ * php artisan migrate:tabla-original-completo --dry-run
+ * php artisan migrate:tabla-original-completo --reset
+ */
 class MigrateTablaOriginalCompleto extends Command
 {
-    /**
-     * The name and signature of the console command.
-     */
-    protected $signature = 'migrate:tabla-original-completo {--dry-run} {--skip-validation}';
+    protected $signature = 'migrate:tabla-original-completo {--dry-run : Simular sin guardar} {--reset : Limpiar datos migrados primero}';
 
-    /**
-     * The console command description.
-     */
-    protected $description = 'Migra TODOS los datos de tabla_original + registros_por_orden a las nuevas tablas normalizadas.';
+    protected $description = '🚀 MIGRACIÓN UNIFICADA COMPLETA: tabla_original → Nueva Arquitectura Normalizada';
 
     protected $stats = [
-        'pedidos_creados' => 0,
-        'prendas_creadas' => 0,
-        'procesos_creados' => 0,
-        'errores' => [],
+        'usuarios_creados' => 0,
+        'usuarios_existentes' => 0,
+        'clientes_creados' => 0,
+        'clientes_existentes' => 0,
+        'pedidos_migrados' => 0,
+        'prendas_migradas' => 0,
+        'procesos_migrados' => 0,
     ];
 
-    /**
-     * Execute the console command.
-     */
+    protected $mapeoAsesoras = [];
+    protected $mapeoClientes = [];
+
     public function handle()
     {
+        $this->info("\n");
+        $this->info(str_repeat("=", 140));
+        $this->info("🚀 MIGRACIÓN UNIFICADA COMPLETA: tabla_original + registros_por_orden → Nueva Arquitectura");
+        $this->info(str_repeat("=", 140) . "\n");
+
         $dryRun = $this->option('dry-run');
-        $skipValidation = $this->option('skip-validation');
-        
-        $this->info('╔════════════════════════════════════════════════════╗');
-        $this->info('║  MIGRACIÓN COMPLETA: tabla_original → nuevas tablas ║');
-        $this->info('╚════════════════════════════════════════════════════╝');
-        $this->newLine();
+        $reset = $this->option('reset');
 
         if ($dryRun) {
-            $this->warn('⚠️  MODO DRY-RUN: Sin cambios en base de datos');
+            $this->warn("⚠️  MODO DRY-RUN: Los datos NO se guardarán en la base de datos\n");
         }
 
-        if (!$skipValidation) {
-            $this->info('Paso 1️⃣ : Validar datos fuente...');
-            if (!$this->validarDatos()) {
-                return;
+        try {
+            // PASO 0: Limpiar SIEMPRE (para evitar duplicados)
+            $this->info("🧹 PASO 0: Limpiando datos existentes para evitar duplicados...\n");
+            $this->limpiarDatos($dryRun);
+
+            // PASO 1: Crear Usuarios (Asesoras)
+            $this->info("👥 PASO 1: Migrando Usuarios (Asesoras)...\n");
+            $this->migrarUsuarios($dryRun);
+
+            // PASO 2: Crear Clientes
+            $this->info("🏢 PASO 2: Migrando Clientes...\n");
+            $this->migrarClientes($dryRun);
+
+            // PASO 3: Migrar Pedidos
+            $this->info("📦 PASO 3: Migrando Pedidos...\n");
+            $this->migrarPedidos($dryRun);
+
+            // PASO 4: Migrar Prendas
+            $this->info("👕 PASO 4: Migrando Prendas...\n");
+            $this->migrarPrendas($dryRun);
+
+            // PASO 5: Migrar Procesos
+            $this->info("⚙️  PASO 5: Migrando Procesos...\n");
+            $this->migrarProcesos($dryRun);
+
+            // MOSTRAR RESUMEN
+            $this->mostrarResumen($dryRun);
+
+        } catch (\Exception $e) {
+            $this->error("\n❌ Error en la migración: " . $e->getMessage());
+            \Log::error('Migración error: ' . $e->getMessage() . "\n" . $e->getTraceAsString());
+            return 1;
+        }
+
+        return 0;
+    }
+
+    /**
+     * PASO 0: Limpiar datos migrados
+     */
+    private function limpiarDatos($dryRun)
+    {
+        if (!$dryRun) {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+            
+            $countProc = ProcesoPrenda::count();
+            ProcesoPrenda::truncate();
+            $this->line("   ✓ Procesos eliminados: $countProc");
+            
+            $countPren = PrendaPedido::count();
+            PrendaPedido::truncate();
+            $this->line("   ✓ Prendas eliminadas: $countPren");
+            
+            $countPed = PedidoProduccion::count();
+            PedidoProduccion::truncate();
+            $this->line("   ✓ Pedidos eliminados: $countPed");
+            
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        } else {
+            $this->line("   [DRY-RUN] Se limpiarían procesos, prendas y pedidos");
+        }
+        $this->newLine();
+    }
+
+    /**
+     * PASO 1: Migrar Usuarios (Asesoras)
+     */
+    private function migrarUsuarios($dryRun)
+    {
+        $asesorasOriginales = DB::table('tabla_original')
+            ->distinct()
+            ->whereNotNull('asesora')
+            ->pluck('asesora')
+            ->toArray();
+
+        $this->line("   📊 Asesoras encontradas: " . count($asesorasOriginales));
+
+        foreach ($asesorasOriginales as $nombreAsesora) {
+            $nombreAsesora = trim($nombreAsesora);
+            if (empty($nombreAsesora)) continue;
+
+            $usuario = User::where('name', $nombreAsesora)->first();
+
+            if ($usuario) {
+                $this->stats['usuarios_existentes']++;
+                $this->mapeoAsesoras[$nombreAsesora] = $usuario->id;
+            } else {
+                if (!$dryRun) {
+                    $nuevoUsuario = User::create([
+                        'name' => $nombreAsesora,
+                        'email' => strtolower(str_replace(' ', '.', $nombreAsesora)) . '@mundoindustrial.local',
+                        'password' => bcrypt('password123'),
+                        'role_id' => 2, // Asesora por defecto
+                    ]);
+                    $this->mapeoAsesoras[$nombreAsesora] = $nuevoUsuario->id;
+                } else {
+                    $this->mapeoAsesoras[$nombreAsesora] = 0; // Placeholder
+                }
+                $this->stats['usuarios_creados']++;
+                $this->line("   ✓ Usuario creado: {$nombreAsesora}");
             }
         }
 
-        $this->info('Paso 2️⃣ : Obtener datos de tabla_original...');
-        $pedidosOriginales = $this->obtenerPedidos();
-        $this->line("   └─ Encontrados: " . count($pedidosOriginales) . " pedidos");
-
-        $this->info('Paso 3️⃣ : Migrar pedidos...');
-        $this->migrarPedidos($pedidosOriginales, $dryRun);
-
-        $this->info('Paso 4️⃣ : Migrar prendas...');
-        $this->migrarPrendas($pedidosOriginales, $dryRun);
-
-        $this->info('Paso 5️⃣ : Migrar procesos...');
-        $this->migrarProcesos($pedidosOriginales, $dryRun);
-
-        $this->mostrarResumen($dryRun);
+        $this->newLine();
+        $this->line("   Resumen: Creados: {$this->stats['usuarios_creados']}, Existentes: {$this->stats['usuarios_existentes']}");
+        $this->newLine();
     }
 
     /**
-     * Validar que los datos están listos para migración
+     * PASO 2: Migrar Clientes
      */
-    protected function validarDatos(): bool
+    private function migrarClientes($dryRun)
     {
-        $this->line("   Validando tabla_original...");
-        $countOriginal = DB::table('tabla_original')->count();
-        $this->line("   └─ $countOriginal registros");
+        $clientesOriginales = DB::table('tabla_original')
+            ->distinct()
+            ->whereNotNull('cliente')
+            ->pluck('cliente')
+            ->toArray();
 
-        $this->line("   Validando registros_por_orden...");
-        $countRegistros = DB::table('registros_por_orden')->count();
-        $this->line("   └─ $countRegistros registros");
+        $this->line("   📊 Clientes encontrados: " . count($clientesOriginales));
 
-        // Validar que tabla_original tiene user_id y cliente_id_nuevo
-        $sinMapeo = DB::table('tabla_original')
-            ->whereNull('asesora_id')
-            ->whereNull('cliente_id_nuevo')
-            ->count();
+        foreach ($clientesOriginales as $nombreCliente) {
+            $nombreCliente = trim($nombreCliente);
+            if (empty($nombreCliente)) continue;
 
-        if ($sinMapeo > 50) {
-            $this->warn("\n⚠️  Advertencia: $sinMapeo registros sin mapeo de asesora/cliente");
-            $this->warn("   Recomendación: Ejecutar primero:");
-            $this->warn("   php artisan mapear:asesoras-clientes-tabla-original");
-            return false;
+            $cliente = Cliente::where('nombre', $nombreCliente)->first();
+
+            if ($cliente) {
+                $this->stats['clientes_existentes']++;
+                $this->mapeoClientes[$nombreCliente] = $cliente->id;
+            } else {
+                if (!$dryRun) {
+                    $nuevoCliente = Cliente::create([
+                        'nombre' => $nombreCliente,
+                        'estado' => 'Activo',
+                    ]);
+                    $this->mapeoClientes[$nombreCliente] = $nuevoCliente->id;
+                } else {
+                    $this->mapeoClientes[$nombreCliente] = 0; // Placeholder
+                }
+                $this->stats['clientes_creados']++;
+                $this->line("   ✓ Cliente creado: {$nombreCliente}");
+            }
         }
 
-        $this->line("   ✓ Validación completada");
         $this->newLine();
-        return true;
+        $this->line("   Resumen: Creados: {$this->stats['clientes_creados']}, Existentes: {$this->stats['clientes_existentes']}");
+        $this->newLine();
     }
 
     /**
-     * Obtener todos los pedidos con sus detalles DE tabla_original
+     * PASO 3: Migrar Pedidos
      */
-    protected function obtenerPedidos()
+    private function migrarPedidos($dryRun)
     {
-        // Obtener todos los registros de tabla_original con sus detalles de registros_por_orden
-        $datos = DB::table('tabla_original')
-            ->leftJoin('registros_por_orden', 'tabla_original.pedido', '=', 'registros_por_orden.pedido')
+        $pedidosOriginales = DB::table('tabla_original')
             ->select(
-                'tabla_original.pedido',
-                'tabla_original.cliente',
-                'tabla_original.cliente_id_nuevo',
-                'tabla_original.asesora',
-                'tabla_original.asesora_id',
-                'tabla_original.novedades',
-                'tabla_original.forma_de_pago',
-                'tabla_original.estado',
-                'tabla_original.area',
-                'tabla_original.fecha_de_creacion_de_orden',
-                'tabla_original.dia_de_entrega',
-                'tabla_original.fecha_estimada_de_entrega',
-                'registros_por_orden.prenda',
-                'registros_por_orden.cantidad',
-                'registros_por_orden.talla'
+                'pedido as numero_pedido',
+                'asesora',
+                'cliente',
+                'fecha_de_creacion_de_orden',
+                'dia_de_entrega',
+                'fecha_estimada_de_entrega',
+                'estado',
+                'area',
+                'novedades',
+                'forma_de_pago'
             )
-            ->get()
-            ->groupBy('pedido');
+            ->distinct()
+            ->get();
 
-        return $datos;
-    }
+        $this->line("   📊 Pedidos a migrar: " . $pedidosOriginales->count());
 
-    /**
-     * Migrar pedidos a pedidos_produccion
-     */
-    protected function migrarPedidos($pedidosOriginales, $dryRun): void
-    {
-        $progreso = $this->output->createProgressBar(count($pedidosOriginales));
+        $bar = $this->output->createProgressBar($pedidosOriginales->count());
+        $bar->start();
 
-        foreach ($pedidosOriginales as $numeroPedido => $registros) {
-            $primeraFila = $registros->first();
+        foreach ($pedidosOriginales as $pedidoOrig) {
+            try {
+                $asesorId = $this->mapeoAsesoras[$pedidoOrig->asesora] ?? null;
+                $clienteId = $this->mapeoClientes[$pedidoOrig->cliente] ?? null;
 
-            if (!$dryRun) {
-                try {
-                    $pedido = PedidoProduccion::updateOrCreate(
-                        ['numero_pedido' => $numeroPedido],
+                if (!$dryRun) {
+                    PedidoProduccion::updateOrCreate(
+                        ['numero_pedido' => $pedidoOrig->numero_pedido],
                         [
-                            'cliente' => $primeraFila->cliente ?? null,
-                            'cliente_id' => $primeraFila->cliente_id_nuevo ?? null,
-                            'asesora' => $primeraFila->asesora ?? null,
-                            'user_id' => $primeraFila->asesora_id ?? null,
-                            'novedades' => $primeraFila->novedades ?? null,
-                            'forma_de_pago' => $primeraFila->forma_de_pago ?? null,
-                            'estado' => $primeraFila->estado ?? 'No iniciado',
-                            'fecha_de_creacion_de_orden' => $primeraFila->fecha_de_creacion_de_orden ?? now()->toDateString(),
-                            'dia_de_entrega' => $primeraFila->dia_de_entrega ?? null,
-                            'fecha_estimada_de_entrega' => $primeraFila->fecha_estimada_de_entrega ?? null,
+                            'asesor_id' => $asesorId,
+                            'cliente_id' => $clienteId,
+                            'cliente' => $pedidoOrig->cliente,
+                            'estado' => $pedidoOrig->estado ?? 'Pendiente',
+                            'fecha_de_creacion_de_orden' => $this->parsearFecha($pedidoOrig->fecha_de_creacion_de_orden),
+                            'dia_de_entrega' => $pedidoOrig->dia_de_entrega ?? 0,
+                            'fecha_estimada_de_entrega' => $this->parsearFecha($pedidoOrig->fecha_estimada_de_entrega),
+                            'area' => $pedidoOrig->area ?? 'Creación Orden',
+                            'novedades' => $pedidoOrig->novedades ?? null,
+                            'forma_de_pago' => $pedidoOrig->forma_de_pago ?? null,
                         ]
                     );
-                    $this->stats['pedidos_creados']++;
-                } catch (\Exception $e) {
-                    $this->stats['errores'][] = "Pedido $numeroPedido: " . $e->getMessage();
                 }
-            } else {
-                $this->stats['pedidos_creados']++;
-            }
 
-            $progreso->advance();
+                $this->stats['pedidos_migrados']++;
+                $bar->advance();
+            } catch (\Exception $e) {
+                $this->error("\nError migrando pedido {$pedidoOrig->numero_pedido}: {$e->getMessage()}");
+            }
         }
 
-        $progreso->finish();
+        $bar->finish();
+        $this->newLine();
+        $this->line("   Pedidos migrados: {$this->stats['pedidos_migrados']}");
         $this->newLine();
     }
 
     /**
-     * Migrar prendas a prendas_pedido
+     * PASO 4: Migrar Prendas (desde registros_por_orden)
      */
-    protected function migrarPrendas($pedidosOriginales, $dryRun): void
+    private function migrarPrendas($dryRun)
     {
-        $progreso = $this->output->createProgressBar(count($pedidosOriginales));
+        $prendas = DB::table('registros_por_orden')
+            ->select(
+                'pedido',
+                'prenda as nombre_prenda',
+                DB::raw('SUM(cantidad) as cantidad'),
+                'descripcion',
+                'talla'
+            )
+            ->groupBy('pedido', 'nombre_prenda', 'descripcion', 'talla')
+            ->get();
 
-        foreach ($pedidosOriginales as $numeroPedido => $registros) {
-            // Obtener el pedido creado
-            $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+        $this->line("   📊 Prendas a migrar: " . $prendas->count());
 
-            if (!$pedido) {
-                $progreso->advance();
-                continue;
-            }
+        $bar = $this->output->createProgressBar($prendas->count());
+        $bar->start();
 
-            // Agrupar prendas por nombre (para consolidar cantidades)
-            $prendasAgrupadas = [];
-            foreach ($registros as $registro) {
-                $nombrePrenda = trim($registro->prenda ?? 'SIN ESPECIFICAR');
+        foreach ($prendas as $prenda) {
+            try {
+                $pedido = PedidoProduccion::where('numero_pedido', $prenda->pedido)->first();
                 
-                if (!isset($prendasAgrupadas[$nombrePrenda])) {
-                    $prendasAgrupadas[$nombrePrenda] = [
-                        'cantidad' => 0,
-                        'talla' => $registro->talla,
-                    ];
+                if (!$pedido) {
+                    $bar->advance();
+                    continue;
                 }
-                
-                $cantidad = (int) ($registro->cantidad ?? 1);
-                $prendasAgrupadas[$nombrePrenda]['cantidad'] += $cantidad;
-            }
 
-            // Crear prendas
-            foreach ($prendasAgrupadas as $nombrePrenda => $datos) {
+                // Consolidar tallas
+                $tallasRaw = DB::table('registros_por_orden')
+                    ->where('pedido', $prenda->pedido)
+                    ->where('prenda', $prenda->nombre_prenda)
+                    ->select('talla', 'cantidad')
+                    ->get()
+                    ->toArray();
+
                 if (!$dryRun) {
-                    try {
-                        PrendaPedido::updateOrCreate(
-                            [
-                                'pedido_produccion_id' => $pedido->id,
-                                'nombre_prenda' => $nombrePrenda,
-                            ],
-                            [
-                                'cantidad' => $datos['cantidad'],
-                                'descripcion' => "Migrado de tabla_original",
-                            ]
-                        );
-                        $this->stats['prendas_creadas']++;
-                    } catch (\Exception $e) {
-                        $this->stats['errores'][] = "Prenda en pedido $numeroPedido: " . $e->getMessage();
+                    PrendaPedido::updateOrCreate(
+                        [
+                            'pedido_produccion_id' => $pedido->id,
+                            'nombre_prenda' => $prenda->nombre_prenda,
+                        ],
+                        [
+                            'cantidad' => $prenda->cantidad ?? 0,
+                            'descripcion' => $prenda->descripcion,
+                            'tallas' => json_encode($tallasRaw),
+                        ]
+                    );
+                }
+
+                $this->stats['prendas_migradas']++;
+                $bar->advance();
+            } catch (\Exception $e) {
+                $this->error("\nError en prenda: {$e->getMessage()}");
+                $bar->advance();
+            }
+        }
+
+        $bar->finish();
+        $this->newLine();
+        $this->line("   Prendas migradas: {$this->stats['prendas_migradas']}");
+        $this->newLine();
+    }
+
+    /**
+     * PASO 5: Migrar Procesos (desde tabla_original)
+     */
+    private function migrarProcesos($dryRun)
+    {
+        $pedidos = PedidoProduccion::all();
+        $this->line("   📊 Procesando " . $pedidos->count() . " pedidos");
+
+        $bar = $this->output->createProgressBar($pedidos->count());
+        $bar->start();
+
+        foreach ($pedidos as $pedido) {
+            try {
+                $pedidoOriginal = DB::table('tabla_original')
+                    ->where('pedido', $pedido->numero_pedido)
+                    ->first();
+
+                if (!$pedidoOriginal) {
+                    $bar->advance();
+                    continue;
+                }
+
+                // Crear proceso inicial "Creación Orden"
+                $fechaInicio = $this->parsearFecha($pedidoOriginal->fecha_de_creacion_de_orden);
+                
+                if (!$dryRun && $fechaInicio) {
+                    ProcesoPrenda::updateOrCreate(
+                        [
+                            'numero_pedido' => $pedido->numero_pedido,
+                            'proceso' => 'Creación Orden',
+                        ],
+                        [
+                            'fecha_inicio' => $fechaInicio,
+                            'estado_proceso' => 'Completado',
+                        ]
+                    );
+                }
+
+                $this->stats['procesos_migrados']++;
+                $ultimaFecha = $fechaInicio;
+                $ultimoProceso = 'Creación Orden';
+
+                // Mapeo de campos de procesos en tabla_original
+                $procesosMap = [
+                    'inventario' => 'Inventario',
+                    'insumos_y_telas' => 'Insumos y Telas',
+                    'corte' => 'Corte',
+                    'bordado' => 'Bordado',
+                    'estampado' => 'Estampado',
+                    'costura' => 'Costura',
+                    'reflectivo' => 'Reflectivo',
+                    'lavanderia' => 'Lavandería',
+                    'arreglos' => 'Arreglos',
+                    'control_de_calidad' => 'Control Calidad',
+                    'entrega' => 'Entrega',
+                    'despacho' => 'Despacho',
+                ];
+
+                // Migrar procesos adicionales
+                foreach ($procesosMap as $campoOrig => $nombreProceso) {
+                    // Intentar diferentes variaciones de nombres de campo
+                    $fechaInicioCampo = $campoOrig . '_inicio' ?: $campoOrig . '_fecha_inicio';
+                    $fechaFinCampo = $campoOrig . '_fin' ?: $campoOrig . '_fecha_fin';
+
+                    // Buscar en los atributos del objeto
+                    $fechaProceso = null;
+                    foreach ((array)$pedidoOriginal as $key => $value) {
+                        if (strpos($key, $campoOrig) !== false && strpos($key, 'fecha') !== false && $value) {
+                            $fechaProceso = $this->parsearFecha($value);
+                            break;
+                        }
                     }
-                } else {
-                    $this->stats['prendas_creadas']++;
-                }
-            }
 
-            $progreso->advance();
-        }
-
-        $progreso->finish();
-        $this->newLine();
-    }
-
-    /**
-     * Migrar procesos (área actual) a procesos_prenda
-     * Ahora incluye el cálculo automático de días desde tabla_original
-     */
-    protected function migrarProcesos($pedidosOriginales, $dryRun): void
-    {
-        $progreso = $this->output->createProgressBar(count($pedidosOriginales));
-
-        // Mapeo de campos de tabla_original a procesos
-        $mapaAreas = [
-            'corte' => 'Corte',
-            'bordado' => 'Bordado',
-            'estampado' => 'Estampado',
-            'costura' => 'Costura',
-            'reflectivo' => 'Reflectivo',
-            'lavanderia' => 'Lavandería',
-            'arreglos' => 'Arreglos',
-            'control_de_calidad' => 'Control Calidad',
-            'entrega' => 'Entrega',
-            'despacho' => 'Despacho',
-        ];
-
-        foreach ($pedidosOriginales as $numeroPedido => $registros) {
-            // Obtener el pedido
-            $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
-
-            if (!$pedido) {
-                $progreso->advance();
-                continue;
-            }
-
-            // Obtener la primera fila para extraer datos
-            $primeraFila = is_array($registros) ? reset($registros) : $registros->first();
-            
-            // Crear proceso inicial: Creación Orden (siempre)
-            $prendas = $pedido->prendas;
-
-            foreach ($prendas as $prenda) {
-                if (!$dryRun) {
-                    try {
-                        // Proceso 1: Creación Orden
-                        ProcesoPrenda::firstOrCreate(
-                            [
-                                'prenda_pedido_id' => $prenda->id,
-                                'proceso' => 'Creación Orden',
-                            ],
-                            [
-                                'fecha_inicio' => $primeraFila->fecha_de_creacion_de_orden ?? now()->toDateString(),
-                                'fecha_fin' => $primeraFila->fecha_de_creacion_de_orden ?? now()->toDateString(),
-                                'encargado' => $primeraFila->encargado_orden ?? null,
-                                'estado_proceso' => 'Completado',
-                                'observaciones' => "Migrado de tabla_original",
-                                // dias_duracion se calcula automáticamente en el modelo
-                            ]
-                        );
-
-                        // Crear procesos para cada área que tenga fecha registrada
-                        foreach ($mapaAreas as $campoFecha => $nombreProceso) {
-                            $fechaProceso = $primeraFila->$campoFecha ?? null;
-                            
-                            if ($fechaProceso) {
-                                $campoEncargado = "encargados_" . str_replace("_", "_", $campoFecha);
-                                
-                                ProcesoPrenda::firstOrCreate(
-                                    [
-                                        'prenda_pedido_id' => $prenda->id,
-                                        'proceso' => $nombreProceso,
-                                    ],
-                                    [
-                                        'fecha_inicio' => $fechaProceso,
-                                        'fecha_fin' => $fechaProceso,
-                                        'encargado' => $primeraFila->$campoEncargado ?? null,
-                                        'estado_proceso' => 'Completado',
-                                        'observaciones' => "Migrado de tabla_original.$campoFecha",
-                                        // dias_duracion se calcula automáticamente en el modelo
-                                    ]
-                                );
-                            }
+                    if ($fechaProceso) {
+                        if (!$dryRun) {
+                            ProcesoPrenda::updateOrCreate(
+                                [
+                                    'numero_pedido' => $pedido->numero_pedido,
+                                    'proceso' => $nombreProceso,
+                                ],
+                                [
+                                    'fecha_inicio' => $fechaProceso,
+                                    'estado_proceso' => 'Completado',
+                                ]
+                            );
                         }
 
-                        $this->stats['procesos_creados']++;
-                    } catch (\Exception $e) {
-                        $this->stats['errores'][] = "Proceso en prenda: " . $e->getMessage();
+                        $this->stats['procesos_migrados']++;
+                        $ultimaFecha = $fechaProceso;
+                        $ultimoProceso = $nombreProceso;
                     }
-                } else {
-                    $this->stats['procesos_creados']++;
                 }
+
+                // Actualizar área y fecha_ultimo_proceso del pedido
+                if (!$dryRun) {
+                    $pedido->update([
+                        'area' => $ultimoProceso,
+                        'fecha_ultimo_proceso' => $ultimaFecha,
+                    ]);
+                }
+            } catch (\Exception $e) {
+                $this->error("\nError en procesos pedido {$pedido->numero_pedido}: {$e->getMessage()}");
             }
 
-            $progreso->advance();
+            $bar->advance();
         }
 
-        $progreso->finish();
+        $bar->finish();
+        $this->newLine();
+        $this->line("   Procesos migrados: {$this->stats['procesos_migrados']}");
         $this->newLine();
     }
 
     /**
      * Mostrar resumen final
      */
-    protected function mostrarResumen($dryRun): void
+    private function mostrarResumen($dryRun)
     {
-        $this->newLine(2);
-        $this->info('╔════════════════════════════════╗');
-        $this->info('║  RESUMEN DE MIGRACIÓN          ║');
-        $this->info('╚════════════════════════════════╝');
-        $this->newLine();
+        $this->info("\n");
+        $this->info(str_repeat("=", 140));
+        $this->info("📊 RESUMEN DE MIGRACIÓN");
+        $this->info(str_repeat("=", 140) . "\n");
 
-        $this->line("📊 Estadísticas:");
-        $this->line("   ✓ Pedidos migrados: " . $this->stats['pedidos_creados']);
-        $this->line("   ✓ Prendas migradas: " . $this->stats['prendas_creadas']);
-        $this->line("   ✓ Procesos creados: " . $this->stats['procesos_creados']);
+        $tabla = [
+            ['Usuarios creados', $this->stats['usuarios_creados']],
+            ['Usuarios existentes', $this->stats['usuarios_existentes']],
+            ['Clientes creados', $this->stats['clientes_creados']],
+            ['Clientes existentes', $this->stats['clientes_existentes']],
+            ['Pedidos migrados', $this->stats['pedidos_migrados']],
+            ['Prendas migradas', $this->stats['prendas_migradas']],
+            ['Procesos migrados', $this->stats['procesos_migrados']],
+        ];
 
-        if (!empty($this->stats['errores'])) {
-            $this->newLine();
-            $this->error("⚠️  Errores encontrados: " . count($this->stats['errores']));
-            foreach (array_slice($this->stats['errores'], 0, 10) as $error) {
-                $this->error("   - $error");
-            }
-            if (count($this->stats['errores']) > 10) {
-                $this->error("   ... y " . (count($this->stats['errores']) - 10) . " más");
-            }
+        $this->table(['Concepto', 'Cantidad'], $tabla);
+
+        if ($dryRun) {
+            $this->warn("\n⚠️  MODO DRY-RUN: Los datos NO fueron guardados en la base de datos");
+            $this->info("✓ Ejecuta sin --dry-run para realizar la migración real\n");
+        } else {
+            $this->info("\n✅ MIGRACIÓN COMPLETADA EXITOSAMENTE");
+            $this->info("✓ Ejecuta: php artisan validate:migracion-completa");
+            $this->info("✓ Para validar la integridad de los datos migrados\n");
         }
 
-        $this->newLine();
-        if ($dryRun) {
-            $this->warn('⚠️  Este fue un DRY-RUN. Sin cambios en la base de datos.');
-            $this->info('Para ejecutar la migración real, ejecuta:');
-            $this->info('   php artisan migrate:tabla-original-completo');
-        } else {
-            $this->info('✅ Migración completada exitosamente!');
-            $this->info('Los datos están ahora en las nuevas tablas normalizadas.');
+        $this->info(str_repeat("=", 140) . "\n");
+    }
+
+    /**
+     * Parsear fecha de diferentes formatos
+     */
+    private function parsearFecha($fecha)
+    {
+        if (!$fecha || $fecha === '0000-00-00' || $fecha === '0000-00-00 00:00:00') {
+            return null;
+        }
+
+        try {
+            $parsed = Carbon::parse($fecha);
+            // Validar que sea una fecha razonable
+            if ($parsed->year < 2000 || $parsed->year > 2100) {
+                return null;
+            }
+            return $parsed->format('Y-m-d');
+        } catch (\Exception $e) {
+            return null;
         }
     }
 }

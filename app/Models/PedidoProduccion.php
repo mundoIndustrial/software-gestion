@@ -28,6 +28,7 @@ class PedidoProduccion extends Model
         'forma_de_pago',
         'estado',
         'area',
+        'fecha_ultimo_proceso',
         'fecha_de_creacion_de_orden',
         'dia_de_entrega',
         'fecha_estimada_de_entrega',

@@ -435,7 +435,6 @@
 .tracking-area-card.pending {
     background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
     border-color: #9ca3af;
-    opacity: 0.6;
 }
 
 .tracking-area-name {

@@ -93,7 +93,7 @@
                                             <th class="table-header-cell" data-column="{{ $colName }}">
                                                 <div class="header-content">
                                                     <span class="header-text">{{ $colLabel }}</span>
-                                                    @if($colName !== 'acciones' && $colName !== 'descripcion_prendas' && $colName !== 'cantidad_total')
+                                                    @if($colName !== 'acciones' && $colName !== 'cantidad_total')
                                                         <button class="filter-btn" data-column="{{ $columnIndex }}" data-column-name="{{ $colName }}">
                                                             <i class="fas fa-filter"></i>
                                                         </button>
@@ -176,7 +176,7 @@
                                     ];
                                 @endphp
                                 <tr class="table-row {{ $conditionalClass }}" data-order-id="{{ $orden->id }}" data-numero-pedido="{{ $orden->numero_pedido }}">
-                                    <!-- DEBUG: Pedido={{ $orden->numero_pedido }}, Estado={{ $orden->estado }}, Area={{ $orden->area ?? 'NULL' }}, Cliente={{ $orden->cliente }}, Prendas={{ $orden->prendas->count() }}, DescripcionLength={{ strlen($orden->descripcion_prendas) }}, CantidadTotal={{ $orden->cantidad_total }} -->
+                                    <!-- DEBUG: Pedido={{ $orden->pedido ?? $orden->numero_pedido }}, Estado={{ $orden->estado }}, Area={{ $orden->area ?? 'NULL' }}, Cliente={{ $orden->cliente }} -->
                                     {{-- Columna de Acciones --}}
                                     <td class="table-cell acciones-column" style="min-width: 220px !important;">
                                         <div class="cell-content" style="display: flex; gap: 8px; flex-wrap: nowrap; align-items: center; justify-content: flex-start; padding: 4px 0;">
@@ -218,13 +218,17 @@
                                                         @endif
                                                     @elseif($colName === 'area')
                                                         @php
-                                                            $areaValue = $areasMap[$orden->numero_pedido] ?? $orden->$colName ?? '';
+                                                            $areaValue = $orden->area ?? '';
                                                         @endphp
                                                         @if(auth()->user()->role && auth()->user()->role->name === 'supervisor')
                                                             <select class="area-dropdown" data-id="{{ $orden->numero_pedido }}" data-value="{{ $areaValue }}" disabled style="cursor: not-allowed; opacity: 0.8;">
+                                                                <option value="">Seleccionar área</option>
                                                                 @foreach($areaOptions as $areaOption)
                                                                     <option value="{{ $areaOption }}" {{ $areaValue === $areaOption ? 'selected' : '' }}>{{ $areaOption }}</option>
                                                                 @endforeach
+                                                                @if($areaValue && !in_array($areaValue, $areaOptions))
+                                                                    <option value="{{ $areaValue }}" selected>{{ $areaValue }}</option>
+                                                                @endif
                                                             </select>
                                                         @else
                                                             <select class="area-dropdown" data-id="{{ $orden->numero_pedido }}" data-value="{{ $areaValue }}">
@@ -232,6 +236,9 @@
                                                                 @foreach($areaOptions as $areaOption)
                                                                     <option value="{{ $areaOption }}" {{ $areaValue === $areaOption ? 'selected' : '' }}>{{ $areaOption }}</option>
                                                                 @endforeach
+                                                                @if($areaValue && !in_array($areaValue, $areaOptions))
+                                                                    <option value="{{ $areaValue }}" selected>{{ $areaValue }}</option>
+                                                                @endif
                                                             </select>
                                                         @endif
                                                     @elseif($colName === 'dia_de_entrega' && $context === 'registros')

@@ -2,6 +2,9 @@ console.log('✅ orders-table.js cargado - Versión: ' + new Date().getTime());
 
 const updateDebounceMap = new Map();
 
+// OPTIMIZACIÓN: Flag global para evitar reinicializaciones duplicadas
+window.isInitializingDropdowns = false;
+
 /**
  * Función helper para formatear fechas
  * Convierte YYYY-MM-DD a DD/MM/YYYY
@@ -1619,47 +1622,83 @@ function actualizarOrdenEnTabla(orden) {
 
 // ===== DIA DE ENTREGA DROPDOWN =====
 function initializeDiaEntregaDropdowns() {
+    // OPTIMIZACIÓN: Evitar inicializaciones simultáneas
+    if (window.isInitializingDropdowns) {
+        console.log('⏳ Ya se está inicializando, ignorando llamada duplicada');
+        return;
+    }
+    
+    window.isInitializingDropdowns = true;
+    
     const dropdowns = document.querySelectorAll('.dia-entrega-dropdown');
     
     if (dropdowns.length === 0) {
         console.log('⚠️ No se encontraron dropdowns de día de entrega');
+        window.isInitializingDropdowns = false;
         return;
     }
     
     let newlyInitialized = 0;
     
-    dropdowns.forEach(dropdown => {
-        // IMPORTANTE: Siempre sincronizar data-value con el valor actual del select
-        const currentValue = dropdown.value || '';
-        const existingDataValue = dropdown.getAttribute('data-value');
-        
-        // Si data-value no coincide con el valor actual, actualizarlo
-        if (existingDataValue !== currentValue) {
-            dropdown.setAttribute('data-value', currentValue);
-        }
-
-        // CRÍTICO: Siempre limpiar eventos anteriores antes de agregar nuevos
-        // Esto evita que se acumulen múltiples listeners
-        const oldHandler = dropdown._diaEntregaHandler;
-        if (oldHandler) {
-            dropdown.removeEventListener('change', oldHandler);
-        }
-
-        // Crear nuevo handler y guardarlo en el elemento
-        const newHandler = function() {
-            handleDiaEntregaChange.call(this);
-        };
-        dropdown._diaEntregaHandler = newHandler;
-        
-        // Agregar evento de cambio
-        dropdown.addEventListener('change', newHandler);
-        
-        // Marcar como inicializado
-        dropdown.dataset.initialized = 'true';
-        newlyInitialized++;
-    });
+    // OPTIMIZACIÓN: Procesar en batches pequeños para evitar bloqueo
+    const BATCH_SIZE = 5;
+    let batchIndex = 0;
     
-    console.log(`✅ ${newlyInitialized} dropdowns de día de entrega inicializados/actualizados`);
+    const processBatch = () => {
+        const endIndex = Math.min(batchIndex + BATCH_SIZE, dropdowns.length);
+        
+        for (let i = batchIndex; i < endIndex; i++) {
+            const dropdown = dropdowns[i];
+            
+            // IMPORTANTE: Siempre sincronizar data-value con el valor actual del select
+            const currentValue = dropdown.value || '';
+            const existingDataValue = dropdown.getAttribute('data-value');
+            
+            // Si data-value no coincide con el valor actual, actualizarlo
+            if (existingDataValue !== currentValue) {
+                dropdown.setAttribute('data-value', currentValue);
+            }
+
+            // CRÍTICO: Verificar si ya está inicializado
+            if (dropdown.dataset.initialized === 'true' && dropdown._diaEntregaHandler) {
+                // Ya está inicializado, no hacer nada
+                newlyInitialized++;
+                continue;
+            }
+
+            // Limpiar eventos anteriores antes de agregar nuevos
+            const oldHandler = dropdown._diaEntregaHandler;
+            if (oldHandler) {
+                dropdown.removeEventListener('change', oldHandler);
+            }
+
+            // Crear nuevo handler y guardarlo en el elemento
+            const newHandler = function() {
+                handleDiaEntregaChange.call(this);
+            };
+            dropdown._diaEntregaHandler = newHandler;
+            
+            // Agregar evento de cambio
+            dropdown.addEventListener('change', newHandler);
+            
+            // Marcar como inicializado
+            dropdown.dataset.initialized = 'true';
+            newlyInitialized++;
+        }
+        
+        batchIndex = endIndex;
+        
+        // Si quedan más, procesar en siguiente frame
+        if (batchIndex < dropdowns.length) {
+            requestAnimationFrame(processBatch);
+        } else {
+            console.log(`✅ ${newlyInitialized} dropdowns de día de entrega inicializados/actualizados`);
+            window.isInitializingDropdowns = false;
+        }
+    };
+    
+    // Iniciar procesamiento en batches
+    processBatch();
 }
 
 // Manejador de cambio de día de entrega

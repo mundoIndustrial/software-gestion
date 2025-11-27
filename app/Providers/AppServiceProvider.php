@@ -5,8 +5,10 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use App\Models\TablaOriginal;
 use App\Models\TablaOriginalBodega;
+use App\Models\ProcesoPrenda;
 use App\Observers\TablaOriginalObserver;
 use App\Observers\TablaOriginalBodegaObserver;
+use App\Observers\ProcesoPrendaObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -36,5 +38,10 @@ class AppServiceProvider extends ServiceProvider
         // Esto sincroniza automáticamente los cambios en 'descripcion' y 'cliente'
         // del padre hacia los registros hijos en 'registros_por_orden_bodega'
         // TablaOriginalBodega::observe(TablaOriginalBodegaObserver::class);
+
+        // Registrar Observer para ProcesoPrenda
+        // Actualiza automáticamente el campo 'area' en pedidos_produccion
+        // cada vez que se crea o modifica un proceso
+        ProcesoPrenda::observe(ProcesoPrendaObserver::class);
     }
 }

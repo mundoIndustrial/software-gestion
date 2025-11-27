@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\PedidoProduccion;
-use App\Models\ProcesosPrenda;
+use App\Models\PrendaPedido;
+use App\Models\ProcesoPrenda;
+use App\Services\CacheCalculosService;
 use App\Models\News;
 use App\Models\Festivo;
 use Illuminate\Support\Facades\DB;
@@ -34,64 +36,110 @@ class RegistroOrdenController extends Controller
         ];
 
         // Handle request for unique values for filters
-        if ($request->has('get_unique_values') && $request->column) {
-            $column = $request->column;
-        $allowedColumns = [
-            'pedido', 'estado', 'area', 'total_de_dias_', 'dia_de_entrega', 'fecha_estimada_de_entrega', 'cliente',
-            'descripcion', 'cantidad', 'novedades', 'forma_de_pago',
-            'fecha_de_creacion_de_orden', 'encargado_orden', 'dias_orden', 'inventario',
-            'encargados_inventario', 'dias_inventario', 'insumos_y_telas', 'encargados_insumos',
-            'dias_insumos', 'corte', 'encargados_de_corte', 'dias_corte', 'bordado',
-            'codigo_de_bordado', 'dias_bordado', 'estampado', 'encargados_estampado',
-            'dias_estampado', 'costura', 'modulo', 'dias_costura', 'reflectivo',
-            'encargado_reflectivo', 'total_de_dias_reflectivo', 'lavanderia',
-            'encargado_lavanderia', 'dias_lavanderia', 'arreglos', 'encargado_arreglos',
-            'total_de_dias_arreglos', 'marras', 'encargados_marras', 'total_de_dias_marras',
-            'control_de_calidad', 'encargados_calidad', 'dias_c_c', 'entrega',
-            'encargados_entrega', 'despacho', 'column_52', '_pedido'
-        ];
+        if ($request->has('get_unique_values') && $request->has('column')) {
+            $column = $request->input('column');
+            
+            // Columnas permitidas de pedidos_produccion
+            $allowedColumns = [
+                'numero_pedido', 'estado', 'area', 'cliente', 'forma_de_pago',
+                'novedades', 'dia_de_entrega', 'fecha_de_creacion_de_orden',
+                'fecha_estimada_de_entrega', 'fecha_ultimo_proceso', 'descripcion_prendas',
+                'asesora', 'encargado_orden'
+            ];
 
             if (in_array($column, $allowedColumns)) {
-                // Si es la columna calculada total_de_dias_, obtener todos los registros y calcular
-                if ($column === 'total_de_dias_') {
-                    $festivos = \App\Models\Festivo::pluck('fecha')->toArray();
-                    $ordenes = PedidoProduccion::all();
-                    foreach ($ordenes as $orden) {
-                        $orden->setFestivos($festivos);
+                try {
+                    $uniqueValues = [];
+
+                    // Columnas especiales que requieren JOIN
+                    if ($column === 'asesora') {
+                        // Obtener nombres únicos de asesores
+                        $uniqueValues = PedidoProduccion::join('users', 'pedidos_produccion.asesor_id', '=', 'users.id')
+                            ->whereNotNull('users.name')
+                            ->distinct()
+                            ->pluck('users.name')
+                            ->filter(function($value) {
+                                return $value !== null && $value !== '';
+                            })
+                            ->values()
+                            ->toArray();
+                    } elseif ($column === 'descripcion_prendas') {
+                        // Obtener descripciones únicas de prendas
+                        $uniqueValues = \DB::table('prendas_pedido')
+                            ->whereNotNull('descripcion')
+                            ->where('descripcion', '!=', '')
+                            ->distinct()
+                            ->pluck('descripcion')
+                            ->filter(function($value) {
+                                return $value !== null && $value !== '';
+                            })
+                            ->values()
+                            ->toArray();
+                    } elseif ($column === 'encargado_orden') {
+                        // Obtener encargados de orden únicos (procesos_prenda)
+                        $uniqueValues = ProcesoPrenda::where('proceso', 'Creación Orden')
+                            ->whereNotNull('encargado')
+                            ->distinct()
+                            ->pluck('encargado')
+                            ->filter(function($value) {
+                                return $value !== null && $value !== '';
+                            })
+                            ->values()
+                            ->toArray();
+                    } else {
+                        // Columnas normales de pedidos_produccion
+                        $uniqueValues = PedidoProduccion::whereNotNull($column)
+                            ->distinct()
+                            ->pluck($column)
+                            ->filter(function($value) {
+                                return $value !== null && $value !== '';
+                            })
+                            ->values()
+                            ->toArray();
                     }
-                    $uniqueValues = $ordenes->map(function($orden) {
-                        return $orden->total_de_dias;
-                    })->unique()->sort()->values()->toArray();
-                } else {
-                    $uniqueValues = PedidoProduccion::distinct()->pluck($column)->filter()->values()->toArray();
-                }
-                
-                // Si es una columna de fecha, formatear los valores a d/m/Y
-                if (in_array($column, $dateColumns)) {
-                    $uniqueValues = array_map(function($value) {
-                        try {
-                            if (!empty($value)) {
-                                $date = \Carbon\Carbon::parse($value);
-                                return $date->format('d/m/Y');
+                    
+                    // Si es una columna de fecha, formatear los valores a d/m/Y
+                    if (in_array($column, $dateColumns)) {
+                        $uniqueValues = array_map(function($value) {
+                            try {
+                                if (!empty($value)) {
+                                    $date = \Carbon\Carbon::parse($value);
+                                    return $date->format('d/m/Y');
+                                }
+                            } catch (\Exception $e) {
+                                // Si no se puede parsear, devolver el valor original
                             }
-                        } catch (\Exception $e) {
-                            // Si no se puede parsear, devolver el valor original
-                        }
-                        return $value;
-                    }, $uniqueValues);
-                    // Eliminar duplicados y reindexar
-                    $uniqueValues = array_values(array_unique($uniqueValues));
+                            return $value;
+                        }, $uniqueValues);
+                        // Eliminar duplicados y reindexar
+                        $uniqueValues = array_values(array_unique($uniqueValues));
+                    }
+                    
+                    // Ordenar alfabéticamente
+                    sort($uniqueValues);
+                    
+                    return response()->json(['unique_values' => $uniqueValues]);
+                } catch (\Exception $e) {
+                    return response()->json(['error' => 'Error fetching values: ' . $e->getMessage()], 500);
                 }
-                
-                return response()->json(['unique_values' => $uniqueValues]);
             }
             return response()->json(['error' => 'Invalid column'], 400);
         }
 
         $query = PedidoProduccion::query()
-            ->with(['asesora', 'prendas' => function($q) {
-                $q->select('id', 'pedido_produccion_id', 'nombre_prenda', 'cantidad', 'descripcion', 'cantidad_talla', 'color_id', 'tela_id', 'tipo_manga_id', 'tipo_broche_id', 'tiene_bolsillos', 'tiene_reflectivo', 'descripcion_variaciones');
-            }]);
+            ->select([
+                'id', 'numero_pedido', 'estado', 'area', 'cliente', 'cliente_id',
+                'fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega',
+                'fecha_ultimo_proceso',
+                'dia_de_entrega', 'asesor_id', 'forma_de_pago',
+                'novedades', 'cotizacion_id', 'numero_cotizacion'
+            ])
+            ->with([
+                'asesora:id,name',
+                'prendas' => function($q) {
+                    $q->select('id', 'pedido_produccion_id', 'nombre_prenda', 'cantidad', 'descripcion');
+                }
+            ]);
 
         // Filtro por defecto para supervisores: "En Ejecución" (pero puede cambiarse)
         if (auth()->user() && auth()->user()->role && auth()->user()->role->name === 'supervisor') {
@@ -127,25 +175,74 @@ class RegistroOrdenController extends Controller
 
                 // Whitelist de columnas permitidas para seguridad
                 $allowedColumns = [
-                    'id', 'estado', 'area', 'total_de_dias_', 'dia_de_entrega', 'fecha_estimada_de_entrega', 'pedido', 'cliente',
-                    'descripcion', 'cantidad', 'novedades', 'forma_de_pago',
-                    'fecha_de_creacion_de_orden', 'encargado_orden', 'dias_orden', 'inventario',
-                    'encargados_inventario', 'dias_inventario', 'insumos_y_telas', 'encargados_insumos',
-                    'dias_insumos', 'corte', 'encargados_de_corte', 'dias_corte', 'bordado',
-                    'codigo_de_bordado', 'dias_bordado', 'estampado', 'encargados_estampado',
-                    'dias_estampado', 'costura', 'modulo', 'dias_costura', 'reflectivo',
-                    'encargado_reflectivo', 'total_de_dias_reflectivo', 'lavanderia',
-                    'encargado_lavanderia', 'dias_lavanderia', 'arreglos', 'encargado_arreglos',
-                    'total_de_dias_arreglos', 'marras', 'encargados_marras', 'total_de_dias_marras',
-                    'control_de_calidad', 'encargados_calidad', 'dias_c_c', 'entrega',
-                    'encargados_entrega', 'despacho', 'column_52'
+                    'id', 'estado', 'area', 'total_de_dias_', 'dia_de_entrega', 'fecha_estimada_de_entrega', 'numero_pedido', 'cliente',
+                    'descripcion_prendas', 'cantidad', 'novedades', 'forma_de_pago', 'asesora', 'encargado_orden',
+                    'fecha_de_creacion_de_orden', 'fecha_ultimo_proceso'
                 ];
 
                 if (in_array($column, $allowedColumns)) {
                     // Si es total_de_dias_, guardarlo para filtrar después del cálculo
                     if ($column === 'total_de_dias_') {
                         $filterTotalDias = array_map('intval', $values);
-                        \Log::info("Filtro recibido - Columna: {$column}, Valores raw: " . json_encode($values) . ", Valores int: " . json_encode($filterTotalDias));
+                        continue;
+                    }
+                    
+                    // Si es asesora, filtrar por nombre de usuario
+                    if ($column === 'asesora') {
+                        $query->whereIn('asesor_id', function($subquery) use ($values) {
+                            $subquery->select('id')
+                                ->from('users')
+                                ->whereIn('name', $values);
+                        });
+                        continue;
+                    }
+                    
+                    // Si es descripcion_prendas, filtrar por prendas
+                    if ($column === 'descripcion_prendas') {
+                        // For descripcion_prendas: Match against selected description values
+                        // Both values and DB descriptions need normalization
+                        if (!empty($values)) {
+                            $query->whereIn('id', function($subquery) use ($values) {
+                                $subquery->select('pedido_produccion_id')
+                                    ->from('prendas_pedido')
+                                    ->where(function($q) use ($values) {
+                                        $first = true;
+                                        foreach ($values as $value) {
+                                            // Normalize: replace common problematic chars with spaces
+                                            $normalized = str_replace(['\r', '\n', ',', '"', ':', '='], ' ', $value);
+                                            $normalized = preg_replace('/\s+/', ' ', trim($normalized));
+                                            
+                                            if ($first) {
+                                                // Do similar normalization in the DB
+                                                $q->whereRaw(
+                                                    "LOWER(TRIM(REGEXP_REPLACE(REGEXP_REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(descripcion, '\r', ' '), '\n', ' '), ',', ' '), '\"', ' '), ':', ' '), '=', ' '), '  +', ' '))) = LOWER(?)",
+                                                    [$normalized]
+                                                );
+                                                $first = false;
+                                            } else {
+                                                $q->orWhereRaw(
+                                                    "LOWER(TRIM(REGEXP_REPLACE(REGEXP_REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(descripcion, '\r', ' '), '\n', ' '), ',', ' '), '\"', ' '), ':', ' '), '=', ' '), '  +', ' '))) = LOWER(?)",
+                                                    [$normalized]
+                                                );
+                                            }
+                                        }
+                                    })
+                                    ->distinct();
+                            });
+                        }
+                        continue;
+                    }
+                    
+                    // Si es encargado_orden, filtrar por procesos
+                    if ($column === 'encargado_orden') {
+                        $query->whereIn('id', function($subquery) use ($values) {
+                            $subquery->select('prendas_pedido.pedido_produccion_id')
+                                ->from('prendas_pedido')
+                                ->join('procesos_prenda', 'prendas_pedido.id', '=', 'procesos_prenda.prenda_pedido_id')
+                                ->where('procesos_prenda.proceso', 'Creación Orden')
+                                ->whereIn('procesos_prenda.encargado', $values)
+                                ->distinct();
+                        });
                         continue;
                     }
                     
@@ -217,18 +314,22 @@ class RegistroOrdenController extends Controller
                 ['path' => request()->url(), 'query' => request()->query()]
             );
             
-            // Recalcular solo para las órdenes de la página actual
-            $totalDiasCalculados = $this->calcularTotalDiasBatchConCache($ordenes->items(), $festivos);
+            // Recalcular solo para las órdenes de la página actual (con caché inteligente)
+            $totalDiasCalculados = CacheCalculosService::getTotalDiasBatch($ordenes->items(), $festivos);
         } else {
-            // Optimización: Reducir paginación de 50 a 25 para mejor performance
+            // OPTIMIZACIÓN: Paginación a 25 items
             $ordenes = $query->paginate(25);
 
-            // Cálculo optimizado con caché para TODAS las órdenes visibles
-            $totalDiasCalculados = $this->calcularTotalDiasBatchConCache($ordenes->items(), $festivos);
+            // OPTIMIZACIÓN CRÍTICA: SOLO calcular para la página actual (25 items) con caché
+            // No calcular para TODAS las 2257 órdenes - usa CacheCalculosService con TTL de 1 hora
+            $totalDiasCalculados = CacheCalculosService::getTotalDiasBatch($ordenes->items(), $festivos);
         }
 
-        // Obtener el último proceso (área) para cada orden desde procesos_prenda
-        $areasMap = $this->getLastProcessByOrder($ordenes->items());
+        // Obtener areasMap solo para los items de esta página (OPTIMIZACIÓN)
+        $numeroPedidosPagina = array_map(function($orden) {
+            return $orden->numero_pedido;
+        }, $ordenes->items());
+        $areasMap = $this->getLastProcessByOrderByNumbers($numeroPedidosPagina);
 
         // Obtener opciones del enum 'area'
         $areaOptions = $this->getEnumOptions('tabla_original', 'area');
@@ -762,7 +863,7 @@ class RegistroOrdenController extends Controller
                 'success' => true,
                 'updated_fields' => $updatedFields,
                 'order' => $ordenData,
-                'totalDiasCalculados' => $this->calcularTotalDiasBatch([$ordenActualizada], Festivo::pluck('fecha')->toArray())
+                'totalDiasCalculados' => CacheCalculosService::getTotalDiasBatch([$ordenActualizada], Festivo::pluck('fecha')->toArray())
             ]);
         } catch (\Exception $e) {
             // Log del error para debugging
@@ -849,38 +950,77 @@ class RegistroOrdenController extends Controller
     private function calcularTotalDiasBatchConCache(array $ordenes, array $festivos): array
     {
         $resultados = [];
+        
+        if (empty($ordenes)) {
+            return $resultados;
+        }
+
+        // OPTIMIZACIÓN: Obtener todos los procesos en UNA SOLA QUERY
+        $numeroPedidos = array_map(function($orden) {
+            return $orden->numero_pedido ?? $orden['numero_pedido'];
+        }, $ordenes);
+        
+        $numeroPedidos = array_filter(array_unique($numeroPedidos));
+        
+        if (empty($numeroPedidos)) {
+            return $resultados;
+        }
+
+        // QUERY OPTIMIZADA: Un solo SELECT para todos los pedidos
+        $procesosMap = [];
+        if (!empty($numeroPedidos)) {
+            $procesos = DB::table('procesos_prenda')
+                ->whereIn('numero_pedido', $numeroPedidos)
+                ->where('fecha_inicio', '!=', null)
+                ->select('numero_pedido', 'fecha_inicio')
+                ->orderBy('numero_pedido')
+                ->orderBy('fecha_inicio', 'desc')
+                ->get();
+
+            // Mapear el primer proceso por pedido
+            foreach ($procesos as $p) {
+                if (!isset($procesosMap[$p->numero_pedido])) {
+                    $procesosMap[$p->numero_pedido] = $p->fecha_inicio;
+                }
+            }
+        }
+
+        // OPTIMIZACIÓN: Pre-calcular set de festivos
+        $festivosSet = [];
+        foreach ($festivos as $f) {
+            try {
+                $festivosSet[\Carbon\Carbon::parse($f)->format('Y-m-d')] = true;
+            } catch (\Exception $e) {
+                // Ignorar festivos inválidos
+            }
+        }
 
         foreach ($ordenes as $orden) {
-            $ordenPedido = $orden->numero_pedido;
+            $ordenPedido = $orden->numero_pedido ?? $orden['numero_pedido'];
 
             // Verificar si fecha_de_creacion_de_orden existe
-            if (!$orden->fecha_de_creacion_de_orden) {
+            if (!($orden->fecha_de_creacion_de_orden ?? $orden['fecha_de_creacion_de_orden'])) {
                 $resultados[$ordenPedido] = 0;
                 continue;
             }
 
-            // DESACTIVADO: Caché deshabilitado para pruebas
-            // Calcular directamente sin caché
             try {
-                // Obtener fechas de procesos_prenda (nueva arquitectura)
-                $procesosPrenda = \App\Models\ProcesosPrenda::where('numero_pedido', $orden->numero_pedido)
-                    ->whereNotNull('fecha_inicio')
-                    ->orderBy('fecha_inicio', 'asc')
-                    ->get();
+                // Usar el proceso del mapa (O(1))
+                if (!isset($procesosMap[$ordenPedido])) {
+                    $resultados[$ordenPedido] = 0;
+                    continue;
+                }
 
-                if ($procesosPrenda->isEmpty()) {
-                    $dias = 0;
+                $fechaInicio = \Carbon\Carbon::parse($orden->fecha_de_creacion_de_orden ?? $orden['fecha_de_creacion_de_orden']);
+                $fechaFin = \Carbon\Carbon::parse($procesosMap[$ordenPedido]);
+                
+                $estado = $orden->estado ?? $orden['estado'];
+                if ($estado === 'Entregado') {
+                    // Para órdenes entregadas, usar última fecha de proceso
+                    $dias = $this->calcularDiasHabilesBatch($fechaInicio, $fechaFin, $festivosSet);
                 } else {
-                    $fechaInicio = \Carbon\Carbon::parse($procesosPrenda->first()->fecha_inicio);
-                    
-                    if ($orden->estado === 'Entregado') {
-                        // Para órdenes entregadas, usar última fecha de proceso
-                        $fechaFin = \Carbon\Carbon::parse($procesosPrenda->last()->fecha_inicio);
-                        $dias = $this->calcularDiasHabilesBatch($fechaInicio, $fechaFin, $festivos);
-                    } else {
-                        // Para órdenes en ejecución, contar hasta hoy
-                        $dias = $this->calcularDiasHabilesBatch($fechaInicio, \Carbon\Carbon::now(), $festivos);
-                    }
+                    // Para órdenes en ejecución, contar hasta hoy
+                    $dias = $this->calcularDiasHabilesBatch($fechaInicio, \Carbon\Carbon::now(), $festivosSet);
                 }
 
                 $resultados[$ordenPedido] = max(0, $dias);
@@ -906,6 +1046,16 @@ class RegistroOrdenController extends Controller
      */
     private function calcularDiasHabilesBatch(\Carbon\Carbon $inicio, \Carbon\Carbon $fin, array $festivos): int
     {
+        // OPTIMIZACIÓN: Crear set de festivos una sola vez
+        $festivosSet = [];
+        foreach ($festivos as $f) {
+            try {
+                $festivosSet[\Carbon\Carbon::parse($f)->format('Y-m-d')] = true;
+            } catch (\Exception $e) {
+                // Ignorar festivos inválidos
+            }
+        }
+        
         // El contador inicia desde el PRIMER DÍA HÁBIL DESPUÉS de la fecha de inicio
         // Si creación es sábado, el contador empieza desde el lunes
         
@@ -917,16 +1067,22 @@ class RegistroOrdenController extends Controller
         $weekends = 0;
         $holidaysCount = 0;
         
-        while ($current <= $fin) {
+        // LIMITE DE SEGURIDAD: No contar más de 10 años de días
+        $maxIterations = 3650;
+        $iterations = 0;
+        
+        while ($current <= $fin && $iterations < $maxIterations) {
             $dateString = $current->format('Y-m-d');
             $isWeekend = $current->dayOfWeek === 0 || $current->dayOfWeek === 6;
-            $isFestivo = in_array($dateString, array_map(fn($f) => \Carbon\Carbon::parse($f)->format('Y-m-d'), $festivos));
+            $isFestivo = isset($festivosSet[$dateString]);
             
             $totalDays++;
             if ($isWeekend) $weekends++;
             if ($isFestivo) $holidaysCount++;
             
             $current->addDay();
+            $iterations++;
+
         }
 
         $businessDays = $totalDays - $weekends - $holidaysCount;
@@ -1504,39 +1660,57 @@ class RegistroOrdenController extends Controller
             return $areasMap;
         }
         
-        // Obtener procesos actuales (procesos_prenda) ordenados por updated_at DESC
+        // Obtener procesos ordenados por fecha_inicio DESC (más reciente)
         $procesosActuales = DB::table('procesos_prenda')
             ->whereIn('numero_pedido', $numeroPedidos)
             ->orderBy('numero_pedido', 'asc')
-            ->orderBy('updated_at', 'desc')
-            ->orderBy('id', 'desc')
-            ->select('numero_pedido', 'proceso', 'updated_at', 'id')
+            ->orderBy('fecha_inicio', 'DESC')
+            ->orderBy('id', 'DESC')
+            ->select('numero_pedido', 'proceso', 'fecha_inicio', 'id')
             ->get();
         
-        // Agrupar por numero_pedido - tomar el primero (más reciente)
+        // Agrupar por numero_pedido - tomar el primero (más reciente por fecha)
         foreach ($procesosActuales as $p) {
             if (!isset($areasMap[$p->numero_pedido])) {
                 $areasMap[$p->numero_pedido] = $p->proceso;
             }
         }
         
-        // Para los pedidos que NO tienen proceso actual, buscar en historial
-        $pedidosSinArea = array_diff($numeroPedidos, array_keys($areasMap));
+        return $areasMap;
+    }
+
+    /**
+     * Obtener el último proceso (área) para cada número de pedido desde procesos_prenda
+     * Versión optimizada que recibe directamente array de números de pedido
+     */
+    private function getLastProcessByOrderByNumbers($numeroPedidos = [])
+    {
+        $areasMap = [];
         
-        if (!empty($pedidosSinArea)) {
-            $procesosHistorial = DB::table('procesos_historial')
-                ->whereIn('numero_pedido', $pedidosSinArea)
-                ->orderBy('numero_pedido', 'asc')
-                ->orderBy('updated_at', 'desc')
-                ->orderBy('id', 'desc')
-                ->select('numero_pedido', 'proceso', 'updated_at', 'id')
-                ->get();
-            
-            // Agrupar por numero_pedido - tomar el primero (más reciente)
-            foreach ($procesosHistorial as $p) {
-                if (!isset($areasMap[$p->numero_pedido])) {
-                    $areasMap[$p->numero_pedido] = $p->proceso;
-                }
+        if (empty($numeroPedidos)) {
+            return $areasMap;
+        }
+        
+        // Filtrar valores null y eliminar duplicados
+        $numeroPedidos = array_filter(array_unique($numeroPedidos));
+        
+        if (empty($numeroPedidos)) {
+            return $areasMap;
+        }
+        
+        // Obtener procesos ordenados por fecha_inicio DESC (más reciente)
+        $procesosActuales = DB::table('procesos_prenda')
+            ->whereIn('numero_pedido', $numeroPedidos)
+            ->orderBy('numero_pedido', 'asc')
+            ->orderBy('fecha_inicio', 'DESC')
+            ->orderBy('id', 'DESC')
+            ->select('numero_pedido', 'proceso', 'fecha_inicio', 'id')
+            ->get();
+        
+        // Agrupar por numero_pedido - tomar el primero (más reciente por fecha)
+        foreach ($procesosActuales as $p) {
+            if (!isset($areasMap[$p->numero_pedido])) {
+                $areasMap[$p->numero_pedido] = $p->proceso;
             }
         }
         

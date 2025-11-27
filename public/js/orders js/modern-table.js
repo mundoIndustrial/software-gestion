@@ -255,23 +255,47 @@ class ModernTable {
             select.dataset.id = orden.pedido || orden.id;
             select.dataset.value = value || '';
 
-            const options = key === 'estado' 
-                ? ['Entregado', 'En Ejecución', 'No iniciado', 'Anulada']
-                : window.areaOptions || [];
+            // Obtener opciones según el tipo
+            let options;
+            if (key === 'estado') {
+                options = ['Entregado', 'En Ejecución', 'No iniciado', 'Anulada'];
+            } else {
+                // Para área, primero agregar opción vacía "Seleccionar área"
+                options = [''];  // Opción vacía
+                const areaOpts = window.areaOptions || [];
+                options = options.concat(areaOpts);
+            }
 
             // Normalizar el valor actual para comparación
             const normalizedValue = value ? String(value).trim() : '';
 
-            options.forEach(opt => {
+            // DEBUG: Log para área
+            if (key === 'area' && orden.pedido) {
+                console.log(`[modern-table] Renderizando área para pedido ${orden.pedido}: value="${value}", normalizedValue="${normalizedValue}", options=${JSON.stringify(options)}`);
+            }
+
+            options.forEach((opt, idx) => {
                 const option = document.createElement('option');
-                option.value = opt;
-                option.textContent = opt;
+                
+                // Para la primera opción de área (vacía), mostrar "Seleccionar área"
+                if (key === 'area' && idx === 0 && opt === '') {
+                    option.value = '';
+                    option.textContent = 'Seleccionar área';
+                } else {
+                    option.value = opt;
+                    option.textContent = opt;
+                }
                 
                 // Establecer selected durante la creación de la opción
-                if (normalizedValue && opt.trim() === normalizedValue) {
+                const optTrimmed = String(opt).trim();
+                if (normalizedValue && (optTrimmed === normalizedValue || (opt === '' && normalizedValue === ''))) {
                     option.setAttribute('selected', 'selected');
                     option.defaultSelected = true;
                     option.selected = true;
+                    
+                    if (key === 'area' && orden.pedido) {
+                        console.log(`[modern-table] ✅ Opción "${optTrimmed}" seleccionada para pedido ${orden.pedido}`);
+                    }
                 }
                 
                 select.appendChild(option);
@@ -281,6 +305,9 @@ class ModernTable {
             if (normalizedValue) {
                 setTimeout(() => {
                     select.value = normalizedValue;
+                    if (key === 'area' && orden.pedido) {
+                        console.log(`[modern-table] 🔧 Forzando select.value="${normalizedValue}" para pedido ${orden.pedido}`);
+                    }
                 }, 0);
             }
 

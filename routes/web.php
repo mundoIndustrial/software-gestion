@@ -12,6 +12,7 @@ use App\Http\Controllers\TablerosController;
 use App\Http\Controllers\VistasController;
 use App\Http\Controllers\BalanceoController;
 use App\Http\Controllers\CotizacionesViewController;
+use App\Http\Controllers\DebugRegistrosController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -278,6 +279,15 @@ Route::middleware(['auth', 'role:asesor'])->prefix('asesores')->name('asesores.'
         Route::post('/ajustar-stock', [App\Http\Controllers\AsesoresInventarioTelasController::class, 'ajustarStock'])->name('ajustar-stock');
         Route::get('/historial', [App\Http\Controllers\AsesoresInventarioTelasController::class, 'historial'])->name('historial');
     });
+});
+
+// ========== DEBUG ROUTES PARA OPTIMIZACIÓN DE /registros ==========
+// Solo accesible en desarrollo o para admins
+Route::middleware(['auth', 'role:admin'])->prefix('debug')->name('debug.')->group(function () {
+    Route::get('/registros/performance', [DebugRegistrosController::class, 'debugPerformance'])->name('registros-performance');
+    Route::get('/registros/queries', [DebugRegistrosController::class, 'listAllQueries'])->name('registros-queries');
+    Route::get('/registros/table-analysis', [DebugRegistrosController::class, 'analyzeTable'])->name('registros-table-analysis');
+    Route::get('/registros/suggest-indices', [DebugRegistrosController::class, 'suggestIndices'])->name('registros-suggest-indices');
 });
 
 // API Routes para Prendas (Reconocimiento y Variaciones)
