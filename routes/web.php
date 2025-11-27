@@ -78,6 +78,10 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/api/procesos/obtener/{numero_pedido}', [App\Http\Controllers\OrdenController::class, 'obtenerProcesosPorPedido'])->name('api.procesos.obtener');
     Route::get('/api/procesos/historial/{numero_pedido}', [App\Http\Controllers\OrdenController::class, 'obtenerHistorial'])->name('api.procesos.historial');
     
+    // API - Calcular días en tiempo real
+    Route::get('/api/registros/{numero_pedido}/dias', [RegistroOrdenController::class, 'calcularDiasAPI'])->name('api.registros.dias');
+    Route::post('/api/registros/dias-batch', [RegistroOrdenController::class, 'calcularDiasBatchAPI'])->name('api.registros.dias-batch');
+    
     // API - Editar y eliminar procesos (solo admin)
     Route::middleware('role:admin')->group(function () {
         Route::put('/api/procesos/{id}/editar', [App\Http\Controllers\OrdenController::class, 'editarProceso'])->name('api.procesos.editar');

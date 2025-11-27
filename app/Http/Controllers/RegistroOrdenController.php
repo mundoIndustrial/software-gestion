@@ -64,20 +64,20 @@ class RegistroOrdenController extends Controller
                             ->values()
                             ->toArray();
                     } elseif ($column === 'descripcion_prendas') {
-                        // Obtener descripciones únicas de prendas
+                        // Obtener descripciones únicas de prendas (ahora desde descripcion_armada)
                         $uniqueValues = \DB::table('prendas_pedido')
-                            ->whereNotNull('descripcion')
-                            ->where('descripcion', '!=', '')
+                            ->whereNotNull('descripcion_armada')
+                            ->where('descripcion_armada', '!=', '')
                             ->distinct()
-                            ->pluck('descripcion')
+                            ->pluck('descripcion_armada')
                             ->filter(function($value) {
                                 return $value !== null && $value !== '';
                             })
                             ->values()
                             ->toArray();
                     } elseif ($column === 'encargado_orden') {
-                        // Obtener encargados de orden únicos (procesos_prenda)
-                        $uniqueValues = ProcesoPrenda::where('proceso', 'Creación Orden')
+                        // Obtener encargados de orden únicos (procesos_prenda - Creación de Orden)
+                        $uniqueValues = ProcesoPrenda::where('proceso', 'Creación de Orden')
                             ->whereNotNull('encargado')
                             ->distinct()
                             ->pluck('encargado')
@@ -197,34 +197,17 @@ class RegistroOrdenController extends Controller
                         continue;
                     }
                     
-                    // Si es descripcion_prendas, filtrar por prendas
+                    // Si es descripcion_prendas, filtrar por descripcion_armada
                     if ($column === 'descripcion_prendas') {
-                        // For descripcion_prendas: Match against selected description values
-                        // Both values and DB descriptions need normalization
+                        // Usar la columna descripcion_armada que ya tiene la descripción armada
+                        // Buscar todas las descripciones que contengan cualquiera de los valores ingresados
                         if (!empty($values)) {
                             $query->whereIn('id', function($subquery) use ($values) {
                                 $subquery->select('pedido_produccion_id')
                                     ->from('prendas_pedido')
                                     ->where(function($q) use ($values) {
-                                        $first = true;
                                         foreach ($values as $value) {
-                                            // Normalize: replace common problematic chars with spaces
-                                            $normalized = str_replace(['\r', '\n', ',', '"', ':', '='], ' ', $value);
-                                            $normalized = preg_replace('/\s+/', ' ', trim($normalized));
-                                            
-                                            if ($first) {
-                                                // Do similar normalization in the DB
-                                                $q->whereRaw(
-                                                    "LOWER(TRIM(REGEXP_REPLACE(REGEXP_REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(descripcion, '\r', ' '), '\n', ' '), ',', ' '), '\"', ' '), ':', ' '), '=', ' '), '  +', ' '))) = LOWER(?)",
-                                                    [$normalized]
-                                                );
-                                                $first = false;
-                                            } else {
-                                                $q->orWhereRaw(
-                                                    "LOWER(TRIM(REGEXP_REPLACE(REGEXP_REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(descripcion, '\r', ' '), '\n', ' '), ',', ' '), '\"', ' '), ':', ' '), '=', ' '), '  +', ' '))) = LOWER(?)",
-                                                    [$normalized]
-                                                );
-                                            }
+                                            $q->orWhere('descripcion_armada', 'LIKE', '%' . $value . '%');
                                         }
                                     })
                                     ->distinct();
@@ -235,12 +218,11 @@ class RegistroOrdenController extends Controller
                     
                     // Si es encargado_orden, filtrar por procesos
                     if ($column === 'encargado_orden') {
-                        $query->whereIn('id', function($subquery) use ($values) {
-                            $subquery->select('prendas_pedido.pedido_produccion_id')
-                                ->from('prendas_pedido')
-                                ->join('procesos_prenda', 'prendas_pedido.id', '=', 'procesos_prenda.prenda_pedido_id')
-                                ->where('procesos_prenda.proceso', 'Creación Orden')
-                                ->whereIn('procesos_prenda.encargado', $values)
+                        $query->whereIn('numero_pedido', function($subquery) use ($values) {
+                            $subquery->select('numero_pedido')
+                                ->from('procesos_prenda')
+                                ->where('proceso', 'Creación de Orden')
+                                ->whereIn('encargado', $values)
                                 ->distinct();
                         });
                         continue;
@@ -330,13 +312,16 @@ class RegistroOrdenController extends Controller
             return $orden->numero_pedido;
         }, $ordenes->items());
         $areasMap = $this->getLastProcessByOrderByNumbers($numeroPedidosPagina);
+        
+        // Obtener encargados de "Creación Orden" para cada pedido
+        $encargadosCreacionOrdenMap = $this->getCreacionOrdenEncargados($numeroPedidosPagina);
 
         // Obtener opciones del enum 'area'
         $areaOptions = $this->getEnumOptions('tabla_original', 'area');
 
         if ($request->wantsJson()) {
             // Filtrar campos sensibles según el rol del usuario
-            $ordenesFiltered = array_map(function($orden) use ($areasMap) {
+            $ordenesFiltered = array_map(function($orden) use ($areasMap, $encargadosCreacionOrdenMap) {
                 $ordenArray = is_object($orden) ? $orden->toArray() : (array) $orden;
                 
                 // Campos que se ocultan para todos los usuarios
@@ -367,6 +352,9 @@ class RegistroOrdenController extends Controller
                 
                 // Agregar el área (último proceso) desde procesos_prenda
                 $ordenArray['area'] = $areasMap[$orden->numero_pedido] ?? 'Creación Orden';
+                
+                // Agregar el encargado de "Creación Orden" desde procesos_prenda
+                $ordenArray['encargado_orden'] = $encargadosCreacionOrdenMap[$orden->numero_pedido] ?? '';
                 
                 // Eliminar campos ocultos globales
                 foreach ($camposOcultosGlobal as $campo) {
@@ -405,7 +393,7 @@ class RegistroOrdenController extends Controller
         $fetchUrl = '/registros';
         $updateUrl = '/registros';
         $modalContext = 'orden';
-        return view('orders.index', compact('ordenes', 'totalDiasCalculados', 'areaOptions', 'areasMap', 'context', 'title', 'icon', 'fetchUrl', 'updateUrl', 'modalContext'));
+        return view('orders.index', compact('ordenes', 'totalDiasCalculados', 'areaOptions', 'areasMap', 'encargadosCreacionOrdenMap', 'context', 'title', 'icon', 'fetchUrl', 'updateUrl', 'modalContext'));
     }
 
     public function show($pedido)
@@ -953,87 +941,9 @@ class RegistroOrdenController extends Controller
      */
     private function calcularTotalDiasBatchConCache(array $ordenes, array $festivos): array
     {
-        $resultados = [];
-        
-        if (empty($ordenes)) {
-            return $resultados;
-        }
-
-        // OPTIMIZACIÓN: Obtener todos los procesos en UNA SOLA QUERY
-        $numeroPedidos = array_map(function($orden) {
-            return $orden->numero_pedido ?? $orden['numero_pedido'];
-        }, $ordenes);
-        
-        $numeroPedidos = array_filter(array_unique($numeroPedidos));
-        
-        if (empty($numeroPedidos)) {
-            return $resultados;
-        }
-
-        // QUERY OPTIMIZADA: Un solo SELECT para todos los pedidos
-        $procesosMap = [];
-        if (!empty($numeroPedidos)) {
-            $procesos = DB::table('procesos_prenda')
-                ->whereIn('numero_pedido', $numeroPedidos)
-                ->where('fecha_inicio', '!=', null)
-                ->select('numero_pedido', 'fecha_inicio')
-                ->orderBy('numero_pedido')
-                ->orderBy('fecha_inicio', 'desc')
-                ->get();
-
-            // Mapear el primer proceso por pedido
-            foreach ($procesos as $p) {
-                if (!isset($procesosMap[$p->numero_pedido])) {
-                    $procesosMap[$p->numero_pedido] = $p->fecha_inicio;
-                }
-            }
-        }
-
-        // OPTIMIZACIÓN: Pre-calcular set de festivos
-        $festivosSet = [];
-        foreach ($festivos as $f) {
-            try {
-                $festivosSet[\Carbon\Carbon::parse($f)->format('Y-m-d')] = true;
-            } catch (\Exception $e) {
-                // Ignorar festivos inválidos
-            }
-        }
-
-        foreach ($ordenes as $orden) {
-            $ordenPedido = $orden->numero_pedido ?? $orden['numero_pedido'];
-
-            // Verificar si fecha_de_creacion_de_orden existe
-            if (!($orden->fecha_de_creacion_de_orden ?? $orden['fecha_de_creacion_de_orden'])) {
-                $resultados[$ordenPedido] = 0;
-                continue;
-            }
-
-            try {
-                // Usar el proceso del mapa (O(1))
-                if (!isset($procesosMap[$ordenPedido])) {
-                    $resultados[$ordenPedido] = 0;
-                    continue;
-                }
-
-                $fechaInicio = \Carbon\Carbon::parse($orden->fecha_de_creacion_de_orden ?? $orden['fecha_de_creacion_de_orden']);
-                $fechaFin = \Carbon\Carbon::parse($procesosMap[$ordenPedido]);
-                
-                $estado = $orden->estado ?? $orden['estado'];
-                if ($estado === 'Entregado') {
-                    // Para órdenes entregadas, usar última fecha de proceso
-                    $dias = $this->calcularDiasHabilesBatch($fechaInicio, $fechaFin, $festivosSet);
-                } else {
-                    // Para órdenes en ejecución, contar hasta hoy
-                    $dias = $this->calcularDiasHabilesBatch($fechaInicio, \Carbon\Carbon::now(), $festivosSet);
-                }
-
-                $resultados[$ordenPedido] = max(0, $dias);
-            } catch (\Exception $e) {
-                $resultados[$ordenPedido] = 0;
-            }
-        }
-
-        return $resultados;
+        // IMPORTANTE: Delegar TODO a CacheCalculosService
+        // Esto garantiza que servidor y API usen exactamente la misma lógica
+        return \App\Services\CacheCalculosService::getTotalDiasBatch($ordenes, $festivos);
     }
     
     /**
@@ -1043,55 +953,6 @@ class RegistroOrdenController extends Controller
     private function calcularTotalDiasBatch(array $ordenes, array $festivos): array
     {
         return $this->calcularTotalDiasBatchConCache($ordenes, $festivos);
-    }
-
-    /**
-     * Cálculo vectorizado de días hábiles (optimizado para batch)
-     */
-    private function calcularDiasHabilesBatch(\Carbon\Carbon $inicio, \Carbon\Carbon $fin, array $festivos): int
-    {
-        // OPTIMIZACIÓN: Crear set de festivos una sola vez
-        $festivosSet = [];
-        foreach ($festivos as $f) {
-            try {
-                $festivosSet[\Carbon\Carbon::parse($f)->format('Y-m-d')] = true;
-            } catch (\Exception $e) {
-                // Ignorar festivos inválidos
-            }
-        }
-        
-        // El contador inicia desde el PRIMER DÍA HÁBIL DESPUÉS de la fecha de inicio
-        // Si creación es sábado, el contador empieza desde el lunes
-        
-        // Avanzar al día siguiente
-        $current = $inicio->copy()->addDay();
-        
-        // Contar solo desde el primer día hábil después
-        $totalDays = 0;
-        $weekends = 0;
-        $holidaysCount = 0;
-        
-        // LIMITE DE SEGURIDAD: No contar más de 10 años de días
-        $maxIterations = 3650;
-        $iterations = 0;
-        
-        while ($current <= $fin && $iterations < $maxIterations) {
-            $dateString = $current->format('Y-m-d');
-            $isWeekend = $current->dayOfWeek === 0 || $current->dayOfWeek === 6;
-            $isFestivo = isset($festivosSet[$dateString]);
-            
-            $totalDays++;
-            if ($isWeekend) $weekends++;
-            if ($isFestivo) $holidaysCount++;
-            
-            $current->addDay();
-            $iterations++;
-
-        }
-
-        $businessDays = $totalDays - $weekends - $holidaysCount;
-
-        return max(0, $businessDays);
     }
 
     /**
@@ -1687,6 +1548,36 @@ class RegistroOrdenController extends Controller
      * Obtener el último proceso (área) para cada número de pedido desde procesos_prenda
      * Versión optimizada que recibe directamente array de números de pedido
      */
+    private function getCreacionOrdenEncargados($numeroPedidos = [])
+    {
+        $encargadosMap = [];
+        
+        if (empty($numeroPedidos)) {
+            return $encargadosMap;
+        }
+        
+        // Filtrar valores null y eliminar duplicados
+        $numeroPedidos = array_filter(array_unique($numeroPedidos));
+        
+        if (empty($numeroPedidos)) {
+            return $encargadosMap;
+        }
+        
+        // Obtener el encargado del proceso "Creación de Orden" para cada pedido
+        $procesos = DB::table('procesos_prenda')
+            ->whereIn('numero_pedido', $numeroPedidos)
+            ->where('proceso', 'Creación de Orden')
+            ->select('numero_pedido', 'encargado')
+            ->get();
+        
+        // Mapear numero_pedido a encargado
+        foreach ($procesos as $p) {
+            $encargadosMap[$p->numero_pedido] = $p->encargado ?? '';
+        }
+        
+        return $encargadosMap;
+    }
+
     private function getLastProcessByOrderByNumbers($numeroPedidos = [])
     {
         $areasMap = [];
@@ -1719,5 +1610,85 @@ class RegistroOrdenController extends Controller
         }
         
         return $areasMap;
+    }
+
+    /**
+     * API endpoint para calcular días en tiempo real
+     * Usado en modal de tracking y tabla de órdenes
+     */
+    public function calcularDiasAPI(Request $request, $numeroPedido)
+    {
+        try {
+            // Validar entrada
+            if (!$numeroPedido) {
+                return response()->json(['error' => 'Número de pedido requerido'], 400);
+            }
+
+            // Obtener festivos
+            $festivos = Festivo::pluck('fecha')->toArray();
+            
+            // Obtener la orden
+            $orden = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+            if (!$orden) {
+                return response()->json(['error' => 'Orden no encontrada'], 404);
+            }
+
+            // Calcular días usando el método existente
+            $resultado = $this->calcularTotalDiasBatchConCache([$orden], $festivos);
+            $diasCalculados = $resultado[$numeroPedido] ?? 0;
+
+            return response()->json([
+                'success' => true,
+                'numero_pedido' => $numeroPedido,
+                'total_dias' => intval($diasCalculados),
+                'timestamp' => now()->toIso8601String()
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en calcularDiasAPI: ' . $e->getMessage());
+            return response()->json(['error' => 'Error al calcular días'], 500);
+        }
+    }
+
+    /**
+     * API endpoint para calcular días de múltiples órdenes
+     * Usado para actualizar tabla completa
+     */
+    public function calcularDiasBatchAPI(Request $request)
+    {
+        try {
+            // Validar entrada
+            $numeroPedidos = $request->input('numero_pedidos', []);
+            if (empty($numeroPedidos)) {
+                return response()->json(['error' => 'Lista de pedidos requerida'], 400);
+            }
+
+            // Obtener festivos
+            $festivos = Festivo::pluck('fecha')->toArray();
+            
+            // Obtener todas las órdenes
+            $ordenes = PedidoProduccion::whereIn('numero_pedido', $numeroPedidos)->get();
+            if ($ordenes->isEmpty()) {
+                return response()->json(['error' => 'No se encontraron órdenes'], 404);
+            }
+
+            // Calcular días para todas
+            $resultados = $this->calcularTotalDiasBatchConCache($ordenes->toArray(), $festivos);
+
+            // Formatear respuesta
+            $dias = [];
+            foreach ($numeroPedidos as $pedido) {
+                $dias[$pedido] = intval($resultados[$pedido] ?? 0);
+            }
+
+            return response()->json([
+                'success' => true,
+                'dias' => $dias,
+                'total' => count($dias),
+                'timestamp' => now()->toIso8601String()
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en calcularDiasBatchAPI: ' . $e->getMessage());
+            return response()->json(['error' => 'Error al calcular días'], 500);
+        }
     }
 }

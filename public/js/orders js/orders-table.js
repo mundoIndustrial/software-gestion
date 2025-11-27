@@ -689,6 +689,15 @@ function updateRowColor(orderId, newStatus) {
 document.addEventListener('DOMContentLoaded', function () {
     initializeStatusDropdowns();
     initializeAreaDropdowns();
+    
+    // ACTUALIZAR DÍAS EN TIEMPO REAL en la carga inicial (con delay para asegurar que tabla esté lista)
+    if (typeof actualizarDiasTabla === 'function') {
+        setTimeout(() => {
+            console.log('⏱️ Iniciando actualización de días en carga inicial...');
+            actualizarDiasTabla();
+            console.log('✅ Días actualizados en carga inicial de la tabla');
+        }, 800);
+    }
 });
 
 // OPTIMIZACIÓN: MutationObserver ELIMINADO - causaba reinicializaciones innecesarias

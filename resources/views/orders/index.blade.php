@@ -250,9 +250,9 @@
                                                             <option value="30" {{ $orden->$colName == 30 ? 'selected' : '' }}>30 días</option>
                                                         </select>
                                                     @else
-                                                        <span class="cell-text">
+                                                        <span class="cell-text" data-pedido="{{ $orden->numero_pedido }}">
                                                             @if($colName === 'total_de_dias_')
-                                                                {{ $totalDiasCalculados[$orden->numero_pedido] ?? 0 }}
+                                                                <span class="dias-value">{{ intval($totalDiasCalculados[$orden->numero_pedido] ?? 0) }}</span>
                                                             @elseif($colName === 'asesora')
                                                                 {{ $orden->asesora->name ?? ($orden->$colName ?? '') }}
                                                             @elseif($colName === 'numero_pedido')
@@ -261,6 +261,8 @@
                                                                 {{ $orden->descripcion_prendas }}
                                                             @elseif($colName === 'cantidad_total')
                                                                 {{ $orden->cantidad_total }}
+                                                            @elseif($colName === 'encargado_orden')
+                                                                {{ $encargadosCreacionOrdenMap[$orden->numero_pedido] ?? '' }}
                                                             @elseif(in_array($colName, ['fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega']))
                                                                 @php
                                                                     echo !empty($orden->$colName) ? \Carbon\Carbon::parse($orden->$colName)->format('d/m/Y') : '';

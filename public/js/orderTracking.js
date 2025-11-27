@@ -359,6 +359,27 @@ function openOrderTracking(orderId) {
         return response.json();
     })
     .then(data => {
+        // Obtener días calculados en tiempo real desde el API
+        return fetch(`/api/registros/${orderId}/dias`, {
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(diasResponse => {
+            if (diasResponse.ok) {
+                return diasResponse.json().then(diasData => {
+                    // Agregar los días calculados a los datos del pedido
+                    data.total_dias_habiles = diasData.total_dias;
+                    data.timestamp_calculo = diasData.timestamp;
+                    return data;
+                });
+            }
+            // Si falla la obtención de días, devolver data sin días
+            return data;
+        });
+    })
+    .then(data => {
         displayOrderTrackingWithProcesos(data);
     })
     .catch(error => {
@@ -433,17 +454,16 @@ async function displayOrderTrackingWithProcesos(orderData) {
         return;
     }
     
-    // Usar el total de días hábiles calculado por el backend
-    const totalDias = orderData.total_dias_habiles || 0;
+    // Usar el total de días hábiles calculado por el backend (fallback)
+    let totalDias = orderData.total_dias_habiles || 0;
     const festivos = orderData.festivos || [];
-    
-    document.getElementById('trackingTotalDays').textContent = totalDias;
     
     // Llenar timeline de procesos
     const timelineContainer = document.getElementById('trackingTimelineContainer');
     timelineContainer.innerHTML = '';
     
     let fechaAnterior = null;
+    let totalDiasCalculado = 0; // Sumar días conforme procesamos
     
     procesos.forEach((proceso, index) => {
         const timelineItem = document.createElement('div');
@@ -454,22 +474,23 @@ async function displayOrderTrackingWithProcesos(orderData) {
         
         // Calcular días en esta área
         let diasEnArea = 0;
-        if (index === procesos.length - 1) {
-            // Es el último proceso: contar hasta hoy
-            const fecha1 = parseLocalDate(proceso.fecha_inicio);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            if (!isNaN(fecha1.getTime())) {
-                diasEnArea = calculateBusinessDays(fecha1, today, festivos);
+        const fecha1 = parseLocalDate(proceso.fecha_inicio);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        // IMPORTANTE: La lógica debe ser consistente con la del backend
+        // - Si hay siguiente proceso: contar desde este hasta el siguiente
+        // - Si NO hay siguiente: contar desde este hasta hoy
+        const proximo = procesos[index + 1];
+        
+        if (proximo) {
+            // Hay siguiente proceso: contar hasta su fecha
+            const fecha2 = parseLocalDate(proximo.fecha_inicio);
+            if (!isNaN(fecha1.getTime()) && !isNaN(fecha2.getTime())) {
+                diasEnArea = calculateBusinessDays(fecha1, fecha2, festivos);
             }
-        } else if (fechaAnterior) {
-            // No es el primer proceso: contar desde el anterior
-            diasEnArea = calculateBusinessDays(fechaAnterior, proceso.fecha_inicio, festivos);
         } else {
-            // Es el primer proceso: contar desde él hasta hoy
-            const fecha1 = parseLocalDate(proceso.fecha_inicio);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
+            // Es el último: contar hasta hoy
             if (!isNaN(fecha1.getTime())) {
                 diasEnArea = calculateBusinessDays(fecha1, today, festivos);
             }
@@ -538,6 +559,9 @@ async function displayOrderTrackingWithProcesos(orderData) {
             </div>
         `;
         
+        // Acumular días totales
+        totalDiasCalculado += diasEnArea;
+        
         detailsHTML += `
             <div class="tracking-detail-row">
                 <span class="tracking-detail-label">Estado</span>
@@ -549,9 +573,17 @@ async function displayOrderTrackingWithProcesos(orderData) {
         areaCard.innerHTML = detailsHTML;
         timelineItem.appendChild(areaCard);
         timelineContainer.appendChild(timelineItem);
-        
-        fechaAnterior = proceso.fecha_inicio;
     });
+    
+    // IMPORTANTE: Si no se pudo calcular desde el backend, usar la suma de días en área
+    if (totalDias === 0 && totalDiasCalculado > 0) {
+        totalDias = totalDiasCalculado;
+        console.log(`ℹ️ Total de días recalculado desde procesos: ${totalDias}`);
+    }
+    
+    // Actualizar total de días en el modal
+    document.getElementById('trackingTotalDays').textContent = totalDias;
+    console.log(`✅ Total de días mostrado: ${totalDias}`);
     
     // Agregar event listeners a los botones
     document.querySelectorAll('.btn-editar-proceso').forEach(btn => {
@@ -1253,4 +1285,136 @@ function closeViewDropdown(orderId) {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ Order Tracking inicializado');
     initializeTrackingModal();
+    
+    // Cargar días en tiempo real para la tabla actual
+    actualizarDiasTabla();
 });
+
+/**
+ * Actualiza los días en tiempo real para la tabla actual
+ * Se ejecuta cuando carga la página o cuando cambia de página
+ */
+function actualizarDiasTabla() {
+    // Obtener todos los números de pedido de la tabla
+    const tabla = document.getElementById('tablaOrdenes');
+    if (!tabla) {
+        console.log('❌ Tabla #tablaOrdenes no encontrada');
+        return;
+    }
+    
+    const tbody = tabla.querySelector('tbody');
+    if (!tbody) {
+        console.log('❌ tbody no encontrado en tabla');
+        return;
+    }
+    
+    const filas = tbody.querySelectorAll('tr[data-numero-pedido]');
+    console.log(`📊 Filas con data-numero-pedido encontradas: ${filas.length}`);
+    
+    if (filas.length === 0) {
+        console.log('⏱️ No hay órdenes en la tabla actual');
+        return;
+    }
+    
+    // Recopilar números de pedido
+    const numeroPedidos = Array.from(filas)
+        .map(fila => {
+            const num = fila.getAttribute('data-numero-pedido');
+            console.log(`  → Pedido: ${num}`);
+            return num;
+        })
+        .filter(num => num && num !== '');
+    
+    if (numeroPedidos.length === 0) {
+        console.log('❌ No se encontraron números de pedido');
+        return;
+    }
+    
+    console.log(`⏱️ Actualizando ${numeroPedidos.length} órdenes en la tabla`);
+    
+    // Hacer llamada batch al API
+    fetch('/api/registros/dias-batch', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({
+            numero_pedidos: numeroPedidos
+        })
+    })
+    .then(response => {
+        console.log(`📡 Respuesta recibida: HTTP ${response.status}`);
+        if (!response.ok) {
+            console.error('❌ Error en respuesta HTTP:', response.status);
+            throw new Error(`HTTP ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log(`📦 Datos recibidos:`, data);
+        
+        if (!data || !data.success) {
+            console.error('❌ Error en respuesta API:', data);
+            return;
+        }
+        
+        console.log(`✅ Días obtenidos para ${Object.keys(data.dias).length} órdenes`);
+        console.log(`   Días por pedido:`, data.dias);
+        
+        // Actualizar cada fila en la tabla
+        let actualizadas = 0;
+        filas.forEach(fila => {
+            const numeroPedido = fila.getAttribute('data-numero-pedido');
+            const dias = data.dias[numeroPedido];
+            
+            if (dias !== undefined && dias !== null) {
+                // Buscar la celda de "total_de_dias_"
+                const celdas = fila.querySelectorAll('td[data-column="total_de_dias_"]');
+                console.log(`   Pedido ${numeroPedido}: encontradas ${celdas.length} celdas con data-column="total_de_dias_"`);
+                
+                celdas.forEach(celdaTotal => {
+                    // Intentar buscar primero el .dias-value (nuevo)
+                    let spanDias = celdaTotal.querySelector('.dias-value');
+                    
+                    // Si no existe, buscar el .cell-text (antiguo)
+                    if (!spanDias) {
+                        spanDias = celdaTotal.querySelector('.cell-text');
+                    }
+                    
+                    if (spanDias) {
+                        const textoAnterior = spanDias.textContent.trim();
+                        spanDias.textContent = String(dias);
+                        console.log(`   ↻ Pedido ${numeroPedido}: "${textoAnterior}" → "${dias}"`);
+                        actualizadas++;
+                    } else {
+                        console.warn(`   ⚠️  No se encontró span en celda de pedido ${numeroPedido}`);
+                        console.log(`   HTML de celda:`, celdaTotal.innerHTML);
+                    }
+                });
+            } else {
+                console.warn(`   ⚠️  No hay datos de días para pedido ${numeroPedido}`);
+            }
+        });
+        
+        console.log(`✅ Tabla actualizada: ${actualizadas} celdas actualizadas`);
+    })
+    .catch(error => {
+        console.error('❌ Error al actualizar días en tabla:', error);
+    });
+}
+
+/**
+ * Hook para actualizar días cuando cambia de página
+ * Llamar esto desde el manejador de paginación
+ */
+function actualizarDiasAlCambiarPagina() {
+    console.log('⏱️ Cambiando página, actualizando días...');
+    
+    // Esperar a que se carguen los elementos de la nueva página
+    setTimeout(() => {
+        actualizarDiasTabla();
+    }, 200);
+}

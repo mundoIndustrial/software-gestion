@@ -14,18 +14,78 @@ class MigrarProcesosCorrectamente extends Command
     protected $description = 'Migra TODOS los procesos de tabla_original a procesos_prenda con áreas correctas';
 
     protected $procesosMap = [
-        'encargado_orden' => ['proceso' => 'Creación Orden', 'fecha' => 'encargado_orden', 'encargado' => 'encargado_orden', 'dias' => 'dias_orden'],
-        'insumos_y_telas' => ['proceso' => 'Insumos y Telas', 'fecha' => 'insumos_y_telas', 'encargado' => 'encargados_insumos', 'dias' => 'dias_insumos'],
-        'corte' => ['proceso' => 'Corte', 'fecha' => 'corte', 'encargado' => 'encargados_de_corte', 'dias' => 'dias_corte'],
-        'bordado' => ['proceso' => 'Bordado', 'fecha' => 'bordado', 'encargado' => 'codigo_de_bordado', 'dias' => 'dias_bordado'],
-        'estampado' => ['proceso' => 'Estampado', 'fecha' => 'estampado', 'encargado' => 'encargados_estampado', 'dias' => 'dias_estampado'],
-        'costura' => ['proceso' => 'Costura', 'fecha' => 'costura', 'encargado' => 'modulo', 'dias' => 'dias_costura'],
-        'reflectivo' => ['proceso' => 'Reflectivo', 'fecha' => 'reflectivo', 'encargado' => 'encargado_reflectivo', 'dias' => 'total_de_dias_reflectivo'],
-        'lavanderia' => ['proceso' => 'Lavandería', 'fecha' => 'lavanderia', 'encargado' => 'encargado_lavanderia', 'dias' => 'dias_lavanderia'],
-        'arreglos' => ['proceso' => 'Arreglos', 'fecha' => 'arreglos', 'encargado' => 'encargado_arreglos', 'dias' => 'total_de_dias_arreglos'],
-        'control_de_calidad' => ['proceso' => 'Control Calidad', 'fecha' => 'control_de_calidad', 'encargado' => 'encargados_calidad', 'dias' => 'dias_c_c'],
-        'entrega' => ['proceso' => 'Entrega', 'fecha' => 'entrega', 'encargado' => 'encargados_entrega', 'dias' => null],
-        'despacho' => ['proceso' => 'Despacho', 'fecha' => 'despacho', 'encargado' => 'column_52', 'dias' => null],
+        'creacion_de_orden' => [
+            'proceso' => 'Creación de Orden',
+            'fecha' => 'fecha_de_creacion_de_orden',  // ← La fecha real de inicio
+            'encargado' => 'encargado_orden',          // ← El encargado asignado
+            'dias' => 'dias_orden',
+        ],
+        'insumos_y_telas' => [
+            'proceso' => 'Insumos y Telas',
+            'fecha' => 'insumos_y_telas',
+            'encargado' => 'encargados_insumos',
+            'dias' => 'dias_insumos',
+        ],
+        'corte' => [
+            'proceso' => 'Corte',
+            'fecha' => 'corte',
+            'encargado' => 'encargados_de_corte',
+            'dias' => 'dias_corte',
+        ],
+        'bordado' => [
+            'proceso' => 'Bordado',
+            'fecha' => 'bordado',
+            'encargado' => 'codigo_de_bordado',
+            'dias' => 'dias_bordado',
+        ],
+        'estampado' => [
+            'proceso' => 'Estampado',
+            'fecha' => 'estampado',
+            'encargado' => 'encargados_estampado',
+            'dias' => 'dias_estampado',
+        ],
+        'costura' => [
+            'proceso' => 'Costura',
+            'fecha' => 'costura',
+            'encargado' => 'modulo',
+            'dias' => 'dias_costura',
+        ],
+        'reflectivo' => [
+            'proceso' => 'Reflectivo',
+            'fecha' => 'reflectivo',
+            'encargado' => 'encargado_reflectivo',
+            'dias' => 'total_de_dias_reflectivo',
+        ],
+        'lavanderia' => [
+            'proceso' => 'Lavandería',
+            'fecha' => 'lavanderia',
+            'encargado' => 'encargado_lavanderia',
+            'dias' => 'dias_lavanderia',
+        ],
+        'arreglos' => [
+            'proceso' => 'Arreglos',
+            'fecha' => 'arreglos',
+            'encargado' => 'encargado_arreglos',
+            'dias' => 'total_de_dias_arreglos',
+        ],
+        'control_de_calidad' => [
+            'proceso' => 'Control Calidad',
+            'fecha' => 'control_de_calidad',
+            'encargado' => 'encargados_calidad',
+            'dias' => 'dias_c_c',
+        ],
+        'entrega' => [
+            'proceso' => 'Entrega',
+            'fecha' => 'entrega',
+            'encargado' => 'encargados_entrega',
+            'dias' => null,
+        ],
+        'despacho' => [
+            'proceso' => 'Despacho',
+            'fecha' => 'despacho',
+            'encargado' => 'column_52',
+            'dias' => null,
+        ],
     ];
 
     protected $stats = [
@@ -84,6 +144,8 @@ class MigrarProcesosCorrectamente extends Command
         $bar = $this->output->createProgressBar($pedidos->count());
         $bar->start();
 
+        $procesos_saltados = 0;
+
         foreach ($pedidos as $pedidoOriginal) {
             try {
                 $pedido = PedidoProduccion::where('numero_pedido', $pedidoOriginal->pedido)->first();
@@ -93,59 +155,62 @@ class MigrarProcesosCorrectamente extends Command
                     continue;
                 }
 
-                // Recopilar todos los procesos con fecha
-                $procesosConFecha = [];
+                // VERIFICAR: ¿Este pedido tiene cotizacion_id?
+                if ($pedido->cotizacion_id !== null) {
+                    // ⚠️ SALTAR: Este pedido tiene cotizacion_id
+                    $procesos_saltados++;
+                    $bar->advance();
+                    continue;
+                }
 
-                foreach ($this->procesosMap as $columnFecha => $info) {
+                $ultimaFecha = null;
+                $ultimoProceso = null;
+
+                // Migrar todos los procesos usando el mapeo
+                foreach ($this->procesosMap as $key => $info) {
                     $fechaValue = $pedidoOriginal->{$info['fecha']} ?? null;
 
-                    if ($fechaValue && $fechaValue !== '0000-00-00') {
-                        try {
-                            $fecha = $this->parsearFecha($fechaValue);
-                            if ($fecha) {
-                                $encargado = $pedidoOriginal->{$info['encargado']} ?? null;
-                                $dias = null;
-                                
-                                if ($info['dias']) {
-                                    $diasValue = $pedidoOriginal->{$info['dias']} ?? null;
-                                    $dias = is_numeric($diasValue) ? $diasValue : null;
-                                }
-                                
-                                $procesosConFecha[] = [
-                                    'proceso' => $info['proceso'],
-                                    'fecha' => $fecha,
-                                    'encargado' => $encargado,
-                                    'dias' => $dias,
-                                    'original_value' => $fechaValue,
-                                ];
+                    if ($fechaValue && $fechaValue !== '0000-00-00' && $fechaValue !== '0000-00-00 00:00:00') {
+                        $fecha = $this->parsearFecha($fechaValue);
+                        
+                        if ($fecha) {
+                            $encargado = $pedidoOriginal->{$info['encargado']} ?? null;
+                            $dias = null;
+                            
+                            if ($info['dias']) {
+                                $diasValue = $pedidoOriginal->{$info['dias']} ?? null;
+                                $dias = is_numeric($diasValue) ? intval($diasValue) : null;
                             }
-                        } catch (\Exception $e) {
-                            // Saltar fechas inválidas
-                            continue;
+
+                            if (!$dryRun) {
+                                ProcesoPrenda::updateOrCreate(
+                                    [
+                                        'numero_pedido' => $pedido->numero_pedido,
+                                        'proceso' => $info['proceso'],
+                                    ],
+                                    [
+                                        'fecha_inicio' => $fecha,
+                                        'fecha_fin' => $fecha,
+                                        'encargado' => $encargado,
+                                        'dias_duracion' => $dias,
+                                        'estado_proceso' => 'Completado',
+                                    ]
+                                );
+                            }
+
+                            $this->stats['procesos_migrados']++;
+                            $ultimaFecha = $fecha;
+                            $ultimoProceso = $info['proceso'];
                         }
                     }
                 }
 
-                // Crear procesos en la BD
-                if (!$dryRun) {
-                    foreach ($procesosConFecha as $procesoData) {
-                        ProcesoPrenda::updateOrCreate(
-                            [
-                                'numero_pedido' => $pedido->numero_pedido,
-                                'proceso' => $procesoData['proceso'],
-                            ],
-                            [
-                                'fecha_inicio' => $procesoData['fecha'],
-                                'fecha_fin' => $procesoData['fecha'],
-                                'encargado' => $procesoData['encargado'],
-                                'dias_duracion' => $procesoData['dias'],
-                                'estado_proceso' => 'Completado',
-                            ]
-                        );
-                        $this->stats['procesos_migrados']++;
-                    }
-                } else {
-                    $this->stats['procesos_migrados'] += count($procesosConFecha);
+                // Actualizar área y fecha_ultimo_proceso del pedido
+                if (!$dryRun && $ultimaFecha && $ultimoProceso) {
+                    $pedido->update([
+                        'area' => $ultimoProceso,
+                        'fecha_ultimo_proceso' => $ultimaFecha,
+                    ]);
                 }
 
                 $bar->advance();
@@ -158,6 +223,9 @@ class MigrarProcesosCorrectamente extends Command
         $bar->finish();
         $this->newLine();
         $this->line("   ✅ Procesos migrados: {$this->stats['procesos_migrados']}\n");
+        if ($procesos_saltados > 0) {
+            $this->line("   ⚠️  Procesos saltados (pedido con cotizacion_id): {$procesos_saltados}\n");
+        }
     }
 
     private function actualizarAreas($dryRun)

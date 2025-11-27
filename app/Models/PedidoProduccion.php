@@ -58,6 +58,28 @@ class PedidoProduccion extends Model
                 }
             }
         });
+
+        // Crear automáticamente el proceso "Creación de Orden" cuando se crea un nuevo pedido
+        static::created(function ($model) {
+            // Solo crear si es un nuevo pedido (tiene numero_pedido y fecha_de_creacion_de_orden)
+            if ($model->numero_pedido && $model->fecha_de_creacion_de_orden) {
+                // Verificar si ya existe el proceso
+                $existe = \App\Models\ProcesosPrenda::where('numero_pedido', $model->numero_pedido)
+                    ->where('proceso', 'Creación de Orden')
+                    ->exists();
+
+                if (!$existe) {
+                    // Crear el proceso automáticamente
+                    \App\Models\ProcesosPrenda::create([
+                        'numero_pedido' => $model->numero_pedido,
+                        'proceso' => 'Creación de Orden',
+                        'fecha_inicio' => $model->fecha_de_creacion_de_orden,
+                        'fecha_fin' => $model->fecha_de_creacion_de_orden,
+                        'encargado' => null, // Se asignará luego
+                    ]);
+                }
+            }
+        });
     }
 
     /**

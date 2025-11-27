@@ -47,6 +47,82 @@ class MigrateTablaOriginalCompleto extends Command
     protected $mapeoAsesoras = [];
     protected $mapeoClientes = [];
 
+    // Mapeo completo de procesos con sus campos en tabla_original
+    protected $procesosMap = [
+        'creacion_de_orden' => [
+            'proceso' => 'Creación de Orden',
+            'fecha' => 'fecha_de_creacion_de_orden',  // ← La fecha real de inicio
+            'encargado' => 'encargado_orden',          // ← El encargado asignado
+            'dias' => 'dias_orden',
+        ],
+        'insumos_y_telas' => [
+            'proceso' => 'Insumos y Telas',
+            'fecha' => 'insumos_y_telas',
+            'encargado' => 'encargados_insumos',
+            'dias' => 'dias_insumos',
+        ],
+        'corte' => [
+            'proceso' => 'Corte',
+            'fecha' => 'corte',
+            'encargado' => 'encargados_de_corte',
+            'dias' => 'dias_corte',
+        ],
+        'bordado' => [
+            'proceso' => 'Bordado',
+            'fecha' => 'bordado',
+            'encargado' => 'codigo_de_bordado',
+            'dias' => 'dias_bordado',
+        ],
+        'estampado' => [
+            'proceso' => 'Estampado',
+            'fecha' => 'estampado',
+            'encargado' => 'encargados_estampado',
+            'dias' => 'dias_estampado',
+        ],
+        'costura' => [
+            'proceso' => 'Costura',
+            'fecha' => 'costura',
+            'encargado' => 'modulo',
+            'dias' => 'dias_costura',
+        ],
+        'reflectivo' => [
+            'proceso' => 'Reflectivo',
+            'fecha' => 'reflectivo',
+            'encargado' => 'encargado_reflectivo',
+            'dias' => 'total_de_dias_reflectivo',
+        ],
+        'lavanderia' => [
+            'proceso' => 'Lavandería',
+            'fecha' => 'lavanderia',
+            'encargado' => 'encargado_lavanderia',
+            'dias' => 'dias_lavanderia',
+        ],
+        'arreglos' => [
+            'proceso' => 'Arreglos',
+            'fecha' => 'arreglos',
+            'encargado' => 'encargado_arreglos',
+            'dias' => 'total_de_dias_arreglos',
+        ],
+        'control_de_calidad' => [
+            'proceso' => 'Control Calidad',
+            'fecha' => 'control_de_calidad',
+            'encargado' => 'encargados_calidad',
+            'dias' => 'dias_c_c',
+        ],
+        'entrega' => [
+            'proceso' => 'Entrega',
+            'fecha' => 'entrega',
+            'encargado' => 'encargados_entrega',
+            'dias' => null,
+        ],
+        'despacho' => [
+            'proceso' => 'Despacho',
+            'fecha' => 'despacho',
+            'encargado' => 'column_52',
+            'dias' => null,
+        ],
+    ];
+
     public function handle()
     {
         $this->info("\n");
@@ -99,28 +175,90 @@ class MigrateTablaOriginalCompleto extends Command
     }
 
     /**
-     * PASO 0: Limpiar datos migrados
+     * PASO 0: Limpiar datos migrados (PERO RESPETAR PEDIDOS CON COTIZACION_ID)
      */
     private function limpiarDatos($dryRun)
     {
         if (!$dryRun) {
-            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+            // Desactivar checks de integridad referencial
+            DB::statement('SET FOREIGN_KEY_CHECKS=0');
             
-            $countProc = ProcesoPrenda::count();
-            ProcesoPrenda::truncate();
-            $this->line("   ✓ Procesos eliminados: $countProc");
+            // Obtener números de pedidos CON cotizacion_id (ESTOS NO SE TOCAN)
+            $numerosPedidosConCotizacion = DB::table('pedidos_produccion')
+                ->whereNotNull('cotizacion_id')
+                ->pluck('numero_pedido')
+                ->toArray();
             
-            $countPren = PrendaPedido::count();
-            PrendaPedido::truncate();
-            $this->line("   ✓ Prendas eliminadas: $countPren");
+            $this->line("   ⚠️  Pedidos con cotizacion_id encontrados: " . count($numerosPedidosConCotizacion) . " (NO serán tocados)");
             
-            $countPed = PedidoProduccion::count();
-            PedidoProduccion::truncate();
-            $this->line("   ✓ Pedidos eliminados: $countPed");
+            // ORDEN IMPORTANTE: Primero eliminar PROCESOS, luego PRENDAS, luego PEDIDOS
             
-            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+            // 1. Eliminar procesos SOLO de pedidos SIN cotizacion_id
+            try {
+                if (!empty($numerosPedidosConCotizacion)) {
+                    $countProc = DB::table('procesos_prenda')
+                        ->whereNotIn('numero_pedido', $numerosPedidosConCotizacion)
+                        ->count();
+                    DB::table('procesos_prenda')
+                        ->whereNotIn('numero_pedido', $numerosPedidosConCotizacion)
+                        ->delete();
+                    $this->line("   ✓ Procesos eliminados: $countProc");
+                } else {
+                    $countProc = DB::table('procesos_prenda')->count();
+                    DB::table('procesos_prenda')->truncate();
+                    $this->line("   ✓ Procesos eliminados: $countProc");
+                }
+            } catch (\Exception $e) {
+                $this->line("   ⚠️  Error eliminando procesos: " . $e->getMessage());
+            }
+            
+            // 2. Eliminar prendas SOLO de pedidos SIN cotizacion_id
+            $idsConCotizacion = DB::table('pedidos_produccion')
+                ->whereNotNull('cotizacion_id')
+                ->pluck('id')
+                ->toArray();
+            
+            try {
+                if (!empty($idsConCotizacion)) {
+                    $countPren = DB::table('prendas_pedido')
+                        ->whereNotIn('pedido_produccion_id', $idsConCotizacion)
+                        ->count();
+                    DB::table('prendas_pedido')
+                        ->whereNotIn('pedido_produccion_id', $idsConCotizacion)
+                        ->delete();
+                    $this->line("   ✓ Prendas eliminadas: $countPren");
+                } else {
+                    $countPren = DB::table('prendas_pedido')->count();
+                    DB::table('prendas_pedido')->truncate();
+                    $this->line("   ✓ Prendas eliminadas: $countPren");
+                }
+            } catch (\Exception $e) {
+                $this->line("   ⚠️  Error eliminando prendas: " . $e->getMessage());
+            }
+            
+            // 3. Eliminar pedidos SOLO si NO tienen cotizacion_id
+            try {
+                if (!empty($idsConCotizacion)) {
+                    $countPed = DB::table('pedidos_produccion')
+                        ->whereNull('cotizacion_id')
+                        ->count();
+                    DB::table('pedidos_produccion')
+                        ->whereNull('cotizacion_id')
+                        ->delete();
+                    $this->line("   ✓ Pedidos eliminados (sin cotizacion): $countPed");
+                } else {
+                    $countPed = DB::table('pedidos_produccion')->count();
+                    DB::table('pedidos_produccion')->truncate();
+                    $this->line("   ✓ Pedidos eliminados: $countPed");
+                }
+            } catch (\Exception $e) {
+                $this->line("   ⚠️  Error eliminando pedidos: " . $e->getMessage());
+            }
+            
+            // Reactivar checks de integridad referencial
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
         } else {
-            $this->line("   [DRY-RUN] Se limpiarían procesos, prendas y pedidos");
+            $this->line("   [DRY-RUN] Se limpiarían procesos, prendas y pedidos (excepto los con cotizacion_id)");
         }
         $this->newLine();
     }
@@ -212,7 +350,7 @@ class MigrateTablaOriginalCompleto extends Command
     }
 
     /**
-     * PASO 3: Migrar Pedidos
+     * PASO 3: Migrar Pedidos (RESPETANDO PEDIDOS CON COTIZACION_ID)
      */
     private function migrarPedidos($dryRun)
     {
@@ -237,44 +375,60 @@ class MigrateTablaOriginalCompleto extends Command
         $bar = $this->output->createProgressBar($pedidosOriginales->count());
         $bar->start();
 
+        $pedidosSaltados = 0;
+
         foreach ($pedidosOriginales as $pedidoOrig) {
             try {
+                // VERIFICAR: ¿Este pedido YA tiene cotizacion_id?
+                $pedidoExistente = PedidoProduccion::where('numero_pedido', $pedidoOrig->numero_pedido)->first();
+                
+                if ($pedidoExistente && $pedidoExistente->cotizacion_id !== null) {
+                    // ⚠️ SALTAR: Este pedido ya tiene cotizacion_id, no tocarlo
+                    $pedidosSaltados++;
+                    $bar->advance();
+                    continue;
+                }
+
                 $asesorId = $this->mapeoAsesoras[$pedidoOrig->asesora] ?? null;
                 $clienteId = $this->mapeoClientes[$pedidoOrig->cliente] ?? null;
 
                 if (!$dryRun) {
-                    PedidoProduccion::updateOrCreate(
-                        ['numero_pedido' => $pedidoOrig->numero_pedido],
-                        [
-                            'asesor_id' => $asesorId,
-                            'cliente_id' => $clienteId,
-                            'cliente' => $pedidoOrig->cliente,
-                            'estado' => $pedidoOrig->estado ?? 'Pendiente',
-                            'fecha_de_creacion_de_orden' => $this->parsearFecha($pedidoOrig->fecha_de_creacion_de_orden),
-                            'dia_de_entrega' => $pedidoOrig->dia_de_entrega ?? 0,
-                            'fecha_estimada_de_entrega' => $this->parsearFecha($pedidoOrig->fecha_estimada_de_entrega),
-                            'area' => $pedidoOrig->area ?? 'Creación Orden',
-                            'novedades' => $pedidoOrig->novedades ?? null,
-                            'forma_de_pago' => $pedidoOrig->forma_de_pago ?? null,
-                        ]
-                    );
+                    // Los pedidos SIN cotizacion_id fueron eliminados en limpiarDatos()
+                    // Así que siempre CREAMOS nuevos aquí
+                    PedidoProduccion::create([
+                        'numero_pedido' => $pedidoOrig->numero_pedido,
+                        'asesor_id' => $asesorId,
+                        'cliente_id' => $clienteId,
+                        'cliente' => $pedidoOrig->cliente,
+                        'estado' => $pedidoOrig->estado ?? 'Pendiente',
+                        'fecha_de_creacion_de_orden' => $this->parsearFecha($pedidoOrig->fecha_de_creacion_de_orden),
+                        'dia_de_entrega' => $pedidoOrig->dia_de_entrega ?? 0,
+                        'fecha_estimada_de_entrega' => $this->parsearFecha($pedidoOrig->fecha_estimada_de_entrega),
+                        'area' => $pedidoOrig->area ?? 'Creación Orden',
+                        'novedades' => $pedidoOrig->novedades ?? null,
+                        'forma_de_pago' => $pedidoOrig->forma_de_pago ?? null,
+                    ]);
                 }
 
                 $this->stats['pedidos_migrados']++;
                 $bar->advance();
             } catch (\Exception $e) {
                 $this->error("\nError migrando pedido {$pedidoOrig->numero_pedido}: {$e->getMessage()}");
+                $bar->advance();
             }
         }
 
         $bar->finish();
         $this->newLine();
         $this->line("   Pedidos migrados: {$this->stats['pedidos_migrados']}");
+        if ($pedidosSaltados > 0) {
+            $this->line("   ⚠️  Pedidos saltados (con cotizacion_id): {$pedidosSaltados}");
+        }
         $this->newLine();
     }
 
     /**
-     * PASO 4: Migrar Prendas (desde registros_por_orden)
+     * PASO 4: Migrar Prendas (RESPETANDO PEDIDOS CON COTIZACION_ID)
      */
     private function migrarPrendas($dryRun)
     {
@@ -294,11 +448,29 @@ class MigrateTablaOriginalCompleto extends Command
         $bar = $this->output->createProgressBar($prendas->count());
         $bar->start();
 
+        $prendasSaltadas = 0;
+
         foreach ($prendas as $prenda) {
             try {
+                // VALIDAR: ¿Tiene nombre_prenda?
+                if (empty(trim($prenda->nombre_prenda ?? ''))) {
+                    // ⚠️ SALTAR: Prenda sin nombre
+                    $prendasSaltadas++;
+                    $bar->advance();
+                    continue;
+                }
+
                 $pedido = PedidoProduccion::where('numero_pedido', $prenda->pedido)->first();
                 
                 if (!$pedido) {
+                    $bar->advance();
+                    continue;
+                }
+
+                // VERIFICAR: ¿Este pedido tiene cotizacion_id?
+                if ($pedido->cotizacion_id !== null) {
+                    // ⚠️ SALTAR: Este pedido tiene cotizacion_id
+                    $prendasSaltadas++;
                     $bar->advance();
                     continue;
                 }
@@ -328,6 +500,7 @@ class MigrateTablaOriginalCompleto extends Command
                 $this->stats['prendas_migradas']++;
                 $bar->advance();
             } catch (\Exception $e) {
+                $prendasSaltadas++;
                 $this->error("\nError en prenda: {$e->getMessage()}");
                 $bar->advance();
             }
@@ -336,11 +509,14 @@ class MigrateTablaOriginalCompleto extends Command
         $bar->finish();
         $this->newLine();
         $this->line("   Prendas migradas: {$this->stats['prendas_migradas']}");
+        if ($prendasSaltadas > 0) {
+            $this->line("   ⚠️  Prendas saltadas (sin nombre o error): {$prendasSaltadas}");
+        }
         $this->newLine();
     }
 
     /**
-     * PASO 5: Migrar Procesos (desde tabla_original)
+     * PASO 5: Migrar Procesos (RESPETANDO PEDIDOS CON COTIZACION_ID)
      */
     private function migrarProcesos($dryRun)
     {
@@ -350,8 +526,18 @@ class MigrateTablaOriginalCompleto extends Command
         $bar = $this->output->createProgressBar($pedidos->count());
         $bar->start();
 
+        $procesos_saltados = 0;
+
         foreach ($pedidos as $pedido) {
             try {
+                // VERIFICAR: ¿Este pedido tiene cotizacion_id?
+                if ($pedido->cotizacion_id !== null) {
+                    // ⚠️ SALTAR: Este pedido tiene cotizacion_id
+                    $procesos_saltados++;
+                    $bar->advance();
+                    continue;
+                }
+
                 $pedidoOriginal = DB::table('tabla_original')
                     ->where('pedido', $pedido->numero_pedido)
                     ->first();
@@ -361,79 +547,50 @@ class MigrateTablaOriginalCompleto extends Command
                     continue;
                 }
 
-                // Crear proceso inicial "Creación Orden"
-                $fechaInicio = $this->parsearFecha($pedidoOriginal->fecha_de_creacion_de_orden);
-                
-                if (!$dryRun && $fechaInicio) {
-                    ProcesoPrenda::updateOrCreate(
-                        [
-                            'numero_pedido' => $pedido->numero_pedido,
-                            'proceso' => 'Creación Orden',
-                        ],
-                        [
-                            'fecha_inicio' => $fechaInicio,
-                            'estado_proceso' => 'Completado',
-                        ]
-                    );
-                }
+                $ultimaFecha = null;
+                $ultimoProceso = null;
 
-                $this->stats['procesos_migrados']++;
-                $ultimaFecha = $fechaInicio;
-                $ultimoProceso = 'Creación Orden';
+                // Migrar todos los procesos usando el mapeo
+                foreach ($this->procesosMap as $key => $info) {
+                    $fechaValue = $pedidoOriginal->{$info['fecha']} ?? null;
 
-                // Mapeo de campos de procesos en tabla_original
-                $procesosMap = [
-                    'inventario' => 'Inventario',
-                    'insumos_y_telas' => 'Insumos y Telas',
-                    'corte' => 'Corte',
-                    'bordado' => 'Bordado',
-                    'estampado' => 'Estampado',
-                    'costura' => 'Costura',
-                    'reflectivo' => 'Reflectivo',
-                    'lavanderia' => 'Lavandería',
-                    'arreglos' => 'Arreglos',
-                    'control_de_calidad' => 'Control Calidad',
-                    'entrega' => 'Entrega',
-                    'despacho' => 'Despacho',
-                ];
+                    if ($fechaValue && $fechaValue !== '0000-00-00' && $fechaValue !== '0000-00-00 00:00:00') {
+                        $fecha = $this->parsearFecha($fechaValue);
+                        
+                        if ($fecha) {
+                            $encargado = $pedidoOriginal->{$info['encargado']} ?? null;
+                            $dias = null;
+                            
+                            if ($info['dias']) {
+                                $diasValue = $pedidoOriginal->{$info['dias']} ?? null;
+                                $dias = is_numeric($diasValue) ? intval($diasValue) : null;
+                            }
 
-                // Migrar procesos adicionales
-                foreach ($procesosMap as $campoOrig => $nombreProceso) {
-                    // Intentar diferentes variaciones de nombres de campo
-                    $fechaInicioCampo = $campoOrig . '_inicio' ?: $campoOrig . '_fecha_inicio';
-                    $fechaFinCampo = $campoOrig . '_fin' ?: $campoOrig . '_fecha_fin';
+                            if (!$dryRun) {
+                                ProcesoPrenda::updateOrCreate(
+                                    [
+                                        'numero_pedido' => $pedido->numero_pedido,
+                                        'proceso' => $info['proceso'],
+                                    ],
+                                    [
+                                        'fecha_inicio' => $fecha,
+                                        'fecha_fin' => $fecha,
+                                        'encargado' => $encargado,
+                                        'dias_duracion' => $dias,
+                                        'estado_proceso' => 'Completado',
+                                    ]
+                                );
+                            }
 
-                    // Buscar en los atributos del objeto
-                    $fechaProceso = null;
-                    foreach ((array)$pedidoOriginal as $key => $value) {
-                        if (strpos($key, $campoOrig) !== false && strpos($key, 'fecha') !== false && $value) {
-                            $fechaProceso = $this->parsearFecha($value);
-                            break;
+                            $this->stats['procesos_migrados']++;
+                            $ultimaFecha = $fecha;
+                            $ultimoProceso = $info['proceso'];
                         }
-                    }
-
-                    if ($fechaProceso) {
-                        if (!$dryRun) {
-                            ProcesoPrenda::updateOrCreate(
-                                [
-                                    'numero_pedido' => $pedido->numero_pedido,
-                                    'proceso' => $nombreProceso,
-                                ],
-                                [
-                                    'fecha_inicio' => $fechaProceso,
-                                    'estado_proceso' => 'Completado',
-                                ]
-                            );
-                        }
-
-                        $this->stats['procesos_migrados']++;
-                        $ultimaFecha = $fechaProceso;
-                        $ultimoProceso = $nombreProceso;
                     }
                 }
 
                 // Actualizar área y fecha_ultimo_proceso del pedido
-                if (!$dryRun) {
+                if (!$dryRun && $ultimaFecha && $ultimoProceso) {
                     $pedido->update([
                         'area' => $ultimoProceso,
                         'fecha_ultimo_proceso' => $ultimaFecha,
@@ -449,6 +606,9 @@ class MigrateTablaOriginalCompleto extends Command
         $bar->finish();
         $this->newLine();
         $this->line("   Procesos migrados: {$this->stats['procesos_migrados']}");
+        if ($procesos_saltados > 0) {
+            $this->line("   ⚠️  Procesos saltados (pedido con cotizacion_id): {$procesos_saltados}");
+        }
         $this->newLine();
     }
 

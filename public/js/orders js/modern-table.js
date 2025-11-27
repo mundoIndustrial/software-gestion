@@ -977,6 +977,12 @@ class ModernTable {
                 console.log('✅ Dropdowns reinicializados después de aplicar filtros');
             }
             
+            // ACTUALIZAR DÍAS EN TIEMPO REAL después de filtros
+            if (typeof actualizarDiasTabla === 'function') {
+                actualizarDiasTabla();
+                console.log('✅ Días actualizados después de aplicar filtros');
+            }
+            
             // Scroll a la tabla
             document.querySelector('.table-container')?.scrollIntoView({ 
                 behavior: 'auto', 

@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // OPTIMIZACIÓN: Usar setTimeout corto para no bloquear
                 setTimeout(() => {
-                    console.log('🔄 Inicializando dropdowns...');
+                    console.log('🔄 Inicializando dropdowns y actualizando días...');
                     
                     // RE-INICIALIZAR DROPDOWNS después de actualizar el HTML
                     if (typeof initializeStatusDropdowns === 'function') {
@@ -126,7 +126,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         initializeDiaEntregaDropdowns();
                     }
                     
-                    console.log('✅ Dropdowns re-inicializados después de cambiar de página');
+                    // ACTUALIZAR DÍAS EN TIEMPO REAL para la página actual
+                    if (typeof actualizarDiasTabla === 'function') {
+                        actualizarDiasTabla();
+                    }
+                    
+                    console.log('✅ Dropdowns re-inicializados y días actualizados');
                     
                     // Restaurar inmediatamente
                     tableBody.style.opacity = '1';
