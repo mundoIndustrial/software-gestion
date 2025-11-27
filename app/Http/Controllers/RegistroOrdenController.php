@@ -411,7 +411,7 @@ class RegistroOrdenController extends Controller
     public function show($pedido)
     {
         // Buscar en PedidoProduccion por 'numero_pedido'
-        $order = PedidoProduccion::with(['asesora', 'prendas'])->where('numero_pedido', $pedido)->firstOrFail();
+        $order = PedidoProduccion::with(['asesora', 'prendas', 'cotizacion'])->where('numero_pedido', $pedido)->firstOrFail();
 
         $totalCantidad = DB::table('prendas_pedido')
             ->where('pedido_produccion_id', $order->id)
@@ -460,6 +460,10 @@ class RegistroOrdenController extends Controller
         } else {
             $orderArray['cliente_nombre'] = $orderArray['cliente'] ?? '';
         }
+        
+        // Asegurar que descripcion_prendas se calcula correctamente
+        // Esto fuerza la evaluación del atributo calculado
+        $orderArray['descripcion_prendas'] = $order->descripcion_prendas;
         
         // Eliminar campos ocultos globales
         foreach ($camposOcultosGlobal as $campo) {

@@ -177,6 +177,9 @@ Route::middleware(['auth', 'role:contador'])->prefix('contador')->name('contador
     
     // Ruta para cambiar estado de cotización
     Route::patch('/cotizacion/{id}/estado', [App\Http\Controllers\ContadorController::class, 'cambiarEstado'])->name('cotizacion.cambiar-estado');
+    
+    // Ruta para obtener costos de prendas
+    Route::get('/cotizacion/{id}/costos', [App\Http\Controllers\ContadorController::class, 'obtenerCostos'])->name('cotizacion.costos');
 });
 
 // ========================================

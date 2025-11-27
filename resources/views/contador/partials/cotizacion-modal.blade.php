@@ -26,10 +26,84 @@
                 {{ strtoupper($prenda->nombre_producto ?? 'N/A') }}:
             </h3>
             
-            <!-- Descripción (ancho completo) -->
+            <!-- Descripción + Especificaciones (unidas como en modal de orden) -->
+            @php
+                // Obtener información de variantes desde la cotización si está disponible
+                $cotizacionProductos = [];
+                if ($cotizacion->productos) {
+                    $cotizacionProductos = is_string($cotizacion->productos) 
+                        ? json_decode($cotizacion->productos, true) 
+                        : $cotizacion->productos;
+                }
+                
+                $descripcionCompleta = $prenda->descripcion ?? '';
+                $especificaciones = '';
+                
+                // Si hay información de variantes en la cotización, obtener especificaciones
+                if (!empty($cotizacionProductos) && isset($cotizacionProductos[$productoIndex])) {
+                    $producto = $cotizacionProductos[$productoIndex];
+                    $variantes = $producto['variantes'] ?? [];
+                    
+                    if (!empty($variantes['descripcion_adicional'])) {
+                        $especificaciones = $variantes['descripcion_adicional'];
+                    }
+                }
+                
+                // Construir línea final: Descripción | Especificaciones
+                $lineaCompleta = $descripcionCompleta;
+                if ($especificaciones) {
+                    // Hacer negrilla los títulos "Bolsillos:" y "Reflectivo:"
+                    $especificacionesFormato = $especificaciones;
+                    $especificacionesFormato = str_replace('Bolsillos:', '<strong>Bolsillos:</strong>', $especificacionesFormato);
+                    $especificacionesFormato = str_replace('Reflectivo:', '<strong>Reflectivo:</strong>', $especificacionesFormato);
+                    $lineaCompleta .= ' | ' . $especificacionesFormato;
+                }
+            @endphp
+            
             <p style="color: #333; font-size: 0.9rem; line-height: 1.6; margin: 0 0 1rem 0; word-wrap: break-word;">
-                {{ $prenda->descripcion ?? '-' }}
+                {!! $lineaCompleta ?: '-' !!}
             </p>
+            
+            <!-- DETALLES COMPLETOS DE LA PRENDA (Color, Tela, Manga) -->
+            @php
+                $detallesPrenda = [];
+                
+                // Si hay información de variantes en la cotización
+                if (!empty($cotizacionProductos) && isset($cotizacionProductos[$productoIndex])) {
+                    $producto = $cotizacionProductos[$productoIndex];
+                    $variantes = $producto['variantes'] ?? [];
+                    
+                    if (!empty($variantes['color'])) {
+                        $detallesPrenda['Color'] = $variantes['color'];
+                    }
+                    
+                    if (!empty($variantes['tela'])) {
+                        $tela = $variantes['tela'];
+                        if (!empty($variantes['tela_referencia'])) {
+                            $tela .= " (Ref: {$variantes['tela_referencia']})";
+                        }
+                        $detallesPrenda['Tela'] = $tela;
+                    }
+                    
+                    if (!empty($variantes['manga_nombre'])) {
+                        $detallesPrenda['Manga'] = $variantes['manga_nombre'];
+                    }
+                }
+            @endphp
+            
+            @if(count($detallesPrenda) > 0)
+            <div style="background-color: #f8f9fa; padding: 1rem; border-radius: 4px; margin-bottom: 1rem; border-left: 4px solid #2b7ec9;">
+                <div style="font-weight: 700; color: #1e5ba8; margin-bottom: 0.75rem; font-size: 0.9rem;">📋 Detalles de la Prenda:</div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    @foreach($detallesPrenda as $label => $valor)
+                    <div>
+                        <div style="font-weight: 600; color: #333; font-size: 0.85rem; margin-bottom: 0.25rem;">{{ $label }}:</div>
+                        <div style="color: #666; font-size: 0.9rem; word-wrap: break-word;">{{ $valor }}</div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
             
             <!-- Sección de Imágenes de Prenda y Tela -->
             @php

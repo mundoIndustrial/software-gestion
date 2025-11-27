@@ -179,4 +179,128 @@ class ContadorController extends Controller
         }
     }
 
+    /**
+     * Obtener costos de prendas de una cotización
+     */
+    public function obtenerCostos($id)
+    {
+        try {
+            $cotizacion = Cotizacion::with('prendasCotizaciones')->findOrFail($id);
+            
+            // Obtener costos de la cotización desde la tabla costos_prendas
+            $costosCotizacion = \DB::table('costos_prendas')
+                ->where('cotizacion_id', $id)
+                ->get();
+            
+            if ($costosCotizacion->isEmpty()) {
+                return response()->json([
+                    'success' => true,
+                    'prendas' => []
+                ]);
+            }
+            
+            // Obtener productos de la cotización
+            $cotizacionProductos = [];
+            if ($cotizacion->productos) {
+                $cotizacionProductos = is_string($cotizacion->productos) 
+                    ? json_decode($cotizacion->productos, true) 
+                    : $cotizacion->productos;
+            }
+            
+            // Construir array de prendas con costos
+            $prendas = [];
+            foreach ($costosCotizacion as $costoPrenda) {
+                // Obtener la prenda correspondiente buscando por nombre
+                $prenda = $cotizacion->prendasCotizaciones()
+                    ->where('nombre_producto', $costoPrenda->nombre_prenda)
+                    ->orWhere('nombre_producto', 'LIKE', '%' . $costoPrenda->nombre_prenda . '%')
+                    ->first();
+                
+                if (!$prenda) {
+                    // Si no encuentra por nombre, usar la primera prenda disponible
+                    $prenda = $cotizacion->prendasCotizaciones()->first();
+                    if (!$prenda) {
+                        continue;
+                    }
+                }
+                
+                $productoIndex = $cotizacion->prendasCotizaciones()->pluck('id')->search($prenda->id) ?? 0;
+                
+                // Obtener información de variantes
+                $color = '';
+                $tela = '';
+                $tela_referencia = '';
+                $manga_nombre = '';
+                $descripcion = '';
+                
+                if (!empty($cotizacionProductos) && isset($cotizacionProductos[$productoIndex])) {
+                    $producto = $cotizacionProductos[$productoIndex];
+                    $variantes = $producto['variantes'] ?? [];
+                    
+                    $color = $variantes['color'] ?? '';
+                    $tela = $variantes['tela'] ?? '';
+                    $tela_referencia = $variantes['tela_referencia'] ?? '';
+                    $manga_nombre = $variantes['manga_nombre'] ?? '';
+                    
+                    // Construir descripción con especificaciones
+                    $descripcionBase = $prenda->descripcion ?? '';
+                    $especificaciones = $variantes['descripcion_adicional'] ?? '';
+                    $descripcion = $descripcionBase;
+                    if ($especificaciones) {
+                        $descripcion .= ' | ' . $especificaciones;
+                    }
+                }
+                
+                // Obtener items de costos (estructura: [{item: "", precio: ""}])
+                $items = [];
+                $costoTotal = $costoPrenda->total_costo ?? 0;
+                
+                if ($costoPrenda->items) {
+                    $itemsArray = is_string($costoPrenda->items) 
+                        ? json_decode($costoPrenda->items, true) 
+                        : $costoPrenda->items;
+                    
+                    if (is_array($itemsArray)) {
+                        $items = $itemsArray;
+                    }
+                }
+                
+                // Obtener fotos de la prenda
+                $fotos = [];
+                if ($prenda->fotos) {
+                    $fotosArray = is_string($prenda->fotos) 
+                        ? json_decode($prenda->fotos, true) 
+                        : $prenda->fotos;
+                    
+                    if (is_array($fotosArray)) {
+                        $fotos = $fotosArray;
+                    }
+                }
+                
+                $prendas[] = [
+                    'id' => $prenda->id,
+                    'nombre_producto' => $prenda->nombre_producto,
+                    'descripcion' => $descripcion,
+                    'color' => $color,
+                    'tela' => $tela,
+                    'tela_referencia' => $tela_referencia,
+                    'manga_nombre' => $manga_nombre,
+                    'costo_total' => $costoTotal,
+                    'items' => $items,
+                    'fotos' => $fotos
+                ];
+            }
+            
+            return response()->json([
+                'success' => true,
+                'prendas' => $prendas
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener costos: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
 }

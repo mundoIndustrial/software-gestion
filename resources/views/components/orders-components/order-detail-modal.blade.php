@@ -202,16 +202,42 @@
         .order-descripcion {
             position: absolute;
             top: 240px;
-            left: 50%;
-            transform: translateX(-50%);
+            left: 20px;
+            right: 20px;
             text-align: left;
-            font-size: 11px;
+            font-size: 12px;
             color: #000;
-            width: 85%;
-            white-space: pre-line;
-            line-height: 1.5;
-            overflow: hidden;
-            max-height: 320px;
+            width: auto;
+            line-height: 1.4;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        /* Estilos para las prendas en el modal */
+        .prenda-line {
+            margin-bottom: 8px;
+            line-height: 1.4;
+            font-size: 12px;
+            word-wrap: break-word;
+            white-space: normal;
+        }
+        
+        .prenda-name {
+            display: block;
+            margin-bottom: 4px;
+        }
+        
+        .prenda-description-label {
+            font-weight: bold;
+        }
+        
+        .prenda-tallas-label {
+            font-weight: bold;
+            color: #ff0000;
+        }
+        
+        .prenda-tallas-value {
+            color: #ff0000;
         }
 
         .arrow-btn {

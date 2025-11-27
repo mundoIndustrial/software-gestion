@@ -16,16 +16,12 @@ class PDFCotizacionController extends Controller
         try {
             $cotizacion = Cotizacion::with(['prendasCotizaciones', 'usuario'])->findOrFail($cotizacionId);
             
-            // Verificar si se solicita recortar
-            $recortar = request()->query('recortar', false);
-            
             // Generar HTML del PDF
-            $html = $this->generarHTML($cotizacion, $recortar);
+            $html = $this->generarHTML($cotizacion);
             
             // Crear PDF con DomPDF
-            // Tamaño personalizado: A4 con altura aumentada (297mm → 420mm)
-            // Si está recortado, usar altura menor
-            $altura = $recortar ? 600 : 1190; // 600pt ≈ 210mm (A4 + 2cm extra)
+            // Altura estándar para múltiples páginas
+            $altura = 1190;
             
             $pdf = Pdf::loadHTML($html)
                 ->setPaper([0, 0, 595, $altura], 'portrait')  // Ancho A4 (595pt) x Altura variable
@@ -64,7 +60,7 @@ class PDFCotizacionController extends Controller
     /**
      * Genera el HTML del PDF
      */
-    private function generarHTML($cotizacion, $recortar = false)
+    private function generarHTML($cotizacion)
     {
         $html = '<!DOCTYPE html>
 <html>
@@ -109,11 +105,6 @@ class PDFCotizacionController extends Controller
         
         // Tabla de especificaciones
         $html .= $this->generarTablaEspecificacionesHTML($cotizacion);
-        
-        // Si está recortado, agregar espacio de 2cm
-        if ($recortar) {
-            $html .= '<div style="margin-top: 20px; height: 20px;"></div>';
-        }
         
         $html .= '</div>
 </body>
@@ -167,15 +158,78 @@ class PDFCotizacionController extends Controller
     {
         $html = '';
         
-        foreach ($cotizacion->prendasCotizaciones as $prenda) {
+        // Obtener productos de la cotización para información de variantes
+        $cotizacionProductos = [];
+        if ($cotizacion->productos) {
+            $cotizacionProductos = is_string($cotizacion->productos) 
+                ? json_decode($cotizacion->productos, true) 
+                : $cotizacion->productos;
+        }
+        
+        foreach ($cotizacion->prendasCotizaciones as $productoIndex => $prenda) {
             $html .= '<div class="prenda">';
             
             // Nombre
             $html .= '<div class="prenda-nombre">' . strtoupper($prenda->nombre_producto ?? 'N/A') . '</div>';
             
-            // Descripción
-            if ($prenda->descripcion) {
-                $html .= '<div class="prenda-descripcion">' . $prenda->descripcion . '</div>';
+            // Descripción + Especificaciones (unidas como en modal de orden)
+            $descripcionCompleta = $prenda->descripcion ?? '';
+            $especificaciones = '';
+            
+            if (!empty($cotizacionProductos) && isset($cotizacionProductos[$productoIndex])) {
+                $producto = $cotizacionProductos[$productoIndex];
+                $variantes = $producto['variantes'] ?? [];
+                
+                if (!empty($variantes['descripcion_adicional'])) {
+                    $especificaciones = $variantes['descripcion_adicional'];
+                }
+            }
+            
+            // Construir línea final: Descripción | Especificaciones
+            $lineaCompleta = $descripcionCompleta;
+            if ($especificaciones) {
+                // Hacer negrilla los títulos "Bolsillos:" y "Reflectivo:"
+                $especificacionesFormato = $especificaciones;
+                $especificacionesFormato = str_replace('Bolsillos:', '<strong>Bolsillos:</strong>', $especificacionesFormato);
+                $especificacionesFormato = str_replace('Reflectivo:', '<strong>Reflectivo:</strong>', $especificacionesFormato);
+                $lineaCompleta .= ' | ' . $especificacionesFormato;
+            }
+            
+            if ($lineaCompleta) {
+                $html .= '<div class="prenda-descripcion">' . $lineaCompleta . '</div>';
+            }
+            
+            // DETALLES COMPLETOS DE LA PRENDA (Color, Tela, Manga)
+            $detallesPrenda = [];
+            if (!empty($cotizacionProductos) && isset($cotizacionProductos[$productoIndex])) {
+                $producto = $cotizacionProductos[$productoIndex];
+                $variantes = $producto['variantes'] ?? [];
+                
+                if (!empty($variantes['color'])) {
+                    $detallesPrenda['Color'] = $variantes['color'];
+                }
+                
+                if (!empty($variantes['tela'])) {
+                    $tela = $variantes['tela'];
+                    if (!empty($variantes['tela_referencia'])) {
+                        $tela .= " (Ref: {$variantes['tela_referencia']})";
+                    }
+                    $detallesPrenda['Tela'] = $tela;
+                }
+                
+                if (!empty($variantes['manga_nombre'])) {
+                    $detallesPrenda['Manga'] = $variantes['manga_nombre'];
+                }
+            }
+            
+            // Mostrar detalles si existen
+            if (count($detallesPrenda) > 0) {
+                $html .= '<div style="background-color: #f8f9fa; padding: 8px; margin: 8px 0; border-left: 3px solid #2b7ec9; font-size: 8px; line-height: 1.3;">';
+                $html .= '<strong style="color: #1e5ba8;">Detalles:</strong><br>';
+                foreach ($detallesPrenda as $label => $valor) {
+                    $html .= '<strong>' . $label . ':</strong> ' . htmlspecialchars($valor) . '<br>';
+                }
+                $html .= '</div>';
             }
             
             // Tallas

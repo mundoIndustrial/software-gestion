@@ -6,6 +6,12 @@
     <div class="table-container">
         <div class="table-header">
             <h2>📋 Mis Cotizaciones</h2>
+            <div style="display: flex; gap: 1rem; align-items: center; margin-top: 1rem;">
+                <input type="text" id="inputBusqueda" placeholder="🔍 Buscar por número de cotización o cliente..." style="flex: 1; padding: 0.75rem 1rem; border: 2px solid #ddd; border-radius: 6px; font-size: 0.95rem; transition: all 0.2s;" onfocus="this.style.borderColor='#1e5ba8'" onblur="this.style.borderColor='#ddd'">
+                <button onclick="limpiarFiltros()" style="padding: 0.75rem 1.5rem; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='#4b5563'" onmouseout="this.style.background='#6b7280'">
+                    🔄 Limpiar Filtros
+                </button>
+            </div>
         </div>
         <table>
             <thead>
@@ -132,6 +138,144 @@
     </div>
 </section>
 
+<!-- Sección de Análisis de Costos -->
+<section id="costos-section" class="section-content">
+    <div class="table-container">
+        <div class="table-header">
+            <h2>📊 Análisis de Costos de Prendas</h2>
+            <div style="display: flex; gap: 1rem; align-items: center; margin-top: 1rem;">
+                <input type="text" id="inputBusquedaCostos" placeholder="🔍 Buscar por número de cotización o cliente..." style="flex: 1; padding: 0.75rem 1rem; border: 2px solid #ddd; border-radius: 6px; font-size: 0.95rem; transition: all 0.2s;" onfocus="this.style.borderColor='#1e5ba8'" onblur="this.style.borderColor='#ddd'">
+                <button onclick="limpiarFiltrosCostos()" style="padding: 0.75rem 1.5rem; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='#4b5563'" onmouseout="this.style.background='#6b7280'">
+                    🔄 Limpiar Filtros
+                </button>
+            </div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Número de Cotización</th>
+                    <th>Cliente</th>
+                    <th>Fecha</th>
+                    <th>Asesora</th>
+                    <th>Prendas Costeadas</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @php
+                    // Obtener cotizaciones que tengan costos calculados
+                    // Los costos se guardan en la tabla costos_prendas con cotizacion_id
+                    $cotizacionesConCostos = $cotizaciones->filter(function($cot) {
+                        return \DB::table('costos_prendas')
+                            ->where('cotizacion_id', $cot->id)
+                            ->exists();
+                    });
+                @endphp
+                
+                @forelse($cotizacionesConCostos as $cotizacion)
+                    @php
+                        // Contar prendas con costos en la tabla costos_prendas
+                        $prendasConCosto = \DB::table('costos_prendas')
+                            ->where('cotizacion_id', $cotizacion->id)
+                            ->count();
+                        $totalPrendas = $cotizacion->prendasCotizaciones()->count();
+                        
+                        // Obtener la fecha del primer registro de costos
+                        $fechaPrimerCosto = \DB::table('costos_prendas')
+                            ->where('cotizacion_id', $cotizacion->id)
+                            ->orderBy('created_at', 'asc')
+                            ->first();
+                        $fechaCostos = $fechaPrimerCosto ? \Carbon\Carbon::parse($fechaPrimerCosto->created_at)->format('d/m/Y H:i') : 'N/A';
+                    @endphp
+                    <tr>
+                        <td><strong>COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}</strong></td>
+                        <td>{{ $cotizacion->cliente ?? 'N/A' }}</td>
+                        <td>{{ $fechaCostos }}</td>
+                        <td>{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? 'N/A') }}</td>
+                        <td>
+                            <span style="background: #dbeafe; color: #1e40af; padding: 0.4rem 0.8rem; border-radius: 4px; font-weight: 600; font-size: 0.9rem;">
+                                {{ $prendasConCosto }} de {{ $totalPrendas }}
+                            </span>
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
+                                <button class="btn btn-primary" onclick="abrirModalVisorCostos({{ $cotizacion->id }}, '{{ $cotizacion->cliente }}')" style="padding: 0.6rem 1rem; background: #1e5ba8; color: white; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.2s; font-weight: 600;" title="Ver Costos" onmouseover="this.style.background='#1e40af'" onmouseout="this.style.background='#1e5ba8'">
+                                    <span class="material-symbols-rounded" style="font-size: 1rem;">visibility</span>
+                                    VER
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 2rem; color: #999;">
+                            <span class="material-symbols-rounded" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;">inbox</span>
+                            No hay cotizaciones con costos calculados
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- Modal de Visor de Costos por Prenda -->
+<div id="visorCostosModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9998; justify-content: center; align-items: center; padding: 2rem; overflow: hidden;">
+    <div class="modal-content" id="visorCostosModalContent" style="width: 90%; max-width: 800px; height: auto; overflow: visible; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); display: flex; flex-direction: column;">
+        <style>
+            #visorCostosModal {
+                overflow: hidden;
+            }
+            #visorCostosModal .modal-content {
+                max-height: calc(100vh - 4rem);
+                overflow: visible;
+            }
+            #visorCostosContenido {
+                overflow-x: hidden;
+                overflow-y: auto;
+                max-height: none;
+            }
+            #visorCostosContenido::-webkit-scrollbar {
+                width: 8px;
+            }
+            #visorCostosContenido::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            #visorCostosContenido::-webkit-scrollbar-thumb {
+                background: #ccc;
+                border-radius: 4px;
+            }
+            #visorCostosContenido::-webkit-scrollbar-thumb:hover {
+                background: #999;
+            }
+        </style>
+        <!-- Header del Modal -->
+        <div style="background: linear-gradient(135deg, #1e5ba8 0%, #2b7ec9 100%); color: white; padding: 0.75rem 1.5rem; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; transform: scale(0.8); transform-origin: top left; width: 125%;">
+            <div>
+                <h2 style="margin: 0; font-size: 1.2rem; font-weight: 700;" id="visorTitulo">-</h2>
+                <p style="margin: 0.25rem 0 0 0; font-size: 0.75rem; opacity: 0.9;" id="visorCliente">Cliente: -</p>
+            </div>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <button onclick="visorCostosAnterior()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 4px; transition: all 0.2s;" title="Prenda Anterior" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                    ‹
+                </button>
+                <span style="color: white; font-weight: 600; min-width: 60px; text-align: center;" id="visorIndice">1 / 1</span>
+                <button onclick="visorCostosProximo()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 4px; transition: all 0.2s;" title="Próxima Prenda" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                    ›
+                </button>
+                <button onclick="cerrarVisorCostos()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0.5rem 1rem; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                    ✕
+                </button>
+            </div>
+        </div>
+
+        <!-- Contenido del Modal -->
+        <div style="padding: 2rem;" id="visorCostosContenido">
+            <!-- Se llena dinámicamente -->
+        </div>
+    </div>
+</div>
+
 <!-- Modal de Cálculo de Costos por Prenda -->
 <div id="calculoCostosModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9998; justify-content: center; align-items: center;">
     <div class="modal-content" style="width: 90%; max-width: 900px; max-height: 90vh; overflow-y: auto; background: white; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
@@ -210,10 +354,6 @@
     <div style="position: absolute; top: 0; left: 0; right: 0; background: #1e5ba8; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; z-index: 10000;">
         <h2 style="margin: 0; font-size: 1.3rem;">📄 Visualizar Cotización PDF</h2>
         <div style="display: flex; gap: 1rem; align-items: center;">
-            <button onclick="recortarAlContenido()" style="padding: 0.75rem 1.5rem; background: #f59e0b; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='#d97706'" onmouseout="this.style.background='#f59e0b'" title="Recortar la altura al contenido">
-                <span class="material-symbols-rounded" style="font-size: 1.2rem;">crop</span>
-                Recortar
-            </button>
             <button onclick="descargarPDF()" style="padding: 0.75rem 1.5rem; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
                 <span class="material-symbols-rounded" style="font-size: 1.2rem;">download</span>
                 Descargar PDF
@@ -230,19 +370,21 @@
 <!-- Script para Modal de Cálculo de Costos -->
 <script src="{{ asset('js/contador/modal-calculo-costos.js') }}"></script>
 
+<!-- Script para Visor de Costos -->
+<script src="{{ asset('js/contador/visor-costos.js') }}"></script>
+
 <!-- Script para Modal PDF -->
 <script>
-    let cotizacionIdActualPDF = null;
-    let pdfRecortado = false;
+    // Variable global para acceder desde otros scripts
+    window.cotizacionIdActualPDF = null;
 
     function abrirModalPDF(cotizacionId) {
-        cotizacionIdActualPDF = cotizacionId;
+        window.cotizacionIdActualPDF = cotizacionId;
         const modalPDF = document.getElementById('modalPDF');
         const pdfViewer = document.getElementById('pdfViewer');
         
         // Mostrar modal
         modalPDF.style.display = 'block';
-        pdfRecortado = false;
         
         // Cargar PDF en iframe con zoom 125%
         pdfViewer.src = `/contador/cotizacion/${cotizacionId}/pdf#zoom=125`;
@@ -254,33 +396,15 @@
         
         modalPDF.style.display = 'none';
         pdfViewer.src = '';
-        cotizacionIdActualPDF = null;
-        pdfRecortado = false;
-    }
-
-    function recortarAlContenido() {
-        if (cotizacionIdActualPDF) {
-            const pdfViewer = document.getElementById('pdfViewer');
-            pdfRecortado = !pdfRecortado;
-            
-            if (pdfRecortado) {
-                // Cargar PDF recortado
-                pdfViewer.src = `/contador/cotizacion/${cotizacionIdActualPDF}/pdf?recortar=1#zoom=125`;
-            } else {
-                // Cargar PDF completo
-                pdfViewer.src = `/contador/cotizacion/${cotizacionIdActualPDF}/pdf#zoom=125`;
-            }
-        }
+        window.cotizacionIdActualPDF = null;
     }
 
     function descargarPDF() {
-        if (cotizacionIdActualPDF) {
+        if (window.cotizacionIdActualPDF) {
             const link = document.createElement('a');
-            const url = pdfRecortado 
-                ? `/contador/cotizacion/${cotizacionIdActualPDF}/pdf?descargar=1&recortar=1`
-                : `/contador/cotizacion/${cotizacionIdActualPDF}/pdf?descargar=1`;
+            const url = `/contador/cotizacion/${window.cotizacionIdActualPDF}/pdf?descargar=1`;
             link.href = url;
-            link.download = `Cotizacion_${cotizacionIdActualPDF}_${new Date().toISOString().split('T')[0]}.pdf`;
+            link.download = `Cotizacion_${window.cotizacionIdActualPDF}_${new Date().toISOString().split('T')[0]}.pdf`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -301,5 +425,8 @@
         }
     });
 </script>
+
+<!-- Script de Búsqueda y Filtros -->
+<script src="{{ asset('js/contador/busqueda-filtros.js') }}"></script>
 
 @endsection

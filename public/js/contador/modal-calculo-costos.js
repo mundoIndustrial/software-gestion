@@ -37,13 +37,43 @@ function abrirModalCalculoCostos(cotizacionId, cliente) {
                     // Obtener la descripción (párrafo siguiente al h3)
                     let descripcion = '';
                     let imagenes = [];
+                    let detalles = {};
                     
                     let elemento = el.nextElementSibling;
                     
-                    // Obtener descripción del párrafo
+                    // Obtener descripción del párrafo (ya incluye especificaciones unidas)
                     if (elemento && elemento.tagName === 'P') {
                         descripcion = elemento.textContent.trim();
                         elemento = elemento.nextElementSibling;
+                    }
+                    
+                    // Obtener detalles de la prenda (Color, Tela, Manga, Especificaciones)
+                    // Buscar el div con clase o estilo que contenga los detalles
+                    let elementoBusquedaDetalles = el.nextElementSibling;
+                    while (elementoBusquedaDetalles) {
+                        if (elementoBusquedaDetalles.tagName === 'H3') {
+                            break; // Encontramos otra prenda
+                        }
+                        
+                        // Buscar div con "Detalles de la Prenda"
+                        if (elementoBusquedaDetalles.textContent.includes('Detalles de la Prenda')) {
+                            // Extraer todos los detalles (Color, Tela, Manga, Especificaciones)
+                            const detallesDivs = elementoBusquedaDetalles.querySelectorAll('div > div');
+                            detallesDivs.forEach(detDiv => {
+                                const label = detDiv.querySelector('div:first-child');
+                                const valor = detDiv.querySelector('div:last-child');
+                                if (label && valor) {
+                                    const labelText = label.textContent.replace(':', '').trim();
+                                    const valorText = valor.textContent.trim();
+                                    if (labelText && valorText) {
+                                        detalles[labelText] = valorText;
+                                    }
+                                }
+                            });
+                            break;
+                        }
+                        
+                        elementoBusquedaDetalles = elementoBusquedaDetalles.nextElementSibling;
                     }
                     
                     // Obtener imágenes - buscar todas las imágenes después del h3
@@ -86,12 +116,14 @@ function abrirModalCalculoCostos(cotizacionId, cliente) {
                     }
                     
                     console.log(`Prenda: ${nombrePrenda}, Imágenes encontradas: ${imagenes.length}`, imagenes);
+                    console.log(`Detalles de prenda: ${nombrePrenda}`, detalles);
                     
                     prendas.push({
                         id: index,
                         nombre: nombrePrenda,
                         descripcion: descripcion,
-                        imagenes: imagenes
+                        imagenes: imagenes,
+                        detalles: detalles
                     });
                 }
             });
@@ -134,7 +166,7 @@ function abrirModalCalculoCostos(cotizacionId, cliente) {
                 const div = document.createElement('div');
                 div.id = `prenda-content-${prenda.id}`;
                 div.style.display = index === 0 ? 'block' : 'none';
-                div.innerHTML = crearTablaPrecios(prenda.id, prenda.nombre, prenda.descripcion, prenda.imagenes);
+                div.innerHTML = crearTablaPrecios(prenda.id, prenda.nombre, prenda.descripcion, prenda.imagenes, prenda.detalles || {});
                 contentContainer.appendChild(div);
             });
             
@@ -229,18 +261,43 @@ function cambiarPrendaTab(prendaId, prendas) {
  * @param {array} imagenes - Array de URLs de imágenes
  * @returns {string} HTML de la tabla
  */
-function crearTablaPrecios(prendaId, nombrePrenda, descripcion = '', imagenes = []) {
+function crearTablaPrecios(prendaId, nombrePrenda, descripcion = '', imagenes = [], detalles = {}) {
     // Inicializar costos para esta prenda si no existen
     if (!window.costosPorPrenda[prendaId]) {
         window.costosPorPrenda[prendaId] = {
             nombre: nombrePrenda,
             descripcion: descripcion,
             imagenes: imagenes,
+            detalles: detalles,
             items: [{ item: '', precio: '' }]
         };
     }
     
     const costos = window.costosPorPrenda[prendaId];
+    
+    // Crear HTML de detalles de la prenda (Color, Tela, Manga, Especificaciones)
+    let detallesHTML = '';
+    if (Object.keys(detalles).length > 0) {
+        detallesHTML = `
+            <div style="background-color: #f8f9fa; padding: 1rem; border-radius: 4px; margin-bottom: 1rem; border-left: 4px solid #2b7ec9;">
+                <div style="font-weight: 700; color: #1e5ba8; margin-bottom: 0.75rem; font-size: 0.9rem;">📋 Detalles de la Prenda:</div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+        `;
+        
+        Object.entries(detalles).forEach(([label, valor]) => {
+            detallesHTML += `
+                <div>
+                    <div style="font-weight: 600; color: #333; font-size: 0.85rem; margin-bottom: 0.25rem;">${label}:</div>
+                    <div style="color: #666; font-size: 0.9rem; word-wrap: break-word;">${valor}</div>
+                </div>
+            `;
+        });
+        
+        detallesHTML += `
+                </div>
+            </div>
+        `;
+    }
     
     // Crear HTML de imágenes
     let imagenesHTML = '';
@@ -270,10 +327,18 @@ function crearTablaPrecios(prendaId, nombrePrenda, descripcion = '', imagenes = 
         `;
     }
     
+    // Hacer negrilla los títulos "Bolsillos:" y "Reflectivo:" en la descripción
+    let descripcionFormato = descripcion;
+    if (descripcionFormato) {
+        descripcionFormato = descripcionFormato.replace(/Bolsillos:/g, '<strong>Bolsillos:</strong>');
+        descripcionFormato = descripcionFormato.replace(/Reflectivo:/g, '<strong>Reflectivo:</strong>');
+    }
+    
     let html = `
         <div style="margin-bottom: 2rem;">
             <h3 style="color: #1e5ba8; margin-bottom: 0.5rem; font-size: 1.1rem;">📋 ${nombrePrenda}</h3>
-            ${descripcion ? `<p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem; line-height: 1.5; font-style: italic;">${descripcion}</p>` : ''}
+            ${descripcionFormato ? `<p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem; line-height: 1.5; font-style: italic;">${descripcionFormato}</p>` : ''}
+            ${detallesHTML}
             ${imagenesHTML}
             
             <table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem;">

@@ -57,9 +57,9 @@
                             </a>
                         </li>
                         <li class="menu-item">
-                            <a href="#" class="menu-link" data-section="formatos">
-                                <span class="material-symbols-rounded">description</span>
-                                <span class="menu-label">Formatos</span>
+                            <a href="#" class="menu-link" data-section="costos">
+                                <span class="material-symbols-rounded">analytics</span>
+                                <span class="menu-label">Análisis de Costos</span>
                             </a>
                         </li>
                     </ul>
@@ -129,14 +129,17 @@
                 
                 // Actualizar título
                 const titles = {
-                    'pedidos': 'Pedidos',
-                    'formatos': 'Formatos de Cotización'
+                    'pedidos': 'Mis Cotizaciones',
+                    'costos': 'Análisis de Costos'
                 };
                 document.getElementById('pageTitle').textContent = titles[section] || 'Contador';
                 
                 // Actualizar secciones
                 document.querySelectorAll('.section-content').forEach(s => s.classList.remove('active'));
-                document.getElementById(section + '-section').classList.add('active');
+                const sectionElement = document.getElementById(section + '-section');
+                if (sectionElement) {
+                    sectionElement.classList.add('active');
+                }
                 
                 // Cerrar sidebar en mobile
                 if (window.innerWidth <= 768) {

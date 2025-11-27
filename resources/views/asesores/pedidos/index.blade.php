@@ -249,9 +249,15 @@
 @endpush
 
 @push('scripts')
+<script>
+    // Configurar variables globales para los modales
+    window.fetchUrl = '/registros';
+    window.modalContext = 'pedidos';
+</script>
 <script src="{{ asset('js/asesores/pedidos-list.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-modal.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-dropdown.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
+<script src="{{ asset('js/orderTracking.js') }}"></script>
 @endpush
