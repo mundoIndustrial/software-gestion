@@ -63,10 +63,10 @@ class ContadorController extends Controller
                 $cotizacion->logoCotizacion()->delete();
             }
             
-            // 3. Eliminar pedido de producción relacionado (si existe)
-            if ($cotizacion->pedidoProduccion()->exists()) {
-                \Log::info('Eliminando pedido de producción');
-                $cotizacion->pedidoProduccion()->delete();
+            // 3. Eliminar pedidos de producción relacionados (si existen)
+            if ($cotizacion->pedidosProduccion()->exists()) {
+                \Log::info('Eliminando pedidos de producción');
+                $cotizacion->pedidosProduccion()->delete();
             }
             
             // 4. Eliminar historial de cambios relacionado (si existe)

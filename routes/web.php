@@ -12,6 +12,7 @@ use App\Http\Controllers\TablerosController;
 use App\Http\Controllers\VistasController;
 use App\Http\Controllers\BalanceoController;
 use App\Http\Controllers\CotizacionesViewController;
+use App\Http\Controllers\CotizacionBordadoController;
 use App\Http\Controllers\DebugRegistrosController;
 
 Route::get('/', function () {
@@ -286,6 +287,17 @@ Route::middleware(['auth', 'role:asesor'])->prefix('asesores')->name('asesores.'
         Route::post('/ajustar-stock', [App\Http\Controllers\AsesoresInventarioTelasController::class, 'ajustarStock'])->name('ajustar-stock');
         Route::get('/historial', [App\Http\Controllers\AsesoresInventarioTelasController::class, 'historial'])->name('historial');
     });
+
+    // ========================================
+    // COTIZACIONES DE BORDADO - Solo Asesor
+    // ========================================
+    Route::get('/cotizaciones/bordado/crear', [CotizacionBordadoController::class, 'create'])->name('cotizaciones-bordado.create');
+    Route::post('/cotizaciones/bordado', [CotizacionBordadoController::class, 'store'])->name('cotizaciones-bordado.store');
+    Route::get('/cotizaciones/bordado/lista', [CotizacionBordadoController::class, 'lista'])->name('cotizaciones-bordado.lista');
+    Route::get('/cotizaciones/bordado/{cotizacion}/editar', [CotizacionBordadoController::class, 'edit'])->name('cotizaciones-bordado.edit');
+    Route::put('/cotizaciones/bordado/{cotizacion}', [CotizacionBordadoController::class, 'update'])->name('cotizaciones-bordado.update');
+    Route::post('/cotizaciones/bordado/{cotizacion}/enviar', [CotizacionBordadoController::class, 'enviar'])->name('cotizaciones-bordado.enviar');
+    Route::delete('/cotizaciones/bordado/{cotizacion}', [CotizacionBordadoController::class, 'destroy'])->name('cotizaciones-bordado.destroy');
 });
 
 // ========== DEBUG ROUTES PARA OPTIMIZACIÓN DE /registros ==========

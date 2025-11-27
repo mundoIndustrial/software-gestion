@@ -112,6 +112,20 @@
                             <span class="menu-label">Nueva Cotización</span>
                         </a>
                     </li>
+                    <li class="menu-item">
+                        <a href="{{ route('asesores.cotizaciones-bordado.lista') }}" 
+                           class="menu-link {{ request()->routeIs('asesores.cotizaciones-bordado.*') ? 'active' : '' }}">
+                            <span class="material-symbols-rounded">brush</span>
+                            <span class="menu-label">Cotizaciones Bordados</span>
+                        </a>
+                    </li>
+                    <li class="menu-item">
+                        <a href="{{ route('asesores.cotizaciones-bordado.create') }}" 
+                           class="menu-link">
+                            <span class="material-symbols-rounded">add</span>
+                            <span class="menu-label">Nuevo Bordado</span>
+                        </a>
+                    </li>
                 </ul>
             </div>
 

@@ -15,6 +15,7 @@ class Cotizacion extends Model
     protected $fillable = [
         'user_id',
         'numero_cotizacion',
+        'tipo_cotizacion',
         'tipo_cotizacion_id',
         'fecha_inicio',
         'fecha_envio',
@@ -41,7 +42,8 @@ class Cotizacion extends Model
         'tecnicas' => 'array',
         'ubicaciones' => 'array',
         'observaciones_generales' => 'array',
-        'estado' => 'string'
+        'estado' => 'string',
+        'tipo_cotizacion' => 'string'
     ];
 
     /**
@@ -61,11 +63,11 @@ class Cotizacion extends Model
     }
 
     /**
-     * Relación: Una cotización puede tener un pedido de producción
+     * Relación: Una cotización puede tener múltiples pedidos de producción
      */
-    public function pedidoProduccion()
+    public function pedidosProduccion()
     {
-        return $this->hasOne(PedidoProduccion::class);
+        return $this->hasMany(PedidoProduccion::class);
     }
 
     /**
