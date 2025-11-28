@@ -50,6 +50,14 @@ class PrendaPedido extends Model
     }
 
     /**
+     * Relación: Una prenda tiene muchas entregas (por talla)
+     */
+    public function entregas(): HasMany
+    {
+        return $this->hasMany(EntregaPrendaPedido::class, 'prenda_pedido_id');
+    }
+
+    /**
      * Event: Antes de guardar, generar descripcion_armada automáticamente
      */
     protected static function boot()

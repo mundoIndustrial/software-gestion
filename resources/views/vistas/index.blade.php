@@ -86,9 +86,17 @@
                 @else
                     <div class="cards-container">
                         @php
-                            $groupedRegistros = $registros->groupBy(function($item) {
-                                return $item->pedido . '-' . $item->cliente;
-                            });
+                            // Para Costura - Pedidos: agrupar prendas_pedido por pedido
+                            if ($tipo === 'pedidos') {
+                                $groupedRegistros = $registros->groupBy(function($prenda) {
+                                    return $prenda->pedido->numero_pedido . '-' . $prenda->pedido->cliente;
+                                });
+                            } else {
+                                // Para Costura - Bodega: agrupar por pedido-cliente
+                                $groupedRegistros = $registros->groupBy(function($item) {
+                                    return $item->pedido . '-' . $item->cliente;
+                                });
+                            }
                         @endphp
 
                         @foreach($groupedRegistros as $groupKey => $groupRegistros)
@@ -138,22 +146,68 @@
                                         </thead>
                                         <tbody>
                                             @foreach($groupRegistros as $registro)
-                                                <tr data-id="{{ $registro->id }}" data-tipo="{{ $tipo }}">
-                                                    <td class="prenda-cell cell-clickable" data-content="{{ $registro->prenda ?: '-' }}">{{ $registro->prenda ?: '-' }}</td>
-                                                    <td class="descripcion-cell cell-clickable" data-content="{{ $registro->descripcion ?: '-' }}">{{ $registro->descripcion ?: '-' }}</td>
-                                                    <td class="talla-cell">{{ $registro->talla ?: '-' }}</td>
-                                                    <td class="cantidad-cell editable" data-field="cantidad" data-value="{{ $registro->cantidad ?? '' }}">{{ $registro->cantidad !== null && $registro->cantidad !== '' ? $registro->cantidad : '-' }}</td>
-                                                    <td class="costurero-cell cell-clickable editable" data-field="costurero" data-content="{{ $registro->costurero ?: '-' }}" data-value="{{ $registro->costurero ?? '' }}">{{ $registro->costurero ?: '-' }}</td>
-                                                    <td class="total_producido_por_talla-cell editable" data-field="total_producido_por_talla" data-value="{{ $registro->total_producido_por_talla ?? '' }}">{{ $registro->total_producido_por_talla !== null && $registro->total_producido_por_talla !== '' ? $registro->total_producido_por_talla : '-' }}</td>
-                                                    <td class="total_pendiente_por_talla-cell editable" data-field="total_pendiente_por_talla" data-value="{{ $registro->total_pendiente_por_talla ?? '' }}">{{ $registro->total_pendiente_por_talla !== null && $registro->total_pendiente_por_talla !== '' ? $registro->total_pendiente_por_talla : '-' }}</td>
-                                                    <td class="fecha_completado-cell">
-                                                        @if($registro->fecha_completado)
-                                                            {{ \Carbon\Carbon::parse($registro->fecha_completado)->format('d/m/Y') }}
-                                                        @else
-                                                            -
-                                                        @endif
-                                                    </td>
-                                                </tr>
+                                                @if($tipo === 'pedidos')
+                                                    {{-- Para prendas_pedido: expandir por tallas y traer info de entrega_prenda_pedido --}}
+                                                    @php
+                                                        $cantidadTalla = is_string($registro->cantidad_talla) 
+                                                            ? json_decode($registro->cantidad_talla, true) 
+                                                            : $registro->cantidad_talla;
+                                                    @endphp
+                                                    @if(is_array($cantidadTalla) && !empty($cantidadTalla))
+                                                        @foreach($cantidadTalla as $talla => $cantidad)
+                                                            @php
+                                                                // Buscar entrega_prenda_pedido relacionada
+                                                                $entrega = \App\Models\EntregaPrendaPedido::where('prenda_pedido_id', $registro->id)
+                                                                    ->where('talla', $talla)
+                                                                    ->first();
+                                                                
+                                                                $costurero = $entrega ? ($entrega->costurero ?: '-') : '-';
+                                                                $totalProducido = $entrega ? $entrega->total_producido_por_talla : '-';
+                                                                $totalPendiente = $entrega ? $entrega->total_pendiente_por_talla : '-';
+                                                                $fechaCompletado = $entrega && $entrega->fecha_completado ? $entrega->fecha_completado->format('d/m/Y') : '-';
+                                                            @endphp
+                                                            <tr data-id="{{ $registro->id }}" data-tipo="{{ $tipo }}" data-talla="{{ $talla }}">
+                                                                <td class="prenda-cell cell-clickable" data-content="{{ $registro->nombre_prenda ?: '-' }}">{{ $registro->nombre_prenda ?: '-' }}</td>
+                                                                <td class="descripcion-cell cell-clickable" data-content="{{ $registro->descripcion ?: '-' }}">{{ $registro->descripcion ?: '-' }}</td>
+                                                                <td class="talla-cell">{{ $talla }}</td>
+                                                                <td class="cantidad-cell editable" data-field="cantidad" data-value="{{ $cantidad }}">{{ $cantidad }}</td>
+                                                                <td class="costurero-cell cell-clickable editable" data-field="costurero" data-content="{{ $costurero }}" data-value="{{ $entrega ? ($entrega->costurero ?? '') : '' }}">{{ $costurero }}</td>
+                                                                <td class="total_producido_por_talla-cell editable" data-field="total_producido_por_talla" data-value="{{ $entrega ? $entrega->total_producido_por_talla : '' }}">{{ $totalProducido }}</td>
+                                                                <td class="total_pendiente_por_talla-cell editable" data-field="total_pendiente_por_talla" data-value="{{ $entrega ? $entrega->total_pendiente_por_talla : '' }}">{{ $totalPendiente }}</td>
+                                                                <td class="fecha_completado-cell">{{ $fechaCompletado }}</td>
+                                                            </tr>
+                                                        @endforeach
+                                                    @else
+                                                        <tr data-id="{{ $registro->id }}" data-tipo="{{ $tipo }}">
+                                                            <td class="prenda-cell cell-clickable" data-content="{{ $registro->nombre_prenda ?: '-' }}">{{ $registro->nombre_prenda ?: '-' }}</td>
+                                                            <td class="descripcion-cell cell-clickable" data-content="{{ $registro->descripcion ?: '-' }}">{{ $registro->descripcion ?: '-' }}</td>
+                                                            <td class="talla-cell">-</td>
+                                                            <td class="cantidad-cell editable" data-field="cantidad" data-value="">-</td>
+                                                            <td class="costurero-cell cell-clickable editable" data-field="costurero" data-content="-" data-value="">-</td>
+                                                            <td class="total_producido_por_talla-cell editable" data-field="total_producido_por_talla" data-value="">-</td>
+                                                            <td class="total_pendiente_por_talla-cell editable" data-field="total_pendiente_por_talla" data-value="">-</td>
+                                                            <td class="fecha_completado-cell">-</td>
+                                                        </tr>
+                                                    @endif
+                                                @else
+                                                    {{-- Para registros_por_orden (bodega): mostrar como antes --}}
+                                                    <tr data-id="{{ $registro->id }}" data-tipo="{{ $tipo }}">
+                                                        <td class="prenda-cell cell-clickable" data-content="{{ $registro->prenda ?: '-' }}">{{ $registro->prenda ?: '-' }}</td>
+                                                        <td class="descripcion-cell cell-clickable" data-content="{{ $registro->descripcion ?: '-' }}">{{ $registro->descripcion ?: '-' }}</td>
+                                                        <td class="talla-cell">{{ $registro->talla ?: '-' }}</td>
+                                                        <td class="cantidad-cell editable" data-field="cantidad" data-value="{{ $registro->cantidad ?? '' }}">{{ $registro->cantidad !== null && $registro->cantidad !== '' ? $registro->cantidad : '-' }}</td>
+                                                        <td class="costurero-cell cell-clickable editable" data-field="costurero" data-content="{{ $registro->costurero ?: '-' }}" data-value="{{ $registro->costurero ?? '' }}">{{ $registro->costurero ?: '-' }}</td>
+                                                        <td class="total_producido_por_talla-cell editable" data-field="total_producido_por_talla" data-value="{{ $registro->total_producido_por_talla ?? '' }}">{{ $registro->total_producido_por_talla !== null && $registro->total_producido_por_talla !== '' ? $registro->total_producido_por_talla : '-' }}</td>
+                                                        <td class="total_pendiente_por_talla-cell editable" data-field="total_pendiente_por_talla" data-value="{{ $registro->total_pendiente_por_talla ?? '' }}">{{ $registro->total_pendiente_por_talla !== null && $registro->total_pendiente_por_talla !== '' ? $registro->total_pendiente_por_talla : '-' }}</td>
+                                                        <td class="fecha_completado-cell">
+                                                            @if($registro->fecha_completado)
+                                                                {{ \Carbon\Carbon::parse($registro->fecha_completado)->format('d/m/Y') }}
+                                                            @else
+                                                                -
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                @endif
                                             @endforeach
                                         </tbody>
                                     </table>

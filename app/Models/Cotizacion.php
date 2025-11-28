@@ -65,7 +65,7 @@ class Cotizacion extends Model
     /**
      * Relación: Una cotización puede tener múltiples pedidos de producción
      */
-    public function pedidosProduccion()
+    public function pedidosProduccion(): HasMany
     {
         return $this->hasMany(PedidoProduccion::class);
     }

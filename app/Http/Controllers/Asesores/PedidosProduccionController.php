@@ -20,9 +20,9 @@ class PedidosProduccionController extends Controller
      */
     public function crearForm()
     {
+        // Permitir crear pedidos de cotizaciones en CUALQUIER estado (excepto borradores)
         $cotizaciones = Cotizacion::where('user_id', Auth::id())
             ->where('es_borrador', false)
-            ->where('estado', 'enviada')
             ->with([
                 'prendasCotizaciones.variantes.color',
                 'prendasCotizaciones.variantes.tela',
@@ -212,11 +212,8 @@ class PedidosProduccionController extends Controller
                 }
             }
 
-            // Actualizar cotización
-            $cotizacion->update([
-                'estado' => 'aceptada',
-                'es_borrador' => false
-            ]);
+            // NO cambiar el estado de la cotización para permitir crear múltiples pedidos
+            // La cotización mantiene su estado actual (enviada, aceptada, etc.)
 
             DB::commit();
 

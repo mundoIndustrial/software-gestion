@@ -39,11 +39,8 @@ class PedidoService
                         $this->crearPrendasPedido($cotizacion, $pedido);
                     }
 
-                    // Actualizar estado de cotización
-                    $cotizacion->update([
-                        'estado' => 'aceptada',
-                        'es_borrador' => false
-                    ]);
+                    // NO cambiar el estado de la cotización para permitir crear múltiples pedidos
+                    // La cotización mantiene su estado actual (enviada, aceptada, etc.)
 
                     \Log::info('Cotización aceptada exitosamente', [
                         'cotizacion_id' => $cotizacion->id,

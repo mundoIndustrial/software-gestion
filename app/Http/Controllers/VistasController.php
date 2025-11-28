@@ -35,12 +35,29 @@ class VistasController extends Controller
                 $icon = 'fas fa-cut';
             }
         } else {
-            $registrosQuery = RegistrosPorOrden::query();
+            // Para Costura - Pedidos: usar prendas_pedido con relación a pedidos
             $title = 'Vista Costura - Pedidos';
             $icon = 'fas fa-shopping-cart';
+            
+            $prendaQuery = \App\Models\PrendaPedido::with('pedido')
+                ->whereHas('pedido', function($q) {
+                    // Solo prendas de pedidos que existen
+                });
+            
+            // Aplicar filtro de búsqueda si hay query
+            if (!empty($query)) {
+                $prendaQuery->whereHas('pedido', function($q) use ($query) {
+                    $q->where('numero_pedido', 'like', '%' . $query . '%')
+                      ->orWhere('cliente', 'like', '%' . $query . '%');
+                });
+            }
+            
+            $registros = $prendaQuery->paginate(50)->appends(['search' => $query]);
+            
+            return view('vistas.index', compact('registros', 'title', 'icon', 'tipo', 'query'));
         }
 
-        // Aplicar filtro de búsqueda si hay query
+        // Aplicar filtro de búsqueda si hay query (para bodega y corte)
         if (!empty($query)) {
             if ($tipo === 'corte') {
                 $registrosQuery->where('pedido', 'like', '%' . $query . '%');
@@ -76,15 +93,22 @@ class VistasController extends Controller
                 $registrosQuery = EntregaPedidoCorte::query();
             }
         } else {
-            $registrosQuery = RegistrosPorOrden::query();
+            // Para Costura - Pedidos: usar prendas_pedido
+            $registrosQuery = \App\Models\PrendaPedido::with('pedido');
         }
 
         // Aplicar filtro de búsqueda si hay query
         if (!empty($query)) {
             if ($tipo === 'corte') {
                 $registrosQuery->where('pedido', 'like', '%' . $query . '%');
+            } elseif ($tipo === 'pedidos') {
+                // Para prendas_pedido: buscar por numero_pedido o cliente del pedido
+                $registrosQuery->whereHas('pedido', function($q) use ($query) {
+                    $q->where('numero_pedido', 'like', '%' . $query . '%')
+                      ->orWhere('cliente', 'like', '%' . $query . '%');
+                });
             } else {
-                // Buscar por pedido o por cliente
+                // Buscar por pedido o por cliente (bodega)
                 $registrosQuery->where(function($q) use ($query) {
                     $q->where('pedido', 'like', '%' . $query . '%')
                       ->orWhere('cliente', 'like', '%' . $query . '%');
@@ -93,10 +117,10 @@ class VistasController extends Controller
         }
 
         // Aplicar filtros adicionales
-        if (!empty($clientes) && $tipo !== 'corte') {
+        if (!empty($clientes) && $tipo !== 'corte' && $tipo !== 'pedidos') {
             $registrosQuery->whereIn('cliente', $clientes);
         }
-        if (!empty($costureros) && $tipo !== 'corte') {
+        if (!empty($costureros) && $tipo !== 'corte' && $tipo !== 'pedidos') {
             $registrosQuery->whereIn('costurero', $costureros);
         }
 
@@ -174,64 +198,45 @@ class VistasController extends Controller
                 $html .= '</div>';
             }
         } else {
-            // Agrupar los registros por pedido y cliente, y obtener el encargado de corte
-            $groupedRegistros = $registros->groupBy(function($item) {
-                return $item->pedido . '-' . $item->cliente;
-            });
-
-            // Obtener los encargados de corte únicos por pedido desde la tabla original
-            $pedidos = $groupedRegistros->keys()->map(function($key) {
-                return explode('-', $key)[0];
-            })->unique()->values()->toArray();
-
-            $encargadosCorte = [];
-            if ($tipo === 'bodega') {
-                $encargadosCorte = TablaOriginalBodega::whereIn('pedido', $pedidos)
-                    ->whereNotNull('encargados_de_corte')
-                    ->pluck('encargados_de_corte', 'pedido')
-                    ->toArray();
-            } else {
-                $encargadosCorte = TablaOriginal::whereIn('pedido', $pedidos)
-                    ->whereNotNull('encargados_de_corte')
-                    ->pluck('encargados_de_corte', 'pedido')
-                    ->toArray();
-            }
-
-            // Aplicar filtro de cortadores si se especifica
-            if (!empty($cortadores)) {
-                $filteredGroupedRegistros = [];
-                foreach ($groupedRegistros as $groupKey => $groupRegistros) {
-                    $pedido = explode('-', $groupKey)[0];
-                    $encargado = isset($encargadosCorte[$pedido]) ? $encargadosCorte[$pedido] : '';
-                    if (in_array($encargado, $cortadores)) {
-                        $filteredGroupedRegistros[$groupKey] = $groupRegistros;
-                    }
-                }
-                $groupedRegistros = collect($filteredGroupedRegistros);
-            }
-
+            // Para Costura - Pedidos: agrupar prendas_pedido por pedido
+            // Expandir tallas desde cantidad_talla (JSON)
             $html = '';
-            if ($groupedRegistros->isEmpty()) {
+            
+            if ($registros->isEmpty()) {
                 $html = '<div class="no-data">
                             <h3>No hay registros disponibles</h3>
                             <p>No se encontraron registros de costura para mostrar.</p>
                         </div>';
             } else {
+                // Agrupar prendas por pedido
+                $groupedByPedido = $registros->groupBy(function($prenda) {
+                    return $prenda->pedido->numero_pedido . '-' . $prenda->pedido->cliente;
+                });
+                
                 $html .= '<div class="cards-container">';
-                foreach($groupedRegistros as $groupKey => $groupRegistros) {
+                
+                foreach($groupedByPedido as $groupKey => $prendas) {
                     $pedidoCliente = explode('-', $groupKey);
-                    $pedido = $pedidoCliente[0];
+                    $numeroPedido = $pedidoCliente[0];
                     $cliente = $pedidoCliente[1];
-
-                    $encargadoCorte = isset($encargadosCorte[$pedido]) ? $encargadosCorte[$pedido] : '-';
-
+                    
+                    // Obtener encargado de corte
+                    $encargadoCorte = '-';
+                    $pedidoProduccion = $prendas->first()->pedido;
+                    if ($pedidoProduccion) {
+                        $tablaOriginal = \App\Models\TablaOriginal::where('pedido', $numeroPedido)->first();
+                        if ($tablaOriginal && $tablaOriginal->encargados_de_corte) {
+                            $encargadoCorte = $tablaOriginal->encargados_de_corte;
+                        }
+                    }
+                    
                     $html .= '<div class="pedido-card">
                                 <div class="card-header">
-                                    <h3>' . ($pedido ?: '-') . ' - ' . ($cliente ?: '-') . '</h3>
+                                    <h3>' . htmlspecialchars($numeroPedido ?: '-') . ' - ' . htmlspecialchars($cliente ?: '-') . '</h3>
                                     <div class="encargado-corte">
                                         <span class="encargado-label">Encargado de Corte:</span>
                                         <span class="encargado-value">' . htmlspecialchars($encargadoCorte) . '</span>
-                                        <button class="btn-toggle-edit" data-card-id="' . htmlspecialchars($pedido . '-' . $cliente) . '" title="Activar edición">
+                                        <button class="btn-toggle-edit" data-card-id="' . htmlspecialchars($numeroPedido . '-' . $cliente) . '" title="Activar edición">
                                             <i class="fas fa-edit"></i> Editar
                                         </button>
                                     </div>
@@ -251,48 +256,59 @@ class VistasController extends Controller
                                             </tr>
                                         </thead>
                                         <tbody>';
-
-                    foreach($groupRegistros as $registro) {
-                        $prenda = isset($registro->prenda) && $registro->prenda && $registro->prenda !== 'undefined' ? $registro->prenda : '-';
-                        $descripcion = isset($registro->descripcion) && $registro->descripcion && $registro->descripcion !== 'undefined' ? $registro->descripcion : '-';
-                        $talla = isset($registro->talla) && $registro->talla && $registro->talla !== 'undefined' ? $registro->talla : '-';
+                    
+                    // Expandir cada prenda por sus tallas
+                    foreach($prendas as $prenda) {
+                        $nombrePrenda = htmlspecialchars($prenda->nombre_prenda ?: '-');
+                        $descripcion = htmlspecialchars($prenda->descripcion ?: '-');
                         
-                        // Handle numeric values - show 0 if it's 0, show value if exists, otherwise show '-'
-                        $cantidad = isset($registro->cantidad) && $registro->cantidad !== null && $registro->cantidad !== '' ? $registro->cantidad : '-';
-                        $cantidad_value = $registro->cantidad ?? '';
+                        // Extraer tallas desde cantidad_talla (JSON)
+                        $cantidadTalla = is_string($prenda->cantidad_talla) 
+                            ? json_decode($prenda->cantidad_talla, true) 
+                            : $prenda->cantidad_talla;
                         
-                        $costurero = isset($registro->costurero) && $registro->costurero && $registro->costurero !== 'undefined' ? $registro->costurero : '-';
-                        $costurero_value = $registro->costurero ?? '';
-                        
-                        $total_producido = isset($registro->total_producido_por_talla) && $registro->total_producido_por_talla !== null && $registro->total_producido_por_talla !== '' ? $registro->total_producido_por_talla : '-';
-                        $total_producido_value = $registro->total_producido_por_talla ?? '';
-                        
-                        $total_pendiente = isset($registro->total_pendiente_por_talla) && $registro->total_pendiente_por_talla !== null && $registro->total_pendiente_por_talla !== '' ? $registro->total_pendiente_por_talla : '-';
-                        $total_pendiente_value = $registro->total_pendiente_por_talla ?? '';
-
-                        $fecha_completado = '-';
-                        if (isset($registro->fecha_completado) && $registro->fecha_completado && $registro->fecha_completado !== 'undefined') {
-                            try {
-                                $fecha_completado = \Carbon\Carbon::parse($registro->fecha_completado)->format('d/m/Y');
-                            } catch (\Exception $e) {
-                                $fecha_completado = '-';
+                        if (is_array($cantidadTalla) && !empty($cantidadTalla)) {
+                            // Crear una fila por cada talla
+                            foreach($cantidadTalla as $talla => $cantidad) {
+                                // Buscar entrega_prenda_pedido relacionada
+                                $entrega = \App\Models\EntregaPrendaPedido::where('prenda_pedido_id', $prenda->id)
+                                    ->where('talla', $talla)
+                                    ->first();
+                                
+                                $costurero = $entrega ? htmlspecialchars($entrega->costurero ?: '-') : '-';
+                                $totalProducido = $entrega ? htmlspecialchars($entrega->total_producido_por_talla) : '-';
+                                $totalPendiente = $entrega ? htmlspecialchars($entrega->total_pendiente_por_talla) : '-';
+                                $fechaCompletado = $entrega && $entrega->fecha_completado ? $entrega->fecha_completado->format('d/m/Y') : '-';
+                                
+                                $html .= '<tr data-id="' . $prenda->id . '" data-tipo="pedidos" data-talla="' . htmlspecialchars($talla) . '">
+                                            <td class="prenda-cell cell-clickable" data-content="' . $nombrePrenda . '">' . $nombrePrenda . '</td>
+                                            <td class="descripcion-cell cell-clickable" data-content="' . $descripcion . '">' . $descripcion . '</td>
+                                            <td class="talla-cell">' . htmlspecialchars($talla) . '</td>
+                                            <td class="cantidad-cell editable" data-field="cantidad" data-value="' . htmlspecialchars($cantidad) . '">' . htmlspecialchars($cantidad) . '</td>
+                                            <td class="costurero-cell cell-clickable editable" data-field="costurero" data-content="' . $costurero . '" data-value="' . ($entrega ? htmlspecialchars($entrega->costurero ?? '') : '') . '">' . $costurero . '</td>
+                                            <td class="total_producido_por_talla-cell editable" data-field="total_producido_por_talla" data-value="' . ($entrega ? htmlspecialchars($entrega->total_producido_por_talla) : '') . '">' . $totalProducido . '</td>
+                                            <td class="total_pendiente_por_talla-cell editable" data-field="total_pendiente_por_talla" data-value="' . ($entrega ? htmlspecialchars($entrega->total_pendiente_por_talla) : '') . '">' . $totalPendiente . '</td>
+                                            <td class="fecha_completado-cell">' . $fechaCompletado . '</td>
+                                        </tr>';
                             }
+                        } else {
+                            // Si no hay tallas, mostrar una fila sin talla
+                            $html .= '<tr data-id="' . $prenda->id . '" data-tipo="pedidos">
+                                        <td class="prenda-cell cell-clickable" data-content="' . $nombrePrenda . '">' . $nombrePrenda . '</td>
+                                        <td class="descripcion-cell cell-clickable" data-content="' . $descripcion . '">' . $descripcion . '</td>
+                                        <td class="talla-cell">-</td>
+                                        <td class="cantidad-cell editable" data-field="cantidad" data-value="">-</td>
+                                        <td class="costurero-cell cell-clickable editable" data-field="costurero" data-content="-" data-value="">-</td>
+                                        <td class="total_producido_por_talla-cell editable" data-field="total_producido_por_talla" data-value="">-</td>
+                                        <td class="total_pendiente_por_talla-cell editable" data-field="total_pendiente_por_talla" data-value="">-</td>
+                                        <td class="fecha_completado-cell">-</td>
+                                    </tr>';
                         }
-
-                        $html .= '<tr data-id="' . $registro->id . '" data-tipo="' . htmlspecialchars($tipo) . '">
-                                    <td class="prenda-cell cell-clickable" data-content="' . htmlspecialchars($prenda) . '">' . htmlspecialchars($prenda) . '</td>
-                                    <td class="descripcion-cell cell-clickable" data-content="' . htmlspecialchars($descripcion) . '">' . htmlspecialchars($descripcion) . '</td>
-                                    <td class="talla-cell">' . htmlspecialchars($talla) . '</td>
-                                    <td class="cantidad-cell editable" data-field="cantidad" data-value="' . htmlspecialchars($cantidad_value) . '">' . htmlspecialchars($cantidad) . '</td>
-                                    <td class="costurero-cell cell-clickable editable" data-field="costurero" data-content="' . htmlspecialchars($costurero) . '" data-value="' . htmlspecialchars($costurero_value) . '">' . htmlspecialchars($costurero) . '</td>
-                                    <td class="total_producido_por_talla-cell editable" data-field="total_producido_por_talla" data-value="' . htmlspecialchars($total_producido_value) . '">' . htmlspecialchars($total_producido) . '</td>
-                                    <td class="total_pendiente_por_talla-cell editable" data-field="total_pendiente_por_talla" data-value="' . htmlspecialchars($total_pendiente_value) . '">' . htmlspecialchars($total_pendiente) . '</td>
-                                    <td class="fecha_completado-cell">' . htmlspecialchars($fecha_completado) . '</td>
-                                </tr>';
                     }
-
+                    
                     $html .= '</tbody></table></div></div>';
                 }
+                
                 $html .= '</div>';
             }
         }
