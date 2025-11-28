@@ -11,6 +11,7 @@ use App\Http\Controllers\EntregaController;
 use App\Http\Controllers\TablerosController;
 use App\Http\Controllers\VistasController;
 use App\Http\Controllers\BalanceoController;
+use App\Http\Controllers\AsesorController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -130,6 +131,23 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::delete('/balanceo/operacion/{id}', [BalanceoController::class, 'destroyOperacion'])->name('balanceo.operacion.destroy');
     Route::get('/balanceo/{id}/data', [BalanceoController::class, 'getBalanceoData'])->name('balanceo.data');
     Route::post('/balanceo/{id}/toggle-estado', [BalanceoController::class, 'toggleEstadoCompleto'])->name('balanceo.toggle-estado');
+});
+
+// Rutas de Insumos
+Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.')->group(function () {
+    Route::get('/dashboard', [\App\Http\Controllers\Insumos\InsumosController::class, 'dashboard'])->name('dashboard');
+    Route::get('/materiales', [\App\Http\Controllers\Insumos\InsumosController::class, 'materiales'])->name('materiales.index');
+    Route::post('/materiales/{pedido}/guardar', [\App\Http\Controllers\Insumos\InsumosController::class, 'guardarMateriales'])->name('materiales.guardar');
+    Route::post('/materiales/{pedido}/eliminar', [\App\Http\Controllers\Insumos\InsumosController::class, 'eliminarMaterial'])->name('materiales.eliminar');
+    Route::get('/test', function () {
+        return view('insumos.test');
+    })->name('test');
+});
+
+// Rutas de Asesores (Notificaciones)
+Route::middleware('auth')->prefix('asesores')->name('asesores.')->group(function () {
+    Route::get('/notifications', [AsesorController::class, 'getNotifications'])->name('notifications');
+    Route::post('/notifications/mark-all-read', [AsesorController::class, 'markAllNotificationsAsRead'])->name('notifications.mark-all-read');
 });
 
 require __DIR__.'/auth.php';

@@ -28,9 +28,27 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        // Si el usuario es supervisor, redirigir a gestión de órdenes
-        if (auth()->user()->role && auth()->user()->role->name === 'supervisor') {
-            return redirect()->intended(route('registros.index', absolute: false));
+        $user = auth()->user();
+        
+        // Redireccionar según el rol del usuario
+        if ($user->role) {
+            // Si es un objeto Role
+            if (is_object($user->role)) {
+                if ($user->role->name === 'supervisor') {
+                    return redirect()->intended(route('registros.index', absolute: false));
+                }
+                if ($user->role->name === 'insumos') {
+                    return redirect()->intended(route('insumos.materiales.index', absolute: false));
+                }
+            } else {
+                // Si es string directo
+                if ($user->role === 'supervisor') {
+                    return redirect()->intended(route('registros.index', absolute: false));
+                }
+                if ($user->role === 'insumos') {
+                    return redirect()->intended(route('insumos.materiales.index', absolute: false));
+                }
+            }
         }
 
         return redirect()->intended(route('dashboard', absolute: false));

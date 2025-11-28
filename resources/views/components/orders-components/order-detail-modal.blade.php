@@ -63,7 +63,7 @@
             align-items: center;
             justify-content: center;
             position: relative;
-            z-index: 1000;
+            z-index: 9999;
             transform: translateY(15px) scale(0.75);
             transform-origin: top center;
         }

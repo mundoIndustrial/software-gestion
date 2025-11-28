@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'supervisor-readonly' => \App\Http\Middleware\SupervisorReadOnly::class,
             'supervisor-access' => \App\Http\Middleware\SupervisorAccessControl::class,
+            'insumos-access' => \App\Http\Middleware\InsumosAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
