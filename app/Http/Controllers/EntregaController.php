@@ -291,8 +291,8 @@ class EntregaController extends Controller
                     $request->validate([
                         'pedido' => 'required|integer',
                         'cortador' => 'required|string',
-                        'cantidad_prendas' => 'required|integer',
                         'piezas' => 'required|integer',
+                        'pasadas' => 'required|integer',
                         'etiquetador' => 'nullable|string',
                         'fecha_entrega' => 'required|date',
                     ]);
@@ -329,11 +329,9 @@ class EntregaController extends Controller
                     }
                     $entrega['prenda'] = trim($prendaString);
 
-                    // Calculate pasadas automatically: cantidad_prendas / piezas
-                    $cantidad_prendas = $entrega['cantidad_prendas'] ?? 1;
+                    // Use piezas and pasadas directly from the form
                     $piezas = $entrega['piezas'] ?? 1;
-                    $pasadas = $cantidad_prendas > 0 ? ceil($cantidad_prendas / $piezas) : 0;
-                    $entrega['pasadas'] = $pasadas;
+                    $pasadas = $entrega['pasadas'] ?? 1;
 
                     // Calculate etiqueteadas as piezas * pasadas (calculated internally, to be saved in DB)
                     $etiqueteadas = $piezas * $pasadas;
@@ -455,20 +453,11 @@ class EntregaController extends Controller
                 $validated = $request->validate([
                     'pedido' => 'sometimes|integer',
                     'cortador' => 'sometimes|string',
-                    'cantidad_prendas' => 'sometimes|integer',
                     'piezas' => 'sometimes|integer',
-                    'pasadas' => 'sometimes|integer', // Permitir edición manual de pasadas
+                    'pasadas' => 'sometimes|integer',
                     'etiquetador' => 'sometimes|string',
                     'fecha_entrega' => 'sometimes|date',
                 ]);
-
-                // Recalculate pasadas automatically only if cantidad_prendas or piezas changed (not if pasadas was manually edited)
-                if ((isset($validated['cantidad_prendas']) || isset($validated['piezas'])) && !isset($validated['pasadas'])) {
-                    $cantidad_prendas = $validated['cantidad_prendas'] ?? $entrega->cantidad_prendas;
-                    $piezas = $validated['piezas'] ?? $entrega->piezas;
-                    $pasadas = $cantidad_prendas > 0 ? ceil($cantidad_prendas / $piezas) : 0;
-                    $validated['pasadas'] = $pasadas;
-                }
 
                 // Recalculate etiqueteadas: piezas * pasadas
                 if (isset($validated['piezas']) || isset($validated['pasadas'])) {
