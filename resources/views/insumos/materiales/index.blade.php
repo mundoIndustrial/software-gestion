@@ -5,6 +5,7 @@
 @section('page-title', 'Control de Insumos del Pedido')
 
 @section('content')
+<link rel="stylesheet" href="{{ asset('css/insumos/materiales.css') }}?v={{ time() }}">
 <style>
     /* Ocultar el top-nav del layout para esta vista */
     .top-nav {

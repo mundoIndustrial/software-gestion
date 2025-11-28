@@ -12,6 +12,14 @@
     margin-top: 20px;
     border: 1px solid #dee2e6;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+/* Modo oscuro para paginación */
+body.dark-theme .table-pagination {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-color: #334155;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .pagination-info {
@@ -19,6 +27,11 @@
     font-size: 14px;
     font-weight: 500;
     white-space: nowrap;
+    transition: color 0.3s ease;
+}
+
+body.dark-theme .pagination-info {
+    color: #cbd5e1;
 }
 
 .pagination-controls {
@@ -46,12 +59,26 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
+body.dark-theme .pagination-btn {
+    background: #334155;
+    border-color: #475569;
+    color: #cbd5e1;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
 .pagination-btn:hover:not(:disabled) {
     background: #e9ecef;
     border-color: #adb5bd;
     color: #212529;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+body.dark-theme .pagination-btn:hover:not(:disabled) {
+    background: #475569;
+    border-color: #64748b;
+    color: #f1f5f9;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 .pagination-btn.active {
@@ -62,11 +89,24 @@
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
+body.dark-theme .pagination-btn.active {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    border-color: #3b82f6;
+    color: white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.6);
+}
+
 .pagination-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
     background: #f8f9fa;
     color: #adb5bd;
+}
+
+body.dark-theme .pagination-btn:disabled {
+    background: #1e293b;
+    color: #64748b;
+    opacity: 0.5;
 }
 
 .pagination-btn i {
