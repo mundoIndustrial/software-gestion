@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('materiales_orden_insumos', function (Blueprint $table) {
             $table->id();
-            $table->string('tabla_original_pedido')->nullable();
+            $table->unsignedInteger('tabla_original_pedido')->nullable();
             $table->string('nombre_material');
             $table->date('fecha_pedido')->nullable();
             $table->date('fecha_llegada')->nullable();
@@ -21,7 +21,6 @@ return new class extends Migration
             $table->timestamps();
             
             // Índice para búsquedas rápidas
-            $table->foreign('tabla_original_pedido')->references('pedido')->on('tabla_original')->onDelete('cascade');
             $table->index('tabla_original_pedido');
         });
     }
