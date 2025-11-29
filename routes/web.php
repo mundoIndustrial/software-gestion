@@ -67,6 +67,9 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::post('/registros/update-status', [RegistroOrdenController::class, 'updateStatus'])->name('registros.updateStatus');
     Route::get('/registros/{pedido}/entregas', [RegistroOrdenController::class, 'getEntregas'])->name('registros.entregas');
     Route::get('/api/registros-por-orden/{pedido}', [RegistroOrdenController::class, 'getRegistrosPorOrden'])->name('api.registros-por-orden');
+    Route::get('/api/registros/{numero_pedido}/dias', [RegistroOrdenController::class, 'calcularDiasAPI'])->name('api.registros.dias');
+    Route::get('/api/ordenes/{id}/procesos', [App\Http\Controllers\OrdenController::class, 'getProcesos'])->name('api.ordenes.procesos');
+    Route::post('/api/registros/dias-batch', [RegistroOrdenController::class, 'calcularDiasBatchAPI'])->name('api.registros.dias-batch');
     Route::post('/registros/{pedido}/edit-full', [RegistroOrdenController::class, 'editFullOrder'])->name('registros.editFull');
     Route::get('/bodega', [RegistroBodegaController::class, 'index'])->name('bodega.index');
     Route::get('/bodega/next-pedido', [RegistroBodegaController::class, 'getNextPedido'])->name('bodega.next-pedido');

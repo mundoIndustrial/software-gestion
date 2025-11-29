@@ -336,7 +336,6 @@ class RegistroOrdenController extends Controller
         $areaOptions = $this->getEnumOptions('tabla_original', 'area');
 
         if ($request->wantsJson()) {
-<<<<<<< HEAD
             // Filtrar campos sensibles según el rol del usuario
             $ordenesFiltered = array_map(function($orden) use ($areasMap, $encargadosCreacionOrdenMap) {
                 $ordenArray = is_object($orden) ? $orden->toArray() : (array) $orden;
