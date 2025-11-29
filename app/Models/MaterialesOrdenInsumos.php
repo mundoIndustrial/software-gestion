@@ -15,20 +15,28 @@ class MaterialesOrdenInsumos extends Model
         'fecha_llegada',
         'recibido',
         'numero_pedido',
+        'fecha_orden',
+        'fecha_pago',
+        'fecha_despacho',
+        'observaciones',
+        'dias_demora',
     ];
 
     protected $casts = [
         'fecha_pedido' => 'date',
         'fecha_llegada' => 'date',
+        'fecha_orden' => 'date',
+        'fecha_pago' => 'date',
+        'fecha_despacho' => 'date',
         'recibido' => 'boolean',
     ];
 
     protected $appends = ['dias_demora'];
 
     /**
-     * Relación con la orden original
+     * Relación con el pedido de producción
      */
-    public function orden()
+    public function pedido()
     {
         return $this->belongsTo(PedidoProduccion::class, 'numero_pedido', 'numero_pedido');
     }

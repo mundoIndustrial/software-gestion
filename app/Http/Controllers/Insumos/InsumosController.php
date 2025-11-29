@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Insumos;
 
 use App\Http\Controllers\Controller;
-use App\Models\TablaOriginal;
+use App\Models\PedidoProduccion;
+use App\Models\PrendaPedido;
 use App\Models\MaterialesOrdenInsumos;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
@@ -35,7 +36,7 @@ class InsumosController extends Controller
             $this->verificarRolInsumos($user);
             
             // Validar que la columna sea permitida
-            $columnasPermitidas = ['pedido', 'cliente', 'descripcion', 'estado', 'area', 'fecha_de_creacion_de_orden'];
+            $columnasPermitidas = ['numero_pedido', 'cliente', 'descripcion_armada', 'estado', 'area', 'fecha_de_creacion_de_orden'];
             if (!in_array($column, $columnasPermitidas)) {
                 \Log::warning('Columna no permitida en filtro: ' . $column);
                 return response()->json([
@@ -47,9 +48,9 @@ class InsumosController extends Controller
             
             // Obtener valores únicos de la columna especificada
             // Usar la misma query base que en materiales() - Filtrar por Estados y Áreas permitidas
-            $query = TablaOriginal::where(function($q) {
+            $query = PedidoProduccion::where(function($q) {
                 // Estados permitidos
-                $q->whereIn('estado', ['No iniciado', 'En Ejecución', 'Entregado', 'Anulada']);
+                $q->whereIn('estado', ['No iniciado', 'En Ejecución', 'Anulada']);
             })->where(function($q) {
                 // Áreas permitidas
                 $q->where('area', 'LIKE', '%Corte%')
@@ -58,14 +59,46 @@ class InsumosController extends Controller
             });
             
             // Obtener valores únicos
-            if ($column === 'fecha_de_creacion_de_orden') {
+            if ($column === 'descripcion_armada') {
+                // Para descripción armada, obtener valores únicos desde prendas_pedido.descripcion_armada
+                $allRecords = $query->with('prendas')->get();
+                $totalRegistros = $allRecords->count();
+                
+                \Log::info('📝 FILTRO DESCRIPCIÓN ARMADA - Registros totales encontrados:', [
+                    'total_registros' => $totalRegistros,
+                    'filtros_aplicados' => 'Estado (No iniciado, En Ejecución, Anulada) + Área (Corte, Creación de orden)'
+                ]);
+                
+                $valores = [];
+                foreach ($allRecords as $orden) {
+                    if ($orden->prendas && $orden->prendas->isNotEmpty()) {
+                        foreach ($orden->prendas as $prenda) {
+                            if ($prenda->descripcion_armada) {
+                                $valores[] = $prenda->descripcion_armada;
+                            }
+                        }
+                    }
+                }
+                
+                $valores = array_unique($valores);
+                $valores = array_values($valores);
+                
+                \Log::info('✅ Valores únicos encontrados: ' . count($valores));
+                
+                return response()->json([
+                    'success' => true,
+                    'column' => $column,
+                    'valores' => $valores,
+                    'total' => count($valores),
+                ]);
+            } elseif ($column === 'fecha_de_creacion_de_orden') {
                 // Para fechas, obtener primero y luego formatear
                 $allRecords = $query->get();
                 $totalRegistros = $allRecords->count();
                 
                 \Log::info('📅 FILTRO FECHA - Registros totales encontrados:', [
                     'total_registros' => $totalRegistros,
-                    'filtros_aplicados' => 'Estado (No iniciado, En Ejecución, Entregado, Anulada) + Área (Corte, Creación de orden)'
+                    'filtros_aplicados' => 'Estado (No iniciado, En Ejecución, Entregado, Anulada)'
                 ]);
                 
                 $valores = $allRecords
@@ -189,13 +222,13 @@ class InsumosController extends Controller
         ]);
         
         // Construir query base - Filtrar por:
-        // - Estados: "No iniciado", "En Ejecución", "Entregado", "Anulada"
-        // - Áreas: "Corte" o "Creación de orden"
-        $baseQuery = TablaOriginal::where(function($q) {
+        // - Estados: "No iniciado", "En Ejecución", "Anulada"
+        // - Áreas: "Corte", "Creación de Orden"
+        $baseQuery = PedidoProduccion::where(function($q) {
             // Estados permitidos
-            $q->whereIn('estado', ['No iniciado', 'En Ejecución', 'Entregado', 'Anulada']);
+            $q->whereIn('estado', ['No iniciado', 'En Ejecución', 'Anulada']);
         })->where(function($q) {
-            // Áreas permitidas - Usar LIKE para ser más flexible con espacios/mayúsculas
+            // Áreas permitidas
             $q->where('area', 'LIKE', '%Corte%')
               ->orWhere('area', 'LIKE', '%Creación%orden%')
               ->orWhere('area', 'LIKE', '%Creación de orden%');
@@ -214,8 +247,8 @@ class InsumosController extends Controller
                     $filterValue = $filterValuesArray[$idx];
                     \Log::info("📌 Aplicando filtro: {$column} = {$filterValue}");
                     
-                    // Para campos de texto (pedido, cliente, descripcion), usar LIKE
-                    if (in_array($column, ['pedido', 'cliente', 'descripcion'])) {
+                    // Para campos de texto (numero_pedido, cliente, descripcion_prendas), usar LIKE
+                    if (in_array($column, ['numero_pedido', 'cliente', 'descripcion_prendas'])) {
                         $baseQuery->where($column, 'LIKE', "%{$filterValue}%");
                     } elseif ($column === 'fecha_de_creacion_de_orden') {
                         // Para fechas, convertir de d/m/Y a Y-m-d
@@ -242,21 +275,65 @@ class InsumosController extends Controller
         if (!empty($search)) {
             $hasFilters = true;
             $baseQuery->where(function($q) use ($search) {
-                $q->where('pedido', 'LIKE', "%{$search}%")
+                $q->where('numero_pedido', 'LIKE', "%{$search}%")
                   ->orWhere('cliente', 'LIKE', "%{$search}%");
             });
         }
         
-        // Siempre paginar, con o sin filtros
-        $ordenes = $baseQuery->orderBy('pedido', 'asc')->paginate(10);
+        // Siempre paginar, con o sin filtros - con relaciones
+        $ordenes = $baseQuery->with('prendas')->orderBy('numero_pedido', 'asc')->paginate(10);
         
         // Preservar parámetros de búsqueda y filtro en links de paginación
         $ordenes->appends($request->query());
         
-        // Cargar materiales guardados para cada orden
-        $ordenesConMateriales = $ordenes->map(function($orden) {
+        // Cargar materiales guardados para cada orden y armar descripción desde prendas
+        $ordenes->getCollection()->transform(function($orden) {
             $materialesGuardados = MaterialesOrdenInsumos::where('numero_pedido', $orden->numero_pedido)->get();
             $orden->materiales_guardados = $materialesGuardados;
+            
+            // Armar descripción desde prendas_pedido (ya cargadas con with())
+            if ($orden->prendas && $orden->prendas->isNotEmpty()) {
+                $descripcionesArray = $orden->prendas->map(function($prenda) {
+                    // Armar descripción completa con nombre, descripción y tallas
+                    $partes = [];
+                    
+                    // 1. Nombre de la prenda
+                    if ($prenda->nombre_prenda) {
+                        $partes[] = "PRENDA: " . strtoupper(trim($prenda->nombre_prenda));
+                    }
+                    
+                    // 2. Descripción
+                    if ($prenda->descripcion) {
+                        $partes[] = "DESCRIPCIÓN: " . strtoupper(trim($prenda->descripcion));
+                    }
+                    
+                    // 3. Tallas con cantidades
+                    if ($prenda->cantidad_talla) {
+                        $tallaInfo = $prenda->cantidad_talla;
+                        if (is_string($tallaInfo)) {
+                            $tallaInfo = json_decode($tallaInfo, true);
+                        }
+                        
+                        if (is_array($tallaInfo)) {
+                            $tallas = [];
+                            foreach ($tallaInfo as $talla => $cantidad) {
+                                if ($cantidad > 0) {
+                                    $tallas[] = "{$talla}: {$cantidad}";
+                                }
+                            }
+                            if (!empty($tallas)) {
+                                $partes[] = "TALLAS: " . implode(", ", $tallas);
+                            }
+                        }
+                    }
+                    
+                    return implode("\n", $partes);
+                })->toArray();
+                $orden->descripcion_prendas = implode("\n\n", $descripcionesArray);
+            } else {
+                $orden->descripcion_prendas = 'Sin prendas';
+            }
+            
             return $orden;
         });
         
@@ -300,15 +377,19 @@ class InsumosController extends Controller
             $user = Auth::user();
             $this->verificarRolInsumos($user);
             
-            // Validar que la orden existe
-            $orden = TablaOriginal::where('pedido', $ordenId)->firstOrFail();
+            // Buscar por numero_pedido en lugar de ID
+            $orden = PedidoProduccion::where('numero_pedido', $ordenId)->firstOrFail();
             
             // Validar datos
             $validated = $request->validate([
                 'materiales' => 'array',
                 'materiales.*.nombre' => 'required|string',
+                'materiales.*.fecha_orden' => 'nullable|date',
                 'materiales.*.fecha_pedido' => 'nullable|date',
+                'materiales.*.fecha_pago' => 'nullable|date',
                 'materiales.*.fecha_llegada' => 'nullable|date',
+                'materiales.*.fecha_despacho' => 'nullable|date',
+                'materiales.*.observaciones' => 'nullable|string',
                 'materiales.*.recibido' => 'boolean',
             ]);
             
@@ -321,7 +402,7 @@ class InsumosController extends Controller
             $materialesGuardados = 0;
             $materialesEliminados = 0;
             
-            \Log::info('🔵 GUARDANDO MATERIALES - Pedido: ' . $orden->pedido);
+            \Log::info('🔵 GUARDANDO MATERIALES - Pedido ID: ' . $orden->id . ', Número: ' . $orden->numero_pedido);
             \Log::info('📋 Materiales recibidos:', $validated['materiales']);
             \Log::info('📊 Total de materiales: ' . count($validated['materiales']));
             
@@ -338,8 +419,12 @@ class InsumosController extends Controller
                             'nombre_material' => $material['nombre'],
                         ],
                         [
+                            'fecha_orden' => $material['fecha_orden'] ?? null,
                             'fecha_pedido' => $material['fecha_pedido'] ?? null,
+                            'fecha_pago' => $material['fecha_pago'] ?? null,
                             'fecha_llegada' => $material['fecha_llegada'] ?? null,
+                            'fecha_despacho' => $material['fecha_despacho'] ?? null,
+                            'observaciones' => $material['observaciones'] ?? null,
                             'recibido' => true,
                         ]
                     );
@@ -403,8 +488,8 @@ class InsumosController extends Controller
             $user = Auth::user();
             $this->verificarRolInsumos($user);
             
-            // Validar que la orden existe
-            $orden = TablaOriginal::where('pedido', $ordenId)->firstOrFail();
+            // Buscar por numero_pedido en lugar de ID
+            $orden = PedidoProduccion::where('numero_pedido', $ordenId)->firstOrFail();
             
             // Validar datos
             $validated = $request->validate([
@@ -449,17 +534,25 @@ class InsumosController extends Controller
             $user = Auth::user();
             $this->verificarRolInsumos($user);
             
-            // Obtener materiales guardados
+            // Validar que el pedido existe
+            PedidoProduccion::where('numero_pedido', $pedido)->firstOrFail();
+            
+            // Obtener materiales guardados usando numero_pedido
             $materiales = MaterialesOrdenInsumos::where('numero_pedido', $pedido)->get();
             
             // Transformar los datos para la respuesta
             $materialesTransformados = $materiales->map(function($material) {
                 return [
+                    'id' => $material->id,
                     'nombre_material' => $material->nombre_material,
                     'recibido' => $material->recibido,
+                    'fecha_orden' => $material->fecha_orden ? $material->fecha_orden->format('Y-m-d') : null,
                     'fecha_pedido' => $material->fecha_pedido ? $material->fecha_pedido->format('Y-m-d') : null,
+                    'fecha_pago' => $material->fecha_pago ? $material->fecha_pago->format('Y-m-d') : null,
                     'fecha_llegada' => $material->fecha_llegada ? $material->fecha_llegada->format('Y-m-d') : null,
+                    'fecha_despacho' => $material->fecha_despacho ? $material->fecha_despacho->format('Y-m-d') : null,
                     'dias_demora' => $material->dias_demora,
+                    'observaciones' => $material->observaciones,
                 ];
             });
             
@@ -478,4 +571,5 @@ class InsumosController extends Controller
             ], 500);
         }
     }
+
 }

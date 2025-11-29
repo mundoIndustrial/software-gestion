@@ -133,6 +133,170 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::post('/balanceo/{id}/toggle-estado', [BalanceoController::class, 'toggleEstadoCompleto'])->name('balanceo.toggle-estado');
 });
 
+// ========================================
+// RUTAS PARA SUPERVISOR-ADMIN (COTIZACIONES)
+// ========================================
+Route::middleware(['auth', 'role:supervisor-admin'])->group(function () {
+    Route::get('/cotizaciones', [CotizacionesViewController::class, 'index'])->name('cotizaciones.index');
+    Route::get('/cotizaciones/{id}/detalle', [CotizacionesViewController::class, 'getCotizacionDetail'])->name('cotizaciones.detalle');
+});
+
+// ========================================
+// RUTAS PARA CONTADOR (MÓDULO INDEPENDIENTE)
+// ========================================
+Route::middleware(['auth', 'role:contador'])->prefix('contador')->name('contador.')->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\ContadorController::class, 'index'])->name('index');
+    Route::get('/cotizacion/{id}', [App\Http\Controllers\ContadorController::class, 'getCotizacionDetail'])->name('cotizacion.detail');
+    Route::delete('/cotizacion/{id}', [App\Http\Controllers\ContadorController::class, 'deleteCotizacion'])->name('cotizacion.delete');
+    
+    // Rutas para costos de prendas
+    Route::post('/costos/guardar', [App\Http\Controllers\CostoPrendaController::class, 'guardar'])->name('costos.guardar');
+    Route::get('/costos/obtener/{cotizacion_id}', [App\Http\Controllers\CostoPrendaController::class, 'obtener'])->name('costos.obtener');
+    
+    // Rutas para notas de tallas
+    Route::post('/prenda/{prendaId}/notas-tallas', [App\Http\Controllers\ContadorController::class, 'guardarNotasTallas'])->name('prenda.guardar-notas-tallas');
+    
+    // Rutas para PDF
+    Route::get('/cotizacion/{id}/pdf', [App\Http\Controllers\PDFCotizacionController::class, 'generarPDF'])->name('cotizacion.pdf');
+    
+    // Ruta para cambiar estado de cotización
+    Route::patch('/cotizacion/{id}/estado', [App\Http\Controllers\ContadorController::class, 'cambiarEstado'])->name('cotizacion.cambiar-estado');
+    
+    // Ruta para obtener costos de prendas
+    Route::get('/cotizacion/{id}/costos', [App\Http\Controllers\ContadorController::class, 'obtenerCostos'])->name('cotizacion.costos');
+});
+
+// ========================================
+// RUTAS PARA ASESORES (MÓDULO INDEPENDIENTE)
+// ========================================
+Route::middleware(['auth', 'role:asesor'])->prefix('asesores')->name('asesores.')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [App\Http\Controllers\AsesoresController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard-data', [App\Http\Controllers\AsesoresController::class, 'getDashboardData'])->name('dashboard-data');
+    
+    // Perfil
+    Route::get('/perfil', [App\Http\Controllers\AsesoresController::class, 'profile'])->name('profile')->middleware('auth');
+    Route::post('/perfil/update', [App\Http\Controllers\AsesoresController::class, 'updateProfile'])->name('profile.update');
+    
+    // Pedidos (usando tabla_original)
+    Route::get('/pedidos', [App\Http\Controllers\AsesoresController::class, 'index'])->name('pedidos.index');
+    Route::get('/pedidos/create', [App\Http\Controllers\AsesoresController::class, 'create'])->name('pedidos.create');
+    Route::get('/pedidos/next-pedido', [App\Http\Controllers\AsesoresController::class, 'getNextPedido'])->name('next-pedido');
+    Route::post('/pedidos', [App\Http\Controllers\AsesoresController::class, 'store'])->name('pedidos.store');
+    Route::post('/pedidos/confirm', [App\Http\Controllers\AsesoresController::class, 'confirm'])->name('pedidos.confirm');
+    Route::get('/pedidos/{pedido}', [App\Http\Controllers\AsesoresController::class, 'show'])->name('pedidos.show');
+    Route::get('/pedidos/{pedido}/edit', [App\Http\Controllers\AsesoresController::class, 'edit'])->name('pedidos.edit');
+    Route::put('/pedidos/{pedido}', [App\Http\Controllers\AsesoresController::class, 'update'])->name('pedidos.update');
+    Route::delete('/pedidos/{pedido}', [App\Http\Controllers\AsesoresController::class, 'destroy'])->name('pedidos.destroy');
+    
+    // ========================================
+    // SISTEMA DE ÓRDENES CON BORRADORES
+    // ========================================
+    
+    // BORRADORES - Gestión de borradores
+    Route::get('/borradores', [App\Http\Controllers\OrdenController::class, 'borradores'])->name('borradores.index');
+    
+    // ÓRDENES - CRUD principal
+    Route::get('/ordenes/create', [App\Http\Controllers\OrdenController::class, 'create'])->name('ordenes.create');
+    Route::post('/ordenes/guardar', [App\Http\Controllers\OrdenController::class, 'guardarBorrador'])->name('ordenes.store.draft');
+    Route::get('/ordenes/{id}/edit', [App\Http\Controllers\OrdenController::class, 'edit'])->name('ordenes.edit');
+    Route::patch('/ordenes/{id}', [App\Http\Controllers\OrdenController::class, 'update'])->name('ordenes.update');
+    Route::post('/ordenes/{id}/confirmar', [App\Http\Controllers\OrdenController::class, 'confirmar'])->name('ordenes.confirm');
+    Route::delete('/ordenes/{id}', [App\Http\Controllers\OrdenController::class, 'destroy'])->name('ordenes.destroy');
+    Route::get('/ordenes', [App\Http\Controllers\OrdenController::class, 'index'])->name('ordenes.index');
+    Route::get('/ordenes/{id}', [App\Http\Controllers\OrdenController::class, 'show'])->name('ordenes.show');
+    
+    // Estadísticas de órdenes
+    Route::get('/ordenes/stats', [App\Http\Controllers\OrdenController::class, 'stats'])->name('ordenes.stats');
+    
+    // Notificaciones
+    Route::get('/notifications', [App\Http\Controllers\AsesoresController::class, 'getNotifications'])->name('notifications');
+    Route::post('/notifications/mark-all-read', [App\Http\Controllers\AsesoresController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    
+    // ========================================
+    // COTIZACIONES - Gestión de cotizaciones y borradores
+    // ========================================
+    Route::get('/cotizaciones', [App\Http\Controllers\Asesores\CotizacionesController::class, 'index'])->name('cotizaciones.index');
+    Route::post('/cotizaciones/guardar', [App\Http\Controllers\Asesores\CotizacionesController::class, 'guardar'])->name('cotizaciones.guardar');
+    Route::post('/cotizaciones/guardar-test', [App\Http\Controllers\Asesores\CotizacionesController::class, 'guardarTest'])->name('cotizaciones.guardar-test');
+    Route::post('/cotizaciones/{id}/imagenes', [App\Http\Controllers\Asesores\CotizacionesController::class, 'subirImagenes'])->name('cotizaciones.subir-imagenes');
+    Route::delete('/cotizaciones/{id}/imagenes', [App\Http\Controllers\Asesores\CotizacionesController::class, 'eliminarImagen'])->name('cotizaciones.eliminar-imagen');
+    Route::post('/cotizaciones/{id}/precios', [App\Http\Controllers\Asesores\CotizacionesController::class, 'guardarPrecios'])->name('cotizaciones.guardar-precios');
+    Route::get('/cotizaciones/{id}', [App\Http\Controllers\Asesores\CotizacionesController::class, 'show'])->name('cotizaciones.show');
+    Route::get('/cotizaciones/{id}/editar-borrador', [App\Http\Controllers\Asesores\CotizacionesController::class, 'editarBorrador'])->name('cotizaciones.edit-borrador');
+    Route::delete('/cotizaciones/{id}', [App\Http\Controllers\Asesores\CotizacionesController::class, 'destroy'])->name('cotizaciones.destroy');
+    Route::delete('/cotizaciones/{id}/borrador', [App\Http\Controllers\Asesores\CotizacionesController::class, 'destroy'])->name('cotizaciones.destroy-borrador');
+    Route::patch('/cotizaciones/{id}/estado/{estado}', [App\Http\Controllers\Asesores\CotizacionesController::class, 'cambiarEstado'])->name('cotizaciones.cambiar-estado');
+    Route::post('/cotizaciones/{id}/aceptar', [App\Http\Controllers\Asesores\CotizacionesController::class, 'aceptarCotizacion'])->name('cotizaciones.aceptar');
+    
+    // ========================================
+    // PEDIDOS DE PRODUCCIÓN - Gestión de pedidos desde cotizaciones
+    // ========================================
+    Route::get('/pedidos-produccion/crear', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'crearForm'])->name('pedidos-produccion.crear');
+    Route::get('/pedidos-produccion', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'index'])->name('pedidos-produccion.index');
+    Route::get('/pedidos-produccion/{id}', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'show'])->name('pedidos-produccion.show');
+    Route::get('/pedidos-produccion/{id}/plantilla', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'plantilla'])->name('pedidos-produccion.plantilla');
+    Route::post('/pedidos-produccion/crear-desde-cotizacion/{cotizacionId}', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'crearDesdeCotizacion'])->name('pedidos-produccion.crear-desde-cotizacion');
+    
+    // ========================================
+    // CLIENTES - Gestión de clientes
+    // ========================================
+    Route::get('/clientes', [App\Http\Controllers\Asesores\ClientesController::class, 'index'])->name('clientes.index');
+    Route::post('/clientes', [App\Http\Controllers\Asesores\ClientesController::class, 'store'])->name('clientes.store');
+    Route::patch('/clientes/{id}', [App\Http\Controllers\Asesores\ClientesController::class, 'update'])->name('clientes.update');
+    Route::delete('/clientes/{id}', [App\Http\Controllers\Asesores\ClientesController::class, 'destroy'])->name('clientes.destroy');
+    
+    // ========================================
+    // REPORTES - Gestión de reportes
+    // ========================================
+    Route::get('/reportes', [App\Http\Controllers\Asesores\ReportesController::class, 'index'])->name('reportes.index');
+    Route::post('/reportes', [App\Http\Controllers\Asesores\ReportesController::class, 'store'])->name('reportes.store');
+    Route::patch('/reportes/{id}', [App\Http\Controllers\Asesores\ReportesController::class, 'update'])->name('reportes.update');
+    Route::delete('/reportes/{id}', [App\Http\Controllers\Asesores\ReportesController::class, 'destroy'])->name('reportes.destroy');
+    
+    // Agregar Prendas (Sistema de Variantes)
+    Route::get('/prendas/agregar', function () {
+        return view('asesores.prendas.agregar-prendas');
+    })->name('prendas.agregar');
+
+    // ========================================
+    // COTIZACIONES DE BORDADO - Solo Asesor
+    // ========================================
+    Route::get('/cotizaciones/bordado/crear', [CotizacionBordadoController::class, 'create'])->name('cotizaciones-bordado.create');
+    Route::post('/cotizaciones/bordado', [CotizacionBordadoController::class, 'store'])->name('cotizaciones-bordado.store');
+    Route::get('/cotizaciones/bordado/lista', [CotizacionBordadoController::class, 'lista'])->name('cotizaciones-bordado.lista');
+    Route::get('/cotizaciones/bordado/{cotizacion}/editar', [CotizacionBordadoController::class, 'edit'])->name('cotizaciones-bordado.edit');
+    Route::put('/cotizaciones/bordado/{cotizacion}', [CotizacionBordadoController::class, 'update'])->name('cotizaciones-bordado.update');
+    Route::post('/cotizaciones/bordado/{cotizacion}/enviar', [CotizacionBordadoController::class, 'enviar'])->name('cotizaciones-bordado.enviar');
+    Route::delete('/cotizaciones/bordado/{cotizacion}', [CotizacionBordadoController::class, 'destroy'])->name('cotizaciones-bordado.destroy');
+});
+
+// ========== DEBUG ROUTES PARA OPTIMIZACIÓN DE /registros ==========
+// Solo accesible en desarrollo o para admins
+Route::middleware(['auth', 'role:admin'])->prefix('debug')->name('debug.')->group(function () {
+    Route::get('/registros/performance', [DebugRegistrosController::class, 'debugPerformance'])->name('registros-performance');
+    Route::get('/registros/queries', [DebugRegistrosController::class, 'listAllQueries'])->name('registros-queries');
+    Route::get('/registros/table-analysis', [DebugRegistrosController::class, 'analyzeTable'])->name('registros-table-analysis');
+    Route::get('/registros/suggest-indices', [DebugRegistrosController::class, 'suggestIndices'])->name('registros-suggest-indices');
+});
+
+// ========================================
+// RUTAS GENERALES - Inventario de Telas (Compartido)
+// ========================================
+Route::middleware(['auth'])->prefix('inventario-telas')->name('inventario-telas.')->group(function () {
+    Route::get('/', [App\Http\Controllers\AsesoresInventarioTelasController::class, 'index'])->name('index');
+    Route::post('/store', [App\Http\Controllers\AsesoresInventarioTelasController::class, 'store'])->name('store');
+    Route::post('/ajustar-stock', [App\Http\Controllers\AsesoresInventarioTelasController::class, 'ajustarStock'])->name('ajustar-stock');
+    Route::get('/historial', [App\Http\Controllers\AsesoresInventarioTelasController::class, 'historial'])->name('historial');
+});
+
+// API Routes para Prendas (Reconocimiento y Variaciones)
+Route::middleware('auth')->prefix('api')->name('api.')->group(function () {
+    Route::get('/tipos-prenda', [App\Http\Controllers\API\PrendaController::class, 'tiposPrenda'])->name('tipos-prenda');
+    Route::post('/prenda/reconocer', [App\Http\Controllers\API\PrendaController::class, 'reconocer'])->name('prenda.reconocer');
+    Route::get('/prenda-variaciones/{tipoPrendaId}', [App\Http\Controllers\API\PrendaController::class, 'variaciones'])->name('prenda.variaciones');
+});
+
 // Rutas de Insumos
 Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\Insumos\InsumosController::class, 'dashboard'])->name('dashboard');
@@ -144,6 +308,11 @@ Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.
     Route::get('/test', function () {
         return view('insumos.test');
     })->name('test');
+    
+    // Cálculo de Metrajes
+    Route::get('/metrajes', function () {
+        return view('insumos.metrajes.index');
+    })->name('metrajes.index');
 });
 
 // Rutas de Asesores (Notificaciones)

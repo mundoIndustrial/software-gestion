@@ -160,8 +160,8 @@
                         </a>
                     </li>
                     <li class="menu-item">
-                        <a href="{{ route('asesores.inventario.telas') }}" 
-                           class="menu-link {{ request()->routeIs('asesores.inventario.telas') ? 'active' : '' }}">
+                        <a href="{{ route('inventario-telas.index') }}" 
+                           class="menu-link {{ request()->routeIs('inventario-telas.index') ? 'active' : '' }}">
                             <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" class="menu-icon-svg">
                                 <g>
                                     <g>
