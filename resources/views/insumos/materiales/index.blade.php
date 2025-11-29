@@ -69,6 +69,20 @@
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
     }
+    
+    /* Mejorar contraste en modo oscuro para filas hover */
+    @media (prefers-color-scheme: dark) {
+        tbody tr:hover {
+            background-color: rgba(59, 130, 246, 0.1) !important;
+        }
+    }
+    
+    /* Hover normal en modo claro */
+    @media (prefers-color-scheme: light) {
+        tbody tr:hover {
+            background-color: #f9fafb !important;
+        }
+    }
 </style>
 
 @if(app()->isLocal())
