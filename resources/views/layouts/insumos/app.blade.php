@@ -4,58 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="referrer" content="strict-origin-when-cross-origin">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>@yield('title', 'Panel de Insumos') - MundoIndustrial</title>
+    <title>@yield('title', 'Insumos') - MundoIndustrial</title>
     
-    <!-- Favicon para Insumos -->
+    <!-- Favicon -->
     <link rel="icon" type="image/png" href="{{ asset('mundo_icon.png') }}" sizes="any">
     
-    <!-- Cache Control Headers -->
-    <meta http-equiv="Cache-Control" content="public, max-age=31536000">
-    
     <!-- Tailwind CSS -->
-    <script>
-        // Suprimir warning antes de cargar Tailwind
-        const originalWarn = console.warn;
-        console.warn = function(...args) {
-            if (typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) {
-                return;
-            }
-            return originalWarn.apply(console, args);
-        };
-    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Custom Tailwind Utils CSS -->
-    <link rel="stylesheet" href="{{ asset('css/insumos/tailwind-utils.css') }}">
-    
-    <!-- CSS -->
-    <link rel="stylesheet" href="{{ asset('css/insumos/layout.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/insumos/module.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/insumos/dashboard.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/insumos/pagination.css') }}">>
-    
-    <!-- Chart.js para gráficas -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    
-    <!-- Material Symbols para iconos -->
+    <!-- Material Symbols -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
     
-    <!-- Font Awesome para iconos -->
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- SweetAlert2 para modales profesionales -->
+    <!-- SweetAlert2 -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
-    <!-- Alpine.js para interactividad -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
-    <!-- Google Fonts - Poppins -->
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- CSS del módulo de insumos -->
+    <link rel="stylesheet" href="{{ asset('css/insumos/layout.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/insumos/module.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/insumos/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/insumos/pagination.css') }}">
+    
     <style>
+        body {
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
         .top-nav {
             display: flex;
             justify-content: space-between;
@@ -70,13 +50,6 @@
             gap: 1rem;
         }
         
-        .nav-center {
-            flex: 0 1 auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
         .nav-right {
             flex: 1;
             display: flex;
@@ -87,10 +60,9 @@
     </style>
     
     @stack('styles')
-
 </head>
-<body class="light-theme {{ request()->routeIs('insumos.materiales.*') ? 'materiales-view' : '' }}">
-    <!-- Sidebar Moderno -->
+<body class="light-theme">
+    <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <div class="logo-wrapper">
@@ -158,31 +130,29 @@
                 <span class="theme-text">Tema</span>
             </button>
             
-            @if(request()->routeIs('insumos.materiales.*') || request()->routeIs('insumos.metrajes.*') || request()->routeIs('inventario-telas.*'))
-                <a href="{{ route('logout') }}" 
-                   onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
-                   class="logout-btn"
-                   title="Salir">
-                    <i class="fas fa-sign-out-alt"></i>
-                    <span class="menu-label">Salir</span>
-                </a>
-                <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
-                    @csrf
-                </form>
-            @endif
+            <a href="{{ route('logout') }}" 
+               onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
+               class="logout-btn"
+               title="Salir">
+                <i class="fas fa-sign-out-alt"></i>
+                <span class="menu-label">Salir</span>
+            </a>
+            <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+                @csrf
+            </form>
         </div>
     </aside>
 
     <!-- Main Content -->
     <div class="main-content" id="mainContent">
-        <!-- Top Navigation Moderna -->
+        <!-- Top Navigation -->
         <header class="top-nav">
             <div class="nav-left">
                 <button class="mobile-toggle" id="mobileToggle">
                     <span class="material-symbols-rounded">menu</span>
                 </button>
                 <div class="breadcrumb-section">
-                    <h1 class="page-title">@yield('page-title', 'Dashboard de Insumos')</h1>
+                    <h1 class="page-title">@yield('page-title', 'Insumos')</h1>
                 </div>
             </div>
 
@@ -204,40 +174,6 @@
                             <span class="user-role">Insumos</span>
                         </div>
                     </button>
-                    <div class="user-menu" id="userMenu">
-                        <div class="user-menu-header">
-                            <div class="user-avatar-large">
-                                @if(Auth::user()->avatar)
-                                    <img src="{{ asset('storage/avatars/' . Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}">
-                                @else
-                                    <div class="avatar-placeholder">
-                                        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
-                                    </div>
-                                @endif
-                            </div>
-                            <div>
-                                <p class="user-menu-name">{{ Auth::user()->name }}</p>
-                                <p class="user-menu-email">{{ Auth::user()->email }}</p>
-                            </div>
-                        </div>
-                        <div class="menu-divider"></div>
-                        <a href="{{ route('profile.edit') }}" class="menu-item">
-                            <span class="material-symbols-rounded">person</span>
-                            <span>Mi Perfil</span>
-                        </a>
-                        <a href="#" class="menu-item">
-                            <span class="material-symbols-rounded">settings</span>
-                            <span>Configuración</span>
-                        </a>
-                        <div class="menu-divider"></div>
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-                            <button type="submit" class="menu-item logout">
-                                <span class="material-symbols-rounded">logout</span>
-                                <span>Cerrar Sesión</span>
-                            </button>
-                        </form>
-                    </div>
                 </div>
             </div>
         </header>

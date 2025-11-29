@@ -281,14 +281,6 @@ Route::middleware(['auth', 'role:asesor'])->prefix('asesores')->name('asesores.'
         return view('asesores.prendas.agregar-prendas');
     })->name('prendas.agregar');
 
-    // Inventario de Telas
-    Route::get('/inventario/telas', [App\Http\Controllers\AsesoresController::class, 'inventarioTelas'])->name('inventario.telas');
-    Route::prefix('inventario-telas')->name('inventario-telas.')->group(function () {
-        Route::post('/store', [App\Http\Controllers\AsesoresInventarioTelasController::class, 'store'])->name('store');
-        Route::post('/ajustar-stock', [App\Http\Controllers\AsesoresInventarioTelasController::class, 'ajustarStock'])->name('ajustar-stock');
-        Route::get('/historial', [App\Http\Controllers\AsesoresInventarioTelasController::class, 'historial'])->name('historial');
-    });
-
     // ========================================
     // COTIZACIONES DE BORDADO - Solo Asesor
     // ========================================
@@ -310,6 +302,16 @@ Route::middleware(['auth', 'role:admin'])->prefix('debug')->name('debug.')->grou
     Route::get('/registros/suggest-indices', [DebugRegistrosController::class, 'suggestIndices'])->name('registros-suggest-indices');
 });
 
+// ========================================
+// RUTAS GENERALES - Inventario de Telas (Compartido)
+// ========================================
+Route::middleware(['auth'])->prefix('inventario-telas')->name('inventario-telas.')->group(function () {
+    Route::get('/', [App\Http\Controllers\AsesoresInventarioTelasController::class, 'index'])->name('index');
+    Route::post('/store', [App\Http\Controllers\AsesoresInventarioTelasController::class, 'store'])->name('store');
+    Route::post('/ajustar-stock', [App\Http\Controllers\AsesoresInventarioTelasController::class, 'ajustarStock'])->name('ajustar-stock');
+    Route::get('/historial', [App\Http\Controllers\AsesoresInventarioTelasController::class, 'historial'])->name('historial');
+});
+
 // API Routes para Prendas (Reconocimiento y Variaciones)
 Route::middleware('auth')->prefix('api')->name('api.')->group(function () {
     Route::get('/tipos-prenda', [App\Http\Controllers\API\PrendaController::class, 'tiposPrenda'])->name('tipos-prenda');
@@ -328,6 +330,11 @@ Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.
     Route::get('/test', function () {
         return view('insumos.test');
     })->name('test');
+    
+    // Cálculo de Metrajes
+    Route::get('/metrajes', function () {
+        return view('insumos.metrajes.index');
+    })->name('metrajes.index');
 });
 
 // Rutas de Asesores (Notificaciones)

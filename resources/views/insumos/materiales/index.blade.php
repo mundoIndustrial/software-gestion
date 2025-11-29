@@ -1,5 +1,5 @@
 {{-- resources/views/insumos/materiales/index.blade.php --}}
-@extends('insumos.layout')
+@extends('layouts.insumos.app')
 
 @section('title', 'Gestión de Insumos - Control de Insumos del Pedido')
 @section('page-title', 'Control de Insumos del Pedido')
@@ -253,7 +253,7 @@
                             <th class="text-left py-4 px-6 font-bold">
                                 <div class="flex items-center justify-between gap-2">
                                     <span>Pedido</span>
-                                    <button class="filter-btn-insumos hover:bg-blue-500 p-1 rounded transition" data-column="pedido" title="Filtrar por Pedido">
+                                    <button class="filter-btn-insumos hover:bg-blue-500 p-1 rounded transition" data-column="numero_pedido" title="Filtrar por Pedido">
                                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                             <path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
                                         </svg>
@@ -273,7 +273,7 @@
                             <th class="text-left py-4 px-6 font-bold">
                                 <div class="flex items-center justify-between gap-2">
                                     <span>Descripción</span>
-                                    <button class="filter-btn-insumos hover:bg-blue-500 p-1 rounded transition" data-column="descripcion" title="Filtrar por Descripción">
+                                    <button class="filter-btn-insumos hover:bg-blue-500 p-1 rounded transition" data-column="descripcion_armada" title="Filtrar por Descripción">
                                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                             <path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
                                         </svg>
@@ -315,16 +315,16 @@
                     </thead>
                     <tbody>
                         @forelse($ordenes ?? [] as $orden)
-                            <tr class="border-b border-gray-200 hover:bg-gray-50 transition" data-pedido="{{ strtoupper($orden->pedido ?? '') }}" data-cliente="{{ strtoupper($orden->cliente ?? '') }}" data-orden-pedido="{{ $orden->pedido }}">
+                            <tr class="border-b border-gray-200 hover:bg-gray-50 transition" data-pedido="{{ strtoupper($orden->numero_pedido ?? '') }}" data-cliente="{{ strtoupper($orden->cliente ?? '') }}" data-orden-pedido="{{ $orden->numero_pedido }}">
                                 <td class="py-4 px-6">
-                                    <span class="font-bold text-blue-600 text-lg">{{ $orden->pedido ?? 'N/A' }}</span>
+                                    <span class="font-bold text-blue-600 text-lg">{{ $orden->numero_pedido ?? 'N/A' }}</span>
                                 </td>
                                 <td class="py-4 px-6">
                                     <span class="font-medium text-gray-800">{{ $orden->cliente ?? 'N/A' }}</span>
                                 </td>
                                 <td class="py-4 px-6">
-                                    <span class="text-gray-600 text-sm cursor-pointer hover:text-blue-600 transition" onclick="abrirModalDescripcion('{{ $orden->pedido }}', {{ json_encode($orden->descripcion ?? '') }})">
-                                        {{ Str::limit($orden->descripcion ?? '', 50) }}
+                                    <span class="text-gray-600 text-sm cursor-pointer hover:text-blue-600 transition" onclick="abrirModalDescripcion('{{ $orden->numero_pedido }}', {{ json_encode($orden->descripcion_prendas ?? '') }})">
+                                        {{ Str::limit($orden->descripcion_prendas ?? '', 50) }}
                                     </span>
                                 </td>
                                 <td class="py-4 px-6 text-center">
@@ -370,7 +370,7 @@
                                         </button>
                                         <button 
                                             class="btn-ver-insumos px-3 py-1 bg-green-100 text-green-600 font-medium rounded hover:bg-green-200 transition text-sm flex items-center gap-1"
-                                            onclick="abrirModalInsumos('{{ $orden->pedido }}')"
+                                            onclick="abrirModalInsumos('{{ $orden->numero_pedido }}')"
                                             title="Ver insumos"
                                         >
                                             <i class="fas fa-box"></i> Insumos
@@ -925,15 +925,19 @@
 
         <div class="p-6">
             <div class="overflow-x-auto">
-                <table class="w-full">
+                <table class="w-full text-sm">
                     <thead>
                         <tr class="bg-gray-100 border-b-2 border-gray-300">
-                            <th class="text-left py-3 px-4 font-bold text-gray-800">Insumo</th>
-                            <th class="text-center py-3 px-4 font-bold text-gray-800">Estado</th>
-                            <th class="text-center py-3 px-4 font-bold text-gray-800">Fecha Pedido</th>
-                            <th class="text-center py-3 px-4 font-bold text-gray-800">Fecha Llegada</th>
-                            <th class="text-center py-3 px-4 font-bold text-gray-800">Días Demora</th>
-                            <th class="text-center py-3 px-4 font-bold text-gray-800">Acciones</th>
+                            <th class="text-left py-3 px-4 font-bold text-gray-800 min-w-max">Insumo</th>
+                            <th class="text-center py-3 px-3 font-bold text-gray-800">Estado</th>
+                            <th class="text-center py-3 px-3 font-bold text-gray-800">Fecha Orden</th>
+                            <th class="text-center py-3 px-3 font-bold text-gray-800">Fecha Pedido</th>
+                            <th class="text-center py-3 px-3 font-bold text-gray-800">Fecha Pago</th>
+                            <th class="text-center py-3 px-3 font-bold text-gray-800">Fecha Llegada</th>
+                            <th class="text-center py-3 px-3 font-bold text-gray-800">Fecha Despacho</th>
+                            <th class="text-center py-3 px-3 font-bold text-gray-800">Días Demora</th>
+                            <th class="text-center py-3 px-3 font-bold text-gray-800">Observaciones</th>
+                            <th class="text-center py-3 px-3 font-bold text-gray-800">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="insumosTableBody">
@@ -991,6 +995,49 @@
             <div class="flex gap-3 justify-end">
                 <button onclick="cerrarModalDescripcion()" class="px-6 py-2 bg-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-400 transition">
                     Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Modal para ver/editar observaciones --}}
+<div id="observacionesModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center" style="display: none; z-index: 10001;">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4" style="z-index: 10002;">
+        <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex justify-between items-center">
+            <div>
+                <h2 class="text-2xl font-bold flex items-center gap-2">
+                    <i class="fas fa-sticky-note"></i>
+                    Observaciones del Insumo
+                </h2>
+                <p class="text-blue-100 text-sm">Material: <span id="observacionesMaterial" class="font-bold"></span></p>
+            </div>
+            <button onclick="cerrarModalObservaciones()" class="text-white hover:bg-blue-600 rounded-full p-2 transition">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div class="p-6">
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Observaciones:</label>
+                <textarea 
+                    id="observacionesTexto" 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" 
+                    rows="6"
+                    placeholder="Escribe las observaciones del insumo aquí..."
+                ></textarea>
+            </div>
+            <div class="flex gap-3 justify-end">
+                <button 
+                    onclick="cerrarModalObservaciones()" 
+                    class="px-6 py-2 bg-gray-400 text-white font-semibold rounded-lg hover:bg-gray-500 transition flex items-center gap-2"
+                >
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button 
+                    onclick="guardarObservaciones()" 
+                    class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
+                >
+                    <i class="fas fa-save"></i> Guardar
                 </button>
             </div>
         </div>
@@ -1101,53 +1148,90 @@
         const colorPunto = colores[index % 3];
 
         row.innerHTML = `
-            <td class="py-4 px-4 font-medium text-gray-900">
-                <div class="flex items-center gap-3">
+            <td class="py-3 px-4 font-medium text-gray-900 min-w-max">
+                <div class="flex items-center gap-2">
                     <div class="w-3 h-3 rounded-full ${colorPunto}"></div>
                     <span>${nombreMaterial}</span>
                 </div>
             </td>
-            <td class="py-4 px-4 text-center">
+            <td class="py-3 px-3 text-center">
                 <input 
                     type="checkbox" 
                     id="checkbox_${materialId}"
-                    class="w-6 h-6 cursor-pointer material-checkbox accent-green-500"
+                    class="w-5 h-5 cursor-pointer material-checkbox accent-green-500"
                     ${materialData.recibido ? 'checked' : ''}
                     data-original="${materialData.recibido ? 'true' : 'false'}"
                 >
             </td>
-            <td class="py-4 px-4 text-center">
+            <td class="py-3 px-3 text-center">
+                <input 
+                    type="date" 
+                    id="fecha_orden_${materialId}"
+                    class="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                    value="${materialData.fecha_orden ? materialData.fecha_orden : ''}"
+                    data-original="${materialData.fecha_orden ? materialData.fecha_orden : ''}"
+                >
+            </td>
+            <td class="py-3 px-3 text-center">
                 <input 
                     type="date" 
                     id="fecha_pedido_${materialId}"
-                    class="px-2 py-1 border border-gray-300 rounded text-sm font-medium text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
                     value="${materialData.fecha_pedido ? materialData.fecha_pedido : ''}"
                     data-original="${materialData.fecha_pedido ? materialData.fecha_pedido : ''}"
                 >
             </td>
-            <td class="py-4 px-4 text-center">
+            <td class="py-3 px-3 text-center">
+                <input 
+                    type="date" 
+                    id="fecha_pago_${materialId}"
+                    class="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
+                    value="${materialData.fecha_pago ? materialData.fecha_pago : ''}"
+                    data-original="${materialData.fecha_pago ? materialData.fecha_pago : ''}"
+                >
+            </td>
+            <td class="py-3 px-3 text-center">
                 <input 
                     type="date" 
                     id="fecha_llegada_${materialId}"
-                    class="px-2 py-1 border border-gray-300 rounded text-sm font-medium text-green-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    class="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 w-full"
                     value="${materialData.fecha_llegada ? materialData.fecha_llegada : ''}"
                     data-original="${materialData.fecha_llegada ? materialData.fecha_llegada : ''}"
                 >
             </td>
-            <td class="py-4 px-4 text-center">
-                <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-600 flex items-center justify-center gap-1">
+            <td class="py-3 px-3 text-center">
+                <input 
+                    type="date" 
+                    id="fecha_despacho_${materialId}"
+                    class="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 w-full"
+                    value="${materialData.fecha_despacho ? materialData.fecha_despacho : ''}"
+                    data-original="${materialData.fecha_despacho ? materialData.fecha_despacho : ''}"
+                >
+            </td>
+            <td class="py-3 px-3 text-center">
+                <span class="inline-block px-2 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-600 flex items-center justify-center gap-1">
                     ${materialData.dias_demora !== null && materialData.dias_demora !== undefined ? 
                         (materialData.dias_demora <= 0 ? '<i class="fas fa-check text-green-600"></i>' : 
                          materialData.dias_demora <= 5 ? '<i class="fas fa-exclamation-triangle text-yellow-600"></i>' : 
                          '<i class="fas fa-times text-red-600"></i>') + 
-                        materialData.dias_demora + ' días' 
+                        materialData.dias_demora + 'd' 
                         : '-'}
                 </span>
             </td>
-            <td class="py-4 px-4 text-center">
+            <td class="py-3 px-3 text-center">
+                <button 
+                    onclick="abrirModalObservaciones('${materialId}', '${nombreMaterial}')"
+                    class="px-2 py-1 bg-blue-100 text-blue-600 font-medium rounded hover:bg-blue-200 transition text-sm flex items-center gap-1 justify-center"
+                    title="Ver/Editar observaciones"
+                >
+                    <i class="fas fa-eye"></i>
+                </button>
+                <input type="hidden" id="observaciones_${materialId}" value="${materialData.observaciones ? materialData.observaciones.replace(/"/g, '&quot;') : ''}">
+            </td>
+            <td class="py-3 px-3 text-center">
                 <button 
                     onclick="eliminarFilaMaterial('${materialId}')"
-                    class="px-3 py-1 bg-red-100 text-red-600 font-medium rounded hover:bg-red-200 transition text-sm flex items-center gap-1 justify-center"
+                    class="px-2 py-1 bg-red-100 text-red-600 font-medium rounded hover:bg-red-200 transition text-sm flex items-center gap-1 justify-center"
                     title="Eliminar"
                 >
                     <i class="fas fa-trash-alt"></i>
@@ -1262,45 +1346,81 @@
         const row = document.createElement('tr');
         row.className = 'border-b border-gray-200 hover:bg-gray-50 transition';
         row.id = `row_${materialId}`;
+        
+        // Inicializar atributo data-observaciones vacío
+        row.setAttribute('data-observaciones', '');
 
         row.innerHTML = `
-            <td class="py-4 px-4 font-medium text-gray-900">
-                <div class="flex items-center gap-3">
+            <td class="py-3 px-4 font-medium text-gray-900 min-w-max">
+                <div class="flex items-center gap-2">
                     <div class="w-3 h-3 rounded-full ${colorPunto}"></div>
                     <span>${nombreMaterial}</span>
                 </div>
             </td>
-            <td class="py-4 px-4 text-center">
+            <td class="py-3 px-3 text-center">
                 <input 
                     type="checkbox" 
                     id="checkbox_${materialId}"
-                    class="w-6 h-6 cursor-pointer material-checkbox accent-green-500"
+                    class="w-5 h-5 cursor-pointer material-checkbox accent-green-500"
                     data-original="false"
                 >
             </td>
-            <td class="py-4 px-4 text-center">
+            <td class="py-3 px-3 text-center">
+                <input 
+                    type="date" 
+                    id="fecha_orden_${materialId}"
+                    class="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                    data-original=""
+                >
+            </td>
+            <td class="py-3 px-3 text-center">
                 <input 
                     type="date" 
                     id="fecha_pedido_${materialId}"
-                    class="px-2 py-1 border border-gray-300 rounded text-sm font-medium text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
                     data-original=""
                 >
             </td>
-            <td class="py-4 px-4 text-center">
+            <td class="py-3 px-3 text-center">
+                <input 
+                    type="date" 
+                    id="fecha_pago_${materialId}"
+                    class="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 w-full"
+                    data-original=""
+                >
+            </td>
+            <td class="py-3 px-3 text-center">
                 <input 
                     type="date" 
                     id="fecha_llegada_${materialId}"
-                    class="px-2 py-1 border border-gray-300 rounded text-sm font-medium text-green-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    class="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 w-full"
                     data-original=""
                 >
             </td>
-            <td class="py-4 px-4 text-center">
-                <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-600">-</span>
+            <td class="py-3 px-3 text-center">
+                <input 
+                    type="date" 
+                    id="fecha_despacho_${materialId}"
+                    class="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 w-full"
+                    data-original=""
+                >
             </td>
-            <td class="py-4 px-4 text-center">
+            <td class="py-3 px-3 text-center">
+                <span class="inline-block px-2 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-600">-</span>
+            </td>
+            <td class="py-3 px-3 text-center">
+                <button 
+                    onclick="abrirModalObservaciones('${materialId}', '${nombreMaterial}')"
+                    class="px-2 py-1 bg-blue-100 text-blue-600 font-medium rounded hover:bg-blue-200 transition text-sm flex items-center gap-1 justify-center"
+                    title="Ver/Editar observaciones"
+                >
+                    <i class="fas fa-eye"></i>
+                </button>
+            </td>
+            <td class="py-3 px-3 text-center">
                 <button 
                     onclick="eliminarFilaMaterial('${materialId}')"
-                    class="px-3 py-1 bg-red-100 text-red-600 font-medium rounded hover:bg-red-200 transition text-sm flex items-center gap-1 justify-center"
+                    class="px-2 py-1 bg-red-100 text-red-600 font-medium rounded hover:bg-red-200 transition text-sm flex items-center gap-1 justify-center"
                     title="Eliminar"
                 >
                     <i class="fas fa-trash-alt"></i>
@@ -1392,6 +1512,113 @@
     }
 
     /**
+     * Abre el modal de observaciones para un insumo
+     */
+    function abrirModalObservaciones(materialId, nombreMaterial) {
+        // Mostrar el modal
+        const modal = document.getElementById('observacionesModal');
+        modal.style.display = 'flex';
+        
+        // Establecer el nombre del material
+        document.getElementById('observacionesMaterial').textContent = nombreMaterial;
+        
+        // Guardar el materialId en un atributo data para usarlo al guardar
+        modal.setAttribute('data-material-id', materialId);
+        
+        // Obtener observaciones del input hidden
+        const inputObservaciones = document.getElementById(`observaciones_${materialId}`);
+        if (inputObservaciones) {
+            document.getElementById('observacionesTexto').value = inputObservaciones.value;
+        } else {
+            document.getElementById('observacionesTexto').value = '';
+        }
+        
+        // Enfocar el textarea
+        document.getElementById('observacionesTexto').focus();
+    }
+
+    /**
+     * Cierra el modal de observaciones
+     */
+    function cerrarModalObservaciones() {
+        const modal = document.getElementById('observacionesModal');
+        modal.style.display = 'none';
+        document.getElementById('observacionesTexto').value = '';
+        modal.removeAttribute('data-material-id');
+    }
+
+    /**
+     * Guarda las observaciones del insumo directamente en la BD
+     */
+    function guardarObservaciones() {
+        const modal = document.getElementById('observacionesModal');
+        const materialId = modal.getAttribute('data-material-id');
+        const observaciones = document.getElementById('observacionesTexto').value;
+        
+        if (!materialId) {
+            showToast('Error: No se pudo identificar el material', 'error');
+            return;
+        }
+        
+        // Guardar en el input hidden
+        const inputObservaciones = document.getElementById(`observaciones_${materialId}`);
+        if (inputObservaciones) {
+            inputObservaciones.value = observaciones;
+        }
+        
+        // Obtener el nombre del material y el pedido
+        const fila = document.getElementById(`row_${materialId}`);
+        const nombreMaterial = fila.querySelector('td:first-child span').textContent.trim();
+        const pedido = document.getElementById('modalPedido').textContent;
+        
+        // Obtener el estado actual del checkbox
+        const checkbox = fila.querySelector('input[type="checkbox"]');
+        const recibido = checkbox ? checkbox.checked : false;
+        
+        // Obtener todas las fechas
+        const todosInputsFecha = fila.querySelectorAll('input[type="date"]');
+        const fechaOrden = todosInputsFecha[0]?.value || null;
+        const fechaPedido = todosInputsFecha[1]?.value || null;
+        const fechaPago = todosInputsFecha[2]?.value || null;
+        const fechaLlegada = todosInputsFecha[3]?.value || null;
+        const fechaDespacho = todosInputsFecha[4]?.value || null;
+        
+        // Enviar directamente al servidor
+        fetch(`/insumos/materiales/${pedido}/guardar`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            },
+            body: JSON.stringify({ 
+                materiales: [{
+                    nombre: nombreMaterial,
+                    fecha_orden: fechaOrden,
+                    fecha_pedido: fechaPedido,
+                    fecha_pago: fechaPago,
+                    fecha_llegada: fechaLlegada,
+                    fecha_despacho: fechaDespacho,
+                    observaciones: observaciones || null,
+                    recibido: recibido,
+                }]
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast('Observaciones guardadas correctamente', 'success');
+            } else {
+                showToast('Error al guardar observaciones', 'error');
+            }
+            cerrarModalObservaciones();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error al guardar observaciones', 'error');
+        });
+    }
+
+    /**
      * Guarda los cambios de insumos desde el modal
      */
     function guardarInsumosModal() {
@@ -1413,22 +1640,36 @@
             // Obtener checkbox y fechas
             const checkbox = fila.querySelector('input[type="checkbox"]');
             const todosInputsFecha = fila.querySelectorAll('input[type="date"]');
-            const fechaPedidoInput = todosInputsFecha[0];
-            const fechaLlegadaInput = todosInputsFecha[1];
+            const fechaOrdenInput = todosInputsFecha[0];
+            const fechaPedidoInput = todosInputsFecha[1];
+            const fechaPagoInput = todosInputsFecha[2];
+            const fechaLlegadaInput = todosInputsFecha[3];
+            const fechaDespachoInput = todosInputsFecha[4];
             
             const recibido = checkbox?.checked || false;
+            const fechaOrden = fechaOrdenInput?.value || '';
             const fechaPedido = fechaPedidoInput?.value || '';
+            const fechaPago = fechaPagoInput?.value || '';
             const fechaLlegada = fechaLlegadaInput?.value || '';
+            const fechaDespacho = fechaDespachoInput?.value || '';
             
-            console.log(`📦 Material: ${nombreMaterial}, Fecha Pedido: ${fechaPedido}, Fecha Llegada: ${fechaLlegada}, Recibido: ${recibido}`);
+            // Obtener observaciones del input hidden
+            const inputObservaciones = fila.querySelector(`input[type="hidden"][id^="observaciones_"]`);
+            const observaciones = inputObservaciones ? inputObservaciones.value : '';
+            
+            console.log(`📦 Material: ${nombreMaterial}, Fecha Pedido: ${fechaPedido}, Fecha Llegada: ${fechaLlegada}, Recibido: ${recibido}, Observaciones: ${observaciones}`);
             
             // Agregar si está marcado o tiene fechas
-            if (recibido || fechaPedido || fechaLlegada) {
+            if (recibido || fechaOrden || fechaPedido || fechaPago || fechaLlegada || fechaDespacho || observaciones) {
                 materiales.push({
                     nombre: nombreMaterial,
+                    fecha_orden: fechaOrden || null,
                     fecha_pedido: fechaPedido || null,
+                    fecha_pago: fechaPago || null,
                     fecha_llegada: fechaLlegada || null,
+                    fecha_despacho: fechaDespacho || null,
                     recibido: recibido,
+                    observaciones: observaciones || null,
                 });
             }
         });

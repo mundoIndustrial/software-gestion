@@ -1,109 +1,120 @@
-{{-- Vista de Asesores para Inventario de Telas - Reutiliza vista general --}}
-@extends('asesores.layout')
+@extends('layouts.insumos.app')
 
-@section('title', 'Inventario de Telas')
+@section('title', 'Inventario de Telas - Insumos')
 @section('page-title', 'Inventario de Telas')
 
-@push('styles')
-<link rel="stylesheet" href="{{ asset('css/inventario-telas/inventario.css') }}">
-@endpush
-
-@push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-@endpush
-
 @section('content')
-{{-- Incluir vista general de inventario de telas sin duplicación de código --}}
-@include('inventario-telas.index')
-@endsection {{-- Oculto para asesores, disponible para futuro rol insumos --}}
-        <button type="button" class="btn btn-create" onclick="abrirModalCrearTela()">
-            <span class="material-symbols-rounded">add_circle</span>
-            Nueva Tela
-        </button>
-        <button type="button" class="btn btn-historial" onclick="abrirModalHistorial()">
-            <span class="material-symbols-rounded">analytics</span>
-            Historial y Estadísticas
-        </button>
-        @endif
-        <div class="search-box">
-            <i class="fas fa-search"></i>
-            <input type="text" id="searchInput" placeholder="Buscar por nombre o categoría...">
-        </div>
-        
-        <div class="filter-group">
-            <select id="filterCategoria" class="filter-select">
-                <option value="">Todas las Categorías</option>
-                @foreach($telas->unique('categoria')->pluck('categoria')->sort() as $categoria)
-                    <option value="{{ $categoria }}">{{ $categoria }}</option>
-                @endforeach
-            </select>
+<link rel="stylesheet" href="{{ asset('css/inventario-telas/inventario.css') }}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<div class="min-h-screen bg-gray-50">
+    {{-- Header Principal Blanco --}}
+    <div class="bg-white border-b border-gray-200 shadow-sm w-full m-0">
+        <div class="px-6 py-6">
+            {{-- Título y Descripción --}}
+            <div class="mb-6">
+                <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
+                    <span class="material-symbols-rounded text-4xl text-blue-600">checkroom</span>
+                    Inventario de Telas
+                </h1>
+                <p class="text-gray-600 text-sm mt-2">Gestiona el inventario de telas disponibles</p>
+            </div>
+
+            {{-- Buscador y Filtros --}}
+            <div class="flex gap-3 items-end">
+                <div class="flex-1 relative">
+                    <input 
+                        type="text" 
+                        id="searchInput"
+                        placeholder="Buscar por nombre o categoría..."
+                        class="w-full px-4 py-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition shadow-sm"
+                    >
+                </div>
+                <select id="filterCategoria" class="px-4 py-3 bg-gray-50 text-gray-800 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition shadow-sm">
+                    <option value="">Todas las Categorías</option>
+                    @foreach($telas->unique('categoria')->pluck('categoria')->sort() as $categoria)
+                        <option value="{{ $categoria }}">{{ $categoria }}</option>
+                    @endforeach
+                </select>
+                <button type="button" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition shadow-sm flex items-center gap-2 whitespace-nowrap" onclick="abrirModalCrearTela()">
+                    <span class="material-symbols-rounded">add_circle</span>
+                    Nueva Tela
+                </button>
+            </div>
         </div>
     </div>
 
-    <!-- Tabla de Inventario -->
-    <div class="table-container">
-        @if($telas->count() > 0)
-            <table class="inventario-table">
-                <thead>
-                    <tr>
-                        <th>Categoría</th>
-                        <th>Nombre de Tela</th>
-                        <th>Stock</th>
-                        <th>Metraje Sugerido</th>
-                        <th>Fecha de Registro</th>
-                        @if(false) {{-- Oculto para asesores --}}
-                        <th>Acciones</th>
-                        @endif
-                    </tr>
-                </thead>
-                <tbody id="telasTableBody">
-                    @foreach($telas as $tela)
-                        <tr data-categoria="{{ $tela->categoria }}" data-nombre="{{ $tela->nombre_tela }}">
-                            <td class="categoria-cell">{{ $tela->categoria }}</td>
-                            <td class="nombre-tela">{{ $tela->nombre_tela }}</td>
-                            <td>
-                                <span class="stock-badge {{ $tela->stock < 10 ? 'stock-bajo' : ($tela->stock < 50 ? 'stock-medio' : 'stock-alto') }}">
-                                    {{ $tela->stock == floor($tela->stock) ? number_format($tela->stock, 0) : number_format($tela->stock, 2) }} m
-                                </span>
-                            </td>
-                            <td class="metraje-cell">
-                                {{ $tela->metraje_sugerido ? ($tela->metraje_sugerido == floor($tela->metraje_sugerido) ? number_format($tela->metraje_sugerido, 0) : number_format($tela->metraje_sugerido, 2)) . ' m' : '-' }}
-                            </td>
-                            <td class="fecha-cell">{{ $tela->fecha_registro ? \Carbon\Carbon::parse($tela->fecha_registro)->format('d/m/Y H:i') : '-' }}</td>
-                            @if(false) {{-- Oculto para asesores --}}
-                            <td class="actions-cell">
-                                <button type="button" 
-                                        class="btn-action btn-adjust" 
-                                        onclick="abrirModalAjustarStock({{ $tela->id }}, '{{ $tela->nombre_tela }}', {{ $tela->stock }})"
-                                        title="Ajustar Stock">
-                                    <span class="material-symbols-rounded">tune</span>
-                                </button>
-                            </td>
-                            @endif
+    <div class="px-6 py-8 w-full">
+        {{-- Tabla de Inventario --}}
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            @if($telas->count() > 0)
+                <table class="w-full" style="font-size: 0.75em;">
+                    <thead>
+                        <tr class="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+                            <th class="text-left py-4 px-6 font-bold">Categoría</th>
+                            <th class="text-left py-4 px-6 font-bold">Nombre de Tela</th>
+                            <th class="text-center py-4 px-6 font-bold">Stock</th>
+                            <th class="text-center py-4 px-6 font-bold">Metraje Sugerido</th>
+                            <th class="text-center py-4 px-6 font-bold">Fecha de Registro</th>
+                            <th class="text-center py-4 px-6 font-bold">Acciones</th>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        @else
-            <div class="empty-state">
-                <i class="fas fa-box-open"></i>
-                <h3>No hay telas en el inventario</h3>
-                <p>Aún no se han registrado telas en el sistema.</p>
-            </div>
-        @endif
+                    </thead>
+                    <tbody id="telasTableBody">
+                        @foreach($telas as $tela)
+                            <tr class="border-b border-gray-200 hover:bg-gray-50 transition" data-categoria="{{ $tela->categoria }}" data-nombre="{{ $tela->nombre_tela }}">
+                                <td class="py-4 px-6">
+                                    <span class="font-medium text-gray-800">{{ $tela->categoria }}</span>
+                                </td>
+                                <td class="py-4 px-6">
+                                    <span class="font-medium text-gray-800">{{ $tela->nombre_tela }}</span>
+                                </td>
+                                <td class="py-4 px-6 text-center">
+                                    <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold {{ $tela->stock < 10 ? 'bg-red-100 text-red-800' : ($tela->stock < 50 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800') }}">
+                                        {{ $tela->stock == floor($tela->stock) ? number_format($tela->stock, 0) : number_format($tela->stock, 2) }} m
+                                    </span>
+                                </td>
+                                <td class="py-4 px-6 text-center">
+                                    <span class="text-gray-600 text-sm">
+                                        {{ $tela->metraje_sugerido ? ($tela->metraje_sugerido == floor($tela->metraje_sugerido) ? number_format($tela->metraje_sugerido, 0) : number_format($tela->metraje_sugerido, 2)) . ' m' : '-' }}
+                                    </span>
+                                </td>
+                                <td class="py-4 px-6 text-center">
+                                    <span class="text-gray-600 text-sm">{{ $tela->created_at ? \Carbon\Carbon::parse($tela->created_at)->format('d/m/Y') : '-' }}</span>
+                                </td>
+                                <td class="py-4 px-6 text-center">
+                                    <button type="button"
+                                            class="px-3 py-1 bg-blue-100 text-blue-600 font-medium rounded hover:bg-blue-200 transition text-sm flex items-center gap-1 justify-center"
+                                            onclick="abrirModalAjustarStock({{ $tela->id }}, '{{ $tela->nombre_tela }}', {{ $tela->stock }})"
+                                            title="Ajustar Stock">
+                                        <i class="fas fa-edit"></i> Ajustar
+                                    </button>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @else
+                <div class="py-12 px-6 text-center">
+                    <p class="text-xl text-gray-500">No hay telas en el inventario</p>
+                </div>
+            @endif
+        </div>
     </div>
 </div>
 
-<!-- Incluir Modales -->
-@include('asesores.componentes.modal-ajustar-stock')
+<!-- Incluir Modales - Desde carpeta general de inventario-telas -->
+@include('inventario-telas.componentes.modal-ajustar-stock')
 @include('asesores.componentes.modal-crear-tela', ['categorias' => $telas->unique('categoria')->pluck('categoria')->sort()])
-@include('asesores.componentes.modal-historial-telas')
+@include('inventario-telas.componentes.modal-historial-telas')
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('searchInput');
     const filterCategoria = document.getElementById('filterCategoria');
     const tableBody = document.getElementById('telasTableBody');
+    
+    if (!tableBody) return; // Salir si no existe el elemento
+    
     const rows = tableBody.querySelectorAll('tr');
 
     function filterTable() {
@@ -158,8 +169,8 @@ function actualizarVistaPrevia() {
     document.getElementById('preview_operator').textContent = operador;
     document.getElementById('preview_cantidad').textContent = cantidad.toFixed(2) + ' m';
     
-    const nuevoStock = tipoAccion === 'entrada' 
-        ? stockActualGlobal + cantidad 
+    const nuevoStock = tipoAccion === 'entrada'
+        ? stockActualGlobal + cantidad
         : stockActualGlobal - cantidad;
     
     document.getElementById('preview_stock_nuevo').textContent = nuevoStock.toFixed(2) + ' m';
@@ -178,8 +189,8 @@ function ajustarStock(event) {
     const formData = new FormData(event.target);
     const cantidad = parseFloat(formData.get('cantidad'));
     const tipoAccion = formData.get('tipo_accion');
-    const nuevoStock = tipoAccion === 'entrada' 
-        ? stockActualGlobal + cantidad 
+    const nuevoStock = tipoAccion === 'entrada'
+        ? stockActualGlobal + cantidad
         : stockActualGlobal - cantidad;
     
     if (nuevoStock < 0) {
@@ -187,7 +198,7 @@ function ajustarStock(event) {
         return;
     }
     
-    fetch('{{ route("asesores.inventario-telas.ajustar-stock") }}', {
+    fetch('{{ route("inventario-telas.ajustar-stock") }}', {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -254,7 +265,7 @@ function crearTela(event) {
     
     const formData = new FormData(event.target);
     
-    fetch('{{ route("asesores.inventario-telas.store") }}', {
+    fetch('{{ route("inventario-telas.store") }}', {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -321,7 +332,7 @@ function cambiarTab(tabName) {
 }
 
 function cargarDatosHistorial() {
-    fetch('{{ route("asesores.inventario-telas.historial") }}', {
+    fetch('{{ route("inventario-telas.historial") }}', {
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
             'Accept': 'application/json'

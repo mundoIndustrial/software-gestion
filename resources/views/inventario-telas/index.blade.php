@@ -1,21 +1,12 @@
-{{-- Vista de Asesores para Inventario de Telas - Reutiliza vista general --}}
-@extends('asesores.layout')
+{{-- Vista General de Inventario de Telas - Usable en cualquier layout --}}
 
-@section('title', 'Inventario de Telas')
-@section('page-title', 'Inventario de Telas')
-
-@push('styles')
 <link rel="stylesheet" href="{{ asset('css/inventario-telas/inventario.css') }}">
-@endpush
-
-@push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-@endpush
 
-@section('content')
-{{-- Incluir vista general de inventario de telas sin duplicación de código --}}
-@include('inventario-telas.index')
-@endsection {{-- Oculto para asesores, disponible para futuro rol insumos --}}
+<div class="inventario-telas-container">
+    <!-- Barra de Acciones -->
+    <div class="list-header">
+        @if(false) {{-- Oculto para asesores, disponible para futuro rol insumos --}}
         <button type="button" class="btn btn-create" onclick="abrirModalCrearTela()">
             <span class="material-symbols-rounded">add_circle</span>
             Nueva Tela
@@ -94,7 +85,7 @@
     </div>
 </div>
 
-<!-- Incluir Modales -->
+<!-- Incluir Modales - Desde carpeta de asesores -->
 @include('asesores.componentes.modal-ajustar-stock')
 @include('asesores.componentes.modal-crear-tela', ['categorias' => $telas->unique('categoria')->pluck('categoria')->sort()])
 @include('asesores.componentes.modal-historial-telas')
@@ -104,6 +95,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('searchInput');
     const filterCategoria = document.getElementById('filterCategoria');
     const tableBody = document.getElementById('telasTableBody');
+    
+    if (!tableBody) return; // Salir si no existe el elemento
+    
     const rows = tableBody.querySelectorAll('tr');
 
     function filterTable() {
@@ -187,7 +181,7 @@ function ajustarStock(event) {
         return;
     }
     
-    fetch('{{ route("asesores.inventario-telas.ajustar-stock") }}', {
+    fetch('{{ route("inventario-telas.ajustar-stock") }}', {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -254,7 +248,7 @@ function crearTela(event) {
     
     const formData = new FormData(event.target);
     
-    fetch('{{ route("asesores.inventario-telas.store") }}', {
+    fetch('{{ route("inventario-telas.store") }}', {
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
@@ -321,7 +315,7 @@ function cambiarTab(tabName) {
 }
 
 function cargarDatosHistorial() {
-    fetch('{{ route("asesores.inventario-telas.historial") }}', {
+    fetch('{{ route("inventario-telas.historial") }}', {
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
             'Accept': 'application/json'
@@ -545,4 +539,3 @@ function filtrarHistorial() {
     });
 }
 </script>
-@endsection

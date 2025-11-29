@@ -115,6 +115,14 @@ class PedidoProduccion extends Model
     }
 
     /**
+     * Relación: Un pedido tiene muchos materiales de insumos
+     */
+    public function materiales(): HasMany
+    {
+        return $this->hasMany(MaterialesOrdenInsumos::class, 'pedido_produccion_id');
+    }
+
+    /**
      * Obtener descripción de prendas (concatenadas con detalles)
      * Extrae información de la cotización si está disponible
      * Formato:

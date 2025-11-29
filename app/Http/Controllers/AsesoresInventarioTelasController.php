@@ -12,8 +12,15 @@ class AsesoresInventarioTelasController extends Controller
     public function index()
     {
         $telas = InventarioTela::orderBy('categoria')->orderBy('nombre_tela')->get();
+        $userRole = Auth::user()->role;
         
-        return view('asesores.inventario-telas.index', compact('telas'));
+        // Si es insumos, retornar con layout general
+        if ($userRole === 'insumos' || (is_object($userRole) && $userRole->name === 'insumos')) {
+            return view('inventario-telas.index-insumos', compact('telas'));
+        }
+        
+        // Si es asesor, retornar con layout de asesores
+        return view('inventario-telas.index', compact('telas'));
     }
 
     public function store(Request $request)
