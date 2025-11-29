@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\CheckRole::class,
             'supervisor-access' => \App\Http\Middleware\SupervisorAccessControl::class,
             'supervisor-readonly' => \App\Http\Middleware\SupervisorReadOnly::class,
+            'insumos-access' => \App\Http\Middleware\InsumosAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

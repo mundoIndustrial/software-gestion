@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\News;
+use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
@@ -13,10 +14,18 @@ class DashboardController extends Controller
      */
     public function index()
     {
-        // Redirigir asesores a su dashboard específico
-        $user = auth()->user();
-        if ($user->role && $user->role->name === 'asesor') {
-            return redirect()->route('asesores.dashboard');
+        $user = Auth::user();
+        
+        if ($user && $user->role) {
+            $roleName = is_object($user->role) ? $user->role->name : $user->role;
+            
+            if ($roleName === 'asesor') {
+                return redirect()->route('asesores.dashboard');
+            }
+            
+            if ($roleName === 'insumos') {
+                return redirect()->route('insumos.materiales.index');
+            }
         }
         
         return view('dashboard');

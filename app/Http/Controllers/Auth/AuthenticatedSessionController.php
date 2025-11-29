@@ -31,16 +31,24 @@ class AuthenticatedSessionController extends Controller
         // Redirigir según el rol del usuario
         $user = Auth::user();
         
-        if ($user->role && $user->role->name === 'asesor') {
-            return redirect()->intended(route('asesores.dashboard', absolute: false));
-        }
+        if ($user && $user->role) {
+            $roleName = is_object($user->role) ? $user->role->name : $user->role;
+            
+            if ($roleName === 'asesor') {
+                return redirect()->intended(route('asesores.dashboard', absolute: false));
+            }
 
-        if ($user->role && $user->role->name === 'contador') {
-            return redirect()->intended(route('contador.index', absolute: false));
-        }
+            if ($roleName === 'contador') {
+                return redirect()->intended(route('contador.index', absolute: false));
+            }
 
-        if ($user->role && $user->role->name === 'supervisor') {
-            return redirect()->intended(route('registros.index', absolute: false));
+            if ($roleName === 'supervisor') {
+                return redirect()->intended(route('registros.index', absolute: false));
+            }
+            
+            if ($roleName === 'insumos') {
+                return redirect()->intended(route('insumos.materiales.index', absolute: false));
+            }
         }
 
         return redirect()->intended(route('dashboard', absolute: false));
