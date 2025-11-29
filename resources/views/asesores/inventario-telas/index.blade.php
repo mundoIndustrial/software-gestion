@@ -26,7 +26,7 @@
         </button>
         @endif
         <div class="search-box">
-            <i class="fas fa-search"></i>
+            <i class="fas fa-search" translate="no"></i>
             <input type="text" id="searchInput" placeholder="Buscar por nombre o categoría...">
         </div>
         
@@ -86,7 +86,7 @@
             </table>
         @else
             <div class="empty-state">
-                <i class="fas fa-box-open"></i>
+                <i class="fas fa-box-open" translate="no"></i>
                 <h3>No hay telas en el inventario</h3>
                 <p>Aún no se han registrado telas en el sistema.</p>
             </div>

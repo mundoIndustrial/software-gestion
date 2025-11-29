@@ -42,8 +42,8 @@
     <!-- Material Symbols para iconos -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
     
-    <!-- Font Awesome para iconos -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Font Awesome para iconos (con respaldo) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVJkEZSMUkrQ3tCFWl+YvH7RYeZY/N8JYkLDbSSIWRw8swuB+5rLu06OaqoiTL1eyJEuskqUlcmw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     
     <!-- SweetAlert2 para modales profesionales -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
