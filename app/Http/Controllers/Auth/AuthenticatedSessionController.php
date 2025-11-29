@@ -28,19 +28,39 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        // Redirigir según el rol del usuario
-        $user = Auth::user();
+        $user = auth()->user();
         
-        if ($user->role && $user->role->name === 'asesor') {
-            return redirect()->intended(route('asesores.dashboard', absolute: false));
-        }
-
-        if ($user->role && $user->role->name === 'contador') {
-            return redirect()->intended(route('contador.index', absolute: false));
-        }
-
-        if ($user->role && $user->role->name === 'supervisor') {
-            return redirect()->intended(route('registros.index', absolute: false));
+        // Redireccionar según el rol del usuario
+        if ($user->role) {
+            // Si es un objeto Role
+            if (is_object($user->role)) {
+                if ($user->role->name === 'asesor') {
+                    return redirect()->intended(route('asesores.dashboard', absolute: false));
+                }
+                if ($user->role->name === 'contador') {
+                    return redirect()->intended(route('contador.index', absolute: false));
+                }
+                if ($user->role->name === 'supervisor') {
+                    return redirect()->intended(route('registros.index', absolute: false));
+                }
+                if ($user->role->name === 'insumos') {
+                    return redirect()->intended(route('insumos.materiales.index', absolute: false));
+                }
+            } else {
+                // Si es string directo
+                if ($user->role === 'asesor') {
+                    return redirect()->intended(route('asesores.dashboard', absolute: false));
+                }
+                if ($user->role === 'contador') {
+                    return redirect()->intended(route('contador.index', absolute: false));
+                }
+                if ($user->role === 'supervisor') {
+                    return redirect()->intended(route('registros.index', absolute: false));
+                }
+                if ($user->role === 'insumos') {
+                    return redirect()->intended(route('insumos.materiales.index', absolute: false));
+                }
+            }
         }
 
         return redirect()->intended(route('dashboard', absolute: false));

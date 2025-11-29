@@ -14,6 +14,7 @@ use App\Http\Controllers\BalanceoController;
 use App\Http\Controllers\CotizacionesViewController;
 use App\Http\Controllers\CotizacionBordadoController;
 use App\Http\Controllers\DebugRegistrosController;
+use App\Http\Controllers\AsesorController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -314,6 +315,25 @@ Route::middleware('auth')->prefix('api')->name('api.')->group(function () {
     Route::get('/tipos-prenda', [App\Http\Controllers\API\PrendaController::class, 'tiposPrenda'])->name('tipos-prenda');
     Route::post('/prenda/reconocer', [App\Http\Controllers\API\PrendaController::class, 'reconocer'])->name('prenda.reconocer');
     Route::get('/prenda-variaciones/{tipoPrendaId}', [App\Http\Controllers\API\PrendaController::class, 'variaciones'])->name('prenda.variaciones');
+});
+
+// Rutas de Insumos
+Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.')->group(function () {
+    Route::get('/dashboard', [\App\Http\Controllers\Insumos\InsumosController::class, 'dashboard'])->name('dashboard');
+    Route::get('/materiales', [\App\Http\Controllers\Insumos\InsumosController::class, 'materiales'])->name('materiales.index');
+    Route::post('/materiales/{pedido}/guardar', [\App\Http\Controllers\Insumos\InsumosController::class, 'guardarMateriales'])->name('materiales.guardar');
+    Route::post('/materiales/{pedido}/eliminar', [\App\Http\Controllers\Insumos\InsumosController::class, 'eliminarMaterial'])->name('materiales.eliminar');
+    Route::get('/api/materiales/{pedido}', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerMateriales'])->name('api.materiales');
+    Route::get('/api/filtros/{column}', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerValoresFiltro'])->name('api.filtros');
+    Route::get('/test', function () {
+        return view('insumos.test');
+    })->name('test');
+});
+
+// Rutas de Asesores (Notificaciones)
+Route::middleware('auth')->prefix('asesores')->name('asesores.')->group(function () {
+    Route::get('/notifications', [AsesorController::class, 'getNotifications'])->name('notifications');
+    Route::post('/notifications/mark-all-read', [AsesorController::class, 'markAllNotificationsAsRead'])->name('notifications.mark-all-read');
 });
 
 require __DIR__.'/auth.php';

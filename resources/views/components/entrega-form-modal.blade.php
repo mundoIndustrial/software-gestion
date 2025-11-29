@@ -183,24 +183,8 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="cantidad_prendas" class="form-label">
-                                <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" stroke-width="2"
-                                        stroke-linecap="round" />
-                                </svg>
-                                Cantidad de Prendas
-                            </label>
-                            <input type="number" id="cantidad_prendas" name="cantidad_prendas" class="form-input"
-                                placeholder="0" min="1" required />
-                        </div>
-
-                        <div class="form-group">
                             <label for="piezas" class="form-label">
-                                <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path
-                                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                                        stroke-width="2" stroke-linecap="round" />
-                                </svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="label-icon icon icon-tabler icons-tabler-filled icon-tabler-puzzle"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 2a3 3 0 0 1 2.995 2.824l.005 .176v1h3a2 2 0 0 1 1.995 1.85l.005 .15v3h1a3 3 0 0 1 .176 5.995l-.176 .005h-1v3a2 2 0 0 1 -1.85 1.995l-.15 .005h-3a2 2 0 0 1 -1.995 -1.85l-.005 -.15v-1a1 1 0 0 0 -1.993 -.117l-.007 .117v1a2 2 0 0 1 -1.85 1.995l-.15 .005h-3a2 2 0 0 1 -1.995 -1.85l-.005 -.15v-3a2 2 0 0 1 1.85 -1.995l.15 -.005h1a1 1 0 0 0 .117 -1.993l-.117 -.007h-1a2 2 0 0 1 -1.995 -1.85l-.005 -.15v-3a2 2 0 0 1 1.85 -1.995l.15 -.005h3v-1a3 3 0 0 1 3 -3z" /></svg>
                                 Piezas
                             </label>
                             <input type="number" id="piezas" name="piezas" class="form-input" placeholder="0" min="1"
@@ -208,10 +192,19 @@
                         </div>
 
                         <div class="form-group">
+                            <label for="pasadas" class="form-label">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="label-icon icon icon-tabler icons-tabler-outline icon-tabler-stack-middle"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M16 10l4 -2l-8 -4l-8 4l4 2" /><path d="M12 12l-4 -2l-4 2l8 4l8 -4l-4 -2l-4 2z" fill="currentColor" /><path d="M8 14l-4 2l8 4l8 -4l-4 -2" /></svg>
+                                Pasadas
+                            </label>
+                            <input type="number" id="pasadas" name="pasadas" class="form-input" placeholder="0" min="1"
+                                required />
+                        </div>
+
+                        <div class="form-group">
                             <label for="etiquetador" class="form-label">
                                 <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                                    <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                        stroke-width="2" stroke-linecap="round" />
+                                    <path d="M7.5 13.5L10 16l7-7M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                 </svg>
                                 Etiquetador
                             </label>
@@ -729,18 +722,18 @@
                         });
                     }
 
-                    const cantidadPrendasEl = document.getElementById('cantidad_prendas');
-                    if (cantidadPrendasEl) {
-                        cantidadPrendasEl.addEventListener('input', (e) => {
-                            this.form.cantidad_prendas = parseInt(e.target.value) || '';
-                            this.updateButtonState();
-                        });
-                    }
-
                     const piezasEl = document.getElementById('piezas');
                     if (piezasEl) {
                         piezasEl.addEventListener('input', (e) => {
                             this.form.piezas = parseInt(e.target.value) || '';
+                            this.updateButtonState();
+                        });
+                    }
+
+                    const pasadasEl = document.getElementById('pasadas');
+                    if (pasadasEl) {
+                        pasadasEl.addEventListener('input', (e) => {
+                            this.form.pasadas = parseInt(e.target.value) || '';
                             this.updateButtonState();
                         });
                     }
@@ -782,8 +775,8 @@
                         costurero: '',
                         fecha_entrega: new Date().toISOString().split('T')[0],
                         cortador: '',
-                        cantidad_prendas: '',
                         piezas: '',
+                        pasadas: '',
                         etiquetador: ''
                     };
                     this.orderData = {};
@@ -824,11 +817,11 @@
                     const cortadorEl = document.getElementById('cortador');
                     if (cortadorEl) cortadorEl.value = '';
                     
-                    const cantidadPrendasEl = document.getElementById('cantidad_prendas');
-                    if (cantidadPrendasEl) cantidadPrendasEl.value = '';
-                    
                     const piezasEl = document.getElementById('piezas');
                     if (piezasEl) piezasEl.value = '';
+                    
+                    const pasadasEl = document.getElementById('pasadas');
+                    if (pasadasEl) pasadasEl.value = '';
                     
                     const etiquetadorEl = document.getElementById('etiquetador');
                     if (etiquetadorEl) etiquetadorEl.value = '';
@@ -989,8 +982,8 @@
                             this.form.cantidad_entregada && this.form.costurero &&
                             this.form.fecha_entrega && !this.quantityError;
                     } else if (this.subtipo === 'corte') {
-                        return this.form.pedido && this.form.cortador && this.form.cantidad_prendas &&
-                            this.form.piezas && this.form.fecha_entrega;
+                        return this.form.pedido && this.form.cortador &&
+                            this.form.piezas && this.form.pasadas && this.form.fecha_entrega;
                     }
                     return false;
                 },

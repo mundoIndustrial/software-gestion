@@ -1138,25 +1138,71 @@ class TablerosController extends Controller
             'method' => $request->method()
         ]);
 
-        $request->validate([
-            'fecha' => 'required|date',
-            'orden_produccion' => 'required|string',
-            'tela_id' => 'required|exists:telas,id',
-            'hora_id' => 'required|exists:horas,id',
-            'operario_id' => 'required|exists:users,id',
-            'actividad' => 'required|string',
-            'maquina_id' => 'required|exists:maquinas,id',
-            'tiempo_ciclo' => 'required|numeric',
-            'porcion_tiempo' => 'required|numeric|min:0|max:1',
-            'cantidad_producida' => 'required|integer',
-            'paradas_programadas' => 'required|string',
-            'paradas_no_programadas' => 'nullable|string',
-            'tiempo_parada_no_programada' => 'nullable|numeric',
-            'tipo_extendido' => 'required|string',
-            'numero_capas' => 'required|integer',
-            'trazado' => 'required|string',
-            'tiempo_trazado' => 'nullable|numeric',
-        ]);
+        // Validación con mensajes personalizados descriptivos
+        try {
+            $request->validate([
+                'fecha' => 'required|date',
+                'orden_produccion' => 'required|string',
+                'tela_id' => 'required|exists:telas,id',
+                'hora_id' => 'required|exists:horas,id',
+                'operario_id' => 'required|exists:users,id',
+                'actividad' => 'required|string',
+                'maquina_id' => 'required|exists:maquinas,id',
+                'tiempo_ciclo' => 'required|numeric|min:0.01',
+                'porcion_tiempo' => 'required|numeric|min:0|max:1',
+                'cantidad_producida' => 'required|integer|min:0',
+                'paradas_programadas' => 'required|string',
+                'paradas_no_programadas' => 'nullable|string',
+                'tiempo_parada_no_programada' => 'nullable|numeric|min:0',
+                'tipo_extendido' => 'required|string',
+                'numero_capas' => 'required|integer|min:0',
+                'trazado' => 'required|string',
+                'tiempo_trazado' => 'nullable|numeric|min:0',
+            ], [
+                'fecha.required' => 'La fecha es obligatoria.',
+                'fecha.date' => 'La fecha debe ser una fecha válida (formato: YYYY-MM-DD).',
+                'orden_produccion.required' => 'La orden de producción es obligatoria.',
+                'tela_id.required' => 'Debe seleccionar una tela válida.',
+                'tela_id.exists' => 'La tela seleccionada no existe en el sistema. Intenta crear una nueva.',
+                'hora_id.required' => 'Debe seleccionar una hora válida.',
+                'hora_id.exists' => 'La hora seleccionada no existe en el sistema.',
+                'operario_id.required' => 'Debe seleccionar un operario válido.',
+                'operario_id.exists' => 'El operario seleccionado no existe en el sistema.',
+                'actividad.required' => 'La actividad es obligatoria.',
+                'maquina_id.required' => 'Debe seleccionar una máquina válida.',
+                'maquina_id.exists' => 'La máquina seleccionada no existe en el sistema.',
+                'tiempo_ciclo.required' => 'El tiempo de ciclo es obligatorio.',
+                'tiempo_ciclo.numeric' => 'El tiempo de ciclo debe ser un número válido.',
+                'tiempo_ciclo.min' => 'El tiempo de ciclo debe ser mayor a 0.',
+                'porcion_tiempo.required' => 'La porción de tiempo es obligatoria.',
+                'porcion_tiempo.numeric' => 'La porción de tiempo debe ser un número válido.',
+                'porcion_tiempo.min' => 'La porción de tiempo no puede ser negativa.',
+                'porcion_tiempo.max' => 'La porción de tiempo no puede ser mayor a 1 (100%).',
+                'cantidad_producida.required' => 'La cantidad producida es obligatoria.',
+                'cantidad_producida.integer' => 'La cantidad producida debe ser un número entero.',
+                'cantidad_producida.min' => 'La cantidad producida no puede ser negativa.',
+                'paradas_programadas.required' => 'Debe seleccionar un tipo de parada programada.',
+                'tiempo_parada_no_programada.numeric' => 'El tiempo de parada no programada debe ser un número válido.',
+                'tiempo_parada_no_programada.min' => 'El tiempo de parada no programada no puede ser negativo.',
+                'tipo_extendido.required' => 'Debe seleccionar un tipo de extendido.',
+                'numero_capas.required' => 'El número de capas es obligatorio.',
+                'numero_capas.integer' => 'El número de capas debe ser un número entero.',
+                'numero_capas.min' => 'El número de capas no puede ser negativo.',
+                'trazado.required' => 'Debe seleccionar un tipo de trazado.',
+                'tiempo_trazado.numeric' => 'El tiempo de trazado debe ser un número válido.',
+                'tiempo_trazado.min' => 'El tiempo de trazado no puede ser negativo.',
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $errors = $e->errors();
+            $firstError = reset($errors)[0] ?? 'Error de validación';
+            
+            return response()->json([
+                'success' => false,
+                'message' => $firstError,
+                'errors' => $errors,
+                'error_type' => 'validation'
+            ], 422);
+        }
 
         try {
             // Check if tiempo_ciclo exists for this tela and maquina, if not, create it
@@ -1275,10 +1321,53 @@ class TablerosController extends Controller
                 'message' => 'Registro de piso de corte guardado correctamente.',
                 'registro' => $registro
             ]);
-        } catch (\Exception $e) {
+        } catch (\Illuminate\Database\QueryException $e) {
+            \Log::error('Error de base de datos en storeCorte', [
+                'error' => $e->getMessage(),
+                'sql' => $e->getSql() ?? 'N/A'
+            ]);
+            
+            $errorMessage = 'Error al guardar en la base de datos. ';
+            if (str_contains($e->getMessage(), 'UNIQUE constraint failed')) {
+                $errorMessage .= 'Este registro ya existe en el sistema.';
+            } elseif (str_contains($e->getMessage(), 'FOREIGN KEY constraint failed')) {
+                $errorMessage .= 'Uno de los datos referenciados no existe (tela, máquina, operario u hora).';
+            } elseif (str_contains($e->getMessage(), 'Column not found')) {
+                $errorMessage .= 'Hay un problema con la estructura de la base de datos.';
+            } else {
+                $errorMessage .= 'Por favor, intenta nuevamente.';
+            }
+            
             return response()->json([
                 'success' => false,
-                'message' => 'Error al guardar el registro: ' . $e->getMessage()
+                'message' => $errorMessage,
+                'error_type' => 'database',
+                'details' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        } catch (\Exception $e) {
+            \Log::error('Error general en storeCorte', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+            
+            $errorMessage = 'Error al procesar el registro. ';
+            
+            if (str_contains($e->getMessage(), 'Call to undefined function')) {
+                $errorMessage .= 'Hay un problema con una función del sistema.';
+            } elseif (str_contains($e->getMessage(), 'Undefined property')) {
+                $errorMessage .= 'Hay un problema con los datos enviados.';
+            } elseif (str_contains($e->getMessage(), 'division by zero')) {
+                $errorMessage .= 'Error en el cálculo: división por cero. Verifica el tiempo de ciclo.';
+            } else {
+                $errorMessage .= 'Por favor, contacta al administrador.';
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => $errorMessage,
+                'error_type' => 'system',
+                'details' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
     }

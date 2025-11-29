@@ -165,7 +165,6 @@ class RegistroOrdenController extends Controller
         foreach ($request->all() as $key => $value) {
             if (str_starts_with($key, 'filter_') && !empty($value)) {
                 $column = str_replace('filter_', '', $key);
-                
                 // Usar separador especial para valores que pueden contener comas y saltos de línea
                 $separator = '|||FILTER_SEPARATOR|||';
                 $values = explode($separator, $value);
@@ -242,6 +241,13 @@ class RegistroOrdenController extends Controller
                                 }
                             }
                         });
+                    } elseif ($column === 'cliente') {
+                        // Para cliente, usar LIKE para búsqueda parcial (como en el buscador)
+                        $query->where(function($q) use ($values) {
+                            foreach ($values as $value) {
+                                $q->orWhere('cliente', 'LIKE', '%' . $value . '%');
+                            }
+                        });
                     } else {
                         $query->whereIn($column, $values);
                     }
@@ -301,6 +307,16 @@ class RegistroOrdenController extends Controller
         } else {
             // OPTIMIZACIÓN: Paginación a 25 items
             $ordenes = $query->paginate(25);
+            
+            // DEBUG: Log de paginación
+            \Log::info("=== PAGINACIÓN DEBUG ===");
+            \Log::info("Total: {$ordenes->total()}");
+            \Log::info("Página actual: {$ordenes->currentPage()}");
+            \Log::info("Última página: {$ordenes->lastPage()}");
+            \Log::info("Por página: {$ordenes->perPage()}");
+            \Log::info("Tiene búsqueda: " . ($request->has('search') ? 'SÍ' : 'NO'));
+            \Log::info("Búsqueda: " . ($request->search ?? 'N/A'));
+            \Log::info("HTML paginación: " . substr($ordenes->links()->toHtml(), 0, 200));
 
             // OPTIMIZACIÓN CRÍTICA: SOLO calcular para la página actual (25 items) con caché
             // No calcular para TODAS las 2257 órdenes - usa CacheCalculosService con TTL de 1 hora
@@ -371,6 +387,13 @@ class RegistroOrdenController extends Controller
                 return $ordenArray;
             }, $ordenes->items());
             
+            $paginationHtml = $ordenes->appends(request()->query())->links()->toHtml();
+            
+            \Log::info("=== PAGINACIÓN HTML ===");
+            \Log::info("Total: {$ordenes->total()}");
+            \Log::info("Última página: {$ordenes->lastPage()}");
+            \Log::info("HTML generado (primeros 500 chars): " . substr($paginationHtml, 0, 500));
+            
             return response()->json([
                 'orders' => $ordenesFiltered,
                 'totalDiasCalculados' => $totalDiasCalculados,
@@ -383,7 +406,7 @@ class RegistroOrdenController extends Controller
                     'from' => $ordenes->firstItem(),
                     'to' => $ordenes->lastItem(),
                 ],
-                'pagination_html' => $ordenes->appends(request()->query())->links()->toHtml()
+                'pagination_html' => $paginationHtml
             ]);
         }
 
@@ -675,8 +698,8 @@ class RegistroOrdenController extends Controller
             $additionalValidation = [];
             foreach ($allowedColumns as $col) {
                 if ($request->has($col) && $col !== 'estado' && $col !== 'area' && $col !== 'dia_de_entrega') {
-                    // El campo descripcion es TEXT y puede ser más largo
-                    if ($col === 'descripcion') {
+                    // Campos TEXT que pueden ser más largos
+                    if ($col === 'descripcion' || $col === 'novedades') {
                         $additionalValidation[$col] = 'nullable|string|max:65535';
                     } else {
                         $additionalValidation[$col] = 'nullable|string|max:255';
