@@ -287,3 +287,4 @@ document.addEventListener('click', function(event) {
         closeModalOverlay();
     }
 });
+

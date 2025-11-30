@@ -196,3 +196,4 @@ class HistorialProcesos {
 window.historialProcesos = new HistorialProcesos();
 
 console.log('✅ Sistema de historial de procesos cargado');
+

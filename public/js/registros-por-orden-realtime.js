@@ -237,3 +237,4 @@ if (document.readyState === 'loading') {
 } else {
     setTimeout(initializeRegistrosPorOrdenRealtimeListeners, 100);
 }
+

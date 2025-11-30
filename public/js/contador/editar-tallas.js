@@ -129,3 +129,4 @@ function mostrarTallasGuardadas() {
     console.log('📋 Notas de Tallas Guardadas:', window.tallasNotas);
     return window.tallasNotas;
 }
+

@@ -14,8 +14,8 @@ async function openEditModal(pedido) {
         const modal = document.getElementById('orderEditModal');
         
         // Guardar el overflow original del body antes de modificarlo
-        if (!window.originalBodyOverflow) {
-            window.originalBodyOverflow = document.body.style.overflow || getComputedStyle(document.body).overflow || '';
+        if (!globalThis.originalBodyOverflow) {
+            globalThis.originalBodyOverflow = document.body.style.overflow || getComputedStyle(document.body).overflow || '';
         }
         
         // Mostrar modal con animación
@@ -39,10 +39,10 @@ function closeEditModal() {
     modal.style.display = 'none';
     
     // Restaurar el overflow original del body
-    if (window.originalBodyOverflow !== undefined) {
-        document.body.style.overflow = window.originalBodyOverflow;
+    if (globalThis.originalBodyOverflow !== undefined) {
+        document.body.style.overflow = globalThis.originalBodyOverflow;
         // Limpiar la variable para la próxima vez
-        window.originalBodyOverflow = undefined;
+        globalThis.originalBodyOverflow = undefined;
     } else {
         // Fallback: remover el estilo inline para que use el CSS por defecto
         document.body.style.overflow = '';
@@ -80,7 +80,7 @@ async function loadOrderData(pedido) {
         showEditNotification('Cargando datos de la orden...', 'info');
 
         // Determinar el contexto (registros o bodega)
-        const context = window.modalContext || 'registros';
+        const context = globalThis.modalContext || 'registros';
         const baseUrl = context === 'bodega' ? '/bodega' : '/registros';
 
         // Cargar datos de tabla_original o tabla_original_bodega
@@ -117,7 +117,7 @@ async function loadOrderData(pedido) {
 async function loadPrendas(pedido) {
     try {
         // Determinar el contexto (registros o bodega)
-        const context = window.modalContext || 'registros';
+        const context = globalThis.modalContext || 'registros';
         const apiUrl = context === 'bodega' 
             ? `/api/registros-por-orden-bodega/${pedido}` 
             : `/api/registros-por-orden/${pedido}`;
@@ -386,6 +386,10 @@ function updatePrendaNumbers() {
  */
 function showEditNotification(message, type = 'success') {
     const notification = document.getElementById('editNotification');
+    if (!notification) {
+        console.warn('⚠️ Elemento #editNotification no encontrado');
+        return;
+    }
     notification.textContent = message;
     notification.className = `notification ${type}`;
     notification.style.display = 'block';
@@ -396,7 +400,9 @@ function showEditNotification(message, type = 'success') {
  */
 function hideEditNotification() {
     const notification = document.getElementById('editNotification');
-    notification.style.display = 'none';
+    if (notification) {
+        notification.style.display = 'none';
+    }
 }
 
 /**
@@ -426,15 +432,21 @@ async function saveEditOrder(event) {
         showEditNotification('Guardando cambios...', 'info');
 
         // Determinar el contexto (registros o bodega)
-        const context = window.modalContext || 'registros';
+        const context = globalThis.modalContext || 'registros';
         const baseUrl = context === 'bodega' ? '/bodega' : '/registros';
+
+        // Obtener CSRF token de forma segura
+        const csrfTokenElement = document.querySelector('meta[name="csrf-token"]');
+        if (!csrfTokenElement) {
+            throw new Error('CSRF token no encontrado en el documento');
+        }
 
         // Enviar al servidor
         const response = await fetch(`${baseUrl}/${currentEditOrderId}/edit-full`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                'X-CSRF-TOKEN': csrfTokenElement.content
             },
             body: JSON.stringify(formData)
         });
@@ -449,8 +461,8 @@ async function saveEditOrder(event) {
         showEditNotification('¡Cambios guardados correctamente!', 'success');
         
         // Actualizar la tabla en tiempo real sin recargar
-        if (result.orden && window.modernTable && typeof window.modernTable.actualizarOrdenEnTabla === 'function') {
-            window.modernTable.actualizarOrdenEnTabla(result.orden);
+        if (result.orden && globalThis.modernTableInstance && typeof globalThis.modernTableInstance.actualizarOrdenEnTabla === 'function') {
+            globalThis.modernTableInstance.actualizarOrdenEnTabla(result.orden);
             console.log('✅ Orden actualizada en tiempo real desde el modal');
         }
         
@@ -479,14 +491,19 @@ async function saveEditOrder(event) {
  * Recopilar datos del formulario
  */
 function collectEditFormData() {
+    const getInputValue = (id) => {
+        const element = document.getElementById(id);
+        return element ? element.value : '';
+    };
+
     const formData = {
         pedido: currentEditOrderId,
-        estado: document.getElementById('edit_estado').value,
-        cliente: document.getElementById('edit_cliente').value,
-        fecha_creacion: document.getElementById('edit_fecha_creacion').value,
-        encargado: document.getElementById('edit_encargado').value,
-        asesora: document.getElementById('edit_asesora').value,
-        forma_pago: document.getElementById('edit_forma_pago').value,
+        estado: getInputValue('edit_estado'),
+        cliente: getInputValue('edit_cliente'),
+        fecha_creacion: getInputValue('edit_fecha_creacion'),
+        encargado: getInputValue('edit_encargado'),
+        asesora: getInputValue('edit_asesora'),
+        forma_pago: getInputValue('edit_forma_pago'),
         prendas: []
     };
 
@@ -529,28 +546,33 @@ function collectEditFormData() {
  * Validar datos del formulario
  */
 function validateEditFormData(formData) {
-    if (!formData.cliente) {
+    if (!formData || typeof formData !== 'object') {
+        showEditNotification('Datos del formulario inválidos', 'error');
+        return false;
+    }
+
+    if (!formData.cliente?.trim?.()) {
         showEditNotification('El campo Cliente es requerido', 'error');
         return false;
     }
 
-    if (!formData.fecha_creacion) {
+    if (!formData.fecha_creacion?.trim?.()) {
         showEditNotification('La Fecha de Creación es requerida', 'error');
         return false;
     }
 
-    if (formData.prendas.length === 0) {
+    if (!Array.isArray(formData.prendas) || formData.prendas.length === 0) {
         showEditNotification('Debe agregar al menos una prenda', 'error');
         return false;
     }
 
     for (let i = 0; i < formData.prendas.length; i++) {
         const prenda = formData.prendas[i];
-        if (!prenda.prenda) {
+        if (!prenda.prenda?.trim?.()) {
             showEditNotification(`La prenda ${i + 1} debe tener un nombre`, 'error');
             return false;
         }
-        if (prenda.tallas.length === 0) {
+        if (!Array.isArray(prenda.tallas) || prenda.tallas.length === 0) {
             showEditNotification(`La prenda ${i + 1} debe tener al menos una talla`, 'error');
             return false;
         }
@@ -560,7 +582,14 @@ function validateEditFormData(formData) {
 }
 
 // Inicializar event listeners cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', function() {
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeEventListeners);
+} else {
+    // DOM ya está listo
+    initializeEventListeners();
+}
+
+function initializeEventListeners() {
     // Botón añadir prenda
     const añadirPrendaBtn = document.getElementById('edit_añadirPrendaBtn');
     if (añadirPrendaBtn) {
@@ -576,7 +605,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Cerrar al hacer clic fuera del modal
     const modal = document.getElementById('orderEditModal');
     if (modal) {
-        modal.addEventListener('click', function(e) {
+        modal.addEventListener('click', (e) => {
             if (e.target === modal) {
                 closeEditModal();
             }
@@ -584,25 +613,36 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Tecla ESC para cerrar
-    document.addEventListener('keydown', function(e) {
+    const handleEscapeKey = (e) => {
         if (e.key === 'Escape') {
             const modal = document.getElementById('orderEditModal');
             if (modal && modal.style.display === 'flex') {
                 closeEditModal();
             }
         }
-    });
-});
+    };
+    document.addEventListener('keydown', handleEscapeKey);
+}
 
 // Añadir estilo de animación para el spinner
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
+(function() {
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+    `;
+    
+    // Solo agregar si no existe ya
+    if (!document.querySelector('style[data-animation="order-edit-spinner"]')) {
+        style.setAttribute('data-animation', 'order-edit-spinner');
+        const head = document.head || document.documentElement;
+        if (head) {
+            head.appendChild(style);
+        }
     }
-    .animate-spin {
-        animation: spin 1s linear infinite;
-    }
-`;
-document.head.appendChild(style);
+})();

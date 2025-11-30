@@ -157,7 +157,7 @@ function actualizarResumenModal() {
     productos.forEach(producto => {
         const cantidadInput = producto.querySelector('.producto-modal-cantidad');
         if (cantidadInput && cantidadInput.value) {
-            cantidadTotal += parseInt(cantidadInput.value) || 0;
+            cantidadTotal += Number.parseInt(cantidadInput.value) || 0;
         }
     });
 
@@ -384,3 +384,4 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+

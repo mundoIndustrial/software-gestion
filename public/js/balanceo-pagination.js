@@ -125,3 +125,4 @@
     
     console.log('✅ Paginación de balanceo inicializada');
 })();
+

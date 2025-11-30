@@ -92,8 +92,8 @@ class FilterManager {
     }
 
     updateWeeks() {
-        const y = parseInt(this.els.year.value) || CONFIG.currentYear;
-        const m = parseInt(this.els.month.value);
+        const y = Number.parseInt(this.els.year.value) || CONFIG.currentYear;
+        const m = Number.parseInt(this.els.month.value);
         this.els.week.innerHTML = '<option value="">Semana</option>';
         if (m) {
             this.els.week.innerHTML += Array.from({length: Utils.getWeeksInMonth(y, m)}, (_, i) => 
@@ -103,9 +103,9 @@ class FilterManager {
     }
 
     get() {
-        const y = this.els.year.value ? parseInt(this.els.year.value) : null;
-        const m = this.els.month.value ? parseInt(this.els.month.value) : null;
-        const wm = this.els.week.value ? parseInt(this.els.week.value) : null;
+        const y = this.els.year.value ? Number.parseInt(this.els.year.value) : null;
+        const m = this.els.month.value ? Number.parseInt(this.els.month.value) : null;
+        const wm = this.els.week.value ? Number.parseInt(this.els.week.value) : null;
         const d = this.els.day.value;
         const w = (wm && m && y) ? Utils.getWeekNumber(Utils.getWeekStartDate(y, m, wm)) : '';
         return { year: y, month: m, week: w, day: d };
@@ -689,3 +689,4 @@ document.addEventListener('DOMContentLoaded', () => {
     
     DataLoader.loadNews(newsDateFilter.value);
 });
+

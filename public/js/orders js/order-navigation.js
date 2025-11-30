@@ -21,7 +21,7 @@ function getAllOrderIds() {
     const rows = tbody.querySelectorAll('tr.table-row');
     return Array.from(rows).map(row => {
         const pedido = row.dataset.orderId;
-        return pedido ? parseInt(pedido) : null;
+        return pedido ? Number.parseInt(pedido) : null;
     }).filter(id => id !== null);
 }
 
@@ -240,3 +240,4 @@ if (document.readyState === 'loading') {
     initializeButtonNavigation();
     monitorModalClose();
 }
+

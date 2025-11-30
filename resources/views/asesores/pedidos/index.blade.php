@@ -259,5 +259,15 @@
 <script src="{{ asset('js/asesores/pedidos-modal.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-dropdown.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
-<script src="{{ asset('js/orderTracking.js') }}"></script>
+<!-- MODULAR ORDER TRACKING (SOLID Architecture) -->
+<script src="{{ asset('js/order-tracking/modules/dateUtils.js') }}"></script>
+<script src="{{ asset('js/order-tracking/modules/holidayManager.js') }}"></script>
+<script src="{{ asset('js/order-tracking/modules/areaMapper.js') }}"></script>
+<script src="{{ asset('js/order-tracking/modules/trackingService.js') }}"></script>
+<script src="{{ asset('js/order-tracking/modules/trackingUI.js') }}"></script>
+<script src="{{ asset('js/order-tracking/modules/apiClient.js') }}"></script>
+<script src="{{ asset('js/order-tracking/modules/processManager.js') }}"></script>
+<script src="{{ asset('js/order-tracking/modules/tableManager.js') }}"></script>
+<script src="{{ asset('js/order-tracking/modules/dropdownManager.js') }}"></script>
+<script src="{{ asset('js/order-tracking/orderTracking-v2.js') }}"></script>
 @endpush

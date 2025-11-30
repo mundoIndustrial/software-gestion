@@ -24,7 +24,7 @@ function testOrdenamientoTiempoReal() {
             return;
         }
         
-        const ids = rows.map(row => parseInt(row.getAttribute('data-id')));
+        const ids = rows.map(row => Number.parseInt(row.getAttribute('data-id')));
         console.log(`Sección "${section}": IDs = [${ids.join(', ')}]`);
         
         // Verificar orden ascendente
@@ -59,7 +59,7 @@ function testOrdenamientoTiempoReal() {
     
     const testTbody = testTable.querySelector('tbody');
     const existingRows = Array.from(testTbody.querySelectorAll('tr[data-id]'));
-    const existingIds = existingRows.map(row => parseInt(row.getAttribute('data-id')));
+    const existingIds = existingRows.map(row => Number.parseInt(row.getAttribute('data-id')));
     const maxId = Math.max(...existingIds, 0);
     const newId = maxId + 1;
     
@@ -88,7 +88,7 @@ function testOrdenamientoTiempoReal() {
         // Verificar que se insertó correctamente
         setTimeout(() => {
             const updatedRows = Array.from(testTbody.querySelectorAll('tr[data-id]'));
-            const updatedIds = updatedRows.map(row => parseInt(row.getAttribute('data-id')));
+            const updatedIds = updatedRows.map(row => Number.parseInt(row.getAttribute('data-id')));
             
             console.log(`IDs después de inserción: [${updatedIds.join(', ')}]`);
             
@@ -139,3 +139,4 @@ function testOrdenamientoTiempoReal() {
 window.testOrdenamientoTiempoReal = testOrdenamientoTiempoReal;
 
 console.log('✅ Script de prueba cargado. Ejecuta: testOrdenamientoTiempoReal()');
+

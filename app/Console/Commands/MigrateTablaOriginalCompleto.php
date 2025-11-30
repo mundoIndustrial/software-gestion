@@ -475,26 +475,54 @@ class MigrateTablaOriginalCompleto extends Command
                     continue;
                 }
 
-                // Consolidar tallas
-                $tallasRaw = DB::table('registros_por_orden')
+                // Consolidar tallas desde registros_por_orden
+                $registrosTallas = DB::table('registros_por_orden')
                     ->where('pedido', $prenda->pedido)
                     ->where('prenda', $prenda->nombre_prenda)
                     ->select('talla', 'cantidad')
                     ->get()
                     ->toArray();
 
+                // Convertir a JSON: {"SIZE": cantidad, "SIZE2": cantidad2, ...}
+                $cantidadTalla = [];
+                foreach ($registrosTallas as $reg) {
+                    $talla = strtoupper(trim($reg->talla ?? 'SIN_TALLA'));
+                    $cantidad = intval($reg->cantidad ?? 0);
+                    
+                    if (!isset($cantidadTalla[$talla])) {
+                        $cantidadTalla[$talla] = 0;
+                    }
+                    $cantidadTalla[$talla] += $cantidad;
+                }
+
                 if (!$dryRun) {
-                    PrendaPedido::updateOrCreate(
-                        [
+                    // Buscar si ya existe
+                    $existing = DB::table('prendas_pedido')
+                        ->where('pedido_produccion_id', $pedido->id)
+                        ->where('nombre_prenda', $prenda->nombre_prenda)
+                        ->first();
+
+                    $data = [
+                        'numero_pedido' => $pedido->numero_pedido,
+                        'cantidad' => $prenda->cantidad ?? 0,
+                        'descripcion' => $prenda->descripcion,
+                        'cantidad_talla' => !empty($cantidadTalla) ? json_encode($cantidadTalla) : null,
+                        'updated_at' => now(),
+                    ];
+
+                    if ($existing) {
+                        // Actualizar
+                        DB::table('prendas_pedido')
+                            ->where('id', $existing->id)
+                            ->update($data);
+                    } else {
+                        // Insertar nuevo
+                        DB::table('prendas_pedido')->insert(array_merge($data, [
                             'pedido_produccion_id' => $pedido->id,
                             'nombre_prenda' => $prenda->nombre_prenda,
-                        ],
-                        [
-                            'cantidad' => $prenda->cantidad ?? 0,
-                            'descripcion' => $prenda->descripcion,
-                            'tallas' => json_encode($tallasRaw),
-                        ]
-                    );
+                            'created_at' => now(),
+                        ]));
+                    }
                 }
 
                 $this->stats['prendas_migradas']++;

@@ -175,7 +175,7 @@
                                         'despacho'
                                     ];
                                 @endphp
-                                <tr class="table-row {{ $conditionalClass }}" data-order-id="{{ $orden->id }}" data-numero-pedido="{{ $orden->numero_pedido }}">
+                                <tr class="table-row {{ $conditionalClass }}" data-order-id="{{ $orden->id }}" data-numero-pedido="{{ $orden->numero_pedido }}" data-total-dias="{{ intval($totalDiasCalculados[$orden->numero_pedido] ?? 0) }}">
                                     <!-- DEBUG: Pedido={{ $orden->pedido ?? $orden->numero_pedido }}, Estado={{ $orden->estado }}, Area={{ $orden->area ?? 'NULL' }}, Cliente={{ $orden->cliente }} -->
                                     {{-- Columna de Acciones --}}
                                     <td class="table-cell acciones-column" style="min-width: 100px !important;">
@@ -218,7 +218,7 @@
                                                         @endif
                                                     @elseif($colName === 'area')
                                                         @php
-                                                            $areaValue = $orden->area ?? '';
+                                                            $areaValue = $areasMap[$orden->numero_pedido] ?? $orden->area ?? '';
                                                         @endphp
                                                         @if(auth()->user()->role && auth()->user()->role->name === 'supervisor')
                                                             <select class="area-dropdown" data-id="{{ $orden->numero_pedido }}" data-value="{{ $areaValue }}" disabled style="cursor: not-allowed; opacity: 0.8;">
@@ -252,7 +252,7 @@
                                                     @else
                                                         <span class="cell-text" data-pedido="{{ $orden->numero_pedido }}">
                                                             @if($colName === 'total_de_dias_')
-                                                                <span class="dias-value">{{ intval($totalDiasCalculados[$orden->numero_pedido] ?? 0) }}</span>
+                                                                <span class="dias-value" data-dias="{{ intval($totalDiasCalculados[$orden->numero_pedido] ?? 0) }}">{{ intval($totalDiasCalculados[$orden->numero_pedido] ?? 0) }}</span>
                                                             @elseif($colName === 'asesora')
                                                                 {{ $orden->asesora->name ?? ($orden->$colName ?? '') }}
                                                             @elseif($colName === 'numero_pedido')
@@ -466,12 +466,48 @@
         }, 100);
     </script>
 
-    <script src="{{ asset('js/orders js/modern-table.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/orders js/orders-table.js') }}?v={{ time() }}"></script>
+    <!-- MODULAR MODERN TABLE (SOLID Architecture) -->
+    <script src="{{ asset('js/modern-table/modules/storageManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modern-table/modules/tableRenderer.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modern-table/modules/styleManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modern-table/modules/filterManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modern-table/modules/dragManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modern-table/modules/columnManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modern-table/modules/dropdownManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modern-table/modules/notificationManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modern-table/modules/paginationManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modern-table/modules/searchManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modern-table/modern-table-v2.js') }}?v={{ time() }}"></script>
+    
+    <!-- ORDER TRACKING MODULES (SOLID Architecture) -->
+    <script src="{{ asset('js/order-tracking/modules/dateUtils.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/order-tracking/modules/holidayManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/order-tracking/modules/areaMapper.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/order-tracking/modules/apiClient.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/order-tracking/modules/trackingService.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/order-tracking/modules/trackingUI.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/order-tracking/modules/tableManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/order-tracking/modules/processManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/order-tracking/modules/dropdownManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/order-tracking/orderTracking-v2.js') }}?v={{ time() }}"></script>
+    
+    <!-- ORDERS TABLE MODULES (SOLID Architecture) -->
+    <script src="{{ asset('js/orders js/modules/formatting.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/orders js/modules/storageModule.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/orders js/modules/notificationModule.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/orders js/modules/rowManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/orders js/modules/updates.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/orders js/modules/dropdownManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/orders js/modules/diaEntregaModule.js') }}?v={{ time() }}"></script>
+    
+    <!-- SCRIPTS REFACTORIZADOS CON MÓDULOS -->
+    <!-- Versión V2: Usa módulos SOLID y elimina ~79% código duplicado -->
+    <script src="{{ asset('js/orders js/orders-table-v2.js') }}?v={{ time() }}"></script>
+    
+    <!-- SCRIPTS COMPLEMENTARIOS (sin cambios) -->
     <script src="{{ asset('js/orders js/order-navigation.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/pagination.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/historial-procesos.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/realtime-listeners.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/orderTracking.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders-scripts/image-gallery-zoom.js') }}?v={{ time() }}"></script>
 @endsection

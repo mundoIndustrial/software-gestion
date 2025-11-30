@@ -161,3 +161,4 @@ async function markAllAsRead() {
         showToast('Error al marcar notificaciones', 'error');
     }
 }
+

@@ -616,3 +616,4 @@ document.addEventListener('keydown', function(event) {
         cerrarImagenFullscreenModal();
     }
 });
+

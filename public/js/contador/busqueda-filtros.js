@@ -927,3 +927,4 @@ function limpiarFiltrosCostos() {
 
 // Inicializar cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', inicializarBusquedaFiltros);
+

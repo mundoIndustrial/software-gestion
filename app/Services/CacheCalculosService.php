@@ -93,7 +93,11 @@ class CacheCalculosService
     
     /**
      * Calcular días para una orden específica
-     * LÓGICA CORRECTA: De "Creación de Orden" INICIO → "Despacho" FIN
+     * LÓGICA MEJORADA: 
+     * - Si hay ambos procesos (Creación + Despacho): De Creación → Despacho
+     * - Si está "No iniciado": De fecha_creacion → HOY
+     * - Si está "En Ejecución": De primer_proceso → HOY
+     * - Si está "Entregado": De fecha_creacion → último_proceso
      */
     private static function calcularDiasParaOrden($numeroPedido, $estado = null)
     {
@@ -106,7 +110,15 @@ class CacheCalculosService
             
             $festivos = Festivo::pluck('fecha')->toArray();
             
-            // LÓGICA: Obtener "Creación de Orden" (inicio) y "Despacho" (fin)
+            // Pre-calcular festivos
+            $festivosSet = [];
+            foreach ($festivos as $f) {
+                try {
+                    $festivosSet[Carbon::parse($f)->format('Y-m-d')] = true;
+                } catch (\Exception $e) {}
+            }
+            
+            // PRIMERO: Intentar obtener "Creación de Orden" y "Despacho"
             $procesoCreacion = DB::table('procesos_prenda')
                 ->where('numero_pedido', $numeroPedido)
                 ->where('proceso', 'Creación de Orden')
@@ -119,22 +131,61 @@ class CacheCalculosService
                 ->select('fecha_fin')
                 ->first();
 
-            // Si no hay procesos, devolver 0
-            if (!$procesoCreacion || !$procesoDespacho) {
-                return 0;
+            // Si tiene AMBOS procesos, calcular entre ellos
+            if ($procesoCreacion && $procesoDespacho) {
+                $fechaInicio = Carbon::parse($procesoCreacion->fecha_inicio);
+                $fechaFin = Carbon::parse($procesoDespacho->fecha_fin);
+                return self::calcularDiasHabiles($fechaInicio, $fechaFin, $festivosSet);
             }
             
-            // Pre-calcular festivos
-            $festivosSet = [];
-            foreach ($festivos as $f) {
-                try {
-                    $festivosSet[Carbon::parse($f)->format('Y-m-d')] = true;
-                } catch (\Exception $e) {}
+            // Si NO tiene procesos, usar diferentes lógicas según estado
+            $estado = $estado ?? $orden->estado;
+            
+            if ($estado === 'No iniciado') {
+                // De fecha_creacion hasta HOY
+                $fechaInicio = Carbon::parse($orden->fecha_de_creacion_de_orden);
+                $fechaFin = Carbon::now();
+                return self::calcularDiasHabiles($fechaInicio, $fechaFin, $festivosSet);
             }
             
-            $fechaInicio = Carbon::parse($procesoCreacion->fecha_inicio);
-            $fechaFin = Carbon::parse($procesoDespacho->fecha_fin);
-
+            if ($estado === 'En Ejecución') {
+                // De primer proceso hasta HOY
+                $primerProceso = DB::table('procesos_prenda')
+                    ->where('numero_pedido', $numeroPedido)
+                    ->orderBy('fecha_inicio', 'ASC')
+                    ->select('fecha_inicio')
+                    ->first();
+                
+                if ($primerProceso) {
+                    $fechaInicio = Carbon::parse($primerProceso->fecha_inicio);
+                    $fechaFin = Carbon::now();
+                    return self::calcularDiasHabiles($fechaInicio, $fechaFin, $festivosSet);
+                } else {
+                    // Sin procesos pero "En Ejecución", contar desde creación
+                    $fechaInicio = Carbon::parse($orden->fecha_de_creacion_de_orden);
+                    $fechaFin = Carbon::now();
+                    return self::calcularDiasHabiles($fechaInicio, $fechaFin, $festivosSet);
+                }
+            }
+            
+            if ($estado === 'Entregado') {
+                // De fecha_creacion hasta último proceso
+                $ultimoProceso = DB::table('procesos_prenda')
+                    ->where('numero_pedido', $numeroPedido)
+                    ->orderBy('fecha_fin', 'DESC')
+                    ->select('fecha_fin')
+                    ->first();
+                
+                if ($ultimoProceso && $ultimoProceso->fecha_fin) {
+                    $fechaInicio = Carbon::parse($orden->fecha_de_creacion_de_orden);
+                    $fechaFin = Carbon::parse($ultimoProceso->fecha_fin);
+                    return self::calcularDiasHabiles($fechaInicio, $fechaFin, $festivosSet);
+                }
+            }
+            
+            // Fallback: De fecha creacion hasta HOY
+            $fechaInicio = Carbon::parse($orden->fecha_de_creacion_de_orden);
+            $fechaFin = Carbon::now();
             return self::calcularDiasHabiles($fechaInicio, $fechaFin, $festivosSet);
             
         } catch (\Exception $e) {
@@ -144,7 +195,7 @@ class CacheCalculosService
     
     /**
      * Calcular días para batch de órdenes
-     * LÓGICA CORRECTA: De "Creación de Orden" INICIO → "Despacho" FIN
+     * LÓGICA MEJORADA: Soporta órdenes sin procesos
      */
     private static function calcularDiasBatch(array $ordenes, array $festivos): array
     {
@@ -161,13 +212,25 @@ class CacheCalculosService
         }
         
         foreach ($ordenes as $numeroPedido => $orden) {
-            if (!($orden->fecha_de_creacion_de_orden ?? $orden['fecha_de_creacion_de_orden'] ?? null)) {
+            $fechaCreacion = null;
+            $estado = 'desconocido';
+            
+            // Obtener valores de forma segura (puede ser objeto o array)
+            if (is_object($orden)) {
+                $fechaCreacion = $orden->fecha_de_creacion_de_orden ?? null;
+                $estado = $orden->estado ?? 'desconocido';
+            } elseif (is_array($orden)) {
+                $fechaCreacion = $orden['fecha_de_creacion_de_orden'] ?? null;
+                $estado = $orden['estado'] ?? 'desconocido';
+            }
+            
+            if (!$fechaCreacion) {
                 $resultados[$numeroPedido] = 0;
                 continue;
             }
             
             try {
-                // LÓGICA: Obtener "Creación de Orden" (inicio) y "Despacho" (fin)
+                // PRIMERO: Intentar obtener "Creación de Orden" y "Despacho"
                 $procesoCreacion = DB::table('procesos_prenda')
                     ->where('numero_pedido', $numeroPedido)
                     ->where('proceso', 'Creación de Orden')
@@ -180,19 +243,64 @@ class CacheCalculosService
                     ->select('fecha_fin')
                     ->first();
 
-                // Si no hay procesos, devolver 0
-                if (!$procesoCreacion || !$procesoDespacho) {
-                    $resultados[$numeroPedido] = 0;
+                // Si tiene AMBOS procesos, calcular entre ellos
+                if ($procesoCreacion && $procesoDespacho) {
+                    $fechaInicio = Carbon::parse($procesoCreacion->fecha_inicio);
+                    $fechaFin = Carbon::parse($procesoDespacho->fecha_fin);
+                    $dias = self::calcularDiasHabiles($fechaInicio, $fechaFin, $festivosSet);
+                    $resultados[$numeroPedido] = max(0, $dias);
                     continue;
                 }
-
-                $fechaInicio = Carbon::parse($procesoCreacion->fecha_inicio);
-                $fechaFin = Carbon::parse($procesoDespacho->fecha_fin);
                 
-                $dias = self::calcularDiasHabiles($fechaInicio, $fechaFin, $festivosSet);
-                $resultados[$numeroPedido] = max(0, $dias);
+                // Si NO tiene procesos, calcular basado en estado
+                if ($estado === 'No iniciado') {
+                    // De fecha_creacion hasta HOY
+                    $fechaInicio = Carbon::parse($fechaCreacion);
+                    $fechaFin = Carbon::now();
+                    $dias = self::calcularDiasHabiles($fechaInicio, $fechaFin, $festivosSet);
+                    $resultados[$numeroPedido] = max(0, $dias);
+                } elseif ($estado === 'En Ejecución') {
+                    // De primer proceso hasta HOY (o desde creación si sin procesos)
+                    $primerProceso = DB::table('procesos_prenda')
+                        ->where('numero_pedido', $numeroPedido)
+                        ->orderBy('fecha_inicio', 'ASC')
+                        ->select('fecha_inicio')
+                        ->first();
+                    
+                    if ($primerProceso) {
+                        $fechaInicio = Carbon::parse($primerProceso->fecha_inicio);
+                    } else {
+                        $fechaInicio = Carbon::parse($fechaCreacion);
+                    }
+                    $fechaFin = Carbon::now();
+                    $dias = self::calcularDiasHabiles($fechaInicio, $fechaFin, $festivosSet);
+                    $resultados[$numeroPedido] = max(0, $dias);
+                } elseif ($estado === 'Entregado') {
+                    // De fecha_creacion hasta último proceso (o hasta hoy si sin procesos)
+                    $ultimoProceso = DB::table('procesos_prenda')
+                        ->where('numero_pedido', $numeroPedido)
+                        ->orderBy('fecha_fin', 'DESC')
+                        ->select('fecha_fin')
+                        ->first();
+                    
+                    if ($ultimoProceso && $ultimoProceso->fecha_fin) {
+                        $fechaFin = Carbon::parse($ultimoProceso->fecha_fin);
+                    } else {
+                        $fechaFin = Carbon::now();
+                    }
+                    $fechaInicio = Carbon::parse($fechaCreacion);
+                    $dias = self::calcularDiasHabiles($fechaInicio, $fechaFin, $festivosSet);
+                    $resultados[$numeroPedido] = max(0, $dias);
+                } else {
+                    // Fallback: De fecha creacion hasta HOY
+                    $fechaInicio = Carbon::parse($fechaCreacion);
+                    $fechaFin = Carbon::now();
+                    $dias = self::calcularDiasHabiles($fechaInicio, $fechaFin, $festivosSet);
+                    $resultados[$numeroPedido] = max(0, $dias);
+                }
                 
             } catch (\Exception $e) {
+                // En caso de error, retornar 0
                 $resultados[$numeroPedido] = 0;
             }
         }

@@ -66,6 +66,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::delete('/registros/{pedido}', [RegistroOrdenController::class, 'destroy'])->name('registros.destroy');
     Route::post('/registros/update-status', [RegistroOrdenController::class, 'updateStatus'])->name('registros.updateStatus');
     Route::get('/registros/{pedido}/entregas', [RegistroOrdenController::class, 'getEntregas'])->name('registros.entregas');
+    Route::get('/registros/{pedido}/images', [RegistroOrdenController::class, 'getOrderImages'])->name('registros.images');
     Route::get('/api/registros-por-orden/{pedido}', [RegistroOrdenController::class, 'getRegistrosPorOrden'])->name('api.registros-por-orden');
     Route::get('/api/registros/{numero_pedido}/dias', [RegistroOrdenController::class, 'calcularDiasAPI'])->name('api.registros.dias');
     Route::get('/api/ordenes/{id}/procesos', [App\Http\Controllers\OrdenController::class, 'getProcesos'])->name('api.ordenes.procesos');

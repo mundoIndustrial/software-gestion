@@ -224,3 +224,4 @@ function handleKeyboard(e) {
 window.loadOrderImages = loadOrderImages;
 window.openImageZoom = openImageZoom;
 window.closeImageZoom = closeImageZoom;
+

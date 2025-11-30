@@ -1,4 +1,4 @@
-﻿// ========================================
+// ========================================
 // NOTIFICATIONS SYSTEM
 // ========================================
 document.addEventListener('DOMContentLoaded', function() {
@@ -23,29 +23,29 @@ function renderNotifications(data) {
     
     const notifications = [];
     
-    // Agregar ├│rdenes pr├│ximas a vencer
+    // Agregar +�rdenes pr+�ximas a vencer
     if (data.ordenes_proximas_vencer && data.ordenes_proximas_vencer.length > 0) {
         data.ordenes_proximas_vencer.forEach(orden => {
             const diasRestantes = Math.ceil((new Date(orden.fecha_entrega) - new Date()) / (1000 * 60 * 60 * 24));
             notifications.push({
                 icon: 'fa-clock',
                 color: '#3b82f6',
-                title: 'Orden pr├│xima a vencer',
+                title: 'Orden pr+�xima a vencer',
                 message: `${orden.numero_orden} - ${orden.cliente}`,
-                time: `Vence en ${diasRestantes} d├¡a${diasRestantes !== 1 ? 's' : ''}`,
+                time: `Vence en ${diasRestantes} d+�a${diasRestantes !== 1 ? 's' : ''}`,
                 link: `/asesores/ordenes/${orden.id}`
             });
         });
     }
     
-    // Agregar ├│rdenes urgentes
+    // Agregar +�rdenes urgentes
     if (data.ordenes_urgentes > 0) {
         notifications.push({
             icon: 'fa-exclamation-triangle',
             color: '#ef4444',
-            title: '├ôrdenes urgentes pendientes',
+            title: '+�rdenes urgentes pendientes',
             message: `Tienes ${data.ordenes_urgentes} orden${data.ordenes_urgentes !== 1 ? 'es' : ''} urgente${data.ordenes_urgentes !== 1 ? 's' : ''} pendiente${data.ordenes_urgentes !== 1 ? 's' : ''}`,
-            time: 'Requiere atenci├│n',
+            time: 'Requiere atenci+�n',
             link: '/asesores/ordenes?estado=pendiente&prioridad=urgente'
         });
     }
@@ -132,9 +132,10 @@ async function markAllAsRead() {
         });
         
         updateNotificationBadge(0);
-        showToast('Notificaciones marcadas como le├¡das', 'success');
+        showToast('Notificaciones marcadas como le+�das', 'success');
     } catch (error) {
         console.error('Error marcando notificaciones:', error);
         showToast('Error al marcar notificaciones', 'error');
     }
 }
+

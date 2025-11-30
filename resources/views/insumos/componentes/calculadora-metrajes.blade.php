@@ -112,11 +112,11 @@
             modalContent.innerHTML = `
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Largo (m)</label>
+                        <label for="largo" class="block text-sm font-medium text-gray-700 mb-2">Largo (m)</label>
                         <input type="number" id="largo" placeholder="Ej: 2.5" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" step="0.01">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Ancho (m)</label>
+                        <label for="ancho" class="block text-sm font-medium text-gray-700 mb-2">Ancho (m)</label>
                         <input type="number" id="ancho" placeholder="Ej: 1.5" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" step="0.01">
                     </div>
                     <div class="bg-blue-50 p-4 rounded-lg">
@@ -132,11 +132,11 @@
             modalContent.innerHTML = `
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Cantidad de Prendas</label>
+                        <label for="cantidad" class="block text-sm font-medium text-gray-700 mb-2">Cantidad de Prendas</label>
                         <input type="number" id="cantidad" placeholder="Ej: 50" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" step="1">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Metraje por Prenda (m)</label>
+                        <label for="metraje" class="block text-sm font-medium text-gray-700 mb-2">Metraje por Prenda (m)</label>
                         <input type="number" id="metraje" placeholder="Ej: 1.2" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" step="0.01">
                     </div>
                     <div class="bg-green-50 p-4 rounded-lg">
@@ -152,7 +152,7 @@
             modalContent.innerHTML = `
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Fórmula (ej: 2 * 3 + 1.5)</label>
+                        <label for="formula" class="block text-sm font-medium text-gray-700 mb-2">Fórmula (ej: 2 * 3 + 1.5)</label>
                         <input type="text" id="formula" placeholder="Ingresa tu fórmula" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
                     </div>
                     <div class="bg-purple-50 p-4 rounded-lg">

@@ -437,3 +437,4 @@ function restoreSavedFilters(section) {
 function clearSavedFilters(section) {
     sessionStorage.removeItem(`tableros_filters_${section}`);
 }
+

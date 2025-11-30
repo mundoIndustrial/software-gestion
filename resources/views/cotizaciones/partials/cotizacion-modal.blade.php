@@ -22,15 +22,15 @@
             <div class="info-section">
                 <div class="info-grid">
                     <div class="info-item">
-                        <label>Asesora</label>
+                        <label for="modalAsesora">Asesora</label>
                         <p id="modalAsesora">-</p>
                     </div>
                     <div class="info-item">
-                        <label>Fecha</label>
+                        <label for="modalFecha">Fecha</label>
                         <p id="modalFecha">-</p>
                     </div>
                     <div class="info-item">
-                        <label>Estado</label>
+                        <label for="modalEstado">Estado</label>
                         <p id="modalEstado">-</p>
                     </div>
                 </div>

@@ -34,7 +34,7 @@ function initializeOrdenesRealtimeListeners() {
         
         // Llamar al método de la instancia de modernTable
         if (window.modernTable && typeof window.modernTable.handleOrdenUpdate === 'function') {
-            window.modernTable.handleOrdenUpdate(e.orden, e.action);
+            window.modernTable.handleOrdenUpdate(e.orden, e.action, e.changedFields);
         } else {
             console.warn('⚠️ modernTable no está disponible o no tiene el método handleOrdenUpdate');
         }
@@ -51,3 +51,4 @@ if (document.readyState === 'loading') {
 } else {
     setTimeout(initializeOrdenesRealtimeListeners, 100);
 }
+

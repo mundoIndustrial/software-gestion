@@ -60,6 +60,19 @@ export function showSuccessMessage(message, duration = 1500) {
 }
 
 // Clipboard Operations
+/**
+ * Copia columna al portapapeles
+ */
+async function _copyToClipboard(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        return { success: true };
+    } catch (err) {
+        console.error('Error al copiar:', err);
+        return { success: false };
+    }
+}
+
 export async function copyColumn(operaciones, columnName) {
     const values = operaciones.map(op => {
         const value = op[columnName];
@@ -67,12 +80,11 @@ export async function copyColumn(operaciones, columnName) {
     });
     
     const text = values.join('\n');
+    const result = await _copyToClipboard(text);
     
-    try {
-        await navigator.clipboard.writeText(text);
+    if (result.success) {
         showSuccessMessage(`✓ Columna "${columnName}" copiada`, 2000);
-    } catch (err) {
-        console.error('Error al copiar:', err);
+    } else {
         alert('No se pudo copiar la columna');
     }
 }
@@ -94,37 +106,57 @@ export function startEditingCell(operacion, field, event, context) {
     });
 }
 
+/**
+ * Envía actualización de celda al servidor
+ */
+async function _sendCellUpdate(operacion, field, newValue) {
+    const response = await fetch(`/balanceo/operacion/${operacion.id}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({
+            [field]: newValue || null
+        })
+    });
+    
+    return await response.json();
+}
+
+/**
+ * Maneja respuesta exitosa de actualización de celda
+ */
+function _handleCellUpdateSuccess(data, operacion, field, newValue, context) {
+    operacion[field] = newValue;
+    
+    if (field === 'sam') {
+        updateMetricas(data.balanceo, context);
+    }
+    
+    showSuccessMessage('✓ Guardado');
+}
+
+/**
+ * Maneja error en actualización de celda
+ */
+function _handleCellUpdateError(data) {
+    alert('Error al guardar: ' + (data.message || 'Error desconocido'));
+}
+
 export async function saveCell(operacion, field, newValue, context) {
-    // Si el valor no cambió, solo cancelar
     if (operacion[field] == newValue) {
         context.editingCell = null;
         return;
     }
 
     try {
-        const response = await fetch(`/balanceo/operacion/${operacion.id}`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: JSON.stringify({
-                [field]: newValue || null
-            })
-        });
-
-        const data = await response.json();
+        const data = await _sendCellUpdate(operacion, field, newValue);
         
         if (data.success) {
-            operacion[field] = newValue;
-            
-            if (field === 'sam') {
-                updateMetricas(data.balanceo, context);
-            }
-            
-            showSuccessMessage('✓ Guardado');
+            _handleCellUpdateSuccess(data, operacion, field, newValue, context);
         } else {
-            alert('Error al guardar: ' + (data.message || 'Error desconocido'));
+            _handleCellUpdateError(data);
         }
     } catch (error) {
         console.error('Error saving cell:', error);
@@ -135,18 +167,25 @@ export async function saveCell(operacion, field, newValue, context) {
 }
 
 // Parameters Update
+/**
+ * Envía actualización de parámetros al servidor
+ */
+async function _sendParametrosUpdate(balanceoId, parametros) {
+    const response = await fetch(`/balanceo/${balanceoId}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify(parametros)
+    });
+    
+    return await response.json();
+}
+
 export async function updateParametros(balanceoId, parametros, context) {
     try {
-        const response = await fetch(`/balanceo/${balanceoId}`, {
-            method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: JSON.stringify(parametros)
-        });
-        
-        const data = await response.json();
+        const data = await _sendParametrosUpdate(balanceoId, parametros);
         if (data.success) {
             updateMetricas(data.balanceo, context);
         }
@@ -170,41 +209,70 @@ export function updateMetricas(balanceo, context) {
 }
 
 // Operation CRUD
+/**
+ * Construye URL y método para guardar operación
+ */
+function _buildOperacionRequest(context) {
+    const url = context.editingOperacion 
+        ? `/balanceo/operacion/${context.editingOperacion}`
+        : `/balanceo/${context.balanceoId}/operacion`;
+    
+    const method = context.editingOperacion ? 'PATCH' : 'POST';
+    
+    return { url, method };
+}
+
+/**
+ * Envía operación al servidor
+ */
+async function _sendOperacion(url, method, formData) {
+    const response = await fetch(url, {
+        method,
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify(formData)
+    });
+    
+    return await response.json();
+}
+
+/**
+ * Actualiza lista de operaciones después de guardar
+ */
+function _updateOperacionesList(context, data) {
+    if (context.editingOperacion) {
+        const index = context.operaciones.findIndex(op => op.id === context.editingOperacion);
+        context.operaciones[index] = data.operacion;
+    } else {
+        context.operaciones.push(data.operacion);
+    }
+}
+
+/**
+ * Maneja respuesta exitosa de guardado de operación
+ */
+function _handleOperacionSaveSuccess(context, data, keepOpen) {
+    _updateOperacionesList(context, data);
+    updateMetricas(data.balanceo, context);
+    
+    if (keepOpen && !context.editingOperacion) {
+        resetForm(context);
+        showSuccessMessage('✓ Operación guardada correctamente', 2000);
+    } else {
+        context.showAddModal = false;
+        resetForm(context);
+    }
+}
+
 export async function saveOperacion(context, keepOpen = false) {
     try {
-        const url = context.editingOperacion 
-            ? `/balanceo/operacion/${context.editingOperacion}`
-            : `/balanceo/${context.balanceoId}/operacion`;
+        const { url, method } = _buildOperacionRequest(context);
+        const data = await _sendOperacion(url, method, context.formData);
         
-        const method = context.editingOperacion ? 'PATCH' : 'POST';
-        
-        const response = await fetch(url, {
-            method: method,
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: JSON.stringify(context.formData)
-        });
-        
-        const data = await response.json();
         if (data.success) {
-            if (context.editingOperacion) {
-                const index = context.operaciones.findIndex(op => op.id === context.editingOperacion);
-                context.operaciones[index] = data.operacion;
-            } else {
-                context.operaciones.push(data.operacion);
-            }
-            
-            updateMetricas(data.balanceo, context);
-            
-            if (keepOpen && !context.editingOperacion) {
-                resetForm(context);
-                showSuccessMessage('✓ Operación guardada correctamente', 2000);
-            } else {
-                context.showAddModal = false;
-                resetForm(context);
-            }
+            _handleOperacionSaveSuccess(context, data, keepOpen);
         }
     } catch (error) {
         console.error('Error saving operation:', error);
@@ -260,7 +328,7 @@ export function addOperacionToList(context) {
         operacion: context.formData.operacion,
         precedencia: context.formData.precedencia,
         maquina: context.formData.maquina,
-        sam: parseFloat(context.formData.sam),
+        sam: Number.parseFloat(context.formData.sam),
         operario: context.formData.operario,
         op: context.formData.op,
         seccion: context.formData.seccion,
@@ -307,10 +375,9 @@ export async function saveAllOperaciones(context) {
         }
 
         if (savedCount > 0) {
-            showSuccessMessage(
-                `✓ ${savedCount} operación(es) guardada(s) correctamente${failedCount > 0 ? `. ${failedCount} fallaron.` : ''}`,
-                3000
-            );
+            const failedMsg = failedCount > 0 ? `. ${failedCount} fallaron.` : '';
+            const successMsg = `✓ ${savedCount} operación(es) guardada(s) correctamente${failedMsg}`;
+            showSuccessMessage(successMsg, 3000);
         }
 
         context.pendingOperaciones = [];

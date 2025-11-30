@@ -277,3 +277,4 @@ function mostrarToast(mensaje, tipo = 'info') {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
+

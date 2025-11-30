@@ -291,48 +291,9 @@ class InsumosController extends Controller
             $materialesGuardados = MaterialesOrdenInsumos::where('numero_pedido', $orden->numero_pedido)->get();
             $orden->materiales_guardados = $materialesGuardados;
             
-            // Armar descripción desde prendas_pedido (ya cargadas con with())
-            if ($orden->prendas && $orden->prendas->isNotEmpty()) {
-                $descripcionesArray = $orden->prendas->map(function($prenda) {
-                    // Armar descripción completa con nombre, descripción y tallas
-                    $partes = [];
-                    
-                    // 1. Nombre de la prenda
-                    if ($prenda->nombre_prenda) {
-                        $partes[] = "PRENDA: " . strtoupper(trim($prenda->nombre_prenda));
-                    }
-                    
-                    // 2. Descripción
-                    if ($prenda->descripcion) {
-                        $partes[] = "DESCRIPCIÓN: " . strtoupper(trim($prenda->descripcion));
-                    }
-                    
-                    // 3. Tallas con cantidades
-                    if ($prenda->cantidad_talla) {
-                        $tallaInfo = $prenda->cantidad_talla;
-                        if (is_string($tallaInfo)) {
-                            $tallaInfo = json_decode($tallaInfo, true);
-                        }
-                        
-                        if (is_array($tallaInfo)) {
-                            $tallas = [];
-                            foreach ($tallaInfo as $talla => $cantidad) {
-                                if ($cantidad > 0) {
-                                    $tallas[] = "{$talla}: {$cantidad}";
-                                }
-                            }
-                            if (!empty($tallas)) {
-                                $partes[] = "TALLAS: " . implode(", ", $tallas);
-                            }
-                        }
-                    }
-                    
-                    return implode("\n", $partes);
-                })->toArray();
-                $orden->descripcion_prendas = implode("\n\n", $descripcionesArray);
-            } else {
-                $orden->descripcion_prendas = 'Sin prendas';
-            }
+            // Usar el mismo método que en Registros: getDescripcionPrendasAttribute()
+            // Esto garantiza que la descripción sea idéntica en ambos módulos
+            // (No recrear la descripción manualmente aquí)
             
             return $orden;
         });

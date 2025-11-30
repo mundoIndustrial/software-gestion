@@ -137,7 +137,7 @@ class RegistroOrdenController extends Controller
             ->with([
                 'asesora:id,name',
                 'prendas' => function($q) {
-                    $q->select('id', 'pedido_produccion_id', 'nombre_prenda', 'cantidad', 'descripcion');
+                    $q->select('id', 'pedido_produccion_id', 'nombre_prenda', 'cantidad', 'descripcion', 'cantidad_talla', 'descripcion_armada');
                 }
             ]);
 
@@ -280,12 +280,12 @@ class RegistroOrdenController extends Controller
             
             // Filtrar por total_de_dias_
             $ordenesFiltradas = $todasOrdenes->filter(function($orden) use ($totalDiasCalculados, $filterTotalDias) {
-                $totalDias = $totalDiasCalculados[$orden->pedido] ?? 0;
+                $totalDias = $totalDiasCalculados[$orden->numero_pedido] ?? 0;
                 $match = in_array((int)$totalDias, $filterTotalDias, true);
                 
                 // Log temporal para debug (eliminar después)
-                if ($orden->pedido <= 3) {
-                    \Log::info("Filtro total_dias - Pedido: {$orden->pedido}, Total días: {$totalDias}, Filtros: " . json_encode($filterTotalDias) . ", Match: " . ($match ? 'SI' : 'NO'));
+                if ((int)$orden->numero_pedido <= 3) {
+                    \Log::info("Filtro total_dias - Pedido: {$orden->numero_pedido}, Total días: {$totalDias}, Filtros: " . json_encode($filterTotalDias) . ", Match: " . ($match ? 'SI' : 'NO'));
                 }
                 
                 return $match;
@@ -332,8 +332,35 @@ class RegistroOrdenController extends Controller
         // Obtener encargados de "Creación Orden" para cada pedido
         $encargadosCreacionOrdenMap = $this->getCreacionOrdenEncargados($numeroPedidosPagina);
 
-        // Obtener opciones del enum 'area'
-        $areaOptions = $this->getEnumOptions('tabla_original', 'area');
+        // Opciones de áreas disponibles (áreas de procesos)
+        $areaOptions = [
+            'Creación de Orden',
+            'Control Calidad',
+            'Entrega',
+            'Despacho',
+            'Insumos y Telas',
+            'Costura',
+            'Corte',
+            'Bordado',
+            'Estampado',
+            'Lavandería',
+            'Arreglos'
+        ];
+        
+        // FALLBACK: Si totalDiasCalculados está vacío o falta alguna orden, recalcular
+        if (empty($totalDiasCalculados)) {
+            \Log::warning("totalDiasCalculados vacío, recalculando...");
+            $totalDiasCalculados = CacheCalculosService::getTotalDiasBatch($ordenes->items(), $festivos);
+        } else {
+            // Verificar que todas las órdenes tengan un valor
+            foreach ($ordenes->items() as $orden) {
+                if (!isset($totalDiasCalculados[$orden->numero_pedido])) {
+                    \Log::warning("Falta días para pedido {$orden->numero_pedido}, recalculando...");
+                    $totalDiasCalculados[$orden->numero_pedido] = 
+                        CacheCalculosService::getTotalDias($orden->numero_pedido, $orden->estado);
+                }
+            }
+        }
 
         if ($request->wantsJson()) {
             // Filtrar campos sensibles según el rol del usuario
@@ -493,7 +520,7 @@ class RegistroOrdenController extends Controller
 
     public function getNextPedido()
     {
-        $lastPedido = DB::table('tabla_original')->max('pedido');
+        $lastPedido = PedidoProduccion::max('numero_pedido');
         $nextPedido = $lastPedido ? $lastPedido + 1 : 1;
         return response()->json(['next_pedido' => $nextPedido]);
     }
@@ -505,7 +532,7 @@ class RegistroOrdenController extends Controller
         ]);
 
         $pedido = $request->input('pedido');
-        $lastPedido = DB::table('tabla_original')->max('pedido');
+        $lastPedido = PedidoProduccion::max('numero_pedido');
         $nextPedido = $lastPedido ? $lastPedido + 1 : 1;
 
         $valid = ($pedido == $nextPedido);
@@ -536,7 +563,7 @@ class RegistroOrdenController extends Controller
                 'allow_any_pedido' => 'nullable|boolean',
             ]);
     
-            $lastPedido = DB::table('tabla_original')->max('pedido');
+            $lastPedido = PedidoProduccion::max('numero_pedido');
             $nextPedido = $lastPedido ? $lastPedido + 1 : 1;
     
             if (!$request->input('allow_any_pedido', false)) {
@@ -548,64 +575,43 @@ class RegistroOrdenController extends Controller
                 }
             }
     
-            // Insertar datos en la base de datos
+            DB::beginTransaction();
+            
+            // Crear pedido en PedidoProduccion
             $estado = $request->estado ?? 'No iniciado';
-            $area = $request->area ?? 'Creación Orden';
-    
-            // Calculate total quantity
-            $totalCantidad = 0;
-            foreach ($request->prendas as $prenda) {
-                foreach ($prenda['tallas'] as $talla) {
-                    $totalCantidad += $talla['cantidad'];
-                }
-            }
-
-            // Build description field combining prenda, descripcion, tallas and cantidades
-            $descripcionCompleta = '';
-            foreach ($request->prendas as $index => $prenda) {
-                $descripcionCompleta .= "Prenda " . ($index + 1) . ": " . $prenda['prenda'] . "\n";
-                if (!empty($prenda['descripcion'])) {
-                    $descripcionCompleta .= "Descripción: " . $prenda['descripcion'] . "\n";
-                }
-                $tallasCantidades = [];
-                foreach ($prenda['tallas'] as $talla) {
-                    $tallasCantidades[] = $talla['talla'] . ':' . $talla['cantidad'];
-                }
-                if (count($tallasCantidades) > 0) {
-                    $descripcionCompleta .= "Tallas: " . implode(', ', $tallasCantidades) . "\n\n";
-                } else {
-                    $descripcionCompleta .= "\n";
-                }
-            }
-
-            $pedidoData = [
-                'pedido' => $request->pedido,
-                'estado' => $estado,
+            
+            $pedido = PedidoProduccion::create([
+                'numero_pedido' => $request->pedido,
                 'cliente' => $request->cliente,
-                'area' => $area,
-                'fecha_de_creacion_de_orden' => $request->fecha_creacion,
-                'encargado_orden' => $request->encargado,
+                'estado' => $estado,
                 'forma_de_pago' => $request->forma_pago,
-                'descripcion' => $descripcionCompleta,
-                'cantidad' => $totalCantidad,
-            ];
-    
-            DB::table('tabla_original')->insert($pedidoData);
-    
-            // Insert registros_por_orden for each prenda and talla
-            foreach ($request->prendas as $prenda) {
-                foreach ($prenda['tallas'] as $talla) {
-                    DB::table('registros_por_orden')->insert([
-                        'pedido' => $request->pedido,
-                        'cliente' => $request->cliente,
-                        'prenda' => $prenda['prenda'],
-                        'descripcion' => $prenda['descripcion'] ?? '',
-                        'talla' => $talla['talla'],
-                        'cantidad' => $talla['cantidad'],
-                        'total_pendiente_por_talla' => $talla['cantidad'],
-                    ]);
+                'fecha_de_creacion_de_orden' => $request->fecha_creacion,
+                'area' => $request->area ?? 'Creación Orden',
+                'novedades' => null,
+            ]);
+
+            // Crear prendas en PrendaPedido
+            foreach ($request->prendas as $index => $prendaData) {
+                // Calcular cantidad total de la prenda
+                $cantidadPrenda = 0;
+                $cantidadesPorTalla = [];
+                
+                foreach ($prendaData['tallas'] as $talla) {
+                    $cantidadPrenda += $talla['cantidad'];
+                    $cantidadesPorTalla[$talla['talla']] = $talla['cantidad'];
                 }
+
+                // Crear prenda
+                PrendaPedido::create([
+                    'pedido_produccion_id' => $pedido->id,
+                    'nombre_prenda' => $prendaData['prenda'],
+                    'cantidad' => $cantidadPrenda,
+                    'descripcion' => $prendaData['descripcion'] ?? '',
+                    'cantidad_talla' => json_encode($cantidadesPorTalla),
+                ]);
             }
+
+            DB::commit();
 
             // Log news
             News::create([
@@ -613,12 +619,11 @@ class RegistroOrdenController extends Controller
                 'description' => "Nueva orden registrada: Pedido {$request->pedido} para cliente {$request->cliente}",
                 'user_id' => auth()->id(),
                 'pedido' => $request->pedido,
-                'metadata' => ['cliente' => $request->cliente, 'estado' => $estado, 'area' => $area]
+                'metadata' => ['cliente' => $request->cliente, 'estado' => $estado]
             ]);
 
             // Broadcast event for real-time updates
-            $ordenCreada = PedidoProduccion::where('numero_pedido', $request->pedido)->first();
-            broadcast(new \App\Events\OrdenUpdated($ordenCreada, 'created'));
+            broadcast(new \App\Events\OrdenUpdated($pedido, 'created'));
 
             return response()->json(['success' => true, 'message' => 'Orden registrada correctamente']);
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -627,31 +632,12 @@ class RegistroOrdenController extends Controller
                 'message' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Error inesperado: ' . $e->getMessage()
             ], 500);
         }
-    }  
-    /**
-     * Mapeo de áreas a sus respectivos campos de fecha
-     */
-     private function getAreaFieldMappings()
-    {
-        return [
-            'Insumos' => 'insumos_y_telas',
-            'Corte' => 'corte',
-            'Creación Orden' => 'fecha_de_creacion_de_orden',
-            'Bordado' => 'bordado',
-            'Estampado' => 'estampado',
-            'Costura' => 'costura',
-            'Polos' => 'costura',
-            'Taller' => 'costura',
-            'Arreglos' => 'arreglos',
-            'Control-Calidad' => 'control_de_calidad',
-            'Entrega' => 'entrega',
-            'Despachos' => 'despacho',
-        ];
     }
 
     public function update(Request $request, $pedido)
@@ -659,7 +645,19 @@ class RegistroOrdenController extends Controller
         try {
             $orden = PedidoProduccion::where('numero_pedido', $pedido)->firstOrFail();
 
-            $areaOptions = ['Creación Orden', 'Corte', 'Costura', 'Bordado', 'Estampado', 'Control-Calidad', 'Entrega', 'Polos', 'Taller', 'Insumos', 'Lavandería', 'Arreglos', 'Despachos'];
+            $areaOptions = [
+                'Creación de Orden',
+                'Control Calidad',
+                'Entrega',
+                'Despacho',
+                'Insumos y Telas',
+                'Costura',
+                'Corte',
+                'Bordado',
+                'Estampado',
+                'Lavandería',
+                'Arreglos'
+            ];
             $estadoOptions = ['Entregado', 'En Ejecución', 'No iniciado', 'Anulada'];
 
             // Whitelist de columnas permitidas para edición
@@ -714,18 +712,37 @@ class RegistroOrdenController extends Controller
                 $updates['estado'] = $validatedData['estado'];
             }
             if (array_key_exists('area', $validatedData)) {
-                $updates['area'] = $validatedData['area'];
-                $areaFieldMap = $this->getAreaFieldMappings();
-                if (isset($areaFieldMap[$validatedData['area']])) {
-                    $field = $areaFieldMap[$validatedData['area']];
-                    $updates[$field] = now()->toDateString();
-                    $updatedFields[$field] = now()->toDateString();
-                }
+                $nuevaArea = $validatedData['area'];
                 
-                // Si el área es "Entrega", copiar encargado_orden a encargados_entrega
-                if ($validatedData['area'] === 'Entrega' && !empty($orden->encargado_orden)) {
-                    $updates['encargados_entrega'] = $orden->encargado_orden;
-                    $updatedFields['encargados_entrega'] = $orden->encargado_orden;
+                // NO actualizar tabla_original, en su lugar crear o actualizar un proceso en procesos_prenda
+                // Solo crear si no existe, pero SÍ actualizar fecha_inicio si ya existe
+                $procesoExistente = DB::table('procesos_prenda')
+                    ->where('numero_pedido', $pedido)
+                    ->where('proceso', $nuevaArea)
+                    ->first();
+                
+                if (!$procesoExistente) {
+                    // Crear nuevo proceso
+                    DB::table('procesos_prenda')->insert([
+                        'numero_pedido' => $pedido,
+                        'proceso' => $nuevaArea,
+                        'fecha_inicio' => now()->toDateTimeString(),
+                        'encargado' => auth()->user()->name ?? 'Sistema',
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                    \Log::info("Proceso CREADO para pedido {$pedido}: {$nuevaArea}");
+                } else {
+                    // Actualizar solo la fecha_inicio si ya existe
+                    DB::table('procesos_prenda')
+                        ->where('numero_pedido', $pedido)
+                        ->where('proceso', $nuevaArea)
+                        ->update([
+                            'fecha_inicio' => now()->toDateTimeString(),
+                            'encargado' => auth()->user()->name ?? 'Sistema',
+                            'updated_at' => now()
+                        ]);
+                    \Log::info("Proceso ACTUALIZADO para pedido {$pedido}: {$nuevaArea}");
                 }
             }
             if (array_key_exists('dia_de_entrega', $validatedData)) {
@@ -795,7 +812,33 @@ class RegistroOrdenController extends Controller
 
             // Broadcast event for real-time updates
             $orden->refresh(); // Reload to get updated data
-            broadcast(new \App\Events\OrdenUpdated($orden, 'updated'));
+            
+            // Si se actualizó el área, obtener el último proceso de procesos_prenda y asignarlo al modelo
+            if (array_key_exists('area', $validatedData)) {
+                $ultimoProceso = DB::table('procesos_prenda')
+                    ->where('numero_pedido', $pedido)
+                    ->orderBy('updated_at', 'desc')
+                    ->first();
+                
+                if ($ultimoProceso) {
+                    // Asignar el último proceso como el área actual para el evento del WebSocket
+                    $orden->area = $ultimoProceso->proceso;
+                }
+            }
+            
+            // Preparar array de campos que cambiaron
+            $changedFields = [];
+            if (isset($updates['estado'])) {
+                $changedFields[] = 'estado';
+            }
+            if (array_key_exists('area', $validatedData)) {
+                $changedFields[] = 'area';
+            }
+            if (isset($updates['dia_de_entrega'])) {
+                $changedFields[] = 'dia_de_entrega';
+            }
+            
+            broadcast(new \App\Events\OrdenUpdated($orden, 'updated', $changedFields));
 
             // Broadcast evento específico para Control de Calidad (después de refresh)
             if (isset($updates['area']) && $updates['area'] !== $oldArea) {
@@ -902,19 +945,14 @@ class RegistroOrdenController extends Controller
         try {
             DB::beginTransaction();
 
-            // Eliminar registros relacionados en registros_por_orden
-            DB::table('registros_por_orden')->where('pedido', $pedido)->delete();
+            // Obtener el pedido desde la nueva arquitectura
+            $orden = PedidoProduccion::where('numero_pedido', $pedido)->firstOrFail();
 
-            // Eliminar la orden principal en tabla_original
-            $deleted = DB::table('tabla_original')->where('pedido', $pedido)->delete();
-
-            if ($deleted === 0) {
-                DB::rollBack();
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Orden no encontrada'
-                ], 404);
-            }
+            // Eliminar todas las prendas asociadas (las entregas se eliminan automáticamente por cascada)
+            $orden->prendas()->delete();
+            
+            // Eliminar el pedido
+            $orden->delete();
 
             DB::commit();
             
@@ -931,9 +969,14 @@ class RegistroOrdenController extends Controller
             ]);
 
             // Broadcast event for real-time updates
-            broadcast(new \App\Events\OrdenUpdated(['pedido' => $pedido], 'deleted'));
+            broadcast(new \App\Events\OrdenUpdated(['numero_pedido' => $pedido], 'deleted'));
 
             return response()->json(['success' => true, 'message' => 'Orden eliminada correctamente']);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Orden no encontrada'
+            ], 404);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -945,16 +988,40 @@ class RegistroOrdenController extends Controller
 
     public function getEntregas($pedido)
     {
-        $registros = DB::table('registros_por_orden')
-            ->where('pedido', $pedido)
-            ->select('prenda', 'talla', 'cantidad', 'total_producido_por_talla')
-            ->get()
-            ->map(function ($reg) {
-                $reg->total_pendiente_por_talla = $reg->cantidad - ($reg->total_producido_por_talla ?? 0);
-                return $reg;
-            });
+        try {
+            // Obtener el pedido desde la nueva arquitectura
+            $orden = PedidoProduccion::where('numero_pedido', $pedido)->firstOrFail();
 
-        return response()->json($registros);
+            // Obtener prendas y convertir a formato compatible
+            $entregas = $orden->prendas()
+                ->select('nombre_prenda', 'cantidad_talla')
+                ->get()
+                ->flatMap(function($prenda) {
+                    $cantidadTalla = is_string($prenda->cantidad_talla)
+                        ? json_decode($prenda->cantidad_talla, true)
+                        : $prenda->cantidad_talla;
+
+                    $resultado = [];
+                    if (is_array($cantidadTalla)) {
+                        foreach ($cantidadTalla as $talla => $cantidad) {
+                            $resultado[] = [
+                                'prenda' => $prenda->nombre_prenda,
+                                'talla' => $talla,
+                                'cantidad' => $cantidad,
+                                'total_producido_por_talla' => 0,
+                                'total_pendiente_por_talla' => $cantidad
+                            ];
+                        }
+                    }
+                    return $resultado;
+                });
+
+            return response()->json($entregas);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['error' => 'Pedido no encontrado'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -1065,35 +1132,8 @@ class RegistroOrdenController extends Controller
 
             DB::beginTransaction();
 
-            // Deshabilitar temporalmente las restricciones de clave foránea
-            DB::statement('SET FOREIGN_KEY_CHECKS=0');
-
-            // Actualizar en tabla_original primero
-            DB::table('tabla_original')
-                ->where('pedido', $oldPedido)
-                ->update(['pedido' => $newPedido]);
-
-            // Actualizar en registros_por_orden
-            DB::table('registros_por_orden')
-                ->where('pedido', $oldPedido)
-                ->update(['pedido' => $newPedido]);
-
-            // Actualizar en entregas_pedido_costura si existen
-            if (DB::getSchemaBuilder()->hasTable('entregas_pedido_costura')) {
-                DB::table('entregas_pedido_costura')
-                    ->where('pedido', $oldPedido)
-                    ->update(['pedido' => $newPedido]);
-            }
-
-            // Actualizar en entregas_pedido_corte si existen
-            if (DB::getSchemaBuilder()->hasTable('entregas_pedido_corte')) {
-                DB::table('entregas_pedido_corte')
-                    ->where('pedido', $oldPedido)
-                    ->update(['pedido' => $newPedido]);
-            }
-
-            // Rehabilitar las restricciones de clave foránea
-            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+            // Actualizar el número de pedido en la nueva arquitectura
+            $orden->update(['numero_pedido' => $newPedido]);
 
             DB::commit();
 
@@ -1111,8 +1151,7 @@ class RegistroOrdenController extends Controller
             ]);
 
             // Broadcast event for real-time updates
-            $ordenActualizada = PedidoProduccion::where('numero_pedido', $newPedido)->first();
-            broadcast(new \App\Events\OrdenUpdated($ordenActualizada, 'updated'));
+            broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated'));
 
             return response()->json([
                 'success' => true,
@@ -1121,16 +1160,12 @@ class RegistroOrdenController extends Controller
                 'new_pedido' => $newPedido
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
-            // Asegurar que las restricciones se rehabiliten incluso si hay error
-            DB::statement('SET FOREIGN_KEY_CHECKS=1');
             DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Datos inválidos: ' . json_encode($e->errors())
             ], 422);
         } catch (\Exception $e) {
-            // Asegurar que las restricciones se rehabiliten incluso si hay error
-            DB::statement('SET FOREIGN_KEY_CHECKS=1');
             DB::rollBack();
             \Log::error('Error al actualizar pedido', [
                 'old_pedido' => $request->old_pedido,
@@ -1148,18 +1183,51 @@ class RegistroOrdenController extends Controller
 
     /**
      * Obtener registros por orden (API para el modal de edición)
+     * Retorna las prendas desde la nueva arquitectura
      */
     public function getRegistrosPorOrden($pedido)
     {
         try {
-            $registros = DB::table('registros_por_orden')
-                ->where('pedido', $pedido)
-                ->orderBy('prenda')
-                ->orderBy('talla')
-                ->get();
+            // Obtener el pedido desde la nueva arquitectura
+            $orden = PedidoProduccion::where('numero_pedido', $pedido)->firstOrFail();
+            
+            // Obtener prendas con sus tallas y cantidades
+            $prendas = $orden->prendas()
+                ->select('id', 'nombre_prenda', 'descripcion', 'cantidad_talla')
+                ->get()
+                ->map(function($prenda) use ($orden) {
+                    // Parsear cantidad_talla desde JSON
+                    $cantidadTalla = is_string($prenda->cantidad_talla) 
+                        ? json_decode($prenda->cantidad_talla, true) 
+                        : $prenda->cantidad_talla;
+                    
+                    // Convertir a formato compatible con registros_por_orden
+                    $registros = [];
+                    if (is_array($cantidadTalla)) {
+                        foreach ($cantidadTalla as $talla => $cantidad) {
+                            $registros[] = [
+                                'pedido' => $orden->numero_pedido,
+                                'cliente' => $orden->cliente,
+                                'prenda' => $prenda->nombre_prenda,
+                                'descripcion' => $prenda->descripcion ?? '',
+                                'talla' => $talla,
+                                'cantidad' => $cantidad,
+                                'total_pendiente_por_talla' => $cantidad,
+                                'costurero' => null,
+                                'total_producido_por_talla' => null,
+                                'fecha_completado' => null
+                            ];
+                        }
+                    }
+                    return $registros;
+                })
+                ->flatten(1)
+                ->values();
 
-            return response()->json($registros);
+            return response()->json($prendas);
 
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['error' => 'Pedido no encontrado'], 404);
         } catch (\Exception $e) {
             \Log::error('Error al obtener registros por orden', [
                 'pedido' => $pedido,
@@ -1179,7 +1247,7 @@ class RegistroOrdenController extends Controller
     public function editFullOrder(Request $request, $pedido)
     {
         try {
-            $validatedData = $request->validate([
+            $request->validate([
                 'pedido' => 'required|integer',
                 'estado' => 'nullable|in:No iniciado,En Ejecución,Entregado,Anulada',
                 'cliente' => 'required|string|max:255',
@@ -1192,70 +1260,43 @@ class RegistroOrdenController extends Controller
                 'prendas.*.tallas' => 'required|array',
                 'prendas.*.tallas.*.talla' => 'required|string|max:50',
                 'prendas.*.tallas.*.cantidad' => 'required|integer|min:1',
-                'prendas.*.originalName' => 'nullable|string|max:255',
             ]);
 
             DB::beginTransaction();
 
-            // Calcular cantidad total
-            $totalCantidad = 0;
-            foreach ($request->prendas as $prenda) {
-                foreach ($prenda['tallas'] as $talla) {
-                    $totalCantidad += $talla['cantidad'];
-                }
-            }
+            // Obtener la orden de la nueva arquitectura
+            $orden = PedidoProduccion::where('numero_pedido', $pedido)->firstOrFail();
 
-            // Construir campo descripcion
-            $descripcionCompleta = '';
-            foreach ($request->prendas as $index => $prenda) {
-                $descripcionCompleta .= "Prenda " . ($index + 1) . ": " . $prenda['prenda'] . "\n";
-                if (!empty($prenda['descripcion'])) {
-                    $descripcionCompleta .= "Descripción: " . $prenda['descripcion'] . "\n";
-                }
-                $tallasCantidades = [];
-                foreach ($prenda['tallas'] as $talla) {
-                    $tallasCantidades[] = $talla['talla'] . ':' . $talla['cantidad'];
-                }
-                if (count($tallasCantidades) > 0) {
-                    $descripcionCompleta .= "Tallas: " . implode(', ', $tallasCantidades) . "\n\n";
-                } else {
-                    $descripcionCompleta .= "\n";
-                }
-            }
-
-            // Actualizar tabla_original
-            $ordenData = [
+            // Actualizar datos de la orden
+            $orden->update([
                 'estado' => $request->estado ?? 'No iniciado',
                 'cliente' => $request->cliente,
                 'fecha_de_creacion_de_orden' => $request->fecha_creacion,
-                'encargado_orden' => $request->encargado,
                 'forma_de_pago' => $request->forma_pago,
-                'descripcion' => $descripcionCompleta,
-                'cantidad' => $totalCantidad,
-            ];
+            ]);
 
-            DB::table('tabla_original')
-                ->where('pedido', $pedido)
-                ->update($ordenData);
+            // Eliminar todas las prendas existentes
+            $orden->prendas()->delete();
 
-            // Eliminar todos los registros_por_orden existentes
-            DB::table('registros_por_orden')
-                ->where('pedido', $pedido)
-                ->delete();
+            // Crear nuevas prendas
+            foreach ($request->prendas as $prendaData) {
+                // Calcular cantidad total de la prenda
+                $cantidadPrenda = 0;
+                $cantidadesPorTalla = [];
 
-            // Insertar nuevos registros_por_orden
-            foreach ($request->prendas as $prenda) {
-                foreach ($prenda['tallas'] as $talla) {
-                    DB::table('registros_por_orden')->insert([
-                        'pedido' => $pedido,
-                        'cliente' => $request->cliente,
-                        'prenda' => $prenda['prenda'],
-                        'descripcion' => $prenda['descripcion'] ?? '',
-                        'talla' => $talla['talla'],
-                        'cantidad' => $talla['cantidad'],
-                        'total_pendiente_por_talla' => $talla['cantidad'],
-                    ]);
+                foreach ($prendaData['tallas'] as $talla) {
+                    $cantidadPrenda += $talla['cantidad'];
+                    $cantidadesPorTalla[$talla['talla']] = $talla['cantidad'];
                 }
+
+                // Crear prenda
+                PrendaPedido::create([
+                    'pedido_produccion_id' => $orden->id,
+                    'nombre_prenda' => $prendaData['prenda'],
+                    'cantidad' => $cantidadPrenda,
+                    'descripcion' => $prendaData['descripcion'] ?? '',
+                    'cantidad_talla' => json_encode($cantidadesPorTalla),
+                ]);
             }
 
             // Invalidar caché
@@ -1272,23 +1313,17 @@ class RegistroOrdenController extends Controller
 
             DB::commit();
 
-            // Obtener la orden actualizada para retornar y broadcast
-            $ordenActualizada = PedidoProduccion::where('numero_pedido', $pedido)->first();
-
-            // Obtener los registros por orden actualizados
-            $registrosActualizados = DB::table('prendas_pedido')
-                ->where('pedido_produccion_id', $ordenActualizada->id)
-                ->get();
+            // Recargar para obtener relaciones
+            $orden->load('prendas');
 
             // Broadcast event for real-time updates
-            broadcast(new \App\Events\OrdenUpdated($ordenActualizada, 'updated'));
-            broadcast(new \App\Events\RegistrosPorOrdenUpdated($pedido, $registrosActualizados, 'updated'));
+            broadcast(new \App\Events\OrdenUpdated($orden, 'updated'));
 
             return response()->json([
                 'success' => true,
                 'message' => 'Orden actualizada correctamente',
                 'pedido' => $pedido,
-                'orden' => $ordenActualizada
+                'orden' => $orden
             ]);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -1297,24 +1332,29 @@ class RegistroOrdenController extends Controller
                 'pedido' => $pedido,
                 'errors' => $e->errors()
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Datos inválidos',
                 'errors' => $e->errors()
             ], 422);
 
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Orden no encontrada'
+            ], 404);
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Error al editar orden completa', [
                 'pedido' => $pedido,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'error' => $e->getMessage()
             ]);
-            
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error al actualizar la orden: ' . $e->getMessage()
+                'message' => '🚨 Error interno del servidor: No se pudo actualizar la orden. Por favor, intente nuevamente o contacte al administrador si el problema persiste.'
             ], 500);
         }
     }
@@ -1335,9 +1375,8 @@ class RegistroOrdenController extends Controller
 
             DB::beginTransaction();
 
-            // Actualizar la descripción en PedidoProduccion
+            // Obtener la orden desde la nueva arquitectura
             $orden = PedidoProduccion::where('numero_pedido', $pedido)->firstOrFail();
-            $orden->update(['descripcion' => $nuevaDescripcion]);
 
             // Parsear la nueva descripción para extraer prendas y tallas
             $prendas = $this->parseDescripcionToPrendas($nuevaDescripcion);
@@ -1353,34 +1392,35 @@ class RegistroOrdenController extends Controller
 
                 if ($totalTallasEncontradas > 0) {
                     $procesarRegistros = true;
-                    
-                    // Eliminar registros existentes en registros_por_orden
-                    DB::table('registros_por_orden')->where('pedido', $pedido)->delete();
 
-                    // Insertar nuevos registros basados en la descripción parseada
-                    foreach ($prendas as $prenda) {
-                        foreach ($prenda['tallas'] as $talla) {
-                            DB::table('registros_por_orden')->insert([
-                                'pedido' => $pedido,
-                                'cliente' => $orden->cliente,
-                                'prenda' => $prenda['nombre'],
-                                'descripcion' => $prenda['descripcion'] ?? '',
-                                'talla' => $talla['talla'],
-                                'cantidad' => $talla['cantidad'],
-                                'total_pendiente_por_talla' => $talla['cantidad'],
-                            ]);
-                        }
-                    }
+                    // Eliminar todas las prendas existentes
+                    $orden->prendas()->delete();
 
-                    // Recalcular cantidad total
+                    // Crear nuevas prendas desde la descripción parseada
                     $totalCantidad = 0;
                     foreach ($prendas as $prenda) {
+                        $cantidadPrenda = 0;
+                        $cantidadesPorTalla = [];
+
                         foreach ($prenda['tallas'] as $talla) {
+                            $cantidadPrenda += $talla['cantidad'];
                             $totalCantidad += $talla['cantidad'];
+                            $cantidadesPorTalla[$talla['talla']] = $talla['cantidad'];
                         }
+
+                        // Crear prenda en la nueva arquitectura
+                        PrendaPedido::create([
+                            'pedido_produccion_id' => $orden->id,
+                            'nombre_prenda' => $prenda['nombre'],
+                            'cantidad' => $cantidadPrenda,
+                            'descripcion' => $prenda['descripcion'] ?? '',
+                            'cantidad_talla' => json_encode($cantidadesPorTalla),
+                        ]);
                     }
+
+                    // Actualizar cantidad total en la orden
                     $orden->update(['cantidad' => $totalCantidad]);
-                    
+
                     $mensaje = "✅ Descripción actualizada y registros regenerados automáticamente. Se procesaron " . count($prendas) . " prenda(s) con " . $totalTallasEncontradas . " talla(s).";
                 } else {
                     $mensaje = "⚠️ Descripción actualizada, pero no se encontraron tallas válidas. Los registros existentes se mantuvieron intactos.";
@@ -1403,12 +1443,11 @@ class RegistroOrdenController extends Controller
 
             DB::commit();
 
+            // Recargar relaciones
+            $orden->load('prendas');
+
             // Broadcast events
-            $ordenActualizada = PedidoProduccion::where('numero_pedido', $pedido)->first();
-            $registrosActualizados = DB::table('prendas_pedido')->where('pedido_produccion_id', $ordenActualizada->id)->get();
-            
-            broadcast(new \App\Events\OrdenUpdated($ordenActualizada, 'updated'));
-            broadcast(new \App\Events\RegistrosPorOrdenUpdated($pedido, $registrosActualizados, 'updated'));
+            broadcast(new \App\Events\OrdenUpdated($orden, 'updated'));
 
             return response()->json([
                 'success' => true,
@@ -1712,6 +1751,62 @@ class RegistroOrdenController extends Controller
         } catch (\Exception $e) {
             \Log::error('Error en calcularDiasBatchAPI: ' . $e->getMessage());
             return response()->json(['error' => 'Error al calcular días'], 500);
+        }
+    }
+
+    /**
+     * Obtener imágenes de una orden
+     * GET /registros/{pedido}/images
+     */
+    public function getOrderImages($pedido)
+    {
+        try {
+            // Obtener la orden por número de pedido
+            $orden = PedidoProduccion::where('numero_pedido', $pedido)->firstOrFail();
+            
+            // Obtener todas las prendas de la orden con sus imágenes
+            $prendas = $orden->prendas()->with('procesos')->get();
+            
+            // Recolectar todas las imágenes
+            $images = [];
+            foreach ($prendas as $prenda) {
+                if ($prenda->imagen) {
+                    // Si es JSON (array de URLs)
+                    if (is_string($prenda->imagen)) {
+                        $imagenDecoded = json_decode($prenda->imagen, true);
+                        if (is_array($imagenDecoded)) {
+                            $images = array_merge($images, $imagenDecoded);
+                        } else {
+                            // Es una URL simple
+                            $images[] = $prenda->imagen;
+                        }
+                    } elseif (is_array($prenda->imagen)) {
+                        $images = array_merge($images, $prenda->imagen);
+                    }
+                }
+            }
+            
+            // Remover duplicados y resetear índices
+            $images = array_values(array_unique($images));
+
+            return response()->json([
+                'success' => true,
+                'images' => $images,
+                'total' => count($images),
+                'pedido' => $pedido
+            ]);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Orden no encontrada'
+            ], 404);
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener imágenes de orden: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener imágenes'
+            ], 500);
         }
     }
 }

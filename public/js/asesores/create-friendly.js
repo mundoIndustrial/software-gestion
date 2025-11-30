@@ -119,7 +119,7 @@ function actualizarResumenFriendly() {
 
     productos.forEach((producto, index) => {
         const nombre = producto.querySelector('input[name*="nombre_producto"]').value || 'Sin nombre';
-        const cantidad = parseInt(producto.querySelector('input[name*="cantidad"]').value) || 0;
+        const cantidad = Number.parseInt(producto.querySelector('input[name*="cantidad"]').value) || 0;
         const talla = producto.querySelector('select[name*="talla"]').value || '-';
         const color = producto.querySelector('input[name*="color"]').value || '-';
 
@@ -190,3 +190,4 @@ document.getElementById('formCrearPedidoFriendly').addEventListener('submit', fu
 document.addEventListener('DOMContentLoaded', function() {
     agregarProductoFriendly();
 });
+

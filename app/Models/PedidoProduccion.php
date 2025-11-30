@@ -137,44 +137,63 @@ class PedidoProduccion extends Model
         }
 
         $prendas = $this->prendas->map(function($prenda, $index) {
-            // Si la descripción ya está formateada (contiene saltos de línea), retornarla tal cual
-            if ($prenda->descripcion && strpos($prenda->descripcion, "\n") !== false) {
-                return $prenda->descripcion;
-            }
-            
-            // Si no está formateada, intentar construirla desde cantidad_talla
             $numero = $index + 1;
             $lineas = [];
             
             // Línea 1: Prenda N: NOMBRE
             $lineas[] = "Prenda {$numero}: {$prenda->nombre_prenda}";
             
-            // Línea 2: DESCRIPCIÓN (si existe)
-            if ($prenda->descripcion) {
-                $lineas[] = "Descripción: {$prenda->descripcion}";
+            // Si la descripción ya está formateada (contiene saltos de línea), usarla
+            if ($prenda->descripcion && strpos($prenda->descripcion, "\n") !== false) {
+                $lineasDesc = explode("\n", $prenda->descripcion);
+                foreach ($lineasDesc as $linea) {
+                    // Saltar la línea "Prenda X:" si aparece nuevamente
+                    if (strpos($linea, 'Prenda') === 0 && strpos($linea, ':') !== false) {
+                        continue;
+                    }
+                    // Solo agregar si la línea no es vacía
+                    if (trim($linea) !== '') {
+                        $lineas[] = $linea;
+                    }
+                }
+            } else {
+                // Si no está formateada, agregar descripción simple
+                if ($prenda->descripcion) {
+                    $lineas[] = "Descripción: {$prenda->descripcion}";
+                }
             }
             
-            // Línea 3: TALLAS (desde JSON)
-            if ($prenda->cantidad_talla) {
-                $tallas = is_string($prenda->cantidad_talla) 
-                    ? json_decode($prenda->cantidad_talla, true) 
+            // Agregar tallas solo si no está ya incluida
+            $textoTallasIncluida = false;
+            foreach ($lineas as $linea) {
+                if (strpos($linea, 'Tallas:') === 0) {
+                    $textoTallasIncluida = true;
+                    break;
+                }
+            }
+            
+            if (!$textoTallasIncluida && $prenda->cantidad_talla) {
+                $tallas = is_string($prenda->cantidad_talla)
+                    ? json_decode($prenda->cantidad_talla, true)
                     : $prenda->cantidad_talla;
                 
                 if (is_array($tallas) && !empty($tallas)) {
+                    $tallasArray = [];
                     // Si tallas es un array asociativo de talla => cantidad
                     if (!isset($tallas[0])) {
-                        $tallasArray = [];
                         foreach ($tallas as $talla => $cantidad) {
                             $tallasArray[] = "{$talla}:{$cantidad}";
                         }
-                        $lineas[] = "Tallas: " . implode(', ', $tallasArray);
                     } else {
                         // Si tallas es un array de objetos
-                        $tallasArray = array_map(function($item) {
+                        foreach ($tallas as $item) {
                             $talla = $item['talla'] ?? 'N/A';
                             $cantidad = $item['cantidad'] ?? 0;
-                            return "{$talla}:{$cantidad}";
-                        }, $tallas);
+                            $tallasArray[] = "{$talla}:{$cantidad}";
+                        }
+                    }
+                    
+                    if (!empty($tallasArray)) {
                         $lineas[] = "Tallas: " . implode(', ', $tallasArray);
                     }
                 }

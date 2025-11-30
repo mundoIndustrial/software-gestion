@@ -1,0 +1,253 @@
+/**
+ * DIAGRAMA DE DEPENDENCIAS - Módulos JavaScript
+ * 
+ * Visualización ASCII del flujo de dependencias entre módulos
+ */
+
+/*
+
+═══════════════════════════════════════════════════════════════════════════════
+                    ARQUITECTURA MODULAR - DIAGRAMA COMPLETO
+═══════════════════════════════════════════════════════════════════════════════
+
+
+                                    TABLE PAGE
+                              (index.blade.php)
+                                      │
+                 ┌────────────────────┼────────────────────┐
+                 │                    │                    │
+            FASE 1              FASE 2 + 3              SCRIPTS
+        (Sin deps)           (Con deps)             (Compatibilidad)
+             │                    │                       │
+    ┌────────┴────────┐           │               ┌──────┴────────┐
+    │                 │           │               │               │
+    │                 │      FASE 2A              │               │
+    │                 │      (Primaria)           │         orders-table.js
+    │ formatting.js   │           │               │      (2300+ líneas)
+    │ ┌────────────┐  │      ┌─────▼─────┐       │
+    │ │ Exported:  │  │      │ updates.js│       │
+    │ │ - format*  │  │      │ ┌────────┐│       │
+    │ │ - esColumn*│  │      │ │ Deps:  ││       │
+    │ │ - asegurar*│  │      │ │ Notif* ││       │
+    │ └────────────┘  │      │ │        ││       │
+    │                 │      │ │Methods:││       │
+    │ storageModule.js│      │ │ -update││       │
+    │ ┌────────────┐  │      │ │ Status ││       │
+    │ │ Exported:  │  │      │ │ -update││       │
+    │ │ - broadcast│  │      │ │ Area   ││       │
+    │ │ - initialize│ │      │ │ -update││       │
+    │ │ - _process │  │      │ │ Dias   ││       │
+    │ └────────────┘  │      │ │ -send* ││       │
+    │                 │      │ │ -handle││       │
+    │ notification    │      │ │ Error* ││       │
+    │ Module.js       │      │ └────────┘│       │
+    │ ┌────────────┐  │      │           │       │
+    │ │ Exported:  │  │      │ rowManager.js    │
+    │ │ - showSuccess│ │      │ ┌────────────┐  │
+    │ │ - showError│  │      │ │ Deps:      │  │
+    │ │ - showAuto │  │      │ │ Format*    │  │
+    │ │ - _ensure  │  │      │ │            │  │
+    │ │ Styles     │  │      │ │ Methods:   │  │
+    │ └────────────┘  │      │ │ -updateRow │  │
+    │                 │      │ │ Color      │  │
+    └─────────────────┘      │ │ -actualizar│  │
+                             │ │ Orden      │  │
+                             │ │ -crearFila │  │
+                             │ │ -eliminarFila
+                             │ │ -executeRow
+                             │ │ Update     │  │
+                             │ │ -_applyRow │  │
+                             │ │ Styles     │  │
+                             │ └────────────┘  │
+                             │                 │
+                             │   FASE 2B       │
+                             │   (Secundaria)  │
+                             │                 │
+                             │ dropdownManager.js
+                             │ ┌────────────┐  │
+                             │ │ Deps:      │  │
+                             │ │ Updates*   │  │
+                             │ │            │  │
+                             │ │ Methods:   │  │
+                             │ │ -initialize│  │
+                             │ │ -initializeS│  │
+                             │ │ tatus       │  │
+                             │ │ -initializeA│  │
+                             │ │ rea         │  │
+                             │ │ -handleStatus│ │
+                             │ │ Change      │  │
+                             │ │ -handleArea │  │
+                             │ │ Change      │  │
+                             │ │ -_update    │  │
+                             │ │ WithDebounce
+                             │ │ -_sendUpdate│  │
+                             │ └────────────┘  │
+                             │                 │
+                             │ diaEntrega      │
+                             │ Module.js       │
+                             │ ┌────────────┐  │
+                             │ │ Deps:      │  │
+                             │ │ Updates*   │  │
+                             │ │            │  │
+                             │ │ Methods:   │  │
+                             │ │ -initialize│  │
+                             │ │ -handleDia*│  │
+                             │ │ Change     │  │
+                             │ │ -_isValid* │  │
+                             │ │ -_show*    │  │
+                             │ │ -calculate*│  │
+                             │ │ -getAvailable
+                             │ │ Days       │  │
+                             │ │ -getSuggested
+                             │ │ Days       │  │
+                             │ │ -getIndicator
+                             │ │ Color      │  │
+                             │ └────────────┘  │
+                             │                 │
+                             │   FASE 3        │
+                             │   (Orquestador) │
+                             │                 │
+                             │ tableManager.js │
+                             │ ┌────────────┐  │
+                             │ │ Deps:      │  │
+                             │ │ TODOS      │  │
+                             │ │            │  │
+                             │ │ Methods:   │  │
+                             │ │ -init()    │  │
+                             │ │ -_loadPhase│  │
+                             │ │ 1,2,3,4()  │  │
+                             │ │ -verify*   │  │
+                             │ │ Dependencies
+                             │ │ -getModule │  │
+                             │ │ -listModules
+                             │ │ -reloadTable
+                             │ │ Auto init  │  │
+                             │ │ en DOM     │  │
+                             │ │ ready      │  │
+                             │ └────────────┘  │
+                             │                 │
+                             └─────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                           FLUJO DE INICIALIZACIÓN
+═══════════════════════════════════════════════════════════════════════════════
+
+
+1. DOM contenido cargado
+                │
+                ↓
+2. tableManager.init() auto-inicia
+                │
+        ┌───────┴───────┐
+        │               │
+   VERIFICAR         INICIALIZAR
+   DEPENDENCIAS      MÓDULOS
+        │               │
+   Valida que        Fase 1
+   existan todos    (base)
+   módulos            │
+        │          ┌──┴──┐
+        └──────→   │     │
+            OK    Fmt   Stor  Notif
+                   │     │    │
+                   Fase 2 (depender)
+                   │
+                ┌──┴──┴──┐
+                │  │  │  │
+              Upd Row  DD DE
+                │  │  │  │
+                Fase 3 (orq)
+                │
+                TM
+                │
+             ✅ LISTO
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                      FLUJO DE UPDATE - Ejemplo: Cambiar Área
+═══════════════════════════════════════════════════════════════════════════════
+
+
+Usuario elige nueva área en <select class="area-select">
+                │
+                ↓ (evento 'change')
+        DropdownManager
+        ↓
+    handleAreaChange()
+        ├─ Debounce 300ms
+        ├─ Valida valor
+        │
+        ↓
+    UpdatesModule.updateOrderArea()
+        ├─ Construye PATCH
+        ├─ POST /api/orders/{id}/area
+        │
+        ↓
+    Backend (Laravel)
+        ├─ Crea proceso en procesos_prenda
+        ├─ Broadcast OrdenUpdated event
+        │
+        ↓
+    Response (200 OK)
+        ├─ UpdatesModule._handleResponse()
+        ├─ NotificationModule.showSuccess()
+        │
+        ├─ StorageModule.broadcastUpdate()
+        │  └─ Otros tabs reciben update via localStorage
+        │
+        ├─ RowManager.executeRowUpdate()
+        │  ├─ Actualiza celdas
+        │  ├─ Aplica estilos
+        │  └─ FormattingModule.formatearFecha()
+        │
+        └─ ✅ Completado
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                         COMUNICACIÓN ENTRE MÓDULOS
+═══════════════════════════════════════════════════════════════════════════════
+
+
+                     DropdownManager
+                            │
+                    Usa (depende de)
+                            │
+                     UpdatesModule
+                            │
+              ┌─────────────┼─────────────┐
+              │             │             │
+            Usa          Usa         Usa
+              │             │             │
+        Notification    RowManager   Storage
+        Module          + Formatting Module
+                        │
+                Usa (depende de)
+                        │
+                    FormattingModule
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                         COMPARACIÓN: ANTES vs DESPUÉS
+═══════════════════════════════════════════════════════════════════════════════
+
+
+ANTES:                              DESPUÉS:
+
+orders-table.js                     modules/
+    ├─ Formatos                     ├─ formatting.js (45 líneas) ✨
+    ├─ Dropdowns                    ├─ dropdownManager.js (80 líneas) ✨
+    ├─ Updates                      ├─ updates.js (120 líneas) ✨
+    ├─ Notificaciones               ├─ notificationModule.js (80 líneas) ✨
+    ├─ Storage                      ├─ storageModule.js (60 líneas) ✨
+    ├─ Día entrega                  ├─ diaEntregaModule.js (130 líneas) ✨
+    ├─ Row manager                  ├─ rowManager.js (180 líneas) ✨
+    └─ TODO MEZCLADO!               └─ tableManager.js (210 líneas) ✨
+       (2300+ líneas)
+       (Mantenimiento imposible)      (800 líneas distribuidas)
+       (Imposible testear)            (Testeable)
+       (Escalabilidad nula)           (Altamente escalable)
+
+
+═══════════════════════════════════════════════════════════════════════════════
+*/

@@ -166,6 +166,20 @@ if (csrfToken) {
 // ========================================
 // FETCH HELPER
 // ========================================
+
+/**
+ * Maneja respuesta de fetch del servidor
+ */
+async function _handleAsesorFetchResponse(response) {
+    const data = await response.json();
+    
+    if (!response.ok) {
+        throw new Error(data.message || 'Error en la petición');
+    }
+    
+    return data;
+}
+
 window.fetchAPI = async function(url, options = {}) {
     const defaultOptions = {
         headers: {
@@ -186,13 +200,7 @@ window.fetchAPI = async function(url, options = {}) {
     
     try {
         const response = await fetch(url, mergedOptions);
-        const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.message || 'Error en la petición');
-        }
-        
-        return data;
+        return await _handleAsesorFetchResponse(response);
     } catch (error) {
         console.error('Error en fetchAPI:', error);
         throw error;
@@ -277,3 +285,4 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+

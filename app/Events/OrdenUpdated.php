@@ -14,14 +14,16 @@ class OrdenUpdated implements ShouldBroadcastNow
 
     public $orden;
     public $action; // 'created', 'updated', 'deleted'
+    public $changedFields; // Array de campos que cambiaron
 
     /**
      * Create a new event instance.
      */
-    public function __construct($orden, $action = 'updated')
+    public function __construct($orden, $action = 'updated', $changedFields = null)
     {
         $this->orden = $orden;
         $this->action = $action;
+        $this->changedFields = $changedFields;
     }
 
     /**
@@ -42,6 +44,7 @@ class OrdenUpdated implements ShouldBroadcastNow
         \Log::info('Broadcasting OrdenUpdated event', [
             'pedido' => $pedido,
             'action' => $this->action,
+            'changedFields' => $this->changedFields,
         ]);
 
         // Asegurar que el objeto orden tenga el atributo correcto para el frontend
@@ -56,7 +59,8 @@ class OrdenUpdated implements ShouldBroadcastNow
 
         return [
             'orden' => $ordenData,
-            'action' => $this->action
+            'action' => $this->action,
+            'changedFields' => $this->changedFields
         ];
     }
 }

@@ -247,14 +247,14 @@ function updateStats(costuraData = [], corteData = []) {
 
 // Configurar listeners de tiempo real
 function setupRealtimeListeners() {
-    if (typeof window.Echo === 'undefined') {
+    if (!globalThis.Echo) {
         console.warn('❌ Laravel Echo no está disponible. Las actualizaciones en tiempo real no funcionarán.');
         return;
     }
 
     console.log('✅ Echo disponible. Suscribiendo al canal "entregas.' + TIPO + '"...');
 
-    const channel = window.Echo.channel(`entregas.${TIPO}`);
+    const channel = globalThis.Echo.channel(`entregas.${TIPO}`);
     
     channel.subscribed(() => {
         console.log('✅ Suscrito al canal "entregas.' + TIPO + '"');
@@ -461,8 +461,8 @@ async function saveCell(newValue) {
                 const etiqueteadasCell = row.querySelectorAll('.table-badge')[2];
                 
                 if (piezasCell && pasadasCell && etiqueteadasCell) {
-                    const piezas = parseInt(piezasCell.textContent);
-                    const pasadas = parseInt(pasadasCell.textContent);
+                    const piezas = Number.parseInt(piezasCell.textContent);
+                    const pasadas = Number.parseInt(pasadasCell.textContent);
                     etiqueteadasCell.textContent = piezas * pasadas;
                 }
             }
@@ -525,3 +525,4 @@ function showSuccessMessage(message) {
         successMsg.remove();
     }, 1500);
 }
+

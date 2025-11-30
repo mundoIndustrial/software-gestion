@@ -170,7 +170,7 @@ function actualizarResumen() {
     productos.forEach(producto => {
         const cantidad = producto.querySelector('.producto-cantidad');
         if (cantidad) {
-            totalCantidad += parseInt(cantidad.value) || 0;
+            totalCantidad += Number.parseInt(cantidad.value) || 0;
         }
     });
     
@@ -240,7 +240,7 @@ async function guardarPedido(form, crear = false) {
                 color: colorInput ? colorInput.value : '',
                 talla: tallaInput ? tallaInput.value : '',
                 genero: generoInput ? generoInput.value : '',
-                cantidad: parseInt(cantidadInput.value) || 1,
+                cantidad: Number.parseInt(cantidadInput.value) || 1,
                 ref_hilo: refHiloInput ? refHiloInput.value : '',
                 precio_unitario: precioInput ? parseFloat(precioInput.value) || null : null
             });
@@ -255,7 +255,7 @@ async function guardarPedido(form, crear = false) {
     
     // Preparar datos
     const data = {
-        pedido: crear ? parseInt(formData.get('pedido')) : null,
+        pedido: crear ? Number.parseInt(formData.get('pedido')) : null,
         cliente: formData.get('cliente'),
         descripcion: formData.get('descripcion'),
         novedades: formData.get('novedades'),
@@ -333,7 +333,7 @@ async function actualizarPedido(form) {
                 color: colorInput ? colorInput.value : '',
                 talla: tallaInput ? tallaInput.value : '',
                 genero: generoInput ? generoInput.value : '',
-                cantidad: parseInt(cantidadInput.value) || 1,
+                cantidad: Number.parseInt(cantidadInput.value) || 1,
                 ref_hilo: refHiloInput ? refHiloInput.value : '',
                 precio_unitario: precioInput ? parseFloat(precioInput.value) || null : null
             });
@@ -439,3 +439,4 @@ function mostrarToast(mensaje, tipo = 'info') {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
+

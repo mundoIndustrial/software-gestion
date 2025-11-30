@@ -81,3 +81,4 @@ document.addEventListener('scroll', function() {
         }
     }
 }, true); // Usar captura para detectar scroll en elementos internos
+

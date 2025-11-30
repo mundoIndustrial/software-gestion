@@ -850,34 +850,54 @@
                 this.onSelect(item);
             }
 
+            /**
+             * Maneja respuesta exitosa de creación de item
+             */
+            _handleCreateSuccess(data) {
+                const createdItem = this.getCreatedItemFromData(data);
+                this.selectItem(createdItem);
+            }
+
+            /**
+             * Maneja error en creación de item
+             */
+            _handleCreateError(data) {
+                if (typeof showErrorModal === 'function') {
+                    showErrorModal(data.message || 'Error al crear el elemento');
+                } else {
+                    alert(data.message || 'Error al crear el elemento');
+                }
+                this.suggestionsManager.hide();
+            }
+
+            /**
+             * Envía solicitud de creación de item
+             */
+            async _sendCreateRequest(nombre) {
+                const response = await fetch(this.createRoute, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': Utils.getCsrfToken(),
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        [this.createKey]: nombre.toUpperCase()
+                    })
+                });
+
+                return await response.json();
+            }
+
             async createNewItem(nombre) {
                 try {
-                    const response = await fetch(this.createRoute, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': Utils.getCsrfToken(),
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            [this.createKey]: nombre.toUpperCase()
-                        })
-                    });
-
-                    const data = await response.json();
+                    const data = await this._sendCreateRequest(nombre);
 
                     if (data.success) {
-                        const createdItem = this.getCreatedItemFromData(data);
-                        this.selectItem(createdItem);
+                        this._handleCreateSuccess(data);
                     } else {
-                        // Mostrar modal de error bonito
-                        if (typeof showErrorModal === 'function') {
-                            showErrorModal(data.message || 'Error al crear el elemento');
-                        } else {
-                            alert(data.message || 'Error al crear el elemento');
-                        }
-                        this.suggestionsManager.hide();
+                        this._handleCreateError(data);
                     }
                 } catch (error) {
                     Utils.handleError(error, 'Error al crear el elemento');

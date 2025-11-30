@@ -132,24 +132,24 @@
                 <div style="display: flex; gap: 1rem; align-items: flex-start; flex-wrap: wrap;" data-producto-index="{{ $productoIndex }}" data-todas-imagenes="{{ json_encode($imagenesPrenda) }}">
                     <!-- Imágenes de prenda (máx 2) -->
                     @foreach($imagenesVisibles as $imagen)
-                    <div style="position: relative; cursor: pointer;" ondblclick="abrirImagenFullscreen('{{ $imagen }}')">
+                    <button type="button" style="position: relative; cursor: pointer; background: none; border: none; padding: 0; margin: 0;" ondblclick="abrirImagenFullscreen('{{ $imagen }}')" onkeydown="if(event.key==='Enter') abrirImagenFullscreen('{{ $imagen }}')">
                         <img src="{{ $imagen }}" alt="Prenda" 
                              style="width: 150px; height: 150px; object-fit: cover; border: 1px solid #ddd; border-radius: 4px; transition: all 0.2s;"
                              onmouseover="this.style.opacity='0.8'; this.style.transform='scale(1.02)'"
                              onmouseout="this.style.opacity='1'; this.style.transform='scale(1)'"
                              onclick="abrirModalImagenes({{ $productoIndex }}, '{{ $prenda->nombre_producto ?? 'Producto' }}')">
-                    </div>
+                    </button>
                     @endforeach
                     
                     <!-- Imágenes de tela si existen -->
                     @foreach($imagenesTela as $imagenTela)
-                    <div style="position: relative; cursor: pointer;" ondblclick="abrirImagenFullscreen('{{ $imagenTela }}')">
+                    <button type="button" style="position: relative; cursor: pointer; background: none; border: none; padding: 0; margin: 0;" ondblclick="abrirImagenFullscreen('{{ $imagenTela }}')" onkeydown="if(event.key==='Enter') abrirImagenFullscreen('{{ $imagenTela }}')">
                         <img src="{{ $imagenTela }}" alt="Tela" 
                              style="width: 150px; height: 150px; object-fit: cover; border: 2px solid #8B4513; border-radius: 4px; transition: all 0.2s;"
                              title="Tela"
                              onmouseover="this.style.opacity='0.8'; this.style.transform='scale(1.02)'"
                              onmouseout="this.style.opacity='1'; this.style.transform='scale(1)'">
-                    </div>
+                    </button>
                     @endforeach
                     
                     <!-- Botón VER MAS si hay más de 2 imágenes de prenda -->

@@ -395,9 +395,20 @@
     <x-orders-components.order-tracking-modal />
 
     <!-- Scripts -->
-    <script src="{{ asset('js/orders js/modern-table.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/orders-table.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/order-navigation.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/pagination.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/orderTracking.js') }}?v={{ time() }}"></script>
+    <!-- MODULAR MODERN TABLE (SOLID Architecture) -->
+    <script src="{{ asset('js/modern-table/modules/storageManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modern-table/modules/tableRenderer.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modern-table/modules/styleManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modern-table/modules/filterManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modern-table/modules/dragManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modern-table/modules/columnManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modern-table/modules/dropdownManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modern-table/modules/notificationManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modern-table/modules/paginationManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modern-table/modules/searchManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/modern-table/modern-table-v2.js') }}?v={{ time() }}"></script>
+@endsection
 @endsection
