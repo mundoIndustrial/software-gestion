@@ -856,24 +856,32 @@ document.addEventListener('DOMContentLoaded', function() {
         showLoading('Guardando cambios...');
         
         let newValue = document.getElementById('editCellInput').value;
-        const section = currentCell.closest('table').dataset.section;
+        let section = currentCell.closest('table').dataset.section;
+        
+        // 🔒 VALIDACIÓN: Si no se puede determinar la sección, usar 'produccion' como default
+        if (!section) {
+            console.warn('⚠️ No se pudo determinar la sección, usando default: produccion');
+            section = 'produccion';
+        }
+        
         let displayName = newValue; // Guardar el nombre para mostrar
         
         timings.start = 0;
         
         // Mapear nombres de columnas si es necesario (ej: 'hora' -> 'hora_id', 'operario' -> 'operario_id', etc.)
+        // ⚡ IMPORTANTE: El mapeo depende de la sección (solo 'corte' usa IDs para relaciones)
         let columnName = currentColumn;
-        if (currentColumn === 'hora') {
+        if (currentColumn === 'hora' && section === 'corte') {
             columnName = 'hora_id';
-        } else if (currentColumn === 'operario') {
+        } else if (currentColumn === 'operario' && section === 'corte') {
             columnName = 'operario_id';
             newValue = newValue.toUpperCase(); // Solo convertir a mayúsculas para texto
             displayName = newValue; // ⚡ IMPORTANTE: Actualizar displayName también
-        } else if (currentColumn === 'maquina') {
+        } else if (currentColumn === 'maquina' && section === 'corte') {
             columnName = 'maquina_id';
             newValue = newValue.toUpperCase();
             displayName = newValue; // ⚡ IMPORTANTE: Actualizar displayName también
-        } else if (currentColumn === 'tela') {
+        } else if (currentColumn === 'tela' && section === 'corte') {
             columnName = 'tela_id';
             newValue = newValue.toUpperCase();
             displayName = newValue; // ⚡ IMPORTANTE: Actualizar displayName también
@@ -929,6 +937,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     displayName = cachedData[displayKey];
                     newValue = cachedData[dataKey];
                     payload[columnName] = newValue;
+                    
+                    // 🎯 FIX: Formatear displayName para relaciones
+                    if (columnName === 'hora_id') {
+                        // Convertir a número si es string, luego formatear como "HORA XX"
+                        const horaNum = typeof displayName === 'number' ? displayName : parseInt(displayName);
+                        displayName = 'HORA ' + String(horaNum).padStart(2, '0');
+                        console.log(`📌 Hora formateada (desde caché): ${horaNum} → ${displayName}`);
+                    }
+                    
                     timings.cacheHit = performance.now() - startTime;
                     console.log(`✅ ${columnName} obtenido del caché:`, cachedData, `(${timings.cacheHit.toFixed(2)}ms)`);
                 } else {
@@ -937,28 +954,35 @@ document.addEventListener('DOMContentLoaded', function() {
                     isSearchingCell = true;
                     console.log(`⏳ isSearchingCell = true (búsqueda iniciada)`);
                     
-                    try {
-                        // Hacer la búsqueda si no está en caché
-                        const response = await fetch(url, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                            },
-                            body: JSON.stringify(
-                                columnName === 'hora_id' ? { hora: newValue } :
-                                columnName === 'operario_id' ? { name: newValue } :
-                                columnName === 'maquina_id' ? { nombre: newValue } :
-                                { nombre: newValue }
-                            )
-                        });
-                        
-                        const data = await response.json();
-                        timings.searchRequest = performance.now() - searchStart;
+                    // Hacer la búsqueda si no está en caché
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: JSON.stringify(
+                            columnName === 'hora_id' ? { hora: newValue } :
+                            columnName === 'operario_id' ? { name: newValue } :
+                            columnName === 'maquina_id' ? { nombre: newValue } :
+                            { nombre: newValue }
+                        )
+                    });
+                    
+                    const data = await response.json();
+                    timings.searchRequest = performance.now() - searchStart;
                     if (data.success || data.id) {
                         displayName = data[displayKey] || data[dataKey];
                         newValue = data[dataKey];
                         payload[columnName] = newValue;
+                        
+                        // 🎯 FIX: Formatear displayName para relaciones
+                        if (columnName === 'hora_id') {
+                            // Convertir a número si es string, luego formatear como "HORA XX"
+                            const horaNum = typeof displayName === 'number' ? displayName : parseInt(displayName);
+                            displayName = 'HORA ' + String(horaNum).padStart(2, '0');
+                            console.log(`📌 Hora formateada: ${horaNum} → ${displayName}`);
+                        }
                         
                         // ⚡ OPTIMIZACIÓN: Guardar en caché para búsquedas futuras
                         if (!searchCache[cacheType]) {
@@ -972,13 +996,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else {
                         hideLoading();
                         alert(`Error al procesar ${columnName}`);
-                        return;
-                    }
-                    } finally {
-                        // ⚡ OPTIMIZACIÓN: Resetear el flag después de búsqueda
                         isSearchingCell = false;
-                        console.log(`✅ isSearchingCell = false (búsqueda completada)`);
+                        throw new Error(`Error al procesar ${columnName}`);
                     }
+                    
+                    // ⚡ OPTIMIZACIÓN: Resetear el flag después de búsqueda
+                    isSearchingCell = false;
+                    console.log(`✅ isSearchingCell = false (búsqueda completada)`);
                 }
             }
         } catch (error) {
@@ -1039,65 +1063,53 @@ document.addEventListener('DOMContentLoaded', function() {
             - TOTAL: ${totalTime.toFixed(2)}ms
             `);
             if (data.success) {
-                // 🎯 FIX: Si se cambió una relación (operario, máquina, tela), obtener el nombre actualizado del servidor
-                if (['operario_id', 'maquina_id', 'tela_id', 'hora_id'].includes(currentColumn) && data.data) {
-                    console.log(`🔍 Intentando extraer relación de data.data para columna: ${currentColumn}`);
-                    // El servidor devolvió el registro actualizado con las relaciones cargadas
-                    let displayValue = displayName;
+                // 🎯 FIX: Si se cambió una relación que mapea a _id (en 'corte'), usar valor del servidor
+                // O si cambió 'hora' directamente (en 'produccion')
+                const isMappedColumn = ['operario_id', 'maquina_id', 'tela_id', 'hora_id'].includes(currentColumn);
+                const isDirectHoraColumn = currentColumn === 'hora' && section === 'produccion';
+                
+                if (isMappedColumn || isDirectHoraColumn) {
+                    // Usar el valor del servidor como source of truth
+                    let serverDisplayValue = displayName; // Fallback al displayName calculado
                     
-                    if (currentColumn === 'hora_id' && data.data.hora && typeof data.data.hora === 'object') {
-                        displayValue = data.data.hora.hora;
-                        console.log(`✅ Extraído hora: ${displayValue}`);
-                        // Actualizar el objeto local también
-                        if (registrosMap[section] && registrosMap[section][currentRowId]) {
-                            registrosMap[section][currentRowId].hora = data.data.hora;
-                        }
-                    } else if (currentColumn === 'operario_id' && data.data.operario && typeof data.data.operario === 'object') {
-                        displayValue = data.data.operario.name;
-                        console.log(`✅ Extraído operario: ${displayValue}`);
-                        // Actualizar el objeto local también
-                        if (registrosMap[section] && registrosMap[section][currentRowId]) {
-                            registrosMap[section][currentRowId].operario = data.data.operario;
-                        }
-                    } else if (currentColumn === 'maquina_id' && data.data.maquina && typeof data.data.maquina === 'object') {
-                        displayValue = data.data.maquina.nombre_maquina;
-                        console.log(`✅ Extraído maquina: ${displayValue}`);
-                        // Actualizar el objeto local también
-                        if (registrosMap[section] && registrosMap[section][currentRowId]) {
-                            registrosMap[section][currentRowId].maquina = data.data.maquina;
-                        }
-                    } else if (currentColumn === 'tela_id' && data.data.tela && typeof data.data.tela === 'object') {
-                        displayValue = data.data.tela.nombre_tela;
-                        console.log(`✅ Extraído tela: ${displayValue}`);
-                        // Actualizar el objeto local también
-                        if (registrosMap[section] && registrosMap[section][currentRowId]) {
-                            registrosMap[section][currentRowId].tela = data.data.tela;
-                        }
-                    } else {
-                        console.log(`⚠️ No se encontró relación en data.data. data.data.operario:`, data.data.operario, 'data.data.maquina:', data.data.maquina, 'data.data.tela:', data.data.tela, 'data.data.hora:', data.data.hora);
+                    if ((currentColumn === 'hora_id' || currentColumn === 'hora') && data.data && data.data.hora) {
+                        serverDisplayValue = data.data.hora;
+                        console.log(`✅ Usando valor del servidor para hora: ${serverDisplayValue}`);
+                        console.log(`📍 currentCell.textContent ANTES:`, currentCell.textContent);
                     }
                     
-                    currentCell.dataset.value = displayValue;
-                    currentCell.textContent = displayValue;
-                    console.log(`✅ Celda confirmada con nombre desde servidor: ${displayValue}`);
-                } else if (['operario_id', 'maquina_id', 'tela_id', 'hora_id'].includes(currentColumn)) {
-                    console.log(`⚠️ No hay data.data para extraer, usando displayName: ${displayName}`);
-                    // Asegurar que se muestra el displayName (ya actualizado en optimistic update)
-                    currentCell.dataset.value = displayName;
-                    currentCell.textContent = displayName;
-                    console.log(`✅ Celda confirmada con: ${displayName}`);
+                    currentCell.dataset.value = serverDisplayValue;
+                    currentCell.textContent = serverDisplayValue;
+                    
+                    if (currentColumn === 'hora_id' || currentColumn === 'hora') {
+                        console.log(`📍 currentCell.textContent DESPUÉS:`, currentCell.textContent);
+                        console.log(`✅ Celda confirmada después de PATCH - Valor: ${serverDisplayValue}`);
+                    }
+                    
+                    // Actualizar el objeto local también con data.data si está disponible
+                    if (data.data && registrosMap[section] && registrosMap[section][currentRowId]) {
+                        if (currentColumn === 'hora_id' && data.data.hora) {
+                            registrosMap[section][currentRowId].hora = data.data.hora;
+                        } else if (currentColumn === 'operario_id' && data.data.operario) {
+                            registrosMap[section][currentRowId].operario = data.data.operario;
+                        } else if (currentColumn === 'maquina_id' && data.data.maquina) {
+                            registrosMap[section][currentRowId].maquina = data.data.maquina;
+                        } else if (currentColumn === 'tela_id' && data.data.tela) {
+                            registrosMap[section][currentRowId].tela = data.data.tela;
+                        }
+                    }
                 } else {
                     currentCell.dataset.value = newValue;
                     currentCell.textContent = formatDisplayValue(currentColumn, newValue);
                 }
 
                 // Si se editó una celda dependiente, actualizar también tiempo_disponible, meta y eficiencia
-                if (['porcion_tiempo', 'numero_operarios', 'tiempo_parada_no_programada', 'tiempo_para_programada', 'tiempo_ciclo', 'cantidad', 'paradas_programadas'].includes(currentColumn)) {
-                    console.log('Actualizando celdas calculadas:', data.data);
-                    console.log('data.data existe:', !!data.data);
-                    console.log('data.data.tiempo_disponible:', data.data?.tiempo_disponible);
-                    console.log('data.data.meta:', data.data?.meta);
-                    console.log('data.data.eficiencia:', data.data?.eficiencia);
+                if (['porcion_tiempo', 'numero_operarios', 'tiempo_parada_no_programada', 'tiempo_para_programada', 'tiempo_ciclo', 'cantidad', 'paradas_programadas', 'paradas_no_programadas', 'tipo_extendido', 'numero_capas', 'tiempo_trazado'].includes(currentColumn)) {
+                    console.log('🔄 Actualizando celdas calculadas para cambio en:', currentColumn);
+                    console.log('📦 data.data completo:', data.data);
+                    console.log('⏱️ data.data.tiempo_disponible:', data.data?.tiempo_disponible);
+                    console.log('📊 data.data.meta:', data.data?.meta);
+                    console.log('📈 data.data.eficiencia:', data.data?.eficiencia);
 
                     // Si cambiamos paradas_programadas y el backend no devuelve tpp, actualizarlo localmente también
                     if (currentColumn === 'paradas_programadas') {
@@ -1106,27 +1118,44 @@ document.addEventListener('DOMContentLoaded', function() {
                             const tppSeconds = mapParadaToSeconds(newValue);
                             tppCell.dataset.value = tppSeconds;
                             tppCell.textContent = formatDisplayValue('tiempo_para_programada', tppSeconds);
+                            console.log(`✅ TPP actualizada a ${tppSeconds}s`);
                         }
                     }
 
-                    const tiempoDisponibleCell = currentCell.closest('tr').querySelector('[data-column="tiempo_disponible"]');
-                    console.log('tiempoDisponibleCell encontrado:', !!tiempoDisponibleCell);
+                    const row = currentCell.closest('tr');
+                    const tiempoDisponibleCell = row.querySelector('[data-column="tiempo_disponible"]');
+                    console.log('🔍 tiempoDisponibleCell encontrado:', !!tiempoDisponibleCell);
                     if (tiempoDisponibleCell && data.data && data.data.tiempo_disponible !== undefined) {
                         tiempoDisponibleCell.dataset.value = data.data.tiempo_disponible;
                         tiempoDisponibleCell.textContent = formatDisplayValue('tiempo_disponible', data.data.tiempo_disponible);
-                        console.log('Tiempo disponible actualizado:', data.data.tiempo_disponible);
+                        console.log('✅ Tiempo disponible actualizado:', data.data.tiempo_disponible);
+                    } else {
+                        console.warn('⚠️ No se pudo actualizar tiempo_disponible. Cell:', !!tiempoDisponibleCell, 'Valor:', data.data?.tiempo_disponible);
+                    }
+                    
+                    // 🎯 FIX: Actualizar tiempo_extendido si está disponible
+                    const tiempoExtendidoCell = row.querySelector('[data-column="tiempo_extendido"]');
+                    console.log('🔍 tiempoExtendidoCell encontrado:', !!tiempoExtendidoCell);
+                    if (tiempoExtendidoCell && data.data && data.data.tiempo_extendido !== undefined) {
+                        tiempoExtendidoCell.dataset.value = data.data.tiempo_extendido;
+                        tiempoExtendidoCell.textContent = formatDisplayValue('tiempo_extendido', data.data.tiempo_extendido);
+                        console.log('✅ Tiempo extendido actualizado:', data.data.tiempo_extendido);
+                    } else if (tiempoExtendidoCell) {
+                        console.warn('⚠️ No se pudo actualizar tiempo_extendido. Valor:', data.data?.tiempo_extendido);
                     }
 
-                    const metaCell = currentCell.closest('tr').querySelector('[data-column="meta"]');
-                    console.log('metaCell encontrado:', !!metaCell);
+                    const metaCell = row.querySelector('[data-column="meta"]');
+                    console.log('🔍 metaCell encontrado:', !!metaCell);
                     if (metaCell && data.data && data.data.meta !== undefined) {
                         metaCell.dataset.value = data.data.meta;
                         metaCell.textContent = formatDisplayValue('meta', data.data.meta);
-                        console.log('Meta actualizada:', data.data.meta);
+                        console.log('✅ Meta actualizada:', data.data.meta);
+                    } else {
+                        console.warn('⚠️ No se pudo actualizar meta. Cell:', !!metaCell, 'Valor:', data.data?.meta);
                     }
 
-                    const eficienciaCell = currentCell.closest('tr').querySelector('[data-column="eficiencia"]');
-                    console.log('eficienciaCell encontrado:', !!eficienciaCell);
+                    const eficienciaCell = row.querySelector('[data-column="eficiencia"]');
+                    console.log('🔍 eficienciaCell encontrado:', !!eficienciaCell);
                     if (eficienciaCell && data.data && data.data.eficiencia !== undefined) {
                         eficienciaCell.dataset.value = data.data.eficiencia;
                         eficienciaCell.textContent = formatDisplayValue('eficiencia', data.data.eficiencia);
@@ -1136,14 +1165,18 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (newClass) {
                             eficienciaCell.classList.add(newClass);
                         }
-                        console.log('Eficiencia actualizada:', data.data.eficiencia);
+                        console.log('✅ Eficiencia actualizada:', data.data.eficiencia);
+                    } else {
+                        console.warn('⚠️ No se pudo actualizar eficiencia. Cell:', !!eficienciaCell, 'Valor:', data.data?.eficiencia);
                     }
 
                     // Recalcular en el front como respaldo inmediato con los valores visibles
-                    try {
-                        recalculateRowDerivedValues(currentCell.closest('tr'));
-                    } catch (e) {
-                        console.warn('Recalculo local fallido:', e);
+                    if (typeof recalculateRowDerivedValues === 'function') {
+                        try {
+                            recalculateRowDerivedValues(row);
+                        } catch (e) {
+                            console.warn('⚠️ Recalculo local fallido (esto es normal, el servidor ya recalculó):', e);
+                        }
                     }
                 }
 

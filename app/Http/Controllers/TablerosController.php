@@ -796,6 +796,13 @@ class TablerosController extends Controller
             'tiempo_para_programada' => 'sometimes|numeric',
             'meta' => 'sometimes|numeric',
             'eficiencia' => 'sometimes|numeric',
+            'tipo_extendido' => 'sometimes|string',
+            'numero_capas' => 'sometimes|integer',
+            'tiempo_extendido' => 'sometimes|integer',
+            'trazado' => 'sometimes|string',
+            'tiempo_trazado' => 'sometimes|numeric',
+            'actividad' => 'sometimes|string',
+            'producida' => 'sometimes|integer',
         ]);
 
         try {
@@ -813,9 +820,17 @@ class TablerosController extends Controller
 
             // ⚡ RÁPIDO: Si solo son campos de relaciones, guardar y retornar sin cálculos
             if ($soloRelacionesExternas) {
+                // 🎯 FIX: Si se está actualizando hora_id, también actualizar el campo hora con el nombre
+                if (isset($validated['hora_id'])) {
+                    $hora = Hora::find($validated['hora_id']);
+                    if ($hora) {
+                        $validated['hora'] = 'HORA ' . str_pad($hora->hora, 2, '0', STR_PAD_LEFT);
+                    }
+                }
+                
                 $registro->update($validated);
                 
-                // ⚡ BROADCAST: Cargar relaciones y emitir evento (ASINCRÓNICO gracias a ShouldBroadcast)
+                // ⚡ BROADCAST: Cargar relaciones y emitir evento (para corte)
                 if ($request->section === 'corte') {
                     $registro->load(['hora', 'operario', 'maquina', 'tela']);
                     try {
@@ -881,48 +896,66 @@ class TablerosController extends Controller
                 // Recalcular según la sección
                 if ($request->section === 'corte') {
                     // Fórmula para CORTE (sin numero_operarios)
-                    $tiempo_para_programada = match($registro->paradas_programadas) {
+                    // 🎯 FIX: Usar valores validados O del registro si no están en el PATCH
+                    $tipoExtendido = $validated['tipo_extendido'] ?? $registro->tipo_extendido;
+                    $numeroCapas = $validated['numero_capas'] ?? $registro->numero_capas;
+                    $tiempoTrazado = $validated['tiempo_trazado'] ?? $registro->tiempo_trazado;
+                    $paradasProgramadas = $validated['paradas_programadas'] ?? $registro->paradas_programadas;
+                    $tiempoPradaNoProgram = $validated['tiempo_parada_no_programada'] ?? $registro->tiempo_parada_no_programada;
+                    $porcionTiempo = $validated['porcion_tiempo'] ?? $registro->porcion_tiempo;
+                    $tiempoCiclo = $validated['tiempo_ciclo'] ?? $registro->tiempo_ciclo;
+                    $cantidad = $validated['cantidad'] ?? $registro->cantidad;
+                    
+                    $tiempo_para_programada = match($paradasProgramadas) {
                         'DESAYUNO' => 900,
                         'MEDIA TARDE' => 900,
                         'NINGUNA' => 0,
                         default => 0
                     };
 
-                    $tiempo_extendido = match($registro->tipo_extendido) {
-                        'Trazo Largo' => 40 * ($registro->numero_capas ?? 0),
-                        'Trazo Corto' => 25 * ($registro->numero_capas ?? 0),
+                    $tiempo_extendido = match($tipoExtendido) {
+                        'Trazo Largo' => 40 * ($numeroCapas ?? 0),
+                        'Trazo Corto' => 25 * ($numeroCapas ?? 0),
                         'Ninguno' => 0,
                         default => 0
                     };
 
-                    $tiempo_disponible = (3600 * $registro->porcion_tiempo) -
+                    $tiempo_disponible = (3600 * $porcionTiempo) -
                                        ($tiempo_para_programada +
-                                       ($registro->tiempo_parada_no_programada ?? 0) +
+                                       ($tiempoPradaNoProgram ?? 0) +
                                        $tiempo_extendido +
-                                       ($registro->tiempo_trazado ?? 0));
+                                       ($tiempoTrazado ?? 0));
 
                     $tiempo_disponible = max(0, $tiempo_disponible);
 
                     // Meta: tiempo_disponible / tiempo_ciclo (SIN multiplicar por 0.9)
-                    $meta = $registro->tiempo_ciclo > 0 ? $tiempo_disponible / $registro->tiempo_ciclo : 0;
+                    $meta = $tiempoCiclo > 0 ? $tiempo_disponible / $tiempoCiclo : 0;
                     
                     // Eficiencia: cantidad / meta (SIN multiplicar por 100)
-                    $eficiencia = $meta > 0 ? ($registro->cantidad / $meta) : 0;
+                    $eficiencia = $meta > 0 ? ($cantidad / $meta) : 0;
                 } else {
                     // Fórmula para PRODUCCIÓN y POLOS (con numero_operarios)
-                    $tiempo_para_programada = match($registro->paradas_programadas) {
+                    // 🎯 FIX: Usar valores validados O del registro si no están en el PATCH
+                    $paradasProgramadas = $validated['paradas_programadas'] ?? $registro->paradas_programadas;
+                    $porcionTiempo = $validated['porcion_tiempo'] ?? $registro->porcion_tiempo;
+                    $numeroOperarios = $validated['numero_operarios'] ?? $registro->numero_operarios;
+                    $tiempoPradaNoProgram = $validated['tiempo_parada_no_programada'] ?? $registro->tiempo_parada_no_programada;
+                    $tiempoCiclo = $validated['tiempo_ciclo'] ?? $registro->tiempo_ciclo;
+                    $cantidad = $validated['cantidad'] ?? $registro->cantidad;
+                    
+                    $tiempo_para_programada = match($paradasProgramadas) {
                         'DESAYUNO' => 900,
                         'MEDIA TARDE' => 900,
                         'NINGUNA' => 0,
                         default => 0
                     };
 
-                    $tiempo_disponible = (3600 * $registro->porcion_tiempo * $registro->numero_operarios) -
-                                       ($registro->tiempo_parada_no_programada ?? 0) -
+                    $tiempo_disponible = (3600 * $porcionTiempo * $numeroOperarios) -
+                                       ($tiempoPradaNoProgram ?? 0) -
                                        $tiempo_para_programada;
 
                     // Meta: (tiempo_disponible / tiempo_ciclo) * 0.9
-                    $meta = $registro->tiempo_ciclo > 0 ? ($tiempo_disponible / $registro->tiempo_ciclo) * 0.9 : 0;
+                    $meta = $tiempoCiclo > 0 ? ($tiempo_disponible / $tiempoCiclo) * 0.9 : 0;
                     
                     // Eficiencia: cantidad / meta (SIN multiplicar por 100)
                     $eficiencia = $meta > 0 ? ($registro->cantidad / $meta) : 0;
@@ -931,6 +964,12 @@ class TablerosController extends Controller
                 $registro->tiempo_disponible = $tiempo_disponible;
                 $registro->meta = $meta;
                 $registro->eficiencia = $eficiencia;
+                
+                // 🎯 FIX: También guardar tiempo_extendido si es CORTE
+                if ($request->section === 'corte') {
+                    $registro->tiempo_extendido = $tiempo_extendido;
+                }
+                
                 $registro->save();
 
                 // Broadcast event for real-time updates (non-blocking)
@@ -2081,18 +2120,28 @@ class TablerosController extends Controller
 
         $horaValue = $request->hora;
         
+        // 🔧 FIX: Extraer el número de la cadena "HORA XX" → XX
+        $horaNumero = (int) preg_replace('/[^0-9]/', '', $horaValue);
+        
+        if ($horaNumero < 1 || $horaNumero > 24) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Hora inválida: ' . $horaValue
+            ], 400);
+        }
+        
         $searchStart = microtime(true);
         
         // ⚡ OPTIMIZACIÓN: Primero intentar buscar sin lock
-        $hora = Hora::where('hora', $horaValue)->first();
+        $hora = Hora::where('hora', $horaNumero)->first();
         
         if (!$hora) {
             // Solo crear si no existe - usar try/catch por si hay race condition
             try {
-                $hora = Hora::create(['hora' => $horaValue]);
+                $hora = Hora::create(['hora' => $horaNumero]);
             } catch (\Exception $e) {
                 // Si falla por duplicate, buscar nuevamente
-                $hora = Hora::where('hora', $horaValue)->first();
+                $hora = Hora::where('hora', $horaNumero)->first();
                 if (!$hora) {
                     // Si aún no existe, re-lanzar el error
                     throw $e;
