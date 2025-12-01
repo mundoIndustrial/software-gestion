@@ -143,6 +143,7 @@
                                 <tr>
                                     <th>Pedido</th>
                                     <th>Cortador</th>
+                                    <th>Cantidad Prendas</th>
                                     <th>Piezas</th>
                                     <th>Pasadas</th>
                                     <th>Etiqueteadas</th>
@@ -155,6 +156,7 @@
                                 <tr data-id="{{ $item->id }}" data-subtipo="corte">
                                     <td class="editable" data-field="pedido">{{ $item->pedido }}</td>
                                     <td class="editable" data-field="cortador">{{ $item->cortador }}</td>
+                                    <td class="editable" data-field="cantidad_prendas"><span class="table-badge">{{ $item->cantidad_prendas }}</span></td>
                                     <td class="editable" data-field="piezas"><span class="table-badge">{{ $item->piezas }}</span></td>
                                     <td class="editable" data-field="pasadas"><span class="table-badge">{{ $item->pasadas }}</span></td>
                                     <td><span class="table-badge">{{ $item->etiqueteadas }}</span></td>

@@ -293,6 +293,7 @@ class EntregaController extends Controller
                         'cortador' => 'required|string',
                         'piezas' => 'required|integer',
                         'pasadas' => 'required|integer',
+                        'cantidad_prendas' => 'required|integer',
                         'etiquetador' => 'nullable|string',
                         'fecha_entrega' => 'required|date',
                     ]);
@@ -455,6 +456,7 @@ class EntregaController extends Controller
                     'cortador' => 'sometimes|string',
                     'piezas' => 'sometimes|integer',
                     'pasadas' => 'sometimes|integer',
+                    'cantidad_prendas' => 'sometimes|integer',
                     'etiquetador' => 'sometimes|string',
                     'fecha_entrega' => 'sometimes|date',
                 ]);

@@ -161,6 +161,7 @@ function updateCorteTable(data) {
         <tr data-id="${item.id}" data-subtipo="corte">
             <td class="editable" data-field="pedido">${item.pedido || ''}</td>
             <td class="editable" data-field="cortador">${item.cortador || ''}</td>
+            <td class="editable" data-field="cantidad_prendas"><span class="table-badge">${item.cantidad_prendas || 0}</span></td>
             <td class="editable" data-field="piezas"><span class="table-badge">${item.piezas || 0}</span></td>
             <td class="editable" data-field="pasadas"><span class="table-badge">${item.pasadas || 0}</span></td>
             <td><span class="table-badge">${item.etiqueteadas || 0}</span></td>

@@ -201,6 +201,18 @@
                         </div>
 
                         <div class="form-group">
+                            <label for="cantidad_prendas" class="form-label">
+                                <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" stroke-width="2"
+                                        stroke-linecap="round" />
+                                </svg>
+                                Cantidad de Prendas
+                            </label>
+                            <input type="number" id="cantidad_prendas" name="cantidad_prendas" class="form-input" placeholder="0" min="1"
+                                required />
+                        </div>
+
+                        <div class="form-group">
                             <label for="etiquetador" class="form-label">
                                 <svg class="label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                     <path d="M7.5 13.5L10 16l7-7M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
@@ -738,6 +750,14 @@
                         });
                     }
 
+                    const cantidadPrendasEl = document.getElementById('cantidad_prendas');
+                    if (cantidadPrendasEl) {
+                        cantidadPrendasEl.addEventListener('input', (e) => {
+                            this.form.cantidad_prendas = parseInt(e.target.value) || '';
+                            this.updateButtonState();
+                        });
+                    }
+
                     // Optional fields
                     ['etiquetador'].forEach(field => {
                         const element = document.getElementById(field);
@@ -777,6 +797,7 @@
                         cortador: '',
                         piezas: '',
                         pasadas: '',
+                        cantidad_prendas: '',
                         etiquetador: ''
                     };
                     this.orderData = {};
@@ -983,7 +1004,7 @@
                             this.form.fecha_entrega && !this.quantityError;
                     } else if (this.subtipo === 'corte') {
                         return this.form.pedido && this.form.cortador &&
-                            this.form.piezas && this.form.pasadas && this.form.fecha_entrega;
+                            this.form.piezas && this.form.pasadas && this.form.cantidad_prendas && this.form.fecha_entrega;
                     }
                     return false;
                 },
