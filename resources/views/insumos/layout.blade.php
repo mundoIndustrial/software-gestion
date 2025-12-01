@@ -112,10 +112,17 @@
                 <nav aria-label="Menú principal">
                     <ul class="menu-list">
                         <li class="menu-item">
+                            <a href="{{ route('dashboard') }}" 
+                               class="menu-link">
+                                <span class="material-symbols-rounded">home</span>
+                                <span class="menu-label">Ir al Dashboard</span>
+                            </a>
+                        </li>
+                        <li class="menu-item">
                             <a href="{{ route('insumos.dashboard') }}" 
                                class="menu-link {{ request()->routeIs('insumos.dashboard') ? 'active' : '' }}">
                                 <span class="material-symbols-rounded">dashboard</span>
-                                <span class="menu-label">Dashboard</span>
+                                <span class="menu-label">Dashboard Insumos</span>
                             </a>
                         </li>
                     </ul>

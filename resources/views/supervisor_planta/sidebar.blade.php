@@ -8,7 +8,7 @@
   </button>
 </nav>
 
-<!-- Sidebar principal -->
+<!-- Sidebar principal para Supervisor de Planta -->
 <aside class="sidebar collapsed" id="sidebar">
   <div class="sidebar-header">
     <img src="{{ asset('images/logo2.png') }}"
@@ -24,7 +24,7 @@
   <div class="sidebar-content">
     <!-- Lista del menú principal -->
     <ul class="menu-list" role="navigation" aria-label="Menú principal">
-      @if(auth()->user()->role && !in_array(auth()->user()->role->name, ['supervisor', 'supervisor_planta']))
+      <!-- Dashboard -->
       <li class="menu-item">
         <a href="{{ route('dashboard') }}"
            class="menu-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"
@@ -33,25 +33,13 @@
           <span class="menu-label">Dashboard</span>
         </a>
       </li>
-      @endif
 
-      @if(auth()->user()->role && auth()->user()->role->name === 'supervisor')
-      <!-- Menú simplificado para supervisores: Solo Gestión de Órdenes > Pedidos sin submenú -->
-      <li class="menu-item">
-        <a href="{{ route('registros.index') }}"
-           class="menu-link {{ request()->routeIs('registros.index') ? 'active' : '' }}"
-           aria-label="Ver registro de órdenes">
-          <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
-          <span class="menu-label">Gestión de Órdenes</span>
-        </a>
-      </li>
-      @else
-      <!-- Menú completo para otros roles -->
+      <!-- Gestión de Órdenes -->
       <li class="menu-item">
         <button class="menu-link submenu-toggle {{ (request()->routeIs('registros.index') || request()->routeIs('bodega.index')) ? 'active' : '' }}"
                 aria-label="Ver órdenes">
           <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
-          <span class="menu-label">Gestiónar Ordenes</span>
+          <span class="menu-label">Gestionar Órdenes</span>
           <span class="material-symbols-rounded submenu-arrow" aria-hidden="true">expand_more</span>
         </button>
         <ul class="submenu">
@@ -74,6 +62,7 @@
         </ul>
       </li>
 
+      <!-- Entregas -->
       <li class="menu-item">
         <button class="menu-link submenu-toggle {{ (request()->routeIs('entrega.index') && in_array(request()->route('tipo'), ['pedido', 'bodega'])) ? 'active' : '' }}"
                 aria-label="Ver entregas">
@@ -99,6 +88,7 @@
         </ul>
       </li>
 
+      <!-- Tableros -->
       <li class="menu-item">
         <a href="{{ route('tableros.index') }}"
            class="menu-link {{ request()->routeIs('tableros.index') ? 'active' : '' }}"
@@ -108,6 +98,7 @@
         </a>
       </li>
 
+      <!-- Balanceo -->
       <li class="menu-item">
         <a href="{{ route('balanceo.index') }}"
            class="menu-link {{ request()->routeIs('balanceo.index') ? 'active' : '' }}"
@@ -117,6 +108,7 @@
         </a>
       </li>
 
+      <!-- Vistas -->
       <li class="menu-item">
         <button class="menu-link submenu-toggle"
                 aria-label="Ver vistas">
@@ -162,35 +154,8 @@
           </li>
         </ul>
       </li>
-      @endif
 
-      <!-- Insumos - Para roles con acceso a insumos -->
-      @if(auth()->user()->role && auth()->user()->role->name === 'insumos')
-      <li class="menu-item">
-        <button class="menu-link submenu-toggle {{ request()->routeIs('insumos.*') ? 'active' : '' }}"
-                aria-label="Gestionar insumos">
-          <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
-          <span class="menu-label">Insumos</span>
-          <span class="material-symbols-rounded submenu-arrow" aria-hidden="true">expand_more</span>
-        </button>
-        <ul class="submenu">
-          <li class="submenu-item">
-            <a href="{{ route('insumos.dashboard') }}"
-               class="menu-link {{ request()->routeIs('insumos.dashboard') ? 'active' : '' }}"
-               aria-label="Dashboard de insumos">
-              <span class="menu-label">Dashboard</span>
-            </a>
-          </li>
-          <li class="submenu-item">
-            <a href="{{ route('insumos.materiales.index') }}"
-               class="menu-link {{ request()->routeIs('insumos.materiales.*') ? 'active' : '' }}"
-               aria-label="Gestionar materiales de insumos">
-              <span class="menu-label">Materiales</span>
-            </a>
-          </li>
-        </ul>
-      </li>
-      @elseif(auth()->user()->role && auth()->user()->role->name === 'supervisor_planta')
+      <!-- INSUMOS - Acceso completo para Supervisor de Planta -->
       <li class="menu-item">
         <a href="{{ route('insumos.materiales.index') }}"
            class="menu-link {{ request()->routeIs('insumos.materiales.*') ? 'active' : '' }}"
@@ -199,9 +164,8 @@
           <span class="menu-label">Insumos</span>
         </a>
       </li>
-      @endif
 
-      @if(auth()->user()->role && auth()->user()->role->name === 'admin')
+      <!-- Usuarios - Acceso completo para Supervisor de Planta -->
       <li class="menu-item">
         <a href="{{ route('users.index') }}"
            class="menu-link {{ request()->routeIs('users.*') ? 'active' : '' }}"
@@ -211,6 +175,7 @@
         </a>
       </li>
 
+      <!-- Configuración - Acceso completo para Supervisor de Planta -->
       <li class="menu-item">
         <a href="{{ route('configuracion.index') }}"
            class="menu-link {{ request()->routeIs('configuracion.*') ? 'active' : '' }}"
@@ -219,8 +184,8 @@
           <span class="menu-label">Configuración</span>
         </a>
       </li>
-      @endif
 
+      <!-- Salir -->
       <li class="menu-item">
         <form action="{{ route('logout') }}" method="POST">
           @csrf

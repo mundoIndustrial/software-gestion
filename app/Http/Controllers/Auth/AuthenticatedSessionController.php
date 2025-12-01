@@ -37,6 +37,9 @@ class AuthenticatedSessionController extends Controller
                 if ($user->role->name === 'supervisor') {
                     return redirect()->intended(route('registros.index', absolute: false));
                 }
+                if ($user->role->name === 'supervisor_planta') {
+                    return redirect()->intended(route('dashboard', absolute: false));
+                }
                 if ($user->role->name === 'insumos') {
                     return redirect()->intended(route('insumos.materiales.index', absolute: false));
                 }
@@ -44,6 +47,9 @@ class AuthenticatedSessionController extends Controller
                 // Si es string directo
                 if ($user->role === 'supervisor') {
                     return redirect()->intended(route('registros.index', absolute: false));
+                }
+                if ($user->role === 'supervisor_planta') {
+                    return redirect()->intended(route('dashboard', absolute: false));
                 }
                 if ($user->role === 'insumos') {
                     return redirect()->intended(route('insumos.materiales.index', absolute: false));

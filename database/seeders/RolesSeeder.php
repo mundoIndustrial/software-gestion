@@ -12,28 +12,42 @@ class RolesSeeder extends Seeder
      */
     public function run(): void
     {
-        \App\Models\Role::create([
-            'name' => 'admin',
-            'description' => 'Administrador del sistema',
-            'requires_credentials' => true,
-        ]);
+        $roles = [
+            [
+                'name' => 'admin',
+                'description' => 'Administrador del sistema',
+                'requires_credentials' => true,
+            ],
+            [
+                'name' => 'operador',
+                'description' => 'Operador de producción',
+                'requires_credentials' => true,
+            ],
+            [
+                'name' => 'cortador',
+                'description' => 'Operario de piso de corte',
+                'requires_credentials' => false,
+            ],
+            [
+                'name' => 'supervisor',
+                'description' => 'Supervisor de gestión de órdenes (solo lectura)',
+                'requires_credentials' => true,
+            ],
+            [
+                'name' => 'supervisor_planta',
+                'description' => 'Supervisor de planta (acceso completo + insumos)',
+                'requires_credentials' => true,
+            ],
+        ];
 
-        \App\Models\Role::create([
-            'name' => 'operador',
-            'description' => 'Operador de producción',
-            'requires_credentials' => true,
-        ]);
-
-        \App\Models\Role::create([
-            'name' => 'cortador',
-            'description' => 'Operario de piso de corte',
-            'requires_credentials' => false,
-        ]);
-
-        \App\Models\Role::create([
-            'name' => 'supervisor',
-            'description' => 'Supervisor de gestión de órdenes (solo lectura)',
-            'requires_credentials' => true,
-        ]);
+        foreach ($roles as $role) {
+            \App\Models\Role::firstOrCreate(
+                ['name' => $role['name']],
+                [
+                    'description' => $role['description'],
+                    'requires_credentials' => $role['requires_credentials'],
+                ]
+            );
+        }
     }
 }

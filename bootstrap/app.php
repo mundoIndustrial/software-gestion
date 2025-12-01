@@ -3,7 +3,6 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Throwable;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -17,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'supervisor-readonly' => \App\Http\Middleware\SupervisorReadOnly::class,
             'supervisor-access' => \App\Http\Middleware\SupervisorAccessControl::class,
             'insumos-access' => \App\Http\Middleware\InsumosAccess::class,
+            'supervisor-planta' => \App\Http\Middleware\SupervisorPlantaAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

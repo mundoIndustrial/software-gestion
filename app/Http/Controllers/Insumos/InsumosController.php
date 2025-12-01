@@ -279,14 +279,22 @@ class InsumosController extends Controller
     }
 
     /**
-     * Verificar que el usuario tenga rol insumos
+     * Verificar que el usuario tenga rol insumos o supervisor_planta
      */
     private function verificarRolInsumos($user)
     {
-        $isInsumos = $user->role === 'insumos' || 
+        // Cargar la relación de rol si no está cargada
+        if (!$user->relationLoaded('role')) {
+            $user->load('role');
+        }
+
+        $isInsumos = $user->role === 'insumos' ||
                     (is_object($user->role) && $user->role->name === 'insumos');
-        
-        if (!$isInsumos) {
+
+        $isSupervisorPlanta = $user->role === 'supervisor_planta' ||
+                             (is_object($user->role) && $user->role->name === 'supervisor_planta');
+
+        if (!$isInsumos && !$isSupervisorPlanta) {
             abort(403, 'No autorizado para acceder a este módulo.');
         }
     }

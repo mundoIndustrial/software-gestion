@@ -19,11 +19,25 @@ class InsumosAccess
     {
         if (Auth::check()) {
             $user = Auth::user();
-            // Verificar si el usuario tiene rol de insumos
-            $isInsumos = $user->role === 'insumos' || 
-                        (is_object($user->role) && $user->role->name === 'insumos');
-            
-            if ($isInsumos) {
+
+            // Cargar la relación de rol si no está cargada
+            if (!$user->relationLoaded('role')) {
+                $user->load('role');
+            }
+
+            // Obtener el nombre del rol de forma segura
+            $roleName = null;
+            if ($user->role && is_object($user->role)) {
+                $roleName = $user->role->name ?? null;
+            } elseif (is_string($user->role)) {
+                $roleName = $user->role;
+            }
+
+            // Log para debugging
+            \Log::info('InsumosAccess - Usuario: ' . $user->email . ', Role ID: ' . ($user->role_id ?? 'NULL') . ', Rol: ' . ($roleName ?? 'NULL'));
+
+            // Verificar si el usuario tiene rol de insumos o supervisor_planta
+            if ($roleName === 'insumos' || $roleName === 'supervisor_planta') {
                 return $next($request);
             }
         }
