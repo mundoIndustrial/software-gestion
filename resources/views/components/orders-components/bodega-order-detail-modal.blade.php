@@ -1,7 +1,7 @@
 <x-modal name="bodega-order-detail" :show="false" maxWidth="2xl">
     <div class="order-detail-modal-container">
         <div class="order-detail-card">
-            <img src="{{ asset('images/logo_bodega.png') }}" alt="Mundo Industrial Bodega Logo" class="order-logo">
+            <img src="{{ asset('images/logo.png') }}" alt="Mundo Industrial Logo" class="order-logo">
             <div id="order-date" class="order-date">
                 <div class="fec-label">FECHA</div>
                 <div class="date-boxes">
@@ -10,13 +10,25 @@
                     <div class="date-box year-box"></div>
                 </div>
             </div>
+            <div id="order-asesora" class="order-asesora">ASESORA: <span id="asesora-value"></span></div>
+            <div id="order-forma-pago" class="order-forma-pago">FORMA DE PAGO: <span id="forma-pago-value"></span></div>
             <div id="order-cliente" class="order-cliente">CLIENTE: <span id="cliente-value"></span></div>
             <div id="order-descripcion" class="order-descripcion">
-                <p id="descripcion-text"></p>
-                <button id="prev-arrow" class="arrow-btn" style="display: none;">&larr;</button>
-                <button id="next-arrow" class="arrow-btn" style="display: none;">&rarr;</button>
+                <div id="descripcion-text"></div>
             </div>
             <h2 class="receipt-title">RECIBO DE CORTE</h2>
+            <div class="arrow-container">
+                <button id="prev-arrow" class="arrow-btn" style="display: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                </button>
+                <button id="next-arrow" class="arrow-btn" style="display: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+            </div>
             <div id="order-pedido" class="pedido-number"></div>
 
             <div class="separator-line"></div>
@@ -51,6 +63,9 @@
             align-items: center;
             justify-content: center;
             position: relative;
+            z-index: 9999;
+            transform: translateY(15px) scale(0.75);
+            transform-origin: top center;
         }
 
         .order-detail-card {
@@ -156,23 +171,80 @@
         .order-descripcion {
             position: absolute;
             top: 240px;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: flex;
-            font-size: 14px;
+            left: 20px;
+            right: 20px;
+            text-align: left;
+            font-size: 12px;
             color: #000;
-            width: 80%;
-            white-space: pre-line;
+            width: auto;
+            line-height: 1.4;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        /* Estilos para las prendas en el modal */
+        .prenda-line {
+            margin-bottom: 8px;
+            line-height: 1.4;
+            font-size: 12px;
+            word-wrap: break-word;
+            white-space: normal;
+        }
+        
+        .prenda-name {
+            display: block;
+            margin-bottom: 4px;
+        }
+        
+        .prenda-description-label {
+            font-weight: bold;
+        }
+        
+        .prenda-tallas-label {
+            font-weight: bold;
+            color: #ff0000;
+        }
+        
+        .prenda-tallas-value {
+            color: #ff0000;
         }
 
         .arrow-btn {
             background: none;
             border: none;
             color: red;
-            font-size: 20px;
-            font-weight: bold;
             cursor: pointer;
-            margin: 0 5px;
+            padding: 5px;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .arrow-btn:hover {
+            transform: scale(1.15);
+            background-color: rgba(255, 0, 0, 0.1);
+        }
+
+        .arrow-btn svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        #descripcion-text {
+            width: 100%;
+            text-align: left;
+        }
+
+        .arrow-container {
+            position: absolute;
+            top: 85px;
+            right: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
         }
 
         .signature-section {

@@ -77,6 +77,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/bodega', [RegistroBodegaController::class, 'index'])->name('bodega.index');
     Route::get('/bodega/next-pedido', [RegistroBodegaController::class, 'getNextPedido'])->name('bodega.next-pedido');
     Route::get('/bodega/{pedido}', [RegistroBodegaController::class, 'show'])->name('bodega.show');
+    Route::get('/bodega/{pedido}/prendas', [RegistroBodegaController::class, 'getPrendas'])->name('bodega.prendas');
     Route::get('/bodega/{pedido}/entregas', [RegistroBodegaController::class, 'getEntregas'])->name('bodega.entregas');
     Route::get('/api/registros-por-orden-bodega/{pedido}', [RegistroBodegaController::class, 'getRegistrosPorOrden'])->name('api.registros-por-orden-bodega');
     Route::post('/bodega/{pedido}/edit-full', [RegistroBodegaController::class, 'editFullOrder'])->name('bodega.editFull');

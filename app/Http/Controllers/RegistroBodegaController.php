@@ -294,7 +294,7 @@ class RegistroBodegaController extends Controller
         $fetchUrl = '/bodega';
         $updateUrl = '/bodega';
         $modalContext = 'bodega';
-        return view('orders.index', compact('ordenes', 'totalDiasCalculados', 'areaOptions', 'context', 'title', 'icon', 'fetchUrl', 'updateUrl', 'modalContext'));
+        return view('bodega.index', compact('ordenes', 'totalDiasCalculados', 'areaOptions', 'context', 'title', 'icon', 'fetchUrl', 'updateUrl', 'modalContext'));
     }
 
 
@@ -314,7 +314,29 @@ class RegistroBodegaController extends Controller
         $order->total_cantidad = $totalCantidad;
         $order->total_entregado = $totalEntregado;
 
-        return response()->json($order);
+        // Asegurar que se devuelven todos los atributos incluyendo área
+        return response()->json($order->toArray());
+    }
+
+    /**
+     * Obtener prendas de un pedido desde registros_por_orden_bodega
+     */
+    public function getPrendas($pedido)
+    {
+        try {
+            $prendas = DB::table('registros_por_orden_bodega')
+                ->where('pedido', $pedido)
+                ->get([
+                    'prenda',
+                    'descripcion',
+                    'talla',
+                    'cantidad'
+                ]);
+
+            return response()->json($prendas);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error al cargar prendas'], 500);
+        }
     }
 
     public function getNextPedido()
@@ -470,9 +492,17 @@ class RegistroBodegaController extends Controller
     public function update(Request $request, $pedido)
     {
         try {
+            \Log::info('📝 UPDATE REQUEST RECIBIDO', [
+                'pedido' => $pedido,
+                'all_data' => $request->all(),
+                'area_recibida' => $request->get('area'),
+            ]);
+
             $orden = TablaOriginalBodega::where('pedido', $pedido)->firstOrFail();
 
             $areaOptions = $this->getEnumOptions('tabla_original_bodega', 'area');
+            \Log::info('📋 AREA OPTIONS DISPONIBLES', ['areaOptions' => $areaOptions]);
+
             $estadoOptions = ['Entregado', 'En Ejecución', 'No iniciado', 'Anulada'];
 
             // Whitelist de columnas permitidas para edición
@@ -500,6 +530,8 @@ class RegistroBodegaController extends Controller
                 'estado' => 'nullable|in:' . implode(',', $estadoOptions),
                 'area' => 'nullable|in:' . implode(',', $areaOptions),
             ]);
+
+            \Log::info('✅ VALIDACIÓN EXITOSA', ['validatedData' => $validatedData]);
 
             // Validar columnas adicionales permitidas como strings
             $additionalValidation = [];
@@ -569,6 +601,34 @@ class RegistroBodegaController extends Controller
                         broadcast(new \App\Events\ControlCalidadUpdated($orden, 'removed', 'bodega'));
                     }
                 }
+            }
+
+            // Procesar prendas si se enviaron
+            if ($request->has('prendas') && is_array($request->get('prendas'))) {
+                $prendas = $request->get('prendas');
+                \Log::info('📦 PRENDAS RECIBIDAS PARA GUARDAR', ['prendas' => $prendas, 'pedido' => $pedido]);
+                
+                // Eliminar prendas existentes y reemplazar con las nuevas
+                DB::table('registros_por_orden_bodega')
+                    ->where('pedido', $pedido)
+                    ->delete();
+                
+                // Insertar nuevas prendas
+                foreach ($prendas as $prenda) {
+                    if (!empty($prenda['prenda']) && is_array($prenda['tallas'])) {
+                        foreach ($prenda['tallas'] as $talla) {
+                            DB::table('registros_por_orden_bodega')->insert([
+                                'pedido' => $pedido,
+                                'prenda' => $prenda['prenda'],
+                                'descripcion' => $prenda['descripcion'] ?? '',
+                                'talla' => $talla['talla'],
+                                'cantidad' => $talla['cantidad'] ?? 0
+                            ]);
+                        }
+                    }
+                }
+                
+                \Log::info('✅ PRENDAS GUARDADAS EXITOSAMENTE', ['pedido' => $pedido]);
             }
 
             return response()->json(['success' => true, 'updated_fields' => $updatedFields]);
