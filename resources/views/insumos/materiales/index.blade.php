@@ -70,17 +70,17 @@
         100% { transform: rotate(360deg); }
     }
     
-    /* Mejorar contraste en modo oscuro para filas hover */
-    @media (prefers-color-scheme: dark) {
-        tbody tr:hover {
-            background-color: rgba(59, 130, 246, 0.1) !important;
-        }
-    }
-    
     /* Hover normal en modo claro */
     @media (prefers-color-scheme: light) {
         tbody tr:hover {
             background-color: #f9fafb !important;
+        }
+    }
+    
+    /* Mejorar contraste en modo oscuro para filas hover */
+    @media (prefers-color-scheme: dark) {
+        tbody tr:hover {
+            background-color: rgba(59, 130, 246, 0.1) !important;
         }
     }
 </style>
@@ -315,7 +315,16 @@
                     </thead>
                     <tbody>
                         @forelse($ordenes ?? [] as $orden)
-                            <tr class="border-b border-gray-200 hover:bg-gray-50 transition" data-pedido="{{ strtoupper($orden->pedido ?? '') }}" data-cliente="{{ strtoupper($orden->cliente ?? '') }}" data-orden-pedido="{{ $orden->pedido }}">
+                            @php
+                                // Verificar si la orden tiene insumos registrados
+                                $tieneInsumos = false;
+                                if (isset($orden->materiales_guardados) && is_countable($orden->materiales_guardados)) {
+                                    $tieneInsumos = count($orden->materiales_guardados) > 0;
+                                }
+                                $bgClass = $tieneInsumos ? 'bg-blue-100' : '';
+                                $bgStyle = $tieneInsumos ? 'background-color: #bfdbfe;' : '';
+                            @endphp
+                            <tr class="border-b border-gray-200 hover:bg-gray-50 transition {{ $bgClass }}" style="{{ $bgStyle }}" data-pedido="{{ strtoupper($orden->pedido ?? '') }}" data-cliente="{{ strtoupper($orden->cliente ?? '') }}" data-orden-pedido="{{ $orden->pedido }}" data-tiene-insumos="{{ $tieneInsumos ? 'true' : 'false' }}">
                                 <td class="py-4 px-6">
                                     <span class="font-bold text-blue-600 text-lg">{{ $orden->pedido ?? 'N/A' }}</span>
                                 </td>
@@ -1080,8 +1089,17 @@
 
         const pedido = document.getElementById('modalPedido').textContent;
         
+        console.log('📦 Materiales recibidos del API:', materiales);
+        
         // Mostrar SOLO los materiales que ya están guardados (sin mostrar estándar por defecto)
         materiales.forEach((materialData, index) => {
+            console.log(`📋 Material ${index}:`, {
+                nombre: materialData.nombre_material,
+                fecha_pedido: materialData.fecha_pedido,
+                fecha_llegada: materialData.fecha_llegada,
+                recibido: materialData.recibido,
+                tipo_recibido: typeof materialData.recibido
+            });
             crearFilaMaterial(materialData.nombre_material, materialData, index, pedido, tbody);
         });
     }
@@ -1094,7 +1112,17 @@
         const materialId = `material_modal_${pedido}_${index}_${sanitizedMaterial}`;
 
         const row = document.createElement('tr');
-        row.className = 'border-b border-gray-200 hover:bg-gray-50 transition';
+        
+        // Verificar si tiene insumos registrados (si existe algún dato: fechas, checkbox o cualquier campo)
+        // Si el registro viene de la BD, significa que tiene datos registrados
+        const tieneInsumos = materialData.fecha_pedido || materialData.fecha_llegada || materialData.recibido === true || materialData.recibido === 1 || materialData.recibido === '1';
+        const bgClass = tieneInsumos ? 'bg-blue-200' : '';
+        const bgStyle = tieneInsumos ? 'background-color: #bfdbfe;' : '';
+        
+        console.log(`🎨 Material: ${nombreMaterial}, tieneInsumos: ${tieneInsumos}, bgClass: "${bgClass}", recibido: ${materialData.recibido} (tipo: ${typeof materialData.recibido})`);
+        
+        row.className = `border-b border-gray-200 hover:bg-blue-100 transition ${bgClass}`;
+        row.style.cssText = bgStyle;
         row.id = `row_${materialId}`;
         
         const colores = ['bg-green-500', 'bg-yellow-500', 'bg-gray-400'];
@@ -1260,7 +1288,8 @@
         const colorPunto = colores[index % 3];
 
         const row = document.createElement('tr');
-        row.className = 'border-b border-gray-200 hover:bg-gray-50 transition';
+        // Nuevos insumos sin datos aún, sin sombreado azul
+        row.className = 'border-b border-gray-200 hover:bg-blue-100 transition';
         row.id = `row_${materialId}`;
 
         row.innerHTML = `
@@ -1496,6 +1525,12 @@
             const checkbox = e.target;
             const materialId = checkbox.id.replace('checkbox_', '');
             confirmarEliminacion(checkbox, materialId);
+            
+            // Actualizar color de fondo cuando se marca/desmarca
+            const fila = checkbox.closest('tr');
+            if (fila) {
+                actualizarDiasDemora(fila);
+            }
         }
         
         // Recalcular días de demora cuando cambian las fechas
@@ -1514,6 +1549,19 @@
         const todosInputsFecha = fila.querySelectorAll('input[type="date"]');
         const fechaPedido = todosInputsFecha[0]?.value;
         const fechaLlegada = todosInputsFecha[1]?.value;
+        const checkbox = fila.querySelector('input[type="checkbox"]');
+        
+        // Verificar si hay datos registrados (fechas o checkbox marcado)
+        const tieneInsumos = fechaPedido || fechaLlegada || (checkbox && checkbox.checked);
+        
+        // Actualizar fondo de la fila con estilos inline
+        if (tieneInsumos) {
+            fila.classList.add('bg-blue-200');
+            fila.style.backgroundColor = '#bfdbfe';
+        } else {
+            fila.classList.remove('bg-blue-200');
+            fila.style.backgroundColor = '';
+        }
         
         if (!fechaPedido || !fechaLlegada) {
             // Si falta alguna fecha, mostrar "-"
@@ -1886,6 +1934,62 @@
                 document.getElementById('loadingOverlay').classList.add('active');
             }
         });
+    });
+    
+    /**
+     * Función para aplicar colores según el tema (claro u oscuro)
+     */
+    function aplicarColoresPorTema() {
+        // Detectar tema: primero verificar la clase del body, luego la preferencia del sistema
+        const isDarkTheme = document.body.classList.contains('dark-theme');
+        
+        console.log('🎨 Aplicando colores por tema.');
+        console.log('   - Body tiene clase dark-theme:', isDarkTheme);
+        console.log('   - Preferencia del sistema (dark):', window.matchMedia('(prefers-color-scheme: dark)').matches);
+        
+        // Colores para modo claro
+        const colorClaro = '#bfdbfe';
+        
+        // Colores para modo oscuro
+        const colorOscuro = '#1e3a8a';
+        
+        // Obtener todas las filas con insumos (usando el atributo data-tiene-insumos)
+        const filasConInsumos = document.querySelectorAll('tbody tr[data-tiene-insumos="true"]');
+        
+        console.log('📋 Filas encontradas:', filasConInsumos.length);
+        
+        filasConInsumos.forEach((fila, index) => {
+            const colorActual = isDarkTheme ? colorOscuro : colorClaro;
+            fila.style.backgroundColor = colorActual;
+            console.log(`✅ Fila ${index} - Dark: ${isDarkTheme} - Color aplicado: ${colorActual}`);
+        });
+    }
+    
+    // Aplicar colores al cargar - esperar a que el DOM esté completamente listo
+    console.log('🚀 Iniciando aplicación de colores por tema');
+    
+    // Aplicar inmediatamente
+    aplicarColoresPorTema();
+    
+    // También aplicar después de un pequeño delay para asegurar que todo esté listo
+    setTimeout(aplicarColoresPorTema, 100);
+    
+    // Observar cambios en el tema con MutationObserver
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.attributeName === 'class') {
+                console.log('🔄 Clase del body cambió, reaplicando colores');
+                setTimeout(aplicarColoresPorTema, 50);
+            }
+        });
+    });
+    
+    observer.observe(document.body, { attributes: true });
+    
+    // Observar cambios en la preferencia del sistema
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
+        console.log('🌙 Preferencia del sistema cambió');
+        aplicarColoresPorTema();
     });
 </script>
 
