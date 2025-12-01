@@ -8,12 +8,11 @@ echo   MUNDO INDUSTRIAL - SERVIDOR
 echo ========================================
 echo.
 
-REM Obtener la IP local
-for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /c:"IPv4"') do set IP=%%a
-set IP=%IP:~1%
+REM Obtener el hostname del computador
+for /f "tokens=*" %%a in ('hostname') do set HOSTNAME=%%a
 
-echo [1/6] Detectando IP local...
-echo       Tu IP: %IP%
+echo [1/6] Detectando hostname...
+echo       Hostname: %HOSTNAME%
 echo.
 
 echo [2/6] Deteniendo procesos anteriores...
@@ -27,44 +26,44 @@ echo [3/6] Configurando variables de entorno...
 REM Actualizar VITE_HMR_HOST
 findstr /C:"VITE_HMR_HOST" .env >nul
 if %errorlevel% equ 0 (
-    powershell -Command "(Get-Content .env) -replace '^VITE_HMR_HOST=.*', 'VITE_HMR_HOST=%IP%' | Set-Content .env.temp" >nul
+    powershell -Command "(Get-Content .env) -replace '^VITE_HMR_HOST=.*', 'VITE_HMR_HOST=%HOSTNAME%' | Set-Content .env.temp" >nul
     move /Y .env.temp .env >nul
 ) else (
-    echo VITE_HMR_HOST=%IP% >> .env
+    echo VITE_HMR_HOST=%HOSTNAME% >> .env
 )
 
 REM Actualizar VITE_REVERB_HOST
 findstr /C:"VITE_REVERB_HOST" .env >nul
 if %errorlevel% equ 0 (
-    powershell -Command "(Get-Content .env) -replace '^VITE_REVERB_HOST=.*', 'VITE_REVERB_HOST=%IP%' | Set-Content .env.temp" >nul
+    powershell -Command "(Get-Content .env) -replace '^VITE_REVERB_HOST=.*', 'VITE_REVERB_HOST=%HOSTNAME%' | Set-Content .env.temp" >nul
     move /Y .env.temp .env >nul
 ) else (
-    echo VITE_REVERB_HOST=%IP% >> .env
+    echo VITE_REVERB_HOST=%HOSTNAME% >> .env
 )
 
 REM Actualizar REVERB_HOST (importante para WebSocket)
 findstr /C:"REVERB_HOST" .env >nul
 if %errorlevel% equ 0 (
-    powershell -Command "(Get-Content .env) -replace '^REVERB_HOST=.*', 'REVERB_HOST=%IP%' | Set-Content .env.temp" >nul
+    powershell -Command "(Get-Content .env) -replace '^REVERB_HOST=.*', 'REVERB_HOST=%HOSTNAME%' | Set-Content .env.temp" >nul
     move /Y .env.temp .env >nul
 ) else (
-    echo REVERB_HOST=%IP% >> .env
+    echo REVERB_HOST=%HOSTNAME% >> .env
 )
 
 REM Actualizar APP_URL
 findstr /C:"APP_URL" .env >nul
 if %errorlevel% equ 0 (
-    powershell -Command "(Get-Content .env) -replace '^APP_URL=.*', 'APP_URL=http://%IP%:8000' | Set-Content .env.temp" >nul
+    powershell -Command "(Get-Content .env) -replace '^APP_URL=.*', 'APP_URL=http://%HOSTNAME%:8000' | Set-Content .env.temp" >nul
     move /Y .env.temp .env >nul
 ) else (
-    echo APP_URL=http://%IP%:8000 >> .env
+    echo APP_URL=http://%HOSTNAME%:8000 >> .env
 )
 
 echo       Variables configuradas:
-echo       - VITE_HMR_HOST=%IP%
-echo       - VITE_REVERB_HOST=%IP%
-echo       - REVERB_HOST=%IP%
-echo       - APP_URL=http://%IP%:8000
+echo       - VITE_HMR_HOST=%HOSTNAME%
+echo       - VITE_REVERB_HOST=%HOSTNAME%
+echo       - REVERB_HOST=%HOSTNAME%
+echo       - APP_URL=http://%HOSTNAME%:8000
 echo.
 
 echo [4/6] Limpiando cache...
@@ -97,7 +96,7 @@ echo   SERVIDOR INICIADO CORRECTAMENTE
 echo ========================================
 echo.
 echo  Acceso LOCAL:     http://localhost:8000
-echo  Acceso en RED:    http://%IP%:8000
+echo  Acceso en RED:    http://%HOSTNAME%:8000
 echo.
 echo  Estado: ACTIVO
 echo  WebSocket: Puerto 8080
