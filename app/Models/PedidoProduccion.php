@@ -114,76 +114,31 @@ class PedidoProduccion extends Model
     public function getDescripcionPrendasAttribute()
     {
         if (!$this->relationLoaded('prendas') || $this->prendas->isEmpty()) {
+            \Log::warning('DEBUG: No hay prendas cargadas o relación no está cargada');
             return 'Sin prendas';
         }
 
+        // 🔧 Usar descripcion_armada que contiene la descripción formateada con saltos de línea
+        \Log::info('DEBUG: Prendas cargadas', [
+            'cantidad' => $this->prendas->count(),
+            'prendas' => $this->prendas->map(function($p) {
+                return [
+                    'id' => $p->id,
+                    'nombre' => $p->nombre_prenda,
+                    'descripcion_armada' => $p->descripcion_armada ? substr($p->descripcion_armada, 0, 50) : 'NULL'
+                ];
+            })->toArray()
+        ]);
+        
         $prendas = $this->prendas->map(function($prenda, $index) {
-            $numero = $index + 1;
-            $lineas = [];
-            
-            // Línea 1: Prenda N: NOMBRE
-            $lineas[] = "Prenda {$numero}: {$prenda->nombre_prenda}";
-            
-            // Si la descripción ya está formateada (contiene saltos de línea), usarla
-            if ($prenda->descripcion && strpos($prenda->descripcion, "\n") !== false) {
-                $lineasDesc = explode("\n", $prenda->descripcion);
-                foreach ($lineasDesc as $linea) {
-                    // Saltar la línea "Prenda X:" si aparece nuevamente
-                    if (strpos($linea, 'Prenda') === 0 && strpos($linea, ':') !== false) {
-                        continue;
-                    }
-                    // Solo agregar si la línea no es vacía
-                    if (trim($linea) !== '') {
-                        $lineas[] = $linea;
-                    }
-                }
-            } else {
-                // Si no está formateada, agregar descripción simple
-                if ($prenda->descripcion) {
-                    $lineas[] = "Descripción: {$prenda->descripcion}";
-                }
-            }
-            
-            // Agregar tallas solo si no está ya incluida
-            $textoTallasIncluida = false;
-            foreach ($lineas as $linea) {
-                if (strpos($linea, 'Tallas:') === 0) {
-                    $textoTallasIncluida = true;
-                    break;
-                }
-            }
-            
-            if (!$textoTallasIncluida && $prenda->cantidad_talla) {
-                $tallas = is_string($prenda->cantidad_talla)
-                    ? json_decode($prenda->cantidad_talla, true)
-                    : $prenda->cantidad_talla;
-                
-                if (is_array($tallas) && !empty($tallas)) {
-                    $tallasArray = [];
-                    // Si tallas es un array asociativo de talla => cantidad
-                    if (!isset($tallas[0])) {
-                        foreach ($tallas as $talla => $cantidad) {
-                            $tallasArray[] = "{$talla}:{$cantidad}";
-                        }
-                    } else {
-                        // Si tallas es un array de objetos
-                        foreach ($tallas as $item) {
-                            $talla = $item['talla'] ?? 'N/A';
-                            $cantidad = $item['cantidad'] ?? 0;
-                            $tallasArray[] = "{$talla}:{$cantidad}";
-                        }
-                    }
-                    
-                    if (!empty($tallasArray)) {
-                        $lineas[] = "Tallas: " . implode(', ', $tallasArray);
-                    }
-                }
-            }
-            
-            return implode("\n", $lineas);
-        })->join("\n\n");
+            return $prenda->descripcion_armada ?? '';
+        })->filter()->join("\n\n");
 
-        return $prendas;
+        \Log::info('DEBUG: Descripción final', [
+            'resultado' => $prendas ? substr($prendas, 0, 100) : 'VACÍO'
+        ]);
+
+        return $prendas ?: 'Sin prendas';
     }
 
     /**

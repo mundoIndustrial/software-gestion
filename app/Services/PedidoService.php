@@ -232,18 +232,27 @@ class PedidoService
         array $cantidadesPorTalla
     ): PrendaPedido {
         try {
+            // 🔧 Guardar la descripción formateada en descripcion_armada (no en descripcion)
+            \Log::info('DEBUG: Guardando prenda con descripcion_armada', [
+                'numero_pedido' => $pedido->numero_pedido,
+                'nombre_prenda' => $producto['nombre_producto'] ?? 'Sin nombre',
+                'descripcion_armada' => $descripcion,
+                'cantidad_talla' => json_encode($cantidadesPorTalla)
+            ]);
+            
             $prenda = PrendaPedido::create([
                 'numero_pedido' => $pedido->numero_pedido,
                 'nombre_prenda' => $producto['nombre_producto'] ?? 'Sin nombre',
                 'cantidad' => $cantidadTotal,
-                'descripcion' => $descripcion,
+                'descripcion_armada' => $descripcion,
                 'cantidad_talla' => json_encode($cantidadesPorTalla)
             ]);
 
             \Log::info('Prenda del pedido creada', [
                 'prenda_id' => $prenda->id,
                 'pedido_id' => $pedido->id,
-                'nombre' => $prenda->nombre_prenda
+                'nombre' => $prenda->nombre_prenda,
+                'descripcion_armada_guardada' => $prenda->descripcion_armada
             ]);
 
             return $prenda;
