@@ -14,7 +14,7 @@ class PrendaPedido extends Model
     protected $table = 'prendas_pedido';
 
     protected $fillable = [
-        'pedido_produccion_id',
+        'numero_pedido',
         'nombre_prenda',
         'cantidad',
         'descripcion',
@@ -34,11 +34,11 @@ class PrendaPedido extends Model
     ];
 
     /**
-     * Relación: Una prenda pertenece a un pedido
+     * Relación: Una prenda pertenece a un pedido (via numero_pedido)
      */
     public function pedido(): BelongsTo
     {
-        return $this->belongsTo(PedidoProduccion::class, 'pedido_produccion_id');
+        return $this->belongsTo(PedidoProduccion::class, 'numero_pedido', 'numero_pedido');
     }
 
     /**

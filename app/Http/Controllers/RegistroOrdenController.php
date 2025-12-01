@@ -6,9 +6,11 @@ use Illuminate\Http\Request;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
 use App\Models\ProcesoPrenda;
+use App\Models\Cotizacion;
 use App\Services\CacheCalculosService;
 use App\Models\News;
 use App\Models\Festivo;
+use App\Models\TablaOriginal;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use App\Services\FestivosColombiaService;
@@ -137,7 +139,7 @@ class RegistroOrdenController extends Controller
             ->with([
                 'asesora:id,name',
                 'prendas' => function($q) {
-                    $q->select('id', 'pedido_produccion_id', 'nombre_prenda', 'cantidad', 'descripcion', 'cantidad_talla', 'descripcion_armada');
+                    $q->select('id', 'numero_pedido', 'nombre_prenda', 'cantidad', 'descripcion', 'cantidad_talla', 'descripcion_armada');
                 }
             ]);
 
@@ -201,8 +203,8 @@ class RegistroOrdenController extends Controller
                         // Usar la columna descripcion_armada que ya tiene la descripción armada
                         // Buscar todas las descripciones que contengan cualquiera de los valores ingresados
                         if (!empty($values)) {
-                            $query->whereIn('id', function($subquery) use ($values) {
-                                $subquery->select('pedido_produccion_id')
+                            $query->whereIn('numero_pedido', function($subquery) use ($values) {
+                                $subquery->select('numero_pedido')
                                     ->from('prendas_pedido')
                                     ->where(function($q) use ($values) {
                                         foreach ($values as $value) {
@@ -452,14 +454,14 @@ class RegistroOrdenController extends Controller
         $order = PedidoProduccion::with(['asesora', 'prendas', 'cotizacion'])->where('numero_pedido', $pedido)->firstOrFail();
 
         $totalCantidad = DB::table('prendas_pedido')
-            ->where('pedido_produccion_id', $order->id)
+            ->where('numero_pedido', $order->numero_pedido)
             ->sum('cantidad');
 
         // $totalEntregado se calcula solo si la tabla procesos_prenda existe y tiene datos
         $totalEntregado = 0;
         try {
             $totalEntregado = DB::table('procesos_prenda')
-                ->whereIn('prenda_pedido_id', DB::table('prendas_pedido')->where('pedido_produccion_id', $order->id)->pluck('id'))
+                ->where('numero_pedido', $order->numero_pedido)
                 ->sum('cantidad_completada');
         } catch (\Exception $e) {
             \Log::warning('Error al calcular totalEntregado', ['error' => $e->getMessage()]);
@@ -603,7 +605,7 @@ class RegistroOrdenController extends Controller
 
                 // Crear prenda
                 PrendaPedido::create([
-                    'pedido_produccion_id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
                     'nombre_prenda' => $prendaData['prenda'],
                     'cantidad' => $cantidadPrenda,
                     'descripcion' => $prendaData['descripcion'] ?? '',
@@ -1291,7 +1293,7 @@ class RegistroOrdenController extends Controller
 
                 // Crear prenda
                 PrendaPedido::create([
-                    'pedido_produccion_id' => $orden->id,
+                    'numero_pedido' => $orden->numero_pedido,
                     'nombre_prenda' => $prendaData['prenda'],
                     'cantidad' => $cantidadPrenda,
                     'descripcion' => $prendaData['descripcion'] ?? '',
@@ -1410,7 +1412,7 @@ class RegistroOrdenController extends Controller
 
                         // Crear prenda en la nueva arquitectura
                         PrendaPedido::create([
-                            'pedido_produccion_id' => $orden->id,
+                            'numero_pedido' => $orden->numero_pedido,
                             'nombre_prenda' => $prenda['nombre'],
                             'cantidad' => $cantidadPrenda,
                             'descripcion' => $prenda['descripcion'] ?? '',
@@ -1757,37 +1759,48 @@ class RegistroOrdenController extends Controller
     /**
      * Obtener imágenes de una orden
      * GET /registros/{pedido}/images
+     * 
+     * Busca primero en PedidoProduccion (nuevos pedidos)
+     * Si no encuentra, busca en TablaOriginal (histórico)
      */
     public function getOrderImages($pedido)
     {
         try {
-            // Obtener la orden por número de pedido
-            $orden = PedidoProduccion::where('numero_pedido', $pedido)->firstOrFail();
-            
-            // Obtener todas las prendas de la orden con sus imágenes
-            $prendas = $orden->prendas()->with('procesos')->get();
-            
-            // Recolectar todas las imágenes
             $images = [];
-            foreach ($prendas as $prenda) {
-                if ($prenda->imagen) {
+            
+            // Intentar obtener desde PedidoProduccion primero
+            $pedidoProduccion = PedidoProduccion::where('numero_pedido', $pedido)->first();
+            
+            if ($pedidoProduccion) {
+                // Si tiene cotización asociada, obtener imágenes de la cotización
+                if ($pedidoProduccion->cotizacion_id) {
+                    $cotizacion = Cotizacion::find($pedidoProduccion->cotizacion_id);
+                    if ($cotizacion && $cotizacion->imagenes) {
+                        $images = is_array($cotizacion->imagenes) ? $cotizacion->imagenes : [];
+                    }
+                }
+            } else {
+                // Si no está en PedidoProduccion, buscar en TablaOriginal (histórico)
+                $orden = TablaOriginal::where('pedido', $pedido)->first();
+                
+                if ($orden && $orden->imagen) {
                     // Si es JSON (array de URLs)
-                    if (is_string($prenda->imagen)) {
-                        $imagenDecoded = json_decode($prenda->imagen, true);
+                    if (is_string($orden->imagen)) {
+                        $imagenDecoded = json_decode($orden->imagen, true);
                         if (is_array($imagenDecoded)) {
-                            $images = array_merge($images, $imagenDecoded);
+                            $images = $imagenDecoded;
                         } else {
                             // Es una URL simple
-                            $images[] = $prenda->imagen;
+                            $images[] = $orden->imagen;
                         }
-                    } elseif (is_array($prenda->imagen)) {
-                        $images = array_merge($images, $prenda->imagen);
+                    } elseif (is_array($orden->imagen)) {
+                        $images = $orden->imagen;
                     }
                 }
             }
             
             // Remover duplicados y resetear índices
-            $images = array_values(array_unique($images));
+            $images = array_values(array_unique(array_filter($images)));
 
             return response()->json([
                 'success' => true,
@@ -1796,13 +1809,11 @@ class RegistroOrdenController extends Controller
                 'pedido' => $pedido
             ]);
 
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Orden no encontrada'
-            ], 404);
         } catch (\Exception $e) {
-            \Log::error('Error al obtener imágenes de orden: ' . $e->getMessage());
+            \Log::error('Error al obtener imágenes de orden: ' . $e->getMessage(), [
+                'pedido' => $pedido,
+                'error' => $e->getMessage()
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener imágenes'

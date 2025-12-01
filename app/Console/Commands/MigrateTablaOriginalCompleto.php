@@ -219,12 +219,18 @@ class MigrateTablaOriginalCompleto extends Command
                 ->toArray();
             
             try {
-                if (!empty($idsConCotizacion)) {
+                // Obtener numeros_pedido de pedidos con cotizacion
+                $numerosPedidosConCotizacion = DB::table('pedidos_produccion')
+                    ->whereNotNull('cotizacion_id')
+                    ->pluck('numero_pedido')
+                    ->toArray();
+                
+                if (!empty($numerosPedidosConCotizacion)) {
                     $countPren = DB::table('prendas_pedido')
-                        ->whereNotIn('pedido_produccion_id', $idsConCotizacion)
+                        ->whereNotIn('numero_pedido', $numerosPedidosConCotizacion)
                         ->count();
                     DB::table('prendas_pedido')
-                        ->whereNotIn('pedido_produccion_id', $idsConCotizacion)
+                        ->whereNotIn('numero_pedido', $numerosPedidosConCotizacion)
                         ->delete();
                     $this->line("   ✓ Prendas eliminadas: $countPren");
                 } else {
@@ -498,12 +504,11 @@ class MigrateTablaOriginalCompleto extends Command
                 if (!$dryRun) {
                     // Buscar si ya existe
                     $existing = DB::table('prendas_pedido')
-                        ->where('pedido_produccion_id', $pedido->id)
+                        ->where('numero_pedido', $pedido->numero_pedido)
                         ->where('nombre_prenda', $prenda->nombre_prenda)
                         ->first();
 
                     $data = [
-                        'numero_pedido' => $pedido->numero_pedido,
                         'cantidad' => $prenda->cantidad ?? 0,
                         'descripcion' => $prenda->descripcion,
                         'cantidad_talla' => !empty($cantidadTalla) ? json_encode($cantidadTalla) : null,
@@ -518,8 +523,8 @@ class MigrateTablaOriginalCompleto extends Command
                     } else {
                         // Insertar nuevo
                         DB::table('prendas_pedido')->insert(array_merge($data, [
-                            'pedido_produccion_id' => $pedido->id,
                             'nombre_prenda' => $prenda->nombre_prenda,
+                            'numero_pedido' => $pedido->numero_pedido,
                             'created_at' => now(),
                         ]));
                     }

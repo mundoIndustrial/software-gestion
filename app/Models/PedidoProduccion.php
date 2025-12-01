@@ -59,27 +59,8 @@ class PedidoProduccion extends Model
             }
         });
 
-        // Crear automáticamente el proceso "Creación de Orden" cuando se crea un nuevo pedido
-        static::created(function ($model) {
-            // Solo crear si es un nuevo pedido (tiene numero_pedido y fecha_de_creacion_de_orden)
-            if ($model->numero_pedido && $model->fecha_de_creacion_de_orden) {
-                // Verificar si ya existe el proceso
-                $existe = \App\Models\ProcesosPrenda::where('numero_pedido', $model->numero_pedido)
-                    ->where('proceso', 'Creación de Orden')
-                    ->exists();
-
-                if (!$existe) {
-                    // Crear el proceso automáticamente
-                    \App\Models\ProcesosPrenda::create([
-                        'numero_pedido' => $model->numero_pedido,
-                        'proceso' => 'Creación de Orden',
-                        'fecha_inicio' => $model->fecha_de_creacion_de_orden,
-                        'fecha_fin' => $model->fecha_de_creacion_de_orden,
-                        'encargado' => null, // Se asignará luego
-                    ]);
-                }
-            }
-        });
+        // Nota: Los procesos se crean automáticamente cuando se crean prendas
+        // No crear procesos aquí, ya que no tenemos prendas aún
     }
 
     /**
@@ -107,11 +88,11 @@ class PedidoProduccion extends Model
     }
 
     /**
-     * Relación: Un pedido tiene muchas prendas
+     * Relación: Un pedido tiene muchas prendas (via numero_pedido)
      */
     public function prendas(): HasMany
     {
-        return $this->hasMany(PrendaPedido::class);
+        return $this->hasMany(PrendaPedido::class, 'numero_pedido', 'numero_pedido');
     }
 
     /**
@@ -297,17 +278,11 @@ class PedidoProduccion extends Model
     }
 
     /**
-     * Relación: Un pedido tiene muchos procesos (a través de prendas)
-     * Útil para eager loading directo
+     * Relación: Un pedido tiene muchos procesos (directa via numero_pedido)
      */
-    public function procesos(): HasManyThrough
+    public function procesos(): HasMany
     {
-        return $this->hasManyThrough(
-            ProcesoPrenda::class,
-            PrendaPedido::class,
-            'pedido_produccion_id',
-            'prenda_pedido_id'
-        );
+        return $this->hasMany(ProcesoPrenda::class, 'numero_pedido', 'numero_pedido');
     }
 
     /**

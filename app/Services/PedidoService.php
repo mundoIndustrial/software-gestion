@@ -233,7 +233,7 @@ class PedidoService
     ): PrendaPedido {
         try {
             $prenda = PrendaPedido::create([
-                'pedido_produccion_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
                 'nombre_prenda' => $producto['nombre_producto'] ?? 'Sin nombre',
                 'cantidad' => $cantidadTotal,
                 'descripcion' => $descripcion,
