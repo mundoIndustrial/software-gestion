@@ -58,6 +58,119 @@ class PrendaPedido extends Model
             ->where('nombre_prenda', $this->nombre_prenda);
     }
 
+    /**
+     * Generar descripción detallada con formato especificado
+     * Formato:
+     * Prenda 1: CAMISA DRILL
+     * Color: NARANJA | Tela: DRILL BORNEO REF:REF-DB-001 | Manga: LARGA
+     * Descripción: LOGO BORDADO EN ESPALDA...
+     * Tallas: S:50, M:50, L:50...
+     */
+    public function generarDescripcionDetallada()
+    {
+        $lineas = [];
+        
+        // Línea 1: Nombre de la prenda
+        $lineas[] = "Prenda: {$this->nombre_prenda}";
+        
+        // Línea 2: Atributos (Color, Tela, Manga)
+        $atributos = [];
+        
+        // Usar relaciones cargadas si están disponibles, sino usar cache
+        if ($this->color_id) {
+            $colorNombre = null;
+            if ($this->relationLoaded('color') && $this->color) {
+                $colorNombre = $this->color->nombre;
+            } else {
+                // Usar cache o valor por defecto
+                $colorNombre = \Cache::remember("color_{$this->color_id}", 3600, function() {
+                    $color = \App\Models\Color::find($this->color_id);
+                    return $color ? $color->nombre : null;
+                });
+            }
+            if ($colorNombre) {
+                $atributos[] = "Color: {$colorNombre}";
+            }
+        }
+        
+        if ($this->tela_id) {
+            $telaNombre = null;
+            $telaReferencia = null;
+            if ($this->relationLoaded('tela') && $this->tela) {
+                $telaNombre = $this->tela->nombre;
+                $telaReferencia = $this->tela->referencia;
+            } else {
+                // Usar cache
+                $telaData = \Cache::remember("tela_{$this->tela_id}", 3600, function() {
+                    $tela = \App\Models\Tela::find($this->tela_id);
+                    return $tela ? ['nombre' => $tela->nombre, 'referencia' => $tela->referencia] : null;
+                });
+                if ($telaData) {
+                    $telaNombre = $telaData['nombre'];
+                    $telaReferencia = $telaData['referencia'];
+                }
+            }
+            if ($telaNombre) {
+                $atributos[] = "Tela: {$telaNombre}" . ($telaReferencia ? " REF:{$telaReferencia}" : "");
+            }
+        }
+        
+        if ($this->tipo_manga_id) {
+            $mangaNombre = null;
+            if ($this->relationLoaded('tipoManga') && $this->tipoManga) {
+                $mangaNombre = $this->tipoManga->nombre;
+            } else {
+                // Usar cache
+                $mangaNombre = \Cache::remember("tipo_manga_{$this->tipo_manga_id}", 3600, function() {
+                    $manga = \App\Models\TipoManga::find($this->tipo_manga_id);
+                    return $manga ? $manga->nombre : null;
+                });
+            }
+            if ($mangaNombre) {
+                $atributos[] = "Manga: {$mangaNombre}";
+            }
+        }
+        
+        if (!empty($atributos)) {
+            $lineas[] = implode(" | ", $atributos);
+        }
+        
+        // Línea 3: Descripción general
+        if ($this->descripcion) {
+            $lineas[] = "Descripción: {$this->descripcion}";
+        }
+        
+        // Línea 4: Detalles adicionales
+        $detalles = [];
+        
+        if ($this->tiene_bolsillos) {
+            $detalles[] = "Bolsillos: SI";
+        }
+        
+        if ($this->tiene_reflectivo) {
+            $detalles[] = "Reflectivo: SI";
+        }
+        
+        if (!empty($detalles)) {
+            $lineas[] = implode(" - ", $detalles);
+        }
+        
+        // Línea 5: Tallas y cantidades
+        if ($this->cantidad_talla && is_array($this->cantidad_talla)) {
+            $tallas = [];
+            foreach ($this->cantidad_talla as $talla => $cantidad) {
+                if ($cantidad > 0) {
+                    $tallas[] = "{$talla}:{$cantidad}";
+                }
+            }
+            if (!empty($tallas)) {
+                $lineas[] = "Tallas: " . implode(", ", $tallas);
+            }
+        }
+        
+        return implode("\n", $lineas);
+    }
+
 
     /**
      * Generar descripción formateada dinámicamente desde los datos

@@ -7,6 +7,7 @@
         crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="{{ asset('css/orders styles/modern-table.css') }}">
     <link rel="stylesheet" href="{{ asset('css/orders styles/dropdown-styles.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/orders styles/descripcion-prendas.css') }}">
     <link rel="stylesheet" href="{{ asset('css/viewButtonDropdown.css') }}">
 
     <div class="table-container">
@@ -258,7 +259,9 @@
                                                             @elseif($colName === 'numero_pedido')
                                                                 {{ $orden->numero_pedido }}
                                                             @elseif($colName === 'descripcion_prendas')
-                                                                {{ $orden->descripcion_prendas }}
+                                                                <div class="descripcion-preview" data-full-content="{{ base64_encode($orden->descripcion_prendas) }}">
+                                                                    <x-descripcion-prendas-formateada :descripcion="$orden->descripcion_prendas" />
+                                                                </div>
                                                             @elseif($colName === 'cantidad_total')
                                                                 {{ $orden->cantidad_total }}
                                                             @elseif($colName === 'encargado_orden')
@@ -500,11 +503,15 @@
     <script src="{{ asset('js/orders js/modules/dropdownManager.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/modules/diaEntregaModule.js') }}?v={{ time() }}"></script>
     
+    <!-- FIX: Descripción de prendas en modal (DEBE CARGAR ANTES de orders-table-v2.js) -->
+    <script src="{{ asset('js/orders js/descripcion-prendas-fix.js') }}?v={{ time() }}"></script>
+    
     <!-- SCRIPTS REFACTORIZADOS CON MÓDULOS -->
     <!-- Versión V2: Usa módulos SOLID y elimina ~79% código duplicado -->
     <script src="{{ asset('js/orders js/orders-table-v2.js') }}?v={{ time() }}"></script>
     
     <!-- SCRIPTS COMPLEMENTARIOS (sin cambios) -->
+    <script src="{{ asset('js/orders js/descripcion-prendas-modal.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/order-navigation.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/pagination.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/historial-procesos.js') }}?v={{ time() }}"></script>

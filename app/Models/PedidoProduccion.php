@@ -114,31 +114,15 @@ class PedidoProduccion extends Model
     public function getDescripcionPrendasAttribute()
     {
         if (!$this->relationLoaded('prendas') || $this->prendas->isEmpty()) {
-            \Log::warning('DEBUG: No hay prendas cargadas o relación no está cargada');
             return 'Sin prendas';
         }
 
-        // 🔧 Usar descripcion_armada que contiene la descripción formateada con saltos de línea
-        \Log::info('DEBUG: Prendas cargadas', [
-            'cantidad' => $this->prendas->count(),
-            'prendas' => $this->prendas->map(function($p) {
-                return [
-                    'id' => $p->id,
-                    'nombre' => $p->nombre_prenda,
-                    'descripcion_armada' => $p->descripcion_armada ? substr($p->descripcion_armada, 0, 50) : 'NULL'
-                ];
-            })->toArray()
-        ]);
-        
-        $prendas = $this->prendas->map(function($prenda, $index) {
-            return $prenda->descripcion_armada ?? '';
-        })->filter()->join("\n\n");
+        // Generar descripción detallada para cada prenda
+        $descripciones = $this->prendas->map(function($prenda, $index) {
+            return ($index + 1) . ". " . $prenda->generarDescripcionDetallada();
+        })->toArray();
 
-        \Log::info('DEBUG: Descripción final', [
-            'resultado' => $prendas ? substr($prendas, 0, 100) : 'VACÍO'
-        ]);
-
-        return $prendas ?: 'Sin prendas';
+        return implode("\n\n", $descripciones);
     }
 
     /**
