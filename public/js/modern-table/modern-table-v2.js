@@ -107,15 +107,36 @@ class ModernTableV2 {
 
         // Doble clic
         document.addEventListener('dblclick', e => {
+            console.log('🖱️ DBLCLICK DETECTADO en:', e.target);
             const cell = e.target.closest('.cell-content');
-            if (cell && !cell.querySelector('select')) {
-                const row = cell.closest('tr');
-                const orderId = row?.dataset.orderId;
-                const column = row?.querySelector('.table-cell:has(> .cell-content)')?.dataset.column;
-                const content = cell.textContent;
+            console.log('📍 Cell encontrada:', cell ? 'SÍ' : 'NO');
+            
+            if (cell) {
+                const hasSelect = cell.querySelector('select');
+                console.log('📍 Tiene select:', hasSelect ? 'SÍ' : 'NO');
                 
-                if (orderId && column) {
-                    this.openCellModal(content, orderId, column);
+                if (!hasSelect) {
+                    const row = cell.closest('tr');
+                    console.log('📍 Row encontrada:', row ? 'SÍ' : 'NO');
+                    
+                    const orderId = row?.dataset.orderId;
+                    console.log('📍 OrderId:', orderId);
+                    
+                    // 🔧 Obtener column desde la celda td más cercana
+                    const td = cell.closest('.table-cell');
+                    const column = td?.dataset.column;
+                    console.log('📍 TD encontrado:', td ? 'SÍ' : 'NO');
+                    console.log('📍 Column:', column);
+                    
+                    const content = cell.textContent;
+                    console.log('📍 Content:', content.substring(0, 50));
+                    
+                    if (orderId && column) {
+                        console.log('✅ Abriendo modal con orderId:', orderId, 'column:', column);
+                        this.openCellModal(content, orderId, column);
+                    } else {
+                        console.log('❌ Falta orderId o column - NO se abre modal');
+                    }
                 }
             }
         });
@@ -224,45 +245,91 @@ class ModernTableV2 {
     }
 
     openCellModal(content, orderId, column) {
+        console.log('🔓 openCellModal LLAMADO con:', { content: content.substring(0, 30), orderId, column });
+        
         this.currentOrderId = orderId;
         this.currentColumn = column;
         
         const input = document.getElementById('cellEditInput');
+        console.log('📝 Input encontrado:', input ? 'SÍ' : 'NO');
+        
         if (input) {
             input.value = content.split('\n').map(line => line.trimStart()).join('\n');
             input.focus();
             input.select();
+            console.log('📝 Input value asignado y enfocado');
         }
 
         const multilineColumns = ['descripcion', 'novedades', 'cliente', 'encargado_orden', 'asesora', 'forma_de_pago'];
         const isMultilineColumn = multilineColumns.includes(column);
+        console.log('📝 Es columna multilínea:', isMultilineColumn);
         
         const hint = document.getElementById('cellEditHint');
+        console.log('💡 Hint encontrado:', hint ? 'SÍ' : 'NO');
+        
         if (hint) {
             hint.textContent = isMultilineColumn ? 'Presiona Ctrl+Enter para guardar' : 'Presiona Enter para guardar';
+            console.log('💡 Hint actualizado');
         }
 
         const saveBtn = document.getElementById('saveCellEdit');
         const cancelBtn = document.getElementById('cancelCellEdit');
+        console.log('🔘 Save btn encontrado:', saveBtn ? 'SÍ' : 'NO');
+        console.log('🔘 Cancel btn encontrado:', cancelBtn ? 'SÍ' : 'NO');
         
-        if (saveBtn) saveBtn.onclick = () => this.saveCellEdit();
-        if (cancelBtn) cancelBtn.onclick = () => this.closeCellModal();
+        // 🔧 Usar onclick en lugar de addEventListener para evitar múltiples listeners
+        if (saveBtn) {
+            saveBtn.onclick = () => {
+                console.log('💾 Save button clickeado');
+                this.saveCellEdit();
+            };
+            console.log('💾 Save onclick asignado');
+        }
+        if (cancelBtn) {
+            cancelBtn.onclick = () => {
+                console.log('❌ Cancel button clickeado');
+                this.closeCellModal();
+            };
+            console.log('❌ Cancel onclick asignado');
+        }
 
         if (input) {
             input.onkeydown = (e) => {
+                console.log('⌨️ Tecla presionada:', e.key);
                 if (isMultilineColumn) {
-                    if (e.ctrlKey && e.key === 'Enter') this.saveCellEdit();
+                    if (e.ctrlKey && e.key === 'Enter') {
+                        console.log('⌨️ Ctrl+Enter detectado');
+                        this.saveCellEdit();
+                    }
                 } else {
-                    if (e.key === 'Enter') this.saveCellEdit();
-                    if (e.key === 'Escape') this.closeCellModal();
+                    if (e.key === 'Enter') {
+                        console.log('⌨️ Enter detectado');
+                        this.saveCellEdit();
+                    }
+                    if (e.key === 'Escape') {
+                        console.log('⌨️ Escape detectado');
+                        this.closeCellModal();
+                    }
                 }
             };
+            console.log('⌨️ Keydown handler asignado');
         }
 
         const overlay = document.getElementById('modalOverlay');
         const modal = document.getElementById('cellModal');
-        if (overlay) overlay.classList.add('active');
-        if (modal) modal.classList.add('active');
+        console.log('🎭 Modal overlay encontrado:', overlay ? 'SÍ' : 'NO');
+        console.log('🎭 Modal encontrado:', modal ? 'SÍ' : 'NO');
+        
+        if (overlay) {
+            overlay.classList.add('active');
+            console.log('🎭 Clase active agregada a overlay');
+        }
+        if (modal) {
+            modal.classList.add('active');
+            console.log('🎭 Clase active agregada a modal');
+        }
+        
+        console.log('✅ openCellModal COMPLETADO');
     }
 
     async saveCellEdit() {
@@ -293,8 +360,23 @@ class ModernTableV2 {
     }
 
     closeCellModal() {
-        document.getElementById('cellModal')?.classList.remove('active');
-        document.getElementById('modalOverlay')?.classList.remove('active');
+        console.log('🔒 closeCellModal LLAMADO');
+        const modal = document.getElementById('cellModal');
+        const overlay = document.getElementById('modalOverlay');
+        
+        console.log('🎭 Modal encontrado:', modal ? 'SÍ' : 'NO');
+        console.log('🎭 Overlay encontrado:', overlay ? 'SÍ' : 'NO');
+        
+        if (modal) {
+            modal.classList.remove('active');
+            console.log('🎭 Clase active removida de modal');
+        }
+        if (overlay) {
+            overlay.classList.remove('active');
+            console.log('🎭 Clase active removida de overlay');
+        }
+        
+        console.log('✅ closeCellModal COMPLETADO');
     }
 
     clearAllFilters() {

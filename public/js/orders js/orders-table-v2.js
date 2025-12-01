@@ -733,26 +733,8 @@ document.addEventListener('DOMContentLoaded', function () {
     initializeAreaDropdowns();
     initializeDiaEntregaDropdowns();
     
-    // 🔧 Agregar evento de clic en celdas para abrir modal de edición
-    const tbody = document.querySelector('.modern-table tbody');
-    if (tbody) {
-        tbody.addEventListener('click', function(e) {
-            // NO abrir modal si se hace clic en dropdowns, botones o acciones
-            if (e.target.closest('.estado-dropdown, .area-dropdown, .dia-entrega-dropdown, .action-btn, .acciones-column')) {
-                return;
-            }
-            
-            const cellText = e.target.closest('.cell-text');
-            if (!cellText) return;
-            
-            const pedido = cellText.getAttribute('data-pedido');
-            if (pedido && typeof viewDetail === 'function') {
-                console.log('📋 Abriendo detalle de orden:', pedido);
-                viewDetail(pedido);
-            }
-        });
-        console.log('✅ Evento de clic en celdas agregado');
-    }
+    // ✅ Sistema de edición de celdas con doble clic (gestionado por modern-table.js)
+    // No agregar evento de clic simple - solo doble clic para editar
     
     // Actualizar días con delay
     if (typeof actualizarDiasTabla === 'function') {
