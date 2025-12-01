@@ -12,6 +12,7 @@ use App\Http\Controllers\TablerosController;
 use App\Http\Controllers\VistasController;
 use App\Http\Controllers\BalanceoController;
 use App\Http\Controllers\AsesorController;
+use App\Http\Controllers\CotizacionBordadoController;
 
 Route::get('/', function () {
     return view('welcome');
