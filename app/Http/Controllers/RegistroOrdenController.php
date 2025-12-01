@@ -139,7 +139,7 @@ class RegistroOrdenController extends Controller
             ->with([
                 'asesora:id,name',
                 'prendas' => function($q) {
-                    $q->select('id', 'numero_pedido', 'pedido_produccion_id', 'nombre_prenda', 'cantidad', 'descripcion', 'cantidad_talla', 'descripcion_armada', 'color_id', 'tela_id', 'tipo_manga_id', 'tiene_bolsillos', 'tiene_reflectivo');
+                    $q->select('id', 'numero_pedido', 'nombre_prenda', 'cantidad', 'descripcion', 'cantidad_talla', 'descripcion_armada', 'color_id', 'tela_id', 'tipo_manga_id', 'tiene_bolsillos', 'tiene_reflectivo');
                 }
             ]);
 
@@ -1817,6 +1817,48 @@ class RegistroOrdenController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener imágenes'
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener la descripción completa de prendas para una orden
+     * Esta descripción se construye combinando información de prendas_pedido
+     */
+    public function getDescripcionPrendas($pedido)
+    {
+        try {
+            // Buscar la orden por número de pedido o por ID
+            $orden = PedidoProduccion::where('numero_pedido', $pedido)
+                ->orWhere('id', $pedido)
+                ->first();
+
+            if (!$orden) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Orden no encontrada'
+                ], 404);
+            }
+
+            // Obtener la descripción de prendas del modelo
+            // El campo descripcion_prendas contiene la descripción armada
+            $descripcionPrendas = $orden->descripcion_prendas ?? '';
+
+            return response()->json([
+                'success' => true,
+                'descripcion_prendas' => $descripcionPrendas,
+                'numero_pedido' => $orden->numero_pedido,
+                'orden_id' => $orden->id
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener descripción de prendas: ' . $e->getMessage(), [
+                'pedido' => $pedido,
+                'error' => $e->getMessage()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener descripción de prendas'
             ], 500);
         }
     }

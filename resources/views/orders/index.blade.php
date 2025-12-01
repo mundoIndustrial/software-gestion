@@ -202,8 +202,14 @@
                                             {{-- Ocultar para supervisores --}}
                                         @else
                                             <td class="table-cell" data-column="{{ $colName }}">
-                                                <div class="cell-content" title="{{ $orden->{$colName} ?? '' }}">
-                                                    @if($colName === 'estado')
+                                                @if($colName === 'descripcion_prendas')
+                                                    <div class="cell-content" title="{{ $orden->descripcion_prendas ?? '' }}">
+                                                        <div class="descripcion-preview" data-full-content="{{ base64_encode($orden->descripcion_prendas) }}">
+                                                        </div>
+                                                        <span class="descripcion-truncated">{{ Str::limit($orden->descripcion_prendas, 150, '...') }}</span>
+                                                    </div>
+                                                @elseif($colName === 'estado')
+                                                    <div class="cell-content" title="{{ $orden->{$colName} ?? '' }}">
                                                         @if(auth()->user()->role && auth()->user()->role->name === 'supervisor')
                                                             <select class="estado-dropdown" data-id="{{ $orden->numero_pedido }}" data-value="{{ $orden->$colName }}" disabled style="cursor: not-allowed; opacity: 0.8;">
                                                                 @foreach(['Entregado', 'En Ejecución', 'No iniciado', 'Anulada'] as $estado)
@@ -217,7 +223,9 @@
                                                                 @endforeach
                                                             </select>
                                                         @endif
-                                                    @elseif($colName === 'area')
+                                                    </div>
+                                                @elseif($colName === 'area')
+                                                    <div class="cell-content" title="{{ $orden->{$colName} ?? '' }}">
                                                         @php
                                                             $areaValue = $areasMap[$orden->numero_pedido] ?? $orden->area ?? '';
                                                         @endphp
@@ -242,7 +250,9 @@
                                                                 @endif
                                                             </select>
                                                         @endif
-                                                    @elseif($colName === 'dia_de_entrega' && $context === 'registros')
+                                                    </div>
+                                                @elseif($colName === 'dia_de_entrega' && $context === 'registros')
+                                                    <div class="cell-content" title="{{ $orden->{$colName} ?? '' }}">
                                                         <select class="dia-entrega-dropdown" data-id="{{ $orden->numero_pedido }}" data-value="{{ $orden->$colName ?? '' }}">
                                                             <option value="" {{ is_null($orden->$colName) ? 'selected' : '' }}>Seleccionar</option>
                                                             <option value="15" {{ $orden->$colName == 15 ? 'selected' : '' }}>15 días</option>
@@ -250,7 +260,9 @@
                                                             <option value="25" {{ $orden->$colName == 25 ? 'selected' : '' }}>25 días</option>
                                                             <option value="30" {{ $orden->$colName == 30 ? 'selected' : '' }}>30 días</option>
                                                         </select>
-                                                    @else
+                                                    </div>
+                                                @else
+                                                    <div class="cell-content" title="{{ $orden->{$colName} ?? '' }}">
                                                         <span class="cell-text" data-pedido="{{ $orden->numero_pedido }}">
                                                             @if($colName === 'total_de_dias_')
                                                                 <span class="dias-value" data-dias="{{ intval($totalDiasCalculados[$orden->numero_pedido] ?? 0) }}">{{ intval($totalDiasCalculados[$orden->numero_pedido] ?? 0) }}</span>
@@ -258,10 +270,6 @@
                                                                 {{ $orden->asesora->name ?? ($orden->$colName ?? '') }}
                                                             @elseif($colName === 'numero_pedido')
                                                                 {{ $orden->numero_pedido }}
-                                                            @elseif($colName === 'descripcion_prendas')
-                                                                <div class="descripcion-preview" data-full-content="{{ base64_encode($orden->descripcion_prendas) }}">
-                                                                    <x-descripcion-prendas-formateada :descripcion="$orden->descripcion_prendas" />
-                                                                </div>
                                                             @elseif($colName === 'cantidad_total')
                                                                 {{ $orden->cantidad_total }}
                                                             @elseif($colName === 'encargado_orden')
@@ -274,8 +282,8 @@
                                                                 {{ $orden->$colName ?? '' }}
                                                             @endif
                                                         </span>
-                                                    @endif
-                                                </div>
+                                                    </div>
+                                                @endif
                                             </td>
                                         @endif
                                     @endforeach

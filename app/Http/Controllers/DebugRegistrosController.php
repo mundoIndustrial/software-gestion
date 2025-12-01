@@ -213,10 +213,10 @@ class DebugRegistrosController extends Controller
             ],
             [
                 'table' => 'prendas_pedido',
-                'index_name' => 'idx_pedido_produccion_id',
-                'columns' => ['pedido_produccion_id'],
-                'reason' => 'Se carga con relación with()',
-                'sql' => 'ALTER TABLE prendas_pedido ADD INDEX idx_pedido_produccion_id (pedido_produccion_id);'
+                'index_name' => 'idx_numero_pedido',
+                'columns' => ['numero_pedido'],
+                'reason' => 'Se carga con relación with() - FK a pedidos_produccion',
+                'sql' => 'ALTER TABLE prendas_pedido ADD INDEX idx_numero_pedido (numero_pedido);'
             ],
         ];
 

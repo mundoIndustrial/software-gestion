@@ -70,19 +70,18 @@ class PrendaPedido extends Model
     {
         $lineas = [];
         
-        // Línea 1: Nombre de la prenda
-        $lineas[] = "Prenda: {$this->nombre_prenda}";
+        // Línea 1: Nombre de la prenda (Prenda X:)
+        $lineas[] = "Prenda {$this->id}:";
         
-        // Línea 2: Atributos (Color, Tela, Manga)
+        // Línea 2: Atributos (Color, Tela, Manga) separados por pipe
         $atributos = [];
         
-        // Usar relaciones cargadas si están disponibles, sino usar cache
+        // Color
         if ($this->color_id) {
             $colorNombre = null;
             if ($this->relationLoaded('color') && $this->color) {
                 $colorNombre = $this->color->nombre;
             } else {
-                // Usar cache o valor por defecto
                 $colorNombre = \Cache::remember("color_{$this->color_id}", 3600, function() {
                     $color = \App\Models\Color::find($this->color_id);
                     return $color ? $color->nombre : null;
@@ -93,6 +92,7 @@ class PrendaPedido extends Model
             }
         }
         
+        // Tela
         if ($this->tela_id) {
             $telaNombre = null;
             $telaReferencia = null;
@@ -100,7 +100,6 @@ class PrendaPedido extends Model
                 $telaNombre = $this->tela->nombre;
                 $telaReferencia = $this->tela->referencia;
             } else {
-                // Usar cache
                 $telaData = \Cache::remember("tela_{$this->tela_id}", 3600, function() {
                     $tela = \App\Models\Tela::find($this->tela_id);
                     return $tela ? ['nombre' => $tela->nombre, 'referencia' => $tela->referencia] : null;
@@ -115,12 +114,12 @@ class PrendaPedido extends Model
             }
         }
         
+        // Manga
         if ($this->tipo_manga_id) {
             $mangaNombre = null;
             if ($this->relationLoaded('tipoManga') && $this->tipoManga) {
                 $mangaNombre = $this->tipoManga->nombre;
             } else {
-                // Usar cache
                 $mangaNombre = \Cache::remember("tipo_manga_{$this->tipo_manga_id}", 3600, function() {
                     $manga = \App\Models\TipoManga::find($this->tipo_manga_id);
                     return $manga ? $manga->nombre : null;
@@ -135,27 +134,26 @@ class PrendaPedido extends Model
             $lineas[] = implode(" | ", $atributos);
         }
         
-        // Línea 3: Descripción general
+        // Línea 3: Descripción + Bolsillos + Reflectivo combinados
+        $descripcionCompleta = [];
+        
         if ($this->descripcion) {
-            $lineas[] = "Descripción: {$this->descripcion}";
+            $descripcionCompleta[] = $this->descripcion;
         }
         
-        // Línea 4: Detalles adicionales
-        $detalles = [];
-        
         if ($this->tiene_bolsillos) {
-            $detalles[] = "Bolsillos: SI";
+            $descripcionCompleta[] = "Bolsillos: SI";
         }
         
         if ($this->tiene_reflectivo) {
-            $detalles[] = "Reflectivo: SI";
+            $descripcionCompleta[] = "Reflectivo: SI";
         }
         
-        if (!empty($detalles)) {
-            $lineas[] = implode(" - ", $detalles);
+        if (!empty($descripcionCompleta)) {
+            $lineas[] = "Descripción: " . implode(" ", $descripcionCompleta);
         }
         
-        // Línea 5: Tallas y cantidades
+        // Línea 4: Tallas y cantidades
         if ($this->cantidad_talla && is_array($this->cantidad_talla)) {
             $tallas = [];
             foreach ($this->cantidad_talla as $talla => $cantidad) {

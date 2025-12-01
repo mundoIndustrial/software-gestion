@@ -128,8 +128,28 @@ class ModernTableV2 {
                     console.log('📍 TD encontrado:', td ? 'SÍ' : 'NO');
                     console.log('📍 Column:', column);
                     
-                    const content = cell.textContent;
-                    console.log('📍 Content:', content.substring(0, 50));
+                    let content = cell.textContent;
+                    console.log('📍 Content inicial:', content.substring(0, 50));
+                    
+                    // 🔧 CORREGIR: Para descripcion_prendas, obtener contenido desde data-full-content del div .descripcion-preview
+                    if (column === 'descripcion_prendas') {
+                        console.log('🎯 Detectado descripcion_prendas - buscando .descripcion-preview...');
+                        
+                        // Buscar el div .descripcion-preview dentro del cell-content
+                        const descripcionDiv = cell.querySelector('.descripcion-preview');
+                        console.log('🎯 descripcionDiv encontrado en cell-content:', descripcionDiv ? 'SÍ' : 'NO');
+                        
+                        if (descripcionDiv && descripcionDiv.dataset.fullContent) {
+                            try {
+                                content = atob(descripcionDiv.dataset.fullContent);
+                                console.log('✅ Contenido decodificado desde data-full-content:', content.substring(0, 50));
+                            } catch (e) {
+                                console.error('❌ Error decodificando base64:', e);
+                            }
+                        } else {
+                            console.warn('⚠️ No se encontró .descripcion-preview o data-full-content');
+                        }
+                    }
                     
                     if (orderId && column) {
                         console.log('✅ Abriendo modal con orderId:', orderId, 'column:', column);
@@ -171,8 +191,22 @@ class ModernTableV2 {
             if (lastTapTarget === cell && tapLength < doubleTapDelay && tapLength > 0) {
                 const row = cell.closest('tr');
                 const orderId = row?.dataset.orderId;
-                const column = row?.querySelector('.table-cell:has(> .cell-content)')?.dataset.column;
-                const content = cell.textContent;
+                const td = row?.querySelector('.table-cell:has(> .cell-content)');
+                const column = td?.dataset.column;
+                let content = cell.textContent;
+                
+                // 🔧 CORREGIR: Para descripcion_prendas, obtener contenido desde data-full-content
+                if (column === 'descripcion_prendas') {
+                    const descripcionDiv = cell.querySelector('.descripcion-preview');
+                    if (descripcionDiv && descripcionDiv.dataset.fullContent) {
+                        try {
+                            content = atob(descripcionDiv.dataset.fullContent);
+                            console.log('✅ Contenido decodificado desde data-full-content en touch');
+                        } catch (e) {
+                            console.error('❌ Error decodificando base64 en touch:', e);
+                        }
+                    }
+                }
                 
                 if (orderId && column) {
                     this.openCellModal(content, orderId, column);
@@ -245,10 +279,17 @@ class ModernTableV2 {
     }
 
     openCellModal(content, orderId, column) {
-        console.log('🔓 openCellModal LLAMADO con:', { content: content.substring(0, 30), orderId, column });
+        console.log('🔓 openCellModal LLAMADO con:', { content: content.substring(0, 50), orderId, column });
         
         this.currentOrderId = orderId;
         this.currentColumn = column;
+        
+        // Rellenar el modal inmediatamente con el contenido
+        this._populateCellModal(content, column);
+    }
+
+    _populateCellModal(content, column) {
+        console.log('📝 Rellenando modal con contenido, longitud:', content.length);
         
         const input = document.getElementById('cellEditInput');
         console.log('📝 Input encontrado:', input ? 'SÍ' : 'NO');
@@ -260,7 +301,7 @@ class ModernTableV2 {
             console.log('📝 Input value asignado y enfocado');
         }
 
-        const multilineColumns = ['descripcion', 'novedades', 'cliente', 'encargado_orden', 'asesora', 'forma_de_pago'];
+        const multilineColumns = ['descripcion', 'descripcion_prendas', 'novedades', 'cliente', 'encargado_orden', 'asesora', 'forma_de_pago'];
         const isMultilineColumn = multilineColumns.includes(column);
         console.log('📝 Es columna multilínea:', isMultilineColumn);
         
