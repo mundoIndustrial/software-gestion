@@ -116,12 +116,11 @@
                                                 $encargado = '-';
                                                 if ($tipo === 'bodega') {
                                                     $registro = \App\Models\TablaOriginalBodega::where('pedido', $pedido)->first();
-                                                } else {
-                                                    $registro = \App\Models\TablaOriginal::where('pedido', $pedido)->first();
+                                                    if ($registro && isset($registro->encargados_de_corte)) {
+                                                        $encargado = $registro->encargados_de_corte;
+                                                    }
                                                 }
-                                                if ($registro && isset($registro->encargados_de_corte)) {
-                                                    $encargado = $registro->encargados_de_corte;
-                                                }
+                                                // Para Costura - Pedidos (tipo === 'pedidos'), no buscar en tabla_original
                                             @endphp
                                             {{ $encargado }}
                                         </span>
@@ -157,7 +156,8 @@
                                                         @foreach($cantidadTalla as $talla => $cantidad)
                                                             @php
                                                                 // Buscar entrega_prenda_pedido relacionada
-                                                                $entrega = \App\Models\EntregaPrendaPedido::where('prenda_pedido_id', $registro->id)
+                                                                $entrega = \App\Models\EntregaPrendaPedido::where('numero_pedido', $registro->pedido->numero_pedido)
+                                                                    ->where('nombre_prenda', $registro->nombre_prenda)
                                                                     ->where('talla', $talla)
                                                                     ->first();
                                                                 

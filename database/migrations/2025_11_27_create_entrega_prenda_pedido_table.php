@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('entrega_prenda_pedido', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('prenda_pedido_id')->constrained('prendas_pedido')->onDelete('cascade');
+            $table->string('numero_pedido'); // Número del pedido (relación con pedidos_produccion)
+            $table->string('nombre_prenda'); // Nombre de la prenda
             $table->string('talla'); // S, M, L, XL, etc.
             $table->integer('cantidad_original'); // Cantidad original de la talla
             $table->string('costurero')->nullable(); // Nombre del costurero
@@ -24,9 +25,13 @@ return new class extends Migration
             $table->softDeletes();
 
             // Índices para búsquedas rápidas
-            $table->index('prenda_pedido_id');
+            $table->index('numero_pedido');
+            $table->index('nombre_prenda');
             $table->index('talla');
             $table->index('costurero');
+            
+            // Índice compuesto para búsquedas por pedido + prenda + talla
+            $table->index(['numero_pedido', 'nombre_prenda', 'talla']);
         });
     }
 

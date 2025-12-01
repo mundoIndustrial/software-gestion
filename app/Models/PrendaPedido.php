@@ -54,7 +54,8 @@ class PrendaPedido extends Model
      */
     public function entregas(): HasMany
     {
-        return $this->hasMany(EntregaPrendaPedido::class, 'prenda_pedido_id');
+        return $this->hasMany(EntregaPrendaPedido::class, 'numero_pedido', 'numero_pedido')
+            ->where('nombre_prenda', $this->nombre_prenda);
     }
 
 

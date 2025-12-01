@@ -287,14 +287,16 @@ class EntregaController extends Controller
                         $cantidadOriginal = $cantidadTalla[$entrega['talla']];
 
                         // Buscar o crear la entrega_prenda_pedido para esta talla
-                        $entregaPrendaPedido = EntregaPrendaPedido::where('prenda_pedido_id', $prendaPedido->id)
+                        $entregaPrendaPedido = EntregaPrendaPedido::where('numero_pedido', $entrega['pedido'])
+                            ->where('nombre_prenda', $entrega['prenda'])
                             ->where('talla', $entrega['talla'])
                             ->first();
 
                         if (!$entregaPrendaPedido) {
                             // Crear nuevo registro en entrega_prenda_pedido
                             $entregaPrendaPedido = EntregaPrendaPedido::create([
-                                'prenda_pedido_id' => $prendaPedido->id,
+                                'numero_pedido' => $entrega['pedido'],
+                                'nombre_prenda' => $entrega['prenda'],
                                 'talla' => $entrega['talla'],
                                 'cantidad_original' => $cantidadOriginal,
                                 'costurero' => $entrega['costurero'],

@@ -13,7 +13,8 @@ class EntregaPrendaPedido extends Model
     protected $table = 'entrega_prenda_pedido';
 
     protected $fillable = [
-        'prenda_pedido_id',
+        'numero_pedido',
+        'nombre_prenda',
         'talla',
         'cantidad_original',
         'costurero',
@@ -29,26 +30,11 @@ class EntregaPrendaPedido extends Model
     ];
 
     /**
-     * Relación: Pertenece a una PrendaPedido
+     * Relación: Pertenece a un PedidoProduccion (via numero_pedido)
      */
-    public function prendaPedido(): BelongsTo
+    public function pedido(): BelongsTo
     {
-        return $this->belongsTo(PrendaPedido::class, 'prenda_pedido_id');
-    }
-
-    /**
-     * Relación: Obtener el pedido de producción a través de la prenda (HasOneThrough)
-     */
-    public function pedido()
-    {
-        return $this->hasOneThrough(
-            PedidoProduccion::class,
-            PrendaPedido::class,
-            'id',
-            'id',
-            'prenda_pedido_id',
-            'pedido_produccion_id'
-        );
+        return $this->belongsTo(PedidoProduccion::class, 'numero_pedido', 'numero_pedido');
     }
 
     /**
@@ -79,11 +65,19 @@ class EntregaPrendaPedido extends Model
     }
 
     /**
-     * Scope: Filtrar por prenda_pedido
+     * Scope: Filtrar por numero_pedido
      */
-    public function scopeByPrendaPedido($query, $prendaPedidoId)
+    public function scopeByNumeroPedido($query, $numeroPedido)
     {
-        return $query->where('prenda_pedido_id', $prendaPedidoId);
+        return $query->where('numero_pedido', $numeroPedido);
+    }
+
+    /**
+     * Scope: Filtrar por nombre_prenda
+     */
+    public function scopeByNombrePrenda($query, $nombrePrenda)
+    {
+        return $query->where('nombre_prenda', $nombrePrenda);
     }
 
     /**

@@ -26,13 +26,15 @@ class EntregaPrendaPedidoSeeder extends Seeder
             if (is_array($cantidadTalla) && !empty($cantidadTalla)) {
                 foreach ($cantidadTalla as $talla => $cantidad) {
                     // Verificar que no exista ya
-                    $exists = EntregaPrendaPedido::where('prenda_pedido_id', $prenda->id)
+                    $exists = EntregaPrendaPedido::where('numero_pedido', $prenda->numero_pedido)
+                        ->where('nombre_prenda', $prenda->nombre_prenda)
                         ->where('talla', $talla)
                         ->exists();
 
                     if (!$exists) {
                         EntregaPrendaPedido::create([
-                            'prenda_pedido_id' => $prenda->id,
+                            'numero_pedido' => $prenda->numero_pedido,
+                            'nombre_prenda' => $prenda->nombre_prenda,
                             'talla' => $talla,
                             'cantidad_original' => $cantidad,
                             'costurero' => null,

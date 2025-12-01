@@ -35,7 +35,7 @@ class VistasController extends Controller
                 $icon = 'fas fa-cut';
             }
         } else {
-            // Para Costura - Pedidos: usar prendas_pedido con relación a pedidos
+            // Para Costura - Pedidos: usar prendas_pedido con relación a pedidos_produccion
             $title = 'Vista Costura - Pedidos';
             $icon = 'fas fa-shopping-cart';
             
@@ -93,7 +93,7 @@ class VistasController extends Controller
                 $registrosQuery = EntregaPedidoCorte::query();
             }
         } else {
-            // Para Costura - Pedidos: usar prendas_pedido
+            // Para Costura - Pedidos: usar prendas_pedido con relación a pedidos_produccion
             $registrosQuery = \App\Models\PrendaPedido::with('pedido');
         }
 
@@ -116,13 +116,14 @@ class VistasController extends Controller
             }
         }
 
-        // Aplicar filtros adicionales
-        if (!empty($clientes) && $tipo !== 'corte' && $tipo !== 'pedidos') {
+        // Aplicar filtros adicionales solo para bodega
+        if (!empty($clientes) && $tipo === 'bodega') {
             $registrosQuery->whereIn('cliente', $clientes);
         }
-        if (!empty($costureros) && $tipo !== 'corte' && $tipo !== 'pedidos') {
+        if (!empty($costureros) && $tipo === 'bodega') {
             $registrosQuery->whereIn('costurero', $costureros);
         }
+
 
         $registros = $registrosQuery->paginate(50);
 
@@ -220,15 +221,8 @@ class VistasController extends Controller
                     $numeroPedido = $pedidoCliente[0];
                     $cliente = $pedidoCliente[1];
                     
-                    // Obtener encargado de corte
+                    // Para Costura - Pedidos, no hay encargado de corte en tabla_original
                     $encargadoCorte = '-';
-                    $pedidoProduccion = $prendas->first()->pedido;
-                    if ($pedidoProduccion) {
-                        $tablaOriginal = \App\Models\TablaOriginal::where('pedido', $numeroPedido)->first();
-                        if ($tablaOriginal && $tablaOriginal->encargados_de_corte) {
-                            $encargadoCorte = $tablaOriginal->encargados_de_corte;
-                        }
-                    }
                     
                     $html .= '<div class="pedido-card">
                                 <div class="card-header">
@@ -271,7 +265,8 @@ class VistasController extends Controller
                             // Crear una fila por cada talla
                             foreach($cantidadTalla as $talla => $cantidad) {
                                 // Buscar entrega_prenda_pedido relacionada
-                                $entrega = \App\Models\EntregaPrendaPedido::where('prenda_pedido_id', $prenda->id)
+                                $entrega = \App\Models\EntregaPrendaPedido::where('numero_pedido', $prenda->pedido->numero_pedido)
+                                    ->where('nombre_prenda', $prenda->nombre_prenda)
                                     ->where('talla', $talla)
                                     ->first();
                                 
