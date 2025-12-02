@@ -1,4 +1,4 @@
-@extends('asesores.layout')
+@extends('layouts.asesores')
 
 @section('title', 'Dashboard')
 @section('page-title', 'Dashboard de Pedidos')

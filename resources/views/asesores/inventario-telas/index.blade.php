@@ -1,5 +1,5 @@
 {{-- Vista de Asesores para Inventario de Telas - Reutiliza vista general --}}
-@extends('asesores.layout')
+@extends('layouts.asesores')
 
 @section('title', 'Inventario de Telas')
 @section('page-title', 'Inventario de Telas')

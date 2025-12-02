@@ -1,4 +1,4 @@
-@extends('asesores.layout')
+@extends('layouts.asesores')
 
 @section('title', 'Editar Pedido')
 @section('page-title', 'Editar Pedido #' . $pedidoData->pedido)

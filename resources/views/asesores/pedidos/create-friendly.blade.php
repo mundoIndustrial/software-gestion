@@ -1,4 +1,4 @@
-@extends('asesores.layout')
+@extends('layouts.asesores')
 
 @section('title', 'Cotizaciones')
 @section('page-title', 'Cotizaciones')
