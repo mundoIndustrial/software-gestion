@@ -33,15 +33,17 @@ const applyTheme = (theme) => {
 };
 
 const updateThemeButton = (theme) => {
+  if (!themeToggle) return; // Exit if themeToggle doesn't exist
+  
   const icon = themeToggle.querySelector(".material-symbols-rounded");
   const text = themeToggle.querySelector(".theme-text");
   
-  if (theme === "dark") {
-    icon.textContent = "dark_mode";
-    text.textContent = "Modo Oscuro";
-  } else {
-    icon.textContent = "light_mode";
-    text.textContent = "Modo Claro";
+  if (icon) {
+    icon.textContent = theme === "dark" ? "dark_mode" : "light_mode";
+  }
+  
+  if (text) {
+    text.textContent = theme === "dark" ? "Modo Oscuro" : "Modo Claro";
   }
 };
 
@@ -54,22 +56,28 @@ if (initialTheme) {
 applyTheme(initialTheme);
 
 // Theme toggle event
-themeToggle.addEventListener("click", () => {
-  const currentTheme = document.body.classList.contains("dark-theme") ? "dark" : "light";
-  const newTheme = currentTheme === "dark" ? "light" : "dark";
-  setStoredTheme(newTheme);
-  applyTheme(newTheme);
-});
+if (themeToggle) {
+  themeToggle.addEventListener("click", () => {
+    const currentTheme = document.body.classList.contains("dark-theme") ? "dark" : "light";
+    const newTheme = currentTheme === "dark" ? "light" : "dark";
+    setStoredTheme(newTheme);
+    applyTheme(newTheme);
+  });
+}
 
 // Toggle sidebar collapsed state on buttons click
-sidebarToggleBtns.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    sidebar.classList.toggle("collapsed");
+if (sidebarToggleBtns.length > 0 && sidebar) {
+  sidebarToggleBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      sidebar.classList.toggle("collapsed");
+    });
   });
-});
+}
 
 // Expand sidebar by default on large screens
-if (window.innerWidth > 768) sidebar.classList.remove("collapsed");
+if (window.innerWidth > 768 && sidebar) {
+  sidebar.classList.remove("collapsed");
+}
 
 // Submenu toggle functionality
 const submenuToggles = document.querySelectorAll(".submenu-toggle");
