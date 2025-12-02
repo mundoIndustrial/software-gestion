@@ -23,7 +23,7 @@
 
 ### Paso 4: Crear Layouts Específicos
 - [x] `resources/views/layouts/asesores.blade.php` ✅ CREADO
-- [ ] `resources/views/layouts/app.blade.php` (próximo)
+- [x] `resources/views/layouts/app.blade.php` ✅ ACTUALIZADO
 - [ ] `resources/views/layouts/guest.blade.php` (próximo)
 - [ ] `resources/views/layouts/contador.blade.php` (próximo)
 - [ ] `resources/views/layouts/insumos.blade.php` (próximo)
