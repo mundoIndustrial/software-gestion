@@ -223,6 +223,18 @@
       </li>
       @endif
 
+      @if(auth()->user()->role && auth()->user()->role->name === 'supervisor_planta')
+      <!-- supervisor_planta puede ver insumos -->
+      <li class="menu-item">
+        <a href="{{ route('insumos.dashboard') }}"
+           class="menu-link {{ request()->routeIs('insumos.*') ? 'active' : '' }}"
+           aria-label="Ver módulo de insumos">
+          <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
+          <span class="menu-label">Insumos</span>
+        </a>
+      </li>
+      @endif
+
       <li class="menu-item">
         <form action="{{ route('logout') }}" method="POST">
           @csrf
