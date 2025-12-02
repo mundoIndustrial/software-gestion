@@ -9,6 +9,14 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 /**
+ * Función wrapper para ser llamada desde onclick en la tabla
+ */
+function openDetailBodega(pedido) {
+    console.log('👁️ Click en botón Ver, pedido:', pedido);
+    openBodegaDetailModal(pedido);
+}
+
+/**
  * Inicializar modal de detalle de bodega
  */
 function initializeBodegaDetailModal() {
@@ -264,47 +272,29 @@ function formatearPrenda(prendaText, index) {
  * Mostrar modal de detalle
  */
 function showBodegaDetailModal() {
-    // Buscar el modal Livewire usando Alpine.js
-    const modalElement = document.querySelector('[x-data*="bodega-order-detail"]') ||
-                         document.querySelector('[x-show*="bodega-order-detail"]') ||
-                         document.querySelector('.order-detail-modal-container');
+    console.log('📱 Mostrando modal de detalle de bodega...');
     
-    if (modalElement) {
-        // Disparar evento Alpine.js para abrir el modal
-        if (window.Alpine && modalElement.__x) {
-            modalElement.__x.$data.show = true;
-            console.log('✅ Modal mostrado via Alpine.js');
-        } else {
-            // Fallback: mostrar directamente
-            modalElement.style.display = 'flex';
-            modalElement.classList.add('show');
-            console.log('✅ Modal mostrado (fallback)');
-        }
-    } else {
-        console.warn('⚠️ No se encontró elemento modal');
-    }
+    // Disparar evento Alpine.js para abrir el modal
+    // El componente x-modal está configurado para escuchar el evento 'bodega-order-detail'
+    window.dispatchEvent(new CustomEvent('open-modal', {
+        detail: 'bodega-order-detail'
+    }));
+    
+    console.log('✅ Evento open-modal disparado');
 }
 
 /**
  * Cerrar modal de detalle
  */
 function closeBodegaDetailModal() {
-    const modalElement = document.querySelector('[x-data*="bodega-order-detail"]') ||
-                         document.querySelector('[x-show*="bodega-order-detail"]') ||
-                         document.querySelector('.order-detail-modal-container');
+    console.log('❌ Cerrando modal de detalle de bodega...');
     
-    if (modalElement) {
-        // Disparar evento Alpine.js para cerrar el modal
-        if (window.Alpine && modalElement.__x) {
-            modalElement.__x.$data.show = false;
-            console.log('✅ Modal cerrado via Alpine.js');
-        } else {
-            // Fallback: cerrar directamente
-            modalElement.style.display = 'none';
-            modalElement.classList.remove('show');
-            console.log('✅ Modal cerrado (fallback)');
-        }
-    }
+    // Disparar evento Alpine.js para cerrar el modal
+    window.dispatchEvent(new CustomEvent('close-modal', {
+        detail: 'bodega-order-detail'
+    }));
+    
+    console.log('✅ Evento close-modal disparado');
 }
 
 /**

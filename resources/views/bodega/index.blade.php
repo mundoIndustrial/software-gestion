@@ -12,6 +12,7 @@
     @include('components.orders-components.bodega-order-detail-modal')
     @include('components.orders-components.bodega-edit-modal', ['areaOptions' => $areaOptions ?? []])
     @include('components.orders-components.bodega-cell-edit-modal')
+    @include('components.orders-components.bodega-tracking-modal')
 
     <div class="table-container">
         <div class="table-header" id="tableHeader">
@@ -280,11 +281,24 @@
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Scripts de Order Tracking -->
+    <script src="{{ asset('js/order-tracking/modules/dateUtils.js') }}"></script>
+    <script src="{{ asset('js/order-tracking/modules/holidayManager.js') }}"></script>
+    <script src="{{ asset('js/order-tracking/modules/areaMapper.js') }}"></script>
+    <script src="{{ asset('js/order-tracking/modules/trackingService.js') }}"></script>
+    <script src="{{ asset('js/order-tracking/modules/trackingUI.js') }}"></script>
+    <script src="{{ asset('js/order-tracking/modules/apiClient.js') }}"></script>
+    <script src="{{ asset('js/order-tracking/modules/processManager.js') }}"></script>
+    <script src="{{ asset('js/order-tracking/modules/tableManager.js') }}"></script>
+    <script src="{{ asset('js/order-tracking/modules/dropdownManager.js') }}"></script>
+    <script src="{{ asset('js/order-tracking/orderTracking-v2.js') }}"></script>
+
+    <!-- Scripts de Bodega -->
     <script src="{{ asset('js/bodega-table.js') }}"></script>
     <script src="{{ asset('js/bodega-detail-modal.js') }}"></script>
     <script src="{{ asset('js/bodega-edit-modal.js') }}"></script>
     <script src="{{ asset('js/bodega-cell-edit.js') }}"></script>
+    <script src="{{ asset('js/bodega-tracking-modal.js') }}"></script>
 
     <!-- Script de debugging -->
     <script>

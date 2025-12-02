@@ -1,68 +1,0 @@
-// Script para ejecutar en: php artisan tinker
-// Copiar y pegar estas líneas en la consola de Tinker
-
-echo "\n╔════════════════════════════════════════════════════════════════╗\n";
-echo "║  TEST: Descripción de Prendas                                 ║\n";
-echo "╚════════════════════════════════════════════════════════════════╝\n\n";
-
-// 1. Buscar un pedido con prendas
-echo "📋 PASO 1: Buscando pedidos con prendas...\n";
-$pedido = App\Models\PedidoProduccion::with('prendas')->has('prendas')->first();
-
-if (!$pedido) {
-    echo "❌ No hay pedidos con prendas\n";
-    exit;
-}
-
-echo "✅ Pedido encontrado: #{$pedido->numero_pedido}\n";
-echo "   Cliente: {$pedido->cliente}\n";
-echo "   Prendas: {$pedido->prendas->count()}\n\n";
-
-// 2. Verificar campos de la primera prenda
-echo "📋 PASO 2: Verificando campos de la primera prenda...\n";
-$prenda = $pedido->prendas->first();
-
-echo "   ✅ ID: {$prenda->id}\n";
-echo "   ✅ Nombre: {$prenda->nombre_prenda}\n";
-echo "   ✅ Cantidad: {$prenda->cantidad}\n";
-echo "   ✅ Descripción: " . substr($prenda->descripcion, 0, 50) . "...\n";
-echo "   ✅ Color ID: {$prenda->color_id}\n";
-echo "   ✅ Tela ID: {$prenda->tela_id}\n";
-echo "   ✅ Tipo Manga ID: {$prenda->tipo_manga_id}\n";
-echo "   ✅ Bolsillos: " . ($prenda->tiene_bolsillos ? 'SÍ' : 'NO') . "\n";
-echo "   ✅ Reflectivo: " . ($prenda->tiene_reflectivo ? 'SÍ' : 'NO') . "\n";
-echo "   ✅ Cantidad Talla: " . json_encode($prenda->cantidad_talla) . "\n\n";
-
-// 3. Generar descripción detallada
-echo "📋 PASO 3: Generando descripción detallada de la prenda...\n";
-$descripcionDetallada = $prenda->generarDescripcionDetallada();
-
-echo "✅ Descripción generada:\n";
-echo "────────────────────────────────────────────────────────────────\n";
-echo $descripcionDetallada;
-echo "\n────────────────────────────────────────────────────────────────\n\n";
-
-// 4. Generar descripción del pedido
-echo "📋 PASO 4: Generando descripción_prendas del pedido...\n";
-$descripcionPedido = $pedido->descripcion_prendas;
-
-echo "✅ Descripción del pedido:\n";
-echo "────────────────────────────────────────────────────────────────\n";
-echo $descripcionPedido;
-echo "\n────────────────────────────────────────────────────────────────\n\n";
-
-// 5. Verificar relación numero_pedido
-echo "📋 PASO 5: Verificando relación numero_pedido...\n";
-echo "   Prenda numero_pedido: {$prenda->numero_pedido}\n";
-echo "   Pedido numero_pedido: {$pedido->numero_pedido}\n";
-
-if ($prenda->numero_pedido === $pedido->numero_pedido) {
-    echo "   ✅ Relación correcta\n\n";
-} else {
-    echo "   ❌ Relación incorrecta\n\n";
-}
-
-// 6. Resumen
-echo "╔════════════════════════════════════════════════════════════════╗\n";
-echo "║  ✅ PRUEBAS COMPLETADAS EXITOSAMENTE                          ║\n";
-echo "╚════════════════════════════════════════════════════════════════╝\n\n";

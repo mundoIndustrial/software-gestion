@@ -7,9 +7,13 @@
 const ApiClient = (() => {
     /**
      * Obtiene los procesos de una orden
+     * Intenta primero con /api/ordenes/{id}/procesos
+     * Si falla, intenta con /api/tabla-original/{numeroPedido}/procesos
+     * Si falla, intenta con /api/tabla-original-bodega/{numeroPedido}/procesos
      */
     async function getOrderProcesos(orderId) {
         try {
+            // Intentar primero con la ruta de ordenes (PedidoProduccion)
             const response = await fetch(`/api/ordenes/${orderId}/procesos`, {
                 headers: {
                     'Accept': 'application/json',
@@ -17,11 +21,37 @@ const ApiClient = (() => {
                 }
             });
             
-            if (!response.ok) {
+            if (response.ok) {
+                return await response.json();
+            }
+            
+            // Si falla, intentar con tabla_original (RegistroOrden)
+            console.log('📍 Ruta /api/ordenes falló, intentando /api/tabla-original');
+            const responseTablaOriginal = await fetch(`/api/tabla-original/${orderId}/procesos`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            if (responseTablaOriginal.ok) {
+                return await responseTablaOriginal.json();
+            }
+            
+            // Si falla, intentar con tabla_original_bodega
+            console.log('📍 Ruta /api/tabla-original falló, intentando /api/tabla-original-bodega');
+            const responseTablaOriginalBodega = await fetch(`/api/tabla-original-bodega/${orderId}/procesos`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            if (!responseTablaOriginalBodega.ok) {
                 throw new Error('No se encontraron los procesos de la orden');
             }
             
-            return await response.json();
+            return await responseTablaOriginalBodega.json();
         } catch (error) {
             console.error('Error al obtener procesos:', error);
             throw error;
@@ -30,6 +60,8 @@ const ApiClient = (() => {
     
     /**
      * Obtiene los días calculados de una orden
+     * Intenta primero con /api/registros/{id}/dias
+     * Si falla, intenta con /api/bodega/{id}/dias
      */
     async function getOrderDays(orderId) {
         try {
@@ -42,6 +74,19 @@ const ApiClient = (() => {
             
             if (response.ok) {
                 return await response.json();
+            }
+            
+            // Si falla, intentar con ruta de bodega
+            console.log('📍 Ruta /api/registros falló, intentando /api/bodega');
+            const responseBodega = await fetch(`/api/bodega/${orderId}/dias`, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            if (responseBodega.ok) {
+                return await responseBodega.json();
             }
             
             return null;

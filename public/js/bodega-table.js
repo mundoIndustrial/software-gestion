@@ -297,7 +297,74 @@ function openEditModal(pedido) {
  */
 function createViewButtonDropdown(pedido) {
     console.log(`👁️ Viendo detalles del pedido ${pedido}`);
-    openBodegaDetailModal(pedido);
+    
+    // Verificar si ya existe un dropdown
+    const existingDropdown = document.querySelector(`.view-button-dropdown[data-order-id="${pedido}"]`);
+    if (existingDropdown) {
+        existingDropdown.remove();
+        return;
+    }
+    
+    // Crear dropdown
+    const dropdown = document.createElement('div');
+    dropdown.className = 'view-button-dropdown';
+    dropdown.dataset.orderId = pedido;
+    dropdown.innerHTML = `
+        <button class="dropdown-option detail-option">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            <span>Detalle</span>
+        </button>
+        <button class="dropdown-option tracking-option">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 11l3 3L22 4M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>Seguimiento</span>
+        </button>
+    `;
+    
+    // Posicionar el dropdown cerca del botón Ver
+    const viewButton = document.querySelector(`.detail-btn[onclick*="createViewButtonDropdown(${pedido})"]`);
+    if (viewButton) {
+        const rect = viewButton.getBoundingClientRect();
+        dropdown.style.position = 'fixed';
+        dropdown.style.top = (rect.bottom + 5) + 'px';
+        dropdown.style.left = rect.left + 'px';
+        dropdown.style.zIndex = '9999';
+        document.body.appendChild(dropdown);
+        
+        console.log('✅ Dropdown creado');
+        
+        // Agregar event listeners
+        const detailBtn = dropdown.querySelector('.detail-option');
+        const trackingBtn = dropdown.querySelector('.tracking-option');
+        
+        detailBtn.addEventListener('click', function() {
+            console.log('🔍 Abriendo detalle de bodega:', pedido);
+            openDetailBodega(pedido);
+            dropdown.remove();
+        });
+        
+        trackingBtn.addEventListener('click', function() {
+            console.log('📊 Abriendo seguimiento de bodega:', pedido);
+            openBodegaTrackingModal(pedido);
+            dropdown.remove();
+        });
+        
+        // Cerrar dropdown al hacer click fuera
+        setTimeout(() => {
+            document.addEventListener('click', function closeDropdown(e) {
+                if (!dropdown.contains(e.target) && !viewButton.contains(e.target)) {
+                    dropdown.remove();
+                    document.removeEventListener('click', closeDropdown);
+                }
+            });
+        }, 0);
+    } else {
+        console.warn('⚠️ No se encontró el botón Ver para el pedido:', pedido);
+    }
 }
 
 /**

@@ -70,7 +70,10 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/registros/{pedido}/images', [RegistroOrdenController::class, 'getOrderImages'])->name('registros.images');
     Route::get('/api/registros-por-orden/{pedido}', [RegistroOrdenController::class, 'getRegistrosPorOrden'])->name('api.registros-por-orden');
     Route::get('/api/registros/{numero_pedido}/dias', [RegistroOrdenController::class, 'calcularDiasAPI'])->name('api.registros.dias');
+    Route::get('/api/bodega/{numero_pedido}/dias', [RegistroBodegaController::class, 'calcularDiasAPI'])->name('api.bodega.dias');
     Route::get('/api/ordenes/{id}/procesos', [App\Http\Controllers\OrdenController::class, 'getProcesos'])->name('api.ordenes.procesos');
+    Route::get('/api/tabla-original/{numeroPedido}/procesos', [RegistroOrdenController::class, 'getProcesosTablaOriginal'])->name('api.tabla-original.procesos');
+    Route::get('/api/tabla-original-bodega/{numeroPedido}/procesos', [RegistroBodegaController::class, 'getProcesosTablaOriginal'])->name('api.tabla-original-bodega.procesos');
     Route::post('/api/registros/dias-batch', [RegistroOrdenController::class, 'calcularDiasBatchAPI'])->name('api.registros.dias-batch');
     Route::post('/registros/{pedido}/edit-full', [RegistroOrdenController::class, 'editFullOrder'])->name('registros.editFull');
     Route::get('/registros/{pedido}/descripcion-prendas', [RegistroOrdenController::class, 'getDescripcionPrendas'])->name('registros.descripcion-prendas');
@@ -326,6 +329,17 @@ Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.
 Route::middleware('auth')->prefix('asesores')->name('asesores.')->group(function () {
     Route::get('/notifications', [AsesorController::class, 'getNotifications'])->name('notifications');
     Route::post('/notifications/mark-all-read', [AsesorController::class, 'markAllNotificationsAsRead'])->name('notifications.mark-all-read');
+});
+
+// ========================================
+// RUTAS API PÚBLICAS PARA FESTIVOS
+// ========================================
+Route::prefix('api')->name('api.')->group(function () {
+    // Rutas públicas para festivos (sin autenticación requerida)
+    Route::get('/festivos', [App\Http\Controllers\Api\FestivosController::class, 'index'])->name('festivos.index');
+    Route::get('/festivos/detailed', [App\Http\Controllers\Api\FestivosController::class, 'detailed'])->name('festivos.detailed');
+    Route::get('/festivos/check', [App\Http\Controllers\Api\FestivosController::class, 'check'])->name('festivos.check');
+    Route::get('/festivos/range', [App\Http\Controllers\Api\FestivosController::class, 'range'])->name('festivos.range');
 });
 
 require __DIR__.'/auth.php';

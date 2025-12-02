@@ -1862,4 +1862,66 @@ class RegistroOrdenController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * API: Obtener procesos de una orden desde tabla_original (para bodega tracking)
+     * Busca en procesos_prenda usando el número de pedido
+     */
+    public function getProcesosTablaOriginal($numeroPedido)
+    {
+        try {
+            // Buscar la orden en tabla_original
+            $orden = TablaOriginal::where('pedido', $numeroPedido)->firstOrFail();
+
+            // Obtener festivos
+            $festivos = Festivo::pluck('fecha')->toArray();
+
+            // Obtener los procesos ordenados por fecha_inicio desde procesos_prenda
+            $procesos = DB::table('procesos_prenda')
+                ->where('numero_pedido', $numeroPedido)
+                ->orderBy('fecha_inicio', 'asc')
+                ->select('proceso', 'fecha_inicio', 'encargado', 'estado_proceso')
+                ->get()
+                ->groupBy('proceso')
+                ->map(function($grupo) {
+                    return $grupo->first();
+                })
+                ->values();
+
+            // Calcular días hábiles totales
+            $totalDiasHabiles = 0;
+            if ($procesos->count() > 0) {
+                $fechaInicio = Carbon::parse($procesos->first()->fecha_inicio);
+                
+                $procesoDespachos = $procesos->firstWhere('proceso', 'Despachos') 
+                    ?? $procesos->firstWhere('proceso', 'Entrega')
+                    ?? $procesos->firstWhere('proceso', 'Despacho');
+                
+                if ($procesoDespachos) {
+                    $fechaFin = Carbon::parse($procesoDespachos->fecha_inicio);
+                } elseif ($procesos->count() > 1) {
+                    $fechaFin = Carbon::parse($procesos->last()->fecha_inicio);
+                } else {
+                    $fechaFin = Carbon::now();
+                }
+                
+                $totalDiasHabiles = $this->calcularDiasHabilesBatch($fechaInicio, $fechaFin, $festivos);
+            }
+
+            return response()->json([
+                'numero_pedido' => $numeroPedido,
+                'cliente' => $orden->cliente ?? '',
+                'fecha_inicio' => $orden->fecha_de_creacion_de_orden ?? null,
+                'fecha_estimada_de_entrega' => $orden->fecha_estimada_entrega ?? null,
+                'procesos' => $procesos,
+                'total_dias_habiles' => $totalDiasHabiles,
+                'festivos' => $festivos
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en getProcesosTablaOriginal: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'No se encontró la orden o no tiene permiso para verla'
+            ], 404);
+        }
+    }
 }
