@@ -30,7 +30,7 @@
 
 ### Paso 5: Crear Componentes
 - [x] `resources/views/components/sidebars/sidebar-asesores.blade.php` ✅ CREADO
-- [ ] `resources/views/components/headers/header-asesores.blade.php` (próximo)
+- [x] `resources/views/components/headers/header-asesores.blade.php` ✅ CREADO
 
 ---
 
