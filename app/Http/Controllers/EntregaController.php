@@ -122,34 +122,50 @@ class EntregaController extends Controller
 
     public function sizes(Request $request)
     {
-        $tipo = $request->route('tipo');
-        $pedido = $request->route('pedido');
-        $prenda = $request->route('prenda');
+        try {
+            $tipo = $request->route('tipo');
+            $pedido = $request->route('pedido');
+            $prenda = $request->route('prenda');
 
-        if ($tipo === 'pedido') {
-            $sizes = \App\Models\RegistrosPorOrden::where('pedido', $pedido)
-                ->where('prenda', $prenda)
-                ->get();
-        } elseif ($tipo === 'bodega') {
-            $sizes = \App\Models\RegistrosPorOrdenBodega::where('pedido', $pedido)
-                ->where('prenda', $prenda)
-                ->get();
+            \Log::info('Sizes request', [
+                'tipo' => $tipo,
+                'pedido' => $pedido,
+                'prenda' => $prenda,
+            ]);
+
+            if ($tipo === 'pedido') {
+                $sizes = \App\Models\RegistrosPorOrden::where('pedido', $pedido)
+                    ->where('prenda', $prenda)
+                    ->get();
+            } elseif ($tipo === 'bodega') {
+                $sizes = \App\Models\RegistrosPorOrdenBodega::where('pedido', $pedido)
+                    ->where('prenda', $prenda)
+                    ->get();
+            } else {
+                return response()->json(['error' => 'Tipo inválido'], 400);
+            }
+
+            $result = [];
+            foreach ($sizes as $size) {
+                $totalProducido = $size->total_producido_por_talla ?? 0;
+                $totalPendiente = $size->total_pendiente_por_talla ?? 0;
+
+                $result[] = [
+                    'talla' => $size->talla,
+                    'total_producido_por_talla' => $totalProducido,
+                    'total_pendiente_por_talla' => $totalPendiente,
+                    'cantidad' => $size->cantidad,
+                ];
+            }
+
+            return response()->json($result);
+        } catch (\Exception $e) {
+            \Log::error('Error in sizes method', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json(['error' => 'Error al obtener tallas: ' . $e->getMessage()], 500);
         }
-
-        $result = [];
-        foreach ($sizes as $size) {
-            $totalProducido = $size->total_producido_por_talla ?? 0;
-            $totalPendiente = $size->total_pendiente_por_talla ?? 0;
-
-            $result[] = [
-                'talla' => $size->talla,
-                'total_producido_por_talla' => $totalProducido,
-                'total_pendiente_por_talla' => $totalPendiente,
-                'cantidad' => $size->cantidad,
-            ];
-        }
-
-        return response()->json($result);
     }
 
     public function store(Request $request)

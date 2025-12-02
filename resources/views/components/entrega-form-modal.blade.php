@@ -927,8 +927,29 @@
                     if (!this.form.pedido || !this.form.prenda) return;
 
                     try {
-                        const response = await fetch(`/entrega/${this.tipo}/sizes/${this.form.pedido}/${encodeURIComponent(this.form.prenda)}`);
+                        const url = `/entrega/${this.tipo}/sizes/${this.form.pedido}/${encodeURIComponent(this.form.prenda)}`;
+                        console.log('Fetching sizes from URL:', url);
+                        
+                        const response = await fetch(url);
+                        
+                        if (!response.ok) {
+                            const text = await response.text();
+                            console.error('Response text:', text);
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        
                         const data = await response.json();
+                        
+                        if (data.error) {
+                            console.error('Error from server:', data.error);
+                            this.showErrorMessage = true;
+                            this.errorMessage = `Error al obtener tallas: ${data.error}`;
+                            setTimeout(() => {
+                                this.showErrorMessage = false;
+                            }, 3000);
+                            return;
+                        }
+                        
                         this.sizes = data;
 
                         // Populate talla select
@@ -941,7 +962,12 @@
                             tallaSelect.appendChild(option);
                         });
                     } catch (error) {
-                        console.error('Error:', error);
+                        console.error('Error fetching sizes:', error);
+                        this.showErrorMessage = true;
+                        this.errorMessage = `Error al obtener tallas: ${error.message}`;
+                        setTimeout(() => {
+                            this.showErrorMessage = false;
+                        }, 3000);
                     }
                 },
 
