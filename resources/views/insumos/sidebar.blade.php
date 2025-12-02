@@ -44,6 +44,18 @@
         </a>
       </li>
 
+      <!-- Volver al Dashboard Principal - Solo para supervisor_planta y admin -->
+      @if(auth()->user()->role && in_array(auth()->user()->role->name, ['supervisor_planta', 'admin']))
+      <li class="menu-item">
+        <a href="{{ route('dashboard') }}"
+           class="menu-link"
+           aria-label="Volver al dashboard principal">
+          <span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
+          <span class="menu-label">Volver</span>
+        </a>
+      </li>
+      @endif
+
       <!-- Salir -->
       <li class="menu-item">
         <form action="{{ route('logout') }}" method="POST">

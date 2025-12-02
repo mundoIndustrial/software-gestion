@@ -122,6 +122,23 @@
                     </ul>
                 </nav>
             </div>
+
+            <!-- Volver al Dashboard - Solo para supervisor_planta y admin -->
+            @if(auth()->user()->role && in_array(auth()->user()->role->name, ['supervisor_planta', 'admin']))
+            <div class="menu-section">
+                <nav aria-label="Navegación">
+                    <ul class="menu-list">
+                        <li class="menu-item">
+                            <a href="{{ route('dashboard') }}" 
+                               class="menu-link">
+                                <span class="material-symbols-rounded">arrow_back</span>
+                                <span class="menu-label">Volver</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+            @endif
         </div>
 
         <div class="sidebar-footer">
