@@ -4,7 +4,7 @@
 
 @section('body')
 <div class="container">
-    @include('layouts.sidebar')
+    @include('contador.sidebar')
 
     <main class="main-content">
         @yield('content')
