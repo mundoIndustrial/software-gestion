@@ -3,6 +3,21 @@
  * Responsabilidad: Modal de especificaciones, secciones de ubicación
  */
 
+// Agregar estilos de animación
+const shakeStyleElement = document.createElement('style');
+shakeStyleElement.textContent = `
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+        20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+    
+    .shake {
+        animation: shake 0.5s ease-in-out;
+    }
+`;
+document.head.appendChild(shakeStyleElement);
+
 // ============ MODAL ESPECIFICACIONES ============
 
 function abrirModalEspecificaciones() {
@@ -117,102 +132,176 @@ document.addEventListener('click', function(e) {
 
 // ============ SECCIONES DE UBICACIÓN ============
 
+// Opciones por ubicación
+const opcionesPorUbicacionFriendly = {
+    'CAMISA': ['PECHO', 'ESPALDA', 'MANGA IZQUIERDA', 'MANGA DERECHA', 'CUELLO'],
+    'JEAN_SUDADERA': ['PIERNA IZQUIERDA', 'PIERNA DERECHA', 'BOLSILLO TRASERO', 'BOLSILLO RELOJERO'],
+    'GORRAS': ['FRENTE', 'LATERAL', 'TRASERA']
+};
+
+let seccionesSeleccionadasFriendly = [];
+
 function agregarSeccion() {
-    const seccion = document.getElementById('seccion_prenda').value;
-    const contenedor = document.getElementById('secciones_agregadas');
-    if (!seccion) {
-        alert('Por favor selecciona una sección');
+    const selector = document.getElementById('seccion_prenda');
+    const ubicacion = selector.value;
+    const errorDiv = document.getElementById('errorSeccionPrendaFriendly');
+    
+    if (!ubicacion) {
+        // Mostrar error
+        selector.style.border = '2px solid #ef4444';
+        selector.style.background = '#fee2e2';
+        selector.classList.add('shake');
+        
+        if (errorDiv) {
+            errorDiv.style.display = 'block';
+        }
+        
+        // Remover efecto después de 600ms
+        setTimeout(() => {
+            selector.style.border = '';
+            selector.style.background = '';
+            selector.classList.remove('shake');
+        }, 600);
+        
+        // Remover mensaje de error después de 3 segundos
+        setTimeout(() => {
+            if (errorDiv) errorDiv.style.display = 'none';
+        }, 3000);
+        
         return;
     }
     
-    let ubicaciones = [];
-    if (seccion === 'CAMISA') {
-        ubicaciones = ['LADO IZQUIERDO', 'LADO DERECHO', 'ESPALDA', 'MANGA'];
-    } else if (seccion === 'JEAN_SUDADERA') {
-        ubicaciones = ['PIERNA IZQUIERDA', 'PIERNA DERECHA', 'BOLSILLO TRASERO', 'BOLSILLO RELOJERO'];
-    } else if (seccion === 'GORRAS') {
-        ubicaciones = ['FRONTAL', 'LATERAL'];
+    // Limpiar error si hay selección
+    selector.style.border = '';
+    selector.style.background = '';
+    if (errorDiv) {
+        errorDiv.style.display = 'none';
     }
     
-    const seccionDiv = document.createElement('div');
-    seccionDiv.style.cssText = 'background: #f9f9f9; border: 2px solid #3498db; border-radius: 8px; padding: 15px; position: relative;';
-    seccionDiv.dataset.seccion = seccion;
+    // Crear modal con opciones
+    const opciones = opcionesPorUbicacionFriendly[ubicacion] || [];
     
-    const titulo = document.createElement('div');
-    titulo.style.cssText = 'font-weight: bold; font-size: 1.1rem; margin-bottom: 10px;';
-    titulo.innerHTML = seccion;
-    seccionDiv.appendChild(titulo);
-    
-    const tabla = document.createElement('table');
-    tabla.style.cssText = 'width: 100%; border-collapse: collapse; margin-bottom: 10px;';
-    
-    const thead = document.createElement('thead');
-    thead.innerHTML = `
-        <tr style="background: #f5f5f5; border-bottom: 2px solid #ddd;">
-            <th style="padding: 10px; text-align: left;">Ubicación</th>
-            <th style="padding: 10px; text-align: center; width: 50px;">Acción</th>
-        </tr>
+    let html = `
+        <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;" id="modalUbicacionFriendly">
+            <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h3 style="margin: 0; color: #1e40af; font-size: 1.1rem;">${ubicacion}</h3>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button type="button" onclick="cerrarModalUbicacionFriendly()" style="background: #ef4444; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 1.5rem; display: flex; align-items: center; justify-content: center;">×</button>
+                        <button type="button" onclick="guardarUbicacionFriendly('${ubicacion}')" style="background: #3498db; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 1.5rem; display: flex; align-items: center; justify-content: center;">+</button>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.75rem; color: #333;">Ubicación</label>
+                    <div id="opcionesUbicacionFriendly" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 300px; overflow-y: auto;"></div>
+                </div>
+                
+                <div>
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #333;">Observaciones de ${ubicacion}</label>
+                    <textarea id="obsUbicacionFriendly" placeholder="Observaciones..." style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; resize: vertical; min-height: 80px;"></textarea>
+                </div>
+            </div>
+        </div>
     `;
-    tabla.appendChild(thead);
     
-    const tbody = document.createElement('tbody');
-    ubicaciones.forEach(ubicacion => {
-        const fila = document.createElement('tr');
-        fila.style.borderBottom = '1px solid #ddd';
-        fila.innerHTML = `
-            <td style="padding: 10px; display: flex; align-items: center; gap: 10px;">
-                <input type="checkbox" name="ubicaciones_check[]" class="ubicacion-checkbox" style="width: 18px; height: 18px; cursor: pointer;">
-                <input type="hidden" name="ubicaciones_seccion[]" value="${seccion}">
-                <input type="hidden" name="ubicaciones[]" value="${ubicacion}">
-                <span>${ubicacion}</span>
-            </td>
-            <td style="padding: 10px; text-align: center;">
-                <button type="button" onclick="this.closest('tr').remove()" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">✕</button>
-            </td>
-        `;
-        tbody.appendChild(fila);
+    document.body.insertAdjacentHTML('beforeend', html);
+    
+    // Agregar opciones como checkboxes (con delay para que el DOM se actualice)
+    setTimeout(() => {
+        const container = document.getElementById('opcionesUbicacionFriendly');
+        console.log('Opciones Friendly:', opciones);
+        console.log('Container Friendly:', container);
+        
+        if (container && opciones.length > 0) {
+            opciones.forEach(opcion => {
+                const label = document.createElement('label');
+                label.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.5rem; border-radius: 6px; transition: background 0.2s;';
+                label.innerHTML = `
+                    <input type="checkbox" value="${opcion}" style="width: 18px; height: 18px; cursor: pointer;">
+                    <span>${opcion}</span>
+                `;
+                label.addEventListener('mouseover', () => label.style.background = '#f0f7ff');
+                label.addEventListener('mouseout', () => label.style.background = 'transparent');
+                container.appendChild(label);
+            });
+        } else {
+            console.log('Container o opciones vacías Friendly');
+        }
+    }, 10);
+}
+
+function cerrarModalUbicacionFriendly() {
+    const modal = document.getElementById('modalUbicacionFriendly');
+    if (modal) modal.remove();
+}
+
+function guardarUbicacionFriendly(ubicacion) {
+    const checkboxes = document.querySelectorAll('#opcionesUbicacionFriendly input[type="checkbox"]:checked');
+    const obs = document.getElementById('obsUbicacionFriendly').value;
+    const container = document.getElementById('opcionesUbicacionFriendly');
+    
+    if (checkboxes.length === 0) {
+        // Efecto de temblor y color rojo
+        container.style.border = '2px solid #ef4444';
+        container.style.background = '#fee2e2';
+        container.style.borderRadius = '6px';
+        container.style.padding = '0.5rem';
+        container.classList.add('shake');
+        
+        // Remover efecto después de 600ms
+        setTimeout(() => {
+            container.style.border = '';
+            container.style.background = '';
+            container.style.padding = '';
+            container.classList.remove('shake');
+        }, 600);
+        
+        return;
+    }
+    
+    const opciones = Array.from(checkboxes).map(cb => cb.value);
+    
+    seccionesSeleccionadasFriendly.push({
+        ubicacion: ubicacion,
+        opciones: opciones,
+        observaciones: obs
     });
-    tabla.appendChild(tbody);
-    seccionDiv.appendChild(tabla);
     
-    // Agregar campo de observaciones para esta sección
-    const obsDiv = document.createElement('div');
-    obsDiv.style.cssText = 'margin-top: 10px;';
-    obsDiv.innerHTML = `
-        <label style="display: block; margin-bottom: 5px; font-weight: 600; font-size: 0.9rem;">Observaciones de ${seccion}</label>
-        <input type="text" name="ubicaciones_observaciones[]" class="input-large" placeholder="Observaciones..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
-        <input type="hidden" name="ubicaciones_seccion_obs[]" value="${seccion}">
-    `;
-    seccionDiv.appendChild(obsDiv);
-    
-    const btnAgregar = document.createElement('button');
-    btnAgregar.type = 'button';
-    btnAgregar.textContent = '+';
-    btnAgregar.style.cssText = 'position: absolute; top: 10px; right: 10px; background: #3498db; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; justify-content: center; line-height: 1;';
-    btnAgregar.onclick = function() {
-        const fila = document.createElement('tr');
-        fila.style.borderBottom = '1px solid #ddd';
-        fila.innerHTML = `
-            <td style="padding: 10px;">
-                <input type="text" name="ubicaciones[]" class="input-large" style="width: 100%; padding: 5px; border: 1px solid #ddd; border-radius: 4px;" placeholder="Ubicación...">
-            </td>
-            <td style="padding: 10px; text-align: center;">
-                <button type="button" onclick="this.closest('tr').remove()" style="background: #f44336; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">✕</button>
-            </td>
-        `;
-        tbody.appendChild(fila);
-    };
-    seccionDiv.appendChild(btnAgregar);
-    
-    const btnEliminar = document.createElement('button');
-    btnEliminar.type = 'button';
-    btnEliminar.textContent = '✕';
-    btnEliminar.style.cssText = 'position: absolute; top: 10px; right: 50px; background: #f44336; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; line-height: 1;';
-    btnEliminar.onclick = function() {
-        seccionDiv.remove();
-    };
-    seccionDiv.appendChild(btnEliminar);
-    
-    contenedor.appendChild(seccionDiv);
+    cerrarModalUbicacionFriendly();
     document.getElementById('seccion_prenda').value = '';
+    renderizarSeccionesFriendly();
+}
+
+function renderizarSeccionesFriendly() {
+    const container = document.getElementById('secciones_agregadas');
+    container.innerHTML = '';
+    
+    seccionesSeleccionadasFriendly.forEach((seccion, index) => {
+        const div = document.createElement('div');
+        div.style.cssText = 'background: white; border: 2px solid #3498db; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;';
+        
+        const opcionesText = Array.isArray(seccion.opciones) ? seccion.opciones.join(', ') : seccion;
+        const ubicacionText = seccion.ubicacion || seccion;
+        const obsText = seccion.observaciones || '';
+        
+        div.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
+                <div>
+                    <h4 style="margin: 0 0 0.5rem 0; color: #1e40af; font-size: 0.95rem;">${ubicacionText}</h4>
+                    <p style="margin: 0 0 0.5rem 0; color: #666; font-size: 0.85rem;"><strong>Ubicación:</strong> ${opcionesText}</p>
+                    ${obsText ? `<p style="margin: 0; color: #666; font-size: 0.85rem;"><strong>Observaciones:</strong> ${obsText}</p>` : ''}
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button type="button" onclick="eliminarSeccionFriendly(${index})" style="background: #ef4444; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center;">×</button>
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+function eliminarSeccionFriendly(index) {
+    seccionesSeleccionadasFriendly.splice(index, 1);
+    renderizarSeccionesFriendly();
 }

@@ -2,6 +2,16 @@
 // NOTIFICATIONS SYSTEM
 // ========================================
 document.addEventListener('DOMContentLoaded', function() {
+    // Verificar que fetchAPI esté disponible
+    if (typeof window.fetchAPI !== 'function') {
+        console.warn('fetchAPI no está disponible aún, retrasando carga de notificaciones');
+        setTimeout(initializeNotifications, 100);
+        return;
+    }
+    initializeNotifications();
+});
+
+function initializeNotifications() {
     loadNotifications();
     
     // Actualizar notificaciones cada 30 segundos
@@ -12,11 +22,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (markAllReadBtn) {
         markAllReadBtn.addEventListener('click', markAllAsRead);
     }
-});
+}
 
 async function loadNotifications() {
     try {
-        const data = await fetchAPI('/asesores/notifications');
+        const data = await window.fetchAPI('/asesores/notifications');
         updateNotificationBadge(data.total_notificaciones);
         renderNotifications(data);
     } catch (error) {
@@ -150,7 +160,7 @@ function createNotificationElement(notif) {
 
 async function markAllAsRead() {
     try {
-        await fetchAPI('/asesores/notifications/mark-all-read', {
+        await window.fetchAPI('/asesores/notifications/mark-all-read', {
             method: 'POST'
         });
         

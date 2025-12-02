@@ -79,6 +79,14 @@ class Cotizacion extends Model
     }
 
     /**
+     * Relación con prenda de cotización (Prenda)
+     */
+    public function prendaCotizacion()
+    {
+        return $this->hasOne(PrendaCotizacion::class);
+    }
+
+    /**
      * Relación con logo/bordado/estampado de cotización
      */
     public function logoCotizacion()

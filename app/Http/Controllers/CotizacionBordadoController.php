@@ -46,6 +46,8 @@ class CotizacionBordadoController extends Controller
             $validated = $request->validate([
                 'cliente' => 'required|string|max:255',
                 'asesora' => 'required|string|max:255',
+                'fecha' => 'nullable|date',
+                'action' => 'required|in:borrador,enviar',
                 'tecnicas' => 'nullable|array',
                 'imagenes' => 'nullable|array',
                 'observaciones_tecnicas' => 'nullable|string',
@@ -53,15 +55,18 @@ class CotizacionBordadoController extends Controller
                 'observaciones_generales' => 'nullable|array',
             ]);
 
-            // Crear cotización de bordado en BORRADOR
+            $esBorrador = $validated['action'] === 'borrador';
+
+            // Crear cotización de bordado con tipo "B" (Logo)
             $cotizacion = Cotizacion::create([
                 'user_id' => auth()->id(),
                 'numero_cotizacion' => 'COT-BORD-' . Str::random(8),
-                'tipo_cotizacion' => 'bordado',
-                'estado' => 'borrador',
+                'tipo_cotizacion_id' => 2, // Tipo "B" (Logo)
+                'estado' => $esBorrador ? 'borrador' : 'enviada',
                 'cliente' => $validated['cliente'],
                 'asesora' => $validated['asesora'],
-                'es_borrador' => true,
+                'created_at' => $validated['fecha'] ?? now(),
+                'es_borrador' => $esBorrador,
             ]);
 
             // Guardar detalles técnicos en logo_cotizaciones
@@ -76,11 +81,19 @@ class CotizacionBordadoController extends Controller
                 ]);
             }
 
+            $mensaje = $esBorrador 
+                ? 'Cotización de bordado guardada en borrador' 
+                : 'Cotización de bordado enviada correctamente';
+            
+            $redirect = $esBorrador 
+                ? route('asesores.cotizaciones-bordado.edit', $cotizacion->id)
+                : route('asesores.cotizaciones.index');
+
             return response()->json([
                 'success' => true,
-                'message' => 'Cotización de bordado guardada en borrador',
+                'message' => $mensaje,
                 'cotizacion_id' => $cotizacion->id,
-                'redirect' => route('asesores.cotizaciones-bordado.edit', $cotizacion->id)
+                'redirect' => $redirect
             ]);
         } catch (\Exception $e) {
             return response()->json([

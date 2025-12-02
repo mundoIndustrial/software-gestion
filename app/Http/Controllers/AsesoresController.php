@@ -174,9 +174,21 @@ class AsesoresController extends Controller
     /**
      * Mostrar formulario para crear pedido (versión amigable)
      */
-    public function create()
+    public function create(Request $request)
     {
-        return view('asesores.pedidos.create-friendly');
+        $tipo = $request->query('tipo', 'PB'); // Por defecto Prenda/Logo
+        
+        // Si es tipo Logo (B), redirigir a cotización de bordado
+        if ($tipo === 'B') {
+            return redirect()->route('asesores.cotizaciones-bordado.create');
+        }
+        
+        // Si es tipo Prenda (P), redirigir a cotización de prenda
+        if ($tipo === 'P') {
+            return redirect()->route('asesores.cotizaciones-prenda.create');
+        }
+        
+        return view('asesores.pedidos.create-friendly', compact('tipo'));
     }
 
     /**

@@ -15,21 +15,21 @@ class TipoCotizacionSeeder extends Seeder
     {
         $tipos = [
             [
-                'codigo' => 'M',
-                'nombre' => 'Muestras',
-                'descripcion' => 'Cotización de muestras de prendas',
+                'codigo' => 'PB',
+                'nombre' => 'Prenda/Bordado',
+                'descripcion' => 'Cotización de prendas con bordado',
                 'activo' => true,
             ],
             [
-                'codigo' => 'D',
-                'nombre' => 'Distribuidor',
-                'descripcion' => 'Cotización para distribuidores',
+                'codigo' => 'B',
+                'nombre' => 'Bordado',
+                'descripcion' => 'Cotización de bordado únicamente',
                 'activo' => true,
             ],
             [
-                'codigo' => 'X',
-                'nombre' => 'Exportación',
-                'descripcion' => 'Cotización para exportación',
+                'codigo' => 'P',
+                'nombre' => 'Prenda',
+                'descripcion' => 'Cotización de prendas únicamente',
                 'activo' => true,
             ],
         ];

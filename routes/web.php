@@ -13,6 +13,7 @@ use App\Http\Controllers\VistasController;
 use App\Http\Controllers\BalanceoController;
 use App\Http\Controllers\AsesorController;
 use App\Http\Controllers\CotizacionBordadoController;
+use App\Http\Controllers\CotizacionPrendaController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -301,6 +302,17 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     Route::put('/cotizaciones/bordado/{cotizacion}', [CotizacionBordadoController::class, 'update'])->name('cotizaciones-bordado.update');
     Route::post('/cotizaciones/bordado/{cotizacion}/enviar', [CotizacionBordadoController::class, 'enviar'])->name('cotizaciones-bordado.enviar');
     Route::delete('/cotizaciones/bordado/{cotizacion}', [CotizacionBordadoController::class, 'destroy'])->name('cotizaciones-bordado.destroy');
+
+    // ========================================
+    // COTIZACIONES DE PRENDA - Solo Asesor
+    // ========================================
+    Route::get('/cotizaciones/prenda/crear', [CotizacionPrendaController::class, 'create'])->name('cotizaciones-prenda.create');
+    Route::post('/cotizaciones/prenda', [CotizacionPrendaController::class, 'store'])->name('cotizaciones-prenda.store');
+    Route::get('/cotizaciones/prenda/lista', [CotizacionPrendaController::class, 'lista'])->name('cotizaciones-prenda.lista');
+    Route::get('/cotizaciones/prenda/{cotizacion}/editar', [CotizacionPrendaController::class, 'edit'])->name('cotizaciones-prenda.edit');
+    Route::put('/cotizaciones/prenda/{cotizacion}', [CotizacionPrendaController::class, 'update'])->name('cotizaciones-prenda.update');
+    Route::post('/cotizaciones/prenda/{cotizacion}/enviar', [CotizacionPrendaController::class, 'enviar'])->name('cotizaciones-prenda.enviar');
+    Route::delete('/cotizaciones/prenda/{cotizacion}', [CotizacionPrendaController::class, 'destroy'])->name('cotizaciones-prenda.destroy');
 });
 
 // ========== DEBUG ROUTES PARA OPTIMIZACIÓN DE /registros ==========

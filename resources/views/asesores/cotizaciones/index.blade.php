@@ -206,7 +206,7 @@
         </div>
     </div>
 
-    <!-- TABS PROFESIONALES -->
+    <!-- TABS PROFESIONALES - ESTADO -->
     <div style="display: flex; gap: 0; margin-bottom: 25px;">
         <button class="tab-btn active" onclick="mostrarTab('cotizaciones')" style="padding: 12px 24px; background: none; border: none; border-bottom: 3px solid #3498db; cursor: pointer; font-weight: 600; color: #333; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; transition: all 0.3s;">
             <i class="fas fa-check" style="font-size: 16px;"></i>
@@ -218,18 +218,32 @@
         </button>
     </div>
 
+    <!-- TABS POR TIPO DE COTIZACIÓN -->
+    <div style="display: flex; gap: 0; margin-bottom: 20px; border-bottom: 1px solid #e5e7eb;">
+        <button class="tipo-tab-btn active" onclick="mostrarTipo('todas')" style="padding: 10px 16px; background: none; border: none; border-bottom: 2px solid #3498db; cursor: pointer; font-weight: 500; color: #333; font-size: 0.9rem; transition: all 0.3s;">
+            Todas
+        </button>
+        <button class="tipo-tab-btn" onclick="mostrarTipo('PB')" style="padding: 10px 16px; background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-weight: 500; color: #666; font-size: 0.9rem; transition: all 0.3s;">
+            Prenda/Bordado
+        </button>
+        <button class="tipo-tab-btn" onclick="mostrarTipo('B')" style="padding: 10px 16px; background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-weight: 500; color: #666; font-size: 0.9rem; transition: all 0.3s;">
+            Bordado
+        </button>
+    </div>
+
     <!-- COTIZACIONES ENVIADAS -->
     <div id="tab-cotizaciones" class="tab-content">
         @if($cotizaciones->count() > 0)
             <!-- VISTA TARJETAS -->
             <div id="vista-tarjetas-cot" style="display: none; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px;">
                 @foreach($cotizaciones as $cot)
-                    <div style="background: white; border: 1px solid #ecf0f1; border-radius: 6px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); transition: all 0.3s;">
+                    <div class="tarjeta-cot" data-tipo="{{ $cot->tipoCotizacion?->codigo ?? 'todas' }}" style="background: white; border: 1px solid #ecf0f1; border-radius: 6px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); transition: all 0.3s;">
                         <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
                             <div style="flex: 1; min-width: 0;">
                                 <h4 style="margin: 0; color: #333; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ $cot->cliente ?? 'Sin cliente' }}</h4>
                                 @if(auth()->user() && auth()->user()->role && auth()->user()->role->name === 'asesor')
                                     <p style="margin: 2px 0 0 0; color: #999; font-size: 0.8rem;">ID: #{{ $cot->id }}</p>
+                                    <p style="margin: 2px 0 0 0; color: #3498db; font-size: 0.75rem; font-weight: 600;">{{ $cot->tipoCotizacion?->nombre ?? 'Sin tipo' }}</p>
                                 @endif
                             </div>
                             <span style="background: #d4edda; color: #155724; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; white-space: nowrap; margin-left: 5px;">
@@ -257,18 +271,26 @@
                                 <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Código</th>
                             @endif
                             <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Cliente</th>
+                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Tipo</th>
                             <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Estado</th>
                             <th style="padding: 14px 12px; text-align: center; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Acción</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($cotizaciones as $cot)
-                            <tr style="border-bottom: 1px solid #ecf0f1; transition: background 0.2s;">
+                            <tr class="fila-cot" data-tipo="{{ $cot->tipoCotizacion?->codigo ?? 'todas' }}" style="border-bottom: 1px solid #ecf0f1; transition: background 0.2s;">
                                 <td style="padding: 12px; color: #666; font-size: 0.9rem;">{{ $cot->created_at->format('d/m/Y') }}</td>
                                 @if(auth()->user() && auth()->user()->role && auth()->user()->role->name === 'asesor')
                                     <td style="padding: 12px; color: #1e40af; font-size: 0.9rem; font-weight: 700;">{{ $cot->numero_cotizacion ?? 'Por asignar' }}</td>
                                 @endif
-                                <td style="padding: 12px; color: #333; font-size: 0.9rem; font-weight: 500;">{{ $cot->cliente ?? 'Sin cliente' }}</td>
+                                <td style="padding: 12px; color: #333; font-size: 0.9rem; font-weight: 500;">
+                                    {{ $cot->cliente ?? 'Sin cliente' }}
+                                </td>
+                                <td style="padding: 12px;">
+                                    <span style="background: #e3f2fd; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">
+                                        {{ $cot->tipoCotizacion?->nombre ?? 'Sin tipo' }}
+                                    </span>
+                                </td>
                                 <td style="padding: 12px;">
                                     <span style="background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">
                                         {{ ucfirst($cot->estado) }}
@@ -353,6 +375,7 @@
                             <div style="flex: 1; min-width: 0;">
                                 <h4 style="margin: 0; color: #333; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ $borrador->cliente ?? 'Sin cliente' }}</h4>
                                 <p style="margin: 2px 0 0 0; color: #999; font-size: 0.8rem;">ID: #{{ $borrador->id }}</p>
+                                <p style="margin: 2px 0 0 0; color: #1e40af; font-size: 0.75rem; font-weight: 600;">{{ $borrador->tipoCotizacion?->nombre ?? 'Sin tipo' }}</p>
                             </div>
                             <span style="background: #fff3cd; color: #856404; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; white-space: nowrap; margin-left: 5px;">
                                 BORRADOR
@@ -381,6 +404,7 @@
                         <tr>
                             <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Fecha</th>
                             <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Cliente</th>
+                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Tipo</th>
                             <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Estado</th>
                             <th style="padding: 14px 12px; text-align: center; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Acciones</th>
                         </tr>
@@ -390,6 +414,11 @@
                             <tr style="border-bottom: 1px solid #ecf0f1; transition: background 0.2s;">
                                 <td style="padding: 12px; color: #666; font-size: 0.9rem;">{{ $borrador->created_at->format('d/m/Y') }}</td>
                                 <td style="padding: 12px; color: #333; font-size: 0.9rem; font-weight: 500;">{{ $borrador->cliente ?? 'Sin cliente' }}</td>
+                                <td style="padding: 12px;">
+                                    <span style="background: #e3f2fd; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">
+                                        {{ $borrador->tipoCotizacion?->nombre ?? 'Sin tipo' }}
+                                    </span>
+                                </td>
                                 <td style="padding: 12px;">
                                     <span style="background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">
                                         BORRADOR
@@ -563,6 +592,32 @@ function cambiarVista(vista) {
     // Cambiar vista en borradores
     document.getElementById('vista-tarjetas-bor').style.display = vista === 'tarjetas' ? 'grid' : 'none';
     document.getElementById('vista-tabla-bor').style.display = vista === 'tabla' ? 'block' : 'none';
+}
+
+function mostrarTipo(tipo) {
+    // Actualizar botones de tipo
+    document.querySelectorAll('.tipo-tab-btn').forEach(btn => {
+        btn.style.borderBottomColor = 'transparent';
+        btn.style.color = '#666';
+    });
+    
+    // Activar botón seleccionado
+    event.target.style.borderBottomColor = '#3498db';
+    event.target.style.color = '#333';
+    
+    // Filtrar tarjetas de cotizaciones
+    const tarjetasCot = document.querySelectorAll('.tarjeta-cot');
+    tarjetasCot.forEach(tarjeta => {
+        const tipoTarjeta = tarjeta.getAttribute('data-tipo');
+        tarjeta.style.display = (tipo === 'todas' || tipoTarjeta === tipo) ? 'block' : 'none';
+    });
+    
+    // Filtrar filas de cotizaciones
+    const filasCot = document.querySelectorAll('.fila-cot');
+    filasCot.forEach(fila => {
+        const tipoFila = fila.getAttribute('data-tipo');
+        fila.style.display = (tipo === 'todas' || tipoFila === tipo) ? 'table-row' : 'none';
+    });
 }
 
 function filtrarCotizaciones() {

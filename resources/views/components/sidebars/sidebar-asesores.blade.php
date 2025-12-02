@@ -39,25 +39,38 @@
                     </a>
                 </li>
                 <li class="menu-item">
-                    <a href="{{ route('asesores.pedidos.create') }}"
-                       class="menu-link {{ request()->routeIs('asesores.pedidos.create') ? 'active' : '' }}">
+                    <button class="menu-link submenu-toggle {{ request()->routeIs('asesores.pedidos.create') ? 'active' : '' }}"
+                            aria-label="Crear nueva cotización">
                         <span class="material-symbols-rounded">add_circle</span>
                         <span class="menu-label">Nueva Cotización</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="{{ route('asesores.cotizaciones-bordado.lista') }}"
-                       class="menu-link {{ request()->routeIs('asesores.cotizaciones-bordado.*') ? 'active' : '' }}">
-                        <span class="material-symbols-rounded">brush</span>
-                        <span class="menu-label">Cotizaciones Bordados</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="{{ route('asesores.cotizaciones-bordado.create') }}"
-                       class="menu-link">
-                        <span class="material-symbols-rounded">add</span>
-                        <span class="menu-label">Nuevo Bordado</span>
-                    </a>
+                        <span class="material-symbols-rounded submenu-arrow">expand_more</span>
+                    </button>
+                    <ul class="submenu">
+                        <li class="submenu-item">
+                            <a href="{{ route('asesores.pedidos.create', ['tipo' => 'P']) }}"
+                               class="menu-link {{ request()->routeIs('asesores.pedidos.create') && request()->query('tipo') === 'P' ? 'active' : '' }}"
+                               aria-label="Crear cotización Prenda">
+                                <span class="material-symbols-rounded">checkroom</span>
+                                <span class="menu-label">Prenda</span>
+                            </a>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="{{ route('asesores.pedidos.create', ['tipo' => 'B']) }}"
+                               class="menu-link {{ request()->routeIs('asesores.pedidos.create') && request()->query('tipo') === 'B' ? 'active' : '' }}"
+                               aria-label="Crear cotización Logo">
+                                <span class="material-symbols-rounded">brush</span>
+                                <span class="menu-label">Logo</span>
+                            </a>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="{{ route('asesores.pedidos.create', ['tipo' => 'PB']) }}"
+                               class="menu-link {{ request()->routeIs('asesores.pedidos.create') && request()->query('tipo') === 'PB' ? 'active' : '' }}"
+                               aria-label="Crear cotización Prenda/Logo">
+                                <span class="material-symbols-rounded">checkroom</span>
+                                <span class="menu-label">Prenda/Logo</span>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
             </ul>
         </div>
@@ -76,22 +89,8 @@
         </div>
 
         <div class="menu-section">
-            <span class="menu-section-title">Información</span>
+            <span class="menu-section-title">Inventario</span>
             <ul class="menu-list">
-                <li class="menu-item">
-                    <a href="{{ route('asesores.clientes.index') }}"
-                       class="menu-link {{ request()->routeIs('asesores.clientes.*') ? 'active' : '' }}">
-                        <span class="material-symbols-rounded">group</span>
-                        <span class="menu-label">Clientes</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="{{ route('asesores.reportes.index') }}"
-                       class="menu-link {{ request()->routeIs('asesores.reportes.*') ? 'active' : '' }}">
-                        <span class="material-symbols-rounded">bar_chart</span>
-                        <span class="menu-label">Reportes</span>
-                    </a>
-                </li>
                 <li class="menu-item">
                     <a href="{{ route('inventario-telas.index') }}"
                        class="menu-link {{ request()->routeIs('inventario-telas.index') ? 'active' : '' }}">
@@ -147,6 +146,26 @@
                             </g>
                         </svg>
                         <span class="menu-label">Inventario de Telas</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="menu-section">
+            <span class="menu-section-title">Información</span>
+            <ul class="menu-list">
+                <li class="menu-item">
+                    <a href="{{ route('asesores.clientes.index') }}"
+                       class="menu-link {{ request()->routeIs('asesores.clientes.*') ? 'active' : '' }}">
+                        <span class="material-symbols-rounded">group</span>
+                        <span class="menu-label">Clientes</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{{ route('asesores.reportes.index') }}"
+                       class="menu-link {{ request()->routeIs('asesores.reportes.*') ? 'active' : '' }}">
+                        <span class="material-symbols-rounded">bar_chart</span>
+                        <span class="menu-label">Reportes</span>
                     </a>
                 </li>
             </ul>

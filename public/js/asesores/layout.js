@@ -260,8 +260,8 @@ window.showToast = function(message, type = 'success') {
 };
 
 // Agregar animaciones CSS
-const style = document.createElement('style');
-style.textContent = `
+const toastStyleElement = document.createElement('style');
+toastStyleElement.textContent = `
     @keyframes slideIn {
         from {
             transform: translateX(100%);
@@ -284,5 +284,5 @@ style.textContent = `
         }
     }
 `;
-document.head.appendChild(style);
+document.head.appendChild(toastStyleElement);
 
