@@ -30,15 +30,15 @@ class InsumosAccess
             'roles_ids' => $user->roles_ids,
         ]);
 
-        // Admin puede ver todo, incluyendo insumos
+        // Admin, supervisor-admin y supervisor_planta pueden ver insumos
         // Verificar directamente en roles_ids array
         if (!empty($user->roles_ids) && is_array($user->roles_ids)) {
             // Obtener los roles del usuario
             $userRoles = \App\Models\Role::whereIn('id', $user->roles_ids)->pluck('name')->toArray();
             Log::info('InsumosAccess: Roles del usuario', ['roles' => $userRoles]);
 
-            if (in_array('admin', $userRoles) || in_array('supervisor-admin', $userRoles)) {
-                Log::info('InsumosAccess: Admin permitido');
+            if (in_array('admin', $userRoles) || in_array('supervisor-admin', $userRoles) || in_array('supervisor_planta', $userRoles)) {
+                Log::info('InsumosAccess: Acceso permitido');
                 return $next($request);
             }
         }

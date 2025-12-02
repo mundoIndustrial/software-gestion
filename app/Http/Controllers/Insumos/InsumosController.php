@@ -317,13 +317,16 @@ class InsumosController extends Controller
     }
 
     /**
-     * Verificar que el usuario tenga rol insumos o admin
+     * Verificar que el usuario tenga rol insumos, admin o supervisor_planta
      */
     private function verificarRolInsumos($user)
     {
-        // Permitir admin
-        if ($user->role && is_object($user->role) && $user->role->name === 'admin') {
-            return;
+        // Permitir admin y supervisor_planta
+        if ($user->role && is_object($user->role)) {
+            $roleName = $user->role->name;
+            if (in_array($roleName, ['admin', 'supervisor_planta'])) {
+                return;
+            }
         }
 
         // Verificar rol insumos
