@@ -24,8 +24,8 @@
 ### Paso 4: Crear Layouts Específicos
 - [x] `resources/views/layouts/asesores.blade.php` ✅ CREADO
 - [x] `resources/views/layouts/app.blade.php` ✅ ACTUALIZADO
-- [ ] `resources/views/layouts/guest.blade.php` (próximo)
-- [ ] `resources/views/layouts/contador.blade.php` (próximo)
+- [x] `resources/views/layouts/guest.blade.php` ✅ ACTUALIZADO
+- [x] `resources/views/layouts/contador.blade.php` ✅ ACTUALIZADO
 - [ ] `resources/views/layouts/insumos.blade.php` (próximo)
 
 ### Paso 5: Crear Componentes
