@@ -152,6 +152,26 @@ Route::middleware(['auth', 'role:supervisor-admin'])->group(function () {
 });
 
 // ========================================
+// RUTAS PARA APROBADOR DE COTIZACIONES
+// ========================================
+Route::middleware(['auth'])->group(function () {
+    // Solo usuarios con rol aprobador_cotizaciones pueden ver cotizaciones pendientes
+    Route::get('/cotizaciones/pendientes', function () {
+        // Verificar que el usuario tenga el rol aprobador_cotizaciones
+        if (!auth()->user()->hasRole('aprobador_cotizaciones')) {
+            abort(403, 'No tienes permiso para acceder a esta sección.');
+        }
+        
+        // Obtener cotizaciones pendientes de aprobación
+        $cotizaciones = \App\Models\Cotizacion::where('estado', 'pendiente_aprobacion')
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        return view('cotizaciones.pendientes', compact('cotizaciones'));
+    })->name('cotizaciones.pendientes');
+});
+
+// ========================================
 // RUTAS PARA CONTADOR (MÓDULO INDEPENDIENTE)
 // ========================================
 // Admin puede acceder a contador además del rol contador

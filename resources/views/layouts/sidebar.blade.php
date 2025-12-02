@@ -235,6 +235,18 @@
       </li>
       @endif
 
+      <!-- Aprobador de Cotizaciones - Para cualquier usuario con este rol -->
+      @if(auth()->user()->hasRole('aprobador_cotizaciones'))
+      <li class="menu-item">
+        <a href="{{ route('cotizaciones.pendientes') }}"
+           class="menu-link {{ request()->routeIs('cotizaciones.pendientes') ? 'active' : '' }}"
+           aria-label="Ver cotizaciones">
+          <span class="material-symbols-rounded" aria-hidden="true">receipt</span>
+          <span class="menu-label">Cotizaciones</span>
+        </a>
+      </li>
+      @endif
+
       <li class="menu-item">
         <form action="{{ route('logout') }}" method="POST">
           @csrf
