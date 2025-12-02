@@ -19,7 +19,8 @@ class CheckRole
             return redirect()->route('login');
         }
 
-        if ($request->user()->role->name !== $role) {
+        // Permitir si el usuario tiene el rol requerido O es admin
+        if (!$request->user()->hasRole($role) && !$request->user()->hasRole('admin')) {
             abort(403, 'No tienes permisos para acceder a esta sección.');
         }
 

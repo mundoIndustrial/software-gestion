@@ -77,15 +77,23 @@
                                 </td>
                                 <td class="table-cell">{{ $user->email }}</td>
                                 <td class="table-cell">
-                                    <span class="badge badge-{{ $user->role ? strtolower($user->role->name) : 'default' }}">
-                                        {{ $user->role ? $user->role->name : 'Sin rol' }}
-                                    </span>
+                                    @if($user->roles_ids && count($user->roles_ids) > 0)
+                                        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                                            @foreach($user->roles() as $role)
+                                                <span class="badge badge-{{ strtolower($role->name) }}">
+                                                    {{ $role->name }}
+                                                </span>
+                                            @endforeach
+                                        </div>
+                                    @else
+                                        <span class="badge badge-default">Sin rol</span>
+                                    @endif
                                 </td>
                                 <td class="table-cell">{{ $user->created_at->format('d/m/Y') }}</td>
                                 <td class="table-cell acciones-cell">
                                     <div class="action-buttons">
-                                        <button class="btn-action btn-edit" 
-                                                onclick="openEditModal({{ $user->id }}, '{{ $user->name }}', '{{ $user->email }}', {{ $user->role_id }})"
+                                        <button class="btn-action btn-edit"
+                                                onclick="openEditModal({{ $user->id }}, '{{ $user->name }}', '{{ $user->email }}')"
                                                 title="Editar usuario">
                                             <i class="fas fa-edit"></i>
                                         </button>
@@ -142,13 +150,16 @@
                         <small>Mínimo 8 caracteres</small>
                     </div>
                     <div class="form-group">
-                        <label for="create_role_id">Rol</label>
-                        <select id="create_role_id" name="role_id" class="form-input" required>
-                            <option value="">Seleccionar rol...</option>
+                        <label>Roles</label>
+                        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
                             @foreach($roles as $role)
-                                <option value="{{ $role->id }}">{{ $role->name }}</option>
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" name="roles_ids[]" value="{{ $role->id }}" class="form-checkbox">
+                                    <span>{{ $role->name }}</span>
+                                </label>
                             @endforeach
-                        </select>
+                        </div>
+                        <small style="color: #666;">Selecciona al menos un rol</small>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -179,12 +190,16 @@
                         <input type="email" id="edit_email" name="email" class="form-input" required>
                     </div>
                     <div class="form-group">
-                        <label for="edit_role_id">Rol</label>
-                        <select id="edit_role_id" name="role_id" class="form-input" required>
+                        <label>Roles</label>
+                        <div id="edit_roles_container" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
                             @foreach($roles as $role)
-                                <option value="{{ $role->id }}">{{ $role->name }}</option>
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" name="roles_ids[]" value="{{ $role->id }}" class="form-checkbox edit-role-checkbox">
+                                    <span>{{ $role->name }}</span>
+                                </label>
                             @endforeach
-                        </select>
+                        </div>
+                        <small style="color: #666;">Selecciona al menos un rol</small>
                     </div>
                 </div>
                 <div class="modal-footer">

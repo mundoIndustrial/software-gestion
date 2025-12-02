@@ -6,12 +6,12 @@
 <div class="asesores-wrapper">
     <!-- Sidebar Asesores (Moderno) -->
     @include('components.sidebars.sidebar-asesores')
-    
+
     <!-- Main Content -->
     <div class="main-content" id="mainContent">
         <!-- Header Asesores (Con notificaciones y perfil) -->
         @include('components.headers.header-asesores')
-        
+
         <!-- Page Content -->
         <main class="page-content">
             @yield('content')

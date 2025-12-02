@@ -20,10 +20,7 @@ class InsumosAccess
         if (Auth::check()) {
             $user = Auth::user();
             // Verificar si el usuario tiene rol de insumos
-            $isInsumos = $user->role === 'insumos' || 
-                        (is_object($user->role) && $user->role->name === 'insumos');
-            
-            if ($isInsumos) {
+            if ($user->hasRole('insumos')) {
                 return $next($request);
             }
         }

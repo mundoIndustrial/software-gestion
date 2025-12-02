@@ -31,11 +31,15 @@ function closeCreateModal() {
     document.getElementById('create_name').value = '';
     document.getElementById('create_email').value = '';
     document.getElementById('create_password').value = '';
-    document.getElementById('create_role_id').value = '';
+    
+    // Desmarcar todos los checkboxes de roles
+    document.querySelectorAll('input[name="roles_ids[]"]').forEach(checkbox => {
+        checkbox.checked = false;
+    });
 }
 
 // ===== MODAL EDITAR USUARIO =====
-function openEditModal(userId, name, email, roleId) {
+function openEditModal(userId, name, email) {
     const modal = document.getElementById('editModal');
     const form = document.getElementById('editForm');
     
@@ -45,7 +49,30 @@ function openEditModal(userId, name, email, roleId) {
     // Llenar los campos
     document.getElementById('edit_name').value = name;
     document.getElementById('edit_email').value = email;
-    document.getElementById('edit_role_id').value = roleId;
+    
+    // Desmarcar todos los checkboxes primero
+    document.querySelectorAll('.edit-role-checkbox').forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    
+    // Obtener los roles del usuario desde la fila de la tabla
+    const row = document.querySelector(`tr[data-user-id="${userId}"]`);
+    
+    if (row) {
+        // Obtener todos los badges de rol
+        const badges = row.querySelectorAll('.badge:not(.badge-default)');
+        badges.forEach(badge => {
+            const roleName = badge.textContent.trim();
+            
+            // Encontrar el checkbox correspondiente
+            document.querySelectorAll('.edit-role-checkbox').forEach(checkbox => {
+                const label = checkbox.parentElement.querySelector('span');
+                if (label && label.textContent.trim() === roleName) {
+                    checkbox.checked = true;
+                }
+            });
+        });
+    }
     
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';

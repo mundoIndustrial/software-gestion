@@ -23,6 +23,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role_id',
+        'roles_ids',
         'avatar',
         'telefono',
         'bio',
@@ -54,29 +55,35 @@ class User extends Authenticatable
         ];
     }
 
-    public function role()
+    /**
+     * Obtener el rol principal (primer rol en roles_ids)
+     * Retorna un atributo accesible, no una relación
+     *
+     * @return \App\Models\Role|null
+     */
+    public function getRoleAttribute()
     {
-        return $this->belongsTo(Role::class);
+        // Retornar el primer rol de roles_ids
+        if (!empty($this->roles_ids) && is_array($this->roles_ids)) {
+            return Role::find($this->roles_ids[0]);
+        }
+
+        return null;
     }
 
     /**
-     * Obtener todos los roles del usuario (múltiples roles)
+     * Obtener todos los roles del usuario
      *
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function roles()
     {
-        // Si tiene roles_ids, obtener esos roles
+        // Obtener roles desde roles_ids (JSON)
         if (!empty($this->roles_ids)) {
             return Role::whereIn('id', $this->roles_ids)->get();
         }
 
-        // Si no, retornar el rol principal (si existe)
-        if ($this->role_id) {
-            return collect([$this->role]);
-        }
-
-        // Si no tiene ningún rol, retornar colección vacía
+        // Si no tiene roles, retornar colección vacía
         return collect([]);
     }
 
@@ -88,13 +95,13 @@ class User extends Authenticatable
      */
     public function hasRole($role): bool
     {
-        // Si es un número, buscar por ID
+        // Si es un número, buscar por ID en roles_ids
         if (is_numeric($role)) {
-            return in_array($role, $this->roles_ids ?? []) || $this->role_id == $role;
+            return in_array($role, $this->roles_ids ?? []);
         }
 
-        // Si es string, buscar por nombre
-        return $this->roles()->where('name', $role)->exists();
+        // Si es string, buscar por nombre en roles
+        return $this->roles()->pluck('name')->contains($role);
     }
 
     /**
@@ -138,10 +145,12 @@ class User extends Authenticatable
     public function addRole(int $roleId): void
     {
         $rolesIds = $this->roles_ids ?? [];
+        $rolesIds = array_map('intval', $rolesIds); // Convertir a enteros
 
-        if (!in_array($roleId, $rolesIds)) {
+        if (!in_array($roleId, $rolesIds, true)) {
             $rolesIds[] = $roleId;
             $this->update(['roles_ids' => $rolesIds]);
+            $this->refresh(); // Recargar el modelo
         }
     }
 

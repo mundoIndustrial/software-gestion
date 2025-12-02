@@ -15,7 +15,7 @@ class SupervisorReadOnly
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Permitir solo métodos GET y HEAD para supervisores
+        // Permitir solo métodos GET y HEAD para supervisores (pero no para admin)
         if (auth()->user() && auth()->user()->role && auth()->user()->role->name === 'supervisor') {
             // Solo permitir lectura (GET, HEAD, OPTIONS)
             if (!in_array($request->method(), ['GET', 'HEAD', 'OPTIONS'])) {

@@ -17,16 +17,10 @@ class SupervisorAccessControl
     {
         // Verificar si el usuario está autenticado
         if (!auth()->check()) {
-            return $next($request);
+            return redirect('/login');
         }
 
-        $user = auth()->user();
-        
-        // Si el usuario es supervisor, permitir acceso (será controlado por supervisor-readonly)
-        if ($user->role && $user->role->name === 'supervisor') {
-            return $next($request);
-        }
-
+        // Permitir acceso a todos los usuarios autenticados
         return $next($request);
     }
 }

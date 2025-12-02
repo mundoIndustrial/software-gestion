@@ -225,6 +225,14 @@ trait Auditable
             $oldValue = $original[$field] ?? 'N/A';
             $newValue = $changes[$field];
 
+            // Convertir arrays a JSON para mostrar
+            if (is_array($oldValue)) {
+                $oldValue = json_encode($oldValue);
+            }
+            if (is_array($newValue)) {
+                $newValue = json_encode($newValue);
+            }
+
             return "Registro actualizado en {$context} {$identifier}: {$fieldName} cambió de {$oldValue} → {$newValue}";
         }
 
@@ -233,6 +241,15 @@ trait Auditable
         foreach ($changes as $field => $newValue) {
             $fieldName = $fieldNames[$field] ?? ucfirst(str_replace('_', ' ', $field));
             $oldValue = $original[$field] ?? 'N/A';
+            
+            // Convertir arrays a JSON para mostrar
+            if (is_array($oldValue)) {
+                $oldValue = json_encode($oldValue);
+            }
+            if (is_array($newValue)) {
+                $newValue = json_encode($newValue);
+            }
+            
             $changesList[] = "{$fieldName}: {$oldValue} → {$newValue}";
         }
 

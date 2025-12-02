@@ -1,4 +1,4 @@
-@extends('insumos.layout')
+@extends('layouts.insumos.app')
 
 @section('title', 'Dashboard - Insumos')
 @section('page-title', 'Dashboard de Insumos')

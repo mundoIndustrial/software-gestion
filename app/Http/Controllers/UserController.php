@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Role;
+use App\Services\SecurityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
@@ -13,11 +14,11 @@ class UserController extends Controller
     public function index()
     {
         // Solo Admin puede acceder
-        if (!auth()->user()->role || auth()->user()->role->name !== 'admin') {
+        if (!auth()->user()->hasRole('admin')) {
             abort(403, 'Acción no autorizada.');
         }
 
-        $users = User::with('role')->get();
+        $users = User::all();
         $roles = Role::all();
         return view('users.index', compact('users', 'roles'));
     }
@@ -25,23 +26,40 @@ class UserController extends Controller
     public function store(Request $request)
     {
         // Solo Admin puede crear usuarios
-        if (!auth()->user()->role || auth()->user()->role->name !== 'admin') {
+        if (!auth()->user()->hasRole('admin')) {
             abort(403, 'Acción no autorizada.');
         }
+
+        // Log para debugging
+        \Log::info('Creando usuario', [
+            'name' => $request->name,
+            'email' => $request->email,
+            'roles_ids_request' => $request->roles_ids,
+        ]);
 
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8'],
-            'role_id' => ['required', 'exists:roles,id'],
+            'roles_ids' => ['required', 'array'],
+            'roles_ids.*' => ['exists:roles,id'],
         ]);
 
-        User::create([
+        $rolesIds = array_map('intval', $request->roles_ids ?? []);
+        
+        \Log::info('Roles mapeados', [
+            'roles_ids' => $rolesIds,
+        ]);
+
+        $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role_id' => $request->role_id,
+            'roles_ids' => $rolesIds,
         ]);
+
+        // Registrar creación de usuario
+        SecurityLogger::logUserCreation($user->id);
 
         return back()->with('status', 'Usuario creado correctamente');
     }
@@ -49,21 +67,45 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         // Solo Admin puede actualizar usuarios
-        if (!auth()->user()->role || auth()->user()->role->name !== 'admin') {
+        if (!auth()->user()->hasRole('admin')) {
             abort(403, 'Acción no autorizada.');
         }
 
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
-            'role_id' => ['required', 'exists:roles,id'],
+            'roles_ids' => ['required', 'array'],
+            'roles_ids.*' => ['exists:roles,id'],
         ]);
+
+        // Log para debugging
+        \Log::info('Actualizando usuario', [
+            'user_id' => $user->id,
+            'roles_ids_request' => $request->roles_ids,
+            'roles_ids_mapped' => array_map('intval', $request->roles_ids ?? []),
+        ]);
+
+        // Guardar roles antiguos para auditoría
+        $oldRoles = $user->roles_ids;
+        $newRoles = array_map('intval', $request->roles_ids ?? []);
 
         $user->update([
             'name' => $request->name,
             'email' => $request->email,
-            'role_id' => $request->role_id,
+            'roles_ids' => $newRoles,
         ]);
+
+        // Verificar que se guardó
+        $user->refresh();
+        \Log::info('Usuario actualizado', [
+            'user_id' => $user->id,
+            'roles_ids_guardado' => $user->roles_ids,
+        ]);
+
+        // Registrar cambio de roles si es diferente
+        if ($oldRoles !== $newRoles) {
+            SecurityLogger::logRoleChange($user->id, $oldRoles, $newRoles);
+        }
 
         return back()->with('status', 'Usuario actualizado correctamente');
     }
@@ -71,7 +113,7 @@ class UserController extends Controller
     public function updatePassword(Request $request, User $user)
     {
         // Solo Admin puede cambiar contraseñas
-        if (!auth()->user()->role || auth()->user()->role->name !== 'admin') {
+        if (!auth()->user()->hasRole('admin')) {
             abort(403, 'Acción no autorizada.');
         }
 
@@ -89,7 +131,7 @@ class UserController extends Controller
     public function destroy(User $user)
     {
         // Solo Admin puede eliminar usuarios
-        if (!auth()->user()->role || auth()->user()->role->name !== 'admin') {
+        if (!auth()->user()->hasRole('admin')) {
             abort(403, 'Acción no autorizada.');
         }
 

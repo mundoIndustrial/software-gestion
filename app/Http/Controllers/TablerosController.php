@@ -1533,7 +1533,7 @@ class TablerosController extends Controller
                 'name' => strtoupper($request->name),
                 'email' => strtolower(str_replace(' ', '.', $request->name)) . '@example.com', // Generate email
                 'password' => bcrypt('password'), // Default password
-                'role_id' => 3, // Cortador role id is 3
+                'roles_ids' => [3], // Cortador role id is 3
             ]);
 
             return response()->json([
