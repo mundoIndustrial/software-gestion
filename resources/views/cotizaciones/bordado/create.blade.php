@@ -1,4 +1,4 @@
-@extends('asesores.layout')
+@extends('layouts.asesores')
 
 @push('styles')
 <style>
