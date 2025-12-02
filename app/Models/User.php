@@ -189,6 +189,14 @@ class User extends Authenticatable
         $this->update(['roles_ids' => $roleIds]);
     }
 
+    /**
+     * Relación con el rol principal del usuario
+     */
+    public function role()
+    {
+        return $this->belongsTo(Role::class, 'role_id');
+    }
+
     public function registrosPisoCorte()
     {
         return $this->hasMany(RegistroPisoCorte::class, 'operario_id');
