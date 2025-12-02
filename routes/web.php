@@ -154,7 +154,8 @@ Route::middleware(['auth', 'role:supervisor-admin'])->group(function () {
 // ========================================
 // RUTAS PARA CONTADOR (MÓDULO INDEPENDIENTE)
 // ========================================
-Route::middleware(['auth', 'role:contador'])->prefix('contador')->name('contador.')->group(function () {
+// Admin puede acceder a contador además del rol contador
+Route::middleware(['auth', 'role:contador,admin'])->prefix('contador')->name('contador.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\ContadorController::class, 'index'])->name('index');
     Route::get('/cotizacion/{id}', [App\Http\Controllers\ContadorController::class, 'getCotizacionDetail'])->name('cotizacion.detail');
     Route::delete('/cotizacion/{id}', [App\Http\Controllers\ContadorController::class, 'deleteCotizacion'])->name('cotizacion.delete');
@@ -179,7 +180,8 @@ Route::middleware(['auth', 'role:contador'])->prefix('contador')->name('contador
 // ========================================
 // RUTAS PARA ASESORES (MÓDULO INDEPENDIENTE)
 // ========================================
-Route::middleware(['auth', 'role:asesor'])->prefix('asesores')->name('asesores.')->group(function () {
+// Admin puede acceder a asesores además del rol asesor
+Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('asesores.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [App\Http\Controllers\AsesoresController::class, 'dashboard'])->name('dashboard');
     Route::get('/dashboard-data', [App\Http\Controllers\AsesoresController::class, 'getDashboardData'])->name('dashboard-data');

@@ -17,12 +17,21 @@ class InsumosAccess
      */
     public function handle(Request $request, Closure $next)
     {
-        if (Auth::check()) {
-            $user = Auth::user();
-            // Verificar si el usuario tiene rol de insumos
-            if ($user->hasRole('insumos')) {
-                return $next($request);
-            }
+        if (!Auth::check()) {
+            return redirect('/login');
+        }
+
+        $user = Auth::user();
+
+        // Admin puede ver todo, incluyendo insumos
+        // Verificar tanto role (singular) como roles_ids (plural)
+        if ($user->role && in_array($user->role->name, ['admin', 'supervisor-admin'])) {
+            return $next($request);
+        }
+
+        // Verificar si el usuario tiene rol de insumos
+        if ($user->hasRole('insumos')) {
+            return $next($request);
         }
 
         return redirect('/')->with('error', 'No autorizado para acceder a este módulo.');

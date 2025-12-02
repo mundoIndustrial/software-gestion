@@ -176,6 +176,34 @@
       @endif
 
       @if(auth()->user()->role && auth()->user()->role->name === 'admin')
+      <!-- Admin puede ver todos los módulos -->
+      <li class="menu-item">
+        <a href="{{ route('asesores.dashboard') }}"
+           class="menu-link {{ request()->routeIs('asesores.*') ? 'active' : '' }}"
+           aria-label="Ver módulo de asesores">
+          <span class="material-symbols-rounded" aria-hidden="true">people</span>
+          <span class="menu-label">Asesores</span>
+        </a>
+      </li>
+
+      <li class="menu-item">
+        <a href="{{ route('insumos.dashboard') }}"
+           class="menu-link {{ request()->routeIs('insumos.*') ? 'active' : '' }}"
+           aria-label="Ver módulo de insumos">
+          <span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>
+          <span class="menu-label">Insumos</span>
+        </a>
+      </li>
+
+      <li class="menu-item">
+        <a href="{{ route('contador.index') }}"
+           class="menu-link {{ request()->routeIs('contador.*') ? 'active' : '' }}"
+           aria-label="Ver módulo de contador">
+          <span class="material-symbols-rounded" aria-hidden="true">calculate</span>
+          <span class="menu-label">Contador</span>
+        </a>
+      </li>
+
       <li class="menu-item">
         <a href="{{ route('users.index') }}"
            class="menu-link {{ request()->routeIs('users.*') ? 'active' : '' }}"
