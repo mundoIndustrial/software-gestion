@@ -34,23 +34,38 @@ class AuthenticatedSessionController extends Controller
         if ($user && $user->role) {
             $roleName = is_object($user->role) ? $user->role->name : $user->role;
             
+            // Asesor - Dashboard de asesores
             if ($roleName === 'asesor') {
                 return redirect()->intended(route('asesores.dashboard', absolute: false));
             }
 
+            // Contador - Dashboard de contador
             if ($roleName === 'contador') {
                 return redirect()->intended(route('contador.index', absolute: false));
             }
 
+            // Supervisor - Gestión de órdenes
             if ($roleName === 'supervisor') {
                 return redirect()->intended(route('registros.index', absolute: false));
             }
+
+            // Supervisor Planta - Gestión de órdenes
+            if ($roleName === 'supervisor_planta') {
+                return redirect()->intended(route('registros.index', absolute: false));
+            }
             
+            // Insumos - Control de insumos
             if ($roleName === 'insumos') {
                 return redirect()->intended(route('insumos.materiales.index', absolute: false));
             }
+
+            // Aprobador de Cotizaciones - Cotizaciones pendientes
+            if ($roleName === 'aprobador_cotizaciones') {
+                return redirect()->intended(route('cotizaciones.pendientes', absolute: false));
+            }
         }
 
+        // Admin y otros - Dashboard principal
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
