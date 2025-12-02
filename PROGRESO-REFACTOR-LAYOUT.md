@@ -26,7 +26,7 @@
 - [x] `resources/views/layouts/app.blade.php` ✅ ACTUALIZADO
 - [x] `resources/views/layouts/guest.blade.php` ✅ ACTUALIZADO
 - [x] `resources/views/layouts/contador.blade.php` ✅ ACTUALIZADO
-- [ ] `resources/views/layouts/insumos.blade.php` (próximo)
+- [x] `resources/views/insumos/layout.blade.php` ✅ ACTUALIZADO
 
 ### Paso 5: Crear Componentes
 - [x] `resources/views/components/sidebars/sidebar-asesores.blade.php` ✅ CREADO
