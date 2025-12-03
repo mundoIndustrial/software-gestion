@@ -292,10 +292,10 @@
                     <i class="fas fa-arrow-left"></i> ANTERIOR
                 </button>
                 <div style="display: flex; gap: 10px;">
-                    <button type="button" class="btn-submit" onclick="guardarCotizacion()" style="background: #95a5a6;">
+                    <button type="button" class="btn-submit" id="btnGuardarBorrador" onclick="guardarCotizacion()" style="background: #95a5a6;">
                         <i class="fas fa-save"></i> GUARDAR (BORRADOR)
                     </button>
-                    <button type="button" class="btn-submit" onclick="enviarCotizacion()">
+                    <button type="button" class="btn-submit" id="btnEnviar" onclick="enviarCotizacion()">
                         <i class="fas fa-paper-plane"></i> ENVIAR
                     </button>
                 </div>

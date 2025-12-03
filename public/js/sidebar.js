@@ -70,13 +70,20 @@ if (sidebarToggleBtns.length > 0 && sidebar) {
   sidebarToggleBtns.forEach((btn) => {
     btn.addEventListener("click", () => {
       sidebar.classList.toggle("collapsed");
+      // Persistir estado en localStorage
+      localStorage.setItem("sidebarCollapsed", sidebar.classList.contains("collapsed"));
     });
   });
 }
 
-// Expand sidebar by default on large screens
+// Restore sidebar state from localStorage on large screens
 if (window.innerWidth > 768 && sidebar) {
-  sidebar.classList.remove("collapsed");
+  const sidebarCollapsed = localStorage.getItem("sidebarCollapsed");
+  if (sidebarCollapsed === "true") {
+    sidebar.classList.add("collapsed");
+  } else {
+    sidebar.classList.remove("collapsed");
+  }
 }
 
 // Submenu toggle functionality

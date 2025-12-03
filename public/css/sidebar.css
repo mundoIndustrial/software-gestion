@@ -242,6 +242,21 @@ body {
   transform: scale(1.1) rotate(5deg);
 }
 
+/* SVG Icon Styles */
+.menu-icon-svg {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  flex-shrink: 0;
+  fill: currentColor;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.menu-list .menu-link:hover .menu-icon-svg {
+  transform: scale(1.1) rotate(5deg);
+}
+
 /* Submenu styles - Modern Design */
 .submenu {
   list-style: none;

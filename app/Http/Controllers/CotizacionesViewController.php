@@ -34,6 +34,25 @@ class CotizacionesViewController extends Controller
                 'logoCotizacion'
             ])->findOrFail($id);
             
+            // Convertir fotos y telas a URLs públicas
+            if ($cotizacion->prendasCotizaciones) {
+                foreach ($cotizacion->prendasCotizaciones as $prenda) {
+                    // Convertir fotos a URLs
+                    if ($prenda->fotos && is_array($prenda->fotos)) {
+                        $prenda->fotos = array_map(function($foto) {
+                            return is_string($foto) ? asset($foto) : $foto;
+                        }, $prenda->fotos);
+                    }
+                    
+                    // Convertir telas a URLs
+                    if ($prenda->telas && is_array($prenda->telas)) {
+                        $prenda->telas = array_map(function($tela) {
+                            return is_string($tela) ? asset($tela) : $tela;
+                        }, $prenda->telas);
+                    }
+                }
+            }
+            
             return response()->json([
                 'success' => true,
                 'data' => $cotizacion

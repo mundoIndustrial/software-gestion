@@ -5,22 +5,14 @@ namespace App\Http\Controllers\Asesores;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCotizacionRequest;
 use App\Models\Cotizacion;
-use App\Models\PedidoProduccion;
-use App\Models\PrendaPedido;
-use App\Models\PrendaCotizacionFriendly;
-use App\Models\ProcesoPrenda;
-use App\Models\VariantePrenda;
-use App\Models\TipoPrenda;
 use App\Services\ImagenCotizacionService;
 use App\Services\CotizacionService;
 use App\Services\PrendaService;
 use App\Services\PedidoService;
 use App\Services\FormatterService;
-use App\DTOs\CotizacionDTO;
 use App\Exceptions\CotizacionException;
-use App\Exceptions\PrendaException;
+use Illuminate\Pagination\LengthAwarePaginator;
 use App\Exceptions\ImagenException;
-use App\Exceptions\PedidoException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -44,23 +36,199 @@ class CotizacionesController extends Controller
     {
         \App\Services\QueryOptimizerService::iniciarAuditoria();
 
-        // Query 1: Cotizaciones enviadas (con eager loading)
-        $cotizaciones = Cotizacion::where('user_id', Auth::id())
+        // Obtener todos los registros con relaciones (sin paginar aún)
+        $allCotizaciones = Cotizacion::where('user_id', Auth::id())
             ->where('es_borrador', false)
-            ->with('tipoCotizacion', 'usuario')  // Eager load relaciones comunes
+            ->with('tipoCotizacion', 'usuario', 'prendasCotizaciones', 'prendaCotizacion', 'logoCotizacion')
             ->orderBy('created_at', 'desc')
-            ->paginate(15);
+            ->get();
         
-        // Query 2: Borradores (con eager loading)
-        $borradores = Cotizacion::where('user_id', Auth::id())
+        $allBorradores = Cotizacion::where('user_id', Auth::id())
             ->where('es_borrador', true)
-            ->with('tipoCotizacion', 'usuario')
+            ->with('tipoCotizacion', 'usuario', 'prendasCotizaciones', 'prendaCotizacion', 'logoCotizacion')
             ->orderBy('created_at', 'desc')
-            ->paginate(15);
+            ->get();
+
+        \Log::info('CotizacionesController@index - Datos obtenidos', [
+            'user_id' => Auth::id(),
+            'total_cotizaciones' => $allCotizaciones->count(),
+            'total_borradores' => $allBorradores->count(),
+        ]);
+
+        // Filtrar por tipo usando obtenerTipoCotizacion()
+        $cotPrendaCollection = $allCotizaciones->filter(fn($c) => $c->obtenerTipoCotizacion() === 'P');
+        $cotLogoCollection = $allCotizaciones->filter(fn($c) => $c->obtenerTipoCotizacion() === 'B');
+        $cotPBCollection = $allCotizaciones->filter(fn($c) => $c->obtenerTipoCotizacion() === 'PB');
         
+        $borPrendaCollection = $allBorradores->filter(fn($c) => $c->obtenerTipoCotizacion() === 'P');
+        $borLogoCollection = $allBorradores->filter(fn($c) => $c->obtenerTipoCotizacion() === 'B');
+        $borPBCollection = $allBorradores->filter(fn($c) => $c->obtenerTipoCotizacion() === 'PB');
+
+        // Debug: mostrar tipos de cada cotización
+        $tiposDebug = [];
+        foreach ($allCotizaciones as $cot) {
+            $tipo = $cot->obtenerTipoCotizacion();
+            $tiposDebug[] = [
+                'id' => $cot->id,
+                'tipo_retornado' => $tipo,
+                'tipo_cotizacion_id' => $cot->tipo_cotizacion_id,
+                'tiene_prendas' => $cot->prendasCotizaciones()->count() > 0,
+                'tiene_logo' => $cot->logoCotizacion ? true : false,
+                'tiene_prenda_cot' => $cot->prendaCotizacion ? true : false,
+            ];
+        }
+        \Log::info('CotizacionesController@index - Debug tipos', $tiposDebug);
+
+        \Log::info('CotizacionesController@index - Filtros aplicados', [
+            'prenda' => $cotPrendaCollection->count(),
+            'logo' => $cotLogoCollection->count(),
+            'prenda_bordado' => $cotPBCollection->count(),
+            'bor_prenda' => $borPrendaCollection->count(),
+            'bor_logo' => $borLogoCollection->count(),
+            'bor_pb' => $borPBCollection->count(),
+        ]);
+
+        // Convertir a paginadores manuales
+        $page = request()->get('page', 1);
+        $perPage = 15;
+        
+        $cotizacionesPrenda = $this->paginateCollection($cotPrendaCollection, $perPage, $page, 'page_cot_prenda');
+        \Log::debug('paginateCollection - page_cot_prenda OK');
+        
+        $cotizacionesLogo = $this->paginateCollection($cotLogoCollection, $perPage, $page, 'page_cot_logo');
+        \Log::debug('paginateCollection - page_cot_logo OK');
+        
+        $cotizacionesPrendaBordado = $this->paginateCollection($cotPBCollection, $perPage, $page, 'page_cot_pb');
+        \Log::debug('paginateCollection - page_cot_pb OK');
+        
+        $borradorespPrenda = $this->paginateCollection($borPrendaCollection, $perPage, $page, 'page_bor_prenda');
+        \Log::debug('paginateCollection - page_bor_prenda OK');
+        
+        $borradoresLogo = $this->paginateCollection($borLogoCollection, $perPage, $page, 'page_bor_logo');
+        \Log::debug('paginateCollection - page_bor_logo OK');
+        
+        $borradorespPrendaBordado = $this->paginateCollection($borPBCollection, $perPage, $page, 'page_bor_pb');
+        \Log::debug('paginateCollection - page_bor_pb OK');
+
+        // Colecciones combinadas con paginación
+        \Log::debug('ANTES DE MERGE - cotPrendaCollection count: ' . $cotPrendaCollection->count());
+        \Log::debug('ANTES DE MERGE - cotLogoCollection count: ' . $cotLogoCollection->count());
+        \Log::debug('ANTES DE MERGE - cotPBCollection count: ' . $cotPBCollection->count());
+        
+        $allCotizacionesCollection = $cotPrendaCollection->merge($cotLogoCollection)->merge($cotPBCollection)->sortByDesc('created_at')->values();
+        \Log::debug('DESPUES DE MERGE - allCotizacionesCollection count: ' . $allCotizacionesCollection->count());
+        
+        $allBorradoresCollection = $borPrendaCollection->merge($borLogoCollection)->merge($borPBCollection)->sortByDesc('created_at')->values();
+        
+        \Log::info('CotizacionesController@index - Colecciones combinadas', [
+            'total_cot' => $allCotizacionesCollection->count(),
+            'total_bor' => $allBorradoresCollection->count(),
+            'cot_prenda_count' => $cotPrendaCollection->count(),
+            'cot_logo_count' => $cotLogoCollection->count(),
+            'cot_pb_count' => $cotPBCollection->count(),
+            'merged_before_sort' => $cotPrendaCollection->merge($cotLogoCollection)->merge($cotPBCollection)->count(),
+        ]);
+
+        // Debug: mostrar tipos en la colección combinada
+        $tiposCombinados = [];
+        foreach ($allCotizacionesCollection as $cot) {
+            $tiposCombinados[] = [
+                'id' => $cot->id,
+                'tipo' => $cot->obtenerTipoCotizacion(),
+            ];
+        }
+        \Log::info('CotizacionesController@index - Tipos en colección combinada', $tiposCombinados);
+        
+        $cotizacionesTodas = $this->paginateCollection($allCotizacionesCollection, $perPage, $page, 'page_cot_todas');
+        $borradoresTodas = $this->paginateCollection($allBorradoresCollection, $perPage, $page, 'page_bor_todas');
+
+        \Log::info('CotizacionesController@index - Paginadores creados', [
+            'cot_todas_total' => $cotizacionesTodas->total(),
+            'cot_todas_current_page' => $cotizacionesTodas->currentPage(),
+            'cot_todas_count' => $cotizacionesTodas->count(),
+            'bor_todas_total' => $borradoresTodas->total(),
+        ]);
+
+        // Colecciones sin paginar para compatibilidad
+        $cotizaciones = $allCotizacionesCollection;
+        $borradores = $allBorradoresCollection;
+
         \App\Services\QueryOptimizerService::finalizarYReportar('CotizacionesController@index');
 
-        return view('asesores.cotizaciones.index', compact('cotizaciones', 'borradores'));
+        return view('asesores.cotizaciones.index', compact(
+            'cotizacionesPrenda', 'cotizacionesLogo', 'cotizacionesPrendaBordado',
+            'cotizacionesTodas', 'borradoresTodas',
+            'borradorespPrenda', 'borradoresLogo', 'borradorespPrendaBordado',
+            'cotizaciones', 'borradores'
+        ))->with([
+            'pageNameCotTodas' => 'page_cot_todas',
+            'pageNameCotPrenda' => 'page_cot_prenda',
+            'pageNameCotLogo' => 'page_cot_logo',
+            'pageNameCotPB' => 'page_cot_pb',
+            'pageNameBorTodas' => 'page_bor_todas',
+            'pageNameBorPrenda' => 'page_bor_prenda',
+            'pageNameBorLogo' => 'page_bor_logo',
+            'pageNameBorPB' => 'page_bor_pb',
+        ]);
+    }
+
+    /**
+     * Convertir una colección filtrada a un paginador
+     */
+    private function paginateCollection($collection, $perPage = 15, $page = 1, $pageName = 'page')
+    {
+        // Obtener la página actual del query parameter específico
+        $currentPage = (int) request()->query($pageName, 1);
+        $currentPage = max(1, $currentPage);
+        
+        // Re-indexar la colección para asegurar que forPage funcione correctamente
+        $collection = $collection->values();
+        
+        // Usar el método forPage de Collection que es lo correcto para esto
+        $items = $collection->forPage($currentPage, $perPage);
+        
+        // Construir query parameters limpios
+        $query = [];
+        foreach (request()->query() as $key => $value) {
+            // Excluir todos los parámetros de paginación excepto el nuestro
+            if (strpos($key, 'page_') === 0 && $key !== $pageName) {
+                continue;
+            }
+            $query[$key] = $value;
+        }
+        
+        // Obtener la URL base sin query parameters
+        $path = request()->url();
+        
+        // Crear el paginador con el pageName correcto
+        $paginator = new LengthAwarePaginator(
+            $items->all(), // Convertir a array
+            $collection->count(),
+            $perPage,
+            $currentPage,
+            [
+                'path' => $path,
+                'query' => $query,
+                'fragment' => null,
+                'pageName' => $pageName,
+            ]
+        );
+        
+        // Asegurar que el pageName se use correctamente
+        $paginator->setPageName($pageName);
+        
+        \Log::debug("paginateCollection - {$pageName}", [
+            'pageName' => $pageName,
+            'currentPage' => $currentPage,
+            'collection_count' => $collection->count(),
+            'items_in_page' => count($items),
+            'query_param' => request()->query($pageName),
+            'path' => $path,
+            'query_keys' => array_keys($query),
+            'paginator_pageName' => $paginator->getPageName(),
+        ]);
+        
+        return $paginator;
     }
 
     /**
@@ -208,7 +376,7 @@ class CotizacionesController extends Controller
     /**
      * Ver detalle de cotización con eager loading optimizado
      */
-    public function show($id)
+    public function show(int $id)
     {
         \App\Services\QueryOptimizerService::iniciarAuditoria();
 
@@ -279,7 +447,7 @@ class CotizacionesController extends Controller
     /**
      * Editar borrador
      */
-    public function editarBorrador($id)
+    public function editarBorrador(int $id)
     {
         $cotizacion = Cotizacion::with([
             'logoCotizacion'
@@ -309,7 +477,7 @@ class CotizacionesController extends Controller
      * 
      * Las excepciones se manejan centralmente en Handler.php
      */
-    public function subirImagenes(Request $request, $id)
+    public function subirImagenes(Request $request, int $id)
     {
         $this->validarAutorizacionCotizacion(
             $cotizacion = Cotizacion::findOrFail($id)
@@ -424,7 +592,7 @@ class CotizacionesController extends Controller
      * 
      * Las excepciones se manejan centralmente en Handler.php
      */
-    public function destroy($id)
+    public function destroy(int $id)
     {
         $cotizacion = Cotizacion::findOrFail($id);
         
@@ -459,7 +627,7 @@ class CotizacionesController extends Controller
      * 
      * Las excepciones se manejan centralmente en Handler.php
      */
-    public function cambiarEstado($id, $estado)
+    public function cambiarEstado(int $id, string $estado)
     {
         $cotizacion = Cotizacion::findOrFail($id);
         
@@ -486,7 +654,7 @@ class CotizacionesController extends Controller
      * Delega completamente a PedidoService
      * Las excepciones se manejan centralmente en Handler.php
      */
-    public function aceptarCotizacion($id)
+    public function aceptarCotizacion(int $id)
     {
         $cotizacion = Cotizacion::findOrFail($id);
         $this->validarAutorizacionCotizacion($cotizacion);
@@ -533,10 +701,10 @@ class CotizacionesController extends Controller
      * Eliminar una imagen específica de una cotización
      * 
      * @param Request $request
-     * @param $id ID de la cotización
+     * @param int $id ID de la cotización
      * @return \Illuminate\Http\JsonResponse
      */
-    public function eliminarImagen(Request $request, $id)
+    public function eliminarImagen(Request $request, int $id)
     {
         $cotizacion = Cotizacion::findOrFail($id);
         

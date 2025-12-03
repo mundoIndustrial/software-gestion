@@ -1,6 +1,7 @@
 /**
  * SISTEMA DE COTIZACIONES - GUARDADO Y ENVÍO
  * Responsabilidad: Guardar, enviar cotizaciones y subir imágenes
+ * Compatible con: localStorage (persistencia) y WebSockets (sin conflictos)
  */
 
 // ============ GUARDAR COTIZACIÓN ============
@@ -8,6 +9,8 @@
 async function guardarCotizacion() {
     console.log('='.repeat(60));
     console.log('🚀 INICIANDO GUARDADO DE COTIZACIÓN');
+    console.log('   🌐 WebSockets:', window.Echo ? 'Disponible ✓' : 'No disponible');
+    console.log('   💾 localStorage:', window.localStorage ? 'Disponible ✓' : 'No disponible');
     console.log('='.repeat(60));
     
     // Debug: Mostrar estado del contenedor antes de recopilar
@@ -150,6 +153,12 @@ async function guardarCotizacion() {
                 if (cantGeneral > 0) {
                     await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.general, 'general');
                 }
+            }
+            
+            // Limpiar localStorage después del guardado exitoso
+            if (typeof limpiarStorage === 'function') {
+                limpiarStorage();
+                console.log('✓ localStorage limpiado después del guardado');
             }
             
             Swal.fire({
@@ -412,6 +421,12 @@ async function procederEnviarCotizacion(datos) {
                 }
             }
             
+            // Limpiar localStorage después del envío exitoso
+            if (typeof limpiarStorage === 'function') {
+                limpiarStorage();
+                console.log('✓ localStorage limpiado después del envío');
+            }
+            
             Swal.fire({
                 toast: true,
                 position: 'top-end',
@@ -468,3 +483,40 @@ function toggleAplicaPaso(paso, btn) {
         btn.style.color = 'white';
     }
 }
+
+// ============ INICIALIZACIÓN DE VALIDACIÓN DE TIPO COTIZACIÓN ============
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Obtener elementos
+    const tipoCotizacionSelect = document.getElementById('tipo_cotizacion');
+    const btnGuardar = document.querySelector('button[onclick="guardarCotizacion()"]');
+    const btnEnviar = document.querySelector('button[onclick="enviarCotizacion()"]');
+    
+    // Función para actualizar estado de botones
+    function actualizarEstadoBotones() {
+        const tipoSeleccionado = tipoCotizacionSelect && tipoCotizacionSelect.value;
+        const deshabilitado = !tipoSeleccionado;
+        
+        if (btnGuardar) {
+            btnGuardar.disabled = deshabilitado;
+            btnGuardar.style.opacity = deshabilitado ? '0.5' : '1';
+            btnGuardar.style.cursor = deshabilitado ? 'not-allowed' : 'pointer';
+            btnGuardar.title = deshabilitado ? 'Selecciona un tipo de cotización (M, D, X) para continuar' : '';
+        }
+        
+        if (btnEnviar) {
+            btnEnviar.disabled = deshabilitado;
+            btnEnviar.style.opacity = deshabilitado ? '0.5' : '1';
+            btnEnviar.style.cursor = deshabilitado ? 'not-allowed' : 'pointer';
+            btnEnviar.title = deshabilitado ? 'Selecciona un tipo de cotización (M, D, X) para continuar' : '';
+        }
+    }
+    
+    // Deshabilitar botones inicialmente
+    if (tipoCotizacionSelect) {
+        actualizarEstadoBotones();
+        
+        // Escuchar cambios en el select
+        tipoCotizacionSelect.addEventListener('change', actualizarEstadoBotones);
+    }
+});

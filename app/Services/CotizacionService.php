@@ -45,6 +45,7 @@ class CotizacionService
             'user_id' => Auth::id(),
             'numero_cotizacion' => $numeroCotizacion,
             'tipo_cotizacion_id' => $tipoCotizacion?->id,
+            'tipo_venta' => $tipoCodigo,  // Guardar el valor M, D, X directamente en tipo_venta
             'fecha_inicio' => now(),
             'cliente' => $datosFormulario['cliente'] ?? null,
             'asesora' => auth()->user()?->name ?? 'Sin nombre',
@@ -85,9 +86,13 @@ class CotizacionService
             'asesora' => auth()->user()?->name ?? 'Sin nombre',
         ];
         
-        // Solo actualizar tipo_cotizacion_id si se proporciona
+        // Solo actualizar tipo_cotizacion_id y tipo_venta si se proporciona
         if ($tipoCotizacion) {
             $datosActualizar['tipo_cotizacion_id'] = $tipoCotizacion->id;
+        }
+        
+        if ($tipoCodigo) {
+            $datosActualizar['tipo_venta'] = $tipoCodigo;
         }
         
         $cotizacion->update($datosActualizar);
@@ -111,6 +116,10 @@ class CotizacionService
         
         if ($nuevoEstado === 'enviada' && !$cotizacion->fecha_envio) {
             $datosActualizar['fecha_envio'] = now();
+            // Asignar número de cotización al enviar
+            if (!$cotizacion->numero_cotizacion) {
+                $datosActualizar['numero_cotizacion'] = $this->generarNumeroCotizacion();
+            }
         }
         
         $cotizacion->update($datosActualizar);

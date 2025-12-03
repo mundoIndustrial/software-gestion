@@ -17,6 +17,7 @@ class Cotizacion extends Model
         'numero_cotizacion',
         'tipo_cotizacion',
         'tipo_cotizacion_id',
+        'tipo_venta',
         'fecha_inicio',
         'fecha_envio',
         'cliente',
@@ -100,5 +101,31 @@ class Cotizacion extends Model
     public function historial()
     {
         return $this->hasMany(HistorialCotizacion::class);
+    }
+
+    /**
+     * Obtener el código del tipo de cotización
+     * Prioridad: tipo_cotizacion_id > detección automática
+     */
+    public function obtenerTipoCotizacion(): string
+    {
+        // Si tiene tipo_cotizacion_id, usarlo
+        if ($this->tipo_cotizacion_id && $this->tipoCotizacion) {
+            return $this->tipoCotizacion->codigo;
+        }
+
+        // Si no, detectar basado en contenido
+        $tienePrendas = $this->prendasCotizaciones()->exists() || $this->prendaCotizacion()->exists();
+        $tieneLogo = $this->logoCotizacion()->exists();
+
+        if ($tienePrendas && $tieneLogo) {
+            return 'PB'; // Prenda/Bordado
+        } elseif ($tienePrendas) {
+            return 'P'; // Prenda
+        } elseif ($tieneLogo) {
+            return 'B'; // Bordado (Logo)
+        }
+
+        return null; // Por defecto
     }
 }

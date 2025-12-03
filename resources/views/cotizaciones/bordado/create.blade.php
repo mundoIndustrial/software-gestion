@@ -10,16 +10,16 @@
     .page-wrapper {
         background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
         min-height: 100vh;
-        padding: 0.5rem 2rem 2rem 2rem;
+        padding: 0.5rem;
     }
 
     .form-container {
-        max-width: 900px;
+        max-width: 1400px;
         margin: 0 auto;
         background: white;
         border-radius: 12px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        padding: 1.25rem;
+        padding: 1.25rem 1.5rem;
     }
 
     .form-header {
@@ -542,19 +542,23 @@
 
             <!-- Botones -->
             <div class="form-actions">
-                <button type="submit" name="action" value="borrador" class="btn btn-primary">
-                    <i class="fas fa-save"></i> Guardar en Borrador
-                </button>
-                <button type="submit" name="action" value="enviar" class="btn btn-primary" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-                    <i class="fas fa-paper-plane"></i> Enviar
-                </button>
-                <a href="{{ route('asesores.cotizaciones-bordado.lista') }}" class="btn btn-secondary">
-                    Cancelar
+                <a href="{{ route('asesores.cotizaciones-bordado.lista') }}" class="btn btn-secondary" style="padding: 0.5rem 1.2rem; background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%); border: 2px solid #ddd; border-radius: 6px; cursor: pointer; font-weight: 600; color: #333; font-size: 0.85rem; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none;" onmouseover="this.style.background='linear-gradient(135deg, #e8e8e8 0%, #d5d5d5 100%)'; this.style.borderColor='#999'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)';" onmouseout="this.style.background='linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%)'; this.style.borderColor='#ddd'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    <i class="fas fa-times" style="font-size: 0.9rem;"></i> Cancelar
                 </a>
+                <div style="display: flex; gap: 0.5rem; flex: 1; justify-content: flex-end;">
+                    <button type="submit" name="action" value="borrador" class="btn btn-primary" style="padding: 0.5rem 1.2rem; background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); border: 2px solid #3d8b40; border-radius: 6px; cursor: pointer; font-weight: 600; color: white; font-size: 0.85rem; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='linear-gradient(135deg, #45a049 0%, #3d8b40 100%)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(76, 175, 80, 0.2)';" onmouseout="this.style.background='linear-gradient(135deg, #4CAF50 0%, #45a049 100%)'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                        <i class="fas fa-save" style="font-size: 0.9rem;"></i> Guardar Borrador
+                    </button>
+                    <button type="submit" name="action" value="enviar" class="btn btn-primary" style="padding: 0.5rem 1.2rem; background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); border: 2px solid #003d7a; border-radius: 6px; cursor: pointer; font-weight: 600; color: white; font-size: 0.85rem; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='linear-gradient(135deg, #0052a3 0%, #003d7a 100%)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 12px rgba(0, 102, 204, 0.3)';" onmouseout="this.style.background='linear-gradient(135deg, #0066cc 0%, #0052a3 100%)'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                        <i class="fas fa-paper-plane" style="font-size: 0.9rem;"></i> Enviar
+                    </button>
+                </div>
             </div>
         </form>
     </div>
 </div>
+
+<script src="{{ asset('js/asesores/cotizaciones/persistencia.js') }}"></script>
 
 <script>
 // Arrays para almacenar datos
@@ -924,6 +928,12 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         const result = await response.json();
 
         if (result.success) {
+            // Limpiar localStorage después del guardado exitoso
+            if (typeof limpiarStorage === 'function') {
+                limpiarStorage();
+                console.log('✓ localStorage limpiado después del guardado');
+            }
+            
             Swal.fire({
                 title: '✅ Éxito',
                 text: 'Cotización guardada en borrador',
@@ -946,6 +956,41 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
             icon: 'error'
         });
     }
+});
+
+// ============ AUTO-GUARDADO EN BORDADO ============
+
+// Cargar datos al iniciar
+document.addEventListener('DOMContentLoaded', function() {
+    // Crear función de guardado para bordado
+    function guardarBordadoEnStorage() {
+        try {
+            const datos = {
+                cliente: document.querySelector('[name="cliente"]')?.value || '',
+                asesora: document.querySelector('[name="asesora"]')?.value || '',
+                observaciones_tecnicas: document.querySelector('[name="observaciones_tecnicas"]')?.value || '',
+                tecnicas: tecnicasSeleccionadas,
+                ubicaciones: seccionesSeleccionadas,
+                observaciones_generales: observacionesGenerales,
+                timestamp: new Date().toISOString()
+            };
+            
+            localStorage.setItem('cotizacion_bordado_datos', JSON.stringify(datos));
+            console.log('💾 Datos bordado guardados en localStorage');
+        } catch (error) {
+            console.error('❌ Error al guardar bordado:', error);
+        }
+    }
+    
+    // Auto-guardar cada 5 segundos
+    setInterval(guardarBordadoEnStorage, 5000);
+    
+    // Guardar antes de cerrar la página
+    window.addEventListener('beforeunload', function() {
+        guardarBordadoEnStorage();
+    });
+    
+    console.log('⏱️ Auto-guardado bordado configurado (cada 5 segundos)');
 });
 </script>
 @endsection

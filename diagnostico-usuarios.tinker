@@ -1,0 +1,11 @@
+// Ver todos los usuarios
+$usuarios = App\Models\User::all();
+echo "👥 USUARIOS EN LA BD:\n";
+foreach ($usuarios as $user) {
+    $cotizaciones = App\Models\Cotizacion::where('user_id', $user->id)->where('es_borrador', false)->count();
+    $pb = App\Models\Cotizacion::where('user_id', $user->id)->where('es_borrador', false)->get()->filter(fn($c) => $c->obtenerTipoCotizacion() === 'PB')->count();
+    echo "\n- {$user->name} (ID: {$user->id})\n";
+    echo "  Email: {$user->email}\n";
+    echo "  Total cotizaciones: {$cotizaciones}\n";
+    echo "  Tipo PB: {$pb}\n";
+}

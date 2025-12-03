@@ -1,57 +1,32 @@
 // ========================================
-// SIDEBAR TOGGLE
+// SIDEBAR MOBILE TOGGLE
 // ========================================
 document.addEventListener('DOMContentLoaded', function() {
     const sidebar = document.getElementById('sidebar');
-    const sidebarToggle = document.getElementById('sidebarToggle');
     const mobileToggle = document.getElementById('mobileToggle');
     
-    // Toggle sidebar en desktop
-    if (sidebarToggle) {
-        sidebarToggle.addEventListener('click', function() {
-            // En móviles, solo cerrar el sidebar sin colapso
-            if (window.innerWidth <= 480) {
-                sidebar.classList.remove('show');
-                document.body.classList.remove('sidebar-open');
-            } else {
-                // En desktop, aplicar colapso
-                sidebar.classList.toggle('collapsed');
-                localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
-            }
-        });
-    }
-    
     // Toggle sidebar en mobile
-    if (mobileToggle) {
+    if (mobileToggle && sidebar) {
         mobileToggle.addEventListener('click', function() {
-            // En móviles, NO usar collapsed, solo show
-            if (window.innerWidth <= 480) {
+            // En móviles, mostrar/ocultar el sidebar
+            if (window.innerWidth <= 768) {
                 sidebar.classList.toggle('show');
                 document.body.classList.toggle('sidebar-open');
-            } else {
-                sidebar.classList.toggle('collapsed');
-                localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
             }
         });
-    }
-    
-    // Restaurar estado del sidebar (solo en desktop)
-    if (window.innerWidth > 480) {
-        const sidebarCollapsed = localStorage.getItem('sidebarCollapsed');
-        if (sidebarCollapsed === 'true') {
-            sidebar.classList.add('collapsed');
-        }
     }
     
     // Cerrar sidebar al hacer click fuera en mobile
-    document.addEventListener('click', function(event) {
-        if (window.innerWidth <= 480) {
-            if (!sidebar.contains(event.target) && !mobileToggle.contains(event.target)) {
-                sidebar.classList.remove('show');
-                document.body.classList.remove('sidebar-open');
+    if (sidebar && mobileToggle) {
+        document.addEventListener('click', function(event) {
+            if (window.innerWidth <= 768) {
+                if (!sidebar.contains(event.target) && !mobileToggle.contains(event.target)) {
+                    sidebar.classList.remove('show');
+                    document.body.classList.remove('sidebar-open');
+                }
             }
-        }
-    });
+        });
+    }
 });
 
 // ========================================
@@ -60,25 +35,32 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', function() {
     const themeToggle = document.getElementById('themeToggle');
     const body = document.body;
-    
-    // Cargar tema guardado
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    if (savedTheme === 'dark') {
-        body.classList.add('dark-theme');
-        updateThemeButton(true);
-    }
+    const html = document.documentElement;
     
     // Toggle theme
     if (themeToggle) {
         themeToggle.addEventListener('click', function() {
             body.classList.toggle('dark-theme');
+            html.classList.toggle('dark-theme');
+            html.setAttribute('data-theme', body.classList.contains('dark-theme') ? 'dark' : 'light');
+            
             const isDark = body.classList.contains('dark-theme');
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
             updateThemeButton(isDark);
         });
     }
     
+    // Sincronizar estado actual del tema
+    const currentIsDark = body.classList.contains('dark-theme');
+    if (currentIsDark) {
+        updateThemeButton(true);
+    } else {
+        updateThemeButton(false);
+    }
+    
     function updateThemeButton(isDark) {
+        if (!themeToggle) return;
+        
         const icon = themeToggle.querySelector('.material-symbols-rounded');
         const text = themeToggle.querySelector('.theme-text');
         const logo = document.querySelector('.header-logo');
@@ -86,14 +68,14 @@ document.addEventListener('DOMContentLoaded', function() {
         if (isDark) {
             if (icon) icon.textContent = 'light_mode';
             if (text) text.textContent = 'Modo Claro';
-            if (logo) {
-                logo.src = logo.dataset.logoDark || 'https://prueba.mundoindustrial.co/wp-content/uploads/2024/07/logo-mundo-industrial-white.png';
+            if (logo && logo.dataset.logoDark) {
+                logo.src = logo.dataset.logoDark;
             }
         } else {
             if (icon) icon.textContent = 'dark_mode';
             if (text) text.textContent = 'Modo Oscuro';
-            if (logo) {
-                logo.src = logo.dataset.logoLight || logo.dataset.logoLight;
+            if (logo && logo.dataset.logoLight) {
+                logo.src = logo.dataset.logoLight;
             }
         }
     }

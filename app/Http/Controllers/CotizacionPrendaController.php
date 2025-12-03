@@ -3,22 +3,34 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cotizacion;
-use App\Models\PrendaCotizacion;
+use App\Services\CotizacionService;
+use App\Services\PrendaService;
+use App\Services\ImagenService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-use Illuminate\Support\Str;
 
 class CotizacionPrendaController extends Controller
 {
+    private CotizacionService $cotizacionService;
+    private PrendaService $prendaService;
+    private ImagenService $imagenService;
+
     /**
-     * Constructor: Verificar que el usuario sea Asesor
+     * Constructor: Verificar que el usuario sea Asesor e inyectar servicios
      */
-    public function __construct()
+    public function __construct(
+        CotizacionService $cotizacionService,
+        PrendaService $prendaService,
+        ImagenService $imagenService
+    )
     {
+        $this->cotizacionService = $cotizacionService;
+        $this->prendaService = $prendaService;
+        $this->imagenService = $imagenService;
+        
         $this->middleware('auth');
         $this->middleware(function ($request, $next) {
             $user = auth()->user();
-            // Verificar rol: puede ser string o objeto
             $rol = is_object($user->role) ? $user->role->name : $user->role;
             
             if ($rol !== 'asesor') {
@@ -37,48 +49,286 @@ class CotizacionPrendaController extends Controller
     }
 
     /**
-     * Guardar cotización de prenda en BORRADOR
+     * Guardar cotización de prenda
      */
     public function store(Request $request)
     {
         try {
+            // Registrar TODO lo que viene en el request
+            \Log::info('🔍 REQUEST COMPLETO RECIBIDO', [
+                'all' => $request->all(),
+            ]);
+            
+            // Validación simple
             $validated = $request->validate([
                 'cliente' => 'required|string|max:255',
                 'asesora' => 'required|string|max:255',
                 'fecha' => 'nullable|date',
                 'action' => 'required|in:borrador,enviar',
                 'tipo_cotizacion' => 'nullable|string',
-                'productos' => 'nullable|array',
             ]);
 
-            $esBorrador = $validated['action'] === 'borrador';
-
-            // Crear cotización de prenda con tipo "P" (Prenda)
-            $cotizacion = Cotizacion::create([
-                'user_id' => auth()->id(),
-                'numero_cotizacion' => 'COT-PREN-' . Str::random(8),
-                'tipo_cotizacion_id' => 3, // Tipo "P" (Prenda) - Ajusta según tu BD
-                'estado' => $esBorrador ? 'borrador' : 'enviada',
+            $tipo = $validated['action'];
+            
+            // Convertir 'enviar' a 'enviada' para el servicio
+            $tipoServicio = ($tipo === 'enviar') ? 'enviada' : 'borrador';
+            
+            // Obtener productos del formulario
+            $productosRaw = $request->input('productos_prenda', []);
+            
+            \Log::info('📥 Productos RAW recibidos del formulario', [
+                'cantidad' => count($productosRaw),
+                'estructura' => json_encode($productosRaw, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+            ]);
+            
+            // También verificar archivos
+            \Log::info('📁 Archivos recibidos en request', [
+                'todos_los_archivos' => $request->allFiles(),
+                'fotos_arquivos' => $request->file('productos_prenda.*.fotos') ?? [],
+                'telas_archivos' => $request->file('productos_prenda.*.telas') ?? []
+            ]);
+            
+            // Primero, crear la cotización para obtener su ID
+            $datosFormulario = [
                 'cliente' => $validated['cliente'],
                 'asesora' => $validated['asesora'],
-                'created_at' => $validated['fecha'] ?? now(),
-                'es_borrador' => $esBorrador,
-            ]);
+                'tipo_cotizacion' => $validated['tipo_cotizacion'] ?? null,
+                'productos' => [], // Se llenarán después
+            ];
 
-            // Guardar detalles de prenda en prenda_cotizaciones
-            if ($cotizacion) {
-                PrendaCotizacion::create([
-                    'cotizacion_id' => $cotizacion->id,
-                    'tipo_cotizacion' => $validated['tipo_cotizacion'] ?? '',
-                    'productos' => $validated['productos'] ?? [],
+            // Crear cotización usando el servicio
+            $cotizacion = $this->cotizacionService->crear(
+                $datosFormulario,
+                $tipoServicio,
+                $datosFormulario['tipo_cotizacion']
+            );
+
+            \Log::info('✅ Cotización creada', ['id' => $cotizacion->id]);
+
+            // Ahora procesar productos con la cotización ID disponible
+            $productos = [];
+            foreach ($productosRaw as $index => $producto) {
+                \Log::info("🔹 Procesando producto $index", [
+                    'producto' => json_encode($producto, JSON_UNESCAPED_UNICODE)
+                ]);
+                
+                // Procesar nombre
+                $nombre = $producto['nombre_producto'] ?? '';
+                if (empty($nombre)) {
+                    \Log::warning("⚠️ Producto $index sin nombre, saltando");
+                    continue;
+                }
+                
+                // Procesar descripción
+                $descripcion = $producto['descripcion'] ?? null;
+                
+                // Procesar tallas
+                $tallas = $producto['tallas'] ?? [];
+                if (is_string($tallas)) {
+                    $tallas = array_filter(array_map('trim', explode(',', $tallas)));
+                } elseif (!is_array($tallas)) {
+                    $tallas = [];
+                }
+                
+                \Log::info("  📏 Tallas procesadas", ['tallas' => $tallas]);
+                
+                // Procesar fotos (GUARDAR EN DISCO)
+                $fotosGuardadas = [];
+                
+                // Acceder a los archivos de fotos usando $request->file()
+                // La ruta es: productos_prenda[$index][fotos]
+                $fotosFiles = $request->file("productos_prenda.$index.fotos") ?? [];
+                
+                \Log::info("  📸 Fotos FILES tipo y contenido", [
+                    'tipo' => gettype($fotosFiles),
+                    'es_array' => is_array($fotosFiles),
+                    'count' => is_array($fotosFiles) ? count($fotosFiles) : 0
+                ]);
+                
+                if (is_array($fotosFiles)) {
+                    foreach ($fotosFiles as $idx => $foto) {
+                        \Log::info("    📸 Foto FILE $idx", [
+                            'tipo' => gettype($foto),
+                            'class' => is_object($foto) ? get_class($foto) : 'N/A',
+                            'es_uploaded_file' => $foto instanceof \Illuminate\Http\UploadedFile,
+                            'nombre_original' => $foto instanceof \Illuminate\Http\UploadedFile ? $foto->getClientOriginalName() : 'N/A'
+                        ]);
+                        
+                        if ($foto instanceof \Illuminate\Http\UploadedFile) {
+                            try {
+                                $nombreArchivo = $this->imagenService->guardarImagenPrenda($foto, $cotizacion->id);
+                                $fotosGuardadas[] = $nombreArchivo;
+                                \Log::info("      ✅ Foto guardada: $nombreArchivo");
+                            } catch (\Exception $e) {
+                                \Log::error("      ❌ Error al guardar foto prenda", [
+                                    'error' => $e->getMessage(),
+                                    'trace' => $e->getTraceAsString()
+                                ]);
+                            }
+                        }
+                    }
+                }
+                
+                \Log::info("  📸 Fotos procesadas y guardadas", ['fotos' => $fotosGuardadas]);
+                
+                // Procesar telas (GUARDAR EN DISCO)
+                $telasGuardadas = [];
+                
+                // Acceder a los archivos de telas usando $request->file()
+                // La ruta es: productos_prenda[$index][telas]
+                $telasFiles = $request->file("productos_prenda.$index.telas") ?? [];
+                
+                \Log::info("  🧵 Telas FILES tipo y contenido", [
+                    'tipo' => gettype($telasFiles),
+                    'es_array' => is_array($telasFiles),
+                    'count' => is_array($telasFiles) ? count($telasFiles) : 0
+                ]);
+                
+                if (is_array($telasFiles)) {
+                    foreach ($telasFiles as $idx => $tela) {
+                        \Log::info("    🧵 Tela FILE $idx", [
+                            'tipo' => gettype($tela),
+                            'class' => is_object($tela) ? get_class($tela) : 'N/A',
+                            'es_uploaded_file' => $tela instanceof \Illuminate\Http\UploadedFile,
+                            'nombre_original' => $tela instanceof \Illuminate\Http\UploadedFile ? $tela->getClientOriginalName() : 'N/A'
+                        ]);
+                        
+                        if ($tela instanceof \Illuminate\Http\UploadedFile) {
+                            try {
+                                $nombreArchivo = $this->imagenService->guardarImagenTela($tela, $cotizacion->id);
+                                $telasGuardadas[] = $nombreArchivo;
+                                \Log::info("      ✅ Tela guardada: $nombreArchivo");
+                            } catch (\Exception $e) {
+                                \Log::error("      ❌ Error al guardar foto tela", [
+                                    'error' => $e->getMessage(),
+                                    'trace' => $e->getTraceAsString()
+                                ]);
+                            }
+                        }
+                    }
+                }
+                
+                \Log::info("  🧵 Telas procesadas y guardadas", ['telas' => $telasGuardadas]);
+                
+                // Procesar variantes - convertir al formato esperado por la DB
+                $variantes = $producto['variantes'] ?? [];
+                if (!is_array($variantes)) {
+                    $variantes = [];
+                }
+                
+                // Transformar variantes del formulario al formato de DB
+                $variantesTransformadas = [];
+                $observaciones = [];
+                
+                // Procesar checkboxes y observaciones
+                if ($variantes['aplica_manga'] ?? false) {
+                    $variantesTransformadas['tiene_manga'] = true;
+                    if ($variantes['obs_manga'] ?? false) {
+                        $observaciones[] = "Manga: " . $variantes['obs_manga'];
+                    }
+                }
+                
+                if ($variantes['aplica_bolsillos'] ?? false) {
+                    $variantesTransformadas['tiene_bolsillos'] = true;
+                    if ($variantes['obs_bolsillos'] ?? false) {
+                        $observaciones[] = "Bolsillos: " . $variantes['obs_bolsillos'];
+                    }
+                }
+                
+                if ($variantes['aplica_broche'] ?? false) {
+                    $variantesTransformadas['tiene_broche'] = true;
+                    if ($variantes['obs_broche'] ?? false) {
+                        $observaciones[] = "Broche: " . $variantes['obs_broche'];
+                    }
+                }
+                
+                if ($variantes['aplica_reflectivo'] ?? false) {
+                    $variantesTransformadas['tiene_reflectivo'] = true;
+                    if ($variantes['obs_reflectivo'] ?? false) {
+                        $observaciones[] = "Reflectivo: " . $variantes['obs_reflectivo'];
+                    }
+                }
+                
+                // GUARDAR COLOR, TELA Y REFERENCIA
+                if ($variantes['color'] ?? false) {
+                    $variantesTransformadas['color'] = $variantes['color'];
+                }
+                
+                if ($variantes['tela'] ?? false) {
+                    $variantesTransformadas['tela'] = $variantes['tela'];
+                }
+                
+                if ($variantes['referencia'] ?? false) {
+                    $variantesTransformadas['referencia'] = $variantes['referencia'];
+                }
+                
+                // Agregar referencias y datos existentes (legado)
+                if ($variantes['tela_referencia'] ?? false) {
+                    $variantesTransformadas['tela_referencia'] = $variantes['tela_referencia'];
+                }
+                
+                if ($variantes['color_id'] ?? false) {
+                    $variantesTransformadas['color_id'] = $variantes['color_id'];
+                }
+                
+                if ($variantes['tela_id'] ?? false) {
+                    $variantesTransformadas['tela_id'] = $variantes['tela_id'];
+                }
+                
+                if ($variantes['tipo_manga_id'] ?? false) {
+                    $variantesTransformadas['tipo_manga_id'] = $variantes['tipo_manga_id'];
+                }
+                
+                // Agregar descripción adicional
+                if (!empty($observaciones)) {
+                    $variantesTransformadas['descripcion_adicional'] = implode(' | ', $observaciones);
+                }
+                
+                \Log::info("  ✨ Variantes transformadas", ['variantes' => json_encode($variantesTransformadas, JSON_UNESCAPED_UNICODE)]);
+                
+                // Construir producto normalizado
+                $productoNormalizado = [
+                    'nombre_producto' => $nombre,
+                    'descripcion' => $descripcion,
+                    'tallas' => $tallas,
+                    'fotos' => $fotosGuardadas,  // ← Nombres de archivos guardados
+                    'telas' => $telasGuardadas,  // ← Nombres de archivos guardados
+                    'variantes' => $variantesTransformadas,
+                ];
+                
+                $productos[] = $productoNormalizado;
+                
+                \Log::info("✅ Producto normalizado", [
+                    'nombre' => $nombre,
+                    'tallas_count' => count($tallas),
+                    'fotos_count' => count($fotosGuardadas),
+                    'telas_count' => count($telasGuardadas),
+                    'variantes_count' => count($variantesTransformadas)
                 ]);
             }
-
-            $mensaje = $esBorrador 
-                ? 'Cotización de prenda guardada en borrador' 
-                : 'Cotización de prenda enviada correctamente';
             
-            $redirect = $esBorrador 
+            \Log::info('✅ Productos normalizados finales', [
+                'cantidad' => count($productos),
+                'productos_resumen' => collect($productos)->map(fn($p) => [
+                    'nombre' => $p['nombre_producto'],
+                    'tallas' => $p['tallas'],
+                    'fotos' => $p['fotos'],
+                    'telas' => $p['telas']
+                ])->toArray()
+            ]);
+            
+            // Crear prendas asociadas
+            if (!empty($productos)) {
+                $this->prendaService->crearPrendasCotizacion($cotizacion, $productos);
+            } else {
+                \Log::warning("⚠️ No hay productos válidos para guardar");
+            }
+
+            $mensaje = ($tipo === 'borrador')
+                ? 'Cotización de prenda guardada en borrador'
+                : 'Cotización de prenda enviada correctamente';
+
+            $redirect = ($tipo === 'borrador')
                 ? route('asesores.cotizaciones-prenda.edit', $cotizacion->id)
                 : route('asesores.cotizaciones.index');
 
@@ -89,10 +339,15 @@ class CotizacionPrendaController extends Controller
                 'redirect' => $redirect
             ]);
         } catch (\Exception $e) {
+            \Log::error('❌ Error al guardar cotización de prenda', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Error al guardar la cotización: ' . $e->getMessage(),
-                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -128,28 +383,21 @@ class CotizacionPrendaController extends Controller
                 'asesora' => 'required|string|max:255',
                 'action' => 'required|in:borrador,enviar',
                 'tipo_cotizacion' => 'nullable|string',
-                'productos' => 'nullable|array',
             ]);
 
-            $esBorrador = $validated['action'] === 'borrador';
-
-            $cotizacion->update([
+            $tipo = $validated['action'];
+            
+            $datosFormulario = [
                 'cliente' => $validated['cliente'],
                 'asesora' => $validated['asesora'],
-                'estado' => $esBorrador ? 'borrador' : 'enviada',
-                'es_borrador' => $esBorrador,
-            ]);
+                'tipo_cotizacion' => $validated['tipo_cotizacion'] ?? null,
+                'productos' => $request->input('productos_prenda', []),
+            ];
 
-            $prendaCotizacion = $cotizacion->prendaCotizacion;
-            if ($prendaCotizacion) {
-                $prendaCotizacion->update([
-                    'tipo_cotizacion' => $validated['tipo_cotizacion'] ?? '',
-                    'productos' => $validated['productos'] ?? [],
-                ]);
-            }
+            $this->cotizacionService->actualizarBorrador($cotizacion, $datosFormulario);
 
-            $mensaje = $esBorrador 
-                ? 'Cotización actualizada en borrador' 
+            $mensaje = ($tipo === 'borrador')
+                ? 'Cotización actualizada en borrador'
                 : 'Cotización actualizada y enviada';
 
             return response()->json([
@@ -190,10 +438,7 @@ class CotizacionPrendaController extends Controller
         }
 
         try {
-            $cotizacion->update([
-                'estado' => 'enviada',
-                'es_borrador' => false,
-            ]);
+            $this->cotizacionService->cambiarEstado($cotizacion, 'enviada');
 
             return response()->json([
                 'success' => true,

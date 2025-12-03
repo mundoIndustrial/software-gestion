@@ -1,16 +1,22 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 
+const isProduction = process.env.VITE_ENV === 'production' || process.env.NODE_ENV === 'production';
+
 export default defineConfig({
     server: {
         host: '0.0.0.0', // Permite conexiones desde cualquier IP de la red
         port: 5173,
-        strictPort: true,
-        hmr: {
+        strictPort: false,
+        hmr: isProduction ? false : {
             host: process.env.VITE_HMR_HOST || 'localhost',
+            port: process.env.VITE_HMR_PORT || 5173,
+            protocol: 'http',
         },
-        cors: true, // Habilitar CORS para desarrollo en red
-        origin: process.env.APP_URL || 'http://localhost:8000',
+        cors: {
+            origin: '*',
+            credentials: true
+        },
     },
     plugins: [
         laravel({

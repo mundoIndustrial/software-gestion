@@ -4,39 +4,30 @@
 <link rel="stylesheet" href="{{ asset('css/asesores/create-friendly-refactored.css') }}">
 <link rel="stylesheet" href="{{ asset('css/asesores/create-friendly.css') }}">
 <style>
-    /* Desactivar navbar y sidebar */
+    /* Desactivar navbar */
     header {
         display: none !important;
     }
 
-    aside, .sidebar {
-        display: none !important;
-    }
-
-    /* Hacer que el contenido principal ocupe todo el ancho */
-    main, .main-content {
-        margin-left: 0 !important;
-        width: 100% !important;
-    }
-
+    /* Solo hacer más estrecho el main-content en esta vista */
     .page-wrapper {
         background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
         min-height: 100vh;
-        padding: 0.5rem 1rem 2rem 1rem;
+        padding: 0.5rem;
     }
 
     .form-container {
-        max-width: 900px;
+        max-width: 1400px;
         margin: 0 auto;
         background: white;
         border-radius: 12px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        padding: 1.25rem;
+        padding: 1.25rem 1.5rem;
     }
 
     /* Contenedor externo para centrar todo */
     .content-wrapper {
-        max-width: 900px;
+        width: 100%;
         margin: 0 auto;
     }
 
@@ -125,7 +116,7 @@
 
     /* Contenedor centrado para productos */
     #productosContainer {
-        max-width: 900px;
+        width: 100%;
         margin: 0 auto;
     }
 
@@ -190,8 +181,8 @@
         margin-top: 0.3rem;
         font-weight: 600;
     }
-
 </style>
+
 @endpush
 
 @section('content')
@@ -268,15 +259,15 @@
 
             <!-- Botones de acción -->
             <div class="form-actions">
-                <button type="button" class="btn btn-secondary" onclick="location.href='{{ route('asesores.pedidos.index') }}'">
-                    <i class="fas fa-times"></i> Cancelar
+                <button type="button" class="btn btn-secondary" onclick="location.href='{{ route('asesores.pedidos.index') }}'\" style="padding: 0.5rem 1.2rem; background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%); border: 2px solid #ddd; border-radius: 6px; cursor: pointer; font-weight: 600; color: #333; font-size: 0.85rem; transition: all 0.3s ease; display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='linear-gradient(135deg, #e8e8e8 0%, #d5d5d5 100%)'; this.style.borderColor='#999'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)';" onmouseout="this.style.background='linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%)'; this.style.borderColor='#ddd'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    <i class="fas fa-times" style="font-size: 0.9rem;"></i> Cancelar
                 </button>
-                <div style="display: flex; gap: 0.75rem; flex: 1; justify-content: flex-end;">
-                    <button type="button" class="btn btn-secondary" id="btnGuardarBorrador" onclick="guardarCotizacionPrenda('borrador')">
-                        <i class="fas fa-save"></i> Guardar Borrador
+                <div style="display: flex; gap: 0.5rem; flex: 1; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" id="btnGuardarBorrador" onclick="guardarCotizacionPrenda('borrador')" style="padding: 0.5rem 1.2rem; background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); border: 2px solid #3d8b40; border-radius: 6px; cursor: pointer; font-weight: 600; color: white; font-size: 0.85rem; transition: all 0.3s ease; display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='linear-gradient(135deg, #45a049 0%, #3d8b40 100%)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(76, 175, 80, 0.2)';" onmouseout="this.style.background='linear-gradient(135deg, #4CAF50 0%, #45a049 100%)'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                        <i class="fas fa-save" style="font-size: 0.9rem;"></i> Guardar Borrador
                     </button>
-                    <button type="button" class="btn btn-primary" id="btnEnviar" onclick="guardarCotizacionPrenda('enviar')">
-                        <i class="fas fa-paper-plane"></i> Enviar
+                    <button type="button" class="btn btn-primary" id="btnEnviar" onclick="guardarCotizacionPrenda('enviar')" style="padding: 0.5rem 1.2rem; background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); border: 2px solid #003d7a; border-radius: 6px; cursor: pointer; font-weight: 600; color: white; font-size: 0.85rem; transition: all 0.3s ease; display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='linear-gradient(135deg, #0052a3 0%, #003d7a 100%)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 6px 12px rgba(0, 102, 204, 0.3)';" onmouseout="this.style.background='linear-gradient(135deg, #0066cc 0%, #0052a3 100%)'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                        <i class="fas fa-paper-plane" style="font-size: 0.9rem;"></i> Enviar
                     </button>
                 </div>
             </div>
@@ -292,12 +283,238 @@
                 <i class="fas fa-plus" style="color: #1e40af; font-size: 1.1rem;"></i>
                 <span>Agregar Prenda</span>
             </button>
+            <button type="button" onclick="abrirModalEspecificaciones(); document.getElementById('menuFlotante').style.display='none'; document.getElementById('btnFlotante').style.transform='scale(1) rotate(0deg)'" style="width: 100%; padding: 12px 16px; border: none; background: white; cursor: pointer; text-align: left; font-size: 0.9rem; color: #333; display: flex; align-items: center; gap: 12px; transition: all 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='white'">
+                <i class="fas fa-sliders-h" style="color: #ff9800; font-size: 1.1rem;"></i>
+                <span>Especificaciones</span>
+            </button>
         </div>
         
         <!-- Botón principal flotante -->
         <button type="button" id="btnFlotante" onclick="const menu = document.getElementById('menuFlotante'); menu.style.display = menu.style.display === 'none' ? 'block' : 'none'; this.style.transform = menu.style.display === 'block' ? 'scale(1) rotate(45deg)' : 'scale(1) rotate(0deg)'" style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #1e40af, #0ea5e9); color: white; border: none; cursor: pointer; font-size: 1.8rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(30, 64, 175, 0.4); transition: all 0.3s ease; position: relative;" onmouseover="this.style.boxShadow='0 6px 20px rgba(30, 64, 175, 0.5)'; this.style.transform='scale(1.1) ' + (document.getElementById('menuFlotante').style.display === 'block' ? 'rotate(45deg)' : 'rotate(0deg)')" onmouseout="this.style.boxShadow='0 4px 12px rgba(30, 64, 175, 0.4)'; this.style.transform='scale(1) ' + (document.getElementById('menuFlotante').style.display === 'block' ? 'rotate(45deg)' : 'rotate(0deg)')">
             <i class="fas fa-plus"></i>
         </button>
+    </div>
+</div>
+
+<!-- MODAL: ESPECIFICACIONES -->
+<div id="modalEspecificaciones" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 900px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 2px solid #ffc107; padding-bottom: 1rem;">
+            <h3 style="margin: 0; color: #333; font-size: 1.3rem;"><i class="fas fa-clipboard-check"></i> ESPECIFICACIONES DE LA COTIZACIÓN</h3>
+            <button type="button" onclick="cerrarModalEspecificaciones()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <table class="tabla-control-compacta" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f0f0f0;">
+                    <th style="width: 30%; text-align: left; padding: 10px; border: 1px solid #ddd;"></th>
+                    <th style="width: 15%; text-align: center; padding: 10px; border: 1px solid #ddd;">SELECCIONAR</th>
+                    <th style="width: 55%; text-align: left; padding: 10px; border: 1px solid #ddd;">OBSERVACIONES</th>
+                </tr>
+            </thead>
+            <tbody id="tbody_especificaciones">
+                <!-- DISPONIBILIDAD -->
+                <tr class="fila-grupo">
+                    <td colspan="3" style="font-weight: 600; background: #ffc107; padding: 10px; border: 1px solid #ddd;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>📦 DISPONIBILIDAD</span>
+                            <button type="button" onclick="agregarFilaEspecificacion('disponibilidad')" style="background: #3498db; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">+</button>
+                        </div>
+                    </td>
+                </tr>
+                <tbody id="tbody_disponibilidad">
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><label style="margin: 0; font-size: 0.8rem;">Bodega</label></td>
+                        <td style="text-align: center; padding: 10px; border: 1px solid #ddd;">
+                            <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">
+                            <input type="text" name="tabla_orden[bodega_obs]" placeholder="Observaciones" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><label style="margin: 0; font-size: 0.8rem;">Cúcuta</label></td>
+                        <td style="text-align: center; padding: 10px; border: 1px solid #ddd;">
+                            <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">
+                            <input type="text" name="tabla_orden[cucuta_obs]" placeholder="Observaciones" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                        </td>
+                    </tr>
+                </tbody>
+
+                <!-- PAGO -->
+                <tr class="fila-grupo">
+                    <td colspan="3" style="font-weight: 600; background: #ffc107; padding: 10px; border: 1px solid #ddd;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>💳 FORMA DE PAGO</span>
+                            <button type="button" onclick="agregarFilaEspecificacion('pago')" style="background: #3498db; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">+</button>
+                        </div>
+                    </td>
+                </tr>
+                <tbody id="tbody_pago">
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><label style="margin: 0; font-size: 0.8rem;">Contado</label></td>
+                        <td style="text-align: center; padding: 10px; border: 1px solid #ddd;">
+                            <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">
+                            <input type="text" name="tabla_orden[pago_contado_obs]" placeholder="Observaciones" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><label style="margin: 0; font-size: 0.8rem;">Crédito</label></td>
+                        <td style="text-align: center; padding: 10px; border: 1px solid #ddd;">
+                            <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">
+                            <input type="text" name="tabla_orden[pago_credito_obs]" placeholder="Observaciones" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                        </td>
+                    </tr>
+                </tbody>
+
+                <!-- RÉGIMEN -->
+                <tr class="fila-grupo">
+                    <td colspan="3" style="font-weight: 600; background: #ffc107; padding: 10px; border: 1px solid #ddd;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>📋 RÉGIMEN</span>
+                            <button type="button" onclick="agregarFilaEspecificacion('regimen')" style="background: #3498db; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">+</button>
+                        </div>
+                    </td>
+                </tr>
+                <tbody id="tbody_regimen">
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><label style="margin: 0; font-size: 0.8rem;">Común</label></td>
+                        <td style="text-align: center; padding: 10px; border: 1px solid #ddd;">
+                            <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">
+                            <input type="text" name="tabla_orden[regimen_comun_obs]" placeholder="Observaciones" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><label style="margin: 0; font-size: 0.8rem;">Simplificado</label></td>
+                        <td style="text-align: center; padding: 10px; border: 1px solid #ddd;">
+                            <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">
+                            <input type="text" name="tabla_orden[regimen_simplificado_obs]" placeholder="Observaciones" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                        </td>
+                    </tr>
+                </tbody>
+
+                <!-- SE HA VENDIDO -->
+                <tr class="fila-grupo">
+                    <td colspan="3" style="font-weight: 600; background: #ffc107; padding: 10px; border: 1px solid #ddd;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>✅ SE HA VENDIDO</span>
+                            <button type="button" onclick="agregarFilaEspecificacion('vendido')" style="background: #3498db; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">+</button>
+                        </div>
+                    </td>
+                </tr>
+                <tbody id="tbody_vendido">
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><label style="margin: 0; font-size: 0.8rem;">Sí</label></td>
+                        <td style="text-align: center; padding: 10px; border: 1px solid #ddd;">
+                            <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">
+                            <input type="text" name="tabla_orden[vendido_si_obs]" placeholder="Observaciones" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><label style="margin: 0; font-size: 0.8rem;">No</label></td>
+                        <td style="text-align: center; padding: 10px; border: 1px solid #ddd;">
+                            <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">
+                            <input type="text" name="tabla_orden[vendido_no_obs]" placeholder="Observaciones" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                        </td>
+                    </tr>
+                </tbody>
+
+                <!-- ÚLTIMA VENTA -->
+                <tr class="fila-grupo">
+                    <td colspan="3" style="font-weight: 600; background: #ffc107; padding: 10px; border: 1px solid #ddd;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>📅 ÚLTIMA VENTA</span>
+                            <button type="button" onclick="agregarFilaEspecificacion('ultima_venta')" style="background: #3498db; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">+</button>
+                        </div>
+                    </td>
+                </tr>
+                <tbody id="tbody_ultima_venta">
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><label style="margin: 0; font-size: 0.8rem;">Mes pasado</label></td>
+                        <td style="text-align: center; padding: 10px; border: 1px solid #ddd;">
+                            <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">
+                            <input type="text" name="tabla_orden[ultima_venta_mes_obs]" placeholder="Observaciones" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><label style="margin: 0; font-size: 0.8rem;">Hace 2 meses</label></td>
+                        <td style="text-align: center; padding: 10px; border: 1px solid #ddd;">
+                            <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">
+                            <input type="text" name="tabla_orden[ultima_venta_dos_meses_obs]" placeholder="Observaciones" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><label style="margin: 0; font-size: 0.8rem;">Más de 2 meses</label></td>
+                        <td style="text-align: center; padding: 10px; border: 1px solid #ddd;">
+                            <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">
+                            <input type="text" name="tabla_orden[ultima_venta_mas_meses_obs]" placeholder="Observaciones" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                        </td>
+                    </tr>
+                </tbody>
+
+                <!-- FLETE DE ENVÍO -->
+                <tr class="fila-grupo">
+                    <td colspan="3" style="font-weight: 600; background: #ffc107; padding: 10px; border: 1px solid #ddd;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>🚚 FLETE DE ENVÍO</span>
+                            <button type="button" onclick="agregarFilaEspecificacion('flete')" style="background: #3498db; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">+</button>
+                        </div>
+                    </td>
+                </tr>
+                <tbody id="tbody_flete">
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><label style="margin: 0; font-size: 0.8rem;">Incluido</label></td>
+                        <td style="text-align: center; padding: 10px; border: 1px solid #ddd;">
+                            <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">
+                            <input type="text" name="tabla_orden[flete_incluido_obs]" placeholder="Observaciones" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #ddd;"><label style="margin: 0; font-size: 0.8rem;">No incluido</label></td>
+                        <td style="text-align: center; padding: 10px; border: 1px solid #ddd;">
+                            <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                        </td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">
+                            <input type="text" name="tabla_orden[flete_no_incluido_obs]" placeholder="Observaciones" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+                        </td>
+                    </tr>
+                </tbody>
+            </tbody>
+        </table>
+
+        <!-- Footer -->
+        <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 2px solid #ffc107; display: flex; gap: 0.75rem; justify-content: flex-end;">
+            <button type="button" onclick="cerrarModalEspecificaciones()" style="padding: 0.5rem 1.2rem; background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%); border: 2px solid #ddd; border-radius: 6px; cursor: pointer; font-weight: 600; color: #333; font-size: 0.85rem; transition: all 0.3s ease; display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='linear-gradient(135deg, #e8e8e8 0%, #d5d5d5 100%)'; this.style.borderColor='#999'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(0,0,0,0.1)';" onmouseout="this.style.background='linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%)'; this.style.borderColor='#ddd'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                <i class="fas fa-times" style="font-size: 0.85rem;"></i> CANCELAR
+            </button>
+            <button type="button" onclick="guardarEspecificaciones()" style="padding: 0.5rem 1.2rem; background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); border: 2px solid #003d7a; border-radius: 6px; cursor: pointer; font-weight: 600; color: white; font-size: 0.85rem; transition: all 0.3s ease; display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='linear-gradient(135deg, #0052a3 0%, #003d7a 100%)'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(0, 102, 204, 0.2)';" onmouseout="this.style.background='linear-gradient(135deg, #0066cc 0%, #0052a3 100%)'; this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                <i class="fas fa-check" style="font-size: 0.85rem;"></i> GUARDAR
+            </button>
+        </div>
     </div>
 </div>
 
@@ -379,22 +596,20 @@
                                 <tr style="border-bottom: 1px solid #ddd;">
                                     <td style="padding: 12px; border-right: 1px solid #ddd;">
                                         <div style="position: relative;">
-                                            <input type="text" class="color-input" placeholder="Buscar o crear color..." style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px; font-size: 0.9rem;">
-                                            <input type="hidden" name="productos_prenda[][variantes][color_id]" class="color-id-input" value="">
+                                            <input type="text" name="productos_prenda[][variantes][color]" class="color-input" placeholder="Buscar o crear color..." style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px; font-size: 0.9rem;">
                                         </div>
                                     </td>
                                     <td style="padding: 12px; border-right: 1px solid #ddd;">
                                         <div style="position: relative;">
-                                            <input type="text" class="tela-input" placeholder="Buscar o crear tela..." style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px; font-size: 0.9rem;">
-                                            <input type="hidden" name="productos_prenda[][variantes][tela_id]" class="tela-id-input" value="">
+                                            <input type="text" name="productos_prenda[][variantes][tela]" class="tela-input" placeholder="Buscar o crear tela..." style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px; font-size: 0.9rem;">
                                         </div>
                                     </td>
                                     <td style="padding: 12px; border-right: 1px solid #ddd;">
                                         <input type="text" name="productos_prenda[][variantes][referencia]" class="referencia-input" placeholder="Ej: REF-NAP-001" style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px; font-size: 0.9rem;">
                                     </td>
                                     <td style="padding: 12px; text-align: center;">
-                                        <label style="display: block; min-height: 60px; padding: 0.5rem; border: 2px dashed #0066cc; border-radius: 6px; cursor: pointer; text-align: center; background: #f0f7ff;" ondrop="manejarDrop(event)" ondragover="event.preventDefault()" ondragleave="this.classList.remove('drag-over')">
-                                            <input type="file" name="productos_prenda[][telas][]" class="input-file-tela" accept="image/*" multiple onchange="agregarFotoTela(this)" style="display: none;">
+                                        <label style="display: block; min-height: 60px; padding: 0.5rem; border: 2px dashed #0066cc; border-radius: 6px; cursor: pointer; text-align: center; background: #f0f7ff;" ondrop="event.preventDefault(); if(event.dataTransfer.files) this.querySelector('input').files = event.dataTransfer.files; this.querySelector('input').onchange && this.querySelector('input').onchange();" ondragover="event.preventDefault(); this.style.background='#e8f4f8';" ondragleave="this.style.background='#f0f7ff';">
+                                            <input type="file" name="productos_prenda[][telas][]" class="input-file-tela" accept="image/*" multiple onchange="agregarFotosAlProducto(this)" style="display: none;">
                                             <div class="drop-zone-content" style="font-size: 0.7rem;">
                                                 <i class="fas fa-cloud-upload-alt" style="font-size: 0.9rem; color: #0066cc;"></i>
                                                 <p style="margin: 0.25rem 0; color: #0066cc; font-weight: 500;">ARRASTRA O CLIC</p>
@@ -423,8 +638,8 @@
                         <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; margin-bottom: 0.5rem; color: #0066cc; font-size: 0.85rem;">
                             <i class="fas fa-image"></i> FOTOS PRENDA
                         </label>
-                        <label style="display: block; min-height: 80px; padding: 0.75rem; border: 2px dashed #0066cc; border-radius: 6px; cursor: pointer; text-align: center; background: #f0f7ff;" ondrop="manejarDrop(event)" ondragover="event.preventDefault()" ondragleave="this.classList.remove('drag-over')">
-                            <input type="file" name="productos_prenda[][fotos][]" class="input-file-single" accept="image/*" multiple onchange="agregarFotos(this.files, this.closest('label').nextElementSibling)" style="display: none;">
+                        <label style="display: block; min-height: 80px; padding: 0.75rem; border: 2px dashed #0066cc; border-radius: 6px; cursor: pointer; text-align: center; background: #f0f7ff;" ondrop="event.preventDefault(); if(event.dataTransfer.files) this.querySelector('input').files = event.dataTransfer.files; this.querySelector('input').onchange && this.querySelector('input').onchange();" ondragover="event.preventDefault(); this.style.background='#e8f4f8';" ondragleave="this.style.background='#f0f7ff';">
+                            <input type="file" name="productos_prenda[][fotos][]" class="input-file-single" accept="image/*" multiple onchange="agregarFotosAlProducto(this)" style="display: none;">
                             <div class="drop-zone-content" style="font-size: 0.75rem;">
                                 <i class="fas fa-cloud-upload-alt" style="font-size: 1rem; color: #0066cc;"></i>
                                 <p style="margin: 0.25rem 0; color: #0066cc; font-weight: 500;">ARRASTRA O CLIC</p>
@@ -591,6 +806,14 @@ function agregarProductoPrenda() {
     const clone = template.content.cloneNode(true);
     const contenedor = document.getElementById('productosContainer');
     const numeroProducto = contenedor.querySelectorAll('.producto-card').length + 1;
+    
+    const productoCard = clone.querySelector('.producto-card');
+    const productoId = 'producto-' + Date.now() + '-' + numeroProducto;
+    productoCard.dataset.productoId = productoId;
+    
+    // Inicializar arrays de fotos y telas para este producto
+    fotosSeleccionadas[productoId] = [];
+    telasSeleccionadas[productoId] = [];
     
     clone.querySelector('.numero-producto').textContent = numeroProducto;
     contenedor.appendChild(clone);
@@ -780,6 +1003,28 @@ document.addEventListener('DOMContentLoaded', function() {
     const clienteInput = document.getElementById('cliente');
     const headerTipoCotizacion = document.getElementById('header-tipo-cotizacion');
     const tipoCotizacionInput = document.getElementById('tipo_cotizacion');
+    const btnGuardarBorrador = document.getElementById('btnGuardarBorrador');
+    const btnEnviar = document.getElementById('btnEnviar');
+    
+    // Función para actualizar estado de botones
+    function actualizarEstadoBotones() {
+        const tipoSeleccionado = headerTipoCotizacion && headerTipoCotizacion.value;
+        const deshabilitado = !tipoSeleccionado;
+        
+        if (btnGuardarBorrador) {
+            btnGuardarBorrador.disabled = deshabilitado;
+            btnGuardarBorrador.style.opacity = deshabilitado ? '0.5' : '1';
+            btnGuardarBorrador.style.cursor = deshabilitado ? 'not-allowed' : 'pointer';
+            btnGuardarBorrador.title = deshabilitado ? 'Selecciona un tipo de cotización (M, D, X) para continuar' : '';
+        }
+        
+        if (btnEnviar) {
+            btnEnviar.disabled = deshabilitado;
+            btnEnviar.style.opacity = deshabilitado ? '0.5' : '1';
+            btnEnviar.style.cursor = deshabilitado ? 'not-allowed' : 'pointer';
+            btnEnviar.title = deshabilitado ? 'Selecciona un tipo de cotización (M, D, X) para continuar' : '';
+        }
+    }
     
     if (headerCliente) {
         headerCliente.addEventListener('input', function() {
@@ -788,30 +1033,42 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     if (headerTipoCotizacion) {
+        // Deshabilitar botones inicialmente
+        actualizarEstadoBotones();
+        
+        // Escuchar cambios en el select
         headerTipoCotizacion.addEventListener('change', function() {
             tipoCotizacionInput.value = this.value;
+            actualizarEstadoBotones();
         });
     }
 });
 
 // Guardar cotización
 function guardarCotizacionPrenda(action) {
-    const cliente = document.getElementById('cliente').value;
-    const asesora = document.getElementById('asesora').value;
+    // Obtener valores del HEADER (no del formulario oculto)
+    const clienteHeader = document.getElementById('header-cliente').value;
     const tipoCotizacion = document.getElementById('header-tipo-cotizacion').value;
     const selectTipo = document.getElementById('header-tipo-cotizacion');
     const errorTipo = document.getElementById('error-tipo-cotizacion');
+    const inputHeaderCliente = document.getElementById('header-cliente');
 
-    if (!cliente || !asesora) {
-        alert('Por favor completa los datos del cliente');
+    // Validar cliente
+    if (!clienteHeader || !clienteHeader.trim()) {
+        inputHeaderCliente.classList.add('campo-invalido');
+        inputHeaderCliente.style.borderColor = '#ff4444';
+        alert('⚠️ Por favor escribe el NOMBRE DEL CLIENTE en el encabezado');
         return;
+    } else {
+        inputHeaderCliente.classList.remove('campo-invalido');
+        inputHeaderCliente.style.borderColor = '';
     }
 
     // Validar que el tipo de cotización esté seleccionado
     if (!tipoCotizacion) {
         selectTipo.classList.add('campo-invalido');
         errorTipo.style.display = 'block';
-        alert('Por favor selecciona el tipo de cotización (M, D o X)');
+        alert('⚠️ Por favor selecciona el TIPO DE COTIZACIÓN (M, D o X)');
         return;
     } else {
         selectTipo.classList.remove('campo-invalido');
@@ -829,22 +1086,166 @@ function guardarCotizacionPrenda(action) {
     });
 
     if (!tieneAlgunProducto) {
-        alert('Por favor agrega al menos una prenda');
+        alert('⚠️ Por favor agrega al menos una prenda');
         return;
     }
 
     const form = document.getElementById('cotizacionPrendaForm');
-    const formData = new FormData(form);
     
-    // Sincronizar header
-    document.getElementById('cliente').value = document.getElementById('header-cliente').value;
-    document.getElementById('fecha').value = document.getElementById('header-fecha').value;
-    document.getElementById('tipo_cotizacion').value = document.getElementById('header-tipo-cotizacion').value;
+    // ✅ ARMAR PRODUCTOS CORRECTAMENTE - MÉTODO 2: Iterar sobre cada producto-card
+    const productosFinales = [];
     
-    formData.set('cliente', document.getElementById('header-cliente').value);
-    formData.set('fecha', document.getElementById('header-fecha').value);
-    formData.set('tipo_cotizacion', document.getElementById('header-tipo-cotizacion').value);
+    // Encontrar todos los contenedores de producto (producto-card)
+    const productCards = form.querySelectorAll('.producto-card');
+    
+    console.log(`=== REORGANIZANDO ${productCards.length} PRODUCTOS ===`);
+    
+    productCards.forEach((card, cardIndex) => {
+        console.log(`\n--- PRODUCTO ${cardIndex} ---`);
+        
+        // Obtener productoId del data attribute
+        const productoId = card.dataset.productoId || '';
+        console.log(`📦 Producto ID: ${productoId}`);
+        
+        // Crear producto vacío
+        const producto = {
+            nombre_producto: '',
+            descripcion: '',
+            tallas: [],
+            fotos: [],
+            telas: [],
+            variantes: {}
+        };
+        
+        // === BUSCAR NOMBRE ===
+        const inputNombre = card.querySelector('input[name*="nombre_producto"]');
+        if (inputNombre) {
+            producto.nombre_producto = inputNombre.value.trim();
+            console.log(`✓ Nombre: ${producto.nombre_producto}`);
+        }
+        
+        // === BUSCAR DESCRIPCIÓN ===
+        const inputDesc = card.querySelector('textarea[name*="descripcion"]');
+        if (inputDesc) {
+            producto.descripcion = inputDesc.value.trim();
+            console.log(`✓ Descripción: ${producto.descripcion}`);
+        }
+        
+        // === BUSCAR TALLAS (input hidden con valor "S, M") ===
+        const inputTallas = card.querySelector('input[name*="tallas"]');
+        if (inputTallas && inputTallas.value) {
+            const tallasStr = inputTallas.value;
+            // Si es string con comas, dividir
+            if (typeof tallasStr === 'string' && tallasStr.includes(',')) {
+                producto.tallas = tallasStr.split(',').map(t => t.trim()).filter(t => t);
+            } else if (typeof tallasStr === 'string') {
+                producto.tallas = [tallasStr.trim()];
+            }
+            console.log(`✓ Tallas: ${JSON.stringify(producto.tallas)}`);
+        }
+        
+        // === BUSCAR FOTOS (desde fotosSeleccionadas en memoria) ===
+        // Las fotos se guardan en memoria por agregarFotos, no en el input HTML
+        if (fotosSeleccionadas[productoId] && fotosSeleccionadas[productoId].length > 0) {
+            fotosSeleccionadas[productoId].forEach(foto => {
+                producto.fotos.push(foto); // ← Agregar FILE OBJECT desde memoria
+            });
+            console.log(`✓ Fotos (${producto.fotos.length}): ${JSON.stringify(producto.fotos.map(f => f.name))}`);
+        } else {
+            console.log(`ℹ️ No hay fotos guardadas para este producto`);
+        }
+        
+        // === BUSCAR TELAS (desde telasSeleccionadas en memoria) ===
+        // Las telas se guardan en memoria por agregarFotoTela, no en el input HTML
+        if (telasSeleccionadas[productoId] && telasSeleccionadas[productoId].length > 0) {
+            telasSeleccionadas[productoId].forEach(tela => {
+                producto.telas.push(tela); // ← Agregar FILE OBJECT desde memoria
+            });
+            console.log(`✓ Telas (${producto.telas.length}): ${JSON.stringify(producto.telas.map(t => t.name))}`);
+        } else {
+            console.log(`ℹ️ No hay telas guardadas para este producto`);
+        }
+        
+        // === BUSCAR VARIANTES (todos los inputs dentro de este card) ===
+        const allInputs = card.querySelectorAll('input, select');
+        allInputs.forEach(input => {
+            const name = input.name;
+            if (!name || !name.includes('variantes')) return;
+            
+            // Extraer el nombre del campo de variante
+            const match = name.match(/\[variantes\]\[([^\]]+)\]/);
+            if (match) {
+                const campo = match[1];
+                // Solo agregar si tiene valor y no es vacío
+                if (input.value !== null && input.value !== undefined && input.value !== '') {
+                    producto.variantes[campo] = input.value;
+                }
+            }
+        });
+        console.log(`✓ Variantes (${Object.keys(producto.variantes).length}): ${JSON.stringify(producto.variantes)}`);
+        
+        // === AGREGAR SOLO SI TIENE NOMBRE ===
+        if (producto.nombre_producto) {
+            productosFinales.push(producto);
+            console.log(`✅ PRODUCTO AGREGADO`);
+        } else {
+            console.log(`⚠️ PRODUCTO SIN NOMBRE - IGNORADO`);
+        }
+    });
+    
+    console.log('\n=== PRODUCTOS FINALES ===');
+    console.log(JSON.stringify(productosFinales, null, 2));
+    
+    // === CREAR FormData LIMPIO ===
+    const formData = new FormData();
+    
+    // Agregar datos básicos
+    formData.append('cliente', document.getElementById('header-cliente').value);
+    formData.append('asesora', document.getElementById('header-asesor').value);
+    formData.append('fecha', document.getElementById('header-fecha').value);
+    formData.append('tipo_cotizacion', document.getElementById('header-tipo-cotizacion').value);
     formData.append('action', action);
+    formData.append('_token', document.querySelector('input[name="_token"]').value);
+    
+    // Agregar productos reorganizados
+    productosFinales.forEach((producto, index) => {
+        // Datos básicos
+        formData.append(`productos_prenda[${index}][nombre_producto]`, producto.nombre_producto);
+        formData.append(`productos_prenda[${index}][descripcion]`, producto.descripcion || '');
+        
+        // Tallas como array
+        producto.tallas.forEach((talla, tallaIdx) => {
+            formData.append(`productos_prenda[${index}][tallas][${tallaIdx}]`, talla);
+        });
+        
+        // Fotos como array - AGREGAR FILE OBJECTS
+        producto.fotos.forEach((foto, fotoIdx) => {
+            if (foto instanceof File) {
+                formData.append(`productos_prenda[${index}][fotos][${fotoIdx}]`, foto, foto.name);
+            } else {
+                formData.append(`productos_prenda[${index}][fotos][${fotoIdx}]`, foto);
+            }
+        });
+        
+        // Telas como array - AGREGAR FILE OBJECTS
+        producto.telas.forEach((tela, telaIdx) => {
+            if (tela instanceof File) {
+                formData.append(`productos_prenda[${index}][telas][${telaIdx}]`, tela, tela.name);
+            } else {
+                formData.append(`productos_prenda[${index}][telas][${telaIdx}]`, tela);
+            }
+        });
+        
+        // Variantes
+        Object.keys(producto.variantes).forEach(campo => {
+            formData.append(`productos_prenda[${index}][variantes][${campo}]`, producto.variantes[campo]);
+        });
+    });
+    
+    console.log('=== FormData FINAL A ENVIAR ===');
+    for (let pair of formData.entries()) {
+        console.log(`${pair[0]}: ${pair[1]}`);
+    }
 
     fetch('{{ route("asesores.cotizaciones-prenda.store") }}', {
         method: 'POST',
@@ -929,5 +1330,189 @@ function mostrarSelectorVariantes(input) {
         innerContainer.innerHTML = '';
     }
 }
+
+// ============ GESTIÓN DE IMÁGENES - DELEGADO A productos.js ============
+
+// Wrapper para compatibilidad con productos.js
+function agregarFotosAlProducto(input) {
+    // Detectar si es una imagen de tela o una foto de prenda
+    const isTela = input.classList.contains('input-file-tela');
+    const isFoto = input.classList.contains('input-file-single');
+    
+    console.log('🖼️ Imagen detectada:', { isTela, isFoto, className: input.className });
+    
+    if (isTela && typeof agregarFotoTela === 'function') {
+        // Es una tela - llamar función específica para telas
+        console.log('✓ Procesando como TELA');
+        agregarFotoTela(input);
+    } else if (isFoto && typeof agregarFotos === 'function') {
+        // Es una foto de prenda - llamar función específica para fotos
+        console.log('✓ Procesando como FOTO DE PRENDA');
+        const dropZone = input.closest('label');
+        if (dropZone) {
+            agregarFotos(input.files, dropZone);
+        }
+    } else {
+        console.warn('⚠️ No se identificó tipo de imagen o función no disponible');
+        console.log('   Funciones disponibles:', {
+            agregarFotos: typeof agregarFotos,
+            agregarFotoTela: typeof agregarFotoTela
+        });
+    }
+}
+
+// Abrir modal de especificaciones
+function abrirModalEspecificaciones() {
+    const modal = document.getElementById('modalEspecificaciones');
+    if (modal) modal.style.display = 'flex';
+}
+
+// Cerrar modal de especificaciones
+function cerrarModalEspecificaciones() {
+    const modal = document.getElementById('modalEspecificaciones');
+    if (modal) modal.style.display = 'none';
+}
+
+// Guardar especificaciones
+function guardarEspecificaciones() {
+    const especificaciones = {};
+    const modal = document.getElementById('modalEspecificaciones');
+    if (!modal) return;
+    
+    // Mapeo de categorías
+    const categoriasMap = {
+        'tbody_disponibilidad': 'disponibilidad',
+        'tbody_pago': 'forma_pago',
+        'tbody_regimen': 'regimen',
+        'tbody_vendido': 'se_ha_vendido',
+        'tbody_ultima_venta': 'ultima_venta',
+        'tbody_flete': 'flete'
+    };
+    
+    console.log('🔍 Buscando especificaciones en modal...');
+    
+    // Procesar cada categoría
+    Object.entries(categoriasMap).forEach(([tbodyId, categoriaKey]) => {
+        const tbody = document.getElementById(tbodyId);
+        if (!tbody) {
+            console.warn(`⚠️ No encontrado: ${tbodyId}`);
+            return;
+        }
+        
+        console.log(`📋 Procesando ${categoriaKey} (${tbodyId})`);
+        
+        const filas = tbody.querySelectorAll('tr');
+        const valoresSeleccionados = [];
+        
+        console.log(`   Encontradas ${filas.length} filas`);
+        
+        filas.forEach((fila, filaIndex) => {
+            const checkbox = fila.querySelector('input[type="checkbox"]');
+            const itemInput = fila.querySelector('input[type="text"]');
+            const label = fila.querySelector('label');
+            
+            console.log(`   Fila ${filaIndex}: checkbox=${checkbox ? checkbox.checked : 'no'}, input=${itemInput ? 'sí' : 'no'}, label=${label ? label.textContent : 'no'}`);
+            
+            // Si está marcado, guardar el valor
+            if (checkbox && checkbox.checked) {
+                let valor = '';
+                
+                // Prioridad: label (para items fijos) > input value (para items personalizados) > "✓" (si solo está marcado)
+                if (label) {
+                    // Si es un label fijo (para categorías como DISPONIBILIDAD, FORMA DE PAGO, etc.)
+                    valor = label.textContent.trim();
+                } else if (itemInput && itemInput.value.trim()) {
+                    // Si hay input con valor (para categorías como SE HA VENDIDO, ÚLTIMA VENTA)
+                    valor = itemInput.value.trim();
+                } else {
+                    // Si solo está marcado sin valor, guardar "✓"
+                    valor = '✓';
+                }
+                
+                if (valor) {
+                    valoresSeleccionados.push(valor);
+                    console.log(`      ✅ Valor guardado: ${valor}`);
+                }
+            }
+        });
+        
+        // Solo guardar la categoría si tiene valores seleccionados
+        if (valoresSeleccionados.length > 0) {
+            especificaciones[categoriaKey] = valoresSeleccionados;
+            console.log(`✅ ${categoriaKey}: ${valoresSeleccionados.join(', ')}`);
+        }
+    });
+    
+    window.especificacionesSeleccionadas = especificaciones;
+    console.log('✅ Especificaciones guardadas:', especificaciones);
+    console.log('📊 Total categorías:', Object.keys(especificaciones).length);
+    cerrarModalEspecificaciones();
+}
+
+// Agregar fila de especificación
+function agregarFilaEspecificacion(categoria) {
+    const tbodyId = 'tbody_' + categoria;
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+    
+    const fila = document.createElement('tr');
+    fila.innerHTML = `
+        <td style="padding: 10px; border: 1px solid #ddd;"><input type="text" name="tabla_orden[${categoria}_item]" class="input-compact" placeholder="Escribe aquí" style="width: 100%;"></td>
+        <td style="text-align: center; padding: 10px; border: 1px solid #ddd;">
+            <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+        </td>
+        <td style="padding: 10px; border: 1px solid #ddd;">
+            <input type="text" name="tabla_orden[${categoria}_obs]" class="input-compact" placeholder="Observaciones" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
+        </td>
+    `;
+    tbody.appendChild(fila);
+}
+
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('modalEspecificaciones');
+    if (e.target === modal) {
+        cerrarModalEspecificaciones();
+    }
+});
 </script>
+
+@push('scripts')
+<script src="{{ asset('js/asesores/cotizaciones/tallas.js') }}"></script>
+<script src="{{ asset('js/asesores/cotizaciones/persistencia.js') }}"></script>
+
+<!-- Módulos del sistema de cotizaciones -->
+<script src="{{ asset('js/asesores/cotizaciones/rutas.js') }}"></script>
+<script>
+    // Asignar rutas después de cargar rutas.js
+    window.routes.guardarCotizacion = '{{ route("asesores.cotizaciones.guardar") }}';
+    window.routes.cotizacionesIndex = '{{ route("asesores.cotizaciones.index") }}';
+</script>
+<script src="{{ asset('js/asesores/cotizaciones/cotizaciones.js') }}"></script>
+<script src="{{ asset('js/asesores/cotizaciones/productos.js') }}"></script>
+<script src="{{ asset('js/asesores/cotizaciones/imagenes.js') }}"></script>
+<script src="{{ asset('js/asesores/cotizaciones/especificaciones.js') }}"></script>
+<script src="{{ asset('js/asesores/cotizaciones/guardado.js') }}"></script>
+<script src="{{ asset('js/asesores/cotizaciones/cargar-borrador.js') }}"></script>
+
+<!-- Script de Variantes de Prendas -->
+<script src="{{ asset('js/asesores/variantes-prendas.js') }}"></script>
+
+<!-- Script de Color, Tela y Referencia (Find/Create) -->
+<script src="{{ asset('js/asesores/color-tela-referencia.js') }}"></script>
+
+<!-- Integración de Variantes en Paso 2 -->
+<script src="{{ asset('js/asesores/cotizaciones/integracion-variantes-inline.js') }}"></script>
+
+<script>
+    // Asegurar que el sidebar está expandido en esta página
+    document.addEventListener('DOMContentLoaded', function() {
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) {
+            // Remover la clase collapsed para que empiece expandido
+            sidebar.classList.remove('collapsed');
+            console.log('✓ Sidebar expandido');
+        }
+    });
+</script>
+@endpush
 @endsection

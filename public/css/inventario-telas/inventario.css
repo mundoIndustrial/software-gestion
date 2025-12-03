@@ -2,10 +2,60 @@
    INVENTARIO DE TELAS - ASESORES
    ======================================== */
 
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --primary-color: #0066cc;
+    --primary-dark: #0052a3;
+    --primary-light: #3399ff;
+    --bg-card: #ffffff;
+    --bg-secondary: #f9fafb;
+    --bg-hover: #f5f5f5;
+    --text-primary: #1f2937;
+    --text-secondary: #6b7280;
+    --border-color: #e5e7eb;
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+}
+
+body.dark-theme {
+    --primary-color: #0066cc;
+    --primary-dark: #0052a3;
+    --primary-light: #3399ff;
+    --bg-card: #1f2937;
+    --bg-secondary: #374151;
+    --bg-hover: #2d3748;
+    --text-primary: #f1f5f9;
+    --text-secondary: #cbd5e0;
+    --border-color: #374151;
+}
+
 .inventario-telas-container {
     padding: 2rem;
     max-width: 1600px;
     margin: 0 auto;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #f9fafb;
+    color: var(--text-primary);
+}
+
+body.dark-theme {
+    background: #0f172a;
+    color: var(--text-primary);
 }
 
 .list-header {
@@ -21,7 +71,7 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.875rem 1.5rem;
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%);
     color: white;
     border: none;
     border-radius: 10px;
@@ -29,12 +79,13 @@
     font-size: 0.95rem;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    font-family: inherit;
 }
 
 .btn-create:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
 }
 
 .btn-create .material-symbols-rounded {
@@ -54,12 +105,13 @@
     font-size: 0.95rem;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    font-family: inherit;
 }
 
 .btn-historial:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
 .btn-historial .material-symbols-rounded {
@@ -84,24 +136,35 @@
 .search-box input {
     width: 100%;
     padding: 0.875rem 1.25rem 0.875rem 2.75rem;
-    border: 2px solid var(--border-color);
+    border: 2px solid #ddd;
     border-radius: 10px;
     font-size: 0.95rem;
     transition: all 0.3s ease;
-    background: var(--bg-card);
-    color: var(--text-primary);
+    background: white;
+    color: #1f2937;
     font-weight: 500;
+    font-family: inherit;
 }
 
 .search-box input:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: #0066cc;
     box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.1);
 }
 
 .search-box input::placeholder {
-    color: var(--text-secondary);
+    color: #9ca3af;
     font-weight: 400;
+}
+
+body.dark-theme .search-box input {
+    background: #1f2937;
+    color: #f1f5f9;
+    border-color: #374151;
+}
+
+body.dark-theme .search-box input::placeholder {
+    color: #6b7280;
 }
 
 .filter-group {
@@ -111,11 +174,11 @@
 
 .filter-select {
     padding: 0.875rem 2.5rem 0.875rem 1.25rem;
-    border: 2px solid var(--border-color);
+    border: 2px solid #ddd;
     border-radius: 10px;
     font-size: 0.95rem;
-    background: var(--bg-card);
-    color: var(--text-primary);
+    background: white;
+    color: #1f2937;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -125,17 +188,24 @@
     background-position: right 0.75rem center;
     background-size: 1.25rem;
     min-width: 200px;
+    font-family: inherit;
 }
 
 .filter-select:hover {
-    border-color: var(--primary-light);
-    background-color: var(--bg-hover);
+    border-color: #0066cc;
+    background-color: #f9fafb;
 }
 
 .filter-select:focus {
     outline: none;
-    border-color: var(--primary-color);
+    border-color: #0066cc;
     box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.1);
+}
+
+body.dark-theme .filter-select {
+    background: #1f2937;
+    color: #f1f5f9;
+    border-color: #374151;
 }
 
 /* ========================================
@@ -171,16 +241,16 @@ body.light-theme .table-container {
     position: sticky;
     top: 0;
     z-index: 10;
-    background: #2A3544;
-    border-bottom: 2px solid var(--border-color);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    border-bottom: 2px solid var(--primary-dark);
 }
 
 body.dark-theme .inventario-table thead {
-    background: #2A3544;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
 }
 
 body.light-theme .inventario-table thead {
-    background: var(--bg-card);
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
 }
 
 .inventario-table th {
@@ -191,15 +261,16 @@ body.light-theme .inventario-table thead {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     background: transparent;
-    border-bottom: 2px solid var(--border-color);
+    color: white;
+    border-bottom: none;
 }
 
 body.dark-theme .inventario-table th {
-    color: #B8C5D6;
+    color: white;
 }
 
 body.light-theme .inventario-table th {
-    color: var(--text-secondary);
+    color: white;
 }
 
 .table-container tbody {

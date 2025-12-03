@@ -1,0 +1,36 @@
+// Diagnóstico de cotizaciones tipo PB
+$user = App\Models\User::first();
+echo "👤 Usuario actual: {$user->name} (ID: {$user->id})\n\n";
+
+// Obtener todas las cotizaciones sin filtrar por usuario
+$cotizaciones = App\Models\Cotizacion::where('es_borrador', false)
+    ->with('tipoCotizacion', 'prendasCotizaciones', 'prendaCotizacion', 'logoCotizacion')
+    ->orderBy('created_at', 'desc')
+    ->get();
+
+echo "📊 Total de cotizaciones en BD: {$cotizaciones->count()}\n\n";
+
+// Agrupar por tipo
+$porTipo = collect();
+foreach ($cotizaciones as $cot) {
+    $tipo = $cot->obtenerTipoCotizacion();
+    $porTipo[$tipo] = ($porTipo[$tipo] ?? 0) + 1;
+}
+
+echo "📈 RESUMEN POR TIPO:\n";
+foreach ($porTipo as $tipo => $count) {
+    echo "✅ Tipo '{$tipo}': {$count} registros\n";
+}
+
+echo "\n📋 COTIZACIONES TIPO PB:\n";
+$pbCotizaciones = $cotizaciones->filter(fn($c) => $c->obtenerTipoCotizacion() === 'PB');
+foreach ($pbCotizaciones as $cot) {
+    echo "\n- ID: {$cot->id} | Código: {$cot->numero_cotizacion}\n";
+    echo "  Cliente: {$cot->cliente}\n";
+    echo "  Usuario: {$cot->usuario?->name}\n";
+    echo "  Prendas: " . ($cot->prendasCotizaciones()->exists() || $cot->prendaCotizacion()->exists() ? 'SÍ' : 'NO') . "\n";
+    echo "  Logo: " . ($cot->logoCotizacion()->exists() ? 'SÍ' : 'NO') . "\n";
+    echo "  Tipo DB: " . ($cot->tipoCotizacion?->codigo ?? 'null') . "\n";
+}
+
+echo "\nTotal PB encontradas: {$pbCotizaciones->count()}\n";

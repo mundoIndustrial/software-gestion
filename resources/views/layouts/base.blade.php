@@ -20,6 +20,8 @@
             if (theme === 'dark') {
                 document.documentElement.classList.add('dark-theme');
                 document.documentElement.setAttribute('data-theme', 'dark');
+                // Marcar para que el body también aplique la clase cuando esté listo
+                document.documentElement.setAttribute('data-pending-theme', 'dark');
             }
         })();
     </script>
@@ -55,19 +57,28 @@
     <script>
         (function() {
             const theme = localStorage.getItem('theme') || 'light';
-            if (theme === 'dark' && !document.body.classList.contains('dark-theme')) {
-                document.body.classList.add('dark-theme');
-                document.documentElement.classList.add('dark-theme');
-                document.documentElement.setAttribute('data-theme', 'dark');
+            const html = document.documentElement;
+            const body = document.body;
+            
+            // Aplicar tema al body
+            if (theme === 'dark') {
+                body.classList.add('dark-theme');
+                html.classList.add('dark-theme');
+                html.setAttribute('data-theme', 'dark');
+            } else {
+                body.classList.remove('dark-theme');
+                html.classList.remove('dark-theme');
+                html.setAttribute('data-theme', 'light');
             }
+            
+            // Limpiar atributo de tema pendiente
+            html.removeAttribute('data-pending-theme');
         })();
     </script>
 
     @yield('body')
 
-    <!-- Librerías externas JS -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Librerías externas JS (cargadas por Vite, no duplicar aquí) -->
 
     <!-- Core JS -->
     <script src="{{ asset('js/sidebar.js') }}"></script>

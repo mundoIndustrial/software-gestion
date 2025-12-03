@@ -32,6 +32,58 @@ class PrendaCotizacionFriendly extends Model
     ];
 
     /**
+     * Accessor para convertir fotos a URLs públicas
+     */
+    public function getFotosAttribute($value)
+    {
+        if (!$value) {
+            return [];
+        }
+        
+        $fotos = is_array($value) ? $value : json_decode($value, true);
+        
+        return array_map(function($foto) {
+            // Si ya es una URL completa, devolverla tal como está
+            if (filter_var($foto, FILTER_VALIDATE_URL)) {
+                return $foto;
+            }
+            
+            // Si es una ruta relativa, convertirla a URL pública
+            if (is_string($foto) && !empty($foto)) {
+                return asset($foto);
+            }
+            
+            return null;
+        }, $fotos ?? []);
+    }
+
+    /**
+     * Accessor para convertir telas a URLs públicas
+     */
+    public function getTelasAttribute($value)
+    {
+        if (!$value) {
+            return [];
+        }
+        
+        $telas = is_array($value) ? $value : json_decode($value, true);
+        
+        return array_map(function($tela) {
+            // Si ya es una URL completa, devolverla tal como está
+            if (filter_var($tela, FILTER_VALIDATE_URL)) {
+                return $tela;
+            }
+            
+            // Si es una ruta relativa, convertirla a URL pública
+            if (is_string($tela) && !empty($tela)) {
+                return asset($tela);
+            }
+            
+            return null;
+        }, $telas ?? []);
+    }
+
+    /**
      * Relación con Cotizacion
      */
     public function cotizacion(): BelongsTo

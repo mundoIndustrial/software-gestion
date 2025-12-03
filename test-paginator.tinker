@@ -1,0 +1,51 @@
+// Prueba del paginador
+$user = App\Models\User::where('name', 'yus2')->first();
+
+$allCotizaciones = App\Models\Cotizacion::where('user_id', $user->id)
+    ->where('es_borrador', false)
+    ->with('tipoCotizacion', 'usuario', 'prendasCotizaciones', 'prendaCotizacion', 'logoCotizacion')
+    ->orderBy('created_at', 'desc')
+    ->get();
+
+$cotPrendaCollection = $allCotizaciones->filter(fn($c) => $c->obtenerTipoCotizacion() === 'P');
+$cotLogoCollection = $allCotizaciones->filter(fn($c) => $c->obtenerTipoCotizacion() === 'B');
+$cotPBCollection = $allCotizaciones->filter(fn($c) => $c->obtenerTipoCotizacion() === 'PB');
+
+$allCotizacionesCollection = $cotPrendaCollection->merge($cotLogoCollection)->merge($cotPBCollection)->sortByDesc('created_at')->values();
+
+echo "📊 Colección antes de paginar: {$allCotizacionesCollection->count()}\n";
+
+// Simular el paginador
+$perPage = 15;
+$page = 1;
+$pageName = 'page_cot_todas';
+
+$page = \Illuminate\Pagination\Paginator::resolveCurrentPage($pageName);
+$items = $allCotizacionesCollection->forPage($page, $perPage);
+
+echo "📄 Items en página {$page}: {$items->count()}\n";
+echo "Items totales: {$allCotizacionesCollection->count()}\n\n";
+
+$paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+    $items,
+    $allCotizacionesCollection->count(),
+    $perPage,
+    $page,
+    [
+        'path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(),
+        'query' => request()->query(),
+        'fragment' => null,
+        'pageName' => $pageName,
+    ]
+);
+
+echo "✅ Paginador creado:\n";
+echo "   Total: {$paginator->total()}\n";
+echo "   Count: {$paginator->count()}\n";
+echo "   Current Page: {$paginator->currentPage()}\n";
+echo "   Items en página actual: {$paginator->count()}\n\n";
+
+echo "📋 Items en el paginador:\n";
+foreach ($paginator as $index => $item) {
+    echo "{$index}. ID: {$item->id} | Tipo: " . $item->obtenerTipoCotizacion() . " | Cliente: {$item->cliente}\n";
+}

@@ -20,7 +20,7 @@ class AsesoresInventarioTelasController extends Controller
         }
         
         // Si es asesor, retornar con layout de asesores
-        return view('inventario-telas.index', compact('telas'));
+        return view('asesores.inventario-telas.index', compact('telas'));
     }
 
     public function store(Request $request)

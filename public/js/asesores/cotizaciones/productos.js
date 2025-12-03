@@ -105,17 +105,41 @@ function agregarFotos(files, dropZone) {
 
 function actualizarPreviewFotos(input) {
     const productoCard = input.closest('.producto-card');
-    if (!productoCard) return;
+    if (!productoCard) {
+        console.warn('⚠️ No se encontró .producto-card');
+        return;
+    }
     const productoId = productoCard.dataset.productoId || 'default';
     
     let container = null;
     const label = input.closest('label');
-    if (label && label.parentElement) container = label.parentElement.querySelector('.fotos-preview');
-    if (!container) container = productoCard.querySelector('.fotos-preview');
-    if (!container) return;
+    console.log('🔍 Buscando contenedor para fotos:');
+    console.log('   - label:', label);
+    
+    if (label && label.parentElement) {
+        container = label.parentElement.querySelector('.fotos-preview');
+        console.log('   - Intentó label.parentElement.querySelector:', container);
+    }
+    if (!container) {
+        container = productoCard.querySelector('.fotos-preview');
+        console.log('   - Intentó productoCard.querySelector:', container);
+    }
+    if (!container) {
+        console.warn('❌ No se encontró contenedor .fotos-preview');
+        return;
+    }
+    
+    console.log('✓ Contenedor encontrado:', container);
     
     container.innerHTML = '';
     const fotos = fotosSeleccionadas[productoId] || [];
+    
+    console.log(`📸 Mostrando ${fotos.length} fotos para producto ${productoId}`);
+    
+    if (fotos.length === 0) {
+        console.log('ℹ️ No hay fotos para mostrar');
+        return;
+    }
     
     fotos.forEach((file, index) => {
         const reader = new FileReader();

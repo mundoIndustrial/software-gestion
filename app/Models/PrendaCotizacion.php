@@ -7,35 +7,34 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
- * DEPRECATED - Este modelo ya no se utiliza
- * Fue reemplazado por PrendaCotizacionFriendly
- * La tabla será eliminada por la migración 2025_11_21_drop_unused_tables.php
+ * Modelo para gestionar prendas asociadas a cotizaciones
+ * Utiliza la tabla prendas_cotizaciones creada en la migración 2025_11_20
  */
 class PrendaCotizacion extends Model
 {
-    protected $table = 'prendas_cotizacion';
+    protected $table = 'prendas_cotizaciones';
 
     protected $fillable = [
         'cotizacion_id',
+        'nombre_producto',
+        'tipo_cotizacion',
+        'genero',
+        'es_jean_pantalon',
+        'tipo_jean_pantalon',
         'descripcion',
-        'especificaciones',
-        'imagen_url',
         'tallas',
-        'aspectos_a_verificar',
-        'forma_pago',
-        'regimen',
-        'filete_envio',
-        'se_ha_vendido',
-        'ultima_venta',
-        'observacion',
+        'fotos',
+        'telas',
+        'notas_tallas',
+        'productos',
         'estado'
     ];
 
     protected $casts = [
-        'especificaciones' => 'array',
         'tallas' => 'array',
-        'aspectos_a_verificar' => 'array',
-        'ultima_venta' => 'decimal:2'
+        'fotos' => 'array',
+        'telas' => 'array',
+        'productos' => 'array'
     ];
 
     /**

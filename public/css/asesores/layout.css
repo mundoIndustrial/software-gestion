@@ -835,7 +835,7 @@ body.dark-theme .sidebar-header .header-logo {
    PAGE CONTENT
    ======================================== */
 .page-content {
-    padding: 2rem;
+    padding: 0.5rem;
     min-height: calc(100vh - var(--topnav-height));
     background: var(--bg-primary);
 }

@@ -63,8 +63,8 @@ class PrendaService
                 : null,
             'descripcion' => $producto['descripcion'] ?? null,
             'tallas' => $tallas,
-            'fotos' => [],
-            'telas' => [],
+            'fotos' => $producto['fotos'] ?? [],
+            'telas' => $producto['telas'] ?? [],
             'estado' => 'Pendiente'
         ]);
         
@@ -136,6 +136,8 @@ class PrendaService
             
             // Procesar color
             if (isset($variantes['color']) && !empty($variantes['color'])) {
+                $datosVariante['color_nombre'] = $variantes['color'];
+                
                 $color = \App\Models\ColorPrenda::firstOrCreate(
                     ['nombre' => $variantes['color']],
                     ['nombre' => $variantes['color']]
@@ -172,24 +174,31 @@ class PrendaService
             
             // Procesar tela
             if (isset($variantes['tela']) && !empty($variantes['tela'])) {
+                $datosVariante['tela_nombre'] = $variantes['tela'];
+                
                 $tela = \App\Models\TelaPrenda::firstOrCreate(
                     ['nombre' => $variantes['tela']],
                     ['nombre' => $variantes['tela']]
                 );
                 
-                // Actualizar referencia si fue proporcionada (incluso si ya existía)
-                if (isset($variantes['tela_referencia']) && !empty($variantes['tela_referencia'])) {
-                    if (!$tela->referencia || $tela->referencia !== $variantes['tela_referencia']) {
-                        $tela->update(['referencia' => $variantes['tela_referencia']]);
+                $datosVariante['tela_id'] = $tela->id;
+            }
+            
+            // Procesar referencia
+            if (isset($variantes['referencia']) && !empty($variantes['referencia'])) {
+                $datosVariante['referencia'] = $variantes['referencia'];
+                
+                // Si también existe tela, actualizar la referencia de tela
+                if (isset($tela)) {
+                    if (!$tela->referencia || $tela->referencia !== $variantes['referencia']) {
+                        $tela->update(['referencia' => $variantes['referencia']]);
                         \Log::info('✅ Referencia de tela actualizada', [
                             'tela_id' => $tela->id,
                             'nombre' => $tela->nombre,
-                            'referencia' => $variantes['tela_referencia']
+                            'referencia' => $variantes['referencia']
                         ]);
                     }
                 }
-                
-                $datosVariante['tela_id'] = $tela->id;
             }
             
             // Procesar manga

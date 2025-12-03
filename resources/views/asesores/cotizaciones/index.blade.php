@@ -223,136 +223,231 @@
         <button class="tipo-tab-btn active" onclick="mostrarTipo('todas')" style="padding: 10px 16px; background: none; border: none; border-bottom: 2px solid #3498db; cursor: pointer; font-weight: 500; color: #333; font-size: 0.9rem; transition: all 0.3s;">
             Todas
         </button>
+        <button class="tipo-tab-btn" onclick="mostrarTipo('P')" style="padding: 10px 16px; background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-weight: 500; color: #666; font-size: 0.9rem; transition: all 0.3s;">
+            Prenda
+        </button>
+        <button class="tipo-tab-btn" onclick="mostrarTipo('L')" style="padding: 10px 16px; background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-weight: 500; color: #666; font-size: 0.9rem; transition: all 0.3s;">
+            Logo
+        </button>
         <button class="tipo-tab-btn" onclick="mostrarTipo('PB')" style="padding: 10px 16px; background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-weight: 500; color: #666; font-size: 0.9rem; transition: all 0.3s;">
             Prenda/Bordado
-        </button>
-        <button class="tipo-tab-btn" onclick="mostrarTipo('B')" style="padding: 10px 16px; background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-weight: 500; color: #666; font-size: 0.9rem; transition: all 0.3s;">
-            Bordado
         </button>
     </div>
 
     <!-- COTIZACIONES ENVIADAS -->
     <div id="tab-cotizaciones" class="tab-content">
-        @if($cotizaciones->count() > 0)
-            <!-- VISTA TARJETAS -->
-            <div id="vista-tarjetas-cot" style="display: none; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px;">
-                @foreach($cotizaciones as $cot)
-                    <div class="tarjeta-cot" data-tipo="{{ $cot->tipoCotizacion?->codigo ?? 'todas' }}" style="background: white; border: 1px solid #ecf0f1; border-radius: 6px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); transition: all 0.3s;">
-                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-                            <div style="flex: 1; min-width: 0;">
-                                <h4 style="margin: 0; color: #333; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ $cot->cliente ?? 'Sin cliente' }}</h4>
-                                @if(auth()->user() && auth()->user()->role && auth()->user()->role->name === 'asesor')
-                                    <p style="margin: 2px 0 0 0; color: #999; font-size: 0.8rem;">ID: #{{ $cot->id }}</p>
-                                    <p style="margin: 2px 0 0 0; color: #3498db; font-size: 0.75rem; font-weight: 600;">{{ $cot->tipoCotizacion?->nombre ?? 'Sin tipo' }}</p>
-                                @endif
-                            </div>
-                            <span style="background: #d4edda; color: #155724; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; white-space: nowrap; margin-left: 5px;">
-                                {{ ucfirst($cot->estado) }}
-                            </span>
-                        </div>
-                        <div style="background: #f8f9fa; padding: 8px; border-radius: 4px; margin-bottom: 10px; font-size: 0.8rem;">
-                            <p style="margin: 2px 0;"><strong>Fecha:</strong> {{ $cot->created_at->format('d/m/Y') }}</p>
-                            <p style="margin: 2px 0;"><strong>Asesora:</strong> {{ $cot->usuario->name ?? 'N/A' }}</p>
-                        </div>
-                        <a href="{{ route('asesores.cotizaciones.show', $cot->id) }}" style="display: block; background: #3498db; color: white; padding: 6px; border-radius: 4px; text-align: center; text-decoration: none; font-size: 0.85rem; font-weight: bold;">
-                            👁️ Ver
-                        </a>
-                    </div>
-                @endforeach
-            </div>
-
-            <!-- VISTA TABLA -->
-            <div id="vista-tabla-cot" style="display: block; overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
-                    <thead style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); border-bottom: 3px solid #1e3a8a;">
-                        <tr>
-                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Fecha</th>
-                            @if(auth()->user() && auth()->user()->role && auth()->user()->role->name === 'asesor')
-                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Código</th>
-                            @endif
-                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Cliente</th>
-                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Tipo</th>
-                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Estado</th>
-                            <th style="padding: 14px 12px; text-align: center; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($cotizaciones as $cot)
-                            <tr class="fila-cot" data-tipo="{{ $cot->tipoCotizacion?->codigo ?? 'todas' }}" style="border-bottom: 1px solid #ecf0f1; transition: background 0.2s;">
-                                <td style="padding: 12px; color: #666; font-size: 0.9rem;">{{ $cot->created_at->format('d/m/Y') }}</td>
-                                @if(auth()->user() && auth()->user()->role && auth()->user()->role->name === 'asesor')
-                                    <td style="padding: 12px; color: #1e40af; font-size: 0.9rem; font-weight: 700;">{{ $cot->numero_cotizacion ?? 'Por asignar' }}</td>
-                                @endif
-                                <td style="padding: 12px; color: #333; font-size: 0.9rem; font-weight: 500;">
-                                    {{ $cot->cliente ?? 'Sin cliente' }}
-                                </td>
-                                <td style="padding: 12px;">
-                                    <span style="background: #e3f2fd; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">
-                                        {{ $cot->tipoCotizacion?->nombre ?? 'Sin tipo' }}
-                                    </span>
-                                </td>
-                                <td style="padding: 12px;">
-                                    <span style="background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">
-                                        {{ ucfirst($cot->estado) }}
-                                    </span>
-                                </td>
-                                <td style="padding: 12px; text-align: center;">
-                                    <a href="{{ route('asesores.cotizaciones.show', $cot->id) }}" style="background: #1e40af; color: white; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s; box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2);" onmouseover="this.style.background='#1e3a8a'; this.style.boxShadow='0 4px 8px rgba(30, 64, 175, 0.3)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='#1e40af'; this.style.boxShadow='0 2px 4px rgba(30, 64, 175, 0.2)'; this.style.transform='translateY(0)'">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                            <circle cx="12" cy="12" r="3"></circle>
-                                        </svg>
-                                        Ver
-                                    </a>
-                                </td>
+        <!-- TODAS -->
+        <div id="seccion-todas" class="seccion-tipo" style="display: block;">
+            <h3 style="color: #1e40af; margin-top: 20px; margin-bottom: 15px; font-size: 1.1rem;">Todas las Cotizaciones <span style="font-size: 0.85rem; color: #666;">({{ $cotizacionesTodas->total() }} registros)</span></h3>
+            @if($cotizacionesTodas->count() > 0)
+                <div id="vista-tabla-todas" style="overflow-x: auto; margin-bottom: 20px;">
+                    <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                        <thead style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); border-bottom: 3px solid #1e3a8a;">
+                            <tr>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Fecha</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Código</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Cliente</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Tipo</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Estado</th>
+                                <th style="padding: 14px 12px; text-align: center; font-weight: 700; color: white; font-size: 0.9rem;">Acción</th>
                             </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- PAGINACIÓN -->
-            <div style="margin-top: 30px;">
-                <div class="pagination-info" style="text-align: center; margin-bottom: 15px; color: #666; font-size: 0.9rem;">
-                    Mostrando {{ $cotizaciones->firstItem() ?? 0 }}-{{ $cotizaciones->lastItem() ?? 0 }} de {{ $cotizaciones->total() }} registros
+                        </thead>
+                        <tbody>
+                            @foreach($cotizacionesTodas as $cot)
+                                <tr style="border-bottom: 1px solid #ecf0f1;">
+                                    <td style="padding: 12px; color: #666; font-size: 0.9rem;">{{ $cot->created_at->format('d/m/Y') }}</td>
+                                    <td style="padding: 12px; color: #1e40af; font-size: 0.9rem; font-weight: 700;">{{ $cot->numero_cotizacion ?? 'Por asignar' }}</td>
+                                    <td style="padding: 12px; color: #333; font-size: 0.9rem;">{{ $cot->cliente ?? 'Sin cliente' }}</td>
+                                    <td style="padding: 12px;">
+                                        <span style="background: #e3f2fd; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">
+                                            @if($cot->obtenerTipoCotizacion() === 'P')
+                                                Prenda
+                                            @elseif($cot->obtenerTipoCotizacion() === 'B')
+                                                Logo
+                                            @elseif($cot->obtenerTipoCotizacion() === 'PB')
+                                                Prenda/Bordado
+                                            @else
+                                                {{ $cot->tipoCotizacion?->nombre ?? 'Sin tipo' }}
+                                            @endif
+                                        </span>
+                                    </td>
+                                    <td style="padding: 12px;">
+                                        <span style="background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">
+                                            {{ ucfirst($cot->estado) }}
+                                        </span>
+                                    </td>
+                                    <td style="padding: 12px; text-align: center;">
+                                        <a href="{{ route('asesores.cotizaciones.show', $cot->id) }}" style="background: #1e40af; color: white; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600;">Ver</a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
-                @if($cotizaciones->hasPages())
-                    <div style="display: flex; justify-content: center; gap: 5px; flex-wrap: wrap;">
-                        {{-- Botón primera página --}}
-                        <a href="{{ $cotizaciones->url(1) }}" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; text-decoration: none; color: #333; background: white; font-size: 0.9rem; transition: all 0.3s; {{ $cotizaciones->currentPage() == 1 ? 'opacity: 0.5; cursor: not-allowed;' : 'cursor: pointer;' }}" {{ $cotizaciones->currentPage() == 1 ? 'onclick="return false;"' : '' }}>
-                            ⟨⟨
-                        </a>
+                <!-- Paginación Todas -->
+                <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+                    {{ $cotizacionesTodas->links('pagination::bootstrap-custom', ['pageName' => $pageNameCotTodas]) }}
+                </div>
+            @else
+                <div style="background: #f0f7ff; border: 2px dashed #3498db; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 30px;">
+                    <p style="margin: 0; color: #666;">📭 No hay cotizaciones</p>
+                </div>
+            @endif
+        </div>
 
-                        {{-- Botón página anterior --}}
-                        <a href="{{ $cotizaciones->previousPageUrl() }}" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; text-decoration: none; color: #333; background: white; font-size: 0.9rem; transition: all 0.3s; {{ $cotizaciones->currentPage() == 1 ? 'opacity: 0.5; cursor: not-allowed;' : 'cursor: pointer;' }}" {{ $cotizaciones->currentPage() == 1 ? 'onclick="return false;"' : '' }}>
-                            ⟨
-                        </a>
+        <!-- PRENDA -->
+        <div id="seccion-prenda" class="seccion-tipo" style="display: none;">
+            <h3 style="color: #1e40af; margin-top: 20px; margin-bottom: 15px; font-size: 1.1rem;">Prenda</h3>
+            @if($cotizacionesPrenda->count() > 0)
+                <div id="vista-tabla-prenda" style="overflow-x: auto; margin-bottom: 20px;">
+                    <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                        <thead style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); border-bottom: 3px solid #1e3a8a;">
+                            <tr>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Fecha</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Código</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Cliente</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Tipo</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Estado</th>
+                                <th style="padding: 14px 12px; text-align: center; font-weight: 700; color: white; font-size: 0.9rem;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($cotizacionesPrenda as $cot)
+                                <tr style="border-bottom: 1px solid #ecf0f1;">
+                                    <td style="padding: 12px; color: #666; font-size: 0.9rem;">{{ $cot->created_at->format('d/m/Y') }}</td>
+                                    <td style="padding: 12px; color: #1e40af; font-size: 0.9rem; font-weight: 700;">{{ $cot->numero_cotizacion ?? 'Por asignar' }}</td>
+                                    <td style="padding: 12px; color: #333; font-size: 0.9rem;">{{ $cot->cliente ?? 'Sin cliente' }}</td>
+                                    <td style="padding: 12px;">
+                                        <span style="background: #e3f2fd; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">
+                                            Prenda
+                                        </span>
+                                    </td>
+                                    <td style="padding: 12px;">
+                                        <span style="background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">
+                                            {{ ucfirst($cot->estado) }}
+                                        </span>
+                                    </td>
+                                    <td style="padding: 12px; text-align: center;">
+                                        <a href="{{ route('asesores.cotizaciones.show', $cot->id) }}" style="background: #1e40af; color: white; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600;">Ver</a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Paginación Prenda -->
+                <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+                    {{ $cotizacionesPrenda->links('pagination::bootstrap-custom', ['pageName' => $pageNameCotPrenda]) }}
+                </div>
+            @else
+                <div style="background: #f0f7ff; border: 2px dashed #3498db; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 30px;">
+                    <p style="margin: 0; color: #666;">📭 No hay cotizaciones de prenda</p>
+                </div>
+            @endif
+        </div>
 
-                        {{-- Números de página --}}
-                        @php
-                            $start = max(1, $cotizaciones->currentPage() - 2);
-                            $end = min($cotizaciones->lastPage(), $cotizaciones->currentPage() + 2);
-                        @endphp
+        <!-- LOGO -->
+        <div id="seccion-logo" class="seccion-tipo" style="display: none;">
+            <h3 style="color: #1e40af; margin-top: 20px; margin-bottom: 15px; font-size: 1.1rem;">Logo</h3>
+            @if($cotizacionesLogo->count() > 0)
+                <div id="vista-tabla-logo" style="overflow-x: auto; margin-bottom: 20px;">
+                    <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                        <thead style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); border-bottom: 3px solid #1e3a8a;">
+                            <tr>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Fecha</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Código</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Cliente</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Tipo</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Estado</th>
+                                <th style="padding: 14px 12px; text-align: center; font-weight: 700; color: white; font-size: 0.9rem;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($cotizacionesLogo as $cot)
+                                <tr style="border-bottom: 1px solid #ecf0f1;">
+                                    <td style="padding: 12px; color: #666; font-size: 0.9rem;">{{ $cot->created_at->format('d/m/Y') }}</td>
+                                    <td style="padding: 12px; color: #1e40af; font-size: 0.9rem; font-weight: 700;">{{ $cot->numero_cotizacion ?? 'Por asignar' }}</td>
+                                    <td style="padding: 12px; color: #333; font-size: 0.9rem;">{{ $cot->cliente ?? 'Sin cliente' }}</td>
+                                    <td style="padding: 12px;">
+                                        <span style="background: #e3f2fd; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">
+                                            Logo
+                                        </span>
+                                    </td>
+                                    <td style="padding: 12px;">
+                                        <span style="background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">
+                                            {{ ucfirst($cot->estado) }}
+                                        </span>
+                                    </td>
+                                    <td style="padding: 12px; text-align: center;">
+                                        <a href="{{ route('asesores.cotizaciones.show', $cot->id) }}" style="background: #1e40af; color: white; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600;">Ver</a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Paginación Logo -->
+                <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+                    {{ $cotizacionesLogo->links('pagination::bootstrap-custom', ['pageName' => $pageNameCotLogo]) }}
+                </div>
+            @else
+                <div style="background: #f0f7ff; border: 2px dashed #3498db; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 30px;">
+                    <p style="margin: 0; color: #666;">📭 No hay cotizaciones de logo</p>
+                </div>
+            @endif
+        </div>
 
-                        @for($i = $start; $i <= $end; $i++)
-                            <a href="{{ $cotizaciones->url($i) }}" style="padding: 8px 12px; border: 1px solid {{ $i == $cotizaciones->currentPage() ? '#3498db' : '#ddd' }}; border-radius: 4px; text-decoration: none; color: {{ $i == $cotizaciones->currentPage() ? 'white' : '#333' }}; background: {{ $i == $cotizaciones->currentPage() ? '#3498db' : 'white' }}; font-size: 0.9rem; font-weight: {{ $i == $cotizaciones->currentPage() ? 'bold' : 'normal' }}; transition: all 0.3s; cursor: pointer;">
-                                {{ $i }}
-                            </a>
-                        @endfor
+        <div id="seccion-pb" class="seccion-tipo" style="display: none;">
+            <h3 style="color: #1e40af; margin-top: 20px; margin-bottom: 15px; font-size: 1.1rem;">Prenda/Bordado</h3>
+            @if($cotizacionesPrendaBordado->count() > 0)
+                <div id="vista-tabla-pb" style="overflow-x: auto; margin-bottom: 20px;">
+                    <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                        <thead style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); border-bottom: 3px solid #1e3a8a;">
+                            <tr>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Fecha</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Código</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Cliente</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Tipo</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Estado</th>
+                                <th style="padding: 14px 12px; text-align: center; font-weight: 700; color: white; font-size: 0.9rem;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($cotizacionesPrendaBordado as $cot)
+                                <tr style="border-bottom: 1px solid #ecf0f1;">
+                                    <td style="padding: 12px; color: #666; font-size: 0.9rem;">{{ $cot->created_at->format('d/m/Y') }}</td>
+                                    <td style="padding: 12px; color: #1e40af; font-size: 0.9rem; font-weight: 700;">{{ $cot->numero_cotizacion ?? 'Por asignar' }}</td>
+                                    <td style="padding: 12px; color: #333; font-size: 0.9rem;">{{ $cot->cliente ?? 'Sin cliente' }}</td>
+                                    <td style="padding: 12px;">
+                                        <span style="background: #e3f2fd; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">
+                                            Prenda/Bordado
+                                        </span>
+                                    </td>
+                                    <td style="padding: 12px;">
+                                        <span style="background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">
+                                            {{ ucfirst($cot->estado) }}
+                                        </span>
+                                    </td>
+                                    <td style="padding: 12px; text-align: center;">
+                                        <a href="{{ route('asesores.cotizaciones.show', $cot->id) }}" style="background: #1e40af; color: white; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600;">Ver</a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Paginación Prenda/Bordado -->
+                <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+                    {{ $cotizacionesPrendaBordado->links('pagination::bootstrap-custom', ['pageName' => $pageNameCotPB]) }}
+                </div>
+            @else
+                <div style="background: #f0f7ff; border: 2px dashed #3498db; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 30px;">
+                    <p style="margin: 0; color: #666;">📭 No hay cotizaciones de prenda/bordado</p>
+                </div>
+            @endif
+        </div>
 
-                        {{-- Botón página siguiente --}}
-                        <a href="{{ $cotizaciones->nextPageUrl() }}" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; text-decoration: none; color: #333; background: white; font-size: 0.9rem; transition: all 0.3s; {{ $cotizaciones->currentPage() == $cotizaciones->lastPage() ? 'opacity: 0.5; cursor: not-allowed;' : 'cursor: pointer;' }}" {{ $cotizaciones->currentPage() == $cotizaciones->lastPage() ? 'onclick="return false;"' : '' }}>
-                            ⟩
-                        </a>
-
-                        {{-- Botón última página --}}
-                        <a href="{{ $cotizaciones->url($cotizaciones->lastPage()) }}" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; text-decoration: none; color: #333; background: white; font-size: 0.9rem; transition: all 0.3s; {{ $cotizaciones->currentPage() == $cotizaciones->lastPage() ? 'opacity: 0.5; cursor: not-allowed;' : 'cursor: pointer;' }}" {{ $cotizaciones->currentPage() == $cotizaciones->lastPage() ? 'onclick="return false;"' : '' }}>
-                            ⟩⟩
-                        </a>
-                    </div>
-                @endif
-            </div>
-        @else
+        @if($cotizacionesPrenda->isEmpty() && $cotizacionesLogo->isEmpty() && $cotizacionesPrendaBordado->isEmpty())
             <div style="background: #f0f7ff; border: 2px dashed #3498db; border-radius: 8px; padding: 40px; text-align: center;">
                 <p style="margin: 0; color: #666; font-size: 1.1rem;">
                     📭 No hay cotizaciones enviadas aún
@@ -366,132 +461,219 @@
 
     <!-- BORRADORES -->
     <div id="tab-borradores" class="tab-content" style="display: none;">
-        @if($borradores->count() > 0)
-            <!-- VISTA TARJETAS -->
-            <div id="vista-tarjetas-bor" style="display: none; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px;">
-                @foreach($borradores as $borrador)
-                    <div style="background: white; border: 1px solid #ecf0f1; border-radius: 6px; padding: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); transition: all 0.3s;">
-                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-                            <div style="flex: 1; min-width: 0;">
-                                <h4 style="margin: 0; color: #333; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ $borrador->cliente ?? 'Sin cliente' }}</h4>
-                                <p style="margin: 2px 0 0 0; color: #999; font-size: 0.8rem;">ID: #{{ $borrador->id }}</p>
-                                <p style="margin: 2px 0 0 0; color: #1e40af; font-size: 0.75rem; font-weight: 600;">{{ $borrador->tipoCotizacion?->nombre ?? 'Sin tipo' }}</p>
-                            </div>
-                            <span style="background: #fff3cd; color: #856404; padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; white-space: nowrap; margin-left: 5px;">
-                                BORRADOR
-                            </span>
-                        </div>
-                        <div style="background: #f8f9fa; padding: 8px; border-radius: 4px; margin-bottom: 10px; font-size: 0.8rem;">
-                            <p style="margin: 2px 0;"><strong>Fecha:</strong> {{ $borrador->created_at->format('d/m/Y') }}</p>
-                            <p style="margin: 2px 0;"><strong>Asesora:</strong> {{ $borrador->usuario->name ?? 'N/A' }}</p>
-                        </div>
-                        <div style="display: flex; gap: 6px;">
-                            <a href="{{ route('asesores.cotizaciones.edit-borrador', $borrador->id) }}" style="flex: 1; background: #f39c12; color: white; padding: 6px; border-radius: 4px; text-align: center; text-decoration: none; font-size: 0.8rem; font-weight: bold;">
-                                ✏️ Editar
-                            </a>
-                            <button onclick="eliminarBorrador({{ $borrador->id }})" style="flex: 1; background: #e74c3c; color: white; padding: 6px; border-radius: 4px; border: none; cursor: pointer; font-size: 0.8rem; font-weight: bold;">
-                                🗑️
-                            </button>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-
-            <!-- VISTA TABLA -->
-            <div id="vista-tabla-bor" style="display: block; overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
-                    <thead style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); border-bottom: 3px solid #1e3a8a;">
-                        <tr>
-                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Fecha</th>
-                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Cliente</th>
-                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Tipo</th>
-                            <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Estado</th>
-                            <th style="padding: 14px 12px; text-align: center; font-weight: 700; color: white; font-size: 0.9rem; letter-spacing: 0.5px;">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($borradores as $borrador)
-                            <tr style="border-bottom: 1px solid #ecf0f1; transition: background 0.2s;">
-                                <td style="padding: 12px; color: #666; font-size: 0.9rem;">{{ $borrador->created_at->format('d/m/Y') }}</td>
-                                <td style="padding: 12px; color: #333; font-size: 0.9rem; font-weight: 500;">{{ $borrador->cliente ?? 'Sin cliente' }}</td>
-                                <td style="padding: 12px;">
-                                    <span style="background: #e3f2fd; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">
-                                        {{ $borrador->tipoCotizacion?->nombre ?? 'Sin tipo' }}
-                                    </span>
-                                </td>
-                                <td style="padding: 12px;">
-                                    <span style="background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">
-                                        BORRADOR
-                                    </span>
-                                </td>
-                                <td style="padding: 12px; text-align: center; display: flex; gap: 8px; justify-content: center;">
-                                    <a href="{{ route('asesores.cotizaciones.edit-borrador', $borrador->id) }}" style="background: #f59e0b; color: white; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s; box-shadow: 0 2px 4px rgba(245, 158, 11, 0.2);" onmouseover="this.style.background='#d97706'; this.style.boxShadow='0 4px 8px rgba(245, 158, 11, 0.3)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='#f59e0b'; this.style.boxShadow='0 2px 4px rgba(245, 158, 11, 0.2)'; this.style.transform='translateY(0)'">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                        </svg>
-                                        Editar
-                                    </a>
-                                    <button onclick="eliminarBorrador({{ $borrador->id }})" style="background: #ef4444; color: white; padding: 8px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; transition: all 0.3s; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);" onmouseover="this.style.background='#dc2626'; this.style.boxShadow='0 4px 8px rgba(239, 68, 68, 0.3)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.background='#ef4444'; this.style.boxShadow='0 2px 4px rgba(239, 68, 68, 0.2)'; this.style.transform='translateY(0)'">
-                                        <i class="fas fa-trash" style="font-size: 14px;"></i>
-                                        Eliminar
-                                    </button>
-                                </td>
+        <!-- TODAS -->
+        <div id="seccion-bor-todas" class="seccion-tipo" style="display: none;">
+            <h3 style="color: #f39c12; margin-top: 20px; margin-bottom: 15px; font-size: 1.1rem;">Todos los Borradores</h3>
+            @if($borradoresTodas->count() > 0)
+                <div id="vista-tabla-bor-todas" style="overflow-x: auto; margin-bottom: 20px;">
+                    <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                        <thead style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); border-bottom: 3px solid #e67e22;">
+                            <tr>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Fecha</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Cliente</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Tipo</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Estado</th>
+                                <th style="padding: 14px 12px; text-align: center; font-weight: 700; color: white; font-size: 0.9rem;">Acciones</th>
                             </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- PAGINACIÓN -->
-            <div style="margin-top: 30px;">
-                <div class="pagination-info" style="text-align: center; margin-bottom: 15px; color: #666; font-size: 0.9rem;">
-                    Mostrando {{ $borradores->firstItem() ?? 0 }}-{{ $borradores->lastItem() ?? 0 }} de {{ $borradores->total() }} registros
+                        </thead>
+                        <tbody>
+                            @foreach($borradoresTodas as $bor)
+                                <tr style="border-bottom: 1px solid #ecf0f1;">
+                                    <td style="padding: 12px; color: #666; font-size: 0.9rem;">{{ $bor->created_at->format('d/m/Y') }}</td>
+                                    <td style="padding: 12px; color: #333; font-size: 0.9rem;">{{ $bor->cliente ?? 'Sin cliente' }}</td>
+                                    <td style="padding: 12px;">
+                                        <span style="background: #e3f2fd; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">
+                                            @if($bor->obtenerTipoCotizacion() === 'P')
+                                                Prenda
+                                            @elseif($bor->obtenerTipoCotizacion() === 'B')
+                                                Logo
+                                            @elseif($bor->obtenerTipoCotizacion() === 'PB')
+                                                Prenda/Bordado
+                                            @else
+                                                {{ $bor->tipoCotizacion?->nombre ?? 'Sin tipo' }}
+                                            @endif
+                                        </span>
+                                    </td>
+                                    <td style="padding: 12px;">
+                                        <span style="background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">
+                                            Borrador
+                                        </span>
+                                    </td>
+                                    <td style="padding: 12px; text-align: center;">
+                                        <a href="{{ route('asesores.cotizaciones.show', $bor->id) }}" style="background: #f39c12; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600; margin-right: 5px;">Editar</a>
+                                        <a href="#" onclick="eliminarBorrador({{ $bor->id }}); return false;" style="background: #e74c3c; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600;">Eliminar</a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
-                @if($borradores->hasPages())
-                    <div style="display: flex; justify-content: center; gap: 5px; flex-wrap: wrap;">
-                        {{-- Botón primera página --}}
-                        <a href="{{ $borradores->url(1) }}" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; text-decoration: none; color: #333; background: white; font-size: 0.9rem; transition: all 0.3s; {{ $borradores->currentPage() == 1 ? 'opacity: 0.5; cursor: not-allowed;' : 'cursor: pointer;' }}" {{ $borradores->currentPage() == 1 ? 'onclick="return false;"' : '' }}>
-                            ⟨⟨
-                        </a>
+                <!-- Paginación Borradores Todas -->
+                <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+                    {{ $borradoresTodas->links('pagination::bootstrap-custom', ['pageName' => $pageNameBorTodas]) }}
+                </div>
+            @else
+                <div style="background: #fff3cd; border: 2px dashed #f39c12; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 30px;">
+                    <p style="margin: 0; color: #856404;">📝 No hay borradores</p>
+                </div>
+            @endif
+        </div>
 
-                        {{-- Botón página anterior --}}
-                        <a href="{{ $borradores->previousPageUrl() }}" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; text-decoration: none; color: #333; background: white; font-size: 0.9rem; transition: all 0.3s; {{ $borradores->currentPage() == 1 ? 'opacity: 0.5; cursor: not-allowed;' : 'cursor: pointer;' }}" {{ $borradores->currentPage() == 1 ? 'onclick="return false;"' : '' }}>
-                            ⟨
-                        </a>
+        <!-- PRENDA -->
+        <div id="seccion-bor-prenda" class="seccion-tipo" style="display: block;">
+            <h3 style="color: #f39c12; margin-top: 20px; margin-bottom: 15px; font-size: 1.1rem;">Prenda</h3>
+            @if($borradorespPrenda->count() > 0)
+                <div id="vista-tabla-bor-prenda" style="overflow-x: auto; margin-bottom: 20px;">
+                    <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                        <thead style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); border-bottom: 3px solid #e67e22;">
+                            <tr>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Fecha</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Cliente</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Tipo</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Estado</th>
+                                <th style="padding: 14px 12px; text-align: center; font-weight: 700; color: white; font-size: 0.9rem;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($borradorespPrenda as $bor)
+                                <tr style="border-bottom: 1px solid #ecf0f1;">
+                                    <td style="padding: 12px; color: #666; font-size: 0.9rem;">{{ $bor->created_at->format('d/m/Y') }}</td>
+                                    <td style="padding: 12px; color: #333; font-size: 0.9rem;">{{ $bor->cliente ?? 'Sin cliente' }}</td>
+                                    <td style="padding: 12px;">
+                                        <span style="background: #e3f2fd; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">
+                                            Prenda
+                                        </span>
+                                    </td>
+                                    <td style="padding: 12px;">
+                                        <span style="background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">
+                                            Borrador
+                                        </span>
+                                    </td>
+                                    <td style="padding: 12px; text-align: center;">
+                                        <a href="{{ route('asesores.cotizaciones.show', $bor->id) }}" style="background: #f39c12; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600; margin-right: 5px;">Editar</a>
+                                        <a href="#" onclick="eliminarBorrador({{ $bor->id }}); return false;" style="background: #e74c3c; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600;">Eliminar</a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Paginación Borradores Prenda -->
+                <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+                    {{ $borradorespPrenda->links('pagination::bootstrap-custom', ['pageName' => $pageNameBorPrenda]) }}
+                </div>
+            @else
+                <div style="background: #fff3cd; border: 2px dashed #f39c12; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 30px;">
+                    <p style="margin: 0; color: #856404;">📝 No hay borradores de prenda</p>
+                </div>
+            @endif
+        </div>
 
-                        {{-- Números de página --}}
-                        @php
-                            $start = max(1, $borradores->currentPage() - 2);
-                            $end = min($borradores->lastPage(), $borradores->currentPage() + 2);
-                        @endphp
+        <!-- LOGO -->
+        <div id="seccion-bor-logo" class="seccion-tipo" style="display: none;">
+            <h3 style="color: #f39c12; margin-top: 20px; margin-bottom: 15px; font-size: 1.1rem;">Logo</h3>
+            @if($borradoresLogo->count() > 0)
+                <div id="vista-tabla-bor-logo" style="overflow-x: auto; margin-bottom: 20px;">
+                    <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                        <thead style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); border-bottom: 3px solid #e67e22;">
+                            <tr>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Fecha</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Cliente</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Tipo</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Estado</th>
+                                <th style="padding: 14px 12px; text-align: center; font-weight: 700; color: white; font-size: 0.9rem;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($borradoresLogo as $bor)
+                                <tr style="border-bottom: 1px solid #ecf0f1;">
+                                    <td style="padding: 12px; color: #666; font-size: 0.9rem;">{{ $bor->created_at->format('d/m/Y') }}</td>
+                                    <td style="padding: 12px; color: #333; font-size: 0.9rem;">{{ $bor->cliente ?? 'Sin cliente' }}</td>
+                                    <td style="padding: 12px;">
+                                        <span style="background: #e3f2fd; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">
+                                            Logo
+                                        </span>
+                                    </td>
+                                    <td style="padding: 12px;">
+                                        <span style="background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">
+                                            Borrador
+                                        </span>
+                                    </td>
+                                    <td style="padding: 12px; text-align: center;">
+                                        <a href="{{ route('asesores.cotizaciones.show', $bor->id) }}" style="background: #f39c12; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600; margin-right: 5px;">Editar</a>
+                                        <a href="#" onclick="eliminarBorrador({{ $bor->id }}); return false;" style="background: #e74c3c; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600;">Eliminar</a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Paginación Borradores Logo -->
+                <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+                    {{ $borradoresLogo->links('pagination::bootstrap-custom', ['pageName' => $pageNameBorLogo]) }}
+                </div>
+            @else
+                <div style="background: #fff3cd; border: 2px dashed #f39c12; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 30px;">
+                    <p style="margin: 0; color: #856404;">📝 No hay borradores de logo</p>
+                </div>
+            @endif
+        </div>
 
-                        @for($i = $start; $i <= $end; $i++)
-                            <a href="{{ $borradores->url($i) }}" style="padding: 8px 12px; border: 1px solid {{ $i == $borradores->currentPage() ? '#3498db' : '#ddd' }}; border-radius: 4px; text-decoration: none; color: {{ $i == $borradores->currentPage() ? 'white' : '#333' }}; background: {{ $i == $borradores->currentPage() ? '#3498db' : 'white' }}; font-size: 0.9rem; font-weight: {{ $i == $borradores->currentPage() ? 'bold' : 'normal' }}; transition: all 0.3s; cursor: pointer;">
-                                {{ $i }}
-                            </a>
-                        @endfor
+        <!-- PRENDA/BORDADO -->
+        <div id="seccion-bor-pb" class="seccion-tipo" style="display: none;">
+            <h3 style="color: #f39c12; margin-top: 20px; margin-bottom: 15px; font-size: 1.1rem;">Prenda/Bordado</h3>
+            @if($borradorespPrendaBordado->count() > 0)
+                <div id="vista-tabla-bor-pb" style="overflow-x: auto; margin-bottom: 20px;">
+                    <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
+                        <thead style="background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); border-bottom: 3px solid #e67e22;">
+                            <tr>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Fecha</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Cliente</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Tipo</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Estado</th>
+                                <th style="padding: 14px 12px; text-align: center; font-weight: 700; color: white; font-size: 0.9rem;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($borradorespPrendaBordado as $bor)
+                                <tr style="border-bottom: 1px solid #ecf0f1;">
+                                    <td style="padding: 12px; color: #666; font-size: 0.9rem;">{{ $bor->created_at->format('d/m/Y') }}</td>
+                                    <td style="padding: 12px; color: #333; font-size: 0.9rem;">{{ $bor->cliente ?? 'Sin cliente' }}</td>
+                                    <td style="padding: 12px;">
+                                        <span style="background: #e3f2fd; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">
+                                            Prenda/Bordado
+                                        </span>
+                                    </td>
+                                    <td style="padding: 12px;">
+                                        <span style="background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">
+                                            Borrador
+                                        </span>
+                                    </td>
+                                    <td style="padding: 12px; text-align: center;">
+                                        <a href="{{ route('asesores.cotizaciones.show', $bor->id) }}" style="background: #f39c12; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600; margin-right: 5px;">Editar</a>
+                                        <a href="#" onclick="eliminarBorrador({{ $bor->id }}); return false;" style="background: #e74c3c; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600;">Eliminar</a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Paginación Borradores Prenda/Bordado -->
+                <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+                    {{ $borradorespPrendaBordado->links('pagination::bootstrap-custom', ['pageName' => $pageNameBorPB]) }}
+                </div>
+            @else
+                <div style="background: #fff3cd; border: 2px dashed #f39c12; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 30px;">
+                    <p style="margin: 0; color: #856404;">📝 No hay borradores de prenda/bordado</p>
+                </div>
+            @endif
+        </div>
 
-                        {{-- Botón página siguiente --}}
-                        <a href="{{ $borradores->nextPageUrl() }}" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; text-decoration: none; color: #333; background: white; font-size: 0.9rem; transition: all 0.3s; {{ $borradores->currentPage() == $borradores->lastPage() ? 'opacity: 0.5; cursor: not-allowed;' : 'cursor: pointer;' }}" {{ $borradores->currentPage() == $borradores->lastPage() ? 'onclick="return false;"' : '' }}>
-                            ⟩
-                        </a>
-
-                        {{-- Botón última página --}}
-                        <a href="{{ $borradores->url($borradores->lastPage()) }}" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; text-decoration: none; color: #333; background: white; font-size: 0.9rem; transition: all 0.3s; {{ $borradores->currentPage() == $borradores->lastPage() ? 'opacity: 0.5; cursor: not-allowed;' : 'cursor: pointer;' }}" {{ $borradores->currentPage() == $borradores->lastPage() ? 'onclick="return false;"' : '' }}>
-                            ⟩⟩
-                        </a>
-                    </div>
-                @endif
-            </div>
-        @else
+        @if($borradorespPrenda->isEmpty() && $borradoresLogo->isEmpty() && $borradorespPrendaBordado->isEmpty())
             <div style="background: #f0f7ff; border: 2px dashed #3498db; border-radius: 8px; padding: 40px; text-align: center;">
                 <p style="margin: 0; color: #666; font-size: 1.1rem;">
-                    📭 No hay borradores guardados
+                    📭 No hay borradores
                 </p>
-                <a href="{{ route('asesores.pedidos.create') }}" style="display: inline-block; margin-top: 15px; background: #3498db; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none;">
-                    Crear Nuevo Borrador
-                </a>
             </div>
         @endif
     </div>
@@ -602,22 +784,31 @@ function mostrarTipo(tipo) {
     });
     
     // Activar botón seleccionado
-    event.target.style.borderBottomColor = '#3498db';
-    event.target.style.color = '#333';
+    if (event && event.target) {
+        event.target.style.borderBottomColor = '#3498db';
+        event.target.style.color = '#333';
+    }
     
-    // Filtrar tarjetas de cotizaciones
-    const tarjetasCot = document.querySelectorAll('.tarjeta-cot');
-    tarjetasCot.forEach(tarjeta => {
-        const tipoTarjeta = tarjeta.getAttribute('data-tipo');
-        tarjeta.style.display = (tipo === 'todas' || tipoTarjeta === tipo) ? 'block' : 'none';
+    // Ocultar todas las secciones
+    const seccionesActuales = document.querySelectorAll('#tab-cotizaciones .seccion-tipo, #tab-borradores .seccion-tipo');
+    seccionesActuales.forEach(seccion => {
+        seccion.style.display = 'none';
     });
     
-    // Filtrar filas de cotizaciones
-    const filasCot = document.querySelectorAll('.fila-cot');
-    filasCot.forEach(fila => {
-        const tipoFila = fila.getAttribute('data-tipo');
-        fila.style.display = (tipo === 'todas' || tipoFila === tipo) ? 'table-row' : 'none';
-    });
+    // Mostrar sección seleccionada
+    if (tipo === 'todas') {
+        document.getElementById('seccion-todas').style.display = 'block';
+        document.getElementById('seccion-bor-todas').style.display = 'block';
+    } else if (tipo === 'P') {
+        document.getElementById('seccion-prenda').style.display = 'block';
+        document.getElementById('seccion-bor-prenda').style.display = 'block';
+    } else if (tipo === 'L') {
+        document.getElementById('seccion-logo').style.display = 'block';
+        document.getElementById('seccion-bor-logo').style.display = 'block';
+    } else if (tipo === 'PB') {
+        document.getElementById('seccion-pb').style.display = 'block';
+        document.getElementById('seccion-bor-pb').style.display = 'block';
+    }
 }
 
 function filtrarCotizaciones() {
@@ -756,5 +947,36 @@ function eliminarBorrador(id) {
         }
     });
 }
+
+// Debug logs para paginación
+console.log('=== DEBUG PAGINACIÓN ===');
+console.log('URL actual:', window.location.href);
+console.log('Query params:', new URLSearchParams(window.location.search));
+console.log('Sección Todas - PageName:', '{{ $pageNameCotTodas ?? "NO DEFINIDO" }}');
+console.log('Sección Prenda - PageName:', '{{ $pageNameCotPrenda ?? "NO DEFINIDO" }}');
+console.log('Sección Logo - PageName:', '{{ $pageNameCotLogo ?? "NO DEFINIDO" }}');
+console.log('Sección PB - PageName:', '{{ $pageNameCotPB ?? "NO DEFINIDO" }}');
+
+// Verificar los links de paginación en el DOM
+const paginationLinks = document.querySelectorAll('a[href*="page_"]');
+console.log('Total de links de paginación encontrados:', paginationLinks.length);
+paginationLinks.forEach((link, index) => {
+    console.log(`Link ${index}:`, link.href, '| Text:', link.textContent);
+});
+
+// Verificar cuántas filas hay en cada tabla
+const tables = document.querySelectorAll('table tbody');
+console.log('Total de tablas:', tables.length);
+tables.forEach((table, index) => {
+    const rows = table.querySelectorAll('tr');
+    console.log(`Tabla ${index} - Filas:`, rows.length);
+    // Mostrar los tipos de cotizaciones en cada tabla
+    const tipos = [];
+    rows.forEach(row => {
+        const tipoSpan = row.querySelector('span:nth-of-type(1)');
+        if (tipoSpan) tipos.push(tipoSpan.textContent.trim());
+    });
+    console.log(`Tabla ${index} - Tipos:`, tipos);
+});
 </script>
 @endsection
