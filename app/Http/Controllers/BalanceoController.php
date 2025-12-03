@@ -48,7 +48,7 @@ class BalanceoController extends Controller
         $prendas = $query->orderBy('created_at', 'desc')->paginate(12)->withQueryString();
         
         // Si es petición AJAX, devolver JSON con HTML de las tarjetas
-        if ($request->ajax() || $request->wantsJson()) {
+        if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
             $endTime = microtime(true);
             $duration = ($endTime - $startTime) * 1000;
             

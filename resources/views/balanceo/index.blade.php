@@ -58,13 +58,12 @@
                        style="width: 100%; padding: 12px 16px 12px 48px; border: 1px solid var(--color-border-hr); border-radius: 8px; font-size: 15px; transition: all 0.3s ease; background: var(--color-bg-sidebar); color: var(--color-text-primary);"
                        onfocus="this.style.borderColor='rgba(255, 157, 88, 0.4)'; this.style.boxShadow='0 0 0 3px rgba(255, 157, 88, 0.1)'"
                        onblur="this.style.borderColor='var(--color-border-hr)'; this.style.boxShadow='none'">
-                @if(request('search'))
                 <button type="button" 
-                        onclick="window.location='{{ route('balanceo.index') }}'"
-                        style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--color-text-placeholder); cursor: pointer; padding: 4px;">
+                        id="clearSearchBtn"
+                        onclick="clearSearch()"
+                        style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--color-text-placeholder); cursor: pointer; padding: 4px; display: {{ request('search') ? 'block' : 'none' }};">
                     <span class="material-symbols-rounded" style="font-size: 20px;">close</span>
                 </button>
-                @endif
             </div>
         </form>
     </div>
@@ -293,20 +292,121 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Búsqueda automática con debounce
+    // Búsqueda AJAX en tiempo real con debounce
     const searchInput = document.getElementById('searchInput');
-    const searchForm = document.getElementById('searchForm');
+    const prendasGrid = document.getElementById('prendasGrid');
+    const paginationContainer = document.getElementById('pagination-balanceo');
     let searchTimeout;
+    let isSearching = false;
 
-    if (searchInput && searchForm) {
+    if (searchInput) {
         searchInput.addEventListener('input', function() {
+            // Mostrar/ocultar botón de limpiar
+            const clearBtn = document.getElementById('clearSearchBtn');
+            if (clearBtn) {
+                clearBtn.style.display = this.value.length > 0 ? 'block' : 'none';
+            }
+            
             // Limpiar timeout anterior
             clearTimeout(searchTimeout);
             
-            // Esperar 500ms después de que el usuario deje de escribir
+            // Esperar 300ms después de que el usuario deje de escribir
             searchTimeout = setTimeout(function() {
-                searchForm.submit();
-            }, 500);
+                performAjaxSearch(searchInput.value);
+            }, 300);
+        });
+    }
+
+    function clearSearch() {
+        const searchInput = document.getElementById('searchInput');
+        const clearBtn = document.getElementById('clearSearchBtn');
+        
+        if (searchInput) {
+            searchInput.value = '';
+            clearBtn.style.display = 'none';
+            performAjaxSearch('');
+        }
+    }
+
+    function performAjaxSearch(searchTerm) {
+        if (isSearching) return;
+        isSearching = true;
+
+        // Mostrar indicador de carga
+        if (prendasGrid) {
+            prendasGrid.style.opacity = '0.6';
+            prendasGrid.style.pointerEvents = 'none';
+        }
+
+        // Hacer petición AJAX
+        fetch(`{{ route('balanceo.index') }}?search=${encodeURIComponent(searchTerm)}`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Actualizar grid de prendas
+            if (prendasGrid && data.cards_html) {
+                prendasGrid.innerHTML = data.cards_html;
+                
+                // Re-aplicar observador de intersección a las nuevas tarjetas
+                if ('IntersectionObserver' in window) {
+                    const cardObserver = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                entry.target.style.opacity = '1';
+                                entry.target.style.transform = 'translateY(0)';
+                                cardObserver.unobserve(entry.target);
+                            }
+                        });
+                    }, { rootMargin: '50px', threshold: 0.1 });
+
+                    document.querySelectorAll('.prenda-card').forEach((card, index) => {
+                        card.style.opacity = '0';
+                        card.style.transform = 'translateY(20px)';
+                        card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+                        setTimeout(() => cardObserver.observe(card), index * 30);
+                    });
+                }
+            }
+
+            // Actualizar paginación
+            if (paginationContainer && data.pagination) {
+                const paginationInfo = document.getElementById('paginationInfo');
+                const paginationControls = document.getElementById('paginationControls');
+                const progressFill = document.getElementById('progressFill');
+
+                if (paginationInfo) {
+                    paginationInfo.textContent = `Mostrando ${data.pagination.first_item || 0}-${data.pagination.last_item || 0} de ${data.pagination.total} prendas`;
+                }
+
+                if (paginationControls) {
+                    paginationControls.innerHTML = data.pagination.links_html;
+                }
+
+                if (progressFill) {
+                    const progress = (data.pagination.current_page / data.pagination.last_page) * 100;
+                    progressFill.style.width = progress + '%';
+                }
+            }
+
+            // Restaurar estado visual
+            if (prendasGrid) {
+                prendasGrid.style.opacity = '1';
+                prendasGrid.style.pointerEvents = 'auto';
+            }
+
+            isSearching = false;
+        })
+        .catch(error => {
+            console.error('Error en búsqueda:', error);
+            if (prendasGrid) {
+                prendasGrid.style.opacity = '1';
+                prendasGrid.style.pointerEvents = 'auto';
+            }
+            isSearching = false;
         });
     }
 });
