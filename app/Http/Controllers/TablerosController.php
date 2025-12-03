@@ -15,9 +15,16 @@ use App\Models\TiempoCiclo;
 use App\Events\ProduccionRecordCreated;
 use App\Events\PoloRecordCreated;
 use App\Events\CorteRecordCreated;
+use App\Services\ProduccionCalculadoraService;
+use App\Services\FiltrosService;
 
 class TablerosController extends Controller
 {
+    public function __construct(
+        private ProduccionCalculadoraService $produccionCalc,
+        private FiltrosService $filtros,
+    ) {}
+
     public function fullscreen(Request $request)
     {
         $section = $request->get('section', 'produccion');
@@ -31,10 +38,11 @@ class TablerosController extends Controller
         };
         
         // Filtrar registros por fecha si hay filtros
-        $registrosFiltrados = $this->filtrarRegistrosPorFecha($registros, $request);
+        $registrosFiltrados = $this->filtros->filtrarRegistrosPorFecha($registros, $request);
         
         // Calcular seguimiento de módulos
-        $seguimiento = $this->calcularSeguimientoModulos($registrosFiltrados);
+        $resultado = $this->produccionCalc->calcularSeguimientoModulos($registrosFiltrados);
+        $seguimiento = $resultado;
         
         return view('tableros-fullscreen', compact('seguimiento', 'section'));
     }
@@ -45,11 +53,11 @@ class TablerosController extends Controller
         $registrosCorte = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela'])->get();
         
         // Filtrar registros por fecha si hay filtros
-        $registrosCorteFiltrados = $this->filtrarRegistrosPorFecha($registrosCorte, $request);
+        $registrosCorteFiltrados = $this->filtros->filtrarRegistrosPorFecha($registrosCorte, $request);
         
         // Calcular datos dinámicos para las tablas
-        $horasData = $this->calcularProduccionPorHoras($registrosCorteFiltrados);
-        $operariosData = $this->calcularProduccionPorOperarios($registrosCorteFiltrados);
+        $horasData = $this->produccionCalc->calcularProduccionPorHoras($registrosCorteFiltrados);
+        $operariosData = $this->produccionCalc->calcularProduccionPorOperarios($registrosCorteFiltrados);
         
         return view('tableros-corte-fullscreen', compact('horasData', 'operariosData'));
     }
@@ -223,21 +231,26 @@ class TablerosController extends Controller
         
         // Aplicar filtro solo al tablero activo (si hubiera filtros adicionales)
         if ($activeSection === 'produccion') {
-            $registrosProduccionFiltrados = $this->filtrarRegistrosPorFecha($todosRegistrosProduccion, request());
+            $registrosProduccionFiltrados = $this->filtros->filtrarRegistrosPorFecha($todosRegistrosProduccion, request());
         } elseif ($activeSection === 'polos') {
-            $registrosPolosFiltrados = $this->filtrarRegistrosPorFecha($todosRegistrosPolos, request());
+            $registrosPolosFiltrados = $this->filtros->filtrarRegistrosPorFecha($todosRegistrosPolos, request());
         } elseif ($activeSection === 'corte') {
-            $registrosCorteFiltrados = $this->filtrarRegistrosPorFecha($todosRegistrosCorte, request());
+            $registrosCorteFiltrados = $this->filtros->filtrarRegistrosPorFecha($todosRegistrosCorte, request());
         }
 
         // Calcular seguimiento de módulos con registros filtrados
-        $seguimientoProduccion = $this->calcularSeguimientoModulos($registrosProduccionFiltrados);
-        $seguimientoPolos = $this->calcularSeguimientoModulos($registrosPolosFiltrados);
-        $seguimientoCorte = $this->calcularSeguimientoModulos($registrosCorteFiltrados);
+        $resultadoProduccion = $this->produccionCalc->calcularSeguimientoModulos($registrosProduccionFiltrados);
+        $seguimientoProduccion = $resultadoProduccion;
+        
+        $resultadoPolos = $this->produccionCalc->calcularSeguimientoModulos($registrosPolosFiltrados);
+        $seguimientoPolos = $resultadoPolos;
+        
+        $resultadoCorte = $this->produccionCalc->calcularSeguimientoModulos($registrosCorteFiltrados);
+        $seguimientoCorte = $resultadoCorte;
         
         // Calcular datos dinámicos para las tablas de horas y operarios CON FILTROS
-        $horasData = $this->calcularProduccionPorHoras($registrosCorteFiltrados);
-        $operariosData = $this->calcularProduccionPorOperarios($registrosCorteFiltrados);
+        $horasData = $this->produccionCalc->calcularProduccionPorHoras($registrosCorteFiltrados);
+        $operariosData = $this->produccionCalc->calcularProduccionPorOperarios($registrosCorteFiltrados);
 
         // Obtener datos para selects en el formulario de corte
         $horas = Hora::all();
@@ -1690,8 +1703,8 @@ class TablerosController extends Controller
         $registrosCorte = $queryCorte->get();
 
         // Calcular datos dinámicos para las tablas de horas y operarios
-        $horasData = $this->calcularProduccionPorHoras($registrosCorte);
-        $operariosData = $this->calcularProduccionPorOperarios($registrosCorte);
+        $horasData = $this->produccionCalc->calcularProduccionPorHoras($registrosCorte);
+        $operariosData = $this->produccionCalc->calcularProduccionPorOperarios($registrosCorte);
 
         return response()->json([
             'horasData' => $horasData,
