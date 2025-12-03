@@ -19,6 +19,9 @@ use App\Services\ProduccionCalculadoraService;
 use App\Services\FiltrosService;
 use App\Services\FiltracionService;
 use App\Services\SectionLoaderService;
+use App\Services\OperarioService;
+use App\Services\MaquinaService;
+use App\Services\TelaService;
 
 class TablerosController extends Controller
 {
@@ -27,6 +30,9 @@ class TablerosController extends Controller
         private FiltrosService $filtros,
         private FiltracionService $filtracion,
         private SectionLoaderService $sectionLoader,
+        private OperarioService $operario,
+        private MaquinaService $maquina,
+        private TelaService $tela,
     ) {}
 
     public function fullscreen(Request $request)
@@ -1031,153 +1037,45 @@ class TablerosController extends Controller
 
     public function storeTela(Request $request)
     {
-        try {
-            // Verificar si ya existe la tela
-            $telaExistente = Tela::where('nombre_tela', $request->nombre_tela)->first();
-            
-            if ($telaExistente) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'La tela "' . $request->nombre_tela . '" ya existe en el sistema.',
-                    'error_type' => 'duplicate',
-                    'existing_item' => $telaExistente
-                ], 422);
-            }
-
-            $request->validate([
-                'nombre_tela' => 'required|string',
-            ]);
-
-            $tela = Tela::create([
-                'nombre_tela' => $request->nombre_tela,
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Tela creada correctamente.',
-                'tela' => $tela
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al crear la tela: ' . $e->getMessage()
-            ], 500);
-        }
+        $result = $this->tela->store($request);
+        $statusCode = $result['success'] ? 201 : 422;
+        return response()->json($result, $statusCode);
     }
 
     public function searchTelas(Request $request)
     {
         $query = $request->get('q', '');
-        
-        // ⚡ OPTIMIZACIÓN: Buscar con índice sin transformar
-        // MySQL usa índice cuando buscamos desde el inicio
-        $telas = Tela::where('nombre_tela', 'like', $query . '%')
-            ->select('id', 'nombre_tela')
-            ->limit(10)
-            ->get();
-
+        $telas = $this->tela->search($query);
         return response()->json(['telas' => $telas]);
     }
 
     public function storeMaquina(Request $request)
     {
-        try {
-            // Verificar si ya existe la máquina
-            $maquinaExistente = Maquina::where('nombre_maquina', $request->nombre_maquina)->first();
-            
-            if ($maquinaExistente) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'La máquina "' . $request->nombre_maquina . '" ya existe en el sistema.',
-                    'error_type' => 'duplicate',
-                    'existing_item' => $maquinaExistente
-                ], 422);
-            }
-
-            $request->validate([
-                'nombre_maquina' => 'required|string',
-            ]);
-
-            $maquina = Maquina::create([
-                'nombre_maquina' => $request->nombre_maquina,
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Máquina creada correctamente.',
-                'maquina' => $maquina
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al crear la máquina: ' . $e->getMessage()
-            ], 500);
-        }
+        $result = $this->maquina->store($request);
+        $statusCode = $result['success'] ? 201 : 422;
+        return response()->json($result, $statusCode);
     }
 
     public function searchMaquinas(Request $request)
     {
         $query = $request->get('q', '');
-        
-        // ⚡ OPTIMIZACIÓN: Buscar con índice sin transformar
-        // MySQL usa índice cuando buscamos desde el inicio
-        $maquinas = Maquina::where('nombre_maquina', 'like', $query . '%')
-            ->select('id', 'nombre_maquina')
-            ->limit(10)
-            ->get();
-
+        $maquinas = $this->maquina->search($query);
         return response()->json(['maquinas' => $maquinas]);
     }
 
     public function searchOperarios(Request $request)
     {
         $query = $request->get('q', '');
-        
-        // ⚡ OPTIMIZACIÓN: Buscar con índice sin transformar
-        // MySQL usa índice cuando buscamos desde el inicio
-        $operarios = User::where('name', 'like', $query . '%')
-            ->select('id', 'name')
-            ->limit(10)
-            ->get();
-
+        $operarios = $this->operario->search($query);
         return response()->json(['operarios' => $operarios]);
     }
 
     public function storeOperario(Request $request)
     {
-        try {
-            // Verificar si ya existe el operario
-            $operarioExistente = User::where('name', strtoupper($request->name))->first();
-            
-            if ($operarioExistente) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'El operario "' . strtoupper($request->name) . '" ya existe en el sistema.',
-                    'error_type' => 'duplicate',
-                    'existing_item' => $operarioExistente
-                ], 422);
-            }
-
-            $request->validate([
-                'name' => 'required|string',
-            ]);
-
-            $operario = User::create([
-                'name' => strtoupper($request->name),
-                'email' => strtolower(str_replace(' ', '.', $request->name)) . '@example.com', // Generate email
-                'password' => bcrypt('password'), // Default password
-                'roles_ids' => [3], // Cortador role id is 3
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Operario creado correctamente.',
-                'operario' => $operario
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al crear el operario: ' . $e->getMessage()
+        $result = $this->operario->store($request);
+        $statusCode = $result['success'] ? 201 : 422;
+        return response()->json($result, $statusCode);
+    }
             ], 500);
         }
     }
@@ -1311,42 +1209,8 @@ class TablerosController extends Controller
      */
     public function findOrCreateOperario(Request $request)
     {
-        $startTime = microtime(true);
-        $name = strtoupper($request->input('name'));
-        
-        // ⚡ OPTIMIZACIÓN: Primero buscar sin crear para evitar bcrypt en la mayoría de casos
-        $searchStart = microtime(true);
-        $operario = User::where('name', $name)->first();
-        $searchTime = (microtime(true) - $searchStart) * 1000;
-        
-        if (!$operario) {
-            // Solo crear si no existe
-            $createStart = microtime(true);
-            $operario = User::create([
-                'name' => $name,
-                'email' => strtolower(str_replace(' ', '', $name)) . '@mundoindustrial.com',
-                'password' => bcrypt('password123')
-            ]);
-            $createTime = (microtime(true) - $createStart) * 1000;
-            
-            \Log::info('findOrCreateOperario - creado:', [
-                'name' => $name,
-                'search_time_ms' => round($searchTime, 2),
-                'create_time_ms' => round($createTime, 2),
-                'total_time_ms' => round($searchTime + $createTime, 2)
-            ]);
-        } else {
-            $totalTime = (microtime(true) - $startTime) * 1000;
-            \Log::info('findOrCreateOperario - encontrado:', [
-                'name' => $name,
-                'total_time_ms' => round($totalTime, 2)
-            ]);
-        }
-
-        return response()->json([
-            'id' => $operario->id,
-            'name' => $operario->name
-        ]);
+        $result = $this->operario->findOrCreate($request->input('name'));
+        return response()->json($result);
     }
 
     /**
@@ -1354,40 +1218,8 @@ class TablerosController extends Controller
      */
     public function findOrCreateMaquina(Request $request)
     {
-        $startTime = microtime(true);
-        $nombre = strtoupper($request->input('nombre'));
-        
-        $createStart = microtime(true);
-        
-        // ⚡ OPTIMIZACIÓN: Primero intentar buscar sin lock
-        $maquina = Maquina::where('nombre_maquina', $nombre)->first();
-        
-        if (!$maquina) {
-            // Solo crear si no existe - usar try/catch por si hay race condition
-            try {
-                $maquina = Maquina::create(['nombre_maquina' => $nombre]);
-            } catch (\Exception $e) {
-                // Si falla por duplicate, buscar nuevamente
-                $maquina = Maquina::where('nombre_maquina', $nombre)->first();
-                if (!$maquina) {
-                    // Si aún no existe, re-lanzar el error
-                    throw $e;
-                }
-            }
-        }
-        
-        $duration = (microtime(true) - $createStart) * 1000;
-        
-        \Log::info('findOrCreateMaquina:', [
-            'nombre' => $nombre,
-            'maquina_id' => $maquina->id,
-            'operation_time_ms' => round($duration, 2)
-        ]);
-
-        return response()->json([
-            'id' => $maquina->id,
-            'nombre_maquina' => $maquina->nombre_maquina
-        ]);
+        $result = $this->maquina->findOrCreate($request->input('nombre'));
+        return response()->json($result);
     }
 
     /**
@@ -1399,40 +1231,8 @@ class TablerosController extends Controller
      */
     public function findOrCreateTela(Request $request)
     {
-        $startTime = microtime(true);
-        $nombre = strtoupper($request->input('nombre'));
-        
-        $createStart = microtime(true);
-        
-        // ⚡ OPTIMIZACIÓN: Primero intentar buscar sin lock
-        $tela = Tela::where('nombre_tela', $nombre)->first();
-        
-        if (!$tela) {
-            // Solo crear si no existe - usar try/catch por si hay race condition
-            try {
-                $tela = Tela::create(['nombre_tela' => $nombre]);
-            } catch (\Exception $e) {
-                // Si falla por duplicate, buscar nuevamente
-                $tela = Tela::where('nombre_tela', $nombre)->first();
-                if (!$tela) {
-                    // Si aún no existe, re-lanzar el error
-                    throw $e;
-                }
-            }
-        }
-        
-        $duration = (microtime(true) - $createStart) * 1000;
-        
-        \Log::info('findOrCreateTela:', [
-            'nombre' => $nombre,
-            'tela_id' => $tela->id,
-            'operation_time_ms' => round($duration, 2)
-        ]);
-
-        return response()->json([
-            'id' => $tela->id,
-            'nombre_tela' => $tela->nombre_tela
-        ]);
+        $result = $this->tela->findOrCreate($request->input('nombre'));
+        return response()->json($result);
     }
 
     /**
