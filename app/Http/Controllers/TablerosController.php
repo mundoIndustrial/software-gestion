@@ -11,7 +11,6 @@ use App\Models\User;
 use App\Models\Hora;
 use App\Models\Maquina;
 use App\Models\Tela;
-use App\Models\TiempoCiclo;
 use App\Events\ProduccionRecordCreated;
 use App\Events\PoloRecordCreated;
 use App\Events\CorteRecordCreated;
@@ -24,6 +23,8 @@ use App\Services\MaquinaService;
 use App\Services\TelaService;
 use App\Services\HoraService;
 use App\Services\CorteService;
+use App\Services\RegistroService;
+use App\Services\DashboardService;
 
 class TablerosController extends Controller
 {
@@ -37,6 +38,8 @@ class TablerosController extends Controller
         private TelaService $tela,
         private HoraService $hora,
         private CorteService $corteService,
+        private RegistroService $registroService,
+        private DashboardService $dashboardService,
     ) {}
 
     public function fullscreen(Request $request)
@@ -279,126 +282,9 @@ class TablerosController extends Controller
 
     public function store(Request $request)
     {
-        \Log::info('🟠 store (GENÉRICO) INICIADO', [
-            'all_data' => $request->all(),
-            'method' => $request->method(),
-            'route' => $request->route()->getName(),
-            'section' => $request->get('section')
-        ]);
-
-        $request->validate([
-            'registros' => 'required|array',
-            'registros.*.fecha' => 'required|date',
-            'registros.*.modulo' => 'required|string',
-            'registros.*.orden_produccion' => 'required|string',
-            'registros.*.hora' => 'required|string',
-            'registros.*.tiempo_ciclo' => 'required|numeric',
-            'registros.*.porcion_tiempo' => 'required|numeric|min:0|max:1',
-            'registros.*.cantidad' => 'nullable|integer',
-            'registros.*.paradas_programadas' => 'required|string',
-            'registros.*.paradas_no_programadas' => 'nullable|string',
-            'registros.*.tiempo_parada_no_programada' => 'nullable|numeric',
-            'registros.*.numero_operarios' => 'required|integer',
-            'registros.*.tiempo_para_programada' => 'nullable|numeric',
-            'registros.*.meta' => 'nullable|numeric',
-            'registros.*.eficiencia' => 'nullable|numeric',
-            'section' => 'required|string|in:produccion,polos,corte',
-        ]);
-
-        $model = match($request->section) {
-            'produccion' => RegistroPisoProduccion::class,
-            'polos' => RegistroPisoPolo::class,
-            'corte' => RegistroPisoCorte::class,
-        };
-
-        try {
-            $createdRecords = [];
-            foreach ($request->registros as $registroData) {
-                $paradaProgramada = strtoupper(trim($registroData['paradas_programadas'] ?? ''));
-                $tiempo_para_programada = match ($paradaProgramada) {
-                    'DESAYUNO',
-                    'MEDIA TARDE' => 900,
-                    'NINGUNA' => 0,
-                    default => 0
-                };
-
-                $porcion_tiempo = floatval($registroData['porcion_tiempo'] ?? 0);
-                $numero_operarios = floatval($registroData['numero_operarios'] ?? 0);
-                $tiempo_parada_no_programada = floatval($registroData['tiempo_parada_no_programada'] ?? 0);
-                $tiempo_ciclo = floatval($registroData['tiempo_ciclo'] ?? 0);
-                $cantidad = floatval($registroData['cantidad'] ?? 0);
-
-                // Log para debugging
-                \Log::info('Calculando meta y eficiencia', [
-                    'porcion_tiempo' => $porcion_tiempo,
-                    'numero_operarios' => $numero_operarios,
-                    'tiempo_parada_no_programada' => $tiempo_parada_no_programada,
-                    'tiempo_ciclo' => $tiempo_ciclo,
-                    'cantidad' => $cantidad,
-                    'tiempo_para_programada' => $tiempo_para_programada
-                ]);
-
-                $tiempo_disponible = (3600 * $porcion_tiempo * $numero_operarios)
-                                    - $tiempo_parada_no_programada
-                                    - $tiempo_para_programada;
-                $tiempo_disponible = max(0, $tiempo_disponible);
-
-                $meta = $tiempo_ciclo > 0 ? ($tiempo_disponible / $tiempo_ciclo) * 0.9 : 0;
-                $eficiencia = $meta > 0 ? ($cantidad / $meta) : 0;
-
-                \Log::info('Resultado de cálculos', [
-                    'tiempo_disponible' => $tiempo_disponible,
-                    'meta' => $meta,
-                    'eficiencia' => $eficiencia
-                ]);
-
-                $record = $model::create([
-                    'fecha' => $registroData['fecha'],
-                    'modulo' => $registroData['modulo'],
-                    'orden_produccion' => $registroData['orden_produccion'],
-                    'hora' => $registroData['hora'],
-                    'tiempo_ciclo' => $registroData['tiempo_ciclo'],
-                    'porcion_tiempo' => $registroData['porcion_tiempo'],
-                    'cantidad' => $registroData['cantidad'] ?? 0,
-                    'paradas_programadas' => $registroData['paradas_programadas'],
-                    'paradas_no_programadas' => $registroData['paradas_no_programadas'] ?? null,
-                    'tiempo_parada_no_programada' => $registroData['tiempo_parada_no_programada'] ?? null,
-                    'numero_operarios' => $registroData['numero_operarios'],
-                    'tiempo_para_programada' => $tiempo_para_programada,
-                    'tiempo_disponible' => $tiempo_disponible,
-                    'meta' => $meta,
-                    'eficiencia' => $eficiencia,
-                ]);
-
-                $createdRecords[] = $record;
-                
-                // Broadcast event for real-time updates (non-blocking)
-                try {
-                    if ($request->section === 'produccion') {
-                        broadcast(new ProduccionRecordCreated($record));
-                    } elseif ($request->section === 'polos') {
-                        broadcast(new PoloRecordCreated($record));
-                    }
-                } catch (\Exception $broadcastError) {
-                    \Log::warning('Error al emitir evento de creación', [
-                        'error' => $broadcastError->getMessage(),
-                        'section' => $request->section
-                    ]);
-                }
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Registros guardados correctamente.',
-                'registros' => $createdRecords,
-                'section' => $request->section
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al guardar los registros: ' . $e->getMessage()
-            ], 500);
-        }
+        $result = $this->registroService->store($request);
+        $statusCode = $result['success'] ? 201 : 422;
+        return response()->json($result, $statusCode);
     }
 
     public function update(Request $request, $id)
@@ -636,142 +522,18 @@ class TablerosController extends Controller
 
     public function destroy($id)
     {
-        $request = request();
-        $section = $request->query('section');
-
-        $model = match($section) {
-            'produccion' => RegistroPisoProduccion::class,
-            'polos' => RegistroPisoPolo::class,
-            'corte' => RegistroPisoCorte::class,
-        };
-
-        try {
-            $registro = $model::find($id);
-            
-            // Si el registro no existe, ya fue eliminado
-            if (!$registro) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'El registro ya fue eliminado.',
-                    'id' => $id,
-                    'already_deleted' => true
-                ]);
-            }
-            
-            // Guardar el ID antes de eliminar
-            $registroId = $registro->id;
-            
-            $registro->delete();
-
-            // Emitir evento de eliminación via WebSocket
-            try {
-                if ($section === 'produccion') {
-                    broadcast(new ProduccionRecordCreated((object)['id' => $registroId, 'deleted' => true]));
-                } elseif ($section === 'polos') {
-                    broadcast(new PoloRecordCreated((object)['id' => $registroId, 'deleted' => true]));
-                } elseif ($section === 'corte') {
-                    broadcast(new CorteRecordCreated((object)['id' => $registroId, 'deleted' => true]));
-                }
-            } catch (\Exception $broadcastError) {
-                \Log::warning('Error al emitir evento de eliminación', [
-                    'error' => $broadcastError->getMessage(),
-                    'section' => $section
-                ]);
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Registro eliminado correctamente.',
-                'id' => $registroId
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Error al eliminar registro', [
-                'error' => $e->getMessage(),
-                'id' => $id,
-                'section' => $section
-            ]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al eliminar el registro: ' . $e->getMessage()
-            ], 500);
-        }
+        $section = request()->query('section');
+        $result = $this->registroService->destroy($id, $section);
+        $statusCode = $result['success'] ? 200 : 500;
+        return response()->json($result, $statusCode);
     }
 
     public function duplicate($id)
     {
-        $request = request();
-        $section = $request->query('section');
-
-        $model = match($section) {
-            'produccion' => RegistroPisoProduccion::class,
-            'polos' => RegistroPisoPolo::class,
-            'corte' => RegistroPisoCorte::class,
-        };
-
-        try {
-            // ⚡ OPTIMIZACIÓN: Cargar con relaciones solo si es corte
-            $relaciones = $section === 'corte' ? ['hora', 'operario', 'maquina', 'tela'] : [];
-            $registroOriginal = $relaciones 
-                ? $model::with($relaciones)->findOrFail($id)
-                : $model::findOrFail($id);
-            
-            // Crear un array con los datos del registro original
-            $datosNuevos = $registroOriginal->toArray();
-            
-            // Remover campos que no deben duplicarse
-            unset($datosNuevos['id']);
-            unset($datosNuevos['created_at']);
-            unset($datosNuevos['updated_at']);
-            
-            // ⚡ OPTIMIZACIÓN: Remover relaciones del array antes de crear
-            // Las relaciones ya están guardadas en las foreign keys
-            foreach ($relaciones as $rel) {
-                unset($datosNuevos[$rel]);
-            }
-            
-            // Crear el nuevo registro duplicado (sin load adicional después)
-            $registroDuplicado = $model::create($datosNuevos);
-            
-            // ⚡ OPTIMIZACIÓN: Cargar relaciones solo una vez, DESPUÉS de crear
-            if ($relaciones) {
-                $registroDuplicado->load($relaciones);
-            }
-            
-            // Emitir evento de creación via WebSocket para actualización en tiempo real
-            try {
-                if ($section === 'produccion') {
-                    broadcast(new ProduccionRecordCreated($registroDuplicado));
-                } elseif ($section === 'polos') {
-                    broadcast(new PoloRecordCreated($registroDuplicado));
-                } elseif ($section === 'corte') {
-                    broadcast(new CorteRecordCreated($registroDuplicado));
-                }
-            } catch (\Exception $broadcastError) {
-                \Log::warning('Error al emitir evento de duplicación', [
-                    'error' => $broadcastError->getMessage(),
-                    'section' => $section
-                ]);
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Registro duplicado correctamente.',
-                'registro' => $registroDuplicado,
-                'section' => $section
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Error al duplicar registro', [
-                'error' => $e->getMessage(),
-                'id' => $id,
-                'section' => $section
-            ]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al duplicar el registro: ' . $e->getMessage()
-            ], 500);
-        }
+        $section = request()->query('section');
+        $result = $this->registroService->duplicate($id, $section);
+        $statusCode = $result['success'] ? 201 : 500;
+        return response()->json($result, $statusCode);
     }
 
     public function storeCorte(Request $request)
@@ -836,126 +598,21 @@ class TablerosController extends Controller
 
     public function getDashboardCorteData(Request $request)
     {
-        // Log de todos los parámetros recibidos (solo los que tienen valor)
-        $paramsRecibidos = array_filter($request->all(), function($value) {
-            return $value !== null && $value !== '';
-        });
-        
-        $hayFiltro = !empty($paramsRecibidos) && isset($paramsRecibidos['filter_type']);
-        \Log::info('Dashboard Corte API: Parámetros recibidos', [
-            'hay_filtro' => $hayFiltro,
-            'parametros' => $paramsRecibidos
-        ]);
-        
-        // Obtener todos los registros de corte con relaciones
-        $query = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela']);
-        $registrosCorte = $query->get();
-        
-        \Log::info('Dashboard Corte API: Total registros antes de filtrar', [
-            'total' => $registrosCorte->count()
-        ]);
-        
-        // Aplicar filtros solo si hay filtro_type
-        if ($hayFiltro) {
-            $registrosCorteFiltrados = $this->filtros->filtrarRegistrosPorFecha($registrosCorte, $request);
-            \Log::info('Dashboard Corte API: Registros FILTRADOS', [
-                'total' => $registrosCorteFiltrados->count(),
-                'filtro_type' => $request->get('filter_type'),
-                'specific_date' => $request->get('specific_date'),
-                'start_date' => $request->get('start_date'),
-                'end_date' => $request->get('end_date'),
-                'month' => $request->get('month'),
-            ]);
-        } else {
-            $registrosCorteFiltrados = $registrosCorte;
-            \Log::info('Dashboard Corte API: SIN FILTRO - Mostrando TODOS los registros', [
-                'total' => $registrosCorteFiltrados->count()
-            ]);
-        }
-        
-        // Calcular datos dinámicos para las tablas
-        $horasData = $this->produccionCalc->calcularProduccionPorHoras($registrosCorteFiltrados);
-        $operariosData = $this->produccionCalc->calcularProduccionPorOperarios($registrosCorteFiltrados);
-        
-        \Log::info('Dashboard Corte API: Datos calculados', [
-            'horas_count' => count($horasData),
-            'operarios_count' => count($operariosData),
-        ]);
-        
-        return response()->json([
-            'horas' => $horasData,
-            'operarios' => $operariosData
-        ]);
+        $result = $this->dashboardService->getDashboardCorteData($request);
+        return response()->json($result);
     }
-
 
     public function getDashboardTablesData(Request $request)
     {
-        $queryCorte = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela']);
-        $this->filtracion->aplicarFiltroFecha($queryCorte, $request);
-        $registrosCorte = $queryCorte->get();
-
-        // Calcular datos dinámicos para las tablas de horas y operarios
-        $horasData = $this->produccionCalc->calcularProduccionPorHoras($registrosCorte);
-        $operariosData = $this->produccionCalc->calcularProduccionPorOperarios($registrosCorte);
-
-        return response()->json([
-            'horasData' => $horasData,
-            'operariosData' => $operariosData
-        ]);
+        $result = $this->dashboardService->getDashboardTablesData($request);
+        return response()->json($result);
     }
 
     public function getSeguimientoData(Request $request)
     {
-        $section = $request->get('section', 'produccion');
-        
-        // 🔍 DEBUG: Loguear parámetros recibidos
-        $filterType = $request->get('filter_type');
-        $specificDate = $request->get('specific_date');
-        $startDate = $request->get('start_date');
-        $endDate = $request->get('end_date');
-        $month = $request->get('month');
-        
-        \Log::info('getSeguimientoData - Parámetros recibidos:', [
-            'section' => $section,
-            'filter_type' => $filterType,
-            'specific_date' => $specificDate,
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'month' => $month,
-            'all_params' => $request->all()
-        ]);
-
-        $model = match($section) {
-            'produccion' => RegistroPisoProduccion::class,
-            'polos' => RegistroPisoPolo::class,
-            'corte' => RegistroPisoCorte::class,
-        };
-
-        $query = $model::query();
-        $this->filtracion->aplicarFiltroFecha($query, $request);
-        
-        // ⚡ OPTIMIZACIÓN: Si no hay filtro específico, limitar a último día o últimos 500 registros
-        // para evitar procesar 7000+ registros que bloquean el servidor
-        if (!$filterType) {
-            $query = $query->latest()->limit(500);
-            \Log::info('getSeguimientoData - Aplicando LIMIT 500 porque no hay filtro');
-        }
-        
-        $registrosFiltrados = $query->get();
-        
-        // 🔍 DEBUG: Loguear cantidad de registros filtrados
-        \Log::info('getSeguimientoData - Registros filtrados:', [
-            'section' => $section,
-            'cantidad' => count($registrosFiltrados),
-            'filter_type' => $filterType,
-            'specific_date' => $specificDate,
-            'limited' => !$filterType ? true : false
-        ]);
-
-        $seguimiento = $this->produccionCalc->calcularSeguimientoModulos($registrosFiltrados);
-
-        return response()->json($seguimiento);
+        $result = $this->dashboardService->getSeguimientoData($request);
+        $statusCode = $result['success'] ? 200 : 500;
+        return response()->json($result['data'] ?? $result, $statusCode);
     }
 
     /**
@@ -994,95 +651,9 @@ class TablerosController extends Controller
      */
     public function getUniqueValues(Request $request)
     {
-        $section = $request->get('section');
-        $column = $request->get('column');
-
-        $model = match($section) {
-            'produccion' => RegistroPisoProduccion::class,
-            'polos' => RegistroPisoPolo::class,
-            'corte' => RegistroPisoCorte::class,
-            default => null
-        };
-
-        if (!$model) {
-            return response()->json(['error' => 'Invalid section'], 400);
-        }
-
-        $values = [];
-
-        // Manejar columnas especiales para corte (relaciones)
-        if ($section === 'corte') {
-            if ($column === 'hora_id') {
-                // Para hora_id, obtener los valores de la tabla horas
-                $values = Hora::distinct()->pluck('hora')->sort()->values()->toArray();
-            } elseif ($column === 'operario_id') {
-                // Para operario_id, obtener los nombres de los operarios
-                $values = User::whereHas('registrosPisoCorte')
-                    ->distinct()
-                    ->pluck('name')
-                    ->sort()
-                    ->values()
-                    ->toArray();
-            } elseif ($column === 'maquina_id') {
-                // Para maquina_id, obtener los nombres de las máquinas
-                $values = Maquina::whereHas('registrosPisoCorte')
-                    ->distinct()
-                    ->pluck('nombre_maquina')
-                    ->sort()
-                    ->values()
-                    ->toArray();
-            } elseif ($column === 'tela_id') {
-                // Para tela_id, obtener los nombres de las telas
-                $values = Tela::whereHas('registrosPisoCorte')
-                    ->distinct()
-                    ->pluck('nombre_tela')
-                    ->sort()
-                    ->values()
-                    ->toArray();
-            } elseif ($column === 'fecha') {
-                // Para fechas, obtener y formatear
-                $values = $model::distinct()
-                    ->pluck($column)
-                    ->filter()
-                    ->map(function($date) {
-                        return \Carbon\Carbon::parse($date)->format('d-m-Y');
-                    })
-                    ->sort()
-                    ->values()
-                    ->toArray();
-            } else {
-                // Columnas normales
-                $values = $model::distinct()
-                    ->pluck($column)
-                    ->filter()
-                    ->sort()
-                    ->values()
-                    ->toArray();
-            }
-        } else {
-            // Para producción y polos
-            if ($column === 'fecha') {
-                // Para fechas, obtener y formatear
-                $values = $model::distinct()
-                    ->pluck($column)
-                    ->filter()
-                    ->map(function($date) {
-                        return \Carbon\Carbon::parse($date)->format('d-m-Y');
-                    })
-                    ->sort()
-                    ->values()
-                    ->toArray();
-            } else {
-                $values = $model::distinct()
-                    ->pluck($column)
-                    ->filter()
-                    ->sort()
-                    ->values()
-                    ->toArray();
-            }
-        }
-
-        return response()->json(['values' => $values]);
+        $result = $this->dashboardService->getUniqueValues($request);
+        $statusCode = $result['success'] ? 200 : 400;
+        return response()->json(['values' => $result['values']], $statusCode);
     }
 
     public function findHoraId(Request $request)
