@@ -58,8 +58,15 @@ class CotizacionService
             'tecnicas' => $datosFormulario['tecnicas'] ?? null,
             'observaciones_tecnicas' => $datosFormulario['observaciones_tecnicas'] ?? null,
             'ubicaciones' => $datosFormulario['ubicaciones'] ?? null,
-            'observaciones_generales' => $datosFormulario['observaciones'] ?? null
+            'observaciones_generales' => $datosFormulario['observaciones_generales'] ?? null
         ];
+        
+        \Log::info('CotizacionService::crear - Datos a guardar', [
+            'tipo_cotizacion_id' => $datos['tipo_cotizacion_id'],
+            'tipo_venta' => $datos['tipo_venta'],
+            'especificaciones' => !empty($datos['especificaciones']) ? 'presente' : 'vacío',
+            'observaciones_generales' => !empty($datos['observaciones_generales']) ? 'presente' : 'vacío'
+        ]);
         
         return Cotizacion::create($datos);
     }

@@ -243,7 +243,7 @@ window.showToast = function(message, type = 'success') {
             position: fixed;
             top: 20px;
             right: 20px;
-            z-index: 9999;
+            z-index: 10005;
             display: flex;
             flex-direction: column;
             gap: 10px;
@@ -277,33 +277,6 @@ window.showToast = function(message, type = 'success') {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 };
-
-// Agregar animaciones CSS
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-    
-    @keyframes slideOut {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-    }
-`;
-document.head.appendChild(style);
 
 // ========================================
 // MODAL - VER ORDEN

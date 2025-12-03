@@ -73,7 +73,7 @@
         background: #f8fafc;
         padding: 1rem;
         flex: 1;
-        overflow: auto;
+        overflow: hidden;
     }
 
     .modal-imagen-contenedor {

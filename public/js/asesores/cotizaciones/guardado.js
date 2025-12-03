@@ -82,6 +82,24 @@ async function guardarCotizacion() {
     });
     
     try {
+        const payloadEnvio = {
+            tipo: 'borrador',
+            cliente: datos.cliente,
+            tipo_cotizacion: tipoCotizacion,
+            productos: datos.productos,
+            tecnicas: datos.tecnicas,
+            observaciones_tecnicas: datos.observaciones_tecnicas,
+            ubicaciones: datos.ubicaciones,
+            observaciones_generales: datos.observaciones_generales,
+            observaciones_check: datos.observaciones_check,
+            observaciones_valor: datos.observaciones_valor,
+            especificaciones: datos.especificaciones || {}
+        };
+        
+        console.log('📤 PAYLOAD A ENVIAR:', payloadEnvio);
+        console.log('📤 Especificaciones en payload:', payloadEnvio.especificaciones);
+        console.log('📤 ¿Especificaciones vacías?', Object.keys(payloadEnvio.especificaciones).length === 0);
+        
         const response = await fetch(window.routes.guardarCotizacion, {
             method: 'POST',
             headers: {
@@ -89,19 +107,7 @@ async function guardarCotizacion() {
                 'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
             },
-            body: JSON.stringify({
-                tipo: 'borrador',
-                cliente: datos.cliente,
-                tipo_cotizacion: tipoCotizacion,
-                productos: datos.productos,
-                tecnicas: datos.tecnicas,
-                observaciones_tecnicas: datos.observaciones_tecnicas,
-                ubicaciones: datos.ubicaciones,
-                observaciones_generales: datos.observaciones_generales,
-                observaciones_check: datos.observaciones_check,
-                observaciones_valor: datos.observaciones_valor,
-                especificaciones: especificaciones
-            })
+            body: JSON.stringify(payloadEnvio)
         });
         
         console.log('📡 Status de respuesta:', response.status);
@@ -349,6 +355,25 @@ async function procederEnviarCotizacion(datos) {
     }
     
     try {
+        const payloadEnvio = {
+            tipo: 'enviada',
+            cliente: datos.cliente,
+            tipo_cotizacion: tipoCotizacion,
+            productos: datos.productos,
+            tecnicas: datos.tecnicas,
+            observaciones_tecnicas: datos.observaciones_tecnicas,
+            ubicaciones: datos.ubicaciones,
+            observaciones_generales: datos.observaciones_generales,
+            observaciones_check: datos.observaciones_check,
+            observaciones_valor: datos.observaciones_valor,
+            imagenes: datos.logo?.imagenes || [],
+            especificaciones: especificaciones
+        };
+        
+        console.log('📤 PAYLOAD A ENVIAR (ENVIAR):', payloadEnvio);
+        console.log('📤 Especificaciones en payload:', payloadEnvio.especificaciones);
+        console.log('📤 ¿Especificaciones vacías?', Object.keys(payloadEnvio.especificaciones).length === 0);
+        
         const response = await fetch(window.routes.guardarCotizacion, {
             method: 'POST',
             headers: {
@@ -356,20 +381,7 @@ async function procederEnviarCotizacion(datos) {
                 'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
             },
-            body: JSON.stringify({
-                tipo: 'enviada',
-                cliente: datos.cliente,
-                tipo_cotizacion: tipoCotizacion,
-                productos: datos.productos,
-                tecnicas: datos.tecnicas,
-                observaciones_tecnicas: datos.observaciones_tecnicas,
-                ubicaciones: datos.ubicaciones,
-                observaciones_generales: datos.observaciones_generales,
-                observaciones_check: datos.observaciones_check,
-                observaciones_valor: datos.observaciones_valor,
-                imagenes: datos.logo?.imagenes || [],
-                especificaciones: especificaciones
-            })
+            body: JSON.stringify(payloadEnvio)
         });
         
         console.log('📡 Status de respuesta:', response.status);

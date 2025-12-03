@@ -102,7 +102,12 @@ class PedidosProduccionController extends Controller
             DB::beginTransaction();
 
             // Crear pedido de producción
-            $especificaciones = is_array($cotizacion->especificaciones) ? $cotizacion->especificaciones : [];
+            $especificaciones = $cotizacion->especificaciones;
+            
+            // Si es string JSON, decodificar
+            if (is_string($especificaciones)) {
+                $especificaciones = json_decode($especificaciones, true) ?? [];
+            }
             
             // Sanitizar numero_cotizacion (convertir a string si es array)
             $numeroCotizacion = $cotizacion->numero_cotizacion;
@@ -191,7 +196,7 @@ class PedidosProduccionController extends Controller
                     ]);
 
                     $prendaPedido = PrendaPedido::create([
-                        'pedido_produccion_id' => $pedido->id,
+                        'numero_pedido' => $pedido->numero_pedido,
                         'nombre_prenda' => $prenda['nombre_producto'] ?? 'Sin nombre',
                         'cantidad' => $cantidadTotal,
                         'descripcion' => $descripcionPrenda,
@@ -200,11 +205,11 @@ class PedidosProduccionController extends Controller
 
                     // Crear proceso inicial para cada prenda
                     ProcesoPrenda::create([
-                        'prenda_pedido_id' => $prendaPedido->id,
+                        'numero_pedido' => $pedido->numero_pedido,
                         'proceso' => 'Creación Orden',
                         'estado_proceso' => 'Completado',
-                        'fecha_inicio' => now()->toDateString(),
-                        'fecha_fin' => now()->toDateString(),
+                        'fecha_inicio' => now(),
+                        'fecha_fin' => now(),
                     ]);
                     
                     // HEREDAR VARIANTES DE LA COTIZACIÓN

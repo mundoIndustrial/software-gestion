@@ -3,20 +3,185 @@
  * Handles opening, closing, and overlay management for the order detail modal
  */
 
+console.log('📄 [MODAL] Cargando pedidos-detail-modal.js');
+
 /**
  * Abre el modal de detalle de la orden y carga los datos
  * @param {number} numeroPedido - Número del pedido
  */
-async function verFactura(numeroPedido) {
-    console.log('Abriendo modal de detalle para pedido:', numeroPedido);
+window.verFactura = async function verFactura(numeroPedido) {
+    console.log('🔵 [MODAL] Abriendo modal de detalle para pedido:', numeroPedido);
     
     try {
         // ✅ HACER FETCH a la API para obtener datos del pedido
+        console.log('🔵 [MODAL] Haciendo fetch a /registros/' + numeroPedido);
         const response = await fetch(`/registros/${numeroPedido}`);
         if (!response.ok) throw new Error('Error fetching order');
         const order = await response.json();
         
-        console.log('✅ Datos del pedido obtenidos:', order);
+        console.log('✅ [MODAL] Datos del pedido obtenidos:', order);
+        
+        // Mostrar el overlay
+        let overlay = document.getElementById('modal-overlay');
+        console.log('🔵 [MODAL] Buscando overlay:', { encontrado: !!overlay, id: 'modal-overlay' });
+        
+        if (overlay) {
+            // Mover el overlay al body si no está ya ahí
+            if (overlay.parentElement !== document.body) {
+                console.log('🔵 [MODAL] Moviendo overlay al body...');
+                document.body.appendChild(overlay);
+            }
+            
+            console.log('🔵 [MODAL] Overlay encontrado, mostrando...');
+            overlay.style.display = 'block';
+            overlay.style.zIndex = '10000';
+            overlay.style.position = 'fixed';
+            overlay.style.opacity = '1';
+            overlay.style.visibility = 'visible';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.width = '100%';
+            overlay.style.height = '100%';
+            console.log('✅ [MODAL] Overlay mostrado, display:', overlay.style.display);
+            console.log('✅ [MODAL] Overlay z-index:', window.getComputedStyle(overlay).zIndex);
+            console.log('✅ [MODAL] Overlay position:', window.getComputedStyle(overlay).position);
+            
+            // Mostrar el wrapper del modal
+            const modalWrapper = document.getElementById('order-detail-modal-wrapper');
+            if (modalWrapper) {
+                modalWrapper.style.display = 'block';
+                console.log('✅ [MODAL] Modal wrapper mostrado');
+            }
+            
+            // Buscar el modal-content en todo el documento
+            console.log('🔵 [MODAL] Buscando modal-content en el documento...');
+            
+            let modalContent = document.querySelector('.modal-content');
+            if (!modalContent) {
+                modalContent = document.querySelector('[style*="max-width: 672px"]');
+            }
+            if (!modalContent) {
+                modalContent = document.querySelector('div[style*="max-width"]');
+            }
+            
+            console.log('🔵 [MODAL] Modal content encontrado:', !!modalContent, modalContent?.className || modalContent?.tagName);
+            
+            if (modalContent) {
+                modalContent.style.zIndex = '10001';
+                modalContent.style.position = 'fixed';
+                modalContent.style.top = '50%';
+                modalContent.style.left = '50%';
+                modalContent.style.transform = 'translate(-50%, -50%)';
+                modalContent.style.display = 'block';
+                modalContent.style.visibility = 'visible';
+                modalContent.style.opacity = '1';
+                modalContent.style.overflow = 'visible';
+                modalContent.style.height = 'auto';
+                modalContent.style.minHeight = '200px';
+                
+                // Buscar elemento con x-show dentro del modal
+                const xShowElement = modalContent.querySelector('[x-show]');
+                if (xShowElement) {
+                    console.log('🔵 [MODAL] Encontrado elemento con x-show, removiendo display:none...');
+                    xShowElement.style.display = 'block';
+                    xShowElement.style.visibility = 'visible';
+                    xShowElement.style.opacity = '1';
+                }
+                
+                // Activar Alpine.js show si existe
+                if (modalContent.__x) {
+                    console.log('🔵 [MODAL] Activando Alpine.js...');
+                    modalContent.__x.show = true;
+                }
+                
+                // Forzar que todos los elementos sean visibles
+                const allChildren = modalContent.querySelectorAll('*');
+                allChildren.forEach(child => {
+                    const computedStyle = window.getComputedStyle(child);
+                    
+                    // Remover display:none
+                    if (computedStyle.display === 'none') {
+                        child.style.display = 'block';
+                        console.log('🔵 [MODAL] Removiendo display:none de:', child.tagName, child.className);
+                    }
+                    
+                    // Remover max-height: 0
+                    if (child.style.maxHeight === '0px' || child.style.maxHeight === '0') {
+                        child.style.maxHeight = 'none';
+                        console.log('🔵 [MODAL] Removiendo max-height:0 de:', child.tagName);
+                    }
+                    
+                    // Remover height: 0
+                    if (child.style.height === '0px' || child.style.height === '0') {
+                        child.style.height = 'auto';
+                        console.log('🔵 [MODAL] Removiendo height:0 de:', child.tagName);
+                    }
+                    
+                    // Remover overflow hidden
+                    if (computedStyle.overflow === 'hidden') {
+                        child.style.overflow = 'visible';
+                        console.log('🔵 [MODAL] Removiendo overflow:hidden de:', child.tagName, child.className);
+                    }
+                    
+                    // Remover max-height restrictivo
+                    const maxHeight = computedStyle.maxHeight;
+                    if (maxHeight && maxHeight !== 'none' && maxHeight !== 'auto' && parseInt(maxHeight) < 500) {
+                        child.style.maxHeight = 'none';
+                        console.log('🔵 [MODAL] Removiendo max-height restrictivo:', maxHeight);
+                    }
+                });
+                
+                // Forzar altura del modal-content
+                modalContent.style.height = 'auto';
+                modalContent.style.maxHeight = '90vh';
+                modalContent.style.overflow = 'auto';
+                
+                // Esperar un frame para que se recalcule
+                setTimeout(() => {
+                    console.log('✅ [MODAL] Altura final del modal después de recalcular:', modalContent.offsetHeight);
+                }, 100);
+                
+                // Remover overflow hidden de padres si existe
+                let parent = modalContent.parentElement;
+                let depth = 0;
+                while (parent && depth < 5) {
+                    const parentOverflow = window.getComputedStyle(parent).overflow;
+                    if (parentOverflow === 'hidden') {
+                        console.log('⚠️ [MODAL] Padre con overflow:hidden encontrado, removiendo...');
+                        parent.style.overflow = 'visible';
+                    }
+                    parent = parent.parentElement;
+                    depth++;
+                }
+                
+                console.log('✅ [MODAL] Modal content z-index:', modalContent.style.zIndex);
+                console.log('✅ [MODAL] Modal content position:', modalContent.style.position);
+                console.log('✅ [MODAL] Modal content top/left:', modalContent.style.top, modalContent.style.left);
+                console.log('✅ [MODAL] Modal content transform:', modalContent.style.transform);
+                console.log('✅ [MODAL] Modal content offsetHeight:', modalContent.offsetHeight);
+                console.log('✅ [MODAL] Modal content offsetWidth:', modalContent.offsetWidth);
+                console.log('✅ [MODAL] Modal content innerHTML length:', modalContent.innerHTML.length);
+                console.log('✅ [MODAL] Modal content children count:', modalContent.children.length);
+                console.log('✅ [MODAL] Modal content visible:', modalContent.offsetHeight > 0 ? 'SÍ' : 'NO (height=0)');
+                
+                // Si está vacío, mostrar su contenido
+                if (modalContent.offsetHeight === 0) {
+                    console.log('🔵 [MODAL] Modal content está vacío o colapsado');
+                    console.log('🔵 [MODAL] Primer hijo:', modalContent.firstChild?.tagName, modalContent.firstChild?.className);
+                    console.log('🔵 [MODAL] HTML:', modalContent.innerHTML.substring(0, 300));
+                }
+            } else {
+                console.error('❌ [MODAL] Modal content NO encontrado en el documento');
+                console.log('🔵 [MODAL] Buscando todos los divs con max-width...');
+                const allDivs = document.querySelectorAll('div[style*="max-width"]');
+                console.log('🔵 [MODAL] Encontrados', allDivs.length, 'divs con max-width');
+                allDivs.forEach((div, i) => {
+                    console.log(`  [${i}]`, div.className, div.style.maxWidth, div.style.zIndex);
+                });
+            }
+        } else {
+            console.error('❌ [MODAL] Overlay NO encontrado en el DOM');
+        }
         
         // ✅ LLENAR CAMPOS DEL MODAL
         
@@ -215,9 +380,12 @@ async function verFactura(numeroPedido) {
         }
         
         // ✅ MOSTRAR MODAL
-        const overlay = document.getElementById('modal-overlay');
-        if (overlay) {
-            overlay.style.display = 'block';
+        const modalOverlay = document.getElementById('modal-overlay');
+        if (modalOverlay) {
+            modalOverlay.style.display = 'block';
+            console.log('✅ [MODAL] Modal overlay mostrado');
+        } else {
+            console.error('❌ [MODAL] Modal overlay no encontrado');
         }
         
         // Disparar evento para abrir el modal usando Alpine.js
@@ -229,19 +397,19 @@ async function verFactura(numeroPedido) {
         alert('Error al cargar los datos del pedido. Intenta nuevamente.');
     }
 }
-
 /**
- * Abre el modal de seguimiento del pedido
+ * Abre el modal de seguimiento del pedido (ASESORAS - VERSIÓN SIMPLIFICADA)
  * @param {number} numeroPedido - Número del pedido
  */
 function verSeguimiento(numeroPedido) {
-    console.log('Abriendo modal de seguimiento para pedido:', numeroPedido);
+    console.log('🔵 [ASESORAS] Abriendo modal de seguimiento simplificado para pedido:', numeroPedido);
     
-    // Llamar a la función openOrderTracking que ya existe en orderTracking.js
-    if (typeof openOrderTracking === 'function') {
-        openOrderTracking(numeroPedido);
+    // Usar la función simplificada para asesoras
+    if (typeof openAsesorasTrackingModal === 'function') {
+        openAsesorasTrackingModal(numeroPedido);
+        console.log('✅ [ASESORAS] Modal de seguimiento abierto');
     } else {
-        console.error('❌ Función openOrderTracking no disponible');
+        console.error('❌ [ASESORAS] Función openAsesorasTrackingModal no disponible');
         alert('Error: No se puede abrir el seguimiento. Intenta nuevamente.');
     }
 }
@@ -255,17 +423,15 @@ function closeModalOverlay() {
         overlay.style.display = 'none';
     }
     
-    // Cerrar el modal
-    const closeEvent = new CustomEvent('close-modal', { detail: 'order-detail' });
+    const modalWrapper = document.getElementById('order-detail-modal-wrapper');
+    if (modalWrapper) {
+        modalWrapper.style.display = 'none';
+    }
+    
+    // Notificar que el modal se cerró (sin causar recursión)
+    const closeEvent = new CustomEvent('modal-closed', { detail: 'order-detail' });
     window.dispatchEvent(closeEvent);
 }
-
-// Escuchar evento de cierre del modal desde Alpine.js
-window.addEventListener('close-modal', function(event) {
-    if (event.detail === 'order-detail') {
-        closeModalOverlay();
-    }
-});
 
 // Cerrar modal al presionar Escape
 document.addEventListener('keydown', function(event) {

@@ -88,12 +88,22 @@ class CotizacionPrendaController extends Controller
                 'telas_archivos' => $request->file('productos_prenda.*.telas') ?? []
             ]);
             
+            // Obtener especificaciones del formulario
+            $especificaciones = $request->input('especificaciones', []);
+            
+            \Log::info('📋 Especificaciones recibidas del formulario', [
+                'especificaciones' => $especificaciones,
+                'tipo' => gettype($especificaciones),
+                'vacías' => empty($especificaciones)
+            ]);
+            
             // Primero, crear la cotización para obtener su ID
             $datosFormulario = [
                 'cliente' => $validated['cliente'],
                 'asesora' => $validated['asesora'],
                 'tipo_cotizacion' => $validated['tipo_cotizacion'] ?? null,
                 'productos' => [], // Se llenarán después
+                'especificaciones' => $especificaciones, // ← AGREGAR ESPECIFICACIONES
             ];
 
             // Crear cotización usando el servicio

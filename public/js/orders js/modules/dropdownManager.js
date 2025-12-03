@@ -53,6 +53,13 @@ const OrdersDropdownManager = {
         const oldValue = dropdown.dataset.value;
         const newValue = dropdown.value;
         
+        // 🆕 Detectar si el cambio fue programático (iniciado por UpdatesModule)
+        if (dropdown.dataset.programmaticChange === 'true') {
+            console.log('ℹ️ Cambio programático detectado, ignorando para evitar loop');
+            dropdown.dataset.programmaticChange = 'false';
+            return;
+        }
+        
         console.log(`📍 Área seleccionada (visualización): ${newValue}`);
         console.log(`📊 Datos: orderId=${orderId}, oldValue=${oldValue}, newValue=${newValue}`);
         

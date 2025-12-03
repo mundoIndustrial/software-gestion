@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\RegistrosPorOrden;
 use App\Models\RegistrosPorOrdenBodega;
-use App\Models\TablaOriginal;
 use App\Models\TablaOriginalBodega;
 use App\Models\EntregaPedidoCorte;
 use App\Models\EntregaBodegaCorte;

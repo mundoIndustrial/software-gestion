@@ -83,7 +83,7 @@ class PrendaPedido extends Model
                 $colorNombre = $this->color->nombre;
             } else {
                 $colorNombre = \Cache::remember("color_{$this->color_id}", 3600, function() {
-                    $color = \App\Models\Color::find($this->color_id);
+                    $color = \App\Models\ColorPrenda::find($this->color_id);
                     return $color ? $color->nombre : null;
                 });
             }
@@ -101,7 +101,7 @@ class PrendaPedido extends Model
                 $telaReferencia = $this->tela->referencia;
             } else {
                 $telaData = \Cache::remember("tela_{$this->tela_id}", 3600, function() {
-                    $tela = \App\Models\Tela::find($this->tela_id);
+                    $tela = \App\Models\TelaPrenda::find($this->tela_id);
                     return $tela ? ['nombre' => $tela->nombre, 'referencia' => $tela->referencia] : null;
                 });
                 if ($telaData) {

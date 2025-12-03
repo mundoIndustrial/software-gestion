@@ -777,13 +777,19 @@ body:not(.dark-theme) .filter-date {
 }
 
 .modal-overlay {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
+    z-index: 10000 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 .modal-content {
@@ -796,6 +802,7 @@ body:not(.dark-theme) .filter-date {
     overflow: hidden;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     animation: modalSlideIn 0.3s ease-out;
+    z-index: 10000;
 }
 
 @keyframes modalSlideIn {

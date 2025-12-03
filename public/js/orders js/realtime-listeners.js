@@ -34,9 +34,15 @@ function initializeOrdenesRealtimeListeners() {
         
         // Llamar al método de la instancia de modernTable
         if (window.modernTable && typeof window.modernTable.handleOrdenUpdate === 'function') {
+            console.log('📡 Llamando handleOrdenUpdate en modernTable');
             window.modernTable.handleOrdenUpdate(e.orden, e.action, e.changedFields);
+        } else if (globalThis.modernTableInstance && typeof globalThis.modernTableInstance.handleOrdenUpdate === 'function') {
+            console.log('📡 Llamando handleOrdenUpdate en globalThis.modernTableInstance');
+            globalThis.modernTableInstance.handleOrdenUpdate(e.orden, e.action, e.changedFields);
         } else {
             console.warn('⚠️ modernTable no está disponible o no tiene el método handleOrdenUpdate');
+            console.log('   - window.modernTable:', !!window.modernTable);
+            console.log('   - globalThis.modernTableInstance:', !!globalThis.modernTableInstance);
         }
     });
 

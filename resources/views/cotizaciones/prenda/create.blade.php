@@ -678,8 +678,17 @@
                                     <td style="padding: 14px 12px; border-right: 1px solid #eee; font-weight: 600; color: #0066cc; white-space: nowrap;">
                                         <i class="fas fa-shirt"></i> Manga
                                     </td>
-                                    <td style="padding: 14px 12px;">
-                                        <input type="text" name="productos_prenda[][variantes][obs_manga]" placeholder="Ej: manga larga..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box;">
+                                    <td style="padding: 14px 12px; display: flex; gap: 8px;">
+                                        <select name="productos_prenda[][variantes][tipo_manga]" style="flex: 1; padding: 8px 12px; border: 1px solid #0066cc; border-radius: 4px; font-size: 0.9rem; background-color: white; color: #0066cc; font-weight: 600; cursor: pointer;">
+                                            <option value="">Selecciona tipo...</option>
+                                            <option value="CORTA">CORTA</option>
+                                            <option value="LARGA">LARGA</option>
+                                            <option value="3/4">3/4</option>
+                                            <option value="RAGLAN">RAGLAN</option>
+                                            <option value="CAMPANA">CAMPANA</option>
+                                            <option value="OTRA">OTRA</option>
+                                        </select>
+                                        <input type="text" name="productos_prenda[][variantes][obs_manga]" placeholder="Observaciones..." style="flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box;">
                                     </td>
                                 </tr>
                                 
@@ -1207,6 +1216,14 @@ function guardarCotizacionPrenda(action) {
     formData.append('action', action);
     formData.append('_token', document.querySelector('input[name="_token"]').value);
     
+    // ✅ AGREGAR ESPECIFICACIONES AL FormData
+    if (window.especificacionesSeleccionadas && Object.keys(window.especificacionesSeleccionadas).length > 0) {
+        formData.append('especificaciones', JSON.stringify(window.especificacionesSeleccionadas));
+        console.log('📋 Especificaciones agregadas al FormData:', window.especificacionesSeleccionadas);
+    } else {
+        console.log('⚠️ Sin especificaciones para agregar');
+    }
+    
     // Agregar productos reorganizados
     productosFinales.forEach((producto, index) => {
         // Datos básicos
@@ -1305,13 +1322,14 @@ function mostrarSelectorVariantes(input) {
     const container = input.closest('.tipo-prenda-row').querySelector('.tipo-jean-pantalon-inline');
     const innerContainer = container.querySelector('.tipo-jean-pantalon-inline-container');
     
-    if (valor.includes('JEAN') || valor.includes('PANTALÓN')) {
+    // Detectar JEAN, PANTALÓN, PANTALONES
+    if (valor.includes('JEAN') || valor.includes('PANTALÓN') || valor.includes('PANTALONES') || valor.includes('PANTALON')) {
         container.style.display = 'block';
         
         // Si no tiene contenido, crear los selectores
         if (innerContainer.innerHTML === '') {
             innerContainer.innerHTML = `
-                <label style="font-weight: 600; color: #0066cc; font-size: 0.85rem;">TIPO DE JEAN/PANTALÓN</label>
+                <label style="font-weight: 600; color: #0066cc; font-size: 0.85rem;">TIPO DE PRENDA</label>
                 <select name="productos_prenda[][tipo_jean]" style="padding: 0.6rem 0.8rem; border: 2px solid #0066cc; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; color: #0066cc; font-weight: 600;">
                     <option value="">Selecciona</option>
                     <option value="SKINNY">SKINNY</option>
@@ -1322,6 +1340,7 @@ function mostrarSelectorVariantes(input) {
                     <option value="MOM">MOM</option>
                     <option value="OVERSIZE">OVERSIZE</option>
                     <option value="OTRO">OTRO</option>
+                    <option value="NO APLICA">NO APLICA</option>
                 </select>
             `;
         }

@@ -158,6 +158,7 @@
     </div>
 
     <!-- Scripts -->
+    <script src="{{ asset('js/toast-notifications.js') }}"></script>
     <script src="{{ asset('js/asesores/layout.js') }}"></script>
     <script src="{{ asset('js/asesores/notifications.js') }}"></script>
     @stack('scripts')

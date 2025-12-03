@@ -4,6 +4,7 @@
 @section('page-title', 'Cotizaciones y Borradores')
 
 @push('styles')
+<link rel="stylesheet" href="{{ asset('css/cotizaciones/filtros-embudo.css') }}">
 <style>
     .top-nav {
         display: none !important;
@@ -244,21 +245,56 @@
                     <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">
                         <thead style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); border-bottom: 3px solid #1e3a8a;">
                             <tr>
-                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Fecha</th>
-                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Código</th>
-                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Cliente</th>
-                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Tipo</th>
-                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">Estado</th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">
+                                    <div class="table-header-with-filter">
+                                        <span>Fecha</span>
+                                        <button class="filter-funnel-btn" data-filter-column="fecha" onclick="abrirFiltro('fecha')" title="Filtrar por fecha">
+                                            <i class="fas fa-filter"></i>
+                                        </button>
+                                    </div>
+                                </th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">
+                                    <div class="table-header-with-filter">
+                                        <span>Código</span>
+                                        <button class="filter-funnel-btn" data-filter-column="codigo" onclick="abrirFiltro('codigo')" title="Filtrar por código">
+                                            <i class="fas fa-filter"></i>
+                                        </button>
+                                    </div>
+                                </th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">
+                                    <div class="table-header-with-filter">
+                                        <span>Cliente</span>
+                                        <button class="filter-funnel-btn" data-filter-column="cliente" onclick="abrirFiltro('cliente')" title="Filtrar por cliente">
+                                            <i class="fas fa-filter"></i>
+                                        </button>
+                                    </div>
+                                </th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">
+                                    <div class="table-header-with-filter">
+                                        <span>Tipo</span>
+                                        <button class="filter-funnel-btn" data-filter-column="tipo" onclick="abrirFiltro('tipo')" title="Filtrar por tipo">
+                                            <i class="fas fa-filter"></i>
+                                        </button>
+                                    </div>
+                                </th>
+                                <th style="padding: 14px 12px; text-align: left; font-weight: 700; color: white; font-size: 0.9rem;">
+                                    <div class="table-header-with-filter">
+                                        <span>Estado</span>
+                                        <button class="filter-funnel-btn" data-filter-column="estado" onclick="abrirFiltro('estado')" title="Filtrar por estado">
+                                            <i class="fas fa-filter"></i>
+                                        </button>
+                                    </div>
+                                </th>
                                 <th style="padding: 14px 12px; text-align: center; font-weight: 700; color: white; font-size: 0.9rem;">Acción</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach($cotizacionesTodas as $cot)
                                 <tr style="border-bottom: 1px solid #ecf0f1;">
-                                    <td style="padding: 12px; color: #666; font-size: 0.9rem;">{{ $cot->created_at->format('d/m/Y') }}</td>
-                                    <td style="padding: 12px; color: #1e40af; font-size: 0.9rem; font-weight: 700;">{{ $cot->numero_cotizacion ?? 'Por asignar' }}</td>
-                                    <td style="padding: 12px; color: #333; font-size: 0.9rem;">{{ $cot->cliente ?? 'Sin cliente' }}</td>
-                                    <td style="padding: 12px;">
+                                    <td style="padding: 12px; color: #666; font-size: 0.9rem;" data-filter-column="fecha">{{ $cot->created_at->format('d/m/Y') }}</td>
+                                    <td style="padding: 12px; color: #1e40af; font-size: 0.9rem; font-weight: 700;" data-filter-column="codigo">{{ $cot->numero_cotizacion ?? 'Por asignar' }}</td>
+                                    <td style="padding: 12px; color: #333; font-size: 0.9rem;" data-filter-column="cliente">{{ $cot->cliente ?? 'Sin cliente' }}</td>
+                                    <td style="padding: 12px;" data-filter-column="tipo">
                                         <span style="background: #e3f2fd; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">
                                             @if($cot->obtenerTipoCotizacion() === 'P')
                                                 Prenda
@@ -271,7 +307,7 @@
                                             @endif
                                         </span>
                                     </td>
-                                    <td style="padding: 12px;">
+                                    <td style="padding: 12px;" data-filter-column="estado">
                                         <span style="background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">
                                             {{ ucfirst($cot->estado) }}
                                         </span>
@@ -978,5 +1014,195 @@ tables.forEach((table, index) => {
     });
     console.log(`Tabla ${index} - Tipos:`, tipos);
 });
+
+// ============================================
+// MODALES DE FILTRO
+// ============================================
 </script>
+
+<!-- MODALES DE FILTRO -->
+
+<!-- Modal Filtro Fecha -->
+<div id="filter-modal-fecha" class="filter-modal">
+    <div class="filter-modal-content">
+        <div class="filter-modal-header">
+            <h3 class="filter-modal-title">📅 Filtrar por Fecha</h3>
+            <button class="filter-modal-close" onclick="cerrarFiltro('fecha')">&times;</button>
+        </div>
+        <div class="filter-modal-body">
+            <div class="filter-group">
+                <label class="filter-group-label">Selecciona las fechas</label>
+                <div class="filter-checkbox-group"></div>
+            </div>
+        </div>
+        <div class="filter-modal-footer">
+            <button class="filter-btn filter-btn-clear" onclick="limpiarFiltroColumna('fecha')">Limpiar</button>
+            <button class="filter-btn filter-btn-apply" onclick="aplicarFiltroColumna('fecha')">Aplicar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Filtro Código -->
+<div id="filter-modal-codigo" class="filter-modal">
+    <div class="filter-modal-content">
+        <div class="filter-modal-header">
+            <h3 class="filter-modal-title">🔢 Filtrar por Código</h3>
+            <button class="filter-modal-close" onclick="cerrarFiltro('codigo')">&times;</button>
+        </div>
+        <div class="filter-modal-body">
+            <div class="filter-group">
+                <label class="filter-group-label">Selecciona los códigos</label>
+                <div class="filter-checkbox-group"></div>
+            </div>
+        </div>
+        <div class="filter-modal-footer">
+            <button class="filter-btn filter-btn-clear" onclick="limpiarFiltroColumna('codigo')">Limpiar</button>
+            <button class="filter-btn filter-btn-apply" onclick="aplicarFiltroColumna('codigo')">Aplicar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Filtro Cliente -->
+<div id="filter-modal-cliente" class="filter-modal">
+    <div class="filter-modal-content">
+        <div class="filter-modal-header">
+            <h3 class="filter-modal-title">👤 Filtrar por Cliente</h3>
+            <button class="filter-modal-close" onclick="cerrarFiltro('cliente')">&times;</button>
+        </div>
+        <div class="filter-modal-body">
+            <div class="filter-group">
+                <label class="filter-group-label">Selecciona los clientes</label>
+                <div class="filter-checkbox-group"></div>
+            </div>
+        </div>
+        <div class="filter-modal-footer">
+            <button class="filter-btn filter-btn-clear" onclick="limpiarFiltroColumna('cliente')">Limpiar</button>
+            <button class="filter-btn filter-btn-apply" onclick="aplicarFiltroColumna('cliente')">Aplicar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Filtro Tipo -->
+<div id="filter-modal-tipo" class="filter-modal">
+    <div class="filter-modal-content">
+        <div class="filter-modal-header">
+            <h3 class="filter-modal-title">🏷️ Filtrar por Tipo</h3>
+            <button class="filter-modal-close" onclick="cerrarFiltro('tipo')">&times;</button>
+        </div>
+        <div class="filter-modal-body">
+            <div class="filter-group">
+                <label class="filter-group-label">Selecciona los tipos</label>
+                <div class="filter-checkbox-group"></div>
+            </div>
+        </div>
+        <div class="filter-modal-footer">
+            <button class="filter-btn filter-btn-clear" onclick="limpiarFiltroColumna('tipo')">Limpiar</button>
+            <button class="filter-btn filter-btn-apply" onclick="aplicarFiltroColumna('tipo')">Aplicar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Filtro Estado -->
+<div id="filter-modal-estado" class="filter-modal">
+    <div class="filter-modal-content">
+        <div class="filter-modal-header">
+            <h3 class="filter-modal-title">✅ Filtrar por Estado</h3>
+            <button class="filter-modal-close" onclick="cerrarFiltro('estado')">&times;</button>
+        </div>
+        <div class="filter-modal-body">
+            <div class="filter-group">
+                <label class="filter-group-label">Selecciona los estados</label>
+                <div class="filter-checkbox-group"></div>
+            </div>
+        </div>
+        <div class="filter-modal-footer">
+            <button class="filter-btn filter-btn-clear" onclick="limpiarFiltroColumna('estado')">Limpiar</button>
+            <button class="filter-btn filter-btn-apply" onclick="aplicarFiltroColumna('estado')">Aplicar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Botón para limpiar todos los filtros (flotante) -->
+<div style="position: fixed; bottom: 30px; right: 30px; z-index: 999;">
+    <button onclick="limpiarTodosFiltros()" style="
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 50px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.9rem;
+        box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+        transition: all 0.3s ease;
+        display: none;
+        align-items: center;
+        gap: 8px;
+    " id="btnLimpiarFiltros" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(52, 152, 219, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 12px rgba(52, 152, 219, 0.3)'">
+        <i class="fas fa-times"></i> Limpiar Filtros
+    </button>
+</div>
+
+<script src="{{ asset('js/asesores/cotizaciones/filtros-embudo.js') }}"></script>
+
+<script>
+// Mostrar/ocultar botón de limpiar filtros
+document.addEventListener('DOMContentLoaded', () => {
+    const btnLimpiar = document.getElementById('btnLimpiarFiltros');
+    
+    // Observar cambios en los filtros activos
+    const observer = setInterval(() => {
+        if (filtroEmbudo && Object.keys(filtroEmbudo.filtrosActivos).length > 0) {
+            btnLimpiar.style.display = 'flex';
+        } else {
+            btnLimpiar.style.display = 'none';
+        }
+    }, 100);
+});
+
+// Cambiar tabla cuando se cambia de tab
+function mostrarTab(nombreTab) {
+    // Cambiar tab
+    document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
+    document.getElementById(`tab-${nombreTab}`).style.display = 'block';
+    
+    // Cambiar botones de tab
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.style.borderBottomColor = 'transparent');
+    event.target.style.borderBottomColor = '#3498db';
+    event.target.style.color = '#333';
+    
+    // Actualizar tabla en filtro
+    if (filtroEmbudo) {
+        cambiarTablaFiltro(nombreTab);
+    }
+}
+
+// Cambiar tipo de cotización
+function mostrarTipo(tipo) {
+    // Ocultar todas las secciones
+    document.querySelectorAll('.seccion-tipo').forEach(sec => sec.style.display = 'none');
+    
+    // Mostrar la seleccionada
+    if (tipo === 'todas') {
+        document.getElementById('seccion-todas').style.display = 'block';
+        document.getElementById('seccion-bor-todas').style.display = 'block';
+    } else if (tipo === 'P') {
+        document.getElementById('seccion-prenda').style.display = 'block';
+        document.getElementById('seccion-bor-prenda').style.display = 'block';
+    } else if (tipo === 'L') {
+        document.getElementById('seccion-logo').style.display = 'block';
+    } else if (tipo === 'PB') {
+        document.getElementById('seccion-pb').style.display = 'block';
+    }
+    
+    // Cambiar botones
+    document.querySelectorAll('.tipo-tab-btn').forEach(btn => {
+        btn.style.borderBottomColor = 'transparent';
+        btn.style.color = '#666';
+    });
+    event.target.style.borderBottomColor = '#3498db';
+    event.target.style.color = '#333';
+}
+</script>
+
 @endsection

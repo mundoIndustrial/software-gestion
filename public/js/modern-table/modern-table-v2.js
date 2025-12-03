@@ -278,6 +278,72 @@ class ModernTableV2 {
         console.log('⚠️ updateOrderArea called on ModernTableV2 - should be handled by OrdersDropdownManager');
     }
 
+    /**
+     * Maneja actualizaciones de órdenes en tiempo real desde Echo/WebSocket
+     */
+    handleOrdenUpdate(ordenData, action, changedFields) {
+        console.log('📡 [ModernTableV2] handleOrdenUpdate recibido', {
+            orderId: ordenData.id,
+            numeroPedido: ordenData.numero_pedido,
+            action: action,
+            changedFields: changedFields
+        });
+
+        try {
+            // Encontrar la fila en la tabla
+            const row = document.querySelector(`tr[data-numero-pedido="${ordenData.numero_pedido}"]`);
+            
+            if (!row) {
+                console.warn(`⚠️ Fila no encontrada para pedido ${ordenData.numero_pedido}`);
+                return;
+            }
+
+            // Actualizar solo los campos que cambiaron
+            if (changedFields && typeof changedFields === 'object') {
+                Object.keys(changedFields).forEach(field => {
+                    const cell = row.querySelector(`[data-column="${field}"]`);
+                    if (cell) {
+                        const cellContent = cell.querySelector('.cell-content') || cell;
+                        
+                        // Actualizar valor según el campo
+                        if (field === 'estado') {
+                            const dropdown = cell.querySelector('.estado-dropdown');
+                            if (dropdown) {
+                                dropdown.value = changedFields[field];
+                                dropdown.setAttribute('data-value', changedFields[field]);
+                            }
+                        } else if (field === 'area') {
+                            const dropdown = cell.querySelector('.area-dropdown');
+                            if (dropdown) {
+                                dropdown.value = changedFields[field];
+                                dropdown.setAttribute('data-value', changedFields[field]);
+                            }
+                        } else if (field === 'dia_de_entrega') {
+                            const dropdown = cell.querySelector('.dia-entrega-dropdown');
+                            if (dropdown) {
+                                dropdown.value = changedFields[field];
+                                dropdown.setAttribute('data-value', changedFields[field]);
+                            }
+                        } else {
+                            // Campos de texto normales
+                            cellContent.textContent = changedFields[field];
+                        }
+                    }
+                });
+                console.log(`✅ Fila ${ordenData.numero_pedido} actualizada desde tiempo real`);
+            }
+
+            // Actualizar color de fila si el estado cambió
+            if (changedFields && changedFields.estado) {
+                if (typeof RowManager !== 'undefined' && RowManager.updateRowColor) {
+                    RowManager.updateRowColor(ordenData.numero_pedido, changedFields.estado);
+                }
+            }
+        } catch (error) {
+            console.error('❌ Error al manejar actualización de orden:', error);
+        }
+    }
+
     openCellModal(content, orderId, column) {
         console.log('🔓 openCellModal LLAMADO con:', { content: content.substring(0, 50), orderId, column });
         
@@ -482,6 +548,8 @@ globalThis.initializeModernTable = () => {
     
     try {
         globalThis.modernTableInstance = new ModernTableV2();
+        // Exponer también como window.modernTable para compatibilidad con realtime-listeners
+        window.modernTable = globalThis.modernTableInstance;
         console.log('%c✅ ModernTableV2 instancia lista', 'color: #00aa00; font-weight: bold; font-size: 14px;');
 
         // Agregar botón de limpiar filtros

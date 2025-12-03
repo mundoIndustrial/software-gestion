@@ -60,12 +60,14 @@ function initializeAreaDropdowns() {
 
 /**
  * DELEGACIÓN: Inicializar dropdowns de día de entrega
- * NOTA: Esta función ya no se usa, los dropdowns de día de entrega
- * se manejan en el módulo DiaEntregaModule
+ * → Usa DiaEntregaModule.initialize()
  */
 function initializeDiaEntregaDropdowns() {
-    // Ya no se necesita - manejado por DiaEntregaModule
-    console.log('ℹ️ initializeDiaEntregaDropdowns: Manejado por DiaEntregaModule');
+    if (DiaEntregaModule && DiaEntregaModule.initialize) {
+        DiaEntregaModule.initialize();
+    } else {
+        console.error('❌ DiaEntregaModule no disponible');
+    }
 }
 
 // ============================================================================
@@ -385,7 +387,7 @@ function showDeleteNotification(message, type) {
  * MANTENER: Lógica compleja de modal de detalles
  */
 async function viewDetail(pedido) {
-    console.log('viewDetail called with pedido:', pedido);
+    console.log('%c🔵 [VIEWDETAIL] viewDetail called with pedido: ' + pedido, 'color: blue; font-weight: bold; font-size: 14px;');
     try {
         setCurrentOrder(pedido);
         
@@ -393,7 +395,7 @@ async function viewDetail(pedido) {
         if (!response.ok) throw new Error('Error fetching order');
         const order = await response.json();
         
-        if (typeof loadOrderImages === 'function') {
+        console.log('✅ [VIEWDETAIL] Datos de orden obtenidos:', order);        if (typeof loadOrderImages === 'function') {
             loadOrderImages(pedido);
         }
 
@@ -596,9 +598,15 @@ async function viewDetail(pedido) {
             if (arrowContainer) arrowContainer.style.display = 'none';
         }
         
+        console.log('%c✅ [VIEWDETAIL] Todos los campos llenados, disparando evento open-modal', 'color: green; font-weight: bold;');
+        console.log('🔍 [VIEWDETAIL] Verificando listeners antes de dispatch:');
+        console.log('   - window listeners:', window.getEventListeners ? window.getEventListeners(window)['open-modal'] : 'N/A');
+        
         window.dispatchEvent(new CustomEvent('open-modal', { detail: 'order-detail' }));
+        console.log('✅ [VIEWDETAIL] Evento open-modal despachado');
     } catch (error) {
-        console.error('Error loading order details:', error);
+        console.error('❌ [VIEWDETAIL] Error loading order details:', error);
+        console.log('🔍 [VIEWDETAIL] Disparando open-modal incluso en caso de error...');
         window.dispatchEvent(new CustomEvent('open-modal', { detail: 'order-detail' }));
     }
 }

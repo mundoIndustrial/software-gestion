@@ -139,7 +139,8 @@ const ApiClient = (() => {
             });
             
             if (!response.ok) {
-                throw new Error('Error al actualizar proceso');
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Error al actualizar proceso');
             }
             
             return await response.json();

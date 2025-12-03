@@ -645,9 +645,17 @@
                         'flete' => ['emoji' => '🚚', 'label' => 'FLETE DE ENVÍO']
                     ];
                     
+                    // Convertir especificaciones a array si es string JSON
+                    $especificacionesData = $cotizacion->especificaciones;
+                    if (is_string($especificacionesData)) {
+                        $especificacionesData = json_decode($especificacionesData, true) ?? [];
+                    } elseif (!is_array($especificacionesData)) {
+                        $especificacionesData = [];
+                    }
+                    
                     $especificacionesExisten = false;
-                    if($cotizacion->especificaciones && is_array($cotizacion->especificaciones)) {
-                        $especificacionesExisten = count($cotizacion->especificaciones) > 0;
+                    if($especificacionesData && is_array($especificacionesData)) {
+                        $especificacionesExisten = count($especificacionesData) > 0;
                     }
                 @endphp
                 
@@ -667,7 +675,7 @@
                                 </thead>
                                 <tbody>
                                     @foreach($categoriasInfo as $categoriaKey => $info)
-                                        @if(isset($cotizacion->especificaciones[$categoriaKey]) && !empty($cotizacion->especificaciones[$categoriaKey]))
+                                        @if(isset($especificacionesData[$categoriaKey]) && !empty($especificacionesData[$categoriaKey]))
                                             <!-- Encabezado de categoría -->
                                             <tr style="border-bottom: 1px solid #e2e8f0;">
                                                 <td colspan="3" style="font-weight: 600; background: #1e40af; padding: 12px; color: white;">
@@ -676,7 +684,7 @@
                                                 </td>
                                             </tr>
                                             <!-- Valores de la categoría -->
-                                            @foreach($cotizacion->especificaciones[$categoriaKey] as $valor)
+                                            @foreach($especificacionesData[$categoriaKey] as $valor)
                                                 <tr style="border-bottom: 1px solid #e2e8f0;">
                                                     <td style="padding: 12px; color: #333; font-weight: 500; border-right: 1px solid #e2e8f0;">{{ $valor }}</td>
                                                     <td style="padding: 12px; text-align: center; color: #1e40af; font-weight: 700; font-size: 1.2rem; border-right: 1px solid #e2e8f0;">✕</td>

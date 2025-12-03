@@ -85,10 +85,12 @@ const TrackingUI = (() => {
      * Crea el HTML de una tarjeta de proceso
      */
     function createProcessCard(proceso, diasEnArea, orderData) {
-        const isAdmin = document.body.getAttribute('data-is-admin') === 'true';
+        // Verificar si el usuario puede editar procesos (admin o produccion)
+        const userRole = document.body.getAttribute('data-user-role');
+        const canEditProcess = userRole === 'admin' || userRole === 'produccion';
         
         let topRightButtons = '';
-        if (isAdmin) {
+        if (canEditProcess) {
             topRightButtons = createAdminButtons(proceso, orderData);
         }
         

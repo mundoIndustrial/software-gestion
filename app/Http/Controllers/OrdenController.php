@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants\AreaOptions;
 use App\Models\OrdenAsesor;
 use App\Models\ProductoPedido;
 use App\Models\PedidoProduccion;
+use App\Models\ProcesoPrenda;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -389,11 +391,12 @@ class OrdenController extends Controller
             $festivos = \App\Models\Festivo::pluck('fecha')->toArray();
 
             // Obtener los procesos ordenados por fecha_inicio
-            // Ahora usa numero_pedido como relación
+            // Solo de procesos_prenda (excluir soft-deleted)
             $procesos = DB::table('procesos_prenda')
                 ->where('numero_pedido', $orden->numero_pedido)
+                ->whereNull('deleted_at')  // Excluir soft-deleted
                 ->orderBy('fecha_inicio', 'asc')
-                ->select('proceso', 'fecha_inicio', 'encargado', 'estado_proceso')
+                ->select('id', 'numero_pedido', 'proceso', 'fecha_inicio', 'encargado', 'estado_proceso')
                 ->get()
                 ->groupBy('proceso')
                 ->map(function($grupo) {
@@ -478,16 +481,19 @@ class OrdenController extends Controller
     }
 
     /**
-     * API: Editar un proceso (solo para admin)
+     * API: Editar un proceso (para admin y producción)
      */
     public function editarProceso(Request $request, $id)
     {
         try {
-            // Verificar que es admin
-            if (!auth()->user()->role || auth()->user()->role->name !== 'admin') {
+            // Verificar que es admin o producción
+            $userRole = auth()->user()->role?->name;
+            $isAllowed = in_array($userRole, ['admin', 'produccion']);
+            
+            if (!$isAllowed) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Solo administradores pueden editar procesos'
+                    'message' => 'No tienes permiso para editar procesos'
                 ], 403);
             }
 
@@ -545,16 +551,19 @@ class OrdenController extends Controller
     }
 
     /**
-     * API: Eliminar un proceso (solo para admin)
+     * API: Eliminar un proceso (para admin y producción)
      */
     public function eliminarProceso(Request $request, $id)
     {
         try {
-            // Verificar que es admin
-            if (!auth()->user()->role || auth()->user()->role->name !== 'admin') {
+            // Verificar que es admin o producción
+            $userRole = auth()->user()->role?->name;
+            $isAllowed = in_array($userRole, ['admin', 'produccion']);
+            
+            if (!$isAllowed) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Solo administradores pueden eliminar procesos'
+                    'message' => 'No tienes permiso para eliminar procesos'
                 ], 403);
             }
 
@@ -562,22 +571,21 @@ class OrdenController extends Controller
                 'numero_pedido' => 'required|integer',
             ]);
 
-            // Buscar el proceso
-            $proceso = DB::table('procesos_prenda')
-                ->where('id', $id)
+            // Buscar el proceso SOLO en procesos_prenda
+            // Los procesos en procesos_historial no deben ser eliminables desde el modal
+            $proceso = ProcesoPrenda::where('id', $id)
                 ->where('numero_pedido', $validated['numero_pedido'])
                 ->first();
 
             if (!$proceso) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Proceso no encontrado'
+                    'message' => 'Proceso no encontrado o ya fue eliminado'
                 ], 404);
             }
 
             // Verificar que no sea el último proceso (debe haber al menos 1)
-            $totalProcesos = DB::table('procesos_prenda')
-                ->where('numero_pedido', $validated['numero_pedido'])
+            $totalProcesos = ProcesoPrenda::where('numero_pedido', $validated['numero_pedido'])
                 ->count();
 
             if ($totalProcesos <= 1) {
@@ -587,10 +595,20 @@ class OrdenController extends Controller
                 ], 422);
             }
 
-            // Eliminar
-            DB::table('procesos_prenda')
-                ->where('id', $id)
+            // Eliminar usando el Model (dispara el Observer deleting)
+            $proceso->delete();
+
+            // También eliminar del historial para que no aparezca en el modal
+            DB::table('procesos_historial')
+                ->where('numero_pedido', $validated['numero_pedido'])
+                ->where('proceso', $proceso->proceso)
                 ->delete();
+
+            \Log::info("Proceso eliminado correctamente", [
+                'id' => $id,
+                'numero_pedido' => $validated['numero_pedido'],
+                'proceso' => $proceso->proceso
+            ]);
 
             return response()->json([
                 'success' => true,

@@ -100,11 +100,58 @@ async function displayOrderTrackingWithProcesos(orderData) {
 }
 
 /**
+ * Vincula los event listeners a los botones de admin y tarjetas de proceso
+ */
+/**
  * Vincula los event listeners a los botones de admin
  */
 function attachProcessButtonListeners(procesos) {
-    // Nota: Los botones se crean dinámicamente en TrackingUI.createAdminButtons
-    // Aquí debería haber event listeners, pero por ahora se usan onclick directos
+    // Usar event delegation en el contenedor del timeline
+    const timelineContainer = document.getElementById('trackingTimelineContainer');
+    if (!timelineContainer) {
+        console.warn('⚠️ trackingTimelineContainer no encontrado');
+        return;
+    }
+    
+    // Event delegation para botones de editar
+    timelineContainer.addEventListener('click', function(e) {
+        const editBtn = e.target.closest('.btn-editar-proceso');
+        if (!editBtn) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Encontrar el proceso asociado al botón
+        const card = editBtn.closest('.tracking-area-card');
+        const areaNameElement = card.querySelector('.tracking-area-name span:last-child');
+        const processName = areaNameElement ? areaNameElement.textContent.trim() : '';
+        
+        // Buscar el proceso en la lista
+        const proceso = procesos.find(p => p.proceso === processName);
+        if (proceso) {
+            editarProceso(JSON.stringify(proceso));
+        }
+    }, false);
+    
+    // Event delegation para botones de eliminar
+    timelineContainer.addEventListener('click', function(e) {
+        const deleteBtn = e.target.closest('.btn-eliminar-proceso');
+        if (!deleteBtn) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Encontrar el proceso asociado al botón
+        const card = deleteBtn.closest('.tracking-area-card');
+        const areaNameElement = card.querySelector('.tracking-area-name span:last-child');
+        const processName = areaNameElement ? areaNameElement.textContent.trim() : '';
+        
+        // Buscar el proceso en la lista
+        const proceso = procesos.find(p => p.proceso === processName);
+        if (proceso) {
+            eliminarProceso(JSON.stringify(proceso));
+        }
+    }, false);
 }
 
 /**

@@ -1,0 +1,301 @@
+/* ESTILOS PARA FILTROS TIPO EMBUDO */
+
+/* Contenedor del header con filtro */
+.table-header-with-filter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    position: relative;
+}
+
+/* Botón de filtro embudo */
+.filter-funnel-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    position: relative;
+}
+
+.filter-funnel-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    transform: scale(1.1);
+}
+
+.filter-funnel-btn.active {
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+}
+
+.filter-funnel-btn.active::after {
+    content: '';
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    background: #fbbf24;
+    border-radius: 50%;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Modal de filtro */
+.filter-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+.filter-modal.active {
+    display: flex;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.filter-modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.filter-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e5e7eb;
+    padding-bottom: 12px;
+}
+
+.filter-modal-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
+}
+
+.filter-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.filter-modal-close:hover {
+    background: #f3f4f6;
+    color: #1f2937;
+}
+
+.filter-modal-body {
+    margin-bottom: 20px;
+}
+
+.filter-group {
+    margin-bottom: 16px;
+}
+
+.filter-group-label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 8px;
+}
+
+.filter-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.filter-input:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.filter-select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+/* Buscador dentro del modal */
+.filter-search-box {
+    margin-bottom: 12px;
+}
+
+.filter-search-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    background: #f9fafb;
+}
+
+.filter-search-input:focus {
+    outline: none;
+    border-color: #3498db;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.filter-search-input::placeholder {
+    color: #9ca3af;
+}
+
+.filter-checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.filter-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.filter-checkbox input[type="checkbox"] {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+    accent-color: #3498db;
+}
+
+.filter-checkbox label {
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #374151;
+    margin: 0;
+}
+
+.filter-modal-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.filter-btn {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.filter-btn-apply {
+    background: #3498db;
+    color: white;
+}
+
+.filter-btn-apply:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
+.filter-btn-clear {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.filter-btn-clear:hover {
+    background: #d1d5db;
+    transform: translateY(-2px);
+}
+
+/* Indicador de filtro activo en la tabla */
+.table-header-filtered {
+    background: rgba(251, 191, 36, 0.1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .filter-modal-content {
+        max-width: 90%;
+        padding: 20px;
+    }
+    
+    .filter-modal-title {
+        font-size: 1rem;
+    }
+    
+    .filter-input,
+    .filter-select {
+        font-size: 16px; /* Evita zoom en iOS */
+    }
+}

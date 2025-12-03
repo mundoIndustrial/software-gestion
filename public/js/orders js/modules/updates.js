@@ -29,23 +29,155 @@ const UpdatesModule = {
     /**
      * Actualizar área de una orden
      */
-    updateOrderArea(orderId, newArea, oldArea, dropdown) {
+    async updateOrderArea(orderId, newArea, oldArea, dropdown) {
         console.log(`📍 Actualizando área: Pedido ${orderId}, Área: ${newArea}`);
+        console.log(`   - Area anterior: ${oldArea}`);
+        console.log(`   - Dropdown encontrado: ${!!dropdown}`);
         
-        this._sendUpdate(`${this.baseUrl}/${orderId}`, { area: newArea }, (data) => {
-            if (data.success) {
-                console.log('✅ Proceso creado/actualizado correctamente en procesos_prenda');
+        try {
+            // Primero actualizar el área en la BD
+            const response = await fetch(`${this.baseUrl}/${orderId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({ area: newArea })
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok && (data.success || data)) {
+                console.log('✅ Área actualizada en procesos_prenda');
                 
+                // Actualizar el dropdown visualmente
                 if (dropdown) {
                     dropdown.value = newArea;
                     dropdown.dataset.value = newArea;
+                    console.log(`✅ Dropdown actualizado visualmente: ${newArea}`);
+                    
+                    // 🆕 CRÍTICO: Marcar como cambio programático para evitar loop
+                    dropdown.dataset.programmaticChange = 'true';
+                    
+                    // 🆕 CRÍTICO: Dispatchear evento change para activar listeners
+                    const changeEvent = new Event('change', { bubbles: true, cancelable: true });
+                    dropdown.dispatchEvent(changeEvent);
+                    console.log(`✅ Evento 'change' disparado en dropdown (marcado como programático)`);
                 }
                 
-                StorageModule.broadcastUpdate('area_update', orderId, 'area', newArea, oldArea);
+                // 🔴 COMENTADO: La actualización de estados de procesos está causando problemas
+                // NO vamos a actualizar automáticamente procesos cuando se cambia el área
+                // El usuario es responsable de marcar los procesos como completados cuando corresponda
+                // console.log('📍 Actualizando estados de procesos...');
+                // await this._updateProcessStates(orderId, oldArea, newArea);
+                
+                // 🆕 Actualizar color de fila
+                if (window.RowManager && typeof window.RowManager.updateRowColor === 'function') {
+                    window.RowManager.updateRowColor(orderId);
+                    console.log('✅ Color de fila actualizado');
+                } else if (RowManager && typeof RowManager.updateRowColor === 'function') {
+                    RowManager.updateRowColor(orderId);
+                    console.log('✅ Color de fila actualizado');
+                }
+                
+                console.log('📢 Broadcast de actualización de área');
+                // Usar window.StorageModule si está disponible
+                if (window.StorageModule && typeof window.StorageModule.broadcastUpdate === 'function') {
+                    window.StorageModule.broadcastUpdate('area_update', orderId, 'area', newArea, oldArea);
+                } else if (StorageModule && typeof StorageModule.broadcastUpdate === 'function') {
+                    StorageModule.broadcastUpdate('area_update', orderId, 'area', newArea, oldArea);
+                }
+                
+                // 🆕 CRÍTICO: Asegurar que el dropdown está visible y actualizado en la tabla
+                if (dropdown && dropdown.closest('table') !== null) {
+                    // Está en la tabla, hacer un pequeño refresh visual
+                    dropdown.blur();
+                    dropdown.focus();
+                    console.log('✅ Dropdown refrescado visualmente (blur/focus)');
+                }
+                
+                // 🆕 CRÍTICO: Forzar refrescamiento de la fila en la tabla desde el servidor
+                // Esto asegura que la tabla se vea actualizada incluso si el modal estaba abierto
+                this._refreshRowInTable(orderId, newArea);
+                
+                console.log('✅ Actualización de área completada');
             } else {
-                this._handleError(dropdown, oldArea, 'area');
+                throw new Error(data.message || 'Error desconocido al actualizar área');
             }
-        });
+        } catch (error) {
+            console.error('❌ Error en updateOrderArea:', error);
+            if (dropdown) {
+                dropdown.value = oldArea;
+                dropdown.dataset.value = oldArea;
+                console.log(`⚠️ Dropdown restaurado a valor anterior: ${oldArea}`);
+            }
+        }
+    },
+
+    /**
+     * 🆕 Marca el proceso anterior como Completado y el nuevo como Pendiente
+     */
+    async _updateProcessStates(orderId, oldArea, newArea) {
+        try {
+            // Obtener los procesos de la orden
+            const response = await fetch(`/api/ordenes/${orderId}/procesos`);
+            if (!response.ok) {
+                console.warn('⚠️ No se pudieron obtener los procesos');
+                return;
+            }
+            
+            const data = await response.json();
+            const procesos = data.procesos || [];
+            
+            // Encontrar el índice del área anterior y la nueva
+            const oldAreaIndex = procesos.findIndex(p => p.proceso === oldArea);
+            const newAreaIndex = procesos.findIndex(p => p.proceso === newArea);
+            
+            // Actualizar el proceso anterior a "Completado"
+            if (oldAreaIndex !== -1 && procesos[oldAreaIndex].estado_proceso !== 'Completado') {
+                await this._updateProcessState(procesos[oldAreaIndex], 'Completado');
+            }
+            
+            // Actualizar el nuevo proceso a "Pendiente"
+            if (newAreaIndex !== -1 && procesos[newAreaIndex].estado_proceso !== 'Pendiente') {
+                await this._updateProcessState(procesos[newAreaIndex], 'Pendiente');
+            }
+        } catch (error) {
+            console.error('❌ Error al actualizar estados de procesos:', error);
+        }
+    },
+
+    /**
+     * 🆕 Actualiza el estado de un proceso individual
+     */
+    async _updateProcessState(proceso, nuevoEstado) {
+        try {
+            const response = await fetch(`/api/procesos/${proceso.id}/editar`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    numero_pedido: proceso.numero_pedido,
+                    proceso: proceso.proceso,
+                    fecha_inicio: proceso.fecha_inicio,
+                    encargado: proceso.encargado || '',
+                    estado_proceso: nuevoEstado
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Error al actualizar proceso');
+            }
+            
+            const data = await response.json();
+            console.log(`✅ Proceso actualizado: ${proceso.proceso} → ${nuevoEstado}`);
+            return data;
+        } catch (error) {
+            console.error(`❌ Error al actualizar proceso ${proceso.proceso}:`, error);
+            throw error;
+        }
     },
 
     /**
@@ -124,6 +256,50 @@ const UpdatesModule = {
                 NotificationModule.showAutoReload('Múltiples errores. Recargando página...', 3000);
                 setTimeout(() => window.location.reload(), 3000);
             }
+        }
+    },
+
+    /**
+     * 🆕 Refrescar fila en la tabla actualizando el dropdown de área
+     */
+    _refreshRowInTable(orderId, newArea) {
+        try {
+            // Buscar la fila en la tabla (por numero_pedido, que es orderId)
+            const tabla = document.querySelector('table#tablaOrdenes tbody');
+            if (!tabla) {
+                console.warn('⚠️ Tabla no encontrada para refrescar');
+                return;
+            }
+            
+            const fila = tabla.querySelector(`tr[data-numero-pedido="${orderId}"]`);
+            if (!fila) {
+                console.warn(`⚠️ Fila ${orderId} no encontrada en tabla`);
+                return;
+            }
+            
+            // Obtener el dropdown de área de esta fila
+            const dropdown = fila.querySelector(`.area-dropdown[data-id="${orderId}"]`);
+            if (!dropdown) {
+                console.warn(`⚠️ Dropdown de área no encontrado en fila ${orderId}`);
+                return;
+            }
+            
+            console.log(`🔄 Refrescando dropdown de tabla: ${dropdown.value} → ${newArea}`);
+            
+            // 🆕 Actualizar el value y dataset
+            dropdown.value = newArea;
+            dropdown.dataset.value = newArea;
+            
+            // 🆕 CRÍTICO: Marcar como actualizado para que se vea en la tabla
+            // Esto dispara el cambio visual en el navegador
+            const event = new Event('input', { bubbles: true });
+            dropdown.dispatchEvent(event);
+            
+            console.log(`✅ Dropdown de tabla refrescado: ${newArea}`);
+            console.log(`✅ Evento 'input' disparado para actualizar vista`);
+            
+        } catch (error) {
+            console.error('❌ Error refrescando fila en tabla:', error);
         }
     },
 

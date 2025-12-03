@@ -5,7 +5,7 @@
 
 // Variables globales
 window.imagenesEnMemoria = { prenda: [], tela: [], general: [] };
-window.especificacionesSeleccionadas = [];
+window.especificacionesSeleccionadas = {};
 
 console.log('🔵 Sistema de cotizaciones inicializado');
 

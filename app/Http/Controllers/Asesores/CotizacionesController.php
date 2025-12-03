@@ -266,7 +266,10 @@ class CotizacionesController extends Controller
             $datosFormulario = $this->formatterService->procesarInputsFormulario($validado);
             
             \Log::info('Datos procesados por FormatterService', [
-                'keys' => array_keys($datosFormulario)
+                'keys' => array_keys($datosFormulario),
+                'especificaciones_presente' => !empty($datosFormulario['especificaciones']),
+                'especificaciones_count' => count($datosFormulario['especificaciones'] ?? []),
+                'especificaciones_keys' => array_keys($datosFormulario['especificaciones'] ?? [])
             ]);
             
             $tipo = $validado['tipo'] ?? 'borrador';
@@ -406,10 +409,41 @@ class CotizacionesController extends Controller
         if (request()->wantsJson()) {
             $prendas = $cotizacion->prendasCotizaciones ?? collect();
             
+            // Extraer forma de pago del array de especificaciones
+            $formaPago = '';
+            $especificaciones = $cotizacion->especificaciones;
+            
+            // Si es string JSON, decodificar
+            if (is_string($especificaciones)) {
+                $especificaciones = json_decode($especificaciones, true) ?? [];
+            }
+            
+            \Log::debug('Extrayendo forma_pago', [
+                'especificaciones_type' => gettype($especificaciones),
+                'especificaciones' => $especificaciones
+            ]);
+            
+            if (is_array($especificaciones)) {
+                $formaPagoArray = $especificaciones['forma_pago'] ?? null;
+                \Log::debug('forma_pago encontrado', [
+                    'formaPagoArray_type' => gettype($formaPagoArray),
+                    'formaPagoArray' => $formaPagoArray
+                ]);
+                
+                if (is_array($formaPagoArray) && !empty($formaPagoArray)) {
+                    $formaPago = $formaPagoArray[0];
+                } elseif (is_string($formaPagoArray)) {
+                    $formaPago = $formaPagoArray;
+                }
+            }
+            
+            \Log::debug('forma_pago final', ['formaPago' => $formaPago]);
+            
             $respuesta = response()->json([
                 'id' => $cotizacion->id,
                 'cliente' => $cotizacion->cliente,
                 'asesora' => $cotizacion->asesora,
+                'forma_pago' => $formaPago,
                 'prendas' => $prendas->map(function($prenda) {
                     $variante = $prenda->variantes?->first();
                     
@@ -740,6 +774,75 @@ class CotizacionesController extends Controller
                 'message' => 'Error al eliminar la imagen: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Obtener valores únicos para filtros
+     * Devuelve los valores únicos de cada columna para los dropdowns de filtro
+     */
+    public function obtenerValoresFiltro()
+    {
+        $userId = Auth::id();
+
+        // Obtener valores únicos de cada columna
+        $fechas = Cotizacion::where('user_id', $userId)
+            ->where('es_borrador', false)
+            ->distinct()
+            ->orderBy('created_at', 'desc')
+            ->pluck('created_at')
+            ->map(fn($date) => $date->format('d/m/Y'))
+            ->unique()
+            ->values();
+
+        $codigos = Cotizacion::where('user_id', $userId)
+            ->where('es_borrador', false)
+            ->distinct()
+            ->whereNotNull('numero_cotizacion')
+            ->pluck('numero_cotizacion')
+            ->unique()
+            ->sort()
+            ->values();
+
+        $clientes = Cotizacion::where('user_id', $userId)
+            ->where('es_borrador', false)
+            ->distinct()
+            ->whereNotNull('cliente')
+            ->pluck('cliente')
+            ->unique()
+            ->sort()
+            ->values();
+
+        $tipos = Cotizacion::where('user_id', $userId)
+            ->where('es_borrador', false)
+            ->distinct()
+            ->get()
+            ->map(fn($cot) => $cot->obtenerTipoCotizacion())
+            ->map(fn($tipo) => match($tipo) {
+                'P' => 'Prenda',
+                'B' => 'Logo',
+                'PB' => 'Prenda/Bordado',
+                default => $tipo
+            })
+            ->unique()
+            ->sort()
+            ->values();
+
+        $estados = Cotizacion::where('user_id', $userId)
+            ->where('es_borrador', false)
+            ->distinct()
+            ->pluck('estado')
+            ->unique()
+            ->map(fn($estado) => ucfirst($estado))
+            ->sort()
+            ->values();
+
+        return response()->json([
+            'fechas' => $fechas,
+            'codigos' => $codigos,
+            'clientes' => $clientes,
+            'tipos' => $tipos,
+            'estados' => $estados
+        ]);
     }
 }
 

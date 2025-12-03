@@ -73,6 +73,9 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/api/registros/{numero_pedido}/dias', [RegistroOrdenController::class, 'calcularDiasAPI'])->name('api.registros.dias');
     Route::get('/api/bodega/{numero_pedido}/dias', [RegistroBodegaController::class, 'calcularDiasAPI'])->name('api.bodega.dias');
     Route::get('/api/ordenes/{id}/procesos', [App\Http\Controllers\OrdenController::class, 'getProcesos'])->name('api.ordenes.procesos');
+    Route::put('/api/procesos/{id}/editar', [App\Http\Controllers\OrdenController::class, 'editarProceso'])->name('api.procesos.editar');
+    Route::delete('/api/procesos/{id}/eliminar', [App\Http\Controllers\OrdenController::class, 'eliminarProceso'])->name('api.procesos.eliminar');
+    Route::post('/api/procesos/buscar', [App\Http\Controllers\OrdenController::class, 'buscarProceso'])->name('api.procesos.buscar');
     Route::get('/api/tabla-original/{numeroPedido}/procesos', [RegistroOrdenController::class, 'getProcesosTablaOriginal'])->name('api.tabla-original.procesos');
     Route::get('/api/tabla-original-bodega/{numeroPedido}/procesos', [RegistroBodegaController::class, 'getProcesosTablaOriginal'])->name('api.tabla-original-bodega.procesos');
     Route::post('/api/registros/dias-batch', [RegistroOrdenController::class, 'calcularDiasBatchAPI'])->name('api.registros.dias-batch');
@@ -250,6 +253,7 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     // COTIZACIONES - Gestión de cotizaciones y borradores
     // ========================================
     Route::get('/cotizaciones', [App\Http\Controllers\Asesores\CotizacionesController::class, 'index'])->name('cotizaciones.index');
+    Route::get('/cotizaciones/filtros/valores', [App\Http\Controllers\Asesores\CotizacionesController::class, 'obtenerValoresFiltro'])->name('cotizaciones.filtros.valores');
     Route::post('/cotizaciones/guardar', [App\Http\Controllers\Asesores\CotizacionesController::class, 'guardar'])->name('cotizaciones.guardar');
     Route::post('/cotizaciones/guardar-test', [App\Http\Controllers\Asesores\CotizacionesController::class, 'guardarTest'])->name('cotizaciones.guardar-test');
     Route::post('/cotizaciones/{id}/imagenes', [App\Http\Controllers\Asesores\CotizacionesController::class, 'subirImagenes'])->name('cotizaciones.subir-imagenes');

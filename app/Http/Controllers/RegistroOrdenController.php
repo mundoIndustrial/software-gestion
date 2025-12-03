@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants\AreaOptions;
+
 use Illuminate\Http\Request;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
@@ -10,7 +12,6 @@ use App\Models\Cotizacion;
 use App\Services\CacheCalculosService;
 use App\Models\News;
 use App\Models\Festivo;
-use App\Models\TablaOriginal;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 use App\Services\FestivosColombiaService;
@@ -335,19 +336,7 @@ class RegistroOrdenController extends Controller
         $encargadosCreacionOrdenMap = $this->getCreacionOrdenEncargados($numeroPedidosPagina);
 
         // Opciones de áreas disponibles (áreas de procesos)
-        $areaOptions = [
-            'Creación de Orden',
-            'Control Calidad',
-            'Entrega',
-            'Despacho',
-            'Insumos y Telas',
-            'Costura',
-            'Corte',
-            'Bordado',
-            'Estampado',
-            'Lavandería',
-            'Arreglos'
-        ];
+        $areaOptions = AreaOptions::getArray();
         
         // FALLBACK: Si totalDiasCalculados está vacío o falta alguna orden, recalcular
         if (empty($totalDiasCalculados)) {
@@ -645,21 +634,15 @@ class RegistroOrdenController extends Controller
     public function update(Request $request, $pedido)
     {
         try {
+            \Log::info("DEBUG: Datos recibidos en update", [
+                'pedido' => $pedido,
+                'all_request' => $request->all(),
+                'dia_de_entrega' => $request->input('dia_de_entrega')
+            ]);
+
             $orden = PedidoProduccion::where('numero_pedido', $pedido)->firstOrFail();
 
-            $areaOptions = [
-                'Creación de Orden',
-                'Control Calidad',
-                'Entrega',
-                'Despacho',
-                'Insumos y Telas',
-                'Costura',
-                'Corte',
-                'Bordado',
-                'Estampado',
-                'Lavandería',
-                'Arreglos'
-            ];
+            $areaOptions = AreaOptions::getArray();
             $estadoOptions = ['Entregado', 'En Ejecución', 'No iniciado', 'Anulada'];
 
             // Whitelist de columnas permitidas para edición
@@ -683,11 +666,26 @@ class RegistroOrdenController extends Controller
                 'lavanderia', 'arreglos', 'control_de_calidad', 'entrega', 'despacho'
             ];
 
+            // Validar área manualmente en lugar de usar la regla 'in'
+            $areaRecibida = $request->input('area');
+            $areasValidas = AreaOptions::getArray();
+            
+            if ($areaRecibida && !in_array($areaRecibida, $areasValidas)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "El área '{$areaRecibida}' no es válida. Áreas válidas: " . implode(', ', $areasValidas)
+                ], 422);
+            }
+
             $validatedData = $request->validate([
                 'estado' => 'nullable|in:' . implode(',', $estadoOptions),
-                'area' => 'nullable|in:' . implode(',', $areaOptions),
                 'dia_de_entrega' => 'nullable|integer|in:15,20,25,30',
             ]);
+            
+            // Agregar el área validada manualmente
+            if ($areaRecibida) {
+                $validatedData['area'] = $areaRecibida;
+            }
             
             // Convertir string vacío a null para dia_de_entrega
             if (isset($validatedData['dia_de_entrega']) && $validatedData['dia_de_entrega'] === '') {
@@ -716,45 +714,43 @@ class RegistroOrdenController extends Controller
             if (array_key_exists('area', $validatedData)) {
                 $nuevaArea = $validatedData['area'];
                 
-                // NO actualizar tabla_original, en su lugar crear o actualizar un proceso en procesos_prenda
-                // Solo crear si no existe, pero SÍ actualizar fecha_inicio si ya existe
-                $procesoExistente = DB::table('procesos_prenda')
-                    ->where('numero_pedido', $pedido)
+                // Crear o actualizar un proceso en procesos_prenda usando el modelo Eloquent
+                // Esto dispara el Observer que actualiza el área en pedidos_produccion
+                $procesoExistente = ProcesoPrenda::where('numero_pedido', $pedido)
                     ->where('proceso', $nuevaArea)
                     ->first();
                 
                 if (!$procesoExistente) {
-                    // Crear nuevo proceso
-                    DB::table('procesos_prenda')->insert([
+                    // Crear nuevo proceso usando Eloquent (dispara Observer)
+                    ProcesoPrenda::create([
                         'numero_pedido' => $pedido,
                         'proceso' => $nuevaArea,
                         'fecha_inicio' => now()->toDateTimeString(),
-                        'encargado' => auth()->user()->name ?? 'Sistema',
-                        'created_at' => now(),
-                        'updated_at' => now()
+                        'encargado' => auth()->user()->name ?? 'Sistema'
                     ]);
                     \Log::info("Proceso CREADO para pedido {$pedido}: {$nuevaArea}");
                 } else {
                     // Actualizar solo la fecha_inicio si ya existe
-                    DB::table('procesos_prenda')
-                        ->where('numero_pedido', $pedido)
-                        ->where('proceso', $nuevaArea)
-                        ->update([
-                            'fecha_inicio' => now()->toDateTimeString(),
-                            'encargado' => auth()->user()->name ?? 'Sistema',
-                            'updated_at' => now()
-                        ]);
+                    $procesoExistente->update([
+                        'fecha_inicio' => now()->toDateTimeString(),
+                        'encargado' => auth()->user()->name ?? 'Sistema'
+                    ]);
                     \Log::info("Proceso ACTUALIZADO para pedido {$pedido}: {$nuevaArea}");
                 }
             }
             if (array_key_exists('dia_de_entrega', $validatedData)) {
-                $updates['dia_de_entrega'] = $validatedData['dia_de_entrega'];
-                
-                // Recalcular fecha_estimada_de_entrega si se actualiza dia_de_entrega
-                $orden->dia_de_entrega = $validatedData['dia_de_entrega'];
-                $fechaEstimada = $orden->calcularFechaEstimada();
-                if ($fechaEstimada) {
-                    $updates['fecha_estimada_de_entrega'] = $fechaEstimada->format('Y-m-d');
+                $diaEntrega = $validatedData['dia_de_entrega'];
+                if ($diaEntrega !== null) {
+                    $updates['dia_de_entrega'] = $diaEntrega;
+                    
+                    // Recalcular fecha_estimada_de_entrega si se actualiza dia_de_entrega
+                    $orden->dia_de_entrega = $diaEntrega;
+                    $fechaEstimada = $orden->calcularFechaEstimada();
+                    if ($fechaEstimada) {
+                        $updates['fecha_estimada_de_entrega'] = $fechaEstimada->format('Y-m-d');
+                    }
+                    
+                    \Log::info("Día de entrega actualizado para pedido {$pedido}: {$diaEntrega}");
                 }
             }
 
@@ -1760,15 +1756,14 @@ class RegistroOrdenController extends Controller
      * Obtener imágenes de una orden
      * GET /registros/{pedido}/images
      * 
-     * Busca primero en PedidoProduccion (nuevos pedidos)
-     * Si no encuentra, busca en TablaOriginal (histórico)
+     * Busca en PedidoProduccion y sus relaciones
      */
     public function getOrderImages($pedido)
     {
         try {
             $images = [];
             
-            // Intentar obtener desde PedidoProduccion primero
+            // Obtener desde PedidoProduccion
             $pedidoProduccion = PedidoProduccion::where('numero_pedido', $pedido)->first();
             
             if ($pedidoProduccion) {
@@ -1777,24 +1772,6 @@ class RegistroOrdenController extends Controller
                     $cotizacion = Cotizacion::find($pedidoProduccion->cotizacion_id);
                     if ($cotizacion && $cotizacion->imagenes) {
                         $images = is_array($cotizacion->imagenes) ? $cotizacion->imagenes : [];
-                    }
-                }
-            } else {
-                // Si no está en PedidoProduccion, buscar en TablaOriginal (histórico)
-                $orden = TablaOriginal::where('pedido', $pedido)->first();
-                
-                if ($orden && $orden->imagen) {
-                    // Si es JSON (array de URLs)
-                    if (is_string($orden->imagen)) {
-                        $imagenDecoded = json_decode($orden->imagen, true);
-                        if (is_array($imagenDecoded)) {
-                            $images = $imagenDecoded;
-                        } else {
-                            // Es una URL simple
-                            $images[] = $orden->imagen;
-                        }
-                    } elseif (is_array($orden->imagen)) {
-                        $images = $orden->imagen;
                     }
                 }
             }
@@ -1864,23 +1841,25 @@ class RegistroOrdenController extends Controller
     }
 
     /**
-     * API: Obtener procesos de una orden desde tabla_original (para bodega tracking)
+     * API: Obtener procesos de una orden (para bodega tracking)
      * Busca en procesos_prenda usando el número de pedido
      */
     public function getProcesosTablaOriginal($numeroPedido)
     {
         try {
-            // Buscar la orden en tabla_original
-            $orden = TablaOriginal::where('pedido', $numeroPedido)->firstOrFail();
+            // Buscar la orden en pedidos_produccion
+            $orden = PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
 
             // Obtener festivos
             $festivos = Festivo::pluck('fecha')->toArray();
 
             // Obtener los procesos ordenados por fecha_inicio desde procesos_prenda
+            // Excluir soft-deleted
             $procesos = DB::table('procesos_prenda')
                 ->where('numero_pedido', $numeroPedido)
+                ->whereNull('deleted_at')  // Excluir soft-deleted
                 ->orderBy('fecha_inicio', 'asc')
-                ->select('proceso', 'fecha_inicio', 'encargado', 'estado_proceso')
+                ->select('id', 'proceso', 'fecha_inicio', 'encargado', 'estado_proceso')
                 ->get()
                 ->groupBy('proceso')
                 ->map(function($grupo) {
@@ -1918,7 +1897,7 @@ class RegistroOrdenController extends Controller
                 'festivos' => $festivos
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error en getProcesosTablaOriginal: ' . $e->getMessage());
+            \Log::error('Error al obtener procesos de orden: ' . $e->getMessage());
             return response()->json([
                 'error' => 'No se encontró la orden o no tiene permiso para verla'
             ], 404);

@@ -220,7 +220,9 @@
             $especificacionesData = $cotizacion->especificaciones ?? [];
             
             // Convertir a array si es necesario
-            if (!is_array($especificacionesData)) {
+            if (is_string($especificacionesData)) {
+                $especificacionesData = json_decode($especificacionesData, true) ?? [];
+            } elseif (!is_array($especificacionesData)) {
                 $especificacionesData = (array) $especificacionesData;
             }
             

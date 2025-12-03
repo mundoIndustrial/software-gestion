@@ -43,6 +43,12 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
 
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Toast Notifications Global -->
+    <script src="{{ asset('js/toast-notifications.js') }}"></script>
+
     <!-- Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 

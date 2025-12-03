@@ -16,15 +16,30 @@ const DiaEntregaModule = {
      */
     initialize() {
         console.log('📅 Inicializando módulo de día de entrega');
+        console.log('📅 Buscando selectores .dia-entrega-dropdown...');
+        const selectors = document.querySelectorAll('.dia-entrega-dropdown');
+        console.log(`📅 Encontrados ${selectors.length} selectores`);
+        
+        // Adjuntar listeners directamente a cada selector
+        selectors.forEach(select => {
+            console.log(`📅 Adjuntando listener a selector:`, select);
+            select.addEventListener('change', (e) => {
+                console.log('📅 Evento change disparado en:', e.target);
+                this.handleDiaEntregaChange(e.target);
+            });
+        });
+        
+        // También usar delegación de eventos para selectores dinámicos
         this._attachEventListeners();
     },
 
     /**
-     * Adjuntar listeners a todos los dropdowns de día de entrega
+     * Adjuntar listeners a todos los dropdowns de día de entrega (delegación)
      */
     _attachEventListeners() {
         document.addEventListener('change', (e) => {
-            if (e.target.classList.contains('dia-entrega-select')) {
+            if (e.target.classList.contains('dia-entrega-dropdown')) {
+                console.log('📅 Evento delegado detectado en:', e.target);
                 this.handleDiaEntregaChange(e.target);
             }
         });
@@ -34,10 +49,18 @@ const DiaEntregaModule = {
      * Manejar cambio en el dropdown de día de entrega
      */
     handleDiaEntregaChange(select) {
-        const numeroOrden = select.dataset.numeroOrden;
+        console.log('📅 handleDiaEntregaChange llamado');
+        console.log('📅 Dataset:', select.dataset);
+        
+        const numeroOrden = select.dataset.id || select.dataset.numeroOrden;
         const value = select.value;
         
-        if (!numeroOrden || !value) return;
+        console.log(`📅 numeroOrden: ${numeroOrden}, value: ${value}`);
+        
+        if (!numeroOrden || !value) {
+            console.log('📅 Falta numeroOrden o value, retornando');
+            return;
+        }
         
         console.log(`📅 Cambio detectado en orden ${numeroOrden}: ${value} días`);
         
@@ -104,7 +127,16 @@ const DiaEntregaModule = {
             return;
         }
 
-        UpdatesModule.updateOrderDiaEntrega(numeroOrden, days);
+        // Obtener el dropdown y el valor anterior
+        const select = document.querySelector(`.dia-entrega-dropdown[data-id="${numeroOrden}"]`);
+        if (!select) {
+            console.error(`❌ Dropdown no encontrado para orden ${numeroOrden}`);
+            return;
+        }
+
+        const oldDias = select.dataset.value || select.value;
+        console.log(`📝 Enviando actualización: Orden ${numeroOrden}, Días: ${days}, Anterior: ${oldDias}`);
+        UpdatesModule.updateOrderDiaEntrega(numeroOrden, days, oldDias, select);
     },
 
     /**

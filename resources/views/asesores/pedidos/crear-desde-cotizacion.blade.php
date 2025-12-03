@@ -2,6 +2,10 @@
 
 @include('components.modal-imagen')
 
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+@endpush
+
 @push('styles')
 <style>
     .top-nav {
@@ -25,20 +29,20 @@
     .page-header {
         background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
         color: white;
-        padding: 1.5rem;
+        padding: 1rem 1.5rem;
         margin-bottom: 1.5rem;
         border-radius: 9px;
         box-shadow: 0 10px 30px rgba(30, 64, 175, 0.15);
     }
 
     .page-header h1 {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
         font-weight: 800;
-        margin: 0 0 0.375rem 0;
+        margin: 0 0 0.25rem 0;
     }
 
     .page-header p {
-        font-size: 0.7125rem;
+        font-size: 0.65rem;
         opacity: 0.95;
         margin: 0;
     }
@@ -118,8 +122,20 @@
 
     .form-row {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(187.5px, 1fr));
+        grid-template-columns: 1fr;
         gap: 1.125rem;
+    }
+    
+    @media (min-width: 768px) {
+        .form-row {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+    
+    @media (min-width: 1024px) {
+        .form-row {
+            grid-template-columns: repeat(3, 1fr);
+        }
     }
 
     .bg-white {
@@ -490,13 +506,13 @@
 @endpush
 
 @section('content')
-<div class="container mx-auto px-4 py-8">
-    <!-- Header -->
-    <div class="page-header">
-        <h1>📋 Crear Pedido de Producción</h1>
-        <p>Selecciona una cotización y agrega las cantidades por talla</p>
-    </div>
+<!-- Header Full Width -->
+<div class="page-header" style="margin: -0.5rem -1rem 1.5rem -1rem; padding: 1rem 1.5rem; border-radius: 0; width: calc(100% + 2rem);">
+    <h1>📋 Crear Pedido de Producción</h1>
+    <p>Selecciona una cotización y agrega las cantidades por talla</p>
+</div>
 
+<div class="container mx-auto px-4 py-8">
     <form id="formCrearPedido" class="space-y-6">
         @csrf
 
@@ -537,17 +553,33 @@
                 if (is_array($cot->especificaciones)) {
                     $formaPagoArray = $cot->especificaciones['forma_pago'] ?? null;
                     // Si es un array, tomar el primer elemento
-                    $formaPago = is_array($formaPagoArray) && count($formaPagoArray) > 0 ? $formaPagoArray[0] : ($formaPagoArray ?? '');
+                    if (is_array($formaPagoArray) && count($formaPagoArray) > 0) {
+                        $formaPago = $formaPagoArray[0];
+                    } elseif (is_string($formaPagoArray)) {
+                        $formaPago = $formaPagoArray;
+                    }
                 } elseif (is_object($cot->especificaciones)) {
                     $formaPagoArray = $cot->especificaciones->forma_pago ?? null;
                     // Si es un array, tomar el primer elemento
-                    $formaPago = is_array($formaPagoArray) && count($formaPagoArray) > 0 ? $formaPagoArray[0] : ($formaPagoArray ?? '');
+                    if (is_array($formaPagoArray) && count($formaPagoArray) > 0) {
+                        $formaPago = $formaPagoArray[0];
+                    } elseif (is_string($formaPagoArray)) {
+                        $formaPago = $formaPagoArray;
+                    }
                 }
                 
                 // Si es null o vacío, intentar desde el campo específico
                 if (empty($formaPago)) {
                     $formaPago = $cot->forma_pago ?? '';
                 }
+                
+                // Debug: mostrar en logs
+                \Log::debug('Cotización forma_pago', [
+                    'id' => $cot->id,
+                    'cliente' => $cliente,
+                    'especificaciones' => $cot->especificaciones,
+                    'formaPago_final' => $formaPago
+                ]);
                 
                 return [
                     'id' => $cot->id,
@@ -771,7 +803,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('numero_cotizacion').value = numero;
         clienteInput.value = cliente;
         asesoraInput.value = asesora;
-        formaPagoInput.value = formaPago;
+        formaPagoInput.value = formaPago || ''; // Usar el valor pasado o vacío
 
         // Cargar prendas de la cotización
         fetch(`/asesores/cotizaciones/${id}`, {
@@ -787,6 +819,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 return response.json();
             })
             .then(data => {
+                console.log('📥 Datos de cotización recibidos:', data);
+                
+                // Usar forma_pago directamente desde los datos
+                if (data.forma_pago) {
+                    console.log('✅ Forma de pago desde servidor:', data.forma_pago);
+                    formaPagoInput.value = data.forma_pago;
+                } else {
+                    console.log('⚠️ No hay forma de pago en los datos');
+                }
+                
                 cargarPrendas(data.prendas);
             })
             .catch(error => {

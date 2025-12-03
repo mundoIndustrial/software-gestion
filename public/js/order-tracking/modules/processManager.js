@@ -10,8 +10,8 @@ const ProcessManager = (() => {
      */
     function openEditModal(procesoData) {
         const modalHTML = `
-            <div id="editProcesoModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;">
-                <div style="background: white; border-radius: 8px; padding: 24px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+            <div id="editProcesoModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9997;">
+                <div style="background: white; border-radius: 8px; padding: 24px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.3); z-index: 9997;">
                     <h2 style="margin: 0 0 20px 0; font-size: 20px; font-weight: 600; color: #1f2937;">Editar Proceso</h2>
                     
                     <div style="margin-bottom: 16px;">
@@ -72,8 +72,27 @@ const ProcessManager = (() => {
      * Convierte fecha a formato yyyy-mm-dd para input date
      */
     function convertToDateInput(dateString) {
-        const fechaParts = dateString.split('-');
-        return fechaParts.length === 3 ? dateString : new Date(dateString).toISOString().split('T')[0];
+        if (!dateString) return '';
+        
+        // Si ya está en formato yyyy-mm-dd, devolver como está
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+            return dateString;
+        }
+        
+        // Intentar parsear diferentes formatos
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) {
+                return '';
+            }
+            // Convertir a UTC para evitar problemas de zona horaria
+            const year = date.getUTCFullYear();
+            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(date.getUTCDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        } catch (e) {
+            return '';
+        }
     }
     
     /**
@@ -102,17 +121,25 @@ const ProcessManager = (() => {
                     icon: 'warning',
                     title: 'Campos requeridos',
                     text: 'Por favor completa todos los campos',
-                    confirmButtonColor: '#3b82f6'
+                    confirmButtonColor: '#3b82f6',
+                    didOpen: (modal) => {
+                        const swalContainer = document.querySelector('.swal2-container');
+                        if (swalContainer) {
+                            swalContainer.style.zIndex = '10002';
+                        }
+                        modal.style.zIndex = '10002';
+                    }
                 });
                 return;
             }
             
-            // Buscar proceso
-            const buscarData = await ApiClient.buscarProceso(procesoOriginal.numero_pedido, procesoOriginal.proceso);
-            const procesoId = buscarData.id;
+            // Usar el ID del proceso original para actualizar
+            if (!procesoOriginal.id) {
+                throw new Error('ID de proceso no disponible');
+            }
             
             // Actualizar proceso
-            const result = await ApiClient.updateProceso(procesoId, {
+            const result = await ApiClient.updateProceso(procesoOriginal.id, {
                 numero_pedido: procesoOriginal.numero_pedido,
                 proceso,
                 fecha_inicio,
@@ -123,25 +150,47 @@ const ProcessManager = (() => {
             if (result.success) {
                 closeEditModal();
                 
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Guardado',
-                    text: 'Proceso actualizado correctamente',
-                    timer: 1500,
+                // Usar toast en lugar de modal
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000,
                     timerProgressBar: true,
-                    confirmButtonColor: '#10b981',
+                    didOpen: (toast) => {
+                        const container = document.querySelector('.swal2-container');
+                        if (container) container.style.zIndex = '99999';
+                        toast.addEventListener('mouseenter', Swal.stopTimer);
+                        toast.addEventListener('mouseleave', Swal.resumeTimer);
+                    },
                     didClose: () => reloadTrackingModal()
+                });
+                Toast.fire({
+                    icon: 'success',
+                    title: 'Guardado exitosamente'
                 });
             } else {
                 throw new Error(result.message);
             }
         } catch (error) {
             console.error('Error al guardar:', error);
-            Swal.fire({
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    const container = document.querySelector('.swal2-container');
+                    if (container) container.style.zIndex = '99999';
+                    toast.addEventListener('mouseenter', Swal.stopTimer);
+                    toast.addEventListener('mouseleave', Swal.resumeTimer);
+                }
+            });
+            Toast.fire({
                 icon: 'error',
-                title: 'Error',
-                text: error.message,
-                confirmButtonColor: '#ef4444'
+                title: 'Error al guardar',
+                text: error.message
             });
         } finally {
             btnGuardar.disabled = false;
@@ -153,6 +202,25 @@ const ProcessManager = (() => {
     /**
      * Elimina un proceso
      */
+    /**
+     * Espera a que UpdatesModule esté disponible
+     */
+    function waitForUpdatesModule(maxAttempts = 10) {
+        return new Promise((resolve, reject) => {
+            let attempts = 0;
+            const interval = setInterval(() => {
+                if (window.UpdatesModule || globalThis.UpdatesModule) {
+                    clearInterval(interval);
+                    resolve(window.UpdatesModule || globalThis.UpdatesModule);
+                } else if (attempts >= maxAttempts) {
+                    clearInterval(interval);
+                    reject(new Error('UpdatesModule no disponible después de múltiples intentos'));
+                }
+                attempts++;
+            }, 100);
+        });
+    }
+
     async function deleteProcess(procesoData) {
         const confirmed = await Swal.fire({
             icon: 'warning',
@@ -162,7 +230,14 @@ const ProcessManager = (() => {
             confirmButtonColor: '#ef4444',
             cancelButtonColor: '#6b7280',
             confirmButtonText: 'Sí, eliminar',
-            cancelButtonText: 'Cancelar'
+            cancelButtonText: 'Cancelar',
+            didOpen: (modal) => {
+                const swalContainer = document.querySelector('.swal2-container');
+                if (swalContainer) {
+                    swalContainer.style.zIndex = '99999';
+                }
+                modal.style.zIndex = '99999';
+            }
         });
         
         if (!confirmed.isConfirmed) {
@@ -170,34 +245,205 @@ const ProcessManager = (() => {
         }
         
         try {
-            const buscarData = await ApiClient.buscarProceso(procesoData.numero_pedido, procesoData.proceso);
-            const procesoId = buscarData.id;
+            if (!procesoData.id) {
+                throw new Error('ID de proceso no disponible');
+            }
             
-            const result = await ApiClient.deleteProceso(procesoId, procesoData.numero_pedido);
+            const result = await ApiClient.deleteProceso(procesoData.id, procesoData.numero_pedido);
             
             if (result.success) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Eliminado',
-                    text: 'Proceso eliminado correctamente',
-                    timer: 1500,
-                    timerProgressBar: true,
-                    confirmButtonColor: '#10b981',
-                    didClose: () => reloadTrackingModal()
+                if (typeof showToast === 'function') {
+                    showToast('Proceso eliminado exitosamente', 'success');
+                } else {
+                    console.log('✅ Proceso eliminado exitosamente');
+                }
+                
+                // 🆕 IMPORTANTE: El Observer ya actualizó el área en la BD
+                // Obtener la orden actualizada para saber cuál es la nueva área
+                const ordenResponse = await fetch(`/registros/${procesoData.numero_pedido}`);
+                const ordenActualizada = await ordenResponse.json();
+                const newAreaFromServer = ordenActualizada.area;
+                
+                console.log(`📡 Área actualizada en servidor: ${newAreaFromServer}`);
+                
+                // Obtener los procesos actualizados (solo para referencia)
+                const procesosData = await fetch(`/api/ordenes/${procesoData.numero_pedido}/procesos`).then(r => r.json());
+                const procesos = procesosData.procesos || [];
+                
+                console.log(`📋 Procesos restantes: ${procesos.length}`);
+                procesos.forEach((p, i) => {
+                    console.log(`   [${i}] ${p.proceso}: ${p.estado_proceso} (fecha: ${p.fecha_inicio})`);
                 });
+                
+                // Usar el área que el Observer ya actualizó en la BD
+                const newArea = newAreaFromServer;
+                
+                // Actualizar el área en la tabla usando UpdatesModule
+                if (newArea) {
+                    try {
+                        const updatesModule = window.UpdatesModule || globalThis.UpdatesModule;
+                        
+                        if (updatesModule) {
+                            let areaDropdown = null;
+                            const tabla = document.querySelector('table#tablaOrdenes tbody');
+                            if (tabla) {
+                                areaDropdown = tabla.querySelector(`.area-dropdown[data-id="${procesoData.numero_pedido}"]`);
+                            }
+                            
+                            const oldArea = areaDropdown?.dataset.value || '';
+                            
+                            console.log(`🔄 [deleteProcess] Llamando UpdatesModule.updateOrderArea`);
+                            console.log(`   - Pedido: ${procesoData.numero_pedido}`);
+                            console.log(`   - Area anterior: ${oldArea}`);
+                            console.log(`   - Area nueva: ${newArea}`);
+                            console.log(`   - Dropdown en tabla encontrado: ${!!areaDropdown}`);
+                            
+                            await updatesModule.updateOrderArea(
+                                procesoData.numero_pedido,
+                                newArea,
+                                oldArea,
+                                areaDropdown
+                            );
+                            
+                            console.log('✅ UpdatesModule.updateOrderArea completado');
+                        } else {
+                            console.warn('⚠️ UpdatesModule no disponible, intentando alternativa...');
+                            const tabla = document.querySelector('table#tablaOrdenes tbody');
+                            const areaDropdown = tabla ? tabla.querySelector(`.area-dropdown[data-id="${procesoData.numero_pedido}"]`) : null;
+                            if (areaDropdown) {
+                                areaDropdown.value = newArea;
+                                areaDropdown.dataset.value = newArea;
+                                areaDropdown.dataset.programmaticChange = 'true';
+                                areaDropdown.dispatchEvent(new Event('change', { bubbles: true }));
+                                console.log('✅ Área actualizada directamente en dropdown de tabla');
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error al actualizar área después de eliminar:', error);
+                    }
+                }
+                
+                // Recargar el modal después de un pequeño delay para asegurar que la BD esté actualizada
+                const numeroPedido = document.getElementById('trackingOrderNumber')?.textContent.replace('#', '');
+                if (numeroPedido) {
+                    // Esperar 300ms para asegurar que la BD esté actualizada
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    
+                    try {
+                        console.log(`🔄 Recargando modal para pedido ${numeroPedido}...`);
+                        const data = await ApiClient.getOrderProcesos(numeroPedido);
+                        console.log(`📋 Procesos recargados: ${data.procesos?.length || 0}`);
+                        
+                        // Recargar el modal con los nuevos datos
+                        if (typeof displayOrderTrackingWithProcesos === 'function') {
+                            displayOrderTrackingWithProcesos(data);
+                            console.log('✅ Modal recargado con nuevos procesos');
+                        } else if (typeof reloadTrackingModal === 'function') {
+                            reloadTrackingModal();
+                            console.log('✅ Modal recargado con reloadTrackingModal');
+                        } else {
+                            console.warn('⚠️ No se encontró función para recargar el modal');
+                        }
+                    } catch (error) {
+                        console.error('Error recargando tracking:', error);
+                    }
+                }
+                
+                // Refrescar la tabla en segundo plano
+                console.log('🔄 Refrescando tabla en segundo plano...');
+                setTimeout(() => {
+                    _refreshTableRow(procesoData.numero_pedido);
+                }, 500);
             } else {
                 throw new Error(result.message);
             }
         } catch (error) {
             console.error('Error al eliminar:', error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: error.message,
-                confirmButtonColor: '#ef4444'
-            });
+            if (typeof showToast === 'function') {
+                showToast(`Error al eliminar: ${error.message}`, 'error');
+            } else {
+                console.error('Error al eliminar:', error);
+            }
         }
     }
+    
+    /**
+     * 🆕 Refrescar una fila específica de la tabla desde el servidor
+     */
+    function _refreshTableRow(numeroPedido) {
+        return (async () => {
+            try {
+                console.log(`📊 Refrescando fila ${numeroPedido} en tabla...`);
+                
+                // Obtener los procesos actuales desde el API
+                const procesosResponse = await fetch(`/api/ordenes/${numeroPedido}/procesos`);
+                if (!procesosResponse.ok) {
+                    console.warn(`⚠️ No se pudieron obtener procesos para ${numeroPedido}`);
+                    return;
+                }
+                
+                const procesosData = await procesosResponse.json();
+                const procesos = procesosData.procesos || [];
+                
+                console.log(`📋 Procesos totales: ${procesos.length}`);
+                procesos.forEach((p, i) => {
+                    console.log(`   [${i}] ${p.proceso}: ${p.estado_proceso}`);
+                });
+                
+                // Buscar el próximo proceso pendiente
+                let proximoProceso = procesos.find(p => p.estado_proceso === 'Pendiente');
+                
+                // Si no hay pendiente, buscar el primer no-completado
+                if (!proximoProceso) {
+                    console.log('⚠️ No hay proceso Pendiente, buscando próximo no-completado...');
+                    proximoProceso = procesos.find(p => p.estado_proceso !== 'Completado');
+                }
+                
+                // Si tampoco hay, simplemente usar el área actual del dropdown
+                if (!proximoProceso) {
+                    console.log('ℹ️ Todos los procesos están completados, no hay cambios que hacer');
+                    return;
+                }
+                
+                const newArea = proximoProceso.proceso;
+                
+                // Buscar la fila en la tabla
+                const tabla = document.querySelector('table#tablaOrdenes tbody');
+                if (!tabla) {
+                    console.warn('⚠️ Tabla no encontrada');
+                    return;
+                }
+                
+                const fila = tabla.querySelector(`tr[data-numero-pedido="${numeroPedido}"]`);
+                if (!fila) {
+                    console.warn(`⚠️ Fila ${numeroPedido} no encontrada en tabla`);
+                    return;
+                }
+                
+                // Actualizar el dropdown de área en la fila
+                const areaDropdown = fila.querySelector(`.area-dropdown[data-id="${numeroPedido}"]`);
+                if (areaDropdown) {
+                    const oldValue = areaDropdown.value;
+                    if (oldValue !== newArea) {
+                        areaDropdown.value = newArea;
+                        areaDropdown.dataset.value = newArea;
+                        
+                        // Disparar evento para actualizar visualmente
+                        areaDropdown.dispatchEvent(new Event('input', { bubbles: true }));
+                        
+                        console.log(`✅ Fila ${numeroPedido} refrescada: ${oldValue} → ${newArea}`);
+                    } else {
+                        console.log(`ℹ️ Fila ${numeroPedido} ya estaba actualizada: ${newArea}`);
+                    }
+                } else {
+                    console.warn(`⚠️ Dropdown de área no encontrado en fila ${numeroPedido}`);
+                }
+            } catch (error) {
+                console.error(`❌ Error refrescando fila ${numeroPedido}:`, error);
+            }
+        })();
+    }
+    
     
     /**
      * Recarga el modal de tracking

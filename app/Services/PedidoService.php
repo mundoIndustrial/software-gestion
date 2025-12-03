@@ -282,8 +282,8 @@ class PedidoService
                 'prenda_pedido_id' => $prenda->id,
                 'proceso' => 'Creación Orden',
                 'estado_proceso' => 'Completado',
-                'fecha_inicio' => now()->toDateString(),
-                'fecha_fin' => now()->toDateString(),
+                'fecha_inicio' => now(),
+                'fecha_fin' => now(),
             ]);
 
             \Log::info('Proceso inicial de prenda creado', [

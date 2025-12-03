@@ -117,6 +117,18 @@ class StoreCotizacionRequest extends FormRequest
                 'imagenes' => json_decode($this->imagenes, true) ?? []
             ]);
         }
+        
+        if (is_string($this->especificaciones ?? null)) {
+            $this->merge([
+                'especificaciones' => json_decode($this->especificaciones, true) ?? []
+            ]);
+        }
+        
+        if (is_string($this->observaciones_generales ?? null)) {
+            $this->merge([
+                'observaciones_generales' => json_decode($this->observaciones_generales, true) ?? []
+            ]);
+        }
     }
 
     /**
