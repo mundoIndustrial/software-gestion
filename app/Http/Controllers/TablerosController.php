@@ -3,17 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Schema;
 use App\Models\RegistroPisoProduccion;
 use App\Models\RegistroPisoPolo;
 use App\Models\RegistroPisoCorte;
-use App\Models\User;
-use App\Models\Hora;
-use App\Models\Maquina;
-use App\Models\Tela;
-use App\Events\ProduccionRecordCreated;
-use App\Events\PoloRecordCreated;
-use App\Events\CorteRecordCreated;
 use App\Services\ProduccionCalculadoraService;
 use App\Services\FiltrosService;
 use App\Services\FiltracionService;
@@ -25,6 +17,8 @@ use App\Services\HoraService;
 use App\Services\CorteService;
 use App\Services\RegistroService;
 use App\Services\DashboardService;
+use App\Services\UpdateService;
+use App\Services\ViewDataService;
 
 class TablerosController extends Controller
 {
@@ -40,6 +34,8 @@ class TablerosController extends Controller
         private CorteService $corteService,
         private RegistroService $registroService,
         private DashboardService $dashboardService,
+        private UpdateService $updateService,
+        private ViewDataService $viewDataService,
     ) {}
 
     public function fullscreen(Request $request)
@@ -81,203 +77,18 @@ class TablerosController extends Controller
 
     public function index()
     {
-        // Optimización: Si es AJAX con parámetro 'section', solo cargar esa sección
+        // Si es AJAX con sección específica, delegar a SectionLoader
         $section = request()->get('section');
         $isAjax = request()->ajax() || request()->wantsJson();
         
-        // Si es AJAX y especifica una sección, devolver solo esa tabla
         if ($isAjax && $section) {
             return $this->sectionLoader->loadSection($section, request());
         }
 
-        // ⚡ OPTIMIZACIÓN CRÍTICA: En la página inicial, limitar a últimos 30 días
-        // si no hay filtros aplicados. Esto hace que cargue mucho más rápido
-        $limit_days = 30; // Mostrar últimos 30 días por defecto
-        $hasFilters = request()->has('filters') || request()->has('filter_type') || 
-                      request()->has('start_date') || request()->has('end_date');
+        // Preparar datos para la vista
+        $viewData = $this->viewDataService->prepareIndexViewData(request());
         
-        if (!$hasFilters) {
-            // Sin filtros, usar límite de 30 días
-            $start_date = now()->subDays($limit_days);
-        } else {
-            // Con filtros, dejar que filtrarRegistrosPorFecha maneje el rango
-            $start_date = now()->subMonths(1); // Permitir búsquedas hasta 1 mes atrás
-        }
-        
-        // TABLAS PRINCIPALES: SIN FILTRO DE FECHA (mostrar todos los registros)
-        // Orden descendente: registros más recientes primero
-        $queryProduccion = RegistroPisoProduccion::whereDate('fecha', '>=', $start_date);
-        $this->filtracion->aplicarFiltrosDinamicos($queryProduccion, request(), 'produccion');
-        // ⚡ OPTIMIZACIÓN: Cargar con SELECT solo las columnas necesarias para la tabla
-        // Esto reduce el tamaño de datos transferidos
-        $registros = $queryProduccion->orderBy('id', 'desc')->paginate(50);
-        $columns = Schema::getColumnListing('registro_piso_produccion');
-        $columns = array_diff($columns, ['id', 'created_at', 'updated_at', 'producida']);
-
-        $queryPolos = RegistroPisoPolo::whereDate('fecha', '>=', $start_date);
-        $this->filtracion->aplicarFiltrosDinamicos($queryPolos, request(), 'polos');
-        $registrosPolos = $queryPolos->orderBy('id', 'desc')->paginate(50);
-        $columnsPolos = Schema::getColumnListing('registro_piso_polo');
-        $columnsPolos = array_diff($columnsPolos, ['id', 'created_at', 'updated_at', 'producida']);
-
-        $queryCorte = RegistroPisoCorte::whereDate('fecha', '>=', $start_date);
-        $this->filtracion->aplicarFiltrosDinamicos($queryCorte, request(), 'corte');
-        // ⚡ OPTIMIZACIÓN: Eager load relaciones ANTES de paginar para evitar N+1 queries
-        $registrosCorte = $queryCorte->with(['hora', 'operario', 'maquina', 'tela'])->orderBy('id', 'desc')->paginate(50);
-        // Ya no necesitamos load() aquí porque eager loading ya cargó las relaciones
-        
-        // 🔍 DEBUG: Verificar que las relaciones se cargaron
-        \Log::info('RegistrosCorte loaded with relations', [
-            'count' => count($registrosCorte->items()),
-            'first_item_has_hora' => !empty($registrosCorte->items()) ? !!$registrosCorte->items()[0]->hora : null,
-            'first_item_hora_value' => !empty($registrosCorte->items()) ? $registrosCorte->items()[0]->hora?->hora : null
-        ]);
-        $columnsCorte = Schema::getColumnListing('registro_piso_corte');
-        $columnsCorte = array_diff($columnsCorte, ['id', 'created_at', 'updated_at', 'producida']);        if (request()->wantsJson()) {
-            return response()->json([
-                'registros' => $registros->items(),
-                'columns' => array_values($columns),
-                'registrosPolos' => $registrosPolos->items(),
-                'columnsPolos' => array_values($columnsPolos),
-                'registrosCorte' => $registrosCorte->map(function($registro) {
-                    $registroArray = $registro->toArray();
-                    // Agregar displays de relaciones para AJAX
-                    if ($registro->hora) {
-                        $registroArray['hora_display'] = $registro->hora->hora;
-                    }
-                    if ($registro->operario) {
-                        $registroArray['operario_display'] = $registro->operario->name;
-                    }
-                    if ($registro->maquina) {
-                        $registroArray['maquina_display'] = $registro->maquina->nombre_maquina;
-                    }
-                    if ($registro->tela) {
-                        $registroArray['tela_display'] = $registro->tela->nombre_tela;
-                    }
-                    return $registroArray;
-                })->toArray(),
-                'columnsCorte' => array_values($columnsCorte),
-                'pagination' => [
-                    'current_page' => $registros->currentPage(),
-                    'last_page' => $registros->lastPage(),
-                    'per_page' => $registros->perPage(),
-                    'total' => $registros->total(),
-                    'first_item' => $registros->firstItem(),
-                    'last_item' => $registros->lastItem(),
-                    'links_html' => $registros->appends(request()->query())->links('vendor.pagination.custom')->render()
-                ],
-                'paginationPolos' => [
-                    'current_page' => $registrosPolos->currentPage(),
-                    'last_page' => $registrosPolos->lastPage(),
-                    'per_page' => $registrosPolos->perPage(),
-                    'total' => $registrosPolos->total(),
-                    'first_item' => $registrosPolos->firstItem(),
-                    'last_item' => $registrosPolos->lastItem(),
-                    'links_html' => $registrosPolos->appends(request()->query())->links('vendor.pagination.custom')->render()
-                ],
-                'paginationCorte' => [
-                    'current_page' => $registrosCorte->currentPage(),
-                    'last_page' => $registrosCorte->lastPage(),
-                    'per_page' => $registrosCorte->perPage(),
-                    'total' => $registrosCorte->total(),
-                    'first_item' => $registrosCorte->firstItem(),
-                    'last_item' => $registrosCorte->lastItem(),
-                    'links_html' => $registrosCorte->appends(request()->query())->links('vendor.pagination.custom')->render()
-                ]
-            ]);
-        }
-
-        // Obtener todos los registros para seguimiento
-        // ⚡ OPTIMIZACIÓN: Detectar si hay filtro de fecha para cargar datos apropiados
-        $endDate = now();
-        
-        // Por defecto, cargar últimos 7 días
-        $startDate = now()->subDays(7);
-        
-        // SI hay filtro de fecha aplicado, calcular el rango necesario
-        $filterType = request()->get('filter_type');
-        if ($filterType) {
-            if ($filterType === 'day') {
-                $specificDate = request()->get('specific_date');
-                if ($specificDate) {
-                    $startDate = \Carbon\Carbon::createFromFormat('Y-m-d', $specificDate)->startOfDay();
-                    $endDate = \Carbon\Carbon::createFromFormat('Y-m-d', $specificDate)->endOfDay();
-                }
-            } elseif ($filterType === 'range') {
-                $startDateStr = request()->get('start_date');
-                $endDateStr = request()->get('end_date');
-                if ($startDateStr && $endDateStr) {
-                    $startDate = \Carbon\Carbon::createFromFormat('Y-m-d', $startDateStr)->startOfDay();
-                    $endDate = \Carbon\Carbon::createFromFormat('Y-m-d', $endDateStr)->endOfDay();
-                }
-            } elseif ($filterType === 'month') {
-                $month = request()->get('month');
-                if ($month) {
-                    $startDate = \Carbon\Carbon::createFromFormat('Y-m', $month)->startOfMonth()->startOfDay();
-                    $endDate = \Carbon\Carbon::createFromFormat('Y-m', $month)->endOfMonth()->endOfDay();
-                }
-            } elseif ($filterType === 'specific') {
-                $specificDates = request()->get('specific_dates');
-                if ($specificDates) {
-                    $datesArray = array_map(function($date) {
-                        return \Carbon\Carbon::createFromFormat('Y-m-d', trim($date));
-                    }, explode(',', $specificDates));
-                    $startDate = collect($datesArray)->min();
-                    $endDate = collect($datesArray)->max()->endOfDay();
-                }
-            }
-        }
-        
-        \Log::info('index() - Cargando registros de seguimiento:', [
-            'startDate' => $startDate->format('Y-m-d H:i:s'),
-            'endDate' => $endDate->format('Y-m-d H:i:s'),
-            'filter_type' => $filterType
-        ]);
-        
-        $todosRegistrosProduccion = RegistroPisoProduccion::whereDate('fecha', '>=', $startDate)->whereDate('fecha', '<=', $endDate)->get();
-        $todosRegistrosPolos = RegistroPisoPolo::whereDate('fecha', '>=', $startDate)->whereDate('fecha', '<=', $endDate)->get();
-        $todosRegistrosCorte = RegistroPisoCorte::whereDate('fecha', '>=', $startDate)->whereDate('fecha', '<=', $endDate)->get(); // Sin cargar relaciones aquí
-
-        // Filtrar registros por fecha SOLO para el tablero activo
-        $activeSection = request()->get('active_section', 'produccion');
-        
-        // Por defecto, usar todos los registros (sin filtro adicional de fecha)
-        $registrosProduccionFiltrados = $todosRegistrosProduccion;
-        $registrosPolosFiltrados = $todosRegistrosPolos;
-        $registrosCorteFiltrados = $todosRegistrosCorte;
-        
-        // Aplicar filtro solo al tablero activo (si hubiera filtros adicionales)
-        if ($activeSection === 'produccion') {
-            $registrosProduccionFiltrados = $this->filtros->filtrarRegistrosPorFecha($todosRegistrosProduccion, request());
-        } elseif ($activeSection === 'polos') {
-            $registrosPolosFiltrados = $this->filtros->filtrarRegistrosPorFecha($todosRegistrosPolos, request());
-        } elseif ($activeSection === 'corte') {
-            $registrosCorteFiltrados = $this->filtros->filtrarRegistrosPorFecha($todosRegistrosCorte, request());
-        }
-
-        // Calcular seguimiento de módulos con registros filtrados
-        $resultadoProduccion = $this->produccionCalc->calcularSeguimientoModulos($registrosProduccionFiltrados);
-        $seguimientoProduccion = $resultadoProduccion;
-        
-        $resultadoPolos = $this->produccionCalc->calcularSeguimientoModulos($registrosPolosFiltrados);
-        $seguimientoPolos = $resultadoPolos;
-        
-        $resultadoCorte = $this->produccionCalc->calcularSeguimientoModulos($registrosCorteFiltrados);
-        $seguimientoCorte = $resultadoCorte;
-        
-        // Calcular datos dinámicos para las tablas de horas y operarios CON FILTROS
-        $horasData = $this->produccionCalc->calcularProduccionPorHoras($registrosCorteFiltrados);
-        $operariosData = $this->produccionCalc->calcularProduccionPorOperarios($registrosCorteFiltrados);
-
-        // Obtener datos para selects en el formulario de corte
-        $horas = Hora::all();
-        $operarios = User::whereHas('role', function($query) {
-            $query->where('name', 'cortador');
-        })->get();
-        $maquinas = Maquina::all();
-        $telas = Tela::all();
-
-        return view('tableros', compact('registros', 'columns', 'registrosPolos', 'columnsPolos', 'registrosCorte', 'columnsCorte', 'seguimientoProduccion', 'seguimientoPolos', 'seguimientoCorte', 'horas', 'operarios', 'maquinas', 'telas', 'horasData', 'operariosData'));
+        return view('tableros', $viewData);
     }
 
     public function store(Request $request)
@@ -289,235 +100,9 @@ class TablerosController extends Controller
 
     public function update(Request $request, $id)
     {
-        $startTime = microtime(true);
+        $result = $this->updateService->update($request, $id);
         
-        $validateStart = microtime(true);
-        $request->validate([
-            'section' => 'required|string|in:produccion,polos,corte',
-        ]);
-
-        $model = match($request->section) {
-            'produccion' => RegistroPisoProduccion::class,
-            'polos' => RegistroPisoPolo::class,
-            'corte' => RegistroPisoCorte::class,
-        };
-
-        $findStart = microtime(true);
-        $registro = $model::findOrFail($id);
-        
-        $validateStart2 = microtime(true);
-        $validated = $request->validate([
-            'fecha' => 'sometimes|date',
-            'modulo' => 'sometimes|string',
-            'orden_produccion' => 'sometimes|string',
-            'hora' => 'sometimes|string',
-            'hora_id' => 'sometimes|integer|exists:horas,id',
-            'operario_id' => 'sometimes|integer|exists:users,id',
-            'maquina_id' => 'sometimes|integer|exists:maquinas,id',
-            'tela_id' => 'sometimes|integer|exists:telas,id',
-            'tiempo_ciclo' => 'sometimes|numeric',
-            'porcion_tiempo' => 'sometimes|numeric|min:0|max:1',
-            'cantidad' => 'sometimes|integer',
-            'paradas_programadas' => 'sometimes|string',
-            'paradas_no_programadas' => 'sometimes|string',
-            'tiempo_parada_no_programada' => 'sometimes|numeric',
-            'numero_operarios' => 'sometimes|integer',
-            'tiempo_para_programada' => 'sometimes|numeric',
-            'meta' => 'sometimes|numeric',
-            'eficiencia' => 'sometimes|numeric',
-        ]);
-
-        try {
-            // ⚡ OPTIMIZACIÓN: Si solo se actualizan campos de relaciones (hora, operario, máquina, tela)
-            // NO recalcular nada, solo guardar y devolver éxito inmediatamente
-            $fieldsRelacionesExternas = ['hora_id', 'operario_id', 'maquina_id', 'tela_id'];
-            $soloRelacionesExternas = true;
-            
-            foreach ($validated as $field => $value) {
-                if (!in_array($field, $fieldsRelacionesExternas)) {
-                    $soloRelacionesExternas = false;
-                    break;
-                }
-            }
-
-            // ⚡ RÁPIDO: Si solo son campos de relaciones, guardar y retornar sin cálculos
-            if ($soloRelacionesExternas) {
-                $registro->update($validated);
-                
-                // ⚡ BROADCAST: Cargar relaciones y emitir evento (ASINCRÓNICO gracias a ShouldBroadcast)
-                if ($request->section === 'corte') {
-                    $registro->load(['hora', 'operario', 'maquina', 'tela']);
-                    try {
-                        broadcast(new CorteRecordCreated($registro));
-                    } catch (\Exception $e) {
-                        \Log::warning('Broadcast error: ' . $e->getMessage());
-                    }
-                }
-                
-                // Retornar inmediatamente
-                $endTime = microtime(true);
-                $duration = ($endTime - $startTime) * 1000;
-                $findDuration = ($findStart - $validateStart) * 1000;
-                $validate2Duration = ($validateStart2 - $findStart) * 1000;
-                
-                \Log::info('TablerosController::update TIMING', [
-                    'total_ms' => round($duration, 2),
-                    'findOrFail_ms' => round($findDuration, 2),
-                    'validate_ms' => round($validate2Duration, 2),
-                    'registro_id' => $id,
-                    'section' => $request->section
-                ]);
-                
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Registro actualizado correctamente.',
-                    'data' => $registro->toArray(), // ⚡ Convertir a array para asegurar relaciones se serializan
-                    'debug' => [
-                        'total_ms' => round($duration, 2),
-                        'findOrFail_ms' => round($findDuration, 2),
-                        'validate_ms' => round($validate2Duration, 2)
-                    ]
-                ]);
-            }
-
-            $registro->update($validated);
-
-            // Recalcular siempre que se actualice cualquier campo que afecte los cálculos
-            // Esto incluye: tiempo_ciclo, porcion_tiempo, numero_operarios, paradas, cantidad, etc.
-            $fieldsToRecalculate = [
-                'porcion_tiempo', 
-                'numero_operarios', 
-                'tiempo_parada_no_programada', 
-                'tiempo_para_programada', 
-                'tiempo_ciclo', 
-                'cantidad',
-                'paradas_programadas',
-                'paradas_no_programadas',
-                'tipo_extendido',
-                'numero_capas',
-                'tiempo_trazado'
-            ];
-            
-            $shouldRecalculate = false;
-            foreach ($fieldsToRecalculate as $field) {
-                if (array_key_exists($field, $validated)) {
-                    $shouldRecalculate = true;
-                    break;
-                }
-            }
-
-            if ($shouldRecalculate) {
-                // Recalcular según la sección
-                if ($request->section === 'corte') {
-                    // Fórmula para CORTE (sin numero_operarios)
-                    $tiempo_para_programada = match($registro->paradas_programadas) {
-                        'DESAYUNO' => 900,
-                        'MEDIA TARDE' => 900,
-                        'NINGUNA' => 0,
-                        default => 0
-                    };
-
-                    $tiempo_extendido = match($registro->tipo_extendido) {
-                        'Trazo Largo' => 40 * ($registro->numero_capas ?? 0),
-                        'Trazo Corto' => 25 * ($registro->numero_capas ?? 0),
-                        'Ninguno' => 0,
-                        default => 0
-                    };
-
-                    $tiempo_disponible = (3600 * $registro->porcion_tiempo) -
-                                       ($tiempo_para_programada +
-                                       ($registro->tiempo_parada_no_programada ?? 0) +
-                                       $tiempo_extendido +
-                                       ($registro->tiempo_trazado ?? 0));
-
-                    $tiempo_disponible = max(0, $tiempo_disponible);
-
-                    // Meta: tiempo_disponible / tiempo_ciclo (SIN multiplicar por 0.9)
-                    $meta = $registro->tiempo_ciclo > 0 ? $tiempo_disponible / $registro->tiempo_ciclo : 0;
-                    
-                    // Eficiencia: cantidad / meta (SIN multiplicar por 100)
-                    $eficiencia = $meta > 0 ? ($registro->cantidad / $meta) : 0;
-                } else {
-                    // Fórmula para PRODUCCIÓN y POLOS (con numero_operarios)
-                    $tiempo_para_programada = match($registro->paradas_programadas) {
-                        'DESAYUNO' => 900,
-                        'MEDIA TARDE' => 900,
-                        'NINGUNA' => 0,
-                        default => 0
-                    };
-
-                    $tiempo_disponible = (3600 * $registro->porcion_tiempo * $registro->numero_operarios) -
-                                       ($registro->tiempo_parada_no_programada ?? 0) -
-                                       $tiempo_para_programada;
-
-                    // Meta: (tiempo_disponible / tiempo_ciclo) * 0.9
-                    $meta = $registro->tiempo_ciclo > 0 ? ($tiempo_disponible / $registro->tiempo_ciclo) * 0.9 : 0;
-                    
-                    // Eficiencia: cantidad / meta (SIN multiplicar por 100)
-                    $eficiencia = $meta > 0 ? ($registro->cantidad / $meta) : 0;
-                }
-
-                $registro->tiempo_disponible = $tiempo_disponible;
-                $registro->meta = $meta;
-                $registro->eficiencia = $eficiencia;
-                $registro->save();
-
-                // Broadcast event for real-time updates (non-blocking)
-                try {
-                    if ($request->section === 'produccion') {
-                        broadcast(new ProduccionRecordCreated($registro));
-                    } elseif ($request->section === 'polos') {
-                        broadcast(new PoloRecordCreated($registro));
-                    } elseif ($request->section === 'corte') {
-                        $registro->load(['hora', 'operario', 'maquina', 'tela']);
-                        broadcast(new CorteRecordCreated($registro));
-                    }
-                } catch (\Exception $broadcastError) {
-                    \Log::warning('Error al emitir evento de actualización', [
-                        'error' => $broadcastError->getMessage(),
-                        'section' => $request->section
-                    ]);
-                }
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Registro actualizado correctamente.',
-                    'data' => $request->section === 'corte' ? $registro->toArray() : [ // ⚡ Convertir a array
-                        'tiempo_disponible' => $tiempo_disponible,
-                        'meta' => $meta,
-                        'eficiencia' => $eficiencia
-                    ]
-                ]);
-            } else {
-                // No recalcular, solo actualizar y emitir evento (non-blocking)
-                try {
-                    if ($request->section === 'produccion') {
-                        broadcast(new ProduccionRecordCreated($registro));
-                    } elseif ($request->section === 'polos') {
-                        broadcast(new PoloRecordCreated($registro));
-                    } elseif ($request->section === 'corte') {
-                        $registro->load(['hora', 'operario', 'maquina', 'tela']);
-                        broadcast(new CorteRecordCreated($registro));
-                    }
-                } catch (\Exception $broadcastError) {
-                    \Log::warning('Error al emitir evento de actualización', [
-                        'error' => $broadcastError->getMessage(),
-                        'section' => $request->section
-                    ]);
-                }
-                
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Registro actualizado correctamente.',
-                    'data' => $request->section === 'corte' ? $registro->toArray() : null // ⚡ Convertir a array
-                ]);
-            }
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al actualizar el registro: ' . $e->getMessage()
-            ], 500);
-        }
+        return response()->json($result, $result['success'] ? 200 : 500);
     }
 
     public function destroy($id)
