@@ -17,12 +17,16 @@ use App\Events\PoloRecordCreated;
 use App\Events\CorteRecordCreated;
 use App\Services\ProduccionCalculadoraService;
 use App\Services\FiltrosService;
+use App\Services\FiltracionService;
+use App\Services\SectionLoaderService;
 
 class TablerosController extends Controller
 {
     public function __construct(
         private ProduccionCalculadoraService $produccionCalc,
         private FiltrosService $filtros,
+        private FiltracionService $filtracion,
+        private SectionLoaderService $sectionLoader,
     ) {}
 
     public function fullscreen(Request $request)
@@ -70,7 +74,7 @@ class TablerosController extends Controller
         
         // Si es AJAX y especifica una sección, devolver solo esa tabla
         if ($isAjax && $section) {
-            return $this->loadSection($section);
+            return $this->sectionLoader->loadSection($section, request());
         }
 
         // ⚡ OPTIMIZACIÓN CRÍTICA: En la página inicial, limitar a últimos 30 días
@@ -90,7 +94,7 @@ class TablerosController extends Controller
         // TABLAS PRINCIPALES: SIN FILTRO DE FECHA (mostrar todos los registros)
         // Orden descendente: registros más recientes primero
         $queryProduccion = RegistroPisoProduccion::whereDate('fecha', '>=', $start_date);
-        $this->aplicarFiltrosDinamicos($queryProduccion, request(), 'produccion');
+        $this->filtracion->aplicarFiltrosDinamicos($queryProduccion, request(), 'produccion');
         // ⚡ OPTIMIZACIÓN: Cargar con SELECT solo las columnas necesarias para la tabla
         // Esto reduce el tamaño de datos transferidos
         $registros = $queryProduccion->orderBy('id', 'desc')->paginate(50);
@@ -98,13 +102,13 @@ class TablerosController extends Controller
         $columns = array_diff($columns, ['id', 'created_at', 'updated_at', 'producida']);
 
         $queryPolos = RegistroPisoPolo::whereDate('fecha', '>=', $start_date);
-        $this->aplicarFiltrosDinamicos($queryPolos, request(), 'polos');
+        $this->filtracion->aplicarFiltrosDinamicos($queryPolos, request(), 'polos');
         $registrosPolos = $queryPolos->orderBy('id', 'desc')->paginate(50);
         $columnsPolos = Schema::getColumnListing('registro_piso_polo');
         $columnsPolos = array_diff($columnsPolos, ['id', 'created_at', 'updated_at', 'producida']);
 
         $queryCorte = RegistroPisoCorte::whereDate('fecha', '>=', $start_date);
-        $this->aplicarFiltrosDinamicos($queryCorte, request(), 'corte');
+        $this->filtracion->aplicarFiltrosDinamicos($queryCorte, request(), 'corte');
         // ⚡ OPTIMIZACIÓN: Eager load relaciones ANTES de paginar para evitar N+1 queries
         $registrosCorte = $queryCorte->with(['hora', 'operario', 'maquina', 'tela'])->orderBy('id', 'desc')->paginate(50);
         // Ya no necesitamos load() aquí porque eager loading ya cargó las relaciones
@@ -262,193 +266,6 @@ class TablerosController extends Controller
 
         return view('tableros', compact('registros', 'columns', 'registrosPolos', 'columnsPolos', 'registrosCorte', 'columnsCorte', 'seguimientoProduccion', 'seguimientoPolos', 'seguimientoCorte', 'horas', 'operarios', 'maquinas', 'telas', 'horasData', 'operariosData'));
     }
-
-    private function aplicarFiltroFecha($query, $request)
-    {
-        $filterType = $request->get('filter_type');
-
-        if (!$filterType || $filterType === 'range') {
-            $startDate = $request->get('start_date');
-            $endDate = $request->get('end_date');
-
-            if ($startDate && $endDate) {
-                $query->whereDate('fecha', '>=', $startDate)
-                      ->whereDate('fecha', '<=', $endDate);
-            }
-        } elseif ($filterType === 'day') {
-            $specificDate = $request->get('specific_date');
-            if ($specificDate) {
-                $query->whereDate('fecha', $specificDate);
-            }
-        } elseif ($filterType === 'month') {
-            $month = $request->get('month');
-            if ($month) {
-                // Formato esperado: YYYY-MM
-                $year = substr($month, 0, 4);
-                $monthNum = substr($month, 5, 2);
-                $startOfMonth = "{$year}-{$monthNum}-01";
-                $endOfMonth = date('Y-m-t', strtotime($startOfMonth));
-                $query->whereDate('fecha', '>=', $startOfMonth)
-                      ->whereDate('fecha', '<=', $endOfMonth);
-            }
-        } elseif ($filterType === 'specific') {
-            $specificDates = $request->get('specific_dates');
-            if ($specificDates) {
-                $dates = explode(',', $specificDates);
-                $query->whereIn('fecha', $dates);
-            }
-        }
-    }
-
-    /**
-     * Obtener columnas válidas para cada sección
-     */
-    private function getValidColumnsForSection($section)
-    {
-        $validColumns = [
-            'produccion' => [
-                'fecha', 'modulo', 'orden_produccion', 'hora', 'tiempo_ciclo',
-                'porcion_tiempo', 'cantidad', 'paradas_programadas', 'paradas_no_programadas',
-                'tiempo_parada_no_programada', 'numero_operarios', 'tiempo_para_programada',
-                'meta', 'eficiencia'
-            ],
-            'polos' => [
-                'fecha', 'modulo', 'orden_produccion', 'hora', 'tiempo_ciclo',
-                'porcion_tiempo', 'cantidad', 'paradas_programadas', 'paradas_no_programadas',
-                'tiempo_parada_no_programada', 'numero_operarios', 'tiempo_para_programada',
-                'meta', 'eficiencia'
-            ],
-            'corte' => [
-                'fecha', 'modulo', 'orden_produccion', 'hora_id', 'operario_id', 'actividad',
-                'maquina_id', 'tela_id', 'tiempo_ciclo', 'porcion_tiempo', 'cantidad',
-                'paradas_programadas', 'paradas_no_programadas', 'tiempo_parada_no_programada',
-                'numero_operarios', 'tiempo_para_programada', 'meta', 'eficiencia',
-                'tipo_extendido', 'numero_capas', 'tiempo_extendido', 'trazado', 'tiempo_trazado'
-            ]
-        ];
-
-        return $validColumns[$section] ?? [];
-    }
-
-    /**
-     * Aplicar filtros dinámicos por columna
-     */
-    private function aplicarFiltrosDinamicos($query, $request, $section)
-    {
-        try {
-            // Obtener filtros del request (formato JSON)
-            $filters = $request->get('filters');
-            
-            if (!$filters) {
-                return;
-            }
-
-            // Si es string JSON, decodificar
-            if (is_string($filters)) {
-                $filters = json_decode($filters, true);
-                
-                // Si la decodificación falla, retornar sin aplicar filtros
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    \Log::warning('Error al decodificar filtros JSON', [
-                        'error' => json_last_error_msg(),
-                        'filters_raw' => $filters
-                    ]);
-                    return;
-                }
-            }
-
-            if (!is_array($filters) || empty($filters)) {
-                return;
-            }
-
-            // VALIDAR QUE LOS FILTROS CORRESPONDAN A LA SECCIÓN ACTUAL
-            // Esto previene que filtros de una sección se apliquen a otra
-            $validColumns = $this->getValidColumnsForSection($section);
-            $filters = array_intersect_key($filters, array_flip($validColumns));
-            
-            if (empty($filters)) {
-                return;
-            }
-
-            // Aplicar cada filtro
-            foreach ($filters as $column => $values) {
-                // Validar que $values sea un array
-                if (!is_array($values)) {
-                    // Si es un valor único, convertirlo a array
-                    $values = [$values];
-                }
-                
-                if (empty($values)) {
-                    continue;
-                }
-
-                // Manejar columnas especiales según la sección
-                if ($section === 'corte') {
-                    // Para corte, manejar relaciones usando los nombres de las columnas con _id
-                    if ($column === 'hora_id') {
-                        // Buscar IDs de horas por sus valores
-                        $horaIds = \App\Models\Hora::whereIn('hora', $values)->pluck('id')->toArray();
-                        if (!empty($horaIds)) {
-                            $query->whereIn('hora_id', $horaIds);
-                        }
-                    } elseif ($column === 'operario_id') {
-                        // Buscar IDs de operarios por sus nombres
-                        $operarioIds = \App\Models\User::whereIn('name', $values)->pluck('id')->toArray();
-                        if (!empty($operarioIds)) {
-                            $query->whereIn('operario_id', $operarioIds);
-                        }
-                    } elseif ($column === 'maquina_id') {
-                        // Buscar IDs de máquinas por sus nombres
-                        $maquinaIds = \App\Models\Maquina::whereIn('nombre_maquina', $values)->pluck('id')->toArray();
-                        if (!empty($maquinaIds)) {
-                            $query->whereIn('maquina_id', $maquinaIds);
-                        }
-                    } elseif ($column === 'tela_id') {
-                        // Buscar IDs de telas por sus nombres
-                        $telaIds = \App\Models\Tela::whereIn('nombre_tela', $values)->pluck('id')->toArray();
-                        if (!empty($telaIds)) {
-                            $query->whereIn('tela_id', $telaIds);
-                        }
-                    } elseif ($column === 'fecha') {
-                        // Convertir fechas del formato dd-mm-yyyy a yyyy-mm-dd
-                        $formattedDates = array_map(function($date) {
-                            if (preg_match('/^(\d{2})-(\d{2})-(\d{4})$/', $date, $matches)) {
-                                return "{$matches[3]}-{$matches[2]}-{$matches[1]}";
-                            }
-                            return $date;
-                        }, $values);
-                        $query->whereIn($column, $formattedDates);
-                    } else {
-                        // Columnas normales
-                        $query->whereIn($column, $values);
-                    }
-                } else {
-                    // Para producción y polos, todas son columnas directas
-                    // Manejar fecha con formato especial
-                    if ($column === 'fecha') {
-                        // Convertir fechas del formato dd-mm-yyyy a yyyy-mm-dd
-                        $formattedDates = array_map(function($date) {
-                            if (preg_match('/^(\d{2})-(\d{2})-(\d{4})$/', $date, $matches)) {
-                                return "{$matches[3]}-{$matches[2]}-{$matches[1]}";
-                            }
-                            return $date;
-                        }, $values);
-                        $query->whereIn($column, $formattedDates);
-                    } else {
-                        $query->whereIn($column, $values);
-                    }
-                }
-            }
-        } catch (\Exception $e) {
-            \Log::error('Error al aplicar filtros dinámicos', [
-                'error' => $e->getMessage(),
-                'section' => $section,
-                'trace' => $e->getTraceAsString()
-            ]);
-            // No lanzar excepción, simplemente continuar sin filtros
-        }
-    }
-
     private function filtrarRegistrosPorFecha($registros, $request)
     {
         $filterType = $request->get('filter_type');
@@ -1699,7 +1516,7 @@ class TablerosController extends Controller
     public function getDashboardTablesData(Request $request)
     {
         $queryCorte = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela']);
-        $this->aplicarFiltroFecha($queryCorte, $request);
+        $this->filtracion->aplicarFiltroFecha($queryCorte, $request);
         $registrosCorte = $queryCorte->get();
 
         // Calcular datos dinámicos para las tablas de horas y operarios
@@ -1740,7 +1557,7 @@ class TablerosController extends Controller
         };
 
         $query = $model::query();
-        $this->aplicarFiltroFecha($query, $request);
+        $this->filtracion->aplicarFiltroFecha($query, $request);
         
         // ⚡ OPTIMIZACIÓN: Si no hay filtro específico, limitar a último día o últimos 500 registros
         // para evitar procesar 7000+ registros que bloquean el servidor
@@ -1852,101 +1669,6 @@ class TablerosController extends Controller
     /**
      * Cargar solo una sección específica (OPTIMIZACIÓN AJAX)
      */
-    private function loadSection($section)
-    {
-        $startTime = microtime(true);
-        
-        if ($section === 'produccion') {
-            $query = RegistroPisoProduccion::query();
-            $this->aplicarFiltrosDinamicos($query, request(), 'produccion');
-            $registros = $query->orderBy('id', 'desc')->paginate(50);
-            $columns = Schema::getColumnListing('registro_piso_produccion');
-            $columns = array_diff($columns, ['id', 'created_at', 'updated_at', 'producida']);
-            
-            // Renderizar HTML de la tabla
-            $tableHtml = view('partials.table-body-produccion', compact('registros', 'columns'))->render();
-            
-            $endTime = microtime(true);
-            $duration = ($endTime - $startTime) * 1000;
-            
-            return response()->json([
-                'table_html' => $tableHtml,
-                'pagination' => [
-                    'current_page' => $registros->currentPage(),
-                    'last_page' => $registros->lastPage(),
-                    'per_page' => $registros->perPage(),
-                    'total' => $registros->total(),
-                    'first_item' => $registros->firstItem(),
-                    'last_item' => $registros->lastItem(),
-                    'links_html' => $registros->appends(request()->query())->links('vendor.pagination.custom')->render()
-                ],
-                'debug' => [
-                    'server_time_ms' => round($duration, 2),
-                    'section' => $section
-                ]
-            ]);
-        } elseif ($section === 'polos') {
-            $query = RegistroPisoPolo::query();
-            $this->aplicarFiltrosDinamicos($query, request(), 'polos');
-            $registros = $query->orderBy('id', 'desc')->paginate(50);
-            $columns = Schema::getColumnListing('registro_piso_polo');
-            $columns = array_diff($columns, ['id', 'created_at', 'updated_at', 'producida']);
-            
-            // Renderizar HTML de la tabla
-            $tableHtml = view('partials.table-body-polos', compact('registros', 'columns'))->render();
-            
-            $endTime = microtime(true);
-            $duration = ($endTime - $startTime) * 1000;
-            
-            return response()->json([
-                'table_html' => $tableHtml,
-                'pagination' => [
-                    'current_page' => $registros->currentPage(),
-                    'last_page' => $registros->lastPage(),
-                    'per_page' => $registros->perPage(),
-                    'total' => $registros->total(),
-                    'first_item' => $registros->firstItem(),
-                    'last_item' => $registros->lastItem(),
-                    'links_html' => $registros->appends(request()->query())->links('vendor.pagination.custom')->render()
-                ],
-                'debug' => [
-                    'server_time_ms' => round($duration, 2),
-                    'section' => $section
-                ]
-            ]);
-        } elseif ($section === 'corte') {
-            $query = RegistroPisoCorte::with(['hora', 'operario', 'maquina', 'tela']);
-            $this->aplicarFiltrosDinamicos($query, request(), 'corte');
-            $registros = $query->orderBy('id', 'desc')->paginate(50);
-            $columns = Schema::getColumnListing('registro_piso_corte');
-            $columns = array_diff($columns, ['id', 'created_at', 'updated_at', 'producida']);
-            
-            // Renderizar HTML de la tabla
-            $tableHtml = view('partials.table-body-corte', compact('registros', 'columns'))->render();
-            
-            $endTime = microtime(true);
-            $duration = ($endTime - $startTime) * 1000;
-            
-            return response()->json([
-                'table_html' => $tableHtml,
-                'pagination' => [
-                    'current_page' => $registros->currentPage(),
-                    'last_page' => $registros->lastPage(),
-                    'per_page' => $registros->perPage(),
-                    'total' => $registros->total(),
-                    'first_item' => $registros->firstItem(),
-                    'last_item' => $registros->lastItem(),
-                    'links_html' => $registros->appends(request()->query())->links('vendor.pagination.custom')->render()
-                ],
-                'debug' => [
-                    'server_time_ms' => round($duration, 2),
-                    'section' => $section
-                ]
-            ]);
-        }
-        
-        return response()->json(['error' => 'Invalid section'], 400);
-    }
 
     /**
      * Crear o buscar tela por nombre
