@@ -2345,6 +2345,9 @@ function updatePaginationLinks(pagination, section) {
     if (paginationControls && pagination.links_html) {
         paginationControls.innerHTML = pagination.links_html;
         console.log(`✅ Enlaces de paginación actualizados desde el servidor`);
+        
+        // Re-attach event listeners after updating pagination HTML
+        attachPaginationClickListeners(section);
     }
     
     // Actualizar la información de paginación

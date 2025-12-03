@@ -2,8 +2,10 @@
 (function() {
     'use strict';
     
+    console.log('🚀 Inicializando paginación AJAX para Tableros...');
+    
     // Evitar inicialización múltiple
-    if (window.tablerosTablerosPaginationInitialized) {
+    if (window.tablerosPaginationInitialized) {
         console.log('⚠️ Paginación ya inicializada, omitiendo...');
         return;
     }
@@ -70,6 +72,8 @@
         })
         .then(response => response.json())
         .then(data => {
+            console.log('📦 Respuesta recibida:', data);
+            
             // Verificar si hay error
             if (data.error || !data.pagination) {
                 throw new Error(data.error || 'Respuesta inválida del servidor');
@@ -78,12 +82,21 @@
             // Actualizar tabla con el HTML del servidor
             if (data.table_html && tableBody) {
                 tableBody.innerHTML = data.table_html;
+                console.log('✅ Tabla actualizada');
             }
             
             // Actualizar controles de paginación usando el HTML del servidor
             const paginationControls = document.getElementById(`paginationControls-${section}`);
             if (data.pagination && data.pagination.links_html && paginationControls) {
                 paginationControls.innerHTML = data.pagination.links_html;
+                // Los listeners se mantendrán activos gracias a la delegación de eventos en document
+                console.log(`✅ Controles de paginación actualizados para ${section}`);
+            } else {
+                console.warn(`⚠️ No se pudieron actualizar controles de paginación:`, {
+                    hasPagination: !!data.pagination,
+                    hasLinksHtml: data.pagination ? !!data.pagination.links_html : false,
+                    hasPaginationControls: !!paginationControls
+                });
             }
             
             // Actualizar info de paginación
@@ -119,6 +132,7 @@
             }
         })
         .catch(error => {
+            console.error('❌ Error en paginación:', error);
             if (tableBody) {
                 tableBody.style.opacity = '1';
                 tableBody.style.pointerEvents = 'auto';

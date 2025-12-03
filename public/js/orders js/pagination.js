@@ -50,10 +50,10 @@ function _initializeControls() {
     }
 }
 
-function _restoreTableState(tableBody, page, isLoading, btn) {
+function _restoreTableState(tableBody, page, btn) {
     tableBody.style.opacity = '1';
     tableBody.style.pointerEvents = 'auto';
-    isLoading = false;
+    paginationState.isLoading = false;
     btn.disabled = false;
     
     if (document.querySelector('.table-container')) {
@@ -77,7 +77,7 @@ function _handlePaginationResponse(html, url, page, tableBody, paginationControl
     setTimeout(() => {
         console.log('🔄 Inicializando dropdowns y actualizando días...');
         _initializeControls();
-        _restoreTableState(tableBody, page, false, btn);
+        _restoreTableState(tableBody, page, btn);
     }, 100);
 }
 
@@ -87,6 +87,7 @@ function _handlePaginationError(error, tableBody, btn, timeoutId) {
     tableBody.style.opacity = '1';
     tableBody.style.pointerEvents = 'auto';
     btn.disabled = false;
+    paginationState.isLoading = false;
     alert(`Error al cargar la página: ${error.message}`);
 }
 
@@ -111,56 +112,74 @@ function _loadPaginationPage(page, url, tableBody, paginationControls, btn) {
     .catch(error => _handlePaginationError(error, tableBody, btn, timeoutId));
 }
 
+// Variable para mantener estado de carga
+let paginationState = {
+    isLoading: false,
+    lastPageLoad: 0,
+    MIN_PAGE_LOAD_DELAY: 500
+};
+
+/**
+ * Inicializar listeners de paginación
+ * Usa delegación de eventos en document para que funcione con contenido dinámico
+ */
+function initializePaginationListeners() {
+    document.addEventListener('click', function(e) {
+        // Usar delegación de eventos en document (no en contenedor específico)
+        const btn = e.target.closest('#paginationControls .pagination-btn');
+        
+        if (!btn) {
+            return; // No es un botón de paginación
+        }
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        if (btn.disabled || paginationState.isLoading) {
+            console.log('⏭️ Botón deshabilitado o ya cargando, ignorando click');
+            return;
+        }
+        
+        const now = Date.now();
+        if (now - paginationState.lastPageLoad < paginationState.MIN_PAGE_LOAD_DELAY) {
+            console.log('⏱️ Click demasiado rápido, ignorando');
+            return;
+        }
+        paginationState.lastPageLoad = now;
+        
+        const page = btn.dataset.page;
+        if (!page) {
+            console.log('❌ No se encontró número de página:', btn);
+            return;
+        }
+        
+        paginationState.isLoading = true;
+        btn.disabled = true;
+        
+        console.log(`📄 Cargando página ${page}...`);
+        
+        const tableBody = document.getElementById('tablaOrdenesBody');
+        if (!tableBody) {
+            console.error('❌ tablaOrdenesBody no encontrado');
+            paginationState.isLoading = false;
+            btn.disabled = false;
+            return;
+        }
+        
+        tableBody.style.transition = 'opacity 0.1s';
+        tableBody.style.opacity = '0.3';
+        tableBody.style.pointerEvents = 'none';
+        
+        const url = new URL(window.location.href);
+        url.searchParams.set('page', page);
+        
+        const paginationControls = document.getElementById('paginationControls');
+        _loadPaginationPage(page, url, tableBody, paginationControls, btn);
+    }, false); // Usar captura de eventos para mayor compatibilidad
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-    const paginationControls = document.getElementById('paginationControls');
-    let isLoading = false;
-    let lastPageLoad = 0;
-    const MIN_PAGE_LOAD_DELAY = 500;
-    
-    if (paginationControls) {
-        paginationControls.addEventListener('click', function(e) {
-            const btn = e.target.closest('.pagination-btn');
-            
-            if (!btn || btn.disabled || isLoading) {
-                console.log('⏭️ Botón deshabilitado o ya cargando, ignorando click');
-                return;
-            }
-            
-            const now = Date.now();
-            if (now - lastPageLoad < MIN_PAGE_LOAD_DELAY) {
-                console.log('⏱️ Click demasiado rápido, ignorando');
-                return;
-            }
-            lastPageLoad = now;
-            
-            const page = btn.dataset.page;
-            if (!page) {
-                console.log('❌ No se encontró número de página');
-                return;
-            }
-            
-            isLoading = true;
-            btn.disabled = true;
-            
-            console.log(`📄 Cargando página ${page}...`);
-            
-            const tableBody = document.getElementById('tablaOrdenesBody');
-            if (!tableBody) {
-                console.error('❌ tablaOrdenesBody no encontrado');
-                isLoading = false;
-                btn.disabled = false;
-                return;
-            }
-            
-            tableBody.style.transition = 'opacity 0.1s';
-            tableBody.style.opacity = '0.3';
-            tableBody.style.pointerEvents = 'none';
-            
-            const url = new URL(window.location.href);
-            url.searchParams.set('page', page);
-            
-            _loadPaginationPage(page, url, tableBody, paginationControls, btn);
-        });
-    }
+    console.log('🚀 Inicializando paginación...');
+    initializePaginationListeners();
 });
 

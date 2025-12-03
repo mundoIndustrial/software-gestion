@@ -75,7 +75,11 @@ function initializeTableFilters(section) {
             });
         }
     });
+
+    // Initialize pagination listeners
+    attachPaginationListeners(section);
 }
+
 
 function showFilterDropdown(column, section) {
     const table = document.querySelector(`table[data-section="${section}"]`);
@@ -313,6 +317,8 @@ function applyFiltersBackend(section) {
         const paginationControls = document.getElementById(`paginationControls-${section}`);
         if (data.pagination && data.pagination.links_html && paginationControls) {
             paginationControls.innerHTML = data.pagination.links_html;
+            // Re-attach pagination event listeners after updating HTML
+            attachPaginationListeners(section);
         }
         
         // Update pagination info
@@ -407,6 +413,8 @@ function restoreSavedFilters(section) {
             const paginationControls = document.getElementById(`paginationControls-${section}`);
             if (data.pagination && data.pagination.links_html && paginationControls) {
                 paginationControls.innerHTML = data.pagination.links_html;
+                // Re-attach pagination event listeners after updating HTML
+                attachPaginationListeners(section);
             }
             
             const paginationInfo = document.getElementById(`paginationInfo-${section}`);
@@ -436,5 +444,109 @@ function restoreSavedFilters(section) {
 // Limpiar filtros guardados
 function clearSavedFilters(section) {
     sessionStorage.removeItem(`tableros_filters_${section}`);
+}
+
+/**
+ * Attach event listeners to pagination buttons
+ * This needs to be called after pagination HTML is updated
+ */
+function attachPaginationListeners(section) {
+    const paginationControls = document.getElementById(`paginationControls-${section}`);
+    if (!paginationControls) return;
+
+    // Find all pagination links
+    const paginationLinks = paginationControls.querySelectorAll('a[href*="page="]');
+    
+    paginationLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Extract page number from href
+            const href = this.getAttribute('href');
+            const url = new URL(href, window.location.origin);
+            const page = url.searchParams.get('page');
+            
+            if (page) {
+                // Fetch page data while maintaining current filters
+                const currentUrl = new URL(window.location);
+                const filters = currentUrl.searchParams.get('filters');
+                
+                // Build new URL with same filters and new page
+                const fetchUrl = new URL(window.location.href);
+                fetchUrl.searchParams.set('section', section);
+                fetchUrl.searchParams.set('page', page);
+                if (filters) {
+                    fetchUrl.searchParams.set('filters', filters);
+                }
+                
+                // Show loading state
+                const tableBody = document.querySelector(`table[data-section="${section}"] tbody`);
+                if (tableBody) {
+                    tableBody.style.opacity = '0.3';
+                    tableBody.style.pointerEvents = 'none';
+                }
+
+                // Fetch new page data
+                fetch(fetchUrl.toString(), {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error || !data.pagination) {
+                        throw new Error(data.error || 'Respuesta inválida del servidor');
+                    }
+                    
+                    // Update table with new data
+                    if (data.table_html && tableBody) {
+                        tableBody.innerHTML = data.table_html;
+                        // Re-attach editable cell listeners después de actualizar la tabla
+                        if (window.attachEditableCellListeners) {
+                            window.attachEditableCellListeners();
+                        }
+                    }
+                    
+                    // Update pagination controls
+                    const paginationControls = document.getElementById(`paginationControls-${section}`);
+                    if (data.pagination && data.pagination.links_html && paginationControls) {
+                        paginationControls.innerHTML = data.pagination.links_html;
+                        // Re-attach pagination event listeners after updating HTML
+                        attachPaginationListeners(section);
+                    }
+                    
+                    // Update pagination info
+                    const paginationInfo = document.getElementById(`paginationInfo-${section}`);
+                    if (data.pagination && paginationInfo) {
+                        paginationInfo.textContent = `Mostrando ${data.pagination.first_item || 0}-${data.pagination.last_item || 0} de ${data.pagination.total} registros`;
+                    }
+                    
+                    // Update progress bar
+                    const progressFill = document.querySelector(`#pagination-${section} .progress-fill`);
+                    if (data.pagination && progressFill) {
+                        const progressPercent = data.pagination.last_page > 0 ? (data.pagination.current_page / data.pagination.last_page) * 100 : 0;
+                        progressFill.style.width = progressPercent + '%';
+                    }
+                    
+                    // Update URL
+                    window.history.pushState({}, '', fetchUrl.toString());
+                    
+                    // Restore table
+                    if (tableBody) {
+                        tableBody.style.opacity = '1';
+                        tableBody.style.pointerEvents = 'auto';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading page:', error);
+                    if (tableBody) {
+                        tableBody.style.opacity = '1';
+                        tableBody.style.pointerEvents = 'auto';
+                    }
+                });
+            }
+        });
+    });
 }
 
