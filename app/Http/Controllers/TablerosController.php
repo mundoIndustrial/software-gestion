@@ -266,203 +266,6 @@ class TablerosController extends Controller
 
         return view('tableros', compact('registros', 'columns', 'registrosPolos', 'columnsPolos', 'registrosCorte', 'columnsCorte', 'seguimientoProduccion', 'seguimientoPolos', 'seguimientoCorte', 'horas', 'operarios', 'maquinas', 'telas', 'horasData', 'operariosData'));
     }
-    private function filtrarRegistrosPorFecha($registros, $request)
-    {
-        $filterType = $request->get('filter_type');
-
-        if (!$filterType || $filterType === 'range') {
-            $startDate = $request->get('start_date');
-            $endDate = $request->get('end_date');
-
-            if ($startDate && $endDate) {
-                return $registros->filter(function($registro) use ($startDate, $endDate) {
-                    $fecha = $registro->fecha->format('Y-m-d');
-                    return $fecha >= $startDate && $fecha <= $endDate;
-                });
-            }
-        } elseif ($filterType === 'day') {
-            $specificDate = $request->get('specific_date');
-            if ($specificDate) {
-                return $registros->filter(function($registro) use ($specificDate) {
-                    return $registro->fecha->format('Y-m-d') == $specificDate;
-                });
-            }
-        } elseif ($filterType === 'month') {
-            $month = $request->get('month');
-            if ($month) {
-                // Formato esperado: YYYY-MM
-                $year = substr($month, 0, 4);
-                $monthNum = substr($month, 5, 2);
-                $startOfMonth = "{$year}-{$monthNum}-01";
-                $endOfMonth = date('Y-m-t', strtotime($startOfMonth));
-                return $registros->filter(function($registro) use ($startOfMonth, $endOfMonth) {
-                    $fecha = $registro->fecha->format('Y-m-d');
-                    return $fecha >= $startOfMonth && $fecha <= $endOfMonth;
-                });
-            }
-        } elseif ($filterType === 'specific') {
-            $specificDates = $request->get('specific_dates');
-            if ($specificDates) {
-                $dates = explode(',', $specificDates);
-                return $registros->filter(function($registro) use ($dates) {
-                    return in_array($registro->fecha->format('Y-m-d'), $dates);
-                });
-            }
-        }
-
-        // Si no hay filtro válido, devolver todos los registros
-        return $registros;
-    }
-
-    private function calcularSeguimientoModulos($registros)
-    {
-        // Obtener módulos únicos de los registros y ordenarlos
-        $modulosDisponibles = $registros->pluck('modulo')->unique()->values()->toArray();
-
-        // Normalizar los nombres de módulos (trim espacios, uppercase consistente)
-        $modulosDisponibles = array_map(function($mod) {
-            return strtoupper(trim($mod));
-        }, $modulosDisponibles);
-
-        // Remover duplicados después de normalizar
-        $modulosDisponibles = array_unique($modulosDisponibles);
-
-        // Filtrar módulos vacíos
-        $modulosDisponibles = array_filter($modulosDisponibles, function($mod) {
-            return !empty(trim($mod));
-        });
-        $modulosDisponibles = array_values($modulosDisponibles); // reindex
-
-        // Ordenar los módulos
-        sort($modulosDisponibles);
-
-        // Si no hay módulos dinámicos, usar los módulos por defecto
-        if (empty($modulosDisponibles)) {
-            $modulosDisponibles = ['MÓDULO 1', 'MÓDULO 2', 'MÓDULO 3'];
-        }
-
-        // Inicializar estructuras de datos
-        $dataPorHora = [];
-        $totales = ['modulos' => []];
-
-        // INICIALIZAR todos los módulos en totales
-        foreach ($modulosDisponibles as $modulo) {
-            $totales['modulos'][$modulo] = [
-                'prendas' => 0,
-                'tiempo_ciclo_sum' => 0,
-                'numero_operarios_sum' => 0,
-                'porcion_tiempo_sum' => 0,
-                'tiempo_parada_no_programada_sum' => 0,
-                'tiempo_para_programada_sum' => 0,
-                'tiempo_disponible_sum' => 0,
-                'meta_sum' => 0,
-                'count' => 0
-            ];
-        }
-
-        // Acumular datos por hora y módulo
-        foreach ($registros as $registro) {
-            // Handle both relationship (object) and direct field (string)
-            $hora = is_object($registro->hora) ? $registro->hora->hora : ($registro->hora ?? 'Sin hora');
-            $hora = !empty(trim($hora)) ? trim($hora) : 'Sin hora';
-            $modulo = !empty(trim($registro->modulo)) ? strtoupper(trim($registro->modulo)) : 'SIN MÓDULO';
-
-            if (!isset($dataPorHora[$hora])) {
-                $dataPorHora[$hora] = ['modulos' => []];
-            }
-
-            if (!isset($dataPorHora[$hora]['modulos'][$modulo])) {
-                $dataPorHora[$hora]['modulos'][$modulo] = [
-                    'prendas' => 0,
-                    'tiempo_ciclo_sum' => 0,
-                    'numero_operarios_sum' => 0,
-                    'porcion_tiempo_sum' => 0,
-                    'tiempo_parada_no_programada_sum' => 0,
-                    'tiempo_para_programada_sum' => 0,
-                    'tiempo_disponible_sum' => 0,
-                    'meta_sum' => 0,
-                    'count' => 0
-                ];
-            }
-
-            $dataPorHora[$hora]['modulos'][$modulo]['prendas'] += floatval($registro->cantidad ?? 0);
-            $dataPorHora[$hora]['modulos'][$modulo]['tiempo_ciclo_sum'] += floatval($registro->tiempo_ciclo ?? 0);
-            $dataPorHora[$hora]['modulos'][$modulo]['numero_operarios_sum'] += floatval($registro->numero_operarios ?? 0);
-            $dataPorHora[$hora]['modulos'][$modulo]['porcion_tiempo_sum'] += floatval($registro->porcion_tiempo ?? 0);
-            $dataPorHora[$hora]['modulos'][$modulo]['tiempo_parada_no_programada_sum'] += floatval($registro->tiempo_parada_no_programada ?? 0);
-            $dataPorHora[$hora]['modulos'][$modulo]['tiempo_para_programada_sum'] += floatval($registro->tiempo_para_programada ?? 0);
-            $dataPorHora[$hora]['modulos'][$modulo]['count']++;
-
-            // Inicializar módulo en totales si no existe
-            if (!isset($totales['modulos'][$modulo])) {
-                $totales['modulos'][$modulo] = [
-                    'prendas' => 0,
-                    'tiempo_ciclo_sum' => 0,
-                    'numero_operarios_sum' => 0,
-                    'porcion_tiempo_sum' => 0,
-                    'tiempo_parada_no_programada_sum' => 0,
-                    'tiempo_para_programada_sum' => 0,
-                    'tiempo_disponible_sum' => 0,
-                    'meta_sum' => 0,
-                    'count' => 0
-                ];
-            }
-
-            // Acumular totales generales
-            $totales['modulos'][$modulo]['prendas'] += floatval($registro->cantidad ?? 0);
-            $totales['modulos'][$modulo]['tiempo_ciclo_sum'] += floatval($registro->tiempo_ciclo ?? 0);
-            $totales['modulos'][$modulo]['numero_operarios_sum'] += floatval($registro->numero_operarios ?? 0);
-            $totales['modulos'][$modulo]['porcion_tiempo_sum'] += floatval($registro->porcion_tiempo ?? 0);
-            $totales['modulos'][$modulo]['tiempo_parada_no_programada_sum'] += floatval($registro->tiempo_parada_no_programada ?? 0);
-            $totales['modulos'][$modulo]['tiempo_para_programada_sum'] += floatval($registro->tiempo_para_programada ?? 0);
-            $totales['modulos'][$modulo]['count']++;
-
-            // Usar la meta que ya está calculada en el registro
-            $meta_registro = floatval($registro->meta ?? 0);
-            $dataPorHora[$hora]['modulos'][$modulo]['meta_sum'] += $meta_registro;
-            $totales['modulos'][$modulo]['meta_sum'] += $meta_registro;
-        }
-
-        // Calcular meta y eficiencia por hora
-        foreach ($dataPorHora as $hora => &$data) {
-            foreach ($data['modulos'] as $modulo => &$modData) {
-                if ($modData['count'] > 0) {
-                    $meta = $modData['meta_sum'];
-                    $eficiencia = $meta > 0 ? ($modData['prendas'] / $meta) : 0;
-
-                    $modData['meta'] = $meta;
-                    $modData['eficiencia'] = $eficiencia;
-                } else {
-                    $modData['meta'] = 0;
-                    $modData['eficiencia'] = 0;
-                }
-            }
-        }
-
-        // Calcular totales finales
-        foreach ($totales['modulos'] as $modulo => &$modData) {
-            if ($modData['count'] > 0) {
-                $total_prendas = $modData['prendas'];
-                $total_meta = $modData['meta_sum'];
-                $eficiencia = $total_meta > 0 ? ($total_prendas / $total_meta) : 0;
-
-                $modData['meta'] = $total_meta;
-                $modData['eficiencia'] = $eficiencia;
-            } else {
-                $modData['meta'] = 0;
-                $modData['eficiencia'] = 0;
-            }
-        }
-
-        // Re-ordenar módulos alfabéticamente para consistencia en la visualización
-        ksort($modulosDisponibles);
-
-        return [
-            'modulosDisponibles' => $modulosDisponibles,
-            'dataPorHora' => $dataPorHora,
-            'totales' => $totales
-        ];
-    }
 
     public function store(Request $request)
     {
@@ -1402,7 +1205,7 @@ class TablerosController extends Controller
         
         // Aplicar filtros solo si hay filtro_type
         if ($hayFiltro) {
-            $registrosCorteFiltrados = $this->filtrarRegistrosPorFecha($registrosCorte, $request);
+            $registrosCorteFiltrados = $this->filtros->filtrarRegistrosPorFecha($registrosCorte, $request);
             \Log::info('Dashboard Corte API: Registros FILTRADOS', [
                 'total' => $registrosCorteFiltrados->count(),
                 'filtro_type' => $request->get('filter_type'),
@@ -1419,8 +1222,8 @@ class TablerosController extends Controller
         }
         
         // Calcular datos dinámicos para las tablas
-        $horasData = $this->calcularProduccionPorHoras($registrosCorteFiltrados);
-        $operariosData = $this->calcularProduccionPorOperarios($registrosCorteFiltrados);
+        $horasData = $this->produccionCalc->calcularProduccionPorHoras($registrosCorteFiltrados);
+        $operariosData = $this->produccionCalc->calcularProduccionPorOperarios($registrosCorteFiltrados);
         
         \Log::info('Dashboard Corte API: Datos calculados', [
             'horas_count' => count($horasData),
@@ -1433,85 +1236,6 @@ class TablerosController extends Controller
         ]);
     }
 
-    private function calcularProduccionPorHoras($registrosCorte)
-    {
-        $horasData = [];
-
-        foreach ($registrosCorte as $registro) {
-            $horaOriginal = $registro->hora ? $registro->hora->hora : 'SIN HORA';
-            
-            // Formatear la hora como "HORA 1", "HORA 2", etc.
-            if ($horaOriginal !== 'SIN HORA' && is_numeric($horaOriginal)) {
-                $hora = 'HORA ' . $horaOriginal;
-            } else {
-                $hora = $horaOriginal;
-            }
-            
-            if (!isset($horasData[$hora])) {
-                $horasData[$hora] = [
-                    'hora' => $hora,
-                    'cantidad' => 0,
-                    'meta' => 0,
-                    'eficiencia' => 0,
-                    'tiempo_disponible' => 0
-                ];
-            }
-            $horasData[$hora]['cantidad'] += $registro->cantidad ?? 0;
-            $horasData[$hora]['meta'] += $registro->meta ?? 0;
-            $horasData[$hora]['tiempo_disponible'] += $registro->tiempo_disponible ?? 0;
-        }
-
-        // Calcular eficiencia para cada hora
-        foreach ($horasData as &$horaData) {
-            if ($horaData['meta'] > 0) {
-                $horaData['eficiencia'] = round(($horaData['cantidad'] / $horaData['meta']) * 100, 1);
-            } else {
-                $horaData['eficiencia'] = 0;
-            }
-        }
-
-        // Ordenar por hora (asumiendo formato HORA XX)
-        uasort($horasData, function($a, $b) {
-            $numA = (int) preg_replace('/\D/', '', $a['hora']);
-            $numB = (int) preg_replace('/\D/', '', $b['hora']);
-            return $numA <=> $numB;
-        });
-
-        return array_values($horasData);
-    }
-
-    private function calcularProduccionPorOperarios($registrosCorte)
-    {
-        $operariosData = [];
-
-        foreach ($registrosCorte as $registro) {
-            $operario = $registro->operario ? $registro->operario->name : 'SIN OPERARIO';
-            if (!isset($operariosData[$operario])) {
-                $operariosData[$operario] = [
-                    'operario' => $operario,
-                    'cantidad' => 0,
-                    'meta' => 0,
-                    'eficiencia' => 0
-                ];
-            }
-            $operariosData[$operario]['cantidad'] += $registro->cantidad ?? 0;
-            $operariosData[$operario]['meta'] += $registro->meta ?? 0;
-        }
-
-        // Calcular eficiencia para cada operario
-        foreach ($operariosData as &$operarioData) {
-            if ($operarioData['meta'] > 0) {
-                $operarioData['eficiencia'] = round(($operarioData['cantidad'] / $operarioData['meta']) * 100, 1);
-            } else {
-                $operarioData['eficiencia'] = 0;
-            }
-        }
-
-        // Ordenar alfabéticamente por operario
-        ksort($operariosData);
-
-        return array_values($operariosData);
-    }
 
     public function getDashboardTablesData(Request $request)
     {
@@ -1577,7 +1301,7 @@ class TablerosController extends Controller
             'limited' => !$filterType ? true : false
         ]);
 
-        $seguimiento = $this->calcularSeguimientoModulos($registrosFiltrados);
+        $seguimiento = $this->produccionCalc->calcularSeguimientoModulos($registrosFiltrados);
 
         return response()->json($seguimiento);
     }
