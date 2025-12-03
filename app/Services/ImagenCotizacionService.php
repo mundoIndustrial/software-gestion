@@ -15,7 +15,7 @@ class ImagenCotizacionService
     /**
      * Tipos de imágenes permitidas
      */
-    private const TIPOS_PERMITIDOS = ['bordado', 'estampado', 'tela', 'prenda', 'general'];
+    private const TIPOS_PERMITIDOS = ['bordado', 'estampado', 'tela', 'prenda', 'logo'];
 
     /**
      * Procesar imagen para almacenamiento (convertir a WebP si es posible)
@@ -131,9 +131,26 @@ class ImagenCotizacionService
 
             \Log::info('Archivo guardado en storage', ['ruta' => $ruta]);
 
+            // Convertir a WebP si es imagen
+            $rutaCompleta = Storage::disk('public')->path($ruta);
+            $nombreWebP = pathinfo($nombreArchivo, PATHINFO_FILENAME) . '.webp';
+            $rutaWebP = Storage::disk('public')->path($carpeta . '/' . $nombreWebP);
+
+            if (file_exists($rutaCompleta)) {
+                if ($this->convertirConGD($rutaCompleta, $rutaWebP)) {
+                    // Eliminar archivo original después de conversión exitosa
+                    @unlink($rutaCompleta);
+                    $nombreArchivo = $nombreWebP;
+                    $ruta = $carpeta . '/' . $nombreWebP;
+                    \Log::info('Imagen convertida a WebP', ['ruta' => $ruta]);
+                } else {
+                    \Log::warning('No se pudo convertir a WebP, usando formato original', ['archivo' => $nombreArchivo]);
+                }
+            }
+
             // Retornar ruta relativa (sin URL base)
-            // Formato: /storage/cotizaciones/37/prenda/37_prenda_20251119174859_197.jpg
-            $rutaRelativa = '/storage/' . $ruta;
+            // Formato: storage/cotizaciones/37/prenda/37_prenda_20251119174859_197.webp
+            $rutaRelativa = 'storage/' . $ruta;
             \Log::info('Ruta relativa generada', ['ruta_relativa' => $rutaRelativa]);
 
             return $rutaRelativa;

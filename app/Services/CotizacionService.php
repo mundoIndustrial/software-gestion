@@ -162,7 +162,7 @@ class CotizacionService
     }
 
     /**
-     * Crear logo/bordado/estampado para una cotización
+     * Crear logo/LOGO para una cotización
      * 
      * @param \App\Models\Cotizacion $cotizacion
      * @param array $datosFormulario

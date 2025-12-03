@@ -312,9 +312,9 @@ class CotizacionesController extends Controller
                 $this->prendaService->crearPrendasCotizacion($cotizacion, $datosFormulario['productos']);
             }
             
-            \Log::info('Creando logo/bordado/estampado');
+            \Log::info('Creando logo/LOGO');
             
-            // Crear logo/bordado/estampado
+            // Crear logo/LOGO
             $this->cotizacionService->crearLogoCotizacion($cotizacion, $datosFormulario);
             
             \Log::info('Cotización completada', ['id' => $cotizacion->id, 'tipo' => $tipo]);
@@ -402,7 +402,7 @@ class CotizacionesController extends Controller
             );
         }
 
-        // Obtener datos de logo/bordado/estampado (ya cargado con eager loading)
+        // Obtener datos de logo/LOGO (ya cargado con eager loading)
         $logo = $cotizacion->logoCotizacion;
 
         // Si es una petición AJAX, retornar JSON
@@ -519,7 +519,7 @@ class CotizacionesController extends Controller
 
         $request->validate([
             'imagenes.*' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
-            'tipo' => 'required|in:bordado,estampado,tela,prenda,general'
+            'tipo' => 'required|in:bordado,estampado,tela,prenda,logo'
         ]);
 
         $tipo = $request->input('tipo');
@@ -604,7 +604,7 @@ class CotizacionesController extends Controller
                     $prenda->update([$campo => array_merge($valoresActuales, $rutasPrenda)]);
                 }
             }
-        } elseif ($tipo === 'general') {
+        } elseif ($tipo === 'logo') {
             $logo = $cotizacion->logoCotizacion;
             // Null-safe logo access
             if ($logo) {

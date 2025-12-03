@@ -16,7 +16,7 @@ return new class extends Migration
             $table->json('productos')->nullable()->after('cotizar_segun_indicaciones'); // Array de productos con: nombre_producto, descripcion, fotos, imagen_tela
             $table->json('especificaciones')->nullable()->after('productos'); // Disponibilidad, forma_pago, régimen, se_ha_vendido, última_venta, flete
             
-            // PASO 3: BORDADO/ESTAMPADO
+            // PASO 3: LOGO
             $table->json('imagenes')->nullable()->after('especificaciones'); // Array de imágenes (máx 5)
             $table->json('tecnicas')->nullable()->after('imagenes'); // Array de técnicas seleccionadas (BORDADO, DTF, ESTAMPADO, SUBLIMADO)
             $table->text('observaciones_tecnicas')->nullable()->after('tecnicas'); // Observaciones de técnicas

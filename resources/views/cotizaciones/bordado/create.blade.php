@@ -462,9 +462,9 @@
             @csrf
 
             <!-- Campos ocultos para sincronizar con el header -->
-            <input type="text" id="cliente" name="cliente" required style="display: none;">
-            <input type="text" id="asesora" name="asesora" required value="{{ auth()->user()->name }}" readonly style="display: none;">
-            <input type="date" id="fecha" name="fecha" required style="display: none;">
+            <input type="text" id="cliente" name="cliente" style="display: none;">
+            <input type="text" id="asesora" name="asesora" value="{{ auth()->user()->name }}" readonly style="display: none;">
+            <input type="date" id="fecha" name="fecha" style="display: none;">
 
             <!-- IMÁGENES -->
             <div class="form-section">
@@ -902,14 +902,58 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         return;
     }
 
+    // Detectar cuál botón se presionó
+    const submitButton = e.submitter;
+    const action = submitButton ? submitButton.value : 'borrador';
+    
+    console.log('🔵 Botón presionado:', submitButton?.textContent?.trim());
+    console.log('🔵 Acción:', action);
+
+    // Leer observaciones generales del DOM con TODA la información
+    const observacionesDelDOM = [];
+    document.querySelectorAll('#observaciones_lista > div').forEach((div) => {
+        const inputTexto = div.querySelector('input[name="observaciones_generales[]"]');
+        const inputCheck = div.querySelector('input[name="observaciones_check[]"]');
+        const inputValor = div.querySelector('input[name="observaciones_valor[]"]');
+        
+        if (inputTexto && inputTexto.value.trim()) {
+            const esCheckbox = inputCheck && inputCheck.checked;
+            const esTexto = inputValor && inputValor.style.display !== 'none';
+            
+            const obs = {
+                texto: inputTexto.value.trim(),
+                tipo: esCheckbox ? 'checkbox' : 'texto',
+                valor: esCheckbox ? inputCheck.checked : (inputValor ? inputValor.value : '')
+            };
+            
+            observacionesDelDOM.push(obs);
+        }
+    });
+
+    // Preparar datos como JSON
+    const data = {
+        _token: document.querySelector('input[name="_token"]').value,
+        cliente: cliente,
+        asesora: asesora,
+        fecha: document.getElementById('header-fecha').value,
+        action: action,
+        observaciones_tecnicas: observacionesTecnicas,
+        tecnicas: tecnicasSeleccionadas,
+        ubicaciones: seccionesSeleccionadas,
+        observaciones_generales: observacionesDelDOM
+    };
+
     // Preparar FormData para subir imágenes
     const formData = new FormData();
-    formData.append('cliente', cliente);
-    formData.append('asesora', asesora);
-    formData.append('observaciones_tecnicas', observacionesTecnicas);
-    formData.append('tecnicas', JSON.stringify(tecnicasSeleccionadas));
-    formData.append('ubicaciones', JSON.stringify(seccionesSeleccionadas));
-    formData.append('observaciones_generales', JSON.stringify(observacionesGenerales));
+    
+    // Agregar datos JSON
+    Object.keys(data).forEach(key => {
+        if (Array.isArray(data[key]) || typeof data[key] === 'object') {
+            formData.append(key, JSON.stringify(data[key]));
+        } else {
+            formData.append(key, data[key]);
+        }
+    });
 
     // Agregar imágenes
     imagenesSeleccionadas.forEach((img) => {
@@ -919,9 +963,6 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     try {
         const response = await fetch('{{ route("asesores.cotizaciones-bordado.store") }}', {
             method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
-            },
             body: formData
         });
 

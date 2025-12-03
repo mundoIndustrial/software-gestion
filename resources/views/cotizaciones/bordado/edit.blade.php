@@ -224,7 +224,7 @@
                 <label for="observaciones_tecnicas" class="block text-sm font-medium text-gray-700">Observaciones Técnicas de Bordado</label>
                 <textarea id="observaciones_tecnicas" name="observaciones_tecnicas" rows="4"
                     class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="Detallar especificaciones técnicas del bordado...">{{ $cotizacion->observaciones_tecnicas }}</textarea>
+                    placeholder="Detallar especificaciones técnicas del bordado...">{{ is_array($cotizacion->observaciones_tecnicas) ? json_encode($cotizacion->observaciones_tecnicas, JSON_PRETTY_PRINT) : ($cotizacion->observaciones_tecnicas ?? '') }}</textarea>
             </div>
 
             <!-- Especificaciones (Paso 4 - Presupuesto) -->
@@ -232,7 +232,7 @@
                 <label for="especificaciones" class="block text-sm font-medium text-gray-700">Especificaciones / Presupuesto</label>
                 <textarea id="especificaciones" name="especificaciones" rows="4"
                     class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="Ingresar presupuesto y especificaciones...">{{ json_encode($cotizacion->especificaciones, JSON_PRETTY_PRINT) }}</textarea>
+                    placeholder="Ingresar presupuesto y especificaciones...">{{ is_array($cotizacion->especificaciones) ? json_encode($cotizacion->especificaciones, JSON_PRETTY_PRINT) : ($cotizacion->especificaciones ?? '') }}</textarea>
             </div>
 
             <!-- Observaciones Generales -->
@@ -240,7 +240,7 @@
                 <label for="observaciones_generales" class="block text-sm font-medium text-gray-700">Observaciones Generales</label>
                 <textarea id="observaciones_generales" name="observaciones_generales" rows="3"
                     class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="Notas adicionales...">{{ json_encode($cotizacion->observaciones_generales, JSON_PRETTY_PRINT) }}</textarea>
+                    placeholder="Notas adicionales...">{{ is_array($cotizacion->observaciones_generales) ? json_encode($cotizacion->observaciones_generales, JSON_PRETTY_PRINT) : ($cotizacion->observaciones_generales ?? '') }}</textarea>
             </div>
 
             <!-- Botones -->

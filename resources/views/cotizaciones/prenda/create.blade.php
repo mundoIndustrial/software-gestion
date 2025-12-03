@@ -242,9 +242,9 @@
             @csrf
 
             <!-- Campos ocultos para sincronizar con el header -->
-            <input type="text" id="cliente" name="cliente" required style="display: none;">
-            <input type="text" id="asesora" name="asesora" required value="{{ auth()->user()->name }}" readonly style="display: none;">
-            <input type="date" id="fecha" name="fecha" required style="display: none;">
+            <input type="text" id="cliente" name="cliente" style="display: none;">
+            <input type="text" id="asesora" name="asesora" value="{{ auth()->user()->name }}" readonly style="display: none;">
+            <input type="date" id="fecha" name="fecha" style="display: none;">
             <input type="text" id="tipo_cotizacion" name="tipo_cotizacion" style="display: none;">
 
             <!-- TIPO DE COTIZACIÓN -->

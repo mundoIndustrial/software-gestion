@@ -4,7 +4,7 @@
  */
 
 // Variables globales
-window.imagenesEnMemoria = { prenda: [], tela: [], general: [] };
+window.imagenesEnMemoria = { prenda: [], tela: [], logo: [] };
 window.especificacionesSeleccionadas = {};
 
 console.log('🔵 Sistema de cotizaciones inicializado');
@@ -251,7 +251,7 @@ function recopilarDatos() {
     
     console.log('📦 Productos recopilados:', productos);
     
-    // ========== PASO 3: BORDADO/ESTAMPADO ==========
+    // ========== PASO 3: LOGO ==========
     
     // Recopilar técnicas
     const contenedorTecnicas = document.getElementById('tecnicas_seleccionadas');

@@ -13,8 +13,8 @@ class CrearTiposCotizacionSeeder extends Seeder
     public function run(): void
     {
         $tipos = [
-            ['nombre' => 'Prenda/Logo', 'codigo' => 'prenda_logo', 'descripcion' => 'Cotización con prendas y bordado/estampado'],
-            ['nombre' => 'Logo', 'codigo' => 'logo', 'descripcion' => 'Cotización solo con bordado/estampado'],
+            ['nombre' => 'Prenda/Logo', 'codigo' => 'prenda_logo', 'descripcion' => 'Cotización con prendas y LOGO'],
+            ['nombre' => 'Logo', 'codigo' => 'logo', 'descripcion' => 'Cotización solo con LOGO'],
             ['nombre' => 'General', 'codigo' => 'general', 'descripcion' => 'Cotización general'],
         ];
 

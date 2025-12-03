@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
-        // Cargar imágenes de bordado/estampado
+        // Cargar imágenes de LOGO
         if (cotizacion.imagenes && Array.isArray(cotizacion.imagenes)) {
             console.log('📸 Cargando imágenes:', cotizacion.imagenes);
             const galeriaImagenes = document.getElementById('galeria_imagenes');

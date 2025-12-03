@@ -31,7 +31,7 @@
             <div class="step-line"></div>
             <div class="step" data-step="3" onclick="irAlPaso(3)" style="cursor: pointer;">
                 <div class="step-number">3</div>
-                <div class="step-label">BORDADO/ESTAMPADO</div>
+                <div class="step-label">LOGO</div>
             </div>
             <div class="step-line"></div>
             <div class="step" data-step="4" onclick="irAlPaso(4)" style="cursor: pointer;">
@@ -183,10 +183,10 @@
             </div>
         </div>
 
-        <!-- PASO 3: BORDADO/ESTAMPADO -->
+        <!-- PASO 3: LOGO -->
         <div class="form-step" data-step="3">
             <div class="step-header">
-                <h2>PASO 3: BORDADO/ESTAMPADO</h2>
+                <h2>PASO 3: LOGO</h2>
                 <p>ESPECIFICA LOS DETALLES DE BORDADO Y ESTAMPADO (OPCIONAL)</p>
             </div>
             

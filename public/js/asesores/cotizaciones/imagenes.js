@@ -45,7 +45,7 @@ function agregarImagenes(newFiles) {
     
     // Guardar en memoria
     newFilesArray.forEach(file => {
-        window.imagenesEnMemoria.general.push(file);
+        window.imagenesEnMemoria.logo.push(file);
         console.log(`✅ Imagen guardada en memoria: ${file.name}`);
     });
     

@@ -80,7 +80,7 @@ function eliminarCotizacion(cotizacionId, cliente) {
                             <ul style="margin: 0.25rem 0 0 0; padding-left: 1.25rem;">
                                 <li>Registro de cotización</li>
                                 <li>Todas las prendas relacionadas</li>
-                                <li>Información de bordado/estampado</li>
+                                <li>Información de LOGO</li>
                                 <li>Pedidos de producción asociados</li>
                                 <li>Historial de cambios</li>
                             </ul>
@@ -90,7 +90,7 @@ function eliminarCotizacion(cotizacionId, cliente) {
                                 <li>Carpeta: <code style="background: #fff3cd; padding: 0.2rem 0.4rem; border-radius: 2px;">/storage/cotizaciones/${cotizacionId}</code></li>
                                 <li>Todas las imágenes de prendas</li>
                                 <li>Todas las imágenes de telas</li>
-                                <li>Todas las imágenes de bordado/estampado</li>
+                                <li>Todas las imágenes de LOGO</li>
                             </ul>
                         </li>
                     </ul>
@@ -149,7 +149,7 @@ function eliminarCotizacion(cotizacionId, cliente) {
                                 <ul style="margin: 0; padding-left: 1.5rem; font-size: 0.9rem;">
                                     <li>Cotización de la base de datos</li>
                                     <li>Todas las prendas relacionadas</li>
-                                    <li>Información de bordado/estampado</li>
+                                    <li>Información de LOGO</li>
                                     <li>Pedidos de producción</li>
                                     <li>Historial de cambios</li>
                                     <li>Carpeta <code style="background: #f0f0f0; padding: 0.2rem 0.4rem; border-radius: 2px;">/storage/cotizaciones/${cotizacionId}</code></li>

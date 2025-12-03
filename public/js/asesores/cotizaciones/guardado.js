@@ -78,7 +78,7 @@ async function guardarCotizacion() {
     console.log('📸 Imágenes en memoria:', {
         prendaConIndice: window.imagenesEnMemoria.prendaConIndice ? window.imagenesEnMemoria.prendaConIndice.length : 0,
         telaConIndice: window.imagenesEnMemoria.telaConIndice ? window.imagenesEnMemoria.telaConIndice.length : 0,
-        general: window.imagenesEnMemoria.general.length
+        logo: window.imagenesEnMemoria.logo.length
     });
     
     try {
@@ -139,13 +139,13 @@ async function guardarCotizacion() {
         if (data.success && data.cotizacion_id) {
             console.log('✅ Cotización creada con ID:', data.cotizacion_id);
             
-            // Contar imágenes: prendaConIndice, telaConIndice, y general
+            // Contar imágenes: prendaConIndice, telaConIndice, y logo
             const cantPrenda = window.imagenesEnMemoria.prendaConIndice ? window.imagenesEnMemoria.prendaConIndice.length : 0;
             const cantTela = window.imagenesEnMemoria.telaConIndice ? window.imagenesEnMemoria.telaConIndice.length : 0;
-            const cantGeneral = window.imagenesEnMemoria.general ? window.imagenesEnMemoria.general.length : 0;
-            const totalImagenes = cantPrenda + cantTela + cantGeneral;
+            const cantLogo = window.imagenesEnMemoria.logo ? window.imagenesEnMemoria.logo.length : 0;
+            const totalImagenes = cantPrenda + cantTela + cantLogo;
             
-            console.log(`📸 Total imágenes: ${cantPrenda} prenda + ${cantTela} tela + ${cantGeneral} general = ${totalImagenes}`);
+            console.log(`📸 Total imágenes: ${cantPrenda} prenda + ${cantTela} tela + ${cantLogo} logo = ${totalImagenes}`);
             
             if (totalImagenes > 0) {
                 console.log('📸 Subiendo', totalImagenes, 'imágenes...');
@@ -156,8 +156,8 @@ async function guardarCotizacion() {
                 if (cantTela > 0) {
                     await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.telaConIndice, 'tela');
                 }
-                if (cantGeneral > 0) {
-                    await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.general, 'general');
+                if (cantLogo > 0) {
+                    await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.logo, 'logo');
                 }
             }
             
@@ -413,13 +413,13 @@ async function procederEnviarCotizacion(datos) {
         if (data.success && data.cotizacion_id) {
             console.log('✅ Cotización creada con ID:', data.cotizacion_id);
             
-            // Contar imágenes: prendaConIndice, telaConIndice, y general
+            // Contar imágenes: prendaConIndice, telaConIndice, y logo
             const cantPrenda = window.imagenesEnMemoria.prendaConIndice ? window.imagenesEnMemoria.prendaConIndice.length : 0;
             const cantTela = window.imagenesEnMemoria.telaConIndice ? window.imagenesEnMemoria.telaConIndice.length : 0;
-            const cantGeneral = window.imagenesEnMemoria.general ? window.imagenesEnMemoria.general.length : 0;
-            const totalImagenes = cantPrenda + cantTela + cantGeneral;
+            const cantLogo = window.imagenesEnMemoria.logo ? window.imagenesEnMemoria.logo.length : 0;
+            const totalImagenes = cantPrenda + cantTela + cantLogo;
             
-            console.log(`📸 Total imágenes: ${cantPrenda} prenda + ${cantTela} tela + ${cantGeneral} general = ${totalImagenes}`);
+            console.log(`📸 Total imágenes: ${cantPrenda} prenda + ${cantTela} tela + ${cantLogo} logo = ${totalImagenes}`);
             
             if (totalImagenes > 0) {
                 if (cantPrenda > 0) {
@@ -428,8 +428,8 @@ async function procederEnviarCotizacion(datos) {
                 if (cantTela > 0) {
                     await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.telaConIndice, 'tela');
                 }
-                if (cantGeneral > 0) {
-                    await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.general, 'general');
+                if (cantLogo > 0) {
+                    await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.logo, 'logo');
                 }
             }
             

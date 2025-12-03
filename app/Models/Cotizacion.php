@@ -88,7 +88,7 @@ class Cotizacion extends Model
     }
 
     /**
-     * Relación con logo/bordado/estampado de cotización
+     * Relación con logo/LOGO de cotización
      */
     public function logoCotizacion()
     {

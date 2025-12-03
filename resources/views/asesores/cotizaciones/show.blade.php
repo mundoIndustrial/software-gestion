@@ -439,19 +439,32 @@
 
     <!-- TABS NAVIGATION -->
     <div class="tabs-container">
-        <button class="tab-button active" onclick="cambiarTab('prendas', this)">
-            <i class="fas fa-box"></i> PRENDAS
-        </button>
-        <button class="tab-button" onclick="cambiarTab('bordado', this)">
-            <i class="fas fa-tools"></i> BORDADO/ESTAMPADO
-        </button>
+        @php
+            // Determinar si es una cotización de logo o prendas
+            $tipoNombre = $cotizacion->tipoCotizacion ? strtolower($cotizacion->tipoCotizacion->nombre) : '';
+            $esLogo = strpos($tipoNombre, 'logo') !== false;
+            $tienePrendas = $cotizacion->prendasCotizaciones && count($cotizacion->prendasCotizaciones) > 0;
+            \Log::info('DEBUG TABS:', ['tipoNombre' => $tipoNombre, 'esLogo' => $esLogo, 'tienePrendas' => $tienePrendas]);
+        @endphp
+        
+        @if(!$esLogo || $tienePrendas)
+            <button class="tab-button {{ $esLogo && !$tienePrendas ? '' : 'active' }}" onclick="cambiarTab('prendas', this)">
+                <i class="fas fa-box"></i> PRENDAS
+            </button>
+        @endif
+        
+        @if($logo)
+            <button class="tab-button {{ $esLogo ? 'active' : '' }}" onclick="cambiarTab('bordado', this)">
+                <i class="fas fa-tools"></i> {{ $esLogo ? 'LOGO' : 'LOGO' }}
+            </button>
+        @endif
     </div>
 
     <!-- TAB CONTENT WRAPPER -->
     <div class="tab-content-wrapper">
 
         <!-- TAB 1: PRENDAS -->
-        <div id="tab-prendas" class="tab-content active">
+        <div id="tab-prendas" class="tab-content {{ (!$esLogo || $tienePrendas) && !$esLogo ? 'active' : '' }}">
             @if($cotizacion->prendasCotizaciones && count($cotizacion->prendasCotizaciones) > 0)
                 <table class="productos-table">
                     <thead>
@@ -597,9 +610,9 @@
                                             @if($prenda->fotos && is_array($prenda->fotos) && count($prenda->fotos) > 0)
                                                 <div style="display: flex; gap: 0.3rem; flex-wrap: wrap; justify-content: center;">
                                                     @foreach($prenda->fotos as $index => $foto)
-                                                        <img src="{{ $foto }}" alt="Prenda {{ $index + 1 }}"
+                                                        <img src="{{ asset($foto) }}" alt="Prenda {{ $index + 1 }}"
                                                              style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid #e2e8f0;"
-                                                             onclick="abrirModalImagen('{{ $foto }}', '{{ $prenda->nombre_producto ?? 'Prenda' }} - Foto {{ $index + 1 }}', {{ json_encode($prenda->fotos) }}, {{ $index }})">
+                                                             onclick="abrirModalImagen('{{ asset($foto) }}', '{{ $prenda->nombre_producto ?? 'Prenda' }} - Foto {{ $index + 1 }}', {{ json_encode($prenda->fotos) }}, {{ $index }})">
                                                     @endforeach
                                                 </div>
                                             @else
@@ -615,9 +628,9 @@
                                             @if($prenda->telas && is_array($prenda->telas) && count($prenda->telas) > 0)
                                                 <div style="display: flex; gap: 0.3rem; flex-wrap: wrap; justify-content: center;">
                                                     @foreach($prenda->telas as $index => $tela)
-                                                        <img src="{{ $tela }}" alt="Tela {{ $index + 1 }}"
+                                                        <img src="{{ asset($tela) }}" alt="Tela {{ $index + 1 }}"
                                                              style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid #e2e8f0;"
-                                                             onclick="abrirModalImagen('{{ $tela }}', '{{ $prenda->nombre_producto ?? 'Tela' }} - Tela {{ $index + 1 }}', {{ json_encode($prenda->telas) }}, {{ $index }})">
+                                                             onclick="abrirModalImagen('{{ asset($tela) }}', '{{ $prenda->nombre_producto ?? 'Tela' }} - Tela {{ $index + 1 }}', {{ json_encode($prenda->telas) }}, {{ $index }})">
                                                     @endforeach
                                                 </div>
                                             @else
@@ -686,7 +699,13 @@
                                             <!-- Valores de la categoría -->
                                             @foreach($especificacionesData[$categoriaKey] as $valor)
                                                 <tr style="border-bottom: 1px solid #e2e8f0;">
-                                                    <td style="padding: 12px; color: #333; font-weight: 500; border-right: 1px solid #e2e8f0;">{{ $valor }}</td>
+                                                    <td style="padding: 12px; color: #333; font-weight: 500; border-right: 1px solid #e2e8f0;">
+                                                        @if(is_array($valor))
+                                                            {{ implode(', ', $valor) ?? '-' }}
+                                                        @else
+                                                            {{ $valor ?? '-' }}
+                                                        @endif
+                                                    </td>
                                                     <td style="padding: 12px; text-align: center; color: #1e40af; font-weight: 700; font-size: 1.2rem; border-right: 1px solid #e2e8f0;">✕</td>
                                                     <td style="padding: 12px; color: #64748b; font-size: 0.9rem;">Sin observaciones</td>
                                                 </tr>
@@ -706,8 +725,8 @@
             @endif
         </div><!-- FIN TAB PRENDAS -->
 
-        <!-- TAB 2: BORDADO/ESTAMPADO -->
-        <div id="tab-bordado" class="tab-content">
+        <!-- TAB 2: LOGO / LOGO -->
+        <div id="tab-bordado" class="tab-content {{ $esLogo ? 'active' : '' }}">
             @if($logo)
                 <!-- 1. IMÁGENES -->
                 @if($logo->imagenes && is_array($logo->imagenes) && count($logo->imagenes) > 0)
@@ -717,16 +736,16 @@
                     <div class="imagenes-bordado">
                         @foreach($logo->imagenes as $imagen)
                             <div class="imagen-bordado">
-                                <img src="{{ $imagen }}" alt="Bordado" 
+                                <img src="{{ asset($imagen) }}" alt="{{ $esLogo ? 'Logo' : 'Bordado' }}" 
                                      style="width: 100%; height: 150px; object-fit: cover;" 
-                                     onclick="abrirModalImagen('{{ $imagen }}', 'Bordado/Estampado')">
+                                     onclick="abrirModalImagen('{{ asset($imagen) }}', '{{ $esLogo ? 'Logo' : 'LOGO' }}')">
                             </div>
                         @endforeach
                     </div>
                 @else
                     <div class="sin-contenido">
                         <i class="fas fa-images" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                        Sin imágenes de bordado/estampado
+                        {{ $esLogo ? 'Sin imágenes de logo' : 'Sin imágenes de LOGO' }}
                     </div>
                 @endif
 
@@ -747,13 +766,25 @@
                                 <tr>
                                     <td>
                                         <div class="producto-descripcion">
-                                            <p style="margin: 0; color: #475569; font-size: 0.95rem;">{{ $tecnica }}</p>
+                                            <p style="margin: 0; color: #475569; font-size: 0.95rem;">
+                                                @if(is_array($tecnica))
+                                                    {{ implode(', ', $tecnica) ?? '-' }}
+                                                @else
+                                                    {{ $tecnica ?? '-' }}
+                                                @endif
+                                            </p>
                                         </div>
                                     </td>
                                     <td>
                                         @if($logo->observaciones_tecnicas && $index === 0)
                                             <div class="producto-descripcion">
-                                                <p style="margin: 0; color: #666; font-size: 0.9rem;">{{ $logo->observaciones_tecnicas }}</p>
+                                                <p style="margin: 0; color: #666; font-size: 0.9rem;">
+                                                    @if(is_array($logo->observaciones_tecnicas))
+                                                        {{ implode(', ', $logo->observaciones_tecnicas) ?? '-' }}
+                                                    @else
+                                                        {{ $logo->observaciones_tecnicas ?? '-' }}
+                                                    @endif
+                                                </p>
                                             </div>
                                         @endif
                                     </td>
@@ -766,7 +797,13 @@
                         <i class="fas fa-wrench"></i> Observaciones Técnicas
                     </div>
                     <div class="observaciones-box">
-                        <p>{{ $logo->observaciones_tecnicas }}</p>
+                        <p>
+                            @if(is_array($logo->observaciones_tecnicas))
+                                {{ implode(', ', $logo->observaciones_tecnicas) ?? '-' }}
+                            @else
+                                {{ $logo->observaciones_tecnicas ?? '-' }}
+                            @endif
+                        </p>
                     </div>
                 @endif
 
@@ -786,10 +823,31 @@
                         <tbody>
                             @foreach($logo->ubicaciones as $item)
                                 @php
-                                    // Manejar tanto formato antiguo (string) como nuevo (array con seccion)
-                                    $seccion = is_array($item) ? ($item['seccion'] ?? 'GENERAL') : 'GENERAL';
-                                    $ubicacionesSeleccionadas = is_array($item) ? ($item['ubicaciones_seleccionadas'] ?? [$item]) : [$item];
-                                    $observaciones = is_array($item) ? ($item['observaciones'] ?? '') : '';
+                                    // Manejar diferentes formatos de ubicaciones
+                                    if (is_array($item)) {
+                                        // Nuevo formato con estructura definida
+                                        if (isset($item['ubicacion']) && isset($item['opciones'])) {
+                                            // Formato: {ubicacion: "...", opciones: [...], observaciones: "..."}
+                                            $seccion = $item['ubicacion'] ?? 'GENERAL';
+                                            $ubicacionesSeleccionadas = $item['opciones'] ?? [];
+                                            $observaciones = $item['observaciones'] ?? '';
+                                        } elseif (isset($item['ubicaciones_seleccionadas'])) {
+                                            // Formato antiguo: {seccion: "...", ubicaciones_seleccionadas: [...]}
+                                            $seccion = $item['seccion'] ?? 'GENERAL';
+                                            $ubicacionesSeleccionadas = $item['ubicaciones_seleccionadas'] ?? [];
+                                            $observaciones = $item['observaciones'] ?? '';
+                                        } else {
+                                            // Fallback: es un array pero no tiene estructura conocida
+                                            $seccion = 'GENERAL';
+                                            $ubicacionesSeleccionadas = is_array($item) ? array_values($item) : [$item];
+                                            $observaciones = '';
+                                        }
+                                    } else {
+                                        // Formato antiguo: solo string
+                                        $seccion = 'GENERAL';
+                                        $ubicacionesSeleccionadas = [$item];
+                                        $observaciones = '';
+                                    }
                                 @endphp
                                 <tr>
                                     <td style="font-weight: 600; color: #1e40af; vertical-align: top;">
@@ -798,14 +856,27 @@
                                     <td style="vertical-align: top;">
                                         <div class="producto-descripcion">
                                             @foreach($ubicacionesSeleccionadas as $ubicacion)
-                                                <p style="margin: 4px 0; color: #475569; font-size: 0.95rem;">• {{ $ubicacion }}</p>
+                                                <p style="margin: 4px 0; color: #475569; font-size: 0.95rem;">
+                                                    • 
+                                                    @if(is_array($ubicacion))
+                                                        {{ implode(', ', $ubicacion) ?? '-' }}
+                                                    @else
+                                                        {{ $ubicacion ?? '-' }}
+                                                    @endif
+                                                </p>
                                             @endforeach
                                         </div>
                                     </td>
                                     <td style="vertical-align: top;">
                                         @if($observaciones)
                                             <div class="producto-descripcion">
-                                                <p style="margin: 0; color: #666; font-size: 0.9rem;">{{ $observaciones }}</p>
+                                                <p style="margin: 0; color: #666; font-size: 0.9rem;">
+                                                    @if(is_array($observaciones))
+                                                        {{ implode(', ', $observaciones) ?? '-' }}
+                                                    @else
+                                                        {{ $observaciones ?? '-' }}
+                                                    @endif
+                                                </p>
                                             </div>
                                         @else
                                             <p style="margin: 0; color: #999; font-size: 0.9rem; font-style: italic;">-</p>
@@ -844,11 +915,19 @@
                                     $texto = is_array($obs) ? ($obs['texto'] ?? $obs) : $obs;
                                     $tipo = is_array($obs) ? ($obs['tipo'] ?? 'texto') : 'texto';
                                     $valor = is_array($obs) ? ($obs['valor'] ?? '') : '';
+                                    
+                                    // Asegurar que texto y valor no sean arrays
+                                    if (is_array($texto)) {
+                                        $texto = implode(', ', $texto);
+                                    }
+                                    if (is_array($valor)) {
+                                        $valor = implode(', ', $valor);
+                                    }
                                 @endphp
                                 <tr>
                                     <td>
                                         <div class="producto-descripcion">
-                                            <p style="margin: 0; color: #475569; font-size: 0.95rem;">{{ $texto }}</p>
+                                            <p style="margin: 0; color: #475569; font-size: 0.95rem;">{{ $texto ?? '-' }}</p>
                                         </div>
                                     </td>
                                     <td style="text-align: center;">
@@ -868,7 +947,7 @@
             @else
                 <div class="sin-contenido">
                     <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                    Sin información de bordado/estampado
+                    {{ $esLogo ? 'Sin información de logo' : 'Sin información de LOGO' }}
                 </div>
             @endif
         </div><!-- FIN TAB BORDADO -->

@@ -57,7 +57,7 @@ class ContadorController extends Controller
                 $cotizacion->prendasCotizaciones()->delete();
             }
             
-            // 2. Eliminar logo/bordado/estampado relacionado (logoCotizacion)
+            // 2. Eliminar logo/LOGO relacionado (logoCotizacion)
             if ($cotizacion->logoCotizacion()->exists()) {
                 \Log::info('Eliminando logoCotizacion');
                 $cotizacion->logoCotizacion()->delete();

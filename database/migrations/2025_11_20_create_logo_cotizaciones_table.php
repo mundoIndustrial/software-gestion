@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('cotizacion_id')->constrained('cotizaciones')->onDelete('cascade');
             
-            // IMÁGENES DE BORDADO/ESTAMPADO
+            // IMÁGENES DE LOGO
             $table->json('imagenes')->nullable(); // Array de imágenes (máx 5)
             
             // TÉCNICAS

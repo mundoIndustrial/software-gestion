@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Cotizacion;
 use App\Models\PedidoProduccion;
 use App\Models\LogoCotizacion;
+use App\Services\ImagenCotizacionService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Support\Str;
@@ -43,16 +44,28 @@ class CotizacionBordadoController extends Controller
     public function store(Request $request)
     {
         try {
+            // Convertir JSON strings a arrays si es necesario
+            $tecnicas = $request->input('tecnicas');
+            if (is_string($tecnicas)) {
+                $tecnicas = json_decode($tecnicas, true) ?? [];
+            }
+            
+            $ubicaciones = $request->input('ubicaciones');
+            if (is_string($ubicaciones)) {
+                $ubicaciones = json_decode($ubicaciones, true) ?? [];
+            }
+            
+            $observacionesGenerales = $request->input('observaciones_generales');
+            if (is_string($observacionesGenerales)) {
+                $observacionesGenerales = json_decode($observacionesGenerales, true) ?? [];
+            }
+            
             $validated = $request->validate([
                 'cliente' => 'required|string|max:255',
                 'asesora' => 'required|string|max:255',
                 'fecha' => 'nullable|date',
                 'action' => 'required|in:borrador,enviar',
-                'tecnicas' => 'nullable|array',
-                'imagenes' => 'nullable|array',
                 'observaciones_tecnicas' => 'nullable|string',
-                'ubicaciones' => 'nullable|array',
-                'observaciones_generales' => 'nullable|array',
             ]);
 
             $esBorrador = $validated['action'] === 'borrador';
@@ -65,19 +78,31 @@ class CotizacionBordadoController extends Controller
                 'estado' => $esBorrador ? 'borrador' : 'enviada',
                 'cliente' => $validated['cliente'],
                 'asesora' => $validated['asesora'],
-                'created_at' => $validated['fecha'] ?? now(),
+                'fecha_inicio' => $validated['fecha'] ?? now(),
                 'es_borrador' => $esBorrador,
             ]);
 
             // Guardar detalles técnicos en logo_cotizaciones
             if ($cotizacion) {
+                // Procesar imágenes usando el servicio
+                $imagenes = [];
+                if ($request->hasFile('imagenes')) {
+                    $imagenService = new ImagenCotizacionService();
+                    foreach ($request->file('imagenes') as $archivo) {
+                        $ruta = $imagenService->guardarImagen($cotizacion->id, $archivo, 'logo');
+                        if ($ruta) {
+                            $imagenes[] = $ruta;
+                        }
+                    }
+                }
+
                 LogoCotizacion::create([
                     'cotizacion_id' => $cotizacion->id,
-                    'tecnicas' => $validated['tecnicas'] ?? [],
-                    'imagenes' => $validated['imagenes'] ?? [],
+                    'tecnicas' => $tecnicas,
+                    'imagenes' => $imagenes,
                     'observaciones_tecnicas' => $validated['observaciones_tecnicas'] ?? '',
-                    'ubicaciones' => $validated['ubicaciones'] ?? [],
-                    'observaciones_generales' => $validated['observaciones_generales'] ?? [],
+                    'ubicaciones' => $ubicaciones,
+                    'observaciones_generales' => $observacionesGenerales,
                 ]);
             }
 
@@ -86,7 +111,7 @@ class CotizacionBordadoController extends Controller
                 : 'Cotización de bordado enviada correctamente';
             
             $redirect = $esBorrador 
-                ? route('asesores.cotizaciones-bordado.edit', $cotizacion->id)
+                ? route('cotizaciones-bordado.edit', $cotizacion->id)
                 : route('asesores.cotizaciones.index');
 
             return response()->json([
@@ -95,10 +120,24 @@ class CotizacionBordadoController extends Controller
                 'cotizacion_id' => $cotizacion->id,
                 'redirect' => $redirect
             ]);
-        } catch (\Exception $e) {
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al guardar cotización: ' . $e->getMessage()
+                'message' => 'Error de validación: ' . implode(', ', array_map(fn($msgs) => implode(', ', $msgs), $e->errors())),
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Error al guardar cotización de bordado', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar cotización: ' . $e->getMessage(),
+                'debug' => config('app.debug') ? $e->getTraceAsString() : null
             ], 500);
         }
     }
@@ -108,8 +147,8 @@ class CotizacionBordadoController extends Controller
      */
     public function edit(Cotizacion $cotizacion): View
     {
-        // Verificar que sea del usuario actual y sea de tipo bordado
-        if ($cotizacion->user_id !== auth()->id() || $cotizacion->tipo_cotizacion !== 'bordado') {
+        // Verificar que sea del usuario actual
+        if ($cotizacion->user_id !== auth()->id()) {
             abort(403, 'No tienes permiso para editar esta cotización');
         }
 
@@ -123,7 +162,7 @@ class CotizacionBordadoController extends Controller
     {
         try {
             // Verificar permisos
-            if ($cotizacion->user_id !== auth()->id() || $cotizacion->tipo_cotizacion !== 'bordado') {
+            if ($cotizacion->user_id !== auth()->id()) {
                 abort(403, 'No tienes permiso para actualizar esta cotización');
             }
 
@@ -173,8 +212,8 @@ class CotizacionBordadoController extends Controller
     public function enviar(Request $request, Cotizacion $cotizacion)
     {
         try {
-            // Verificar permisos y que sea borrador
-            if ($cotizacion->user_id !== auth()->id() || $cotizacion->tipo_cotizacion !== 'bordado') {
+            // Verificar permisos
+            if ($cotizacion->user_id !== auth()->id()) {
                 abort(403, 'No tienes permiso');
             }
 
@@ -220,7 +259,7 @@ class CotizacionBordadoController extends Controller
     public function lista(): View
     {
         $cotizaciones = Cotizacion::where('user_id', auth()->id())
-            ->where('tipo_cotizacion', 'bordado')
+            ->where('tipo_cotizacion_id', 2) // Tipo bordado
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -233,7 +272,7 @@ class CotizacionBordadoController extends Controller
     public function destroy(Cotizacion $cotizacion)
     {
         try {
-            if ($cotizacion->user_id !== auth()->id() || $cotizacion->tipo_cotizacion !== 'bordado') {
+            if ($cotizacion->user_id !== auth()->id()) {
                 abort(403, 'No tienes permiso');
             }
 
