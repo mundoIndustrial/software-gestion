@@ -1,4 +1,4 @@
-@extends('layouts.insumos.app')
+@extends('layouts.insumos')
 
 @section('title', 'Inventario de Telas - Insumos')
 @section('page-title', 'Inventario de Telas')

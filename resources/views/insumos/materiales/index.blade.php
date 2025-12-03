@@ -1,5 +1,5 @@
 {{-- resources/views/insumos/materiales/index.blade.php --}}
-@extends('layouts.insumos.app')
+@extends('layouts.insumos')
 
 @section('title', 'Gestión de Insumos - Control de Insumos del Pedido')
 @section('page-title', 'Control de Insumos del Pedido')

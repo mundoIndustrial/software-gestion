@@ -1,4 +1,4 @@
-@extends('layouts.insumos.app')
+@extends('layouts.insumos')
 
 @section('title', 'Cálculo de Metrajes')
 @section('page-title', 'Cálculo de Metrajes')
