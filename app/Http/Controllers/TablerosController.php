@@ -22,6 +22,8 @@ use App\Services\SectionLoaderService;
 use App\Services\OperarioService;
 use App\Services\MaquinaService;
 use App\Services\TelaService;
+use App\Services\HoraService;
+use App\Services\CorteService;
 
 class TablerosController extends Controller
 {
@@ -33,6 +35,8 @@ class TablerosController extends Controller
         private OperarioService $operario,
         private MaquinaService $maquina,
         private TelaService $tela,
+        private HoraService $hora,
+        private CorteService $corteService,
     ) {}
 
     public function fullscreen(Request $request)
@@ -772,243 +776,9 @@ class TablerosController extends Controller
 
     public function storeCorte(Request $request)
     {
-        \Log::info('🔴 storeCorte INICIADO', [
-            'all_data' => $request->all(),
-            'method' => $request->method()
-        ]);
-
-        // Validación con mensajes personalizados descriptivos
-        try {
-            $request->validate([
-                'fecha' => 'required|date',
-                'orden_produccion' => 'required|string',
-                'tela_id' => 'required|exists:telas,id',
-                'hora_id' => 'required|exists:horas,id',
-                'operario_id' => 'required|exists:users,id',
-                'actividad' => 'required|string',
-                'maquina_id' => 'required|exists:maquinas,id',
-                'tiempo_ciclo' => 'required|numeric|min:0.01',
-                'porcion_tiempo' => 'required|numeric|min:0|max:1',
-                'cantidad_producida' => 'required|integer|min:0',
-                'paradas_programadas' => 'required|string',
-                'paradas_no_programadas' => 'nullable|string',
-                'tiempo_parada_no_programada' => 'nullable|numeric|min:0',
-                'tipo_extendido' => 'required|string',
-                'numero_capas' => 'required|integer|min:0',
-                'trazado' => 'required|string',
-                'tiempo_trazado' => 'nullable|numeric|min:0',
-            ], [
-                'fecha.required' => 'La fecha es obligatoria.',
-                'fecha.date' => 'La fecha debe ser una fecha válida (formato: YYYY-MM-DD).',
-                'orden_produccion.required' => 'La orden de producción es obligatoria.',
-                'tela_id.required' => 'Debe seleccionar una tela válida.',
-                'tela_id.exists' => 'La tela seleccionada no existe en el sistema. Intenta crear una nueva.',
-                'hora_id.required' => 'Debe seleccionar una hora válida.',
-                'hora_id.exists' => 'La hora seleccionada no existe en el sistema.',
-                'operario_id.required' => 'Debe seleccionar un operario válido.',
-                'operario_id.exists' => 'El operario seleccionado no existe en el sistema.',
-                'actividad.required' => 'La actividad es obligatoria.',
-                'maquina_id.required' => 'Debe seleccionar una máquina válida.',
-                'maquina_id.exists' => 'La máquina seleccionada no existe en el sistema.',
-                'tiempo_ciclo.required' => 'El tiempo de ciclo es obligatorio.',
-                'tiempo_ciclo.numeric' => 'El tiempo de ciclo debe ser un número válido.',
-                'tiempo_ciclo.min' => 'El tiempo de ciclo debe ser mayor a 0.',
-                'porcion_tiempo.required' => 'La porción de tiempo es obligatoria.',
-                'porcion_tiempo.numeric' => 'La porción de tiempo debe ser un número válido.',
-                'porcion_tiempo.min' => 'La porción de tiempo no puede ser negativa.',
-                'porcion_tiempo.max' => 'La porción de tiempo no puede ser mayor a 1 (100%).',
-                'cantidad_producida.required' => 'La cantidad producida es obligatoria.',
-                'cantidad_producida.integer' => 'La cantidad producida debe ser un número entero.',
-                'cantidad_producida.min' => 'La cantidad producida no puede ser negativa.',
-                'paradas_programadas.required' => 'Debe seleccionar un tipo de parada programada.',
-                'tiempo_parada_no_programada.numeric' => 'El tiempo de parada no programada debe ser un número válido.',
-                'tiempo_parada_no_programada.min' => 'El tiempo de parada no programada no puede ser negativo.',
-                'tipo_extendido.required' => 'Debe seleccionar un tipo de extendido.',
-                'numero_capas.required' => 'El número de capas es obligatorio.',
-                'numero_capas.integer' => 'El número de capas debe ser un número entero.',
-                'numero_capas.min' => 'El número de capas no puede ser negativo.',
-                'trazado.required' => 'Debe seleccionar un tipo de trazado.',
-                'tiempo_trazado.numeric' => 'El tiempo de trazado debe ser un número válido.',
-                'tiempo_trazado.min' => 'El tiempo de trazado no puede ser negativo.',
-            ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            $errors = $e->errors();
-            $firstError = reset($errors)[0] ?? 'Error de validación';
-            
-            return response()->json([
-                'success' => false,
-                'message' => $firstError,
-                'errors' => $errors,
-                'error_type' => 'validation'
-            ], 422);
-        }
-
-        try {
-            // Check if tiempo_ciclo exists for this tela and maquina, if not, create it
-            $tiempoCiclo = TiempoCiclo::where('tela_id', $request->tela_id)
-                ->where('maquina_id', $request->maquina_id)
-                ->first();
-
-            if (!$tiempoCiclo) {
-                TiempoCiclo::create([
-                    'tela_id' => $request->tela_id,
-                    'maquina_id' => $request->maquina_id,
-                    'tiempo_ciclo' => $request->tiempo_ciclo,
-                ]);
-            }
-
-            // Calculate tiempo_para_programada based on paradas_programadas
-            $tiempo_para_programada = 0;
-            if ($request->paradas_programadas === 'DESAYUNO' || $request->paradas_programadas === 'MEDIA TARDE') {
-                $tiempo_para_programada = 900; // 15 minutes in seconds
-            } elseif ($request->paradas_programadas === 'NINGUNA') {
-                $tiempo_para_programada = 0;
-            }
-
-            // Calculate tiempo_extendido based on tipo_extendido and numero_capas
-            $tiempo_extendido = 0;
-            $tipo_extendido_lower = strtolower($request->tipo_extendido);
-            
-            if (str_contains($tipo_extendido_lower, 'largo')) {
-                $tiempo_extendido = 40 * $request->numero_capas;
-            } elseif (str_contains($tipo_extendido_lower, 'corto')) {
-                $tiempo_extendido = 25 * $request->numero_capas;
-            } else {
-                $tiempo_extendido = 0;
-            }
-
-            // Calculate tiempo_disponible: (3600 * porcion_tiempo) - (tiempo_para_programada + tiempo_parada_no_programada + tiempo_extendido + tiempo_trazado)
-            // NOTA: Para CORTE no se usa numero_operarios
-            $tiempo_disponible = (3600 * $request->porcion_tiempo) -
-                               $tiempo_para_programada -
-                               ($request->tiempo_parada_no_programada ?? 0) -
-                               $tiempo_extendido -
-                               ($request->tiempo_trazado ?? 0);
-
-            // Ensure tiempo_disponible is not negative
-            $tiempo_disponible = max(0, $tiempo_disponible);
-
-            // Calculate meta and eficiencia based on activity (case insensitive)
-            if (str_contains(strtolower($request->actividad), 'extender') || str_contains(strtolower($request->actividad), 'trazar')) {
-                // For activities containing "extender" or "trazar", meta is the cantidad_producida, eficiencia is 1 (100%)
-                $meta = $request->cantidad_producida;
-                $eficiencia = 1;
-            } else {
-                // Calculate meta: tiempo_disponible / tiempo_ciclo
-                $meta = $request->tiempo_ciclo > 0 ? $tiempo_disponible / $request->tiempo_ciclo : 0;
-                // Calculate eficiencia: cantidad_producida / meta (SIN multiplicar por 100)
-                $eficiencia = $meta == 0 ? 0 : $request->cantidad_producida / $meta;
-            }
-
-            \Log::info('Corte - Calculando valores', [
-                'tiempo_disponible' => $tiempo_disponible,
-                'meta' => $meta,
-                'eficiencia' => $eficiencia,
-                'cantidad_producida' => $request->cantidad_producida,
-                'tiempo_ciclo' => $request->tiempo_ciclo,
-                'actividad' => $request->actividad
-            ]);
-
-            $registro = RegistroPisoCorte::create([
-                'fecha' => $request->fecha,
-                // 'modulo' NO existe en registro_piso_corte
-                'orden_produccion' => $request->orden_produccion,
-                'hora_id' => $request->hora_id,
-                'operario_id' => $request->operario_id,
-                'maquina_id' => $request->maquina_id,
-                'porcion_tiempo' => $request->porcion_tiempo,
-                // 'numero_operarios' NO existe en registro_piso_corte
-                'cantidad' => $request->cantidad_producida,
-                'tiempo_ciclo' => $request->tiempo_ciclo,
-                'paradas_programadas' => $request->paradas_programadas,
-                'tiempo_para_programada' => $tiempo_para_programada,
-                'paradas_no_programadas' => $request->paradas_no_programadas,
-                'tiempo_parada_no_programada' => $request->tiempo_parada_no_programada ?? null,
-                'tipo_extendido' => $request->tipo_extendido,
-                'numero_capas' => $request->numero_capas,
-                'tiempo_extendido' => $tiempo_extendido,
-                'trazado' => $request->trazado,
-                'tiempo_trazado' => $request->tiempo_trazado,
-                'actividad' => $request->actividad,
-                'tela_id' => $request->tela_id,
-                'tiempo_disponible' => $tiempo_disponible,
-                'meta' => $meta,
-                'eficiencia' => $eficiencia,
-            ]);
-
-            \Log::info('Corte - Registro guardado', [
-                'registro_id' => $registro->id,
-                'tiempo_disponible_guardado' => $registro->tiempo_disponible,
-                'meta_guardada' => $registro->meta,
-                'eficiencia_guardada' => $registro->eficiencia,
-            ]);
-
-            // Load relations for broadcasting
-            $registro->load(['hora', 'operario', 'maquina', 'tela']);
-
-            // Broadcast the new record to ALL clients (non-blocking)
-            try {
-                broadcast(new CorteRecordCreated($registro));
-            } catch (\Exception $broadcastError) {
-                \Log::warning('Error al emitir evento de corte', [
-                    'error' => $broadcastError->getMessage()
-                ]);
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Registro de piso de corte guardado correctamente.',
-                'registro' => $registro
-            ]);
-        } catch (\Illuminate\Database\QueryException $e) {
-            \Log::error('Error de base de datos en storeCorte', [
-                'error' => $e->getMessage(),
-                'sql' => $e->getSql() ?? 'N/A'
-            ]);
-            
-            $errorMessage = 'Error al guardar en la base de datos. ';
-            if (str_contains($e->getMessage(), 'UNIQUE constraint failed')) {
-                $errorMessage .= 'Este registro ya existe en el sistema.';
-            } elseif (str_contains($e->getMessage(), 'FOREIGN KEY constraint failed')) {
-                $errorMessage .= 'Uno de los datos referenciados no existe (tela, máquina, operario u hora).';
-            } elseif (str_contains($e->getMessage(), 'Column not found')) {
-                $errorMessage .= 'Hay un problema con la estructura de la base de datos.';
-            } else {
-                $errorMessage .= 'Por favor, intenta nuevamente.';
-            }
-            
-            return response()->json([
-                'success' => false,
-                'message' => $errorMessage,
-                'error_type' => 'database',
-                'details' => config('app.debug') ? $e->getMessage() : null
-            ], 500);
-        } catch (\Exception $e) {
-            \Log::error('Error general en storeCorte', [
-                'error' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine()
-            ]);
-            
-            $errorMessage = 'Error al procesar el registro. ';
-            
-            if (str_contains($e->getMessage(), 'Call to undefined function')) {
-                $errorMessage .= 'Hay un problema con una función del sistema.';
-            } elseif (str_contains($e->getMessage(), 'Undefined property')) {
-                $errorMessage .= 'Hay un problema con los datos enviados.';
-            } elseif (str_contains($e->getMessage(), 'division by zero')) {
-                $errorMessage .= 'Error en el cálculo: división por cero. Verifica el tiempo de ciclo.';
-            } else {
-                $errorMessage .= 'Por favor, contacta al administrador.';
-            }
-            
-            return response()->json([
-                'success' => false,
-                'message' => $errorMessage,
-                'error_type' => 'system',
-                'details' => config('app.debug') ? $e->getMessage() : null
-            ], 500);
-        }
+        $result = $this->corteService->store($request);
+        $statusCode = $result['success'] ? 201 : 422;
+        return response()->json($result, $statusCode);
     }
 
     public function getTiempoCiclo(Request $request)
@@ -1018,21 +788,8 @@ class TablerosController extends Controller
             'maquina_id' => 'required|exists:maquinas,id',
         ]);
 
-        $tiempoCiclo = TiempoCiclo::where('tela_id', $request->tela_id)
-            ->where('maquina_id', $request->maquina_id)
-            ->first();
-
-        if ($tiempoCiclo) {
-            return response()->json([
-                'success' => true,
-                'tiempo_ciclo' => $tiempoCiclo->tiempo_ciclo
-            ]);
-        } else {
-            return response()->json([
-                'success' => false,
-                'message' => 'No se encontró tiempo de ciclo para esta combinación de tela y máquina.'
-            ]);
-        }
+        $result = $this->hora->getTiempoCiclo($request->tela_id, $request->maquina_id);
+        return response()->json($result);
     }
 
     public function storeTela(Request $request)
@@ -1075,9 +832,6 @@ class TablerosController extends Controller
         $result = $this->operario->store($request);
         $statusCode = $result['success'] ? 201 : 422;
         return response()->json($result, $statusCode);
-    }
-            ], 500);
-        }
     }
 
     public function getDashboardCorteData(Request $request)
@@ -1333,44 +1087,11 @@ class TablerosController extends Controller
 
     public function findHoraId(Request $request)
     {
-        $startTime = microtime(true);
         $request->validate([
             'hora' => 'required|string',
         ]);
 
-        $horaValue = $request->hora;
-        
-        $searchStart = microtime(true);
-        
-        // ⚡ OPTIMIZACIÓN: Primero intentar buscar sin lock
-        $hora = Hora::where('hora', $horaValue)->first();
-        
-        if (!$hora) {
-            // Solo crear si no existe - usar try/catch por si hay race condition
-            try {
-                $hora = Hora::create(['hora' => $horaValue]);
-            } catch (\Exception $e) {
-                // Si falla por duplicate, buscar nuevamente
-                $hora = Hora::where('hora', $horaValue)->first();
-                if (!$hora) {
-                    // Si aún no existe, re-lanzar el error
-                    throw $e;
-                }
-            }
-        }
-        
-        $duration = (microtime(true) - $searchStart) * 1000;
-        
-        \Log::info('findHoraId performance:', [
-            'horaValue' => $horaValue,
-            'hora_id' => $hora->id,
-            'operation_time_ms' => round($duration, 2)
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'id' => $hora->id,
-            'hora' => $hora->hora
-        ]);
+        $result = $this->hora->findOrCreate($request->hora);
+        return response()->json($result);
     }
 }
