@@ -97,11 +97,39 @@ class CotizacionPrendaController extends Controller
                 'vacías' => empty($especificaciones)
             ]);
             
+            // ===== DETECTAR TIPO DE COTIZACIÓN AUTOMÁTICAMENTE =====
+            // Verificar si hay prendas (productos_prenda no vacío)
+            $tienePrendas = !empty($productosRaw) && count($productosRaw) > 0;
+            
+            // Verificar si hay especificaciones que indiquen bordado/técnicas
+            $tieneBordado = false;
+            if (!empty($especificaciones)) {
+                // Si hay especificaciones (técnicas, ubicaciones, etc.), hay bordado
+                $tieneBordado = true;
+            }
+            
+            // Determinar el código de tipo de cotización (P, B, PB)
+            $codigoTipoCotizacion = null;
+            if ($tienePrendas && $tieneBordado) {
+                $codigoTipoCotizacion = 'PB'; // Prenda + Bordado
+            } elseif ($tienePrendas) {
+                $codigoTipoCotizacion = 'P';  // Solo Prenda
+            } elseif ($tieneBordado) {
+                $codigoTipoCotizacion = 'B';  // Solo Bordado
+            }
+            
+            \Log::info('🔍 Tipo de cotización detectado automáticamente', [
+                'tienePrendas' => $tienePrendas,
+                'tieneBordado' => $tieneBordado,
+                'codigoTipoCotizacion' => $codigoTipoCotizacion
+            ]);
+            
             // Primero, crear la cotización para obtener su ID
             $datosFormulario = [
                 'cliente' => $validated['cliente'],
                 'asesora' => $validated['asesora'],
-                'tipo_cotizacion' => $validated['tipo_cotizacion'] ?? null,
+                'tipo_venta' => $validated['tipo_cotizacion'] ?? null, // M, D, X
+                'tipo_cotizacion_codigo' => $codigoTipoCotizacion, // P, B, PB
                 'productos' => [], // Se llenarán después
                 'especificaciones' => $especificaciones, // ← AGREGAR ESPECIFICACIONES
             ];

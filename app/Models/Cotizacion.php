@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Cotizacion extends Model
 {
@@ -58,7 +59,7 @@ class Cotizacion extends Model
     /**
      * Relación: Una cotización pertenece a un tipo de cotización
      */
-    public function tipoCotizacion()
+    public function tipoCotizacion(): BelongsTo
     {
         return $this->belongsTo(TipoCotizacion::class, 'tipo_cotizacion_id');
     }

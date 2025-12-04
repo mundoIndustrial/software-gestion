@@ -26,14 +26,24 @@ class CotizacionService
      * 
      * @param array $datosFormulario Datos procesados del formulario
      * @param string $tipo 'borrador' o 'enviada'
-     * @param string|null $tipoCodigo Código del tipo de cotización
+     * @param string|null $tipoCodigo Código del tipo de venta (M, D, X)
      * @return \App\Models\Cotizacion
      */
     public function crear(array $datosFormulario, string $tipo = 'borrador', ?string $tipoCodigo = null): Cotizacion
     {
-        $tipoCotizacion = null;
-        if ($tipoCodigo) {
-            $tipoCotizacion = TipoCotizacion::where('codigo', $tipoCodigo)->first();
+        // Buscar tipo_cotizacion_id basándose en el código de tipo de cotización (P, B, PB)
+        $tipoCotizacionId = null;
+        $codigoTipoCotizacion = $datosFormulario['tipo_cotizacion_codigo'] ?? null;
+        
+        if ($codigoTipoCotizacion) {
+            $tipoCotizacion = TipoCotizacion::where('codigo', $codigoTipoCotizacion)->first();
+            $tipoCotizacionId = $tipoCotizacion?->id;
+            
+            \Log::info('CotizacionService::crear - Tipo cotización detectado', [
+                'codigo' => $codigoTipoCotizacion,
+                'tipo_cotizacion_id' => $tipoCotizacionId,
+                'nombre' => $tipoCotizacion?->nombre
+            ]);
         }
         
         $numeroCotizacion = null;
@@ -44,8 +54,8 @@ class CotizacionService
         $datos = [
             'user_id' => Auth::id(),
             'numero_cotizacion' => $numeroCotizacion,
-            'tipo_cotizacion_id' => $tipoCotizacion?->id,
-            'tipo_venta' => $tipoCodigo,  // Guardar el valor M, D, X directamente en tipo_venta
+            'tipo_cotizacion_id' => $tipoCotizacionId,
+            'tipo_venta' => $datosFormulario['tipo_venta'] ?? null,  // M, D, X desde formulario
             'fecha_inicio' => now(),
             'cliente' => $datosFormulario['cliente'] ?? null,
             'asesora' => auth()->user()?->name ?? 'Sin nombre',

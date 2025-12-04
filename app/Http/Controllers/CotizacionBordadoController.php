@@ -69,12 +69,26 @@ class CotizacionBordadoController extends Controller
             ]);
 
             $esBorrador = $validated['action'] === 'borrador';
+            
+            // Para cotización de bordado/logo, el tipo es B
+            $codigoTipoCotizacion = 'B';
+            
+            // Obtener tipo_cotizacion_id buscando el código
+            $tipoCotizacion = \App\Models\TipoCotizacion::where('codigo', $codigoTipoCotizacion)->first();
+            $tipoCotizacionId = $tipoCotizacion?->id;
+            
+            \Log::info('CotizacionBordadoController - Tipo cotización detectado', [
+                'codigo' => $codigoTipoCotizacion,
+                'tipo_cotizacion_id' => $tipoCotizacionId,
+                'nombre' => $tipoCotizacion?->nombre
+            ]);
 
-            // Crear cotización de bordado con tipo "B" (Logo)
+            // Crear cotización de bordado/logo (SIN tipo_venta, ya que no es necesario)
             $cotizacion = Cotizacion::create([
                 'user_id' => auth()->id(),
                 'numero_cotizacion' => 'COT-BORD-' . Str::random(8),
-                'tipo_cotizacion_id' => 2, // Tipo "B" (Logo)
+                'tipo_cotizacion_id' => $tipoCotizacionId,
+                'tipo_venta' => null,  // No se guarda tipo_venta para bordado/logo
                 'estado' => $esBorrador ? 'borrador' : 'enviada',
                 'cliente' => $validated['cliente'],
                 'asesora' => $validated['asesora'],
