@@ -42,6 +42,38 @@ class PrendaPedido extends Model
     }
 
     /**
+     * Relación: Una prenda pertenece a un color
+     */
+    public function color(): BelongsTo
+    {
+        return $this->belongsTo(ColorPrenda::class, 'color_id');
+    }
+
+    /**
+     * Relación: Una prenda pertenece a una tela
+     */
+    public function tela(): BelongsTo
+    {
+        return $this->belongsTo(TelaPrenda::class, 'tela_id');
+    }
+
+    /**
+     * Relación: Una prenda pertenece a un tipo de manga
+     */
+    public function tipoManga(): BelongsTo
+    {
+        return $this->belongsTo(TipoManga::class, 'tipo_manga_id');
+    }
+
+    /**
+     * Relación: Una prenda pertenece a un tipo de broche
+     */
+    public function tipoBroche(): BelongsTo
+    {
+        return $this->belongsTo(TipoBroche::class, 'tipo_broche_id');
+    }
+
+    /**
      * Relación: Una prenda tiene muchos procesos
      */
     public function procesos(): HasMany

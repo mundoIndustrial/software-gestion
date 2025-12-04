@@ -63,6 +63,11 @@ class AuthenticatedSessionController extends Controller
             if ($roleName === 'aprobador_cotizaciones') {
                 return redirect()->intended(route('cotizaciones.pendientes', absolute: false));
             }
+
+            // Supervisor de Pedidos - Supervisión de órdenes
+            if ($roleName === 'supervisor_pedidos') {
+                return redirect()->intended(route('supervisor-pedidos.index', absolute: false));
+            }
         }
 
         // Admin y otros - Dashboard principal

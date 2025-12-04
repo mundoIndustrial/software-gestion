@@ -370,6 +370,44 @@ Route::middleware('auth')->prefix('asesores')->name('asesores.')->group(function
 });
 
 // ========================================
+// RUTAS PARA SUPERVISOR DE PEDIDOS
+// ========================================
+Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor-pedidos')->name('supervisor-pedidos.')->group(function () {
+    // Listar órdenes
+    Route::get('/', [App\Http\Controllers\SupervisorPedidosController::class, 'index'])->name('index');
+    
+    // Perfil del supervisor
+    Route::get('/perfil/editar', [App\Http\Controllers\SupervisorPedidosController::class, 'profile'])->name('profile');
+    Route::post('/perfil/actualizar', [App\Http\Controllers\SupervisorPedidosController::class, 'updateProfile'])->name('update-profile');
+    
+    // Notificaciones
+    Route::get('/notificaciones', [App\Http\Controllers\SupervisorPedidosController::class, 'getNotifications'])->name('notifications');
+    Route::post('/notificaciones/marcar-todas-leidas', [App\Http\Controllers\SupervisorPedidosController::class, 'markAllNotificationsAsRead'])->name('mark-all-read');
+    Route::post('/notificaciones/{notificationId}/marcar-leida', [App\Http\Controllers\SupervisorPedidosController::class, 'markNotificationAsRead'])->name('mark-read');
+    
+    // Obtener opciones de filtro (debe ir antes de /{id})
+    Route::get('/filtro-opciones/{campo}', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerOpcionesFiltro'])->name('filtro-opciones');
+    
+    // Ver detalle de orden
+    Route::get('/{id}', [App\Http\Controllers\SupervisorPedidosController::class, 'show'])->name('show');
+    
+    // Descargar PDF
+    Route::get('/{id}/pdf', [App\Http\Controllers\SupervisorPedidosController::class, 'descargarPDF'])->name('pdf');
+    
+    // Anular orden
+    Route::post('/{id}/anular', [App\Http\Controllers\SupervisorPedidosController::class, 'anular'])->name('anular');
+    
+    // Aprobar orden (enviar a producción)
+    Route::post('/{id}/aprobar', [App\Http\Controllers\SupervisorPedidosController::class, 'aprobarOrden'])->name('aprobar');
+    
+    // Cambiar estado
+    Route::patch('/{id}/estado', [App\Http\Controllers\SupervisorPedidosController::class, 'cambiarEstado'])->name('cambiar-estado');
+    
+    // Obtener datos en JSON
+    Route::get('/{id}/datos', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerDatos'])->name('datos');
+});
+
+// ========================================
 // RUTAS API PÚBLICAS PARA FESTIVOS
 // ========================================
 Route::prefix('api')->name('api.')->group(function () {

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\User;
 use App\Models\Cliente;
 use App\Services\CalculadorDiasService;
+use App\Events\PedidoCreado;
 
 class PedidoProduccion extends Model
 {
@@ -56,6 +57,14 @@ class PedidoProduccion extends Model
                 if ($fechaEstimada) {
                     $model->fecha_estimada_de_entrega = $fechaEstimada;
                 }
+            }
+        });
+
+        // Disparar evento cuando se crea un pedido
+        static::created(function ($model) {
+            $asesor = $model->asesora;
+            if ($asesor) {
+                event(new PedidoCreado($model, $asesor));
             }
         });
 

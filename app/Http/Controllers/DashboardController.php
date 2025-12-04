@@ -15,19 +15,35 @@ class DashboardController extends Controller
     public function index()
     {
         $user = Auth::user();
-        
+
         if ($user && $user->role) {
             $roleName = is_object($user->role) ? $user->role->name : $user->role;
-            
+
             if ($roleName === 'asesor') {
                 return redirect()->route('asesores.dashboard');
             }
-            
+
             if ($roleName === 'insumos') {
                 return redirect()->route('insumos.materiales.index');
             }
+
+            if ($roleName === 'supervisor_pedidos') {
+                return redirect()->route('supervisor-pedidos.index');
+            }
+
+            if ($roleName === 'contador') {
+                return redirect()->route('contador.index');
+            }
+
+            if ($roleName === 'supervisor' || $roleName === 'supervisor_planta') {
+                return redirect()->route('registros.index');
+            }
+
+            if ($roleName === 'aprobador_cotizaciones') {
+                return redirect()->route('cotizaciones.pendientes');
+            }
         }
-        
+
         return view('dashboard');
     }
 
