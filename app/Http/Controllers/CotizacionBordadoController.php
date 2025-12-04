@@ -89,7 +89,7 @@ class CotizacionBordadoController extends Controller
                 'numero_cotizacion' => 'COT-BORD-' . Str::random(8),
                 'tipo_cotizacion_id' => $tipoCotizacionId,
                 'tipo_venta' => null,  // No se guarda tipo_venta para bordado/logo
-                'estado' => $esBorrador ? 'borrador' : 'enviada',
+                'estado' => $esBorrador ? 'BORRADOR' : 'ENVIADA_CONTADOR',
                 'cliente' => $validated['cliente'],
                 'asesora' => $validated['asesora'],
                 'fecha_inicio' => $validated['fecha'] ?? now(),
@@ -240,7 +240,7 @@ class CotizacionBordadoController extends Controller
 
             // Marcar como enviada
             $cotizacion->update([
-                'estado' => 'enviada',
+                'estado' => 'ENVIADA_CONTADOR',
                 'es_borrador' => false,
                 'fecha_envio' => now()
             ]);

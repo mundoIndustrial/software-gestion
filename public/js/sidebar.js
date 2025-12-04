@@ -70,6 +70,16 @@ if (sidebarToggleBtns.length > 0 && sidebar) {
   sidebarToggleBtns.forEach((btn) => {
     btn.addEventListener("click", () => {
       sidebar.classList.toggle("collapsed");
+      // También toggle la clase en el container para que la tabla se adapte
+      const container = document.querySelector(".container");
+      if (container) {
+        container.classList.toggle("sidebar-collapsed");
+      }
+      // También toggle la clase en contador-wrapper
+      const contadorWrapper = document.querySelector(".contador-wrapper");
+      if (contadorWrapper) {
+        contadorWrapper.classList.toggle("sidebar-collapsed");
+      }
       // Persistir estado en localStorage
       localStorage.setItem("sidebarCollapsed", sidebar.classList.contains("collapsed"));
     });
@@ -79,10 +89,24 @@ if (sidebarToggleBtns.length > 0 && sidebar) {
 // Restore sidebar state from localStorage on large screens
 if (window.innerWidth > 768 && sidebar) {
   const sidebarCollapsed = localStorage.getItem("sidebarCollapsed");
+  const container = document.querySelector(".container");
+  const contadorWrapper = document.querySelector(".contador-wrapper");
   if (sidebarCollapsed === "true") {
     sidebar.classList.add("collapsed");
+    if (container) {
+      container.classList.add("sidebar-collapsed");
+    }
+    if (contadorWrapper) {
+      contadorWrapper.classList.add("sidebar-collapsed");
+    }
   } else {
     sidebar.classList.remove("collapsed");
+    if (container) {
+      container.classList.remove("sidebar-collapsed");
+    }
+    if (contadorWrapper) {
+      contadorWrapper.classList.remove("sidebar-collapsed");
+    }
   }
 }
 

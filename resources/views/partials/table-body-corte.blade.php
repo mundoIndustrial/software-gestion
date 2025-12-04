@@ -20,7 +20,7 @@
             $dataValue = $value; // Valor para data-value
             
             if ($column === 'fecha' && $value) {
-                $displayValue = $value->format('d-m-Y');
+                $displayValue = $value->format('d/m/Y');
                 $dataValue = $displayValue;
             } elseif ($column === 'hora_id' && $registro->hora) {
                 $displayValue = $registro->hora->hora;

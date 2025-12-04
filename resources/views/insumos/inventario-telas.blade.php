@@ -140,7 +140,7 @@
                     <tbody>
                         @foreach($historial as $registro)
                             <tr>
-                                <td>{{ $registro->fecha_accion ? \Carbon\Carbon::parse($registro->fecha_accion)->format('d/m/Y H:i') : 'N/A' }}</td>
+                                <td>{{ $registro->fecha_accion ? \Carbon\Carbon::parse($registro->fecha_accion)->format('d/m/Y h:i A') : 'N/A' }}</td>
                                 <td>
                                     @if($registro->tipo_accion === 'entrada')
                                         <span class="badge badge-success">Entrada</span>

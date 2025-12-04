@@ -79,7 +79,7 @@
                                 </span>
                             </td>
                             <td class="fecha-cell">
-                                {{ $orden->created_at->format('d/m/Y H:i') }}
+                                {{ $orden->created_at->format('d/m/Y h:i A') }}
                             </td>
                             <td class="actions-cell">
                                 <div class="action-buttons">

@@ -409,13 +409,13 @@
                                     @else
                                         -
                                     @endif
-                                </td>
-                                <td title="{{ $orden->pedido ?? '-' }}">{{ $orden->pedido ?? '-' }}</td>
+                            <tr>
+                                <td title="{{ $orden->numero_orden ?? '-' }}">{{ $orden->numero_orden ?? '-' }}</td>
                                 <td title="{{ $orden->cliente ?? '-' }}">{{ $orden->cliente ?? '-' }}</td>
                                 <td title="{{ $orden->novedades ?? '-' }}">{{ $orden->novedades ?? '-' }}</td>
                                 <td>
                                     @if($orden->control_de_calidad)
-                                        {{ \Carbon\Carbon::parse($orden->control_de_calidad)->format('d/m/Y H:i') }}
+                                        {{ \Carbon\Carbon::parse($orden->control_de_calidad)->format('d/m/Y h:i A') }}
                                     @else
                                         -
                                     @endif
@@ -481,7 +481,7 @@
                                 <td title="{{ $orden->novedades ?? '-' }}">{{ $orden->novedades ?? '-' }}</td>
                                 <td>
                                     @if($orden->control_de_calidad)
-                                        {{ \Carbon\Carbon::parse($orden->control_de_calidad)->format('d/m/Y H:i') }}
+                                        {{ \Carbon\Carbon::parse($orden->control_de_calidad)->format('d/m/Y h:i A') }}
                                     @else
                                         -
                                     @endif

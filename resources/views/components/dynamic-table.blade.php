@@ -17,9 +17,9 @@
                             $value = $registro->$column;
                             $displayValue = $value;
                             if ($column === 'fecha' && $value) {
-                                $displayValue = $value->format('d-m-Y');
+                                $displayValue = $value->format('d/m/Y');
                             } elseif ($column === 'hora' && $value) {
-                                $displayValue = $value->format('H:i');
+                                $displayValue = $value->format('h:i A');
                             } elseif ($column === 'eficiencia' && $value) {
                                 $displayValue = $value . '%';
                             }

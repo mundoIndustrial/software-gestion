@@ -594,11 +594,33 @@ body.dark-theme .theme-toggle-indicator {
   min-height: 100vh;
 }
 
+/* Contador uses grid layout, override flex */
+[data-module="contador"] .container {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr;
+  height: 100vh;
+  transition: grid-template-columns 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Responsive grid when sidebar is collapsed */
+[data-module="contador"] .container.sidebar-collapsed {
+  grid-template-columns: var(--sidebar-collapsed) 1fr;
+}
+
 .container .main-content {
   flex: 1;
   padding: 20px;
   color: var(--color-text-primary);
   min-width: 0;
+}
+
+/* Contador main-content override */
+[data-module="contador"] .container .main-content {
+  flex: none;
+  padding: 1.5rem 0.5rem 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .main-content .page-title {

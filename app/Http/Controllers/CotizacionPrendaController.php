@@ -128,8 +128,9 @@ class CotizacionPrendaController extends Controller
             $datosFormulario = [
                 'cliente' => $validated['cliente'],
                 'asesora' => $validated['asesora'],
-                'tipo_venta' => $validated['tipo_cotizacion'] ?? null, // M, D, X
-                'tipo_cotizacion_codigo' => $codigoTipoCotizacion, // P, B, PB
+                'tipo_venta' => $validated['tipo_cotizacion'] ?? null, // M, D, X (Mayoreo, Detalle, etc)
+                'tipo_cotizacion_codigo' => $codigoTipoCotizacion, // P, B, PB (Prenda, Bordado, Prenda+Bordado)
+                'tipo_cotizacion' => $validated['tipo_cotizacion'] ?? null, // Guardar también en tipo_cotizacion
                 'productos' => [], // Se llenarán después
                 'especificaciones' => $especificaciones, // ← AGREGAR ESPECIFICACIONES
             ];
@@ -138,8 +139,15 @@ class CotizacionPrendaController extends Controller
             $cotizacion = $this->cotizacionService->crear(
                 $datosFormulario,
                 $tipoServicio,
-                $datosFormulario['tipo_cotizacion']
+                $validated['tipo_cotizacion']
             );
+            
+            \Log::info('✅ Cotización creada con tipo_cotizacion', [
+                'cotizacion_id' => $cotizacion->id,
+                'tipo_cotizacion' => $cotizacion->tipo_cotizacion,
+                'tipo_venta' => $cotizacion->tipo_venta,
+                'tipo_cotizacion_codigo' => $codigoTipoCotizacion
+            ]);
 
             \Log::info('✅ Cotización creada', ['id' => $cotizacion->id]);
 
@@ -317,6 +325,11 @@ class CotizacionPrendaController extends Controller
                     $variantesTransformadas['tipo_manga_id'] = $variantes['tipo_manga_id'];
                 }
                 
+                // GUARDAR tipo_manga (nombre: CORTA, LARGA, 3/4, RAGLAN, CAMPANA, OTRA)
+                if ($variantes['tipo_manga'] ?? false) {
+                    $variantesTransformadas['tipo_manga'] = $variantes['tipo_manga'];
+                }
+                
                 // Agregar descripción adicional
                 if (!empty($observaciones)) {
                     $variantesTransformadas['descripcion_adicional'] = implode(' | ', $observaciones);
@@ -360,6 +373,12 @@ class CotizacionPrendaController extends Controller
                 $this->prendaService->crearPrendasCotizacion($cotizacion, $productos);
             } else {
                 \Log::warning("⚠️ No hay productos válidos para guardar");
+            }
+
+            // Si se envía directamente (no borrador), cambiar estado a ENVIADA_CONTADOR
+            if ($tipo === 'enviar') {
+                $estadoService = new \App\Services\CotizacionEstadoService();
+                $estadoService->enviarACOntador($cotizacion);
             }
 
             $mensaje = ($tipo === 'borrador')
@@ -476,7 +495,9 @@ class CotizacionPrendaController extends Controller
         }
 
         try {
-            $this->cotizacionService->cambiarEstado($cotizacion, 'enviada');
+            // Usar el servicio nuevo para cambiar a ENVIADA_CONTADOR
+            $estadoService = new \App\Services\CotizacionEstadoService();
+            $estadoService->enviarACOntador($cotizacion);
 
             return response()->json([
                 'success' => true,

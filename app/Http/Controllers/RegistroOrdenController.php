@@ -135,7 +135,7 @@ class RegistroOrdenController extends Controller
                 'fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega',
                 'fecha_ultimo_proceso',
                 'dia_de_entrega', 'asesor_id', 'forma_de_pago',
-                'novedades', 'cotizacion_id', 'numero_cotizacion'
+                'novedades', 'cotizacion_id', 'numero_cotizacion', 'aprobado_por_supervisor_en'
             ])
             ->with([
                 'asesora:id,name',
@@ -143,6 +143,14 @@ class RegistroOrdenController extends Controller
                     $q->select('id', 'numero_pedido', 'nombre_prenda', 'cantidad', 'descripcion', 'cantidad_talla', 'descripcion_armada', 'color_id', 'tela_id', 'tipo_manga_id', 'tiene_bolsillos', 'tiene_reflectivo');
                 }
             ]);
+
+        // FILTRO CRÍTICO: Las órdenes solo deben aparecer si:
+        // 1. El supervisor ha tomado una acción (aprobado, anulado, etc. - aprobado_por_supervisor_en NOT NULL)
+        // 2. O si NO tienen cotización asociada (pedidos creados directamente sin pasar por cotización)
+        $query->where(function($q) {
+            $q->whereNotNull('aprobado_por_supervisor_en')
+              ->orWhereNull('cotizacion_id');
+        });
 
         // Filtro por defecto para supervisores: "En Ejecución" (pero puede cambiarse)
         if (auth()->user() && auth()->user()->role && auth()->user()->role->name === 'supervisor') {

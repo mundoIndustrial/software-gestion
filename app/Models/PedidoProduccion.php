@@ -33,10 +33,14 @@ class PedidoProduccion extends Model
         'fecha_de_creacion_de_orden',
         'dia_de_entrega',
         'fecha_estimada_de_entrega',
+        'aprobado_por_supervisor_en',
+        'motivo_anulacion',
+        'fecha_anulacion',
+        'usuario_anulacion',
     ];
 
     protected $casts = [
-        'fecha_de_creacion_de_orden' => 'date',
+        'fecha_de_creacion_de_orden' => 'datetime',
         'fecha_estimada_de_entrega' => 'date',
     ];
 
@@ -94,6 +98,14 @@ class PedidoProduccion extends Model
     public function cotizacion(): BelongsTo
     {
         return $this->belongsTo(Cotizacion::class);
+    }
+
+    /**
+     * Relación: Un pedido tiene historial de cambios de estado
+     */
+    public function historialCambios(): HasMany
+    {
+        return $this->hasMany(HistorialCambiosPedido::class, 'pedido_id');
     }
 
     /**

@@ -25,7 +25,12 @@ class AuthServiceProvider extends ServiceProvider
 
         // 🔑 Definimos un Gate para verificar si el usuario es Admin
         Gate::define('isAdmin', function ($user) {
-            return $user->role === 'Admin';
+            return $user->hasRole('Admin');
+        });
+
+        // 🔑 Definimos un Gate para verificar si el usuario es Contador
+        Gate::define('isContador', function ($user) {
+            return $user->hasRole('contador') || $user->hasRole('Admin');
         });
 
         // Configurar la duración del "remember me" token

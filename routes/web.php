@@ -14,6 +14,8 @@ use App\Http\Controllers\BalanceoController;
 use App\Http\Controllers\AsesorController;
 use App\Http\Controllers\CotizacionBordadoController;
 use App\Http\Controllers\CotizacionPrendaController;
+use App\Http\Controllers\CotizacionesViewController;
+use App\Http\Controllers\DebugRegistrosController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -152,7 +154,20 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
 // ========================================
 Route::middleware(['auth', 'role:supervisor-admin'])->group(function () {
     Route::get('/cotizaciones', [CotizacionesViewController::class, 'index'])->name('cotizaciones.index');
-    Route::get('/cotizaciones/{id}/detalle', [CotizacionesViewController::class, 'getCotizacionDetail'])->name('cotizaciones.detalle');
+});
+
+// Ruta compartida para ver detalles de cotización (supervisor-admin y aprobador_cotizaciones)
+Route::middleware(['auth', 'role:supervisor-admin,aprobador_cotizaciones'])->group(function () {
+    Route::get('/cotizaciones/{cotizacion}/detalle', [CotizacionesViewController::class, 'getCotizacionDetail'])->name('cotizaciones.detalle');
+});
+
+// Ruta para obtener datos JSON de cotización (con autenticación solamente)
+Route::middleware(['auth'])->get('/cotizaciones/{cotizacion}/datos', [CotizacionesViewController::class, 'getDatosForModal'])->name('cotizaciones.datos');
+
+// Rutas para acciones de aprobador sobre cotizaciones
+Route::middleware(['auth'])->group(function () {
+    Route::post('/cotizaciones/{cotizacion}/aprobar-aprobador', [CotizacionesViewController::class, 'aprobarAprobador'])->name('cotizaciones.aprobar-aprobador');
+    Route::post('/cotizaciones/{cotizacion}/rechazar', [CotizacionesViewController::class, 'rechazarCotizacion'])->name('cotizaciones.rechazar');
 });
 
 // ========================================
@@ -166,8 +181,8 @@ Route::middleware(['auth'])->group(function () {
             abort(403, 'No tienes permiso para acceder a esta sección.');
         }
         
-        // Obtener cotizaciones pendientes de aprobación
-        $cotizaciones = \App\Models\Cotizacion::where('estado', 'pendiente_aprobacion')
+        // Obtener cotizaciones pendientes de aprobación (estado APROBADA_CONTADOR)
+        $cotizaciones = \App\Models\Cotizacion::where('estado', 'APROBADA_CONTADOR')
             ->orderBy('created_at', 'desc')
             ->get();
         
@@ -181,8 +196,11 @@ Route::middleware(['auth'])->group(function () {
 // Admin puede acceder a contador además del rol contador
 Route::middleware(['auth', 'role:contador,admin'])->prefix('contador')->name('contador.')->group(function () {
     Route::get('/dashboard', [App\Http\Controllers\ContadorController::class, 'index'])->name('index');
+    Route::get('/todas', [App\Http\Controllers\ContadorController::class, 'todas'])->name('todas');
+    Route::get('/por-revisar', [App\Http\Controllers\ContadorController::class, 'porRevisar'])->name('por-revisar');
     Route::get('/cotizacion/{id}', [App\Http\Controllers\ContadorController::class, 'getCotizacionDetail'])->name('cotizacion.detail');
     Route::delete('/cotizacion/{id}', [App\Http\Controllers\ContadorController::class, 'deleteCotizacion'])->name('cotizacion.delete');
+    Route::get('/por-corregir', [App\Http\Controllers\CotizacionesViewController::class, 'porCorregir'])->name('por-corregir');
     
     // Rutas para costos de prendas
     Route::post('/costos/guardar', [App\Http\Controllers\CostoPrendaController::class, 'guardar'])->name('costos.guardar');
@@ -199,6 +217,17 @@ Route::middleware(['auth', 'role:contador,admin'])->prefix('contador')->name('co
     
     // Ruta para obtener costos de prendas
     Route::get('/cotizacion/{id}/costos', [App\Http\Controllers\ContadorController::class, 'obtenerCostos'])->name('cotizacion.costos');
+    
+    // Rutas para notificaciones
+    Route::get('/notifications', [App\Http\Controllers\ContadorController::class, 'getNotifications'])->name('notifications');
+    Route::post('/notifications/marcar-leidas', [App\Http\Controllers\ContadorController::class, 'markAllNotificationsAsRead'])->name('notifications.mark-all-read');
+    
+    // Ruta para obtener contador de cotizaciones pendientes
+    Route::get('/cotizaciones-pendientes-count', [App\Http\Controllers\ContadorController::class, 'cotizacionesPendientesCount'])->name('cotizaciones-pendientes-count');
+    
+    // Ruta para perfil del contador
+    Route::get('/perfil', [App\Http\Controllers\ContadorController::class, 'profile'])->name('profile')->middleware('auth');
+    Route::post('/perfil/update', [App\Http\Controllers\ContadorController::class, 'updateProfile'])->name('profile.update');
 });
 
 // ========================================
@@ -388,6 +417,9 @@ Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor
     // Obtener opciones de filtro (debe ir antes de /{id})
     Route::get('/filtro-opciones/{campo}', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerOpcionesFiltro'])->name('filtro-opciones');
     
+    // Ruta para obtener contador de órdenes pendientes de aprobación (DEBE IR ANTES DE /{id})
+    Route::get('/ordenes-pendientes-count', [App\Http\Controllers\SupervisorPedidosController::class, 'ordenesPendientesCount'])->name('ordenes-pendientes-count');
+    
     // Ver detalle de orden
     Route::get('/{id}', [App\Http\Controllers\SupervisorPedidosController::class, 'show'])->name('show');
     
@@ -416,6 +448,40 @@ Route::prefix('api')->name('api.')->group(function () {
     Route::get('/festivos/detailed', [App\Http\Controllers\Api\FestivosController::class, 'detailed'])->name('festivos.detailed');
     Route::get('/festivos/check', [App\Http\Controllers\Api\FestivosController::class, 'check'])->name('festivos.check');
     Route::get('/festivos/range', [App\Http\Controllers\Api\FestivosController::class, 'range'])->name('festivos.range');
+});
+
+// ========================================
+// RUTAS PARA ESTADOS DE COTIZACIONES
+// ========================================
+Route::middleware(['auth', 'verified'])->name('cotizaciones.estado.')->group(function () {
+    // Asesor: Enviar cotización a contador
+    Route::post('/cotizaciones/{cotizacion}/enviar', [App\Http\Controllers\CotizacionEstadoController::class, 'enviar'])->name('enviar');
+    
+    // Contador: Aprobar cotización
+    Route::post('/cotizaciones/{cotizacion}/aprobar-contador', [App\Http\Controllers\CotizacionEstadoController::class, 'aprobarContador'])->name('aprobar-contador');
+    
+    // Aprobador de Cotizaciones: Aprobar cotización
+    Route::post('/cotizaciones/{cotizacion}/aprobar-aprobador', [App\Http\Controllers\CotizacionEstadoController::class, 'aprobarAprobador'])->name('aprobar-aprobador');
+    
+    // Ver historial de cambios
+    Route::get('/cotizaciones/{cotizacion}/historial', [App\Http\Controllers\CotizacionEstadoController::class, 'historial'])->name('historial');
+    
+    // Ver seguimiento de cotización
+    Route::get('/cotizaciones/{cotizacion}/seguimiento', [App\Http\Controllers\CotizacionEstadoController::class, 'seguimiento'])->name('seguimiento');
+});
+
+// ========================================
+// RUTAS PARA ESTADOS DE PEDIDOS
+// ========================================
+Route::middleware(['auth', 'verified'])->name('pedidos.estado.')->group(function () {
+    // Supervisor de Pedidos: Aprobar pedido
+    Route::post('/pedidos/{pedido}/aprobar-supervisor', [App\Http\Controllers\PedidoEstadoController::class, 'aprobarSupervisor'])->name('aprobar-supervisor');
+    
+    // Ver historial de cambios
+    Route::get('/pedidos/{pedido}/historial', [App\Http\Controllers\PedidoEstadoController::class, 'historial'])->name('historial');
+    
+    // Ver seguimiento de pedido
+    Route::get('/pedidos/{pedido}/seguimiento', [App\Http\Controllers\PedidoEstadoController::class, 'seguimiento'])->name('seguimiento');
 });
 
 require __DIR__.'/auth.php';

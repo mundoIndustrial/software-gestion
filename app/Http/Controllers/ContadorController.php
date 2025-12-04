@@ -8,19 +8,148 @@ use App\Services\ImagenCotizacionService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 
 class ContadorController extends Controller
 {
     /**
+     * Mostrar el perfil del contador
+     *
+     * @return \Illuminate\View\View
+     */
+    public function profile()
+    {
+        try {
+            $user = Auth::user();
+            
+            if (!$user) {
+                return redirect()->route('login')->with('error', 'Por favor inicia sesión para ver tu perfil.');
+            }
+            
+            return view('contador.profile', compact('user'));
+            
+        } catch (\Exception $e) {
+            return redirect()->route('contador.index')->with('error', 'Error al cargar el perfil: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Actualizar el perfil del contador
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateProfile(Request $request)
+    {
+        try {
+            $user = Auth::user();
+            
+            // Validar los datos
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => ['required', 'email', Rule::unique('users')->ignore($user->id)],
+                'telefono' => 'nullable|string|max:20',
+                'ciudad' => 'nullable|string|max:255',
+                'departamento' => 'nullable|string|max:255',
+                'bio' => 'nullable|string|max:500',
+                'password' => 'nullable|string|min:8|confirmed',
+                'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+            ]);
+            
+            // Actualizar información personal
+            $user->name = $validated['name'];
+            $user->email = $validated['email'];
+            $user->telefono = $validated['telefono'] ?? $user->telefono;
+            $user->ciudad = $validated['ciudad'] ?? $user->ciudad;
+            $user->departamento = $validated['departamento'] ?? $user->departamento;
+            $user->bio = $validated['bio'] ?? $user->bio;
+            
+            // Actualizar contraseña si se proporciona
+            if (!empty($validated['password'])) {
+                $user->password = Hash::make($validated['password']);
+            }
+            
+            // Actualizar avatar si se proporciona
+            if ($request->hasFile('avatar')) {
+                // Eliminar avatar anterior si existe
+                if ($user->avatar && Storage::disk('public')->exists('avatars/' . $user->avatar)) {
+                    Storage::disk('public')->delete('avatars/' . $user->avatar);
+                }
+                
+                // Guardar nuevo avatar
+                $file = $request->file('avatar');
+                $filename = 'avatar_' . $user->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+                $file->storeAs('avatars', $filename, 'public');
+                $user->avatar = $filename;
+            }
+            
+            $user->save();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Perfil actualizado correctamente'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar el perfil: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Mostrar el dashboard del contador
+     * Solo muestra cotizaciones PENDIENTES (estado ENVIADA_CONTADOR)
      */
     public function index(): View
     {
-        $cotizaciones = Cotizacion::where('es_borrador', false)
+        // Obtener SOLO cotizaciones pendientes por aprobar (ENVIADA_CONTADOR)
+        $cotizaciones = Cotizacion::where('estado', 'ENVIADA_CONTADOR')
             ->orderBy('created_at', 'desc')
             ->get();
         
-        return view('contador.index', compact('cotizaciones'));
+        // Obtener cotizaciones en corrección (Cotizaciones por Corregir y a Revisar)
+        $cotizacionesPorCorregir = Cotizacion::where('estado', 'EN_CORRECCION')
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        // Obtener cotizaciones rechazadas (mismo que por corregir para la sección a revisar)
+        $cotizacionesRechazadas = Cotizacion::where('estado', 'EN_CORRECCION')
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        return view('contador.index', compact('cotizaciones', 'cotizacionesPorCorregir', 'cotizacionesRechazadas'));
+    }
+
+    /**
+     * Mostrar todas las cotizaciones (con solo botón Ver)
+     */
+    public function todas(): View
+    {
+        // Obtener todas las cotizaciones ordenadas por fecha descendente
+        $todasLasCotizaciones = Cotizacion::orderBy('created_at', 'desc')->get();
+        
+        return view('contador.todas', compact('todasLasCotizaciones'));
+    }
+
+    /**
+     * Mostrar cotizaciones a revisar (en corrección)
+     */
+    public function porRevisar(): View
+    {
+        // Obtener cotizaciones en corrección
+        $cotizacionesParaRevisar = Cotizacion::where('estado', 'EN_CORRECCION')
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        return view('contador.por-revisar', compact('cotizacionesParaRevisar'));
     }
 
     /**
@@ -159,7 +288,7 @@ class ContadorController extends Controller
             
             // Validar que el estado sea uno de los permitidos
             $request->validate([
-                'estado' => 'required|in:enviada,entregar,anular'
+                'estado' => 'required|in:ENVIADA_CONTADOR,APROBADA_COTIZACIONES,FINALIZADA'
             ]);
             
             // Actualizar el estado
@@ -299,6 +428,88 @@ class ContadorController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener costos: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener notificaciones del contador
+     */
+    public function getNotifications()
+    {
+        try {
+            // Cotizaciones enviadas a revisar (estado ENVIADA_CONTADOR)
+            $cotizacionesParaRevisar = Cotizacion::where('estado', 'ENVIADA_CONTADOR')
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get(['id', 'cliente', 'created_at']);
+            
+            // Nuevas cotizaciones creadas (últimas 5 de las últimas 24 horas)
+            $nuevasCotizaciones = Cotizacion::where('created_at', '>=', now()->subHours(24))
+                ->whereNotIn('estado', ['ENVIADA_CONTADOR'])
+                ->orderBy('created_at', 'desc')
+                ->limit(5)
+                ->get(['id', 'cliente', 'created_at']);
+            
+            // Contar total de notificaciones
+            $totalNotificaciones = $cotizacionesParaRevisar->count() + $nuevasCotizaciones->count();
+            
+            return response()->json([
+                'cotizaciones_para_revisar' => $cotizacionesParaRevisar,
+                'nuevas_cotizaciones' => $nuevasCotizaciones,
+                'total_notificaciones' => $totalNotificaciones
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error al obtener notificaciones',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Marcar todas las notificaciones como leídas
+     */
+    public function markAllNotificationsAsRead()
+    {
+        try {
+            // En esta implementación simple, solo retornamos éxito
+            // En una implementación más completa, guardarías este estado en BD
+            return response()->json([
+                'success' => true,
+                'message' => 'Notificaciones marcadas como leídas'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error al marcar notificaciones como leídas',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener contador de cotizaciones pendientes (ENVIADA_CONTADOR)
+     * Endpoint: GET /contador/cotizaciones-pendientes-count
+     */
+    public function cotizacionesPendientesCount()
+    {
+        try {
+            $count = Cotizacion::where('estado', 'ENVIADA_CONTADOR')->count();
+
+            return response()->json([
+                'success' => true,
+                'count' => $count,
+                'message' => $count > 0 ? "Hay $count cotización(es) pendiente(s) por revisar" : 'No hay cotizaciones pendientes'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener contador de cotizaciones pendientes', [
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'count' => 0,
+                'error' => $e->getMessage()
             ], 500);
         }
     }

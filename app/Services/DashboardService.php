@@ -271,7 +271,7 @@ class DashboardService extends BaseService
                 ->pluck($column)
                 ->filter()
                 ->map(function ($date) {
-                    return \Carbon\Carbon::parse($date)->format('d-m-Y');
+                    return \Carbon\Carbon::parse($date)->format('d/m/Y');
                 })
                 ->sort()
                 ->values()
@@ -321,7 +321,7 @@ class DashboardService extends BaseService
                 ->pluck($column)
                 ->filter()
                 ->map(function ($date) {
-                    return \Carbon\Carbon::parse($date)->format('d-m-Y');
+                    return \Carbon\Carbon::parse($date)->format('d/m/Y');
                 })
                 ->sort()
                 ->values()

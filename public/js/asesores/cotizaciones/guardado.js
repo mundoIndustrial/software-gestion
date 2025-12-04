@@ -85,7 +85,7 @@ async function guardarCotizacion() {
         const payloadEnvio = {
             tipo: 'borrador',
             cliente: datos.cliente,
-            tipo_cotizacion: tipoCotizacion,
+            tipo_venta: tipoCotizacion,
             productos: datos.productos,
             tecnicas: datos.tecnicas,
             observaciones_tecnicas: datos.observaciones_tecnicas,
@@ -358,7 +358,7 @@ async function procederEnviarCotizacion(datos) {
         const payloadEnvio = {
             tipo: 'enviada',
             cliente: datos.cliente,
-            tipo_cotizacion: tipoCotizacion,
+            tipo_venta: tipoCotizacion,
             productos: datos.productos,
             tecnicas: datos.tecnicas,
             observaciones_tecnicas: datos.observaciones_tecnicas,

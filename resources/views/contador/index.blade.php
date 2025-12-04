@@ -1,15 +1,515 @@
 @extends('layouts.contador')
 
 @section('content')
-<!-- Sección de Pedidos -->
-<section id="pedidos-section" class="section-content active">
+@push('styles')
+    <style>
+        /* ====================== ESTILOS GENERALES ====================== */
+        :root {
+            --primary-color: #1e5ba8;
+            --primary-hover: #1e40af;
+            --secondary-color: #ecf0f1;
+            --danger-color: #ef4444;
+            --success-color: #10b981;
+            --warning-color: #f39c12;
+            --light-bg: #f5f7fa;
+            --light-gray: #f8f9fa;
+            --border-color: #e0e6ed;
+            --text-primary: #2c3e50;
+            --text-secondary: #7f8c8d;
+            --radius: 8px;
+            --transition: all 0.3s ease;
+        }
+
+        /* ====================== TABLA ====================== */
+        .table-container {
+            width: 95%;
+            max-width: 1400px;
+            background: white;
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin: 0 auto 1.5rem auto;
+        }
+
+        .table-header {
+            padding: 1.25rem 1.25rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .table-header h2 {
+            margin: 0 0 1rem 0;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            transition: var(--transition);
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(30, 91, 168, 0.1);
+        }
+
+        .btn-primary,
+        .btn-secondary-clear {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(30, 91, 168, 0.3);
+        }
+
+        .btn-secondary-clear {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary-clear:hover {
+            background: #4b5563;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table thead {
+            background: var(--light-gray);
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        table th {
+            padding: 0.75rem 0.875rem;
+            text-align: left;
+            font-weight: 700;
+            font-size: 0.75rem;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        table tbody tr {
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.3s ease;
+        }
+
+        table tbody tr:hover {
+            background: var(--light-gray);
+        }
+
+        table td {
+            padding: 0.75rem 0.875rem;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+        }
+
+        /* ====================== ACCIONES ====================== */
+        .actions-group {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 1.2rem;
+        }
+
+        .btn-success {
+            background: #d4edda;
+            color: var(--success-color);
+        }
+
+        .btn-success:hover {
+            background: var(--success-color);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .btn-view {
+            background: #e8f4f8;
+            color: var(--primary-color);
+        }
+
+        .btn-view:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .btn-danger {
+            background: #fadbd8;
+            color: #c0392b;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        /* ====================== DROPDOWN MENU ====================== */
+        .view-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            min-width: 180px;
+            margin-top: 4px;
+            animation: slideDown 0.2s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .view-dropdown button {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border: none;
+            background: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .view-dropdown button:hover {
+            background: var(--light-gray);
+            color: var(--primary-color);
+        }
+
+        .view-dropdown button:not(:last-child) {
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .view-dropdown button:first-child {
+            border-radius: 6px 6px 0 0;
+        }
+
+        .view-dropdown button:last-child {
+            border-radius: 0 0 6px 6px;
+        }
+
+        /* ====================== PAGINACIÓN ====================== */
+        .paginacion {
+            padding: 2rem 1.5rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .pagination-wrapper {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
+        /* Estilos para el componente de paginación personalizado */
+        .pagination {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .pagination .page-item {
+            display: inline-block;
+        }
+
+        .pagination .page-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+            height: 40px;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: white;
+        }
+
+        .pagination .page-link .material-symbols-rounded {
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pagination .page-item:not(.disabled) .page-link:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(30, 91, 168, 0.2);
+        }
+
+        /* Botones especiales (primero y último) */
+        .pagination .page-item:first-child .page-link,
+        .pagination .page-item:last-child .page-link {
+            font-weight: 600;
+        }
+
+        .pagination .page-item.active .page-link {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            font-weight: 600;
+            cursor: default;
+        }
+
+        .pagination .page-item.disabled .page-link {
+            color: #bdc3c7;
+            cursor: not-allowed;
+            opacity: 0.5;
+            background: #f8f9fa;
+        }
+
+        .pagination .page-item.disabled .page-link:hover {
+            background: #f8f9fa;
+            border-color: var(--border-color);
+            transform: none;
+            box-shadow: none;
+        }
+
+        .pagination-info {
+            text-align: center;
+            margin-top: 1rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* ====================== ALERT SECTION ====================== */
+        .alert-section {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            border-radius: var(--radius);
+            padding: 1rem 1.25rem;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2);
+            border-left: 5px solid #d97706;
+            margin-bottom: 1.5rem;
+        }
+
+        .alert-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .alert-text h3 {
+            margin: 0 0 0.5rem 0;
+            color: #92400e;
+            font-size: 1.3rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .alert-text p {
+            margin: 0;
+            color: #b45309;
+            font-size: 0.95rem;
+        }
+
+        .alert-action {
+            padding: 0.75rem 1.5rem;
+            background: #dc2626;
+            color: white;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: var(--transition);
+            border: none;
+            cursor: pointer;
+        }
+
+        .alert-action:hover {
+            background: #b91c1c;
+        }
+
+        /* ====================== EMPTY STATE ====================== */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state .material-symbols-rounded {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* ====================== RESPONSIVE ====================== */
+        @media (max-width: 768px) {
+            .search-bar {
+                flex-direction: column;
+            }
+
+            .alert-content {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            table {
+                font-size: 0.8rem;
+            }
+
+            table th,
+            table td {
+                padding: 0.75rem 0.5rem;
+            }
+
+            .actions-group {
+                flex-wrap: wrap;
+            }
+
+            .paginacion {
+                padding: 1.5rem 1rem;
+            }
+
+            .pagination {
+                gap: 0.25rem;
+            }
+
+            .pagination .page-link {
+                min-width: 36px;
+                height: 36px;
+                padding: 0.4rem 0.6rem;
+                font-size: 0.8rem;
+            }
+
+            .pagination .page-link .material-symbols-rounded {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            table th,
+            table td {
+                padding: 0.5rem 0.25rem;
+                font-size: 0.7rem;
+            }
+
+            .btn-action {
+                width: 32px;
+                height: 32px;
+                font-size: 1rem;
+            }
+
+            .pagination .page-link {
+                min-width: 32px;
+                height: 32px;
+                padding: 0.3rem 0.5rem;
+                font-size: 0.7rem;
+            }
+        }
+    </style>
+@endpush
+
+<script>
+// Función global para toggle del dropdown de Ver
+window.toggleViewDropdown = function(button) {
+    const dropdown = button.closest('div').querySelector('.view-dropdown');
+    const allDropdowns = document.querySelectorAll('.view-dropdown');
+    
+    allDropdowns.forEach(d => {
+        if (d !== dropdown) {
+            d.style.display = 'none';
+        }
+    });
+    
+    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+};
+
+// Cerrar dropdowns al hacer clic afuera
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.view-dropdown') && !event.target.closest('button[onclick*="toggleViewDropdown"]')) {
+        document.querySelectorAll('.view-dropdown').forEach(d => {
+            d.style.display = 'none';
+        });
+    }
+});
+</script>
+
+<!-- Sección de Pendientes -->
+<section id="pedidos-section" class="section-content active" style="display: block;">
     <div class="table-container">
         <div class="table-header">
-            <h2>📋 Mis Cotizaciones</h2>
-            <div style="display: flex; gap: 1rem; align-items: center; margin-top: 1rem;">
-                <input type="text" id="inputBusqueda" placeholder="🔍 Buscar por número de cotización o cliente..." style="flex: 1; padding: 0.75rem 1rem; border: 2px solid #ddd; border-radius: 6px; font-size: 0.95rem; transition: all 0.2s;" onfocus="this.style.borderColor='#1e5ba8'" onblur="this.style.borderColor='#ddd'">
-                <button onclick="limpiarFiltros()" style="padding: 0.75rem 1.5rem; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='#4b5563'" onmouseout="this.style.background='#6b7280'">
-                    🔄 Limpiar Filtros
+            <h2>⏳ Pendientes</h2>
+            <div class="search-bar">
+                <input type="text" id="inputBusqueda" placeholder="🔍 Buscar por número de cotización o cliente..." class="search-input" onfocus="this.style.borderColor='var(--primary-color)'" onblur="this.style.borderColor='var(--border-color)'">
+                <button onclick="limpiarFiltros()" class="btn-secondary-clear">
+                    <span class="material-symbols-rounded">clear</span>
+                    Limpiar
                 </button>
             </div>
         </div>
@@ -20,7 +520,6 @@
                     <th>Fecha</th>
                     <th>Cliente</th>
                     <th>Asesora</th>
-                    <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -39,38 +538,49 @@
                 @forelse($cotizacionesPaginadas as $cotizacion)
                     <tr>
                         <td><strong>COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}</strong></td>
-                        <td>{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y H:i') : 'N/A' }}</td>
+                        <td>{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y h:i A') : 'N/A' }}</td>
                         <td>{{ $cotizacion->cliente ?? 'N/A' }}</td>
                         <td>{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? 'N/A') }}</td>
                         <td>
-                            <select class="estado-dropdown" data-cotizacion-id="{{ $cotizacion->id }}" onchange="cambiarEstadoCotizacion(this)" style="padding: 0.5rem 0.8rem; border-radius: 4px; border: 2px solid #ddd; font-weight: 600; cursor: pointer; background: white; transition: all 0.2s;">
-                                <option value="enviada" {{ $cotizacion->estado === 'enviada' ? 'selected' : '' }} style="background: #3b82f6; color: white;">✓ Enviada</option>
-                                <option value="entregar" {{ $cotizacion->estado === 'entregar' ? 'selected' : '' }} style="background: #10b981; color: white;">📦 Entregar</option>
-                                <option value="anular" {{ $cotizacion->estado === 'anular' ? 'selected' : '' }} style="background: #ef4444; color: white;">✕ Anular</option>
-                            </select>
-                        </td>
-                        <td>
-                            <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
-                                <button class="btn btn-primary" onclick="openCotizacionModal({{ $cotizacion->id }})" style="padding: 0.6rem 0.8rem; background: #1e5ba8; color: white; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Ver Detalles" onmouseover="this.style.background='#1e40af'" onmouseout="this.style.background='#1e5ba8'">
-                                    <span class="material-symbols-rounded" style="font-size: 1.2rem;">visibility</span>
+                            <div class="actions-group">
+                                @if($cotizacion->estado === 'ENVIADA_CONTADOR')
+                                <button class="btn-action btn-success" onclick="aprobarCotizacionEnLinea({{ $cotizacion->id }})" title="Aprobar Cotización">
+                                    <span class="material-symbols-rounded">check_circle</span>
                                 </button>
-                                <button class="btn btn-edit" onclick="abrirModalCalculoCostos({{ $cotizacion->id }}, '{{ $cotizacion->cliente }}')" style="padding: 0.6rem 0.8rem; background: #f59e0b; color: white; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Calcular Costos" onmouseover="this.style.background='#d97706'" onmouseout="this.style.background='#f59e0b'">
-                                    <span class="material-symbols-rounded" style="font-size: 1.2rem;">edit</span>
-                                </button>
-                                <button class="btn btn-pdf" onclick="abrirModalPDF({{ $cotizacion->id }})" style="padding: 0.6rem 0.8rem; background: #dc2626; color: white; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Ver PDF" onmouseover="this.style.background='#991b1b'" onmouseout="this.style.background='#dc2626'">
-                                    <span class="material-symbols-rounded" style="font-size: 1.2rem;">picture_as_pdf</span>
-                                </button>
-                                <button class="btn btn-danger" onclick="eliminarCotizacion({{ $cotizacion->id }}, '{{ $cotizacion->cliente }}')" style="padding: 0.6rem 0.8rem; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Eliminar" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
-                                    <span class="material-symbols-rounded" style="font-size: 1.2rem;">delete</span>
+                                @endif
+                                <!-- Dropdown de Ver -->
+                                <div style="position: relative; display: inline-block;">
+                                    <button class="btn-action btn-view" onclick="toggleViewDropdown(this)" title="Ver Opciones">
+                                        <span class="material-symbols-rounded">visibility</span>
+                                    </button>
+                                    <div class="view-dropdown" style="display: none;">
+                                        <button onclick="openCotizacionModal({{ $cotizacion->id }}); this.closest('.view-dropdown').style.display='none';">
+                                            <span class="material-symbols-rounded">description</span>
+                                            Ver Cotización
+                                        </button>
+                                        <button onclick="abrirModalVisorCostos({{ $cotizacion->id }}, '{{ $cotizacion->cliente }}'); this.closest('.view-dropdown').style.display='none';">
+                                            <span class="material-symbols-rounded">assessment</span>
+                                            Ver Costos
+                                        </button>
+                                        <button onclick="abrirModalPDF({{ $cotizacion->id }}); this.closest('.view-dropdown').style.display='none';">
+                                            <span class="material-symbols-rounded">picture_as_pdf</span>
+                                            Ver PDF
+                                        </button>
+                                    </div>
+                                </div>
+                                <button class="btn-action btn-danger" onclick="eliminarCotizacion({{ $cotizacion->id }}, '{{ $cotizacion->cliente }}')" title="Eliminar">
+                                    <span class="material-symbols-rounded">delete</span>
                                 </button>
                             </div>
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" style="text-align: center; padding: 2rem; color: #999;">
-                            <span class="material-symbols-rounded" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;">inbox</span>
-                            No hay cotizaciones disponibles
+                        <td colspan="5" style="text-align: center; padding: 2rem;">
+                            <div class="empty-state">
+                                <span class="material-symbols-rounded">inbox</span>
+                                <p>No hay cotizaciones disponibles</p>
+                            </div>
                         </td>
                     </tr>
                 @endforelse
@@ -79,145 +589,91 @@
         
         <!-- Paginación -->
         @if($totalPages > 1)
-        <div style="display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 2rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
-            <!-- Botón Anterior -->
-            @if($currentPage > 1)
-                <a href="?page=1" class="pagination-btn" style="padding: 0.5rem 0.75rem; background: #1e5ba8; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; font-weight: 600;">
-                    « Primera
-                </a>
-                <a href="?page={{ $currentPage - 1 }}" class="pagination-btn" style="padding: 0.5rem 0.75rem; background: #1e5ba8; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; font-weight: 600;">
-                    ‹ Anterior
-                </a>
-            @else
-                <span style="padding: 0.5rem 0.75rem; background: #e0e0e0; color: #999; border-radius: 4px; font-weight: 600;">
-                    « Primera
-                </span>
-                <span style="padding: 0.5rem 0.75rem; background: #e0e0e0; color: #999; border-radius: 4px; font-weight: 600;">
-                    ‹ Anterior
-                </span>
-            @endif
-            
-            <!-- Números de página -->
-            <div style="display: flex; gap: 0.25rem; align-items: center;">
-                @for($i = max(1, $currentPage - 2); $i <= min($totalPages, $currentPage + 2); $i++)
-                    @if($i == $currentPage)
-                        <span style="padding: 0.5rem 0.75rem; background: #1e5ba8; color: white; border-radius: 4px; font-weight: 700; min-width: 2.5rem; text-align: center;">
-                            {{ $i }}
-                        </span>
+        <div class="paginacion">
+            <nav role="navigation" aria-label="Pagination Navigation" class="pagination-wrapper">
+                <ul class="pagination">
+                    {{-- Primera Página --}}
+                    @if($currentPage > 1)
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1" title="Primera página">
+                                <span class="material-symbols-rounded">first_page</span>
+                            </a>
+                        </li>
                     @else
-                        <a href="?page={{ $i }}" style="padding: 0.5rem 0.75rem; background: white; color: #1e5ba8; border: 1px solid #1e5ba8; border-radius: 4px; text-decoration: none; font-weight: 600; min-width: 2.5rem; text-align: center; transition: all 0.2s;">
-                            {{ $i }}
-                        </a>
+                        <li class="page-item disabled">
+                            <span class="page-link" aria-hidden="true">
+                                <span class="material-symbols-rounded">first_page</span>
+                            </span>
+                        </li>
                     @endif
-                @endfor
-            </div>
-            
-            <!-- Botón Siguiente -->
-            @if($currentPage < $totalPages)
-                <a href="?page={{ $currentPage + 1 }}" class="pagination-btn" style="padding: 0.5rem 0.75rem; background: #1e5ba8; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; font-weight: 600;">
-                    Siguiente ›
-                </a>
-                <a href="?page={{ $totalPages }}" class="pagination-btn" style="padding: 0.5rem 0.75rem; background: #1e5ba8; color: white; border: none; border-radius: 4px; cursor: pointer; text-decoration: none; font-weight: 600;">
-                    Última »
-                </a>
-            @else
-                <span style="padding: 0.5rem 0.75rem; background: #e0e0e0; color: #999; border-radius: 4px; font-weight: 600;">
-                    Siguiente ›
-                </span>
-                <span style="padding: 0.5rem 0.75rem; background: #e0e0e0; color: #999; border-radius: 4px; font-weight: 600;">
-                    Última »
-                </span>
-            @endif
+
+                    {{-- Página Anterior --}}
+                    @if($currentPage > 1)
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ $currentPage - 1 }}" rel="prev" title="Página anterior">
+                                <span class="material-symbols-rounded">chevron_left</span>
+                            </a>
+                        </li>
+                    @else
+                        <li class="page-item disabled">
+                            <span class="page-link" aria-hidden="true">
+                                <span class="material-symbols-rounded">chevron_left</span>
+                            </span>
+                        </li>
+                    @endif
+
+                    {{-- Números de Página --}}
+                    @for($i = max(1, $currentPage - 2); $i <= min($totalPages, $currentPage + 2); $i++)
+                        @if($i == $currentPage)
+                            <li class="page-item active" aria-current="page">
+                                <span class="page-link">{{ $i }}</span>
+                            </li>
+                        @else
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ $i }}">{{ $i }}</a>
+                            </li>
+                        @endif
+                    @endfor
+
+                    {{-- Página Siguiente --}}
+                    @if($currentPage < $totalPages)
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ $currentPage + 1 }}" rel="next" title="Página siguiente">
+                                <span class="material-symbols-rounded">chevron_right</span>
+                            </a>
+                        </li>
+                    @else
+                        <li class="page-item disabled">
+                            <span class="page-link" aria-hidden="true">
+                                <span class="material-symbols-rounded">chevron_right</span>
+                            </span>
+                        </li>
+                    @endif
+
+                    {{-- Última Página --}}
+                    @if($currentPage < $totalPages)
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ $totalPages }}" title="Última página">
+                                <span class="material-symbols-rounded">last_page</span>
+                            </a>
+                        </li>
+                    @else
+                        <li class="page-item disabled">
+                            <span class="page-link" aria-hidden="true">
+                                <span class="material-symbols-rounded">last_page</span>
+                            </span>
+                        </li>
+                    @endif
+                </ul>
+            </nav>
         </div>
-        
-        <!-- Info de paginación -->
-        <div style="text-align: center; margin-top: 1rem; color: #666; font-size: 0.9rem;">
+        <div class="pagination-info">
             Mostrando {{ ($offset + 1) }} a {{ min($offset + $perPage, $total) }} de {{ $total }} cotizaciones
         </div>
         @endif
     </div>
 </section>
 
-<!-- Sección de Análisis de Costos -->
-<section id="costos-section" class="section-content">
-    <div class="table-container">
-        <div class="table-header">
-            <h2>📊 Análisis de Costos de Prendas</h2>
-            <div style="display: flex; gap: 1rem; align-items: center; margin-top: 1rem;">
-                <input type="text" id="inputBusquedaCostos" placeholder="🔍 Buscar por número de cotización o cliente..." style="flex: 1; padding: 0.75rem 1rem; border: 2px solid #ddd; border-radius: 6px; font-size: 0.95rem; transition: all 0.2s;" onfocus="this.style.borderColor='#1e5ba8'" onblur="this.style.borderColor='#ddd'">
-                <button onclick="limpiarFiltrosCostos()" style="padding: 0.75rem 1.5rem; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='#4b5563'" onmouseout="this.style.background='#6b7280'">
-                    🔄 Limpiar Filtros
-                </button>
-            </div>
-        </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Número de Cotización</th>
-                    <th>Cliente</th>
-                    <th>Fecha</th>
-                    <th>Asesora</th>
-                    <th>Prendas Costeadas</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                @php
-                    // Obtener cotizaciones que tengan costos calculados
-                    // Los costos se guardan en la tabla costos_prendas con cotizacion_id
-                    $cotizacionesConCostos = $cotizaciones->filter(function($cot) {
-                        return \DB::table('costos_prendas')
-                            ->where('cotizacion_id', $cot->id)
-                            ->exists();
-                    });
-                @endphp
-                
-                @forelse($cotizacionesConCostos as $cotizacion)
-                    @php
-                        // Contar prendas con costos en la tabla costos_prendas
-                        $prendasConCosto = \DB::table('costos_prendas')
-                            ->where('cotizacion_id', $cotizacion->id)
-                            ->count();
-                        $totalPrendas = $cotizacion->prendasCotizaciones()->count();
-                        
-                        // Obtener la fecha del primer registro de costos
-                        $fechaPrimerCosto = \DB::table('costos_prendas')
-                            ->where('cotizacion_id', $cotizacion->id)
-                            ->orderBy('created_at', 'asc')
-                            ->first();
-                        $fechaCostos = $fechaPrimerCosto ? \Carbon\Carbon::parse($fechaPrimerCosto->created_at)->format('d/m/Y H:i') : 'N/A';
-                    @endphp
-                    <tr>
-                        <td><strong>COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}</strong></td>
-                        <td>{{ $cotizacion->cliente ?? 'N/A' }}</td>
-                        <td>{{ $fechaCostos }}</td>
-                        <td>{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? 'N/A') }}</td>
-                        <td>
-                            <span style="background: #dbeafe; color: #1e40af; padding: 0.4rem 0.8rem; border-radius: 4px; font-weight: 600; font-size: 0.9rem;">
-                                {{ $prendasConCosto }} de {{ $totalPrendas }}
-                            </span>
-                        </td>
-                        <td>
-                            <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
-                                <button class="btn btn-primary" onclick="abrirModalVisorCostos({{ $cotizacion->id }}, '{{ $cotizacion->cliente }}')" style="padding: 0.6rem 1rem; background: #1e5ba8; color: white; border: none; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.2s; font-weight: 600;" title="Ver Costos" onmouseover="this.style.background='#1e40af'" onmouseout="this.style.background='#1e5ba8'">
-                                    <span class="material-symbols-rounded" style="font-size: 1rem;">visibility</span>
-                                    VER
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="6" style="text-align: center; padding: 2rem; color: #999;">
-                            <span class="material-symbols-rounded" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;">inbox</span>
-                            No hay cotizaciones con costos calculados
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-</section>
 
 <!-- Modal de Visor de Costos por Prenda -->
 <div id="visorCostosModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9998; justify-content: center; align-items: center; padding: 2rem; overflow: hidden;">
@@ -418,7 +874,7 @@
         }
     });
 
-    // Cerrar modal al hacer clic en el fondo
+        // Cerrar modal al hacer clic en el fondo
     document.getElementById('modalPDF').addEventListener('click', function(event) {
         if (event.target === this) {
             cerrarModalPDF();

@@ -15,13 +15,22 @@
 
     <div class="sidebar-content">
         <div class="menu-section">
-            <span class="menu-section-title">Supervisión</span>
+            <span class="menu-section-title">Estado de Aprobación</span>
             <ul class="menu-list" role="navigation">
                 <li class="menu-item">
-                    <a href="{{ route('supervisor-pedidos.index') }}"
-                       class="menu-link {{ request()->routeIs('supervisor-pedidos.index') && !request()->query('estado') ? 'active' : '' }}">
-                        <span class="material-symbols-rounded">dashboard</span>
-                        <span class="menu-label">Órdenes de Producción</span>
+                    <a href="{{ route('supervisor-pedidos.index', ['aprobacion' => 'pendiente']) }}"
+                       class="menu-link {{ request()->query('aprobacion') === 'pendiente' ? 'active' : '' }}"
+                       style="display:flex;align-items:center;gap:0.5rem;">
+                        <span class="material-symbols-rounded">pending_actions</span>
+                        <span class="menu-label">Pendientes</span>
+                        <span class="badge-alert" id="ordenesPendientesCount">0</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{{ route('supervisor-pedidos.index', ['aprobacion' => 'aprobadas']) }}"
+                       class="menu-link {{ request()->query('aprobacion') === 'aprobadas' ? 'active' : '' }}">
+                        <span class="material-symbols-rounded">verified</span>
+                        <span class="menu-label">Aprobadas/Anuladas</span>
                     </a>
                 </li>
             </ul>
@@ -30,6 +39,13 @@
         <div class="menu-section">
             <span class="menu-section-title">Filtros Rápidos</span>
             <ul class="menu-list" role="navigation">
+                <li class="menu-item">
+                    <a href="{{ route('supervisor-pedidos.index') }}"
+                       class="menu-link {{ request()->routeIs('supervisor-pedidos.index') && !request()->query('estado') && !request()->query('aprobacion') ? 'active' : '' }}">
+                        <span class="material-symbols-rounded">dashboard</span>
+                        <span class="menu-label">Órdenes de Producción</span>
+                    </a>
+                </li>
                 <li class="menu-item">
                     <a href="{{ route('supervisor-pedidos.index', ['estado' => 'No iniciado']) }}"
                        class="menu-link {{ request()->query('estado') === 'No iniciado' ? 'active' : '' }}">

@@ -158,7 +158,7 @@
                     </div>
                     
                     <div class="reporte-fecha">
-                        <strong>Creado:</strong> {{ $reporte->created_at->format('d/m/Y H:i') }}
+                        <strong>Creado:</strong> {{ $reporte->created_at->format('d/m/Y h:i A') }}
                     </div>
                     
                     <div class="reporte-acciones">

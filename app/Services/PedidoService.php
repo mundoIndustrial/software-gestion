@@ -97,7 +97,7 @@ class PedidoService
                 'asesor_id' => Auth::id(),
                 'forma_de_pago' => $cotizacion->especificaciones['forma_pago'] ?? null,
                 'estado' => 'No iniciado',
-                'fecha_de_creacion_de_orden' => now()->toDateString(),
+                'fecha_de_creacion_de_orden' => now(),
             ]);
 
             \Log::info('Pedido de producción creado', [

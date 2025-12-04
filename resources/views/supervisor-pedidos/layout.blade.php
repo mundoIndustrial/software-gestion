@@ -52,6 +52,123 @@
             align-items: center;
             gap: 1rem;
         }
+
+        /* Estilos para notificaciones */
+        .notification-dropdown {
+            position: relative;
+        }
+
+        .notification-btn {
+            position: relative;
+            background: none;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #2c3e50;
+            padding: 0.5rem;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: #e74c3c;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: bold;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            display: none;
+        }
+
+        .notification-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #e0e6ed;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 350px;
+            max-height: 500px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            margin-top: 0.5rem;
+        }
+
+        .notification-menu.active {
+            display: block;
+        }
+
+        .notification-header {
+            padding: 1rem;
+            border-bottom: 1px solid #e0e6ed;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .notification-header h3 {
+            margin: 0;
+            font-size: 1rem;
+            color: #2c3e50;
+        }
+
+        .mark-all-read {
+            background: none;
+            border: none;
+            color: #3498db;
+            cursor: pointer;
+            font-size: 0.85rem;
+            text-decoration: underline;
+        }
+
+        .notification-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .notification-item {
+            padding: 1rem;
+            border-bottom: 1px solid #e0e6ed;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .notification-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .notification-empty {
+            padding: 2rem;
+            text-align: center;
+            color: #7f8c8d;
+        }
+
+        /* Badge Alert */
+        .badge-alert {
+            background: #dc2626;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.75rem;
+            min-width: 24px;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
     </style>
 
     @stack('styles')
@@ -185,11 +302,16 @@
             }
         });
 
-        // Toggle notification menu
+        // Toggle notification menu y cargar notificaciones
         document.getElementById('notificationBtn')?.addEventListener('click', function(e) {
             e.stopPropagation();
             const menu = document.getElementById('notificationMenu');
             menu?.classList.toggle('active');
+            
+            // Cargar notificaciones al abrir
+            if (menu?.classList.contains('active')) {
+                cargarNotificacionesPendientes();
+            }
         });
 
         document.addEventListener('click', function(e) {
@@ -198,6 +320,102 @@
                 notificationMenu?.classList.remove('active');
             }
         });
+
+        // Función para cargar notificaciones (órdenes pendientes de aprobación)
+        function cargarNotificacionesPendientes() {
+            fetch('/supervisor-pedidos/notificaciones')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const badge = document.getElementById('notificationBadge');
+                        const list = document.getElementById('notificationList');
+                        
+                        // Actualizar badge con órdenes pendientes totales
+                        // (mostrar todas las pendientes, no solo las no leídas)
+                        badge.textContent = data.totalPendientes;
+                        badge.style.display = data.totalPendientes > 0 ? 'block' : 'none';
+                        
+                        // Llenar lista de notificaciones
+                        if (data.notificaciones && data.notificaciones.length > 0) {
+                            list.innerHTML = data.notificaciones.map(notif => `
+                                <div class="notification-item" style="padding: 1rem; border-bottom: 1px solid #e0e6ed; cursor: pointer;" onclick="irAOrden(${notif.numero_pedido})">
+                                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                                        <div style="flex: 1;">
+                                            <h4 style="margin: 0 0 0.5rem 0; font-size: 0.95rem; color: #2c3e50;">
+                                                <strong>Orden #${notif.numero_pedido}</strong>
+                                            </h4>
+                                            <p style="margin: 0.25rem 0; font-size: 0.85rem; color: #7f8c8d;">
+                                                Cliente: <strong>${notif.cliente}</strong>
+                                            </p>
+                                            <p style="margin: 0.25rem 0; font-size: 0.85rem; color: #7f8c8d;">
+                                                Asesor: ${notif.asesor}
+                                            </p>
+                                            <small style="color: #999;">${notif.fecha}</small>
+                                        </div>
+                                        <span style="background: #fff3cd; color: #f39c12; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; white-space: nowrap; margin-left: 0.5rem;">
+                                            PENDIENTE
+                                        </span>
+                                    </div>
+                                </div>
+                            `).join('');
+                        } else {
+                            list.innerHTML = `
+                                <div class="notification-empty" style="padding: 2rem; text-align: center; color: #7f8c8d;">
+                                    <span class="material-symbols-rounded" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;">verified</span>
+                                    <p>¡Sin órdenes pendientes!</p>
+                                    <small>Todas las órdenes han sido aprobadas o anuladas.</small>
+                                </div>
+                            `;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error cargando notificaciones:', error);
+                    document.getElementById('notificationList').innerHTML = `
+                        <div class="notification-empty" style="padding: 1rem; text-align: center; color: #e74c3c;">
+                            <p>Error al cargar notificaciones</p>
+                        </div>
+                    `;
+                });
+        }
+
+        // Función para ir a la orden
+        function irAOrden(numeroPedido) {
+            // Ir a la sección de órdenes pendientes
+            window.location.href = '/supervisor-pedidos?aprobacion=pendiente';
+        }
+
+        // Cargar notificaciones al iniciar página
+        document.addEventListener('DOMContentLoaded', function() {
+            cargarNotificacionesPendientes();
+            cargarContadorOrdenesPendientes();
+        });
+
+        /**
+         * Cargar contador de órdenes pendientes de aprobación
+         */
+        function cargarContadorOrdenesPendientes() {
+            fetch('{{ route("supervisor-pedidos.ordenes-pendientes-count") }}')
+                .then(response => response.json())
+                .then(data => {
+                    const badge = document.getElementById('ordenesPendientesCount');
+                    if (badge) {
+                        if (data.success && data.count > 0) {
+                            badge.textContent = data.count;
+                            badge.style.display = 'inline-flex';
+                        } else {
+                            badge.style.display = 'none';
+                        }
+                    }
+                })
+                .catch(error => console.error('Error al cargar contador:', error));
+        }
+
+        // Cargar contador al cargar la página
+        document.addEventListener('DOMContentLoaded', cargarContadorOrdenesPendientes);
+
+        // Recargar contador cada 30 segundos
+        setInterval(cargarContadorOrdenesPendientes, 30000);
     </script>
 
     @stack('scripts')

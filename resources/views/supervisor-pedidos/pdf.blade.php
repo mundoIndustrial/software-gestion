@@ -222,7 +222,7 @@
             </div>
             <div class="fecha-impresion">
                 <strong>Fecha de Impresión:</strong><br>
-                {{ now()->format('d/m/Y H:i') }}
+                {{ now()->format('d/m/Y h:i A') }}
             </div>
         </div>
 
@@ -306,7 +306,7 @@
             <p>{{ $orden->motivo_anulacion }}</p>
             <p style="margin-top: 10px; font-size: 11px;">
                 <strong>Anulada por:</strong> {{ $orden->usuario_anulacion ?? 'N/A' }}<br>
-                <strong>Fecha de Anulación:</strong> {{ $orden->fecha_anulacion ? \Carbon\Carbon::parse($orden->fecha_anulacion)->format('d/m/Y H:i') : 'N/A' }}
+                <strong>Fecha de Anulación:</strong> {{ $orden->fecha_anulacion ? \Carbon\Carbon::parse($orden->fecha_anulacion)->format('d/m/Y h:i A') : 'N/A' }}
             </p>
         </div>
         @endif

@@ -71,7 +71,7 @@
                                 <td>{{ $orden->novedades ?? '-' }}</td>
                                 <td>
                                     @if($orden->control_de_calidad)
-                                        {{ \Carbon\Carbon::parse($orden->control_de_calidad)->format('d/m/Y H:i') }}
+                                        {{ \Carbon\Carbon::parse($orden->control_de_calidad)->format('d/m/Y h:i A') }}
                                     @else
                                         -
                                     @endif
@@ -79,7 +79,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="empty-state">
+                                <td colspan="5" class="empty-state">
                                     <i class="fas fa-clipboard-check"></i>
                                     <p>No hay órdenes de pedidos en Control de Calidad</p>
                                 </td>
@@ -137,7 +137,7 @@
                                 <td>{{ $orden->novedades ?? '-' }}</td>
                                 <td>
                                     @if($orden->control_de_calidad)
-                                        {{ \Carbon\Carbon::parse($orden->control_de_calidad)->format('d/m/Y H:i') }}
+                                        {{ \Carbon\Carbon::parse($orden->control_de_calidad)->format('d/m/Y h:i A') }}
                                     @else
                                         -
                                     @endif

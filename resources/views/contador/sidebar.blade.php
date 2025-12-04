@@ -24,28 +24,40 @@
   <div class="sidebar-content">
     <!-- Lista del menú principal -->
     <ul class="menu-list" role="navigation" aria-label="Menú principal">
-      <!-- Dashboard -->
+      <!-- Pendientes -->
       <li class="menu-item">
         <a href="{{ route('contador.index') }}"
            class="menu-link {{ request()->routeIs('contador.index') ? 'active' : '' }}"
-           aria-label="Ir al Dashboard">
-          <span class="material-symbols-rounded" aria-hidden="true">dashboard</span>
-          <span class="menu-label">Dashboard</span>
+           style="display:flex;align-items:center;gap:0.5rem;"
+           aria-label="Ver Cotizaciones Pendientes">
+          <span class="material-symbols-rounded" aria-hidden="true">schedule</span>
+          <span class="menu-label">Pendientes</span>
+          <span class="badge-alert" id="cotizacionesPendientesCount" style="display:none;">0</span>
         </a>
       </li>
 
-      <!-- Salir -->
+      <!-- Ver Todas las Cotizaciones -->
       <li class="menu-item">
-        <form action="{{ route('logout') }}" method="POST">
-          @csrf
-          <button type="submit"
-                  class="menu-link"
-                  style="border:none;background:none;cursor:pointer;width:100%;"
-                  aria-label="Cerrar sesión">
-            <span class="material-symbols-rounded" aria-hidden="true">logout</span>
-            <span class="menu-label">Salir</span>
-          </button>
-        </form>
+        <a href="{{ route('contador.todas') }}"
+           class="menu-link {{ request()->routeIs('contador.todas') ? 'active' : '' }}"
+           aria-label="Ver Todas las Cotizaciones">
+          <span class="material-symbols-rounded" aria-hidden="true">list_alt</span>
+          <span class="menu-label">Ver Todas</span>
+        </a>
+      </li>
+
+      <!-- Cotizaciones por Revisar -->
+      <li class="menu-item">
+        <a href="{{ route('contador.por-revisar') }}"
+           class="menu-link {{ request()->routeIs('contador.por-revisar') ? 'active' : '' }}"
+           style="display:flex;align-items:center;gap:0.5rem;"
+           aria-label="Ver Cotizaciones a Revisar">
+          <span class="material-symbols-rounded" aria-hidden="true">refresh</span>
+          <span class="menu-label">Cotizaciones a Revisar</span>
+          @if(isset($cotizacionesRechazadas) && $cotizacionesRechazadas->count() > 0)
+            <span class="badge-alert">{{ $cotizacionesRechazadas->count() }}</span>
+          @endif
+        </a>
       </li>
     </ul>
   </div>

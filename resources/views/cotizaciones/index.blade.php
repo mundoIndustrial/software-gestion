@@ -25,7 +25,7 @@
                             @if(auth()->user() && auth()->user()->role && auth()->user()->role->name === 'asesor')
                                 <td><strong>COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}</strong></td>
                             @endif
-                            <td>{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y H:i') : 'N/A' }}</td>
+                            <td>{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y h:i A') : 'N/A' }}</td>
                             <td>{{ $cotizacion->cliente ?? 'N/A' }}</td>
                             <td>{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? 'N/A') }}</td>
                             <td>

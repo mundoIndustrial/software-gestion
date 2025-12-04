@@ -243,7 +243,7 @@
                             <span class="material-symbols-rounded">update</span>
                             Última actualización
                         </span>
-                        <span class="info-value">{{ $user->updated_at->format('d/m/Y H:i') }}</span>
+                        <span class="info-value">{{ $user->updated_at->format('d/m/Y h:i A') }}</span>
                     </div>
                     
                     <div class="info-item">

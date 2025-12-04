@@ -203,6 +203,32 @@ class User extends Authenticatable
     }
 
     /**
+     * Obtener todas las notificaciones del usuario
+     * (Relación con tabla notifications)
+     */
+    public function notificacionesLectura()
+    {
+        return $this->hasMany('Illuminate\Notifications\DatabaseNotification', 'notifiable_id')
+                    ->where('notifiable_type', User::class);
+    }
+
+    /**
+     * Obtener notificaciones no leídas
+     */
+    public function notificacionesNoLeidas()
+    {
+        return $this->notificacionesLectura()->whereNull('read_at');
+    }
+
+    /**
+     * Obtener el número de notificaciones no leídas
+     */
+    public function countNotificacionesNoLeidas(): int
+    {
+        return $this->notificacionesNoLeidas()->count();
+    }
+
+    /**
      * Get the number of minutes for the "remember me" session.
      *
      * @return int

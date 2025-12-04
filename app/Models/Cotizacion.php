@@ -16,7 +16,6 @@ class Cotizacion extends Model
     protected $fillable = [
         'user_id',
         'numero_cotizacion',
-        'tipo_cotizacion',
         'tipo_cotizacion_id',
         'tipo_venta',
         'fecha_inicio',
@@ -97,11 +96,19 @@ class Cotizacion extends Model
     }
 
     /**
-     * Relación con historial de cambios
+     * Relación con historial de cambios (DEPRECATED)
      */
     public function historial()
     {
         return $this->hasMany(HistorialCotizacion::class);
+    }
+
+    /**
+     * Relación con historial de cambios de estado
+     */
+    public function historialCambios(): HasMany
+    {
+        return $this->hasMany(HistorialCambiosCotizacion::class, 'cotizacion_id');
     }
 
     /**

@@ -60,7 +60,7 @@
                             <td class="metraje-cell">
                                 {{ $tela->metraje_sugerido ? ($tela->metraje_sugerido == floor($tela->metraje_sugerido) ? number_format($tela->metraje_sugerido, 0) : number_format($tela->metraje_sugerido, 2)) . ' m' : '-' }}
                             </td>
-                            <td class="fecha-cell">{{ $tela->fecha_registro ? \Carbon\Carbon::parse($tela->fecha_registro)->format('d/m/Y H:i') : '-' }}</td>
+                            <td class="fecha-cell">{{ $tela->fecha_registro ? \Carbon\Carbon::parse($tela->fecha_registro)->format('d/m/Y h:i A') : '-' }}</td>
                             @if(false) {{-- Oculto para asesores --}}
                             <td class="actions-cell">
                                 <button type="button" 

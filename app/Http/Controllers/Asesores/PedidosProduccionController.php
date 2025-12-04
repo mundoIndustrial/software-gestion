@@ -20,9 +20,9 @@ class PedidosProduccionController extends Controller
      */
     public function crearForm()
     {
-        // Permitir crear pedidos de cotizaciones en CUALQUIER estado (excepto borradores)
+        // Solo permitir crear pedidos de cotizaciones APROBADAS
         $cotizaciones = Cotizacion::where('user_id', Auth::id())
-            ->where('es_borrador', false)
+            ->where('estado', 'APROBADA_COTIZACIONES')
             ->with([
                 'prendasCotizaciones.variantes.color',
                 'prendasCotizaciones.variantes.tela',
@@ -98,6 +98,14 @@ class PedidosProduccionController extends Controller
             abort(403);
         }
 
+        // Validar que la cotización esté aprobada
+        if ($cotizacion->estado !== 'APROBADA_COTIZACIONES') {
+            return response()->json([
+                'success' => false,
+                'message' => 'La cotización debe estar aprobada para crear un pedido. Estado actual: ' . $cotizacion->estado
+            ], 403);
+        }
+
         try {
             DB::beginTransaction();
 
@@ -129,7 +137,7 @@ class PedidosProduccionController extends Controller
                 'asesor_id' => auth()->id(),
                 'forma_de_pago' => $formaPago,
                 'estado' => 'No iniciado',
-                'fecha_de_creacion_de_orden' => now()->toDateString(),
+                'fecha_de_creacion_de_orden' => now(),
             ]);
 
             // Obtener datos del request (JSON o Form Data)

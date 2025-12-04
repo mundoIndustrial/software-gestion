@@ -3,17 +3,17 @@
    ======================================== */
 :root {
     /* Colores Primarios - Azul Profesional */
-    --primary-color: #2563eb;
-    --primary-dark: #1d4ed8;
-    --primary-light: #3b82f6;
+    --primary-color: #1e5ba8;
+    --primary-dark: #1e40af;
+    --primary-light: #2b7ec9;
     --accent-color: #1e40af;
     --secondary-color: #0ea5e9;
     --success-color: #10b981;
-    --warning-color: #3b82f6;
+    --warning-color: #f39c12;
     --danger-color: #ef4444;
     
     /* Colores de Fondo */
-    --bg-primary: #f8fafc;
+    --bg-primary: #f5f7fa;
     --bg-secondary: #ffffff;
     --bg-sidebar: #ffffff;
     --bg-card: #ffffff;
@@ -21,14 +21,14 @@
     --bg-active: #eff6ff;
     
     /* Colores de Texto */
-    --text-primary: #0f172a;
+    --text-primary: #2c3e50;
     --text-secondary: #475569;
-    --text-tertiary: #94a3b8;
+    --text-tertiary: #7f8c8d;
     --text-white: #ffffff;
     
     /* Colores de Borde */
-    --border-color: #e2e8f0;
-    --border-hover: rgba(37, 99, 235, 0.3);
+    --border-color: #e0e6ed;
+    --border-hover: rgba(30, 91, 168, 0.3);
     
     /* Sombras Modernas */
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
@@ -45,6 +45,40 @@
     --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-slow: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ========================================
+   VARIABLES DE COLORES - MODO OSCURO
+   ======================================== */
+body.dark-theme {
+    /* Colores Primarios */
+    --primary-color: #3b82f6;
+    --primary-dark: #2563eb;
+    --primary-light: #60a5fa;
+    --secondary-color: #0ea5e9;
+    
+    /* Colores de Fondo */
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-sidebar: #1e293b;
+    --bg-card: #1e293b;
+    --bg-hover: #334155;
+    --bg-active: #1e3a8a;
+    
+    /* Colores de Texto */
+    --text-primary: #f1f5f9;
+    --text-secondary: #cbd5e1;
+    --text-tertiary: #94a3b8;
+    
+    /* Colores de Borde */
+    --border-color: #334155;
+    --border-hover: rgba(59, 130, 246, 0.4);
+    
+    /* Sombras */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 12px 0 rgba(0, 0, 0, 0.6);
+    --shadow-lg: 0 10px 24px 0 rgba(0, 0, 0, 0.7);
+    --shadow-xl: 0 20px 40px 0 rgba(0, 0, 0, 0.8);
 }
 
 /* ========================================
@@ -70,11 +104,59 @@ body {
 /* ========================================
    LAYOUT PRINCIPAL
    ======================================== */
+/* Container and main-content styles are in sidebar.css with [data-module="contador"] selector */
+
 .contador-wrapper {
     display: grid;
     grid-template-columns: var(--sidebar-width) 1fr;
     height: 100vh;
     overflow: hidden;
+    transition: grid-template-columns var(--transition-normal);
+}
+
+.contador-wrapper.sidebar-collapsed {
+    grid-template-columns: var(--sidebar-collapsed) 1fr;
+}
+
+.main-content {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.page-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+    background: var(--bg-primary);
+}
+
+.page-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.page-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.page-content::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+.page-content::-webkit-scrollbar-thumb:hover {
+    background: var(--text-tertiary);
+}
+
+.container .main-content {
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+    background: var(--bg-primary);
 }
 
 /* ========================================
@@ -92,6 +174,10 @@ body {
     box-shadow: var(--shadow-md);
     transition: all var(--transition-normal);
     z-index: 1000;
+}
+
+.sidebar.collapsed {
+    width: var(--sidebar-collapsed);
 }
 
 .sidebar-header {
@@ -120,6 +206,16 @@ body {
     filter: brightness(0) saturate(100%);
 }
 
+body.dark-theme .sidebar-header .header-logo {
+    filter: brightness(0) invert(1) saturate(100%);
+}
+
+.sidebar.collapsed .header-logo {
+    opacity: 0;
+    pointer-events: none;
+    width: 0;
+}
+
 .sidebar-header .sidebar-toggle {
     height: 36px;
     width: 36px;
@@ -140,6 +236,19 @@ body {
     background: var(--primary-color);
     color: var(--text-white);
     transform: scale(1.05);
+}
+
+.sidebar-header .sidebar-toggle:active {
+    transform: scale(0.95);
+}
+
+.sidebar-header .sidebar-toggle span {
+    font-size: 1.25rem;
+    transition: transform var(--transition-normal);
+}
+
+.sidebar.collapsed .sidebar-toggle span {
+    transform: rotate(180deg);
 }
 
 .sidebar-content {
@@ -394,12 +503,26 @@ body {
    SECTIONS
    ======================================== */
 .section-content {
+    width: 100%;
     display: none;
     animation: fadeIn var(--transition-normal);
+    margin: 0 auto;
 }
 
 .section-content.active {
     display: block;
+}
+
+/* Contador sections - center content */
+[data-module="contador"] .section-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+[data-module="contador"] .section-content.active {
+    display: flex;
 }
 
 @keyframes fadeIn {
@@ -672,6 +795,25 @@ tbody tr:hover {
     right: 1.5rem;
     top: 50%;
     transform: translateY(-50%);
+}
+
+/* ========================================
+   BADGE ALERT
+   ======================================== */
+.badge-alert {
+    background: #dc2626;
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.75rem;
+    min-width: 24px;
+    margin-left: auto;
+    flex-shrink: 0;
 }
 
 /* ========================================

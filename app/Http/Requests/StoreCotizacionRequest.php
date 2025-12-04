@@ -24,7 +24,7 @@ class StoreCotizacionRequest extends FormRequest
         return [
             'cliente' => 'required|string|max:255|regex:/^[a-zA-Z0-9\s\-\.]+$/',
             'tipo' => 'required|in:borrador,enviada',
-            'tipo_cotizacion' => 'required_if:tipo,enviada|nullable|string|in:M,D,X',
+            'tipo_venta' => 'required_if:tipo,enviada|nullable|string|in:M,D,X',
             'cotizacion_id' => 'nullable|integer|exists:cotizaciones,id',
             
             'productos' => 'required_if:tipo,enviada|array',
@@ -79,8 +79,8 @@ class StoreCotizacionRequest extends FormRequest
             'cliente.regex' => 'El cliente contiene caracteres no permitidos',
             'tipo.required' => 'El tipo de cotización es requerido',
             'tipo.in' => 'Tipo de cotización inválido (debe ser "borrador" o "enviada")',
-            'tipo_cotizacion.required_if' => 'El tipo de cotización (M/D/X) es requerido para cotizaciones enviadas',
-            'tipo_cotizacion.in' => 'El tipo de cotización debe ser M, D o X',
+            'tipo_venta.required_if' => 'El tipo de venta (M/D/X) es requerido para cotizaciones enviadas',
+            'tipo_venta.in' => 'El tipo de venta debe ser M (Mayoreo), D (Detalle) o X (Otra)',
             'productos.required_if' => 'Los productos son requeridos para cotizaciones enviadas',
             'productos.*.nombre_producto.required' => 'Cada producto debe tener un nombre',
             'productos.*.variantes.genero.in' => 'El género debe ser: hombre, mujer, niño, unisex, caballero o dama',

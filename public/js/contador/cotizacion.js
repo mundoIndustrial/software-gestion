@@ -185,3 +185,119 @@ function eliminarCotizacion(cotizacionId, cliente) {
     });
 }
 
+/**
+ * Aprueba la cotización directamente desde la tabla (sin abrir modal)
+ * @param {number} cotizacionId - ID de la cotización
+ */
+function aprobarCotizacionEnLinea(cotizacionId) {
+    // Mostrar confirmación
+    Swal.fire({
+        title: '¿Aprobar cotización?',
+        html: `
+            <div style="text-align: left; margin: 1rem 0;">
+                <p style="margin: 0 0 0.75rem 0; font-size: 0.95rem; color: #4b5563;">
+                    ¿Estás seguro de que deseas aprobar esta cotización?
+                </p>
+                <div style="background: #dbeafe; border-left: 4px solid #3b82f6; padding: 0.75rem; border-radius: 4px; margin: 0.75rem 0;">
+                    <p style="margin: 0; font-size: 0.85rem; color: #1e40af; font-weight: 600;">
+                        ℹ️ La cotización será enviada al área de Aprobación de Cotizaciones
+                    </p>
+                </div>
+            </div>
+        `,
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#d1d5db',
+        confirmButtonText: 'Sí, aprobar',
+        cancelButtonText: 'Cancelar',
+        width: '450px'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Mostrar loading
+            Swal.fire({
+                title: 'Aprobando cotización...',
+                html: 'Por favor espera mientras se procesa la aprobación',
+                icon: 'info',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Enviar solicitud de aprobación
+            fetch(`/cotizaciones/${cotizacionId}/aprobar-contador`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || `HTTP error! status: ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Encontrar y remover el botón de la fila
+                    const btnAprobar = document.querySelector(`button[onclick="aprobarCotizacionEnLinea(${cotizacionId})"]`);
+                    if (btnAprobar) {
+                        btnAprobar.style.transition = 'all 0.3s ease-out';
+                        btnAprobar.style.opacity = '0';
+                        btnAprobar.style.transform = 'scale(0.8)';
+                        
+                        setTimeout(() => {
+                            btnAprobar.remove();
+                        }, 300);
+                    }
+                    
+                    Swal.fire({
+                        title: '✓ Cotización Aprobada',
+                        html: `
+                            <div style="text-align: left; color: #4b5563;">
+                                <p style="margin: 0 0 0.75rem 0; font-size: 0.95rem;">
+                                    ✅ La cotización ha sido aprobada correctamente.
+                                </p>
+                                <div style="background: #d1fae5; border-left: 4px solid #10b981; padding: 0.75rem; border-radius: 4px; margin: 0.75rem 0;">
+                                    <p style="margin: 0; font-size: 0.85rem; color: #065f46; font-weight: 600;">
+                                        📧 Se ha enviado notificación al área de Aprobación de Cotizaciones
+                                    </p>
+                                </div>
+                                <p style="margin: 0.75rem 0 0 0; font-size: 0.85rem; color: #666;">
+                                    <strong>Estado actual:</strong> Aprobada por Contador
+                                </p>
+                            </div>
+                        `,
+                        icon: 'success',
+                        confirmButtonColor: '#1e5ba8',
+                        confirmButtonText: 'Entendido'
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Error',
+                        text: data.message || 'No se pudo aprobar la cotización',
+                        icon: 'error',
+                        confirmButtonColor: '#ef4444'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: error.message || 'Error al aprobar la cotización. Por favor intenta de nuevo.',
+                    icon: 'error',
+                    confirmButtonColor: '#ef4444'
+                });
+            });
+        }
+    });
+}
+

@@ -136,6 +136,22 @@ class SupervisorPedidosController extends Controller
         // Obtener órdenes con filtros
         $query = PedidoProduccion::with(['asesora', 'prendas']);
 
+        // FILTRO DE APROBACIÓN: Mostrar solo órdenes según su estado de aprobación
+        if ($request->filled('aprobacion')) {
+            if ($request->aprobacion === 'pendiente') {
+                // Órdenes pendientes de aprobación (sin aprobado_por_supervisor_en Y NO ANULADAS Y CON COTIZACIÓN)
+                $query->whereNull('aprobado_por_supervisor_en')
+                      ->where('estado', '!=', 'Anulada')
+                      ->whereNotNull('cotizacion_id');
+            } elseif ($request->aprobacion === 'aprobadas') {
+                // Órdenes ya aprobadas o anuladas (con aprobado_por_supervisor_en)
+                $query->whereNotNull('aprobado_por_supervisor_en');
+            }
+        } else {
+            // Por defecto, mostrar TODAS las órdenes (sin filtro de aprobación)
+            // Esto incluye órdenes con y sin cotización
+        }
+
         // Búsqueda general por pedido o cliente
         if ($request->filled('busqueda')) {
             $busqueda = $request->busqueda;
@@ -218,11 +234,14 @@ class SupervisorPedidosController extends Controller
         $orden = PedidoProduccion::findOrFail($id);
 
         // Actualizar estado
+        // IMPORTANTE: Se registra aprobado_por_supervisor_en para marcar que el supervisor ha actuado sobre la orden
+        // Esto hace que la orden aparezca en el registro (tanto si es aprobada como si es anulada)
         $orden->update([
             'estado' => 'Anulada',
             'motivo_anulacion' => $request->motivo_anulacion,
             'fecha_anulacion' => now(),
             'usuario_anulacion' => auth()->user()->name,
+            'aprobado_por_supervisor_en' => now(), // Registrar acción del supervisor
         ]);
 
         // Log de auditoría
@@ -254,12 +273,11 @@ class SupervisorPedidosController extends Controller
                 ], 422);
             }
 
-            // Marcar orden como aprobada y lista para producción
+            // Marcar orden como aprobada por el supervisor
+            // IMPORTANTE: Solo se registra aprobado_por_supervisor_en, SIN cambiar el estado
+            // El cambio de estado a "En Ejecución" lo hace otro rol (ej: supervisor de producción)
             $orden->update([
-                'estado' => 'En Ejecución',
-                'fecha_aprobacion' => now(),
-                'usuario_aprobacion' => auth()->user()->name,
-                'aprobada' => true,
+                'aprobado_por_supervisor_en' => now(),
             ]);
 
             // Log de auditoría
@@ -269,7 +287,7 @@ class SupervisorPedidosController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Orden aprobada y enviada a producción correctamente',
+                'message' => 'Orden aprobada correctamente. Pendiente de envío a producción.',
                 'orden' => $orden,
             ]);
 
@@ -440,6 +458,9 @@ class SupervisorPedidosController extends Controller
     /**
      * Obtener notificaciones del supervisor
      */
+    /**
+     * Obtener notificaciones (órdenes pendientes de aprobación)
+     */
     public function getNotifications()
     {
         try {
@@ -452,27 +473,46 @@ class SupervisorPedidosController extends Controller
                 ], 401);
             }
 
-            // Obtener notificaciones sin leer
-            $notificacionesSinLeer = $user->unreadNotifications()
-                ->latest()
-                ->take(10)
+            // Obtener todas las órdenes PENDIENTES DE APROBACIÓN
+            // (sin aprobado_por_supervisor_en) QUE TENGAN COTIZACIÓN ASOCIADA Y NO ANULADAS
+            $ordenesPendientes = PedidoProduccion::whereNull('aprobado_por_supervisor_en')
+                ->whereNotNull('cotizacion_id')
+                ->where('estado', '!=', 'Anulada')
+                ->with(['asesora:id,name'])
+                ->select([
+                    'id', 'numero_pedido', 'cliente', 'asesor_id', 
+                    'fecha_de_creacion_de_orden', 'estado', 'forma_de_pago'
+                ])
+                ->orderBy('fecha_de_creacion_de_orden', 'desc')
                 ->get();
 
-            // Obtener todas las notificaciones
-            $notificaciones = $user->notifications()
-                ->latest()
-                ->take(20)
-                ->get();
+            // Convertir a formato de notificación
+            $notificaciones = $ordenesPendientes->map(function($orden) {
+                return [
+                    'id' => $orden->id,
+                    'numero_pedido' => $orden->numero_pedido,
+                    'cliente' => $orden->cliente,
+                    'asesor' => ($orden->asesora?->name) ?? 'N/A',
+                    'fecha' => ($orden->fecha_de_creacion_de_orden?->format('d/m/Y H:i')) ?? '',
+                    'estado' => $orden->estado,
+                    'titulo' => "Orden #" . $orden->numero_pedido . " - " . $orden->cliente,
+                    'mensaje' => "Cliente: {$orden->cliente} | Asesor: " . (($orden->asesora?->name) ?? 'N/A'),
+                    'tipo' => 'orden_pendiente_aprobacion',
+                    'timestamp' => ($orden->fecha_de_creacion_de_orden?->toIso8601String()) ?? null
+                ];
+            });
 
-            $totalNotificaciones = $user->notifications()->count();
+            // Obtener notificaciones NO LEÍDAS del usuario
+            $unreadCount = $user->unreadNotifications()->count();
 
             return response()->json([
                 'success' => true,
-                'notificacionesSinLeer' => $notificacionesSinLeer,
                 'notificaciones' => $notificaciones,
-                'totalNotificaciones' => $totalNotificaciones,
+                'totalPendientes' => $ordenesPendientes->count(),
+                'sin_leer' => $unreadCount  // Cambiar a contar notificaciones no leídas del usuario
             ]);
         } catch (\Exception $e) {
+            \Log::error('Error al obtener notificaciones: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener notificaciones: ' . $e->getMessage()
@@ -543,6 +583,38 @@ class SupervisorPedidosController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al marcar notificación: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener contador de órdenes pendientes de aprobación
+     * Endpoint: GET /supervisor-pedidos/ordenes-pendientes-count
+     */
+    public function ordenesPendientesCount()
+    {
+        try {
+            // Contar órdenes pendientes de aprobación
+            // (sin aprobado_por_supervisor_en, no anuladas y con cotización)
+            $count = PedidoProduccion::whereNull('aprobado_por_supervisor_en')
+                ->whereNotNull('cotizacion_id')
+                ->where('estado', '!=', 'Anulada')
+                ->count();
+
+            return response()->json([
+                'success' => true,
+                'count' => $count,
+                'message' => $count > 0 ? "Hay $count orden(es) pendiente(s) de aprobación" : 'No hay órdenes pendientes'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener contador de órdenes pendientes', [
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'count' => 0,
+                'error' => $e->getMessage()
             ], 500);
         }
     }

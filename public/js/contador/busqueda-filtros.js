@@ -54,9 +54,9 @@ function guardarDatosOriginales() {
                     const valorSelect = select.value;
                     // Mapear valores a nombres legibles
                     const mapeoEstados = {
-                        'enviada': 'Enviada',
-                        'entregar': 'Entregar',
-                        'anular': 'Anular'
+                        'ENVIADA_CONTADOR': 'Enviada',
+                        'APROBADA_COTIZACIONES': 'Entregar',
+                        'FINALIZADA': 'Anular'
                     };
                     estado = mapeoEstados[valorSelect] || valorSelect;
                 } else {
@@ -754,9 +754,9 @@ function aplicarFiltrosCotizaciones() {
             if (select) {
                 const valorSelect = select.value;
                 const mapeoEstados = {
-                    'enviada': 'Enviada',
-                    'entregar': 'Entregar',
-                    'anular': 'Anular'
+                    'ENVIADA_CONTADOR': 'Enviada',
+                    'APROBADA_COTIZACIONES': 'Entregar',
+                    'FINALIZADA': 'Anular'
                 };
                 estado = mapeoEstados[valorSelect] || valorSelect;
             }

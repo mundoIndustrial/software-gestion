@@ -130,7 +130,7 @@
                                         $value = $registro->$column;
                                         $displayValue = $value;
                                         if ($column === 'fecha' && $value) {
-                                            $displayValue = $value->format('d-m-Y');
+                                            $displayValue = $value->format('d/m/Y');
                                         } elseif ($column === 'hora' && $value) {
                                             $displayValue = $value;
                                         } elseif ($column === 'eficiencia' && $value !== null) {
@@ -245,7 +245,7 @@
                                         $value = $registro->$column;
                                         $displayValue = $value;
                                         if ($column === 'fecha' && $value) {
-                                            $displayValue = $value->format('d-m-Y');
+                                            $displayValue = $value->format('d/m/Y');
                                         } elseif ($column === 'hora' && $value) {
                                             $displayValue = $value;
                                         } elseif ($column === 'eficiencia' && $value !== null) {
@@ -372,7 +372,7 @@
                                         $dataValue = $value; // Valor para data-value
                                         
                                         if ($column === 'fecha' && $value) {
-                                            $displayValue = $value->format('d-m-Y');
+                                            $displayValue = $value->format('d/m/Y');
                                             $dataValue = $displayValue;
                                         } elseif ($column === 'hora_id' && $registro->hora) {
                                             $displayValue = $registro->hora->hora;

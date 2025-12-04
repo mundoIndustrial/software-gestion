@@ -146,7 +146,7 @@
         <!-- Footer -->
         <div class="bg-gray-50 px-6 py-4 text-center text-sm text-gray-500">
             <p>Si el problema persiste, contacta al administrador del sistema</p>
-            <p class="mt-1">{{ now()->format('d/m/Y H:i:s') }}</p>
+            <p class="mt-1">{{ now()->format('d/m/Y h:i:s A') }}</p>
         </div>
     </div>
 

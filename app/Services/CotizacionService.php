@@ -6,6 +6,7 @@ use App\Models\Cotizacion;
 use App\Models\LogoCotizacion;
 use App\Models\HistorialCotizacion;
 use App\Models\TipoCotizacion;
+use App\Enums\EstadoCotizacion;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
@@ -46,22 +47,20 @@ class CotizacionService
             ]);
         }
         
-        $numeroCotizacion = null;
-        if ($tipo === 'enviada') {
-            $numeroCotizacion = $this->generarNumeroCotizacion();
-        }
+        // Obtener tipo_venta del formulario (M, D, X)
+        $tipoVenta = $datosFormulario['tipo_venta'] ?? null;
         
         $datos = [
             'user_id' => Auth::id(),
-            'numero_cotizacion' => $numeroCotizacion,
+            'numero_cotizacion' => null, // Se asignará cuando se envíe a contador
             'tipo_cotizacion_id' => $tipoCotizacionId,
-            'tipo_venta' => $datosFormulario['tipo_venta'] ?? null,  // M, D, X desde formulario
+            'tipo_venta' => $tipoVenta,  // M, D, X - Tipo de venta
             'fecha_inicio' => now(),
             'cliente' => $datosFormulario['cliente'] ?? null,
             'asesora' => auth()->user()?->name ?? 'Sin nombre',
-            'es_borrador' => ($tipo === 'borrador'),
-            'estado' => 'enviada',
-            'fecha_envio' => ($tipo === 'enviada') ? now() : null,
+            'es_borrador' => true, // Siempre comienza en BORRADOR
+            'estado' => EstadoCotizacion::BORRADOR->value, // Usar el Enum
+            'fecha_envio' => null,
             'productos' => $datosFormulario['productos'] ?? null,
             'especificaciones' => $datosFormulario['especificaciones'] ?? null,
             'imagenes' => $datosFormulario['imagenes'] ?? null,
@@ -72,8 +71,8 @@ class CotizacionService
         ];
         
         \Log::info('CotizacionService::crear - Datos a guardar', [
-            'tipo_cotizacion_id' => $datos['tipo_cotizacion_id'],
             'tipo_venta' => $datos['tipo_venta'],
+            'tipo_cotizacion_id' => $datos['tipo_cotizacion_id'],
             'especificaciones' => !empty($datos['especificaciones']) ? 'presente' : 'vacío',
             'observaciones_generales' => !empty($datos['observaciones_generales']) ? 'presente' : 'vacío'
         ]);
@@ -131,7 +130,7 @@ class CotizacionService
             'es_borrador' => false
         ];
         
-        if ($nuevoEstado === 'enviada' && !$cotizacion->fecha_envio) {
+        if ($nuevoEstado === 'ENVIADA_CONTADOR' && !$cotizacion->fecha_envio) {
             $datosActualizar['fecha_envio'] = now();
             // Asignar número de cotización al enviar
             if (!$cotizacion->numero_cotizacion) {
@@ -142,7 +141,7 @@ class CotizacionService
         $cotizacion->update($datosActualizar);
         
         // Registrar en historial
-        $tipoHistorial = ($nuevoEstado === 'enviada') ? 'envio' : $nuevoEstado;
+        $tipoHistorial = ($nuevoEstado === 'ENVIADA_CONTADOR') ? 'envio' : $nuevoEstado;
         $this->registrarEnHistorial($cotizacion, $tipoHistorial, "Estado cambiado a: " . ucfirst($nuevoEstado));
         
         return $cotizacion;

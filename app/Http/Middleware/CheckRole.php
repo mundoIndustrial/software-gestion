@@ -14,7 +14,7 @@ class CheckRole
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
-    public function handle(Request $request, Closure $next, string $role): Response
+    public function handle(Request $request, Closure $next, string $roles): Response
     {
         if (!$request->user()) {
             Log::warning('CheckRole: Usuario no autenticado');
@@ -22,19 +22,31 @@ class CheckRole
         }
 
         $user = $request->user();
+        
+        // Soportar múltiples roles separados por comas
+        $requiredRoles = array_map('trim', explode(',', $roles));
+        
         Log::info('CheckRole: Verificando rol', [
             'user_id' => $user->id,
-            'required_role' => $role,
+            'required_roles' => $requiredRoles,
             'roles_ids' => $user->roles_ids,
         ]);
 
-        // Permitir si el usuario tiene el rol requerido O es admin
-        // Verificar directamente en roles_ids para admin
+        // Permitir si el usuario tiene alguno de los roles requeridos O es admin
+        // Verificar directamente en roles_ids
         $userRoles = \App\Models\Role::whereIn('id', $user->roles_ids ?? [])->pluck('name')->toArray();
         Log::info('CheckRole: Roles del usuario', ['roles' => $userRoles]);
 
-        if (!in_array($role, $userRoles) && !in_array('admin', $userRoles)) {
-            Log::warning('CheckRole: Acceso denegado', ['required_role' => $role, 'user_roles' => $userRoles]);
+        $hasRequiredRole = false;
+        foreach ($requiredRoles as $role) {
+            if (in_array($role, $userRoles)) {
+                $hasRequiredRole = true;
+                break;
+            }
+        }
+        
+        if (!$hasRequiredRole && !in_array('admin', $userRoles)) {
+            Log::warning('CheckRole: Acceso denegado', ['required_roles' => $requiredRoles, 'user_roles' => $userRoles]);
             abort(403, 'No tienes permisos para acceder a esta sección.');
         }
 

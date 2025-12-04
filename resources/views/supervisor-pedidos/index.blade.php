@@ -975,16 +975,16 @@
                                         </div>
 
                                         <!-- Aprobar Orden (Enviar a Producción) -->
-                                        @if($orden->estado === 'No iniciado')
+                                        @if($orden->estado === 'No iniciado' && !$orden->aprobado_por_supervisor_en && !request()->filled('estado'))
                                             <button class="btn-accion btn-aprobar" 
-                                                    title="Aprobar y enviar a producción"
+                                                    title="Aprobar orden"
                                                     onclick="aprobarOrden({{ $orden->id }}, '{{ $orden->numero_pedido }}')">
                                                 <span class="material-symbols-rounded">check_circle</span>
                                             </button>
                                         @endif
 
                                         <!-- Anular Orden -->
-                                        @if($orden->estado !== 'Anulada')
+                                        @if($orden->estado !== 'Anulada' && !$orden->aprobado_por_supervisor_en && !request()->filled('estado'))
                                             <button class="btn-accion btn-anular" 
                                                     title="Anular orden"
                                                     onclick="abrirModalAnulacion({{ $orden->id }}, '{{ $orden->numero_pedido }}')">
@@ -2220,8 +2220,13 @@
         .then(data => {
             if (data.success) {
                 alert('Orden anulada correctamente');
+                // Recargar notificaciones si la función existe
+                if (typeof cargarNotificacionesPendientes === 'function') {
+                    cargarNotificacionesPendientes();
+                }
+                // Cerrar modal y recargar después de 1 segundo
                 cerrarModalAnulacion();
-                location.reload();
+                setTimeout(() => location.reload(), 1000);
             } else {
                 alert('Error: ' + data.message);
             }
@@ -2264,8 +2269,13 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert('Orden aprobada y enviada a producción');
-                location.reload();
+                alert('Orden aprobada correctamente');
+                // Recargar notificaciones si la función existe
+                if (typeof cargarNotificacionesPendientes === 'function') {
+                    cargarNotificacionesPendientes();
+                }
+                // Recargar la página después de 1 segundo
+                setTimeout(() => location.reload(), 1000);
             } else {
                 alert('Error: ' + data.message);
             }

@@ -427,12 +427,12 @@
         </div>
         <div class="info-card">
             <label><i class="fas fa-calendar-plus"></i> Fecha Inicio</label>
-            <div class="value" style="font-size: 1rem;">{{ $cotizacion->fecha_inicio ? $cotizacion->fecha_inicio->format('d/m/Y H:i') : '-' }}</div>
+            <div class="value" style="font-size: 1rem;">{{ $cotizacion->fecha_inicio ? $cotizacion->fecha_inicio->format('d/m/Y h:i A') : '-' }}</div>
         </div>
         @if($cotizacion->fecha_envio)
             <div class="info-card">
                 <label><i class="fas fa-calendar-check"></i> Fecha Envío</label>
-                <div class="value" style="font-size: 1rem;">{{ $cotizacion->fecha_envio->format('d/m/Y H:i') }}</div>
+                <div class="value" style="font-size: 1rem;">{{ $cotizacion->fecha_envio->format('d/m/Y h:i A') }}</div>
             </div>
         @endif
     </div>
