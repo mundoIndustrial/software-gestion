@@ -405,17 +405,23 @@ class RegistroOrdenController extends Controller
                 return $ordenArray;
             }, $ordenes->items());
             
-            $paginationHtml = $ordenes->appends(request()->query())->links()->toHtml();
+            // Retornar string vacío para que paginationManager.js genere el HTML con los estilos correctos
+            $paginationHtml = '';
             
-            \Log::info("=== PAGINACIÓN HTML ===");
+            \Log::info("=== PAGINACIÓN ===");
             \Log::info("Total: {$ordenes->total()}");
             \Log::info("Última página: {$ordenes->lastPage()}");
-            \Log::info("HTML generado (primeros 500 chars): " . substr($paginationHtml, 0, 500));
+            
+            // Determinar contexto y rol para renderizado de botones
+            $context = 'registros';
+            $userRole = auth()->user() && auth()->user()->role ? auth()->user()->role->name : null;
             
             return response()->json([
                 'orders' => $ordenesFiltered,
                 'totalDiasCalculados' => $totalDiasCalculados,
                 'areaOptions' => $areaOptions,
+                'context' => $context,
+                'userRole' => $userRole,
                 'pagination' => [
                     'current_page' => $ordenes->currentPage(),
                     'last_page' => $ordenes->lastPage(),

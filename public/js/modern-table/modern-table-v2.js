@@ -69,7 +69,7 @@ class ModernTableV2 {
                     SearchManager.performAjaxSearch(term, this.baseRoute)
                         .then(data => {
                             if (data) {
-                                this.updateTableWithData(data.orders, data.totalDiasCalculados);
+                                this.updateTableWithData(data.orders, data.totalDiasCalculados, data.areaOptions, data.context, data.userRole);
                                 this.updatePaginationInfo(data.pagination);
                                 this.updatePaginationControls(data.pagination_html, data.pagination);
                                 PaginationManager.updateUrl(new URLSearchParams(new URL(globalThis.location).search).toString());
@@ -250,12 +250,12 @@ class ModernTableV2 {
         });
     }
 
-    updateTableWithData(orders, totalDiasCalculados) {
+    updateTableWithData(orders, totalDiasCalculados, areaOptions = [], context = 'registros', userRole = null) {
         this.virtual.allData = orders;
         this.virtual.totalDiasCalculados = totalDiasCalculados || {};
         this.virtual.totalRows = orders.length;
         
-        TableRenderer.updateTableWithData(orders, totalDiasCalculados);
+        TableRenderer.updateTableWithData(orders, totalDiasCalculados, areaOptions, context, userRole);
         StyleManager.setupCellTextWrapping();
         // Dropdown handling now managed by OrdersDropdownManager in orders-table-v2.js
     }

@@ -37,42 +37,40 @@ const PaginationManager = (() => {
                 controls.innerHTML = html;
                 console.log(`✅ Paginación del backend utilizada`);
             } else {
-                let paginationHtml = '<nav aria-label="Page navigation"><ul class="pagination">';
+                let paginationHtml = '';
 
                 if (currentPage > 1) {
-                    paginationHtml += `<li class="page-item"><a class="page-link" href="${PaginationManager.getPaginationUrl(1, baseRoute)}">Primera</a></li>`;
-                    paginationHtml += `<li class="page-item"><a class="page-link" href="${PaginationManager.getPaginationUrl(currentPage - 1, baseRoute)}">Anterior</a></li>`;
+                    paginationHtml += `<button class="pagination-btn" onclick="window.location.href='${PaginationManager.getPaginationUrl(1, baseRoute)}'"><i class="fas fa-angle-double-left"></i></button>`;
+                    paginationHtml += `<button class="pagination-btn" onclick="window.location.href='${PaginationManager.getPaginationUrl(currentPage - 1, baseRoute)}'"><i class="fas fa-angle-left"></i></button>`;
                 } else {
-                    paginationHtml += '<li class="page-item disabled"><span class="page-link">Primera</span></li>';
-                    paginationHtml += '<li class="page-item disabled"><span class="page-link">Anterior</span></li>';
+                    paginationHtml += '<button class="pagination-btn" disabled><i class="fas fa-angle-double-left"></i></button>';
+                    paginationHtml += '<button class="pagination-btn" disabled><i class="fas fa-angle-left"></i></button>';
                 }
 
                 let startPage = Math.max(1, currentPage - 4);
                 let endPage = Math.min(lastPage, currentPage + 5);
 
                 if (startPage > 1) {
-                    paginationHtml += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+                    paginationHtml += '<span class="pagination-ellipsis">...</span>';
                 }
 
                 for (let i = startPage; i <= endPage; i++) {
                     const isActive = i === currentPage ? 'active' : '';
-                    paginationHtml += `<li class="page-item ${isActive}"><a class="page-link" href="${PaginationManager.getPaginationUrl(i, baseRoute)}">${i}</a></li>`;
+                    paginationHtml += `<button class="pagination-btn page-number ${isActive}" onclick="window.location.href='${PaginationManager.getPaginationUrl(i, baseRoute)}'">${i}</button>`;
                 }
 
                 if (endPage < lastPage) {
-                    paginationHtml += '<li class="page-item disabled"><span class="page-link">...</span></li>';
-                    paginationHtml += `<li class="page-item"><a class="page-link" href="${PaginationManager.getPaginationUrl(lastPage, baseRoute)}">Última</a></li>`;
+                    paginationHtml += '<span class="pagination-ellipsis">...</span>';
+                    paginationHtml += `<button class="pagination-btn" onclick="window.location.href='${PaginationManager.getPaginationUrl(lastPage, baseRoute)}'">${lastPage}</button>`;
                 }
 
                 if (currentPage < lastPage) {
-                    paginationHtml += `<li class="page-item"><a class="page-link" href="${PaginationManager.getPaginationUrl(currentPage + 1, baseRoute)}">Siguiente</a></li>`;
-                    paginationHtml += `<li class="page-item"><a class="page-link" href="${PaginationManager.getPaginationUrl(lastPage, baseRoute)}">Última</a></li>`;
+                    paginationHtml += `<button class="pagination-btn" onclick="window.location.href='${PaginationManager.getPaginationUrl(currentPage + 1, baseRoute)}'"><i class="fas fa-angle-right"></i></button>`;
+                    paginationHtml += `<button class="pagination-btn" onclick="window.location.href='${PaginationManager.getPaginationUrl(lastPage, baseRoute)}'"><i class="fas fa-angle-double-right"></i></button>`;
                 } else {
-                    paginationHtml += '<li class="page-item disabled"><span class="page-link">Siguiente</span></li>';
-                    paginationHtml += '<li class="page-item disabled"><span class="page-link">Última</span></li>';
+                    paginationHtml += '<button class="pagination-btn" disabled><i class="fas fa-angle-right"></i></button>';
+                    paginationHtml += '<button class="pagination-btn" disabled><i class="fas fa-angle-double-right"></i></button>';
                 }
-
-                paginationHtml += '</ul></nav>';
 
                 controls.innerHTML = paginationHtml;
                 console.log(`✅ Paginación simple generada: ${lastPage} página(s)`);
