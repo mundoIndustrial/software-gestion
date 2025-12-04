@@ -82,6 +82,24 @@ class RegistroOrdenController extends Controller
                     $uniqueValues = array_values(array_unique($uniqueValues));
                 }
                 
+                // Si es descripcion, devolver también los IDs asociados (optimizado con una sola query)
+                if ($column === 'descripcion') {
+                    $result = [];
+                    // Una sola query agrupada por descripción
+                    $grouped = TablaOriginal::select('descripcion')
+                        ->selectRaw('GROUP_CONCAT(pedido) as pedidos')
+                        ->groupBy('descripcion')
+                        ->get();
+                    
+                    foreach ($grouped as $item) {
+                        $result[] = [
+                            'value' => $item->descripcion,
+                            'ids' => array_map('intval', explode(',', $item->pedidos))
+                        ];
+                    }
+                    return response()->json(['unique_values' => $uniqueValues, 'value_ids' => $result]);
+                }
+                
                 return response()->json(['unique_values' => $uniqueValues]);
             }
             return response()->json(['error' => 'Invalid column'], 400);
@@ -101,10 +119,22 @@ class RegistroOrdenController extends Controller
         // Detectar si hay filtro de total_de_dias_ para procesarlo después
         $filterTotalDias = null;
         
+        // Manejo especial para filter_pedido_ids (viene del filtro de descripción)
+        if ($request->has('filter_pedido_ids') && !empty($request->filter_pedido_ids)) {
+            $pedidoIds = array_map('intval', explode(',', $request->filter_pedido_ids));
+            $query->whereIn('pedido', $pedidoIds);
+        }
+        
         // Apply column filters (dynamic for all columns)
         foreach ($request->all() as $key => $value) {
             if (str_starts_with($key, 'filter_') && !empty($value)) {
                 $column = str_replace('filter_', '', $key);
+                
+                // Saltar filter_pedido_ids ya que ya fue procesado
+                if ($column === 'pedido_ids') {
+                    continue;
+                }
+                
                 // Usar separador especial para valores que pueden contener comas y saltos de línea
                 $separator = '|||FILTER_SEPARATOR|||';
                 $values = explode($separator, $value);

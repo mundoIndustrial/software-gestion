@@ -78,14 +78,19 @@ class RegistroBodegaController extends Controller
                     $uniqueValues = array_values(array_unique($uniqueValues));
                 }
                 
-                // Si es descripcion, devolver también los IDs asociados
+                // Si es descripcion, devolver también los IDs asociados (optimizado con una sola query)
                 if ($column === 'descripcion') {
                     $result = [];
-                    foreach ($uniqueValues as $desc) {
-                        $ids = TablaOriginalBodega::where('descripcion', $desc)->pluck('pedido')->toArray();
+                    // Una sola query agrupada por descripción
+                    $grouped = TablaOriginalBodega::select('descripcion')
+                        ->selectRaw('GROUP_CONCAT(pedido) as pedidos')
+                        ->groupBy('descripcion')
+                        ->get();
+                    
+                    foreach ($grouped as $item) {
                         $result[] = [
-                            'value' => $desc,
-                            'ids' => $ids
+                            'value' => $item->descripcion,
+                            'ids' => array_map('intval', explode(',', $item->pedidos))
                         ];
                     }
                     return response()->json(['unique_values' => $uniqueValues, 'value_ids' => $result]);

@@ -837,33 +837,46 @@ class ModernTable {
         tableBody.style.opacity = '0.3';
         tableBody.style.pointerEvents = 'none';
         
+        console.log(`🚀 Cargando tabla con AJAX desde: ${url}`);
+        
         fetch(url, {
             headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
             }
         })
-        .then(response => response.text())
-        .then(html => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log(`📊 Datos recibidos:`, data);
             
-            // Actualizar tabla
-            const newTableBody = doc.getElementById('tablaOrdenesBody');
-            if (newTableBody) {
-                const rowCount = newTableBody.querySelectorAll('tr').length;
-                console.log(`✅ Tabla actualizada con ${rowCount} filas`);
-                tableBody.innerHTML = newTableBody.innerHTML;
+            // Guardar totalDiasCalculados para usarlos en createVirtualRow
+            if (data.totalDiasCalculados) {
+                this.virtual.totalDiasCalculados = data.totalDiasCalculados;
+            }
+            
+            // Renderizar filas desde los datos JSON
+            if (data.orders && Array.isArray(data.orders)) {
+                tableBody.innerHTML = '';
+                data.orders.forEach((orden, index) => {
+                    const row = this.createVirtualRow(orden, index);
+                    tableBody.appendChild(row);
+                });
+                console.log(`✅ Tabla actualizada con ${data.orders.length} filas`);
             }
             
             // Actualizar paginación
-            const newPaginationControls = doc.getElementById('paginationControls');
-            if (newPaginationControls && paginationControls) {
-                paginationControls.innerHTML = newPaginationControls.innerHTML;
+            if (data.pagination_html) {
+                paginationControls.innerHTML = data.pagination_html;
             }
             
-            const newPaginationInfo = doc.getElementById('paginationInfo');
-            if (newPaginationInfo && paginationInfo) {
-                paginationInfo.innerHTML = newPaginationInfo.innerHTML;
+            if (data.pagination) {
+                const info = `Mostrando ${data.pagination.from}-${data.pagination.to} de ${data.pagination.total} registros`;
+                paginationInfo.textContent = info;
             }
             
             // Actualizar URL sin recargar
