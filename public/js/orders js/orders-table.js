@@ -182,7 +182,7 @@ async function recargarTablaPedidos() {
                 // SIEMPRE crear primero la columna de acciones
                 const accionesTd = document.createElement('td');
                 accionesTd.className = 'table-cell acciones-column';
-                accionesTd.style.minWidth = '200px';
+                accionesTd.style.cssText = 'min-width: 220px !important; width: 220px !important; max-width: 220px !important; flex-shrink: 0;';
                 const accionesDiv = document.createElement('div');
                 accionesDiv.className = 'cell-content';
                 accionesDiv.style.cssText = 'display: flex; gap: 8px; flex-wrap: nowrap; align-items: center; justify-content: flex-start; padding: 4px 0;';

@@ -87,13 +87,13 @@ document.addEventListener('DOMContentLoaded', function() {
             if (icon) icon.textContent = 'light_mode';
             if (text) text.textContent = 'Modo Claro';
             if (logo) {
-                logo.src = logo.dataset.logoDark || 'https://prueba.mundoindustrial.co/wp-content/uploads/2024/07/logo-mundo-industrial-white.png';
+                logo.src = logo.dataset.logoDark;
             }
         } else {
             if (icon) icon.textContent = 'dark_mode';
             if (text) text.textContent = 'Modo Oscuro';
             if (logo) {
-                logo.src = logo.dataset.logoLight || logo.dataset.logoLight;
+                logo.src = logo.dataset.logoLight;
             }
         }
     }

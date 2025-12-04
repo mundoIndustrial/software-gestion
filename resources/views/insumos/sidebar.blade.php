@@ -15,7 +15,7 @@
          alt="Logo Mundo Industrial"
          class="header-logo"
          data-logo-light="{{ asset('images/logo2.png') }}"
-         data-logo-dark="https://prueba.mundoindustrial.co/wp-content/uploads/2024/07/logo-mundo-industrial-white.png" />
+         data-logo-dark="{{ asset('logo.png') }}" />
     <button class="sidebar-toggle" aria-label="Colapsar menú">
       <span class="material-symbols-rounded">chevron_left</span>
     </button>

@@ -99,7 +99,7 @@
                      class="header-logo"
                      loading="lazy"
                      data-logo-light="{{ asset('images/logo2.png') }}"
-                     data-logo-dark="https://prueba.mundoindustrial.co/wp-content/uploads/2024/07/logo-mundo-industrial-white.png" />
+                     data-logo-dark="{{ asset('logo.png') }}" />
             </div>
             <button class="sidebar-toggle" id="sidebarToggle" aria-label="Colapsar menú">
                 <span class="material-symbols-rounded">chevron_left</span>

@@ -358,11 +358,41 @@ class ModernTable {
     createVirtualRow(orden, globalIndex) {
         const row = document.createElement('tr');
         row.className = 'table-row';
-        row.dataset.orderId = orden.id;
+        row.dataset.orderId = orden.pedido || orden.id;
         row.dataset.globalIndex = globalIndex;
 
+        // Crear primero la columna de acciones
+        const accionesTd = document.createElement('td');
+        accionesTd.className = 'table-cell acciones-column';
+        accionesTd.style.cssText = 'min-width: 220px !important; width: 220px !important; max-width: 220px !important; flex-shrink: 0;';
+        const accionesDiv = document.createElement('div');
+        accionesDiv.className = 'cell-content';
+        accionesDiv.style.cssText = 'display: flex; gap: 8px; flex-wrap: nowrap; align-items: center; justify-content: flex-start; padding: 4px 0;';
+        accionesDiv.innerHTML = `
+            <button class="action-btn edit-btn" onclick="openEditModal(${orden.pedido})"
+                title="Editar orden"
+                style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
+                Editar
+            </button>
+            <button class="action-btn detail-btn" onclick="createViewButtonDropdown(${orden.pedido})"
+                title="Ver opciones"
+                style="background-color: green; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
+                Ver
+            </button>
+            <button class="action-btn delete-btn" onclick="deleteOrder(${orden.pedido})"
+                title="Eliminar orden"
+                style="background-color:#f84c4cff ; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
+                Borrar
+            </button>
+        `;
+        accionesTd.appendChild(accionesDiv);
+        row.appendChild(accionesTd);
+
+        // Luego crear las demás columnas, excluyendo 'id' y 'tiempo'
         Object.entries(orden).forEach(([key, value]) => {
-            row.appendChild(this.createCellElement(key, value, orden));
+            if (key !== 'id' && key !== 'tiempo') {
+                row.appendChild(this.createCellElement(key, value, orden));
+            }
         });
 
         return row;
@@ -416,6 +446,16 @@ class ModernTable {
                 e.preventDefault();
                 e.stopPropagation();
                 this.openFilterModal(parseInt(filterBtn.dataset.column), filterBtn.dataset.columnName);
+            } else if (e.target.closest('.pagination-btn')) {
+                // Manejar clics en botones de paginación generados por updatePaginationControls
+                const btn = e.target.closest('.pagination-btn');
+                if (btn && !btn.disabled) {
+                    e.preventDefault();
+                    const page = btn.dataset.page;
+                    if (page) {
+                        this.loadPageFromUrl(this.getPaginationUrl(page));
+                    }
+                }
             } else if (e.target.classList.contains('page-link') && !e.target.classList.contains('disabled')) {
                 e.preventDefault();
                 const href = e.target.getAttribute('href');
@@ -577,7 +617,7 @@ class ModernTable {
             if (data.orders?.length) {
                 this.appendRowsToTable(data.orders, data.totalDiasCalculados);
                 this.updatePaginationInfo(data.pagination);
-                this.updatePaginationControls(data.pagination_html);
+                this.updatePaginationControls(null, data.pagination);
                 this.updateUrl(params.toString());
             }
         } catch (error) {
@@ -869,12 +909,9 @@ class ModernTable {
                 console.log(`✅ Tabla actualizada con ${data.orders.length} filas`);
             }
             
-            // Actualizar paginación
-            if (data.pagination_html) {
-                paginationControls.innerHTML = data.pagination_html;
-            }
-            
+            // Actualizar paginación con estilos consistentes
             if (data.pagination) {
+                this.updatePaginationControls(null, data.pagination);
                 const info = `Mostrando ${data.pagination.from}-${data.pagination.to} de ${data.pagination.total} registros`;
                 paginationInfo.textContent = info;
             }
@@ -1388,7 +1425,7 @@ class ModernTable {
             
             this.updateTableWithData(data.orders, data.totalDiasCalculados);
             this.updatePaginationInfo(data.pagination);
-            this.updatePaginationControls(data.pagination_html, data.pagination);
+            this.updatePaginationControls(null, data.pagination);
             this.updateUrl(params.toString());
             this.initializeStatusDropdowns();
             this.initializeAreaDropdowns();
@@ -1456,24 +1493,24 @@ class ModernTable {
         // PRIMERO: Crear la columna de acciones
         const accionesTd = document.createElement('td');
         accionesTd.className = 'table-cell acciones-column';
-        accionesTd.style.minWidth = '200px';
+        accionesTd.style.cssText = 'min-width: 220px !important; width: 220px !important; max-width: 220px !important; flex-shrink: 0;';
         const accionesDiv = document.createElement('div');
         accionesDiv.className = 'cell-content';
-        accionesDiv.style.cssText = 'display: flex; gap: 4px; flex-wrap: wrap;';
+        accionesDiv.style.cssText = 'display: flex; gap: 8px; flex-wrap: nowrap; align-items: center; justify-content: flex-start; padding: 4px 0;';
         accionesDiv.innerHTML = `
             <button class="action-btn edit-btn" onclick="openEditModal(${pedidoKey})"
                 title="Editar orden"
-                style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                style="background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%); color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
                 Editar
             </button>
             <button class="action-btn detail-btn" onclick="createViewButtonDropdown(${pedidoKey})" 
                 title="Ver opciones"
-                style="background-color: green; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                style="background-color: green; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
                 Ver
             </button>
             <button class="action-btn delete-btn" onclick="deleteOrder(${pedidoKey})" 
                 title="Eliminar orden"
-                style="background-color:#f84c4cff ; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600;">
+                style="background-color:#f84c4cff ; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 600; flex: 1; min-width: 45px; height: 36px; text-align: center; display: flex; align-items: center; justify-content: center; white-space: nowrap;">
                 Borrar
             </button>
         `;
@@ -1540,67 +1577,41 @@ class ModernTable {
 
         console.log(`📊 Actualizando paginación: Página ${currentPage} de ${lastPage} (Total: ${total})`);
 
-        // Usar el HTML del backend si existe, de lo contrario generar uno simple
-        if (html && html.trim().length > 0) {
-            // El HTML del backend ya tiene el diseño correcto, solo usarlo
-            controls.innerHTML = html;
-            console.log(`✅ Paginación del backend utilizada`);
-        } else {
-            // Si no hay HTML del backend, generar uno simple
-            console.warn('⚠️ HTML de paginación del backend no disponible, generando simple');
-            
-            let paginationHtml = '<nav aria-label="Page navigation"><ul class="pagination">';
+        // SIEMPRE generar HTML con botones de paginación consistentes
+        // No usar el HTML del backend para mantener los estilos CSS correctos
+        let paginationHtml = '';
 
-            // Botón anterior
-            if (currentPage > 1) {
-                const prevUrl = this.getPaginationUrl(currentPage - 1);
-                paginationHtml += `<li class="page-item"><a class="page-link" href="${prevUrl}">← Anterior</a></li>`;
-            } else {
-                paginationHtml += '<li class="page-item disabled"><span class="page-link">← Anterior</span></li>';
-            }
+        // Botón primera página
+        paginationHtml += `<button class="pagination-btn" data-page="1" ${currentPage === 1 ? 'disabled' : ''}>
+            <i class="fas fa-angle-double-left"></i>
+        </button>`;
 
-            // Generar botones de página (máximo 10 páginas visibles)
-            let startPage = Math.max(1, currentPage - 4);
-            let endPage = Math.min(lastPage, currentPage + 5);
+        // Botón página anterior
+        paginationHtml += `<button class="pagination-btn" data-page="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}>
+            <i class="fas fa-angle-left"></i>
+        </button>`;
 
-            // Si hay muchas páginas, mostrar puntos suspensivos
-            if (startPage > 1) {
-                paginationHtml += '<li class="page-item"><a class="page-link" href="' + this.getPaginationUrl(1) + '">1</a></li>';
-                if (startPage > 2) {
-                    paginationHtml += '<li class="page-item disabled"><span class="page-link">...</span></li>';
-                }
-            }
+        // Números de página
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(lastPage, currentPage + 2);
 
-            for (let i = startPage; i <= endPage; i++) {
-                if (i === currentPage) {
-                    paginationHtml += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
-                } else {
-                    const pageUrl = this.getPaginationUrl(i);
-                    paginationHtml += `<li class="page-item"><a class="page-link" href="${pageUrl}">${i}</a></li>`;
-                }
-            }
-
-            // Si hay más páginas, mostrar puntos suspensivos y última página
-            if (endPage < lastPage) {
-                if (endPage < lastPage - 1) {
-                    paginationHtml += '<li class="page-item disabled"><span class="page-link">...</span></li>';
-                }
-                paginationHtml += '<li class="page-item"><a class="page-link" href="' + this.getPaginationUrl(lastPage) + '">' + lastPage + '</a></li>';
-            }
-
-            // Botón siguiente
-            if (currentPage < lastPage) {
-                const nextUrl = this.getPaginationUrl(currentPage + 1);
-                paginationHtml += `<li class="page-item"><a class="page-link" href="${nextUrl}">Siguiente →</a></li>`;
-            } else {
-                paginationHtml += '<li class="page-item disabled"><span class="page-link">Siguiente →</span></li>';
-            }
-
-            paginationHtml += '</ul></nav>';
-
-            controls.innerHTML = paginationHtml;
-            console.log(`✅ Paginación simple generada: ${lastPage} página(s)`);
+        for (let i = startPage; i <= endPage; i++) {
+            const activeClass = i === currentPage ? 'active' : '';
+            paginationHtml += `<button class="pagination-btn page-number ${activeClass}" data-page="${i}">${i}</button>`;
         }
+
+        // Botón página siguiente
+        paginationHtml += `<button class="pagination-btn" data-page="${currentPage + 1}" ${currentPage === lastPage ? 'disabled' : ''}>
+            <i class="fas fa-angle-right"></i>
+        </button>`;
+
+        // Botón última página
+        paginationHtml += `<button class="pagination-btn" data-page="${lastPage}" ${currentPage === lastPage ? 'disabled' : ''}>
+            <i class="fas fa-angle-double-right"></i>
+        </button>`;
+
+        controls.innerHTML = paginationHtml;
+        console.log(`✅ Paginación generada con estilos consistentes: ${lastPage} página(s)`);
     }
 
     getPaginationUrl(page) {
@@ -1814,7 +1825,7 @@ initializeStatusDropdowns() {
             const data = await response.json();
             this.updateTableWithData(data.orders, data.totalDiasCalculados);
             this.updatePaginationInfo(data.pagination);
-            this.updatePaginationControls(data.pagination_html, data.pagination);
+            this.updatePaginationControls(null, data.pagination);
             this.updateUrl(params.toString());
             this.initializeStatusDropdowns();
         } catch (error) {
