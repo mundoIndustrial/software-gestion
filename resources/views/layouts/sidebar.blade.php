@@ -9,21 +9,25 @@
 </nav>
 
 <!-- Sidebar principal -->
-<aside class="sidebar collapsed" id="sidebar">
+<aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
-    <img src="{{ asset('images/logo2.png') }}"
-         alt="Logo Mundo Industrial"
-         class="header-logo"
-         data-logo-light="{{ asset('images/logo2.png') }}"
-         data-logo-dark="https://prueba.mundoindustrial.co/wp-content/uploads/2024/07/logo-mundo-industrial-white.png" />
-    <button class="sidebar-toggle" aria-label="Colapsar menú">
+    <a href="{{ route('dashboard') }}" class="logo-wrapper" aria-label="Ir al Dashboard">
+      <img src="{{ asset('images/logo2.png') }}"
+           alt="Logo Mundo Industrial"
+           class="header-logo"
+           data-logo-light="{{ asset('images/logo2.png') }}"
+           data-logo-dark="{{ asset('logo.png') }}" />
+    </a>
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Colapsar menú">
       <span class="material-symbols-rounded">chevron_left</span>
     </button>
   </div>
 
   <div class="sidebar-content">
-    <!-- Lista del menú principal -->
-    <ul class="menu-list" role="navigation" aria-label="Menú principal">
+    <!-- Sección Principal -->
+    <div class="menu-section">
+      <span class="menu-section-title">Principal</span>
+      <ul class="menu-list" role="navigation" aria-label="Menú principal">
       @if(auth()->user()->role && auth()->user()->role->name !== 'supervisor')
       <li class="menu-item">
         <a href="{{ route('dashboard') }}"
@@ -35,6 +39,13 @@
       </li>
       @endif
 
+      </ul>
+    </div>
+
+    <!-- Sección Gestión de Órdenes -->
+    <div class="menu-section">
+      <span class="menu-section-title">Gestión</span>
+      <ul class="menu-list" role="navigation">
       @if(auth()->user()->role && auth()->user()->role->name === 'supervisor')
       <!-- Menú simplificado para supervisores: Solo Gestión de Órdenes > Pedidos sin submenú -->
       <li class="menu-item">
@@ -51,7 +62,7 @@
         <button class="menu-link submenu-toggle {{ (request()->routeIs('registros.index') || request()->routeIs('bodega.index')) ? 'active' : '' }}"
                 aria-label="Ver órdenes">
           <span class="material-symbols-rounded" aria-hidden="true">assignment</span>
-          <span class="menu-label">Gestiónar Ordenes</span>
+          <span class="menu-label">Gestión de Órdenes</span>
           <span class="material-symbols-rounded submenu-arrow" aria-hidden="true">expand_more</span>
         </button>
         <ul class="submenu">
@@ -73,7 +84,13 @@
           </li>
         </ul>
       </li>
+      </ul>
+    </div>
 
+    <!-- Sección Entregas y Vistas -->
+    <div class="menu-section">
+      <span class="menu-section-title">Seguimiento</span>
+      <ul class="menu-list" role="navigation">
       <li class="menu-item">
         <button class="menu-link submenu-toggle {{ (request()->routeIs('entrega.index') && in_array(request()->route('tipo'), ['pedido', 'bodega'])) ? 'active' : '' }}"
                 aria-label="Ver entregas">
@@ -174,9 +191,14 @@
         </ul>
       </li>
       @endif
+      </ul>
+    </div>
 
-      @if(auth()->user()->role && auth()->user()->role->name === 'admin')
-      <!-- Admin puede ver todos los módulos -->
+    <!-- Sección Módulos -->
+    @if(auth()->user()->role && auth()->user()->role->name === 'admin')
+    <div class="menu-section">
+      <span class="menu-section-title">Módulos</span>
+      <ul class="menu-list" role="navigation">
       <li class="menu-item">
         <a href="{{ route('asesores.dashboard') }}"
            class="menu-link {{ request()->routeIs('asesores.*') ? 'active' : '' }}"
@@ -203,7 +225,13 @@
           <span class="menu-label">Contador</span>
         </a>
       </li>
+      </ul>
+    </div>
 
+    <!-- Sección Administración -->
+    <div class="menu-section">
+      <span class="menu-section-title">Administración</span>
+      <ul class="menu-list" role="navigation">
       <li class="menu-item">
         <a href="{{ route('users.index') }}"
            class="menu-link {{ request()->routeIs('users.*') ? 'active' : '' }}"
@@ -221,10 +249,15 @@
           <span class="menu-label">Configuración</span>
         </a>
       </li>
-      @endif
+      </ul>
+    </div>
+    @endif
 
-      @if(auth()->user()->role && auth()->user()->role->name === 'supervisor_planta')
-      <!-- supervisor_planta puede ver insumos -->
+    @if(auth()->user()->role && auth()->user()->role->name === 'supervisor_planta')
+    <!-- Sección Módulos para supervisor_planta -->
+    <div class="menu-section">
+      <span class="menu-section-title">Módulos</span>
+      <ul class="menu-list" role="navigation">
       <li class="menu-item">
         <a href="{{ route('insumos.dashboard') }}"
            class="menu-link {{ request()->routeIs('insumos.*') ? 'active' : '' }}"
@@ -233,10 +266,15 @@
           <span class="menu-label">Insumos</span>
         </a>
       </li>
-      @endif
+      </ul>
+    </div>
+    @endif
 
-      <!-- Aprobador de Cotizaciones - Para cualquier usuario con este rol -->
-      @if(auth()->user()->hasRole('aprobador_cotizaciones'))
+    <!-- Aprobador de Cotizaciones - Para cualquier usuario con este rol -->
+    @if(auth()->user()->hasRole('aprobador_cotizaciones'))
+    <div class="menu-section">
+      <span class="menu-section-title">Aprobaciones</span>
+      <ul class="menu-list" role="navigation">
       <li class="menu-item">
         <a href="{{ route('cotizaciones.pendientes') }}"
            class="menu-link {{ request()->routeIs('cotizaciones.pendientes') ? 'active' : '' }}"
@@ -247,33 +285,16 @@
           <span class="badge-alert" id="cotizacionesPendientesAprobadorCount" style="display:none;">0</span>
         </a>
       </li>
-      @endif
-
-      <li class="menu-item">
-        <form action="{{ route('logout') }}" method="POST">
-          @csrf
-          <button type="submit"
-                  class="menu-link"
-                  style="border:none;background:none;cursor:pointer;width:100%;"
-                  aria-label="Cerrar sesión">
-            <span class="material-symbols-rounded" aria-hidden="true">logout</span>
-            <span class="menu-label">Salir</span>
-          </button>
-        </form>
-      </li>
-    </ul>
+      </ul>
+    </div>
+    @endif
   </div>
 
   <!-- Footer con toggle de tema -->
   <div class="sidebar-footer">
     <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema">
-      <div class="theme-label">
-        <span class="material-symbols-rounded" aria-hidden="true">light_mode</span>
-        <span class="theme-text">Modo Claro</span>
-      </div>
-      <div class="theme-toggle-track">
-        <div class="theme-toggle-indicator"></div>
-      </div>
+      <span class="material-symbols-rounded">light_mode</span>
+      <span class="theme-text">Tema</span>
     </button>
   </div>
 </aside>

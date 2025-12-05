@@ -2,13 +2,21 @@
 // NOTIFICATIONS SYSTEM - CONTADOR
 // ========================================
 document.addEventListener('DOMContentLoaded', function() {
-    // Verificar que fetchAPI esté disponible
-    if (typeof window.fetchAPI !== 'function') {
-        console.warn('fetchAPI no está disponible aún, retrasando carga de notificaciones');
-        setTimeout(initializeNotifications, 100);
-        return;
-    }
-    initializeNotifications();
+    // Esperar a que fetchAPI esté disponible
+    let attempts = 0;
+    const maxAttempts = 50; // 5 segundos máximo
+    
+    const checkFetchAPI = setInterval(() => {
+        attempts++;
+        if (typeof window.fetchAPI === 'function') {
+            clearInterval(checkFetchAPI);
+            initializeNotifications();
+        } else if (attempts >= maxAttempts) {
+            clearInterval(checkFetchAPI);
+            console.warn('fetchAPI no disponible, usando fetch nativo');
+            initializeNotifications();
+        }
+    }, 100);
 });
 
 function initializeNotifications() {
@@ -24,12 +32,27 @@ function initializeNotifications() {
     
     if (notificationBtn && notificationMenu) {
         notificationBtn.addEventListener('click', function(e) {
+            e.preventDefault();
             e.stopPropagation();
-            notificationMenu.classList.toggle('show');
-            if (document.getElementById('userMenu')) {
-                document.getElementById('userMenu').classList.remove('show');
+            
+            // Cerrar menú de usuario si está abierto
+            const userMenu = document.getElementById('userMenu');
+            if (userMenu) {
+                userMenu.classList.remove('show');
             }
-        });
+            
+            // Toggle del menú de notificaciones
+            const isShowing = notificationMenu.classList.contains('show');
+            
+            if (isShowing) {
+                // Cerrar
+                notificationMenu.classList.remove('show');
+            } else {
+                // Abrir y cargar notificaciones
+                notificationMenu.classList.add('show');
+                loadNotifications();
+            }
+        }, false);
     }
     
     // Toggle del dropdown de usuario
@@ -65,17 +88,127 @@ function initializeNotifications() {
 
 async function loadNotifications() {
     try {
-        const data = await window.fetchAPI('/contador/notifications');
-        updateNotificationBadge(data.total_notificaciones);
-        renderNotifications(data);
-    } catch (error) {
-        // Ignorar error 401 (no autenticado)
-        if (error.message && error.message.includes('Unauthenticated')) {
-            console.debug('Usuario no autenticado, notificaciones deshabilitadas');
-            return;
+        let newsItems = null;
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        
+        // Crear promesa con timeout
+        const fetchWithTimeout = (url, options, timeout = 5000) => {
+            return Promise.race([
+                fetch(url, options).then(r => r.ok ? r.json() : null),
+                new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Timeout')), timeout)
+                )
+            ]);
+        };
+        
+        // Intentar cargar de news primero (más rápido)
+        try {
+            const result = await fetchWithTimeout('/dashboard/news?limit=100', {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                }
+            }, 3000);
+            
+            if (result) {
+                newsItems = result.news || result;
+            }
+        } catch (e) {
+            console.debug('Timeout o error cargando news:', e.message);
         }
+        
+        // Si no hay datos de news, intentar contador
+        if (!newsItems || newsItems.length === 0) {
+            try {
+                let data = null;
+                
+                if (typeof window.fetchAPI === 'function') {
+                    data = await window.fetchAPI('/contador/notifications');
+                } else {
+                    data = await fetchWithTimeout('/contador/notifications', {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken
+                        }
+                    }, 3000);
+                }
+                
+                if (data && data.cotizaciones_para_revisar) {
+                    newsItems = data.cotizaciones_para_revisar;
+                }
+            } catch (e) {
+                console.debug('Error cargando contador:', e.message);
+            }
+        }
+        
+        if (newsItems && newsItems.length > 0) {
+            const data = convertDashboardNotifications(newsItems);
+            updateNotificationBadge(data.total_notificaciones || 0);
+            renderNotifications(data);
+        } else {
+            updateNotificationBadge(0);
+            renderNotifications({ total_notificaciones: 0, all_notifications: [] });
+        }
+    } catch (error) {
         console.debug('Error cargando notificaciones:', error.message);
     }
+}
+
+// Convertir notificaciones del dashboard al formato del contador
+function convertDashboardNotifications(newsItems) {
+    const eventTypeConfig = {
+        'record_created': { icon: 'note_add', color: '#10b981', title: 'Nuevo Registro' },
+        'record_updated': { icon: 'edit', color: '#3b82f6', title: 'Registro Actualizado' },
+        'record_deleted': { icon: 'delete', color: '#ef4444', title: 'Registro Eliminado' },
+        'order_created': { icon: 'shopping_cart', color: '#10b981', title: 'Nueva Orden' },
+        'status_changed': { icon: 'update', color: '#f59e0b', title: 'Cambio de Estado' },
+        'area_changed': { icon: 'location_on', color: '#8b5cf6', title: 'Cambio de Área' },
+        'delivery_registered': { icon: 'local_shipping', color: '#06b6d4', title: 'Entrega Registrada' },
+        'order_deleted': { icon: 'delete_outline', color: '#ef4444', title: 'Orden Eliminada' },
+        'cotizacion_created': { icon: 'description', color: '#3b82f6', title: 'Nueva Cotización' },
+        'cotizacion_updated': { icon: 'edit_note', color: '#f59e0b', title: 'Cotización Actualizada' },
+        'cotizacion_approved': { icon: 'check_circle', color: '#10b981', title: 'Cotización Aprobada' },
+        'cotizacion_rejected': { icon: 'cancel', color: '#ef4444', title: 'Cotización Rechazada' }
+    };
+    
+    // Filtrar notificaciones que contienen "token" (case-insensitive)
+    const filteredItems = newsItems.filter(n => {
+        const description = (n.description || '').toLowerCase();
+        const user = (n.user || '').toLowerCase();
+        return !description.includes('token') && !user.includes('token');
+    });
+    
+    const notifications = filteredItems.map(n => {
+        const config = eventTypeConfig[n.event_type] || { icon: 'notifications', color: '#94a3b8', title: 'Evento' };
+        return {
+            id: n.id,
+            icon: config.icon,
+            color: config.color,
+            title: config.title,
+            message: n.description,
+            time: formatTime(n.created_at),
+            link: '#',
+            event_type: n.event_type,
+            user: n.user,
+            metadata: n.metadata
+        };
+    });
+    
+    return {
+        total_notificaciones: notifications.length,
+        cotizaciones_para_revisar: filteredItems
+            .filter(n => n.event_type && n.event_type.includes('cotizacion'))
+            .map(n => ({
+                id: n.id,
+                cliente: n.description,
+                created_at: n.created_at,
+                event_type: n.event_type,
+                user: n.user,
+                metadata: n.metadata
+            })),
+        nuevas_cotizaciones: [],
+        all_notifications: notifications
+    };
 }
 
 function updateNotificationBadge(count) {
@@ -95,7 +228,7 @@ function renderNotifications(data) {
     
     const notifications = [];
     
-    // Agregar cotizaciones enviadas a revisar
+    // Agregar cotizaciones para revisar (del contador)
     if (data.cotizaciones_para_revisar && data.cotizaciones_para_revisar.length > 0) {
         data.cotizaciones_para_revisar.forEach(cot => {
             notifications.push({
@@ -104,12 +237,14 @@ function renderNotifications(data) {
                 title: 'Cotización para revisar',
                 message: `COT-${String(cot.id).padStart(5, '0')} - ${cot.cliente}`,
                 time: formatTime(cot.created_at),
-                link: `/contador/dashboard`
+                link: `/contador/dashboard`,
+                event_type: cot.event_type,
+                metadata: cot.metadata
             });
         });
     }
     
-    // Agregar nuevas cotizaciones creadas
+    // Agregar nuevas cotizaciones creadas (del contador)
     if (data.nuevas_cotizaciones && data.nuevas_cotizaciones.length > 0) {
         data.nuevas_cotizaciones.forEach(cot => {
             notifications.push({
@@ -118,10 +253,26 @@ function renderNotifications(data) {
                 title: 'Nueva cotización creada',
                 message: `COT-${String(cot.id).padStart(5, '0')} - ${cot.cliente}`,
                 time: formatTime(cot.created_at),
-                link: `/contador/dashboard`
+                link: `/contador/dashboard`,
+                event_type: cot.event_type,
+                metadata: cot.metadata
             });
         });
     }
+    
+    // Agregar todos los eventos del dashboard
+    if (data.all_notifications && data.all_notifications.length > 0) {
+        data.all_notifications.forEach(notif => {
+            notifications.push(notif);
+        });
+    }
+    
+    // Ordenar por fecha más reciente primero
+    notifications.sort((a, b) => {
+        const timeA = a.time || '';
+        const timeB = b.time || '';
+        return timeB.localeCompare(timeA);
+    });
     
     // Renderizar notificaciones
     if (notifications.length === 0) {
@@ -140,8 +291,7 @@ function renderNotifications(data) {
 }
 
 function createNotificationElement(notif) {
-    const div = document.createElement('a');
-    div.href = notif.link;
+    const div = document.createElement('div');
     div.className = 'notification-item';
     div.style.cssText = `
         display: flex;
@@ -152,6 +302,7 @@ function createNotificationElement(notif) {
         color: var(--text-primary);
         border-bottom: 1px solid var(--border-color);
         transition: background 0.2s ease;
+        cursor: pointer;
     `;
     
     div.innerHTML = `
@@ -195,6 +346,19 @@ function createNotificationElement(notif) {
         this.style.background = 'transparent';
     });
     
+    // Click simple - no hace nada, solo previene propagación
+    div.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    });
+    
+    // Doble click para abrir modal detallado
+    div.addEventListener('dblclick', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        showNotificationDetailModal(notif);
+    });
+    
     return div;
 }
 
@@ -223,11 +387,155 @@ function formatTime(date) {
 
 async function markAllAsRead() {
     try {
-        await window.fetchAPI('/contador/notifications/marcar-leidas', {
-            method: 'POST'
-        });
+        let response = null;
+        
+        if (typeof window.fetchAPI === 'function') {
+            try {
+                await window.fetchAPI('/contador/notifications/marcar-leidas', {
+                    method: 'POST'
+                });
+            } catch (e) {
+                console.debug('Error con fetchAPI:', e.message);
+            }
+        }
+        
+        if (!response) {
+            response = await fetch('/contador/notifications/marcar-leidas', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                }
+            });
+        }
+        
         loadNotifications();
     } catch (error) {
         console.error('Error al marcar notificaciones como leídas:', error);
     }
+}
+
+// Modal detallado de notificación
+function showNotificationDetailModal(notif) {
+    const modal = document.createElement('div');
+    modal.className = 'notification-detail-modal';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        animation: fadeIn 0.2s ease-out;
+    `;
+    
+    const metadataHTML = notif.metadata ? `
+        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+            <h4 style="margin: 0 0 1rem 0; color: var(--text-primary); font-size: 0.95rem;">📋 Información Adicional</h4>
+            <div style="background: var(--bg-hover); padding: 1rem; border-radius: 8px; font-size: 0.85rem;">
+                <pre style="margin: 0; color: var(--text-secondary); overflow-x: auto; white-space: pre-wrap; word-break: break-word;">
+${JSON.stringify(notif.metadata, null, 2)}
+                </pre>
+            </div>
+        </div>
+    ` : '';
+    
+    modal.innerHTML = `
+        <div style="
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease-out;
+        ">
+            <!-- Header -->
+            <div style="
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                padding: 1.5rem;
+                border-bottom: 1px solid var(--border-color);
+            ">
+                <div style="
+                    width: 50px;
+                    height: 50px;
+                    border-radius: 50%;
+                    background: ${notif.color}20;
+                    color: ${notif.color};
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                    font-size: 1.5rem;
+                ">
+                    <span class="material-symbols-rounded">${notif.icon}</span>
+                </div>
+                <div style="flex: 1;">
+                    <h2 style="margin: 0 0 0.25rem 0; color: var(--text-primary); font-size: 1.25rem;">${notif.title}</h2>
+                    <p style="margin: 0; color: var(--text-tertiary); font-size: 0.85rem;">${notif.time}</p>
+                </div>
+                <button onclick="this.closest('.notification-detail-modal').remove()" style="
+                    background: none;
+                    border: none;
+                    color: var(--text-secondary);
+                    font-size: 1.5rem;
+                    cursor: pointer;
+                    padding: 0;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                ">
+                    <span class="material-symbols-rounded">close</span>
+                </button>
+            </div>
+            
+            <!-- Body -->
+            <div style="padding: 1.5rem;">
+                <div style="margin-bottom: 1rem;">
+                    <h3 style="margin: 0 0 0.5rem 0; color: var(--text-primary); font-size: 0.95rem;">📝 Descripción</h3>
+                    <p style="margin: 0; color: var(--text-secondary); line-height: 1.6;">${notif.message}</p>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <h4 style="margin: 0 0 0.5rem 0; color: var(--text-primary); font-size: 0.85rem;">👤 Usuario</h4>
+                        <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">${notif.user || 'N/A'}</p>
+                    </div>
+                    <div>
+                        <h4 style="margin: 0 0 0.5rem 0; color: var(--text-primary); font-size: 0.85rem;">🏷️ Tipo de Evento</h4>
+                        <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">${notif.event_type || 'N/A'}</p>
+                    </div>
+                </div>
+                
+                ${metadataHTML}
+            </div>
+        </div>
+    `;
+    
+    // Cerrar al hacer click fuera
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
+    
+    // Cerrar con ESC
+    const closeOnEsc = (e) => {
+        if (e.key === 'Escape') {
+            modal.remove();
+            document.removeEventListener('keydown', closeOnEsc);
+        }
+    };
+    document.addEventListener('keydown', closeOnEsc);
+    
+    document.body.appendChild(modal);
 }

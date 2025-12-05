@@ -4,13 +4,6 @@
 <link rel="stylesheet" href="{{ asset('css/dashboard styles/dashboard.css') }}">
 
 <div class="dashboard-container">
-    <div class="header-compact animate-in">
-        <div>
-            <h1>Dashboard de Entregas</h1>
-            <p class="welcome">Bienvenido, {{ auth()->user()->name }}</p>
-        </div>
-    </div>
-
     <div class="kpis-row animate-in">
         <div class="kpi-card">
             <h3>Total Órdenes</h3>
@@ -49,39 +42,6 @@
             </div>
         </div>
 
-        <div class="chart-card animate-in notifications-section">
-            <div class="notifications-header">
-                <div class="notifications-title-section">
-                    <div class="notifications-icon">
-                        <span class="material-symbols-rounded">notifications</span>
-                    </div>
-                    <div>
-                        <h2>Notificaciones</h2>
-                        <span class="notifications-count" id="news-count">0 nuevas</span>
-                    </div>
-                </div>
-                <div class="notifications-actions">
-                    <input type="date" id="news-date-filter" class="filter-date" />
-                    <button class="mark-all-read" id="mark-all-read" title="Marcar todas como leídas">
-                        <span class="material-symbols-rounded">done_all</span>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="notifications-tabs">
-                <button class="notification-tab active" data-filter="all" id="tab-all">
-                    Todas <span class="tab-count" id="count-all">0</span>
-                </button>
-                <button class="notification-tab" data-filter="unread" id="tab-unread">
-                    No leídas <span class="tab-count" id="count-unread">0</span>
-                </button>
-                <button class="notification-tab" data-filter="read" id="tab-read">
-                    Leídas <span class="tab-count" id="count-read">0</span>
-                </button>
-            </div>
-            
-            <div class="news-compact" id="news-feed"></div>
-        </div>
     </div>
 </div>
 
