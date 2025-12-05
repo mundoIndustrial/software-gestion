@@ -15,7 +15,7 @@ return new class extends Migration
     $table->id(); // crea un campo id autoincremental como PK
     $table->unsignedInteger('pedido');
     $table->string('cliente', 84);
-    $table->string('prenda', 158);
+    $table->text('prenda');
     $table->text('descripcion');
     $table->string('talla', 69);
     $table->integer('cantidad_entregada');

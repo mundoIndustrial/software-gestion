@@ -228,11 +228,25 @@ class EntregaController extends Controller
                         $entrega['mes_ano'] = null;
                     }
 
+                    // Extract simple prenda name (first line only) for database lookups
+                    $prendaLines = explode('\n', $entrega['prenda']);
+                    $prendaSimple = trim($prendaLines[0]); // e.g., "CAMISA DRILL"
+                    
+                    // Debug logging
+                    \Log::info('Entrega Debug:', [
+                        'pedido' => $entrega['pedido'],
+                        'prenda_full' => $entrega['prenda'],
+                        'prenda_simple' => $prendaSimple,
+                        'talla' => $entrega['talla'],
+                        'cantidad' => $entrega['cantidad_entregada'],
+                        'tipo' => $tipo
+                    ]);
+                    
                     // Add descripcion from registros_por_orden or registros_por_orden_bodega
                     $descripcion = null;
                     if ($tipo === 'pedido') {
                         $registro = \App\Models\RegistrosPorOrden::where('pedido', $entrega['pedido'])
-                            ->where('prenda', $entrega['prenda'])
+                            ->where('prenda', $prendaSimple)
                             ->where('talla', $entrega['talla'])
                             ->first();
                         if ($registro) {
@@ -240,7 +254,7 @@ class EntregaController extends Controller
                         }
                     } elseif ($tipo === 'bodega') {
                         $registro = \App\Models\RegistrosPorOrdenBodega::where('pedido', $entrega['pedido'])
-                            ->where('prenda', $entrega['prenda'])
+                            ->where('prenda', $prendaSimple)
                             ->where('talla', $entrega['talla'])
                             ->first();
                         if ($registro) {
@@ -267,35 +281,79 @@ class EntregaController extends Controller
 
                     // Update total_pendiente_por_talla, total_producido_por_talla, and costurero
                     if ($tipo === 'pedido') {
+                        // Check if record exists
+                        $registroExistente = \App\Models\RegistrosPorOrden::where('pedido', $entrega['pedido'])
+                            ->where('prenda', $prendaSimple)
+                            ->where('talla', $entrega['talla'])
+                            ->first();
+                        
+                        \Log::info('Registro Existente:', [
+                            'found' => $registroExistente ? 'YES' : 'NO',
+                            'pedido' => $entrega['pedido'],
+                            'prenda_simple' => $prendaSimple,
+                            'talla' => $entrega['talla'],
+                            'total_producido_actual' => $registroExistente?->total_producido_por_talla,
+                            'total_pendiente_actual' => $registroExistente?->total_pendiente_por_talla
+                        ]);
+                        
+                        // First, ensure total_producido_por_talla is not null (initialize to 0 if null)
                         \App\Models\RegistrosPorOrden::where('pedido', $entrega['pedido'])
-                            ->where('prenda', $entrega['prenda'])
+                            ->where('prenda', $prendaSimple)
+                            ->where('talla', $entrega['talla'])
+                            ->whereNull('total_producido_por_talla')
+                            ->update(['total_producido_por_talla' => 0]);
+
+                        $decrementResult = \App\Models\RegistrosPorOrden::where('pedido', $entrega['pedido'])
+                            ->where('prenda', $prendaSimple)
                             ->where('talla', $entrega['talla'])
                             ->decrement('total_pendiente_por_talla', $entrega['cantidad_entregada']);
 
-                        \App\Models\RegistrosPorOrden::where('pedido', $entrega['pedido'])
-                            ->where('prenda', $entrega['prenda'])
+                        \Log::info('Decrement Result:', ['resultado' => $decrementResult]);
+
+                        $incrementResult = \App\Models\RegistrosPorOrden::where('pedido', $entrega['pedido'])
+                            ->where('prenda', $prendaSimple)
                             ->where('talla', $entrega['talla'])
                             ->increment('total_producido_por_talla', $entrega['cantidad_entregada']);
+                        
+                        \Log::info('Increment Result:', ['resultado' => $incrementResult]);
+                        
+                        // Verify after update
+                        $registroActualizado = \App\Models\RegistrosPorOrden::where('pedido', $entrega['pedido'])
+                            ->where('prenda', $prendaSimple)
+                            ->where('talla', $entrega['talla'])
+                            ->first();
+                        
+                        \Log::info('Registro Después de Update:', [
+                            'total_producido_por_talla' => $registroActualizado?->total_producido_por_talla,
+                            'total_pendiente_por_talla' => $registroActualizado?->total_pendiente_por_talla
+                        ]);
 
                         // Update costurero in production table
                         \App\Models\RegistrosPorOrden::where('pedido', $entrega['pedido'])
-                            ->where('prenda', $entrega['prenda'])
+                            ->where('prenda', $prendaSimple)
                             ->where('talla', $entrega['talla'])
                             ->update(['costurero' => $entrega['costurero']]);
                     } elseif ($tipo === 'bodega') {
+                        // First, ensure total_producido_por_talla is not null (initialize to 0 if null)
                         \App\Models\RegistrosPorOrdenBodega::where('pedido', $entrega['pedido'])
-                            ->where('prenda', $entrega['prenda'])
+                            ->where('prenda', $prendaSimple)
+                            ->where('talla', $entrega['talla'])
+                            ->whereNull('total_producido_por_talla')
+                            ->update(['total_producido_por_talla' => 0]);
+
+                        \App\Models\RegistrosPorOrdenBodega::where('pedido', $entrega['pedido'])
+                            ->where('prenda', $prendaSimple)
                             ->where('talla', $entrega['talla'])
                             ->decrement('total_pendiente_por_talla', $entrega['cantidad_entregada']);
 
                         \App\Models\RegistrosPorOrdenBodega::where('pedido', $entrega['pedido'])
-                            ->where('prenda', $entrega['prenda'])
+                            ->where('prenda', $prendaSimple)
                             ->where('talla', $entrega['talla'])
                             ->increment('total_producido_por_talla', $entrega['cantidad_entregada']);
 
                         // Update costurero in production table
                         \App\Models\RegistrosPorOrdenBodega::where('pedido', $entrega['pedido'])
-                            ->where('prenda', $entrega['prenda'])
+                            ->where('prenda', $prendaSimple)
                             ->where('talla', $entrega['talla'])
                             ->update(['costurero' => $entrega['costurero']]);
                     }

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('talla', 50);
             $table->string('cantidad', 60);
             $table->string('costurero', 61)->nullable();
-            $table->string('total_producido_por_talla', 62)->nullable();
+            $table->integer('total_producido_por_talla')->nullable();
             $table->integer('total_pendiente_por_talla')->nullable();
             $table->date('fecha_completado')->nullable();
 
