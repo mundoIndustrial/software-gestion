@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pastillas de Cotizaciones - Demo</title>
+    <link rel="stylesheet" href="public/css/asesores/cotizaciones-tabs.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 50px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .demo-section {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .demo-section h2 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .content-placeholder {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            color: #666;
+            margin-top: 20px;
+        }
+        
+        .content-placeholder p {
+            margin: 0;
+            font-size: 0.95rem;
+        }
+        
+        .badge {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1e40af;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 50px;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .demo-section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎨 Diseño de Pastillas de Cotizaciones</h1>
+            <p>Sistema profesional y moderno para gestionar tipos de cotización</p>
+        </div>
+        
+        <!-- Demo 1: Pastillas Principales -->
+        <div class="demo-section">
+            <h2>
+                <i class="fas fa-layer-group"></i>
+                Pastillas de Tipos de Cotización
+                <span class="badge">Seleccionar Tipo</span>
+            </h2>
+            
+            <div class="cotizaciones-tabs-container">
+                <!-- PASTILLA: TODAS -->
+                <button type="button" class="cotizacion-tab-btn active" data-tipo="todas">
+                    <div class="cotizacion-tab-indicator"></div>
+                    <span class="cotizacion-tab-icon">📋</span>
+                    <span class="cotizacion-tab-label">TODAS</span>
+                    <span class="cotizacion-tab-desc">Todas las cotizaciones</span>
+                </button>
+
+                <!-- PASTILLA: PRENDA -->
+                <button type="button" class="cotizacion-tab-btn tab-prenda" data-tipo="prenda">
+                    <div class="cotizacion-tab-indicator"></div>
+                    <span class="cotizacion-tab-icon">👕</span>
+                    <span class="cotizacion-tab-label">PRENDA</span>
+                    <span class="cotizacion-tab-desc">Solo prendas</span>
+                </button>
+
+                <!-- PASTILLA: LOGO -->
+                <button type="button" class="cotizacion-tab-btn tab-logo" data-tipo="logo">
+                    <div class="cotizacion-tab-indicator"></div>
+                    <span class="cotizacion-tab-icon">🎨</span>
+                    <span class="cotizacion-tab-label">LOGO</span>
+                    <span class="cotizacion-tab-desc">Solo logos</span>
+                </button>
+
+                <!-- PASTILLA: PRENDA/BORDADO -->
+                <button type="button" class="cotizacion-tab-btn tab-prenda-bordado" data-tipo="prenda-bordado">
+                    <div class="cotizacion-tab-indicator"></div>
+                    <span class="cotizacion-tab-icon">✨</span>
+                    <span class="cotizacion-tab-label">PRENDA/BORDADO</span>
+                    <span class="cotizacion-tab-desc">Prendas + logo</span>
+                </button>
+            </div>
+            
+            <div class="content-placeholder">
+                <p><strong id="selectedType">Contenido para: TODAS</strong></p>
+                <p style="font-size: 0.85rem; margin-top: 10px; color: #999;">Aquí se mostraría la tabla con los registros del tipo seleccionado</p>
+            </div>
+        </div>
+        
+        <!-- Demo 2: Características -->
+        <div class="demo-section">
+            <h2>
+                <i class="fas fa-check-circle"></i>
+                Características del Diseño
+            </h2>
+            
+            <ul style="list-style: none; padding: 0;">
+                <li style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
+                    <strong>✓ Pastillas Centradas</strong> - Las pastillas se distribuyen y centran perfectamente en todos los tamaños de pantalla
+                </li>
+                <li style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
+                    <strong>✓ Colores Diferenciados</strong> - Cada tipo tiene su propio color para mejor identificación visual
+                </li>
+                <li style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
+                    <strong>✓ Efectos Hover Profesionales</strong> - Animaciones suaves y cambios de color al pasar el mouse
+                </li>
+                <li style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
+                    <strong>✓ Estado Activo Visible</strong> - La pastilla seleccionada se destaca con gradiente y sombra
+                </li>
+                <li style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
+                    <strong>✓ Indicadores Visuales</strong> - Puntos indicadores para mostrar notificaciones o estados
+                </li>
+                <li style="padding: 12px 0; border-bottom: 1px solid #f0f0f0;">
+                    <strong>✓ Completamente Responsive</strong> - Se adapta perfectamente a móviles, tablets y escritorio
+                </li>
+                <li style="padding: 12px 0;">
+                    <strong>✓ Iconos Emoji Claros</strong> - Iconos intuitivos que comunican el tipo de cotización
+                </li>
+            </ul>
+        </div>
+        
+        <!-- Demo 3: Estados -->
+        <div class="demo-section">
+            <h2>
+                <i class="fas fa-palette"></i>
+                Paleta de Colores
+            </h2>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 20px;">
+                <div style="padding: 20px; border-radius: 8px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white;">
+                    <strong>Prenda</strong><br>
+                    <small>Azul Profesional</small>
+                </div>
+                <div style="padding: 20px; border-radius: 8px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white;">
+                    <strong>Logo</strong><br>
+                    <small>Púrpura Creativo</small>
+                </div>
+                <div style="padding: 20px; border-radius: 8px; background: linear-gradient(135deg, #ec4899 0%, #db2777 100%); color: white;">
+                    <strong>Prenda/Bordado</strong><br>
+                    <small>Rosa Dinámico</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>💡 Sistema de Cotizaciones - Diseño Moderno y Profesional</p>
+            <p style="margin-top: 10px; opacity: 0.8;">Implementado con CSS3 y JavaScript vanilla</p>
+        </div>
+    </div>
+    
+    <script>
+        // Demo interactivo
+        document.querySelectorAll('.cotizacion-tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Remover activo de todos
+                document.querySelectorAll('.cotizacion-tab-btn').forEach(b => b.classList.remove('active'));
+                // Agregar activo al clickeado
+                this.classList.add('active');
+                
+                // Actualizar texto
+                const tipo = this.querySelector('.cotizacion-tab-label').textContent;
+                document.getElementById('selectedType').textContent = `Contenido para: ${tipo}`;
+            });
+        });
+    </script>
+</body>
+</html>

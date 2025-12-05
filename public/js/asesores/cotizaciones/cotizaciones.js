@@ -16,6 +16,57 @@ window.especificacionesSeleccionadas = {};
 console.log('🔵 Sistema de cotizaciones inicializado');
 console.log('📸 imagenesEnMemoria inicializado:', window.imagenesEnMemoria);
 
+// ============ GESTIÓN DE TIPO DE COTIZACIÓN ============
+
+/**
+ * Seleccionar tipo de cotización desde las pastillas
+ */
+function seleccionarTipoCotizacion(tipo) {
+    console.log('🎯 Seleccionando tipo de cotización:', tipo);
+    
+    // Mapear tipo de pastilla a tipo_venta
+    const mapeos = {
+        'prenda': 'M',        // Mercadería
+        'logo': 'D',          // Diseño
+        'prenda-bordado': 'X' // Especial
+    };
+    
+    const tipoVenta = mapeos[tipo];
+    
+    if (!tipoVenta) {
+        console.error('❌ Tipo de cotización desconocido:', tipo);
+        return;
+    }
+    
+    // Actualizar el input oculto
+    document.getElementById('tipo_venta').value = tipoVenta;
+    
+    // Guardar en localStorage
+    localStorage.setItem('tipo_cotizacion_seleccionado', tipo);
+    localStorage.setItem('tipo_venta', tipoVenta);
+    
+    console.log(`✓ Tipo de cotización configurado: ${tipo} (${tipoVenta})`);
+    
+    // Mostrar confirmación visual
+    mostrarNotificacionTipoCotizacion(tipo);
+}
+
+/**
+ * Mostrar notificación de tipo seleccionado
+ */
+function mostrarNotificacionTipoCotizacion(tipo) {
+    const info = {
+        'prenda': '👕 Prendas Sin Logo',
+        'logo': '🎨 Solo Logos',
+        'prenda-bordado': '✨ Prendas Con Bordado/Logo'
+    };
+    
+    const mensaje = info[tipo] || 'Tipo desconocido';
+    
+    // Mostrar toast
+    console.log(`ℹ️ ${mensaje} seleccionado`);
+}
+
 // ============ INICIALIZACIÓN ============
 
 document.addEventListener('DOMContentLoaded', function() {

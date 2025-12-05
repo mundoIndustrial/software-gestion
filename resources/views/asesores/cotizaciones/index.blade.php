@@ -5,6 +5,7 @@
 
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/cotizaciones/filtros-embudo.css') }}">
+<link rel="stylesheet" href="{{ asset('css/asesores/cotizaciones-tabs.css') }}">
 <style>
     .top-nav {
         display: none !important;
@@ -219,20 +220,37 @@
         </button>
     </div>
 
-    <!-- TABS POR TIPO DE COTIZACIÓN -->
-    <div style="display: flex; gap: 0; margin-bottom: 20px; border-bottom: 1px solid #e5e7eb;">
-        <button class="tipo-tab-btn active" onclick="mostrarTipo('todas')" style="padding: 10px 16px; background: none; border: none; border-bottom: 2px solid #3498db; cursor: pointer; font-weight: 500; color: #333; font-size: 0.9rem; transition: all 0.3s;">
-            Todas
-        </button>
-        <button class="tipo-tab-btn" onclick="mostrarTipo('P')" style="padding: 10px 16px; background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-weight: 500; color: #666; font-size: 0.9rem; transition: all 0.3s;">
-            Prenda
-        </button>
-        <button class="tipo-tab-btn" onclick="mostrarTipo('L')" style="padding: 10px 16px; background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-weight: 500; color: #666; font-size: 0.9rem; transition: all 0.3s;">
-            Logo
-        </button>
-        <button class="tipo-tab-btn" onclick="mostrarTipo('PB')" style="padding: 10px 16px; background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-weight: 500; color: #666; font-size: 0.9rem; transition: all 0.3s;">
-            Prenda/Bordado
-        </button>
+    <!-- PASTILLAS PROFESIONALES - TIPOS DE COTIZACIÓN -->
+    <div style="display: flex; align-items: center; gap: 20px; margin: 20px 0 25px 0; flex-wrap: wrap;">
+        <p style="margin: 0; color: #666; font-weight: 600; font-size: 0.9rem; white-space: nowrap;">
+            <i class="fas fa-layer-group"></i> FILTRAR POR TIPO:
+        </p>
+        
+        <div class="cotizaciones-tabs-container" style="margin: 0; padding: 0; gap: 10px;">
+            <!-- PASTILLA: TODAS -->
+            <button type="button" class="cotizacion-tab-btn active" data-tipo="todas" onclick="mostrarTipo('todas')">
+                <i class="fas fa-list cotizacion-tab-icon"></i>
+                <span class="cotizacion-tab-label">TODAS</span>
+            </button>
+
+            <!-- PASTILLA: PRENDA -->
+            <button type="button" class="cotizacion-tab-btn tab-prenda" data-tipo="P" onclick="mostrarTipo('P')">
+                <i class="fas fa-shirt cotizacion-tab-icon"></i>
+                <span class="cotizacion-tab-label">PRENDA</span>
+            </button>
+
+            <!-- PASTILLA: LOGO -->
+            <button type="button" class="cotizacion-tab-btn tab-logo" data-tipo="L" onclick="mostrarTipo('L')">
+                <i class="fas fa-palette cotizacion-tab-icon"></i>
+                <span class="cotizacion-tab-label">LOGO</span>
+            </button>
+
+            <!-- PASTILLA: PRENDA/BORDADO -->
+            <button type="button" class="cotizacion-tab-btn tab-prenda-bordado" data-tipo="PB" onclick="mostrarTipo('PB')">
+                <i class="fas fa-sparkles cotizacion-tab-icon"></i>
+                <span class="cotizacion-tab-label">PRENDA/BORDADO</span>
+            </button>
+        </div>
     </div>
 
     <!-- COTIZACIONES ENVIADAS -->
@@ -1195,14 +1213,13 @@ function mostrarTipo(tipo) {
         document.getElementById('seccion-pb').style.display = 'block';
     }
     
-    // Cambiar botones
-    document.querySelectorAll('.tipo-tab-btn').forEach(btn => {
-        btn.style.borderBottomColor = 'transparent';
-        btn.style.color = '#666';
+    // Cambiar pastillas activas
+    document.querySelectorAll('.cotizacion-tab-btn').forEach(btn => {
+        btn.classList.remove('active');
     });
-    event.target.style.borderBottomColor = '#3498db';
-    event.target.style.color = '#333';
+    document.querySelector(`.cotizacion-tab-btn[data-tipo="${tipo}"]`).classList.add('active');
 }
 </script>
 
 @endsection
+

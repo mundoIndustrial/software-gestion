@@ -207,3 +207,26 @@
 .imagen-preview:hover .btn-eliminar-imagen {
     opacity: 1;
 }
+
+/* ============================================ */
+/* ESTILOS PARA PASTILLAS DE COTIZACIONES */
+/* ============================================ */
+
+/* Asegurar que el contenedor está centrado */
+.form-section {
+    width: 100%;
+}
+
+.form-section:has(.cotizaciones-tabs-container) {
+    display: flex;
+    justify-content: center;
+    padding: 0;
+    background: transparent;
+}
+
+/* Ajuste para dispositivos pequeños */
+@media (max-width: 768px) {
+    .cotizaciones-tabs-container {
+        width: 100%;
+    }
+}

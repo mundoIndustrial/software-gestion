@@ -6,6 +6,7 @@
 @push('styles')
 <link rel="stylesheet" href="{{ asset('css/asesores/create-friendly-refactored.css') }}">
 <link rel="stylesheet" href="{{ asset('css/asesores/create-friendly.css') }}">
+<link rel="stylesheet" href="{{ asset('css/asesores/cotizaciones-tabs.css') }}">
 @endpush
 
 @section('content')
@@ -97,17 +98,35 @@
                 </div>
             </div>
 
-            <div style="background: linear-gradient(135deg, #0066cc, #0052a3); border: 2px solid #0052a3; border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);">
-                <label for="tipo_venta" style="font-weight: 700; font-size: 0.9rem; color: white; white-space: nowrap; display: flex; align-items: center; gap: 8px;">
-                    <i class="fas fa-tag"></i> Elija el tipo de cotización
-                </label>
-                <select id="tipo_venta" name="tipo_venta" style="padding: 0.6rem 0.8rem; border: 2px solid white; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; text-align: center; color: #0066cc; font-weight: 600; min-width: 100px;">
-                    <option value="">Selecciona</option>
-                    <option value="M">M</option>
-                    <option value="D">D</option>
-                    <option value="X">X</option>
-                </select>
+            <!-- PASTILLAS PROFESIONALES - TIPOS DE COTIZACIÓN -->
+            <div style="text-align: center; margin-bottom: 1rem;">
+                <p style="margin: 0 0 1.5rem 0; color: #666; font-weight: 600; font-size: 0.95rem;">
+                    <i class="fas fa-hand-pointer"></i> SELECCIONA EL TIPO DE COTIZACIÓN
+                </p>
             </div>
+
+            <div class="cotizaciones-tabs-container">
+                <!-- PASTILLA: PRENDA -->
+                <button type="button" class="cotizacion-tab-btn tab-prenda" data-tipo="prenda" onclick="seleccionarTipoCotizacion('prenda')">
+                    <i class="fas fa-shirt cotizacion-tab-icon"></i>
+                    <span class="cotizacion-tab-label">PRENDA</span>
+                </button>
+
+                <!-- PASTILLA: LOGO -->
+                <button type="button" class="cotizacion-tab-btn tab-logo" data-tipo="logo" onclick="seleccionarTipoCotizacion('logo')">
+                    <i class="fas fa-palette cotizacion-tab-icon"></i>
+                    <span class="cotizacion-tab-label">LOGO</span>
+                </button>
+
+                <!-- PASTILLA: PRENDA/BORDADO -->
+                <button type="button" class="cotizacion-tab-btn tab-prenda-bordado" data-tipo="prenda-bordado" onclick="seleccionarTipoCotizacion('prenda-bordado')">
+                    <i class="fas fa-sparkles cotizacion-tab-icon"></i>
+                    <span class="cotizacion-tab-label">PRENDA/BORDADO</span>
+                </button>
+            </div>
+
+            <!-- INPUT OCULTO PARA GUARDAR TIPO_VENTA -->
+            <input type="hidden" id="tipo_venta" name="tipo_venta" value="">
 
             <div class="form-section">
                 <div class="productos-container" id="productosContainer">
@@ -809,6 +828,7 @@
 
 <!-- Módulos del sistema de cotizaciones -->
 <script src="{{ asset('js/asesores/cotizaciones/rutas.js') }}"></script>
+<script src="{{ asset('js/asesores/cotizaciones/pastillas.js') }}"></script>
 <script>
     // Asignar rutas después de cargar rutas.js
     window.tipoCotizacionGlobal = 'PB'; // Prenda-Bordado

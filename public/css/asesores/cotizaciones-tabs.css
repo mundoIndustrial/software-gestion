@@ -1,0 +1,214 @@
+/* ============================================ */
+/* PASTILLAS DE COTIZACIONES - DISEÑO PÍLDORA */
+/* ============================================ */
+
+/* Contenedor principal de pastillas */
+.cotizaciones-tabs-container {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    flex-wrap: wrap;
+    padding: 0;
+    background: transparent;
+}
+
+/* Cada pastilla - TIPO PÍLDORA */
+.cotizacion-tab-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 7px !important;
+    padding: 9px 18px !important;
+    border: 2px solid #d1d5db !important;
+    border-radius: 50px !important;
+    background: #ffffff !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    position: relative !important;
+    overflow: hidden !important;
+    box-shadow: none !important;
+    font-family: inherit !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+    color: #6b7280 !important;
+    white-space: nowrap !important;
+}
+
+/* Efecto hover */
+.cotizacion-tab-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-color: #9ca3af;
+}
+
+/* Ícono en la pastilla */
+.cotizacion-tab-icon {
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+}
+
+.cotizacion-tab-btn:hover .cotizacion-tab-icon {
+    transform: scale(1.1);
+}
+
+/* Texto de la pastilla */
+.cotizacion-tab-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #4b5563;
+    letter-spacing: 0.2px;
+}
+
+/* Descripción oculta por defecto */
+.cotizacion-tab-desc {
+    display: none;
+}
+
+/* Pastilla activa - AZUL CLARO */
+.cotizacion-tab-btn.active {
+    border-color: #3b82f6 !important;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2) !important;
+}
+
+.cotizacion-tab-btn.active .cotizacion-tab-label {
+    color: white !important;
+}
+
+.cotizacion-tab-btn.active .cotizacion-tab-icon {
+    color: white !important;
+    animation: wiggle 0.3s ease;
+}
+
+/* Animación */
+@keyframes wiggle {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    25% { transform: scale(1.05) rotate(-3deg); }
+    75% { transform: scale(1.05) rotate(3deg); }
+}
+
+/* ============================================ */
+/* ESTILOS ESPECÍFICOS POR TIPO */
+/* ============================================ */
+
+/* Prenda - AZUL */
+.tab-prenda.cotizacion-tab-btn:hover:not(.active) {
+    border-color: #3b82f6 !important;
+    color: #3b82f6 !important;
+}
+
+.tab-prenda.cotizacion-tab-btn.active {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    border-color: #3b82f6 !important;
+}
+
+/* Logo - PÚRPURA */
+.tab-logo.cotizacion-tab-btn:hover:not(.active) {
+    border-color: #8b5cf6 !important;
+    color: #8b5cf6 !important;
+}
+
+.tab-logo.cotizacion-tab-btn.active {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
+    border-color: #8b5cf6 !important;
+}
+
+/* Prenda/Bordado - ROSA */
+.tab-prenda-bordado.cotizacion-tab-btn:hover:not(.active) {
+    border-color: #ec4899 !important;
+    color: #ec4899 !important;
+}
+
+.tab-prenda-bordado.cotizacion-tab-btn.active {
+    background: linear-gradient(135deg, #ec4899 0%, #db2777 100%) !important;
+    border-color: #ec4899 !important;
+}
+
+/* TODAS - GRIS CLARO */
+.cotizacion-tab-btn[data-tipo="todas"]:hover:not(.active) {
+    border-color: #9ca3af !important;
+    color: #6b7280 !important;
+}
+
+.cotizacion-tab-btn[data-tipo="todas"].active {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%) !important;
+    border-color: #6b7280 !important;
+}
+
+/* ============================================ */
+/* RESPONSIVE */
+/* ============================================ */
+
+@media (max-width: 768px) {
+    .cotizaciones-tabs-container {
+        gap: 8px;
+    }
+
+    .cotizacion-tab-btn {
+        padding: 8px 14px;
+        font-size: 0.8rem;
+    }
+
+    .cotizacion-tab-icon {
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .cotizaciones-tabs-container {
+        gap: 6px;
+    }
+
+    .cotizacion-tab-btn {
+        padding: 7px 12px;
+        font-size: 0.75rem;
+    }
+
+    .cotizacion-tab-icon {
+        font-size: 11px;
+    }
+
+    .cotizacion-tab-label {
+        font-size: 0.7rem;
+    }
+}
+
+/* ============================================ */
+/* ESTADO DESHABILITADO */
+/* ============================================ */
+
+.cotizacion-tab-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* ============================================ */
+/* TEMA OSCURO */
+/* ============================================ */
+
+@media (prefers-color-scheme: dark) {
+    .cotizacion-tab-btn {
+        background: #ffffff !important;
+        border-color: #d1d5db !important;
+        color: #6b7280 !important;
+    }
+
+    .cotizacion-tab-btn:hover:not(.active) {
+        background: #f9fafb !important;
+        border-color: #9ca3af !important;
+    }
+
+    .cotizacion-tab-label {
+        color: #6b7280 !important;
+    }
+}
+
+
+
