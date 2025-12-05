@@ -186,13 +186,129 @@ function cargarProductosDesdeStorage() {
 
 function limpiarStorage() {
     try {
+        // Limpiar localStorage
         localStorage.removeItem(STORAGE_KEY_PREFIX + 'datos_generales');
         localStorage.removeItem(STORAGE_SPECS_KEY);
         localStorage.removeItem(STORAGE_PRODUCTOS_KEY);
+        
+        // Limpiar variables globales
         window.especificacionesSeleccionadas = {};
+        window.imagenesEnMemoria = { prenda: [], tela: [], logo: [], prendaConIndice: [], telaConIndice: [] };
+        
+        // Limpiar seccionesSeleccionadasFriendly si existe
+        if (typeof seccionesSeleccionadasFriendly !== 'undefined') {
+            window.seccionesSeleccionadasFriendly = [];
+        }
+        
+        // Limpiar fotosSeleccionadas si existe
+        if (typeof fotosSeleccionadas !== 'undefined') {
+            window.fotosSeleccionadas = {};
+        }
+        
         console.log('🗑️ localStorage limpiado completamente');
+        console.log('🗑️ Variables globales limpiadas');
     } catch (error) {
         console.error('❌ Error al limpiar localStorage:', error);
+    }
+}
+
+// ============ LIMPIAR FORMULARIO COMPLETAMENTE ============
+
+function limpiarFormularioCompleto() {
+    try {
+        console.log('🧹 Iniciando limpieza completa del formulario...');
+        
+        // 1. Limpiar localStorage
+        if (typeof limpiarStorage === 'function') {
+            limpiarStorage();
+        }
+        
+        // 2. Buscar y limpiar ambos formularios
+        let form = document.getElementById('formCrearPedidoFriendly');
+        if (!form) {
+            form = document.getElementById('cotizacionPrendaForm');
+        }
+        
+        if (form) {
+            // Limpiar todos los inputs, textareas, selects
+            form.querySelectorAll('input, textarea, select').forEach(input => {
+                if (input.type !== 'file') {
+                    input.value = '';
+                    input.checked = false;
+                }
+            });
+            console.log('✓ Formulario HTML limpiado');
+        }
+        
+        // 3. Limpiar contenedor de productos
+        const productosContainer = document.getElementById('productosContainer');
+        if (productosContainer) {
+            // Obtener todos los productos excepto el primero
+            const productos = productosContainer.querySelectorAll('.producto-card');
+            for (let i = productos.length - 1; i > 0; i--) {
+                productos[i].remove();
+            }
+            
+            // Limpiar el primer producto completamente
+            const primerProducto = productosContainer.querySelector('.producto-card');
+            if (primerProducto) {
+                // Limpiar todos los inputs del primer producto
+                primerProducto.querySelectorAll('input, textarea, select').forEach(input => {
+                    if (input.type !== 'file') {
+                        input.value = '';
+                        input.checked = false;
+                    }
+                });
+                
+                // Limpiar previsualizaciones de fotos
+                primerProducto.querySelectorAll('.fotos-preview, .foto-tela-preview').forEach(preview => {
+                    preview.innerHTML = '';
+                });
+            }
+            console.log('✓ Contenedor de productos limpiado');
+        }
+        
+        // 4. Limpiar secciones de ubicación
+        const seccionesContainer = document.getElementById('secciones_agregadas');
+        if (seccionesContainer) {
+            seccionesContainer.innerHTML = '';
+            console.log('✓ Secciones de ubicación limpiadas');
+        }
+        
+        // 5. Limpiar modal de especificaciones
+        const modalEspecificaciones = document.getElementById('modalEspecificaciones');
+        if (modalEspecificaciones) {
+            // Limpiar todos los checkboxes del modal
+            modalEspecificaciones.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            // Limpiar todos los inputs de texto del modal
+            modalEspecificaciones.querySelectorAll('input[type="text"]').forEach(input => {
+                input.value = '';
+            });
+            console.log('✓ Modal de especificaciones limpiado');
+        }
+        
+        // 6. Resetear botón ENVIAR a rojo
+        const btnEnviar = document.querySelector('button[onclick="enviarCotizacion()"]');
+        if (btnEnviar) {
+            btnEnviar.style.background = '#ef4444';
+            btnEnviar.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.3)';
+            console.log('✓ Botón ENVIAR resetado a rojo');
+        }
+        
+        // 7. Limpiar variables globales adicionales
+        window.fotosSeleccionadas = {};
+        window.especificacionesSeleccionadas = {};
+        window.imagenesEnMemoria = { prenda: [], tela: [], logo: [], prendaConIndice: [], telaConIndice: [] };
+        if (typeof seccionesSeleccionadasFriendly !== 'undefined') {
+            window.seccionesSeleccionadasFriendly = [];
+        }
+        
+        console.log('✅ Limpieza completa del formulario finalizada');
+        
+    } catch (error) {
+        console.error('❌ Error al limpiar formulario:', error);
     }
 }
 
@@ -211,26 +327,28 @@ function configurarAutoGuardado() {
 // ============ INICIALIZACIÓN ============
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Cargar datos al abrir la página
-    cargarDatosDesdeStorage();
-    cargarProductosDesdeStorage();
+    // ✅ DESACTIVADO: No cargar datos del localStorage
+    // Esto evita que se carguen datos de cotizaciones anteriores
+    console.log('📝 localStorage DESACTIVADO - Formulario limpio');
+    limpiarFormularioCompleto();
     
-    // Configurar auto-guardado
-    configurarAutoGuardado();
+    // ✅ DESACTIVADO: Auto-guardado desactivado
+    // configurarAutoGuardado();
     
-    // Guardar antes de cerrar la página
-    window.addEventListener('beforeunload', function() {
-        guardarDatosEnStorage();
-        guardarProductosEnStorage();
-    });
+    // ✅ DESACTIVADO: No guardar antes de cerrar
+    // window.addEventListener('beforeunload', function() {
+    //     guardarDatosEnStorage();
+    //     guardarProductosEnStorage();
+    // });
     
     // Actualizar especificaciones cuando se guarden desde el modal
     const originalGuardarEspecificaciones = window.guardarEspecificaciones;
     if (originalGuardarEspecificaciones) {
         window.guardarEspecificaciones = function() {
             originalGuardarEspecificaciones();
-            guardarDatosEnStorage();
-            console.log('✓ Especificaciones guardadas también en localStorage');
+            // ✅ DESACTIVADO: No guardar en localStorage
+            // guardarDatosEnStorage();
+            console.log('✓ Especificaciones guardadas');
         };
     }
 });

@@ -161,8 +161,10 @@ async function guardarCotizacion() {
                 }
             }
             
-            // Limpiar localStorage después del guardado exitoso
-            if (typeof limpiarStorage === 'function') {
+            // ✅ LIMPIAR TODO DESPUÉS DEL GUARDADO EXITOSO
+            if (typeof limpiarFormularioCompleto === 'function') {
+                limpiarFormularioCompleto();
+            } else if (typeof limpiarStorage === 'function') {
                 limpiarStorage();
                 console.log('✓ localStorage limpiado después del guardado');
             }
@@ -313,55 +315,50 @@ async function enviarCotizacion() {
         }
         
         Swal.fire({
-            title: '⚠️ Falta completar especificaciones',
+            title: '🚫 ESPECIFICACIONES REQUERIDAS',
             html: `
                 <div style="text-align: left; margin: 20px 0;">
-                    <p style="margin: 0 0 15px 0; font-size: 0.95rem; color: #4b5563;">
-                        <strong>No has completado las especificaciones de la cotización.</strong>
+                    <p style="margin: 0 0 15px 0; font-size: 1rem; color: #ef4444; font-weight: bold;">
+                        ⚠️ No puedes enviar sin completar las especificaciones
                     </p>
                     <p style="margin: 0 0 15px 0; font-size: 0.9rem; color: #666;">
-                        Las especificaciones son importantes para que el cliente entienda todos los detalles de su pedido.
+                        Las especificaciones son <strong>OBLIGATORIAS</strong> para que el cliente entienda todos los detalles de su pedido.
                     </p>
-                    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; border-radius: 4px; margin: 15px 0;">
-                        <p style="margin: 0; font-size: 0.85rem; color: #856404;">
-                            <strong>📋 Especificaciones requeridas:</strong><br>
-                            • Régimen<br>
-                            • Se ha vendido<br>
-                            • Última venta<br>
-                            • Flete de envío
+                    <div style="background: #fee2e2; border-left: 4px solid #ef4444; padding: 12px; border-radius: 4px; margin: 15px 0;">
+                        <p style="margin: 0 0 8px 0; font-size: 0.85rem; color: #991b1b; font-weight: bold;">
+                            📋 DEBES COMPLETAR AL MENOS UNA:
+                        </p>
+                        <p style="margin: 0; font-size: 0.85rem; color: #991b1b;">
+                            ✓ Régimen<br>
+                            ✓ Se ha vendido<br>
+                            ✓ Última venta<br>
+                            ✓ Flete de envío
                         </p>
                     </div>
                     <p style="margin: 15px 0 0 0; font-size: 0.9rem; color: #666;">
-                        ¿Deseas continuar sin completarlas?
+                        Haz clic en <strong>"Ir a Especificaciones"</strong> para completarlas ahora.
                     </p>
                 </div>
             `,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#ef4444',
-            cancelButtonColor: '#d1d5db',
-            confirmButtonText: 'Enviar sin especificaciones',
-            cancelButtonText: 'Completar especificaciones'
+            icon: 'error',
+            showCancelButton: false,
+            confirmButtonColor: '#3498db',
+            confirmButtonText: '✓ Ir a Especificaciones',
+            allowOutsideClick: false,
+            allowEscapeKey: false
         }).then((result) => {
             if (result.isConfirmed) {
-                // Usuario confirma enviar sin especificaciones
-                procederEnviarCotizacion(datos);
-            } else {
-                // Usuario quiere completar especificaciones
-                // Cambiar botón a rojo y mostrar en PASO 4
-                if (btnEnviar) {
-                    btnEnviar.style.background = '#ef4444';
-                    btnEnviar.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.3)';
-                }
+                // Ir a PASO 3 automáticamente
+                irAlPaso(3);
                 
                 // Mostrar toast recordatorio
                 Swal.fire({
                     toast: true,
                     position: 'top-end',
                     icon: 'info',
-                    title: '📋 Completa las especificaciones en PASO 3',
+                    title: '📋 Completa las especificaciones y haz clic en GUARDAR',
                     showConfirmButton: false,
-                    timer: 4000,
+                    timer: 5000,
                     timerProgressBar: true
                 });
             }
@@ -509,8 +506,10 @@ async function procederEnviarCotizacion(datos) {
                 }
             }
             
-            // Limpiar localStorage después del envío exitoso
-            if (typeof limpiarStorage === 'function') {
+            // ✅ LIMPIAR TODO DESPUÉS DEL ENVÍO EXITOSO
+            if (typeof limpiarFormularioCompleto === 'function') {
+                limpiarFormularioCompleto();
+            } else if (typeof limpiarStorage === 'function') {
                 limpiarStorage();
                 console.log('✓ localStorage limpiado después del envío');
             }
