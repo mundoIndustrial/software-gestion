@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Role;
 use App\Services\SecurityLogger;
+use App\Services\GoogleTestUserService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
@@ -60,6 +61,9 @@ class UserController extends Controller
 
         // Registrar creación de usuario
         SecurityLogger::logUserCreation($user->id);
+
+        // Agregar a usuarios de prueba de Google
+        GoogleTestUserService::addTestUser($user->email);
 
         return back()->with('status', 'Usuario creado correctamente');
     }

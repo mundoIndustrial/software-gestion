@@ -16,6 +16,7 @@ use App\Http\Controllers\CotizacionPrendaController;
 use App\Http\Controllers\CotizacionBordadoController;
 use App\Http\Controllers\CotizacionesViewController;
 use App\Http\Controllers\DebugRegistrosController;
+use App\Http\Controllers\Auth\GoogleAuthController;
 
 Route::get('/', function () {
     return view('welcome');
