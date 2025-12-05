@@ -354,8 +354,8 @@ const mangasDisponibles = [
 ];
 
 const brochesDisponibles = [
-    { id: 1, nombre: 'Metálico' },
-    { id: 2, nombre: 'Plástico' }
+    { id: 1, nombre: 'Broche' },
+    { id: 2, nombre: 'Botón' }
 ];
 
 let proximoMangaId = 4;

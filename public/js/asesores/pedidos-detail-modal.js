@@ -332,17 +332,14 @@ window.verFactura = async function verFactura(numeroPedido) {
                 } else {
                     // Si hay más de 2 prendas, mostrar 2 a la vez con navegación
                     let html = '';
-                    if (currentIndex === 0) {
-                        // Primera pantalla: Prenda 1 + Prenda 2
-                        html = formatearPrenda(prendas[0], 0) + formatearPrenda(prendas[1], 1);
-                    } else {
-                        // Siguientes pantallas: mostrar Prenda N+1 (solo la siguiente)
-                        html = formatearPrenda(prendas[currentIndex + 1], currentIndex + 1);
-                    }
+                    // Mostrar prendas desde currentIndex hasta currentIndex + 1
+                    html = formatearPrenda(prendas[currentIndex], currentIndex) + 
+                           (currentIndex + 1 < prendas.length ? formatearPrenda(prendas[currentIndex + 1], currentIndex + 1) : '');
+                    
                     descripcionText.innerHTML = html;
                     if (arrowContainer) arrowContainer.style.display = 'flex';
                     if (prevArrow) prevArrow.style.display = currentIndex > 0 ? 'inline-block' : 'none';
-                    if (nextArrow) nextArrow.style.display = currentIndex < prendas.length - 2 ? 'inline-block' : 'none';
+                    if (nextArrow) nextArrow.style.display = currentIndex + 2 < prendas.length ? 'inline-block' : 'none';
                 }
             }
             
@@ -370,7 +367,7 @@ window.verFactura = async function verFactura(numeroPedido) {
             
             if (nextArrow) {
                 nextArrow._prendasClickHandler = () => {
-                    if (currentIndex < prendas.length - 2) {
+                    if (currentIndex + 2 < prendas.length) {
                         currentIndex++;
                         updateDescripcion();
                     }

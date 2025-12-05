@@ -2015,7 +2015,7 @@
                                                                 </td>
                                                                 <td style="padding: 1rem;">
                                                                     <div style="font-size: 0.9rem; line-height: 1.8; white-space: pre-wrap; word-break: break-word; color: #475569;">
-                                                                        ${prenda.descripcion_armada || prenda.descripcion || 'Sin especificaciones'}
+                                                                        ${prenda.descripcion || 'Sin especificaciones'}
                                                                     </div>
                                                                 </td>
                                                             </tr>

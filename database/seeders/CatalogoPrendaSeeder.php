@@ -44,7 +44,7 @@ class CatalogoPrendaSeeder extends Seeder
         }
 
         // Tipos de Broche
-        $broches = ['Metálico', 'Plástico'];
+        $broches = ['Broche', 'Botón'];
         foreach ($broches as $broche) {
             TipoBroche::firstOrCreate(['nombre' => $broche]);
         }

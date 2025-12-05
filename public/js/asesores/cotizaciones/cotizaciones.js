@@ -158,7 +158,7 @@ function recopilarDatos() {
         // Referencia de tela
         const referenciaInput = item.querySelector('.referencia-input');
         if (referenciaInput && referenciaInput.value) {
-            variantes.tela_referencia = referenciaInput.value;
+            variantes.referencia = referenciaInput.value;
         }
         
         // Manga
@@ -175,16 +175,10 @@ function recopilarDatos() {
             }
             // Capturar observación de manga
             const mangaObs = item.querySelector('input[name*="obs_manga"]');
-            console.log('🔍 obs_manga input:', {
-                elemento: !!mangaObs,
-                valor: mangaObs?.value,
-                nombre: mangaObs?.name
-            });
             if (mangaObs && mangaObs.value) {
+                variantes.obs_manga = mangaObs.value;
                 observacionesVariantes.push(`Manga: ${mangaObs.value}`);
                 console.log('✅ obs_manga capturada:', mangaObs.value);
-            } else {
-                console.log('⚠️ obs_manga NO CAPTURADA - valor vacío o elemento no encontrado');
             }
         }
         
@@ -195,6 +189,7 @@ function recopilarDatos() {
             // Capturar observación de bolsillos
             const bolsillosObs = item.querySelector('input[name*="obs_bolsillos"]');
             if (bolsillosObs && bolsillosObs.value) {
+                variantes.obs_bolsillos = bolsillosObs.value;
                 observacionesVariantes.push(`Bolsillos: ${bolsillosObs.value}`);
             }
         }
@@ -207,6 +202,7 @@ function recopilarDatos() {
             // Capturar observación de broche
             const brocheObs = item.querySelector('input[name*="obs_broche"]');
             if (brocheObs && brocheObs.value) {
+                variantes.obs_broche = brocheObs.value;
                 observacionesVariantes.push(`Broche: ${brocheObs.value}`);
             }
         }
@@ -218,6 +214,7 @@ function recopilarDatos() {
             // Capturar observación de reflectivo
             const reflectivoObs = item.querySelector('input[name*="obs_reflectivo"]');
             if (reflectivoObs && reflectivoObs.value) {
+                variantes.obs_reflectivo = reflectivoObs.value;
                 observacionesVariantes.push(`Reflectivo: ${reflectivoObs.value}`);
             }
         }
@@ -234,7 +231,23 @@ function recopilarDatos() {
             console.log('ℹ️ Sin observaciones de variantes para agregar a descripcion_adicional');
         }
         
-        console.log('📝 Variantes capturadas:', variantes);
+        console.log('📝 Variantes capturadas:', {
+            color: variantes.color,
+            tela: variantes.tela,
+            referencia: variantes.referencia,
+            genero: variantes.genero,
+            tipo_manga_id: variantes.tipo_manga_id,
+            manga_nombre: variantes.manga_nombre,
+            obs_manga: variantes.obs_manga,
+            tiene_bolsillos: variantes.tiene_bolsillos,
+            obs_bolsillos: variantes.obs_bolsillos,
+            tipo_broche_id: variantes.tipo_broche_id,
+            obs_broche: variantes.obs_broche,
+            tiene_reflectivo: variantes.tiene_reflectivo,
+            obs_reflectivo: variantes.obs_reflectivo,
+            descripcion_adicional: variantes.descripcion_adicional,
+            todas_las_keys: Object.keys(variantes)
+        });
         
         if (nombre.trim()) {
             productos.push({

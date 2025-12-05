@@ -319,12 +319,17 @@ class CotizacionesController extends Controller
             
             \Log::info('Cotización completada', ['id' => $cotizacion->id, 'tipo' => $tipo]);
             
+            $redirect = ($tipo === 'borrador')
+                ? route('asesores.cotizaciones.index', ['page' => 'page_bor_prenda'])
+                : route('asesores.cotizaciones.index', ['page' => 'page_cot_prenda']);
+            
             return response()->json([
                 'success' => true,
                 'message' => ($tipo === 'borrador') 
                     ? 'Cotización guardada en borradores' 
                     : 'Cotización enviada correctamente',
-                'cotizacion_id' => $cotizacion->id
+                'cotizacion_id' => $cotizacion->id,
+                'redirect' => $redirect
             ]);
         } catch (\Illuminate\Validation\ValidationException $ve) {
             \Log::error('Error de validación en guardar cotización', [

@@ -12,8 +12,8 @@ use App\Http\Controllers\TablerosController;
 use App\Http\Controllers\VistasController;
 use App\Http\Controllers\BalanceoController;
 use App\Http\Controllers\AsesorController;
-use App\Http\Controllers\CotizacionBordadoController;
 use App\Http\Controllers\CotizacionPrendaController;
+use App\Http\Controllers\CotizacionBordadoController;
 use App\Http\Controllers\CotizacionesViewController;
 use App\Http\Controllers\DebugRegistrosController;
 
@@ -329,17 +329,6 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     })->name('prendas.agregar');
 
     // ========================================
-    // COTIZACIONES DE BORDADO - Solo Asesor
-    // ========================================
-    Route::get('/cotizaciones/bordado/crear', [CotizacionBordadoController::class, 'create'])->name('cotizaciones-bordado.create');
-    Route::post('/cotizaciones/bordado', [CotizacionBordadoController::class, 'store'])->name('cotizaciones-bordado.store');
-    Route::get('/cotizaciones/bordado/lista', [CotizacionBordadoController::class, 'lista'])->name('cotizaciones-bordado.lista');
-    Route::get('/cotizaciones/bordado/{cotizacion}/editar', [CotizacionBordadoController::class, 'edit'])->name('cotizaciones-bordado.edit');
-    Route::put('/cotizaciones/bordado/{cotizacion}', [CotizacionBordadoController::class, 'update'])->name('cotizaciones-bordado.update');
-    Route::post('/cotizaciones/bordado/{cotizacion}/enviar', [CotizacionBordadoController::class, 'enviar'])->name('cotizaciones-bordado.enviar');
-    Route::delete('/cotizaciones/bordado/{cotizacion}', [CotizacionBordadoController::class, 'destroy'])->name('cotizaciones-bordado.destroy');
-
-    // ========================================
     // COTIZACIONES DE PRENDA - Solo Asesor
     // ========================================
     Route::get('/cotizaciones/prenda/crear', [CotizacionPrendaController::class, 'create'])->name('cotizaciones-prenda.create');
@@ -349,6 +338,17 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     Route::put('/cotizaciones/prenda/{cotizacion}', [CotizacionPrendaController::class, 'update'])->name('cotizaciones-prenda.update');
     Route::post('/cotizaciones/prenda/{cotizacion}/enviar', [CotizacionPrendaController::class, 'enviar'])->name('cotizaciones-prenda.enviar');
     Route::delete('/cotizaciones/prenda/{cotizacion}', [CotizacionPrendaController::class, 'destroy'])->name('cotizaciones-prenda.destroy');
+
+    // ========================================
+    // COTIZACIONES DE BORDADO - Solo Asesor
+    // ========================================
+    Route::get('/cotizaciones/bordado/crear', [CotizacionBordadoController::class, 'create'])->name('cotizaciones-bordado.create');
+    Route::post('/cotizaciones/bordado', [CotizacionBordadoController::class, 'store'])->name('cotizaciones-bordado.store');
+    Route::get('/cotizaciones/bordado/lista', [CotizacionBordadoController::class, 'lista'])->name('cotizaciones-bordado.lista');
+    Route::get('/cotizaciones/bordado/{cotizacion}/editar', [CotizacionBordadoController::class, 'edit'])->name('cotizaciones-bordado.edit');
+    Route::put('/cotizaciones/bordado/{cotizacion}', [CotizacionBordadoController::class, 'update'])->name('cotizaciones-bordado.update');
+    Route::post('/cotizaciones/bordado/{cotizacion}/enviar', [CotizacionBordadoController::class, 'enviar'])->name('cotizaciones-bordado.enviar');
+    Route::delete('/cotizaciones/bordado/{cotizacion}', [CotizacionBordadoController::class, 'destroy'])->name('cotizaciones-bordado.destroy');
 });
 
 // ========== DEBUG ROUTES PARA OPTIMIZACIÓN DE /registros ==========

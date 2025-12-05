@@ -67,12 +67,12 @@ class RegistroOrdenController extends Controller
                             ->values()
                             ->toArray();
                     } elseif ($column === 'descripcion_prendas') {
-                        // Obtener descripciones únicas de prendas (ahora desde descripcion_armada)
+                        // Obtener descripciones únicas de prendas
                         $uniqueValues = \DB::table('prendas_pedido')
-                            ->whereNotNull('descripcion_armada')
-                            ->where('descripcion_armada', '!=', '')
+                            ->whereNotNull('descripcion')
+                            ->where('descripcion', '!=', '')
                             ->distinct()
-                            ->pluck('descripcion_armada')
+                            ->pluck('descripcion')
                             ->filter(function($value) {
                                 return $value !== null && $value !== '';
                             })
@@ -140,7 +140,7 @@ class RegistroOrdenController extends Controller
             ->with([
                 'asesora:id,name',
                 'prendas' => function($q) {
-                    $q->select('id', 'numero_pedido', 'nombre_prenda', 'cantidad', 'descripcion', 'descripcion_variaciones', 'cantidad_talla', 'descripcion_armada', 'color_id', 'tela_id', 'tipo_manga_id', 'tiene_bolsillos', 'tiene_reflectivo')
+                    $q->select('id', 'numero_pedido', 'nombre_prenda', 'cantidad', 'descripcion', 'descripcion_variaciones', 'cantidad_talla', 'color_id', 'tela_id', 'tipo_manga_id', 'tiene_bolsillos', 'tiene_reflectivo')
                       ->with('color:id,nombre', 'tela:id,nombre,referencia', 'tipoManga:id,nombre');
                 }
             ]);
@@ -208,9 +208,9 @@ class RegistroOrdenController extends Controller
                         continue;
                     }
                     
-                    // Si es descripcion_prendas, filtrar por descripcion_armada
+                    // Si es descripcion_prendas, filtrar por descripcion
                     if ($column === 'descripcion_prendas') {
-                        // Usar la columna descripcion_armada que ya tiene la descripción armada
+                        // Usar la columna descripcion de prendas_pedido
                         // Buscar todas las descripciones que contengan cualquiera de los valores ingresados
                         if (!empty($values)) {
                             $query->whereIn('numero_pedido', function($subquery) use ($values) {
@@ -218,7 +218,7 @@ class RegistroOrdenController extends Controller
                                     ->from('prendas_pedido')
                                     ->where(function($q) use ($values) {
                                         foreach ($values as $value) {
-                                            $q->orWhere('descripcion_armada', 'LIKE', '%' . $value . '%');
+                                            $q->orWhere('descripcion', 'LIKE', '%' . $value . '%');
                                         }
                                     })
                                     ->distinct();

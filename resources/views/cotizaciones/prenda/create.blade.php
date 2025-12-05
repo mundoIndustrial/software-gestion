@@ -714,7 +714,14 @@
                                         <i class="fas fa-link"></i> Broche/Botón
                                     </td>
                                     <td style="padding: 14px 12px;">
-                                        <input type="text" name="productos_prenda[][variantes][obs_broche]" placeholder="Ej: Botones de madera..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box;">
+                                        <div style="display: flex; gap: 8px; align-items: center;">
+                                            <select name="productos_prenda[][variantes][tipo_broche_id]" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; background-color: white; cursor: pointer; transition: border-color 0.2s;">
+                                                <option value="">Seleccionar...</option>
+                                                <option value="1">Broche</option>
+                                                <option value="2">Botón</option>
+                                            </select>
+                                            <input type="text" name="productos_prenda[][variantes][obs_broche]" placeholder="Ej: Botones de madera..." style="flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box;">
+                                        </div>
                                     </td>
                                 </tr>
                                 
@@ -1175,25 +1182,46 @@ function guardarCotizacionPrenda(action) {
             console.log(`ℹ️ No hay telas guardadas para este producto`);
         }
         
-        // === BUSCAR VARIANTES (todos los inputs dentro de este card) ===
-        const allInputs = card.querySelectorAll('input, select');
-        allInputs.forEach(input => {
+        // === BUSCAR VARIANTES (todos los inputs dentro de ESTE producto-card) ===
+        // Usar :scope> para asegurar que solo obtiene elementos dentro de este card
+        const allInputs = card.querySelectorAll('input[name*="variantes"], select[name*="variantes"], textarea[name*="variantes"]');
+        console.log(`📝 Inputs de variantes encontrados en este card: ${allInputs.length}`);
+        
+        allInputs.forEach((input, idx) => {
             const name = input.name;
             if (!name || !name.includes('variantes')) return;
             
             // Extraer el nombre del campo de variante
             const match = name.match(/\[variantes\]\[([^\]]+)\]/);
-            if (match) {
-                const campo = match[1];
-                // Solo agregar si tiene valor y no es vacío
-                if (input.value !== null && input.value !== undefined && input.value !== '') {
-                    producto.variantes[campo] = input.value;
-                }
+            if (!match) {
+                console.log(`⚠️ No coincidió regex para: ${name}`);
+                return;
+            }
+            
+            const campo = match[1];
+            
+            // Procesar checkboxes especialmente
+            if (input.type === 'checkbox') {
+                producto.variantes[campo] = input.checked ? 1 : 0;
+                console.log(`  [${idx}] ${campo} (checkbox): ${input.checked ? 1 : 0}`);
+            }
+            // Procesar select (incluso si está vacío)
+            else if (input.tagName === 'SELECT') {
+                producto.variantes[campo] = input.value || null;
+                console.log(`  [${idx}] ${campo} (select): ${input.value || '(vacío)'}`);
+            }
+            // Procesar textarea e inputs de texto (solo si tienen valor)
+            else if (input.value !== null && input.value !== undefined && input.value !== '') {
+                producto.variantes[campo] = input.value;
+                console.log(`  [${idx}] ${campo} (text/textarea): ${input.value}`);
+            } else {
+                console.log(`  [${idx}] ${campo} (vacío - omitido)`);
             }
         });
         console.log(`✓ Variantes (${Object.keys(producto.variantes).length}): ${JSON.stringify(producto.variantes)}`);
         
-        // === AGREGAR SOLO SI TIENE NOMBRE ===
+        // Mostrar todas las variantes capturadas para debug
+        console.log(`  Variantes detalladas:`, producto.variantes);
         if (producto.nombre_producto) {
             productosFinales.push(producto);
             console.log(`✅ PRODUCTO AGREGADO`);
@@ -1212,7 +1240,9 @@ function guardarCotizacionPrenda(action) {
     formData.append('cliente', document.getElementById('header-cliente').value);
     formData.append('asesora', document.getElementById('header-asesor').value);
     formData.append('fecha', document.getElementById('header-fecha').value);
-    formData.append('tipo_cotizacion', document.getElementById('header-tipo-cotizacion').value);
+    formData.append('tipo_venta', document.getElementById('header-tipo-cotizacion').value);
+    formData.append('tipo_cotizacion', 'P');
+    formData.append('tipo', action === 'borrador' ? 'borrador' : 'enviada');
     formData.append('action', action);
     formData.append('_token', document.querySelector('input[name="_token"]').value);
     
@@ -1227,35 +1257,35 @@ function guardarCotizacionPrenda(action) {
     // Agregar productos reorganizados
     productosFinales.forEach((producto, index) => {
         // Datos básicos
-        formData.append(`productos_prenda[${index}][nombre_producto]`, producto.nombre_producto);
-        formData.append(`productos_prenda[${index}][descripcion]`, producto.descripcion || '');
+        formData.append(`productos[${index}][nombre_producto]`, producto.nombre_producto);
+        formData.append(`productos[${index}][descripcion]`, producto.descripcion || '');
         
         // Tallas como array
         producto.tallas.forEach((talla, tallaIdx) => {
-            formData.append(`productos_prenda[${index}][tallas][${tallaIdx}]`, talla);
+            formData.append(`productos[${index}][tallas][${tallaIdx}]`, talla);
         });
         
         // Fotos como array - AGREGAR FILE OBJECTS
         producto.fotos.forEach((foto, fotoIdx) => {
             if (foto instanceof File) {
-                formData.append(`productos_prenda[${index}][fotos][${fotoIdx}]`, foto, foto.name);
+                formData.append(`productos[${index}][fotos][${fotoIdx}]`, foto, foto.name);
             } else {
-                formData.append(`productos_prenda[${index}][fotos][${fotoIdx}]`, foto);
+                formData.append(`productos[${index}][fotos][${fotoIdx}]`, foto);
             }
         });
         
         // Telas como array - AGREGAR FILE OBJECTS
         producto.telas.forEach((tela, telaIdx) => {
             if (tela instanceof File) {
-                formData.append(`productos_prenda[${index}][telas][${telaIdx}]`, tela, tela.name);
+                formData.append(`productos[${index}][telas][${telaIdx}]`, tela, tela.name);
             } else {
-                formData.append(`productos_prenda[${index}][telas][${telaIdx}]`, tela);
+                formData.append(`productos[${index}][telas][${telaIdx}]`, tela);
             }
         });
         
         // Variantes
         Object.keys(producto.variantes).forEach(campo => {
-            formData.append(`productos_prenda[${index}][variantes][${campo}]`, producto.variantes[campo]);
+            formData.append(`productos[${index}][variantes][${campo}]`, producto.variantes[campo]);
         });
     });
     
@@ -1264,7 +1294,7 @@ function guardarCotizacionPrenda(action) {
         console.log(`${pair[0]}: ${pair[1]}`);
     }
 
-    fetch('{{ route("asesores.cotizaciones-prenda.store") }}', {
+    fetch('{{ route("asesores.cotizaciones.guardar") }}', {
         method: 'POST',
         body: formData,
         headers: {
@@ -1503,6 +1533,7 @@ document.addEventListener('click', function(e) {
 <script src="{{ asset('js/asesores/cotizaciones/rutas.js') }}"></script>
 <script>
     // Asignar rutas después de cargar rutas.js
+    window.tipoCotizacionGlobal = 'P'; // Prenda
     window.routes.guardarCotizacion = '{{ route("asesores.cotizaciones.guardar") }}';
     window.routes.cotizacionesIndex = '{{ route("asesores.cotizaciones.index") }}';
 </script>

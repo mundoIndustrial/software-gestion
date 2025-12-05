@@ -209,7 +209,10 @@
                                         @else
                                             <td class="table-cell" data-column="{{ $colName }}">
                                                 @if($colName === 'descripcion_prendas')
-                                                    <div class="cell-content" title="{{ $orden->descripcion_prendas ?? '' }}">
+                                                    <div class="cell-content descripcion-clickeable" 
+                                                         title="Haz clic para ver la descripción completa"
+                                                         onclick="showOrderDescriptionModal(`{{ addslashes($orden->descripcion_prendas ?? '') }}`)"
+                                                         style="cursor: pointer;">
                                                         <div class="descripcion-preview" data-full-content="{{ base64_encode($orden->descripcion_prendas) }}">
                                                         </div>
                                                         <span class="descripcion-truncated">{{ Str::limit($orden->descripcion_prendas, 150, '...') }}</span>
@@ -392,6 +395,9 @@
     </div>
 
     <div id="modalOverlay" class="modal-overlay"></div>
+
+    <!-- Modal de Descripción de Prendas (Solo descripción) -->
+    @include('components.orders-components.order-description-modal')
 
     <script>
         // Pasar opciones de area a JS

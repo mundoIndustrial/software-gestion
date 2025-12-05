@@ -72,8 +72,8 @@
             
             {{-- Descripción --}}
             @if($desc)
-                <div class="prenda-descripcion">
-                    <span class="prenda-descripcion-label">Descripción:</span> {{ $desc }}
+                <div class="prenda-descripcion" style="white-space: pre-wrap; word-wrap: break-word;">
+                    <span class="prenda-descripcion-label">Descripción:</span> {!! nl2br(e($desc)) !!}
                 </div>
             @endif
             

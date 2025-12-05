@@ -273,7 +273,7 @@
                             <th class="text-left py-4 px-6 font-bold">
                                 <div class="flex items-center justify-between gap-2">
                                     <span>Descripción</span>
-                                    <button class="filter-btn-insumos hover:bg-blue-500 p-1 rounded transition" data-column="descripcion_armada" title="Filtrar por Descripción">
+                                    <button class="filter-btn-insumos hover:bg-blue-500 p-1 rounded transition" data-column="descripcion" title="Filtrar por Descripción">
                                         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                                             <path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
                                         </svg>

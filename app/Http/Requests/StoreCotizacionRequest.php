@@ -24,14 +24,17 @@ class StoreCotizacionRequest extends FormRequest
         return [
             'cliente' => 'required|string|max:255|regex:/^[a-zA-Z0-9\s\-\.]+$/',
             'tipo' => 'required|in:borrador,enviada',
-            'tipo_venta' => 'required_if:tipo,enviada|nullable|string|in:M,D,X',
+            'tipo_venta' => 'nullable|string|in:M,D,X',
+            'tipo_cotizacion' => 'nullable|string|in:P,B,PB,M,D,X',
             'cotizacion_id' => 'nullable|integer|exists:cotizaciones,id',
             
-            'productos' => 'required_if:tipo,enviada|array',
+            'productos' => 'nullable|array',
             'productos.*.nombre_producto' => 'required|string|max:255',
             'productos.*.descripcion' => 'nullable|string',
             'productos.*.tallas' => 'array',
             'productos.*.tallas.*' => 'string',
+            'productos.*.fotos' => 'nullable|array',
+            'productos.*.telas' => 'nullable|array',
             'productos.*.variantes' => 'array',
             'productos.*.variantes.color' => 'nullable|string|max:100',
             'productos.*.variantes.tela' => 'nullable|string|max:100',
@@ -127,6 +130,13 @@ class StoreCotizacionRequest extends FormRequest
         if (is_string($this->observaciones_generales ?? null)) {
             $this->merge([
                 'observaciones_generales' => json_decode($this->observaciones_generales, true) ?? []
+            ]);
+        }
+        
+        // Mapear tipo_cotizacion a tipo_venta si no tiene tipo_venta
+        if (!$this->tipo_venta && $this->tipo_cotizacion) {
+            $this->merge([
+                'tipo_venta' => $this->tipo_cotizacion
             ]);
         }
     }

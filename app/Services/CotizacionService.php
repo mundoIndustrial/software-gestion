@@ -50,17 +50,23 @@ class CotizacionService
         // Obtener tipo_venta del formulario (M, D, X)
         $tipoVenta = $datosFormulario['tipo_venta'] ?? null;
         
+        // Determinar si es borrador: 'borrador' = true, 'enviada' = false
+        $esBorrador = ($tipo === 'borrador');
+        
+        // Asignar número de cotización solo si se envía (no es borrador)
+        $numeroCotizacion = $esBorrador ? null : $this->generarNumeroCotizacion();
+        
         $datos = [
             'user_id' => Auth::id(),
-            'numero_cotizacion' => null, // Se asignará cuando se envíe a contador
+            'numero_cotizacion' => $numeroCotizacion, // Generado si es enviada, null si es borrador
             'tipo_cotizacion_id' => $tipoCotizacionId,
             'tipo_venta' => $tipoVenta,  // M, D, X - Tipo de venta
             'fecha_inicio' => now(),
             'cliente' => $datosFormulario['cliente'] ?? null,
             'asesora' => auth()->user()?->name ?? 'Sin nombre',
-            'es_borrador' => true, // Siempre comienza en BORRADOR
-            'estado' => EstadoCotizacion::BORRADOR->value, // Usar el Enum
-            'fecha_envio' => null,
+            'es_borrador' => $esBorrador, // true si tipo='borrador', false si tipo='enviada'
+            'estado' => $esBorrador ? EstadoCotizacion::BORRADOR->value : EstadoCotizacion::ENVIADA_CONTADOR->value,
+            'fecha_envio' => !$esBorrador ? now() : null,
             'productos' => $datosFormulario['productos'] ?? null,
             'especificaciones' => $datosFormulario['especificaciones'] ?? null,
             'imagenes' => $datosFormulario['imagenes'] ?? null,
@@ -73,6 +79,9 @@ class CotizacionService
         \Log::info('CotizacionService::crear - Datos a guardar', [
             'tipo_venta' => $datos['tipo_venta'],
             'tipo_cotizacion_id' => $datos['tipo_cotizacion_id'],
+            'es_borrador' => $datos['es_borrador'],
+            'numero_cotizacion' => $datos['numero_cotizacion'],
+            'estado' => $datos['estado'],
             'especificaciones' => !empty($datos['especificaciones']) ? 'presente' : 'vacío',
             'observaciones_generales' => !empty($datos['observaciones_generales']) ? 'presente' : 'vacío'
         ]);

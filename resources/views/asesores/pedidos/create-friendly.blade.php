@@ -505,8 +505,8 @@
                                         <div style="display: flex; gap: 8px; align-items: center;">
                                             <select name="productos_friendly[][variantes][tipo_broche_id]" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; background-color: white; cursor: pointer; transition: border-color 0.2s;">
                                                 <option value="">Seleccionar...</option>
-                                                <option value="1">Botón</option>
-                                                <option value="2">Broche</option>
+                                                <option value="1">Broche</option>
+                                                <option value="2">Botón</option>
                                             </select>
                                             <input type="text" name="productos_friendly[][variantes][obs_broche]" placeholder="Ej: Botones de madera..." style="flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; transition: border-color 0.2s;">
                                         </div>
@@ -810,8 +810,9 @@
 <script src="{{ asset('js/asesores/cotizaciones/rutas.js') }}"></script>
 <script>
     // Asignar rutas después de cargar rutas.js
+    window.tipoCotizacionGlobal = 'PB'; // Prenda-Bordado
     window.routes.guardarCotizacion = '{{ route("asesores.cotizaciones.guardar") }}';
-    window.routes.cotizacionesIndex = '{{ route("asesores.cotizaciones.index") }}';
+    window.routes.cotizacionesIndex = '{{ route("asesores.cotizaciones.index") }}';}
 </script>
 <script src="{{ asset('js/asesores/cotizaciones/cotizaciones.js') }}"></script>
 <script src="{{ asset('js/asesores/cotizaciones/productos.js') }}"></script>

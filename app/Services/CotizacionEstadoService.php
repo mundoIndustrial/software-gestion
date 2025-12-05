@@ -28,6 +28,11 @@ class CotizacionEstadoService extends BaseService
 
             $estadoAnterior = $cotizacion->estado;
 
+            // Asignar número de cotización si no lo tiene
+            if ($cotizacion->numero_cotizacion === null) {
+                $this->asignarNumeroCotizacion($cotizacion);
+            }
+
             // Cambiar estado
             $cotizacion->update([
                 'estado' => EstadoCotizacion::ENVIADA_CONTADOR->value,

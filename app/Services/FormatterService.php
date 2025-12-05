@@ -51,7 +51,9 @@ class FormatterService
                 'especificaciones' => $this->procesarEspecificaciones($validado['especificaciones'] ?? []),
                 'observaciones_generales' => $observacionesGenerales,
                 'observaciones_tecnicas' => $validado['observaciones_tecnicas'] ?? null,
-                'tipo_cotizacion' => $validado['tipo_cotizacion'] ?? null,
+                'tipo_cotizacion' => $validado['tipo_cotizacion'] ?? $validado['tipo_venta'] ?? null,
+                'tipo_venta' => $validado['tipo_venta'] ?? $validado['tipo_cotizacion'] ?? null,
+                'tipo_cotizacion_codigo' => $validado['tipo_cotizacion'] ?? 'P', // Usar lo que venga, por defecto 'P'
                 'numero_cotizacion' => $validado['numero_cotizacion'] ?? null,
             ];
         } catch (\Exception $e) {

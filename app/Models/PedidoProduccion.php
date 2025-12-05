@@ -127,20 +127,31 @@ class PedidoProduccion extends Model
     /**
      * Obtener descripción de prendas (concatenadas con detalles)
      * 
-     * Si la orden TIENE cotización: muestra descripción completa con detalles
+     * Si la orden TIENE cotización: muestra descripción completa con detalles usando template
      * Si la orden NO tiene cotización: muestra solo nombres de prendas enumerados
      * 
      * Formato SIN cotización:
      * PRENDA 1: CAMISA DRILL
      * DESCRIPCION: Logo bordado en espalda
+     * TALLAS: S:50, M:50, L:50
      * 
-     * PRENDA 2: JEANS
-     * DESCRIPCION: Con bolsillos
+     * Formato CON cotización (con template estructurado):
+     * 1: CAMISA DRILL
+     * Color: NARANJA | Tela: DRILL BORNEO REF:REF-DB-001 | Manga: LARGA
      * 
-     * Formato CON cotización:
-     * Prenda 1: NOMBRE
-     * Descripción: descripcion completa
-     * Tallas: S:1, M:4, L:3, ...
+     * DESCRIPCIÓN:
+     * - Logo: Logo bordado en espalda
+     * 
+     * Bolsillos:
+     * • Pecho
+     * • Espalda
+     * 
+     * Reflectivo:
+     * • Mangas
+     * 
+     * TALLAS:
+     * - S: 50
+     * - M: 50
      */
     public function getDescripcionPrendasAttribute()
     {
@@ -148,35 +159,8 @@ class PedidoProduccion extends Model
             return '';
         }
 
-        // Si NO tiene cotización, mostrar solo nombres de prendas con descripción y tallas
-        if (!$this->cotizacion_id) {
-            $descripciones = $this->prendas->map(function($prenda, $index) {
-                $lineas = [];
-                $lineas[] = "PRENDA " . ($index + 1) . ": " . strtoupper($prenda->nombre_prenda);
-                if ($prenda->descripcion) {
-                    $lineas[] = "DESCRIPCION: " . $prenda->descripcion;
-                }
-                
-                // Agregar tallas si existen
-                if ($prenda->cantidad_talla && is_array($prenda->cantidad_talla)) {
-                    $tallas = [];
-                    foreach ($prenda->cantidad_talla as $talla => $cantidad) {
-                        if ($cantidad > 0) {
-                            $tallas[] = "{$talla}:{$cantidad}";
-                        }
-                    }
-                    if (!empty($tallas)) {
-                        $lineas[] = "TALLAS: " . implode(", ", $tallas);
-                    }
-                }
-                
-                return implode("\n", $lineas);
-            })->toArray();
-            
-            return implode("\n\n", $descripciones);
-        }
-
-        // Si TIENE cotización, generar descripción detallada
+        // Generar descripción detallada para TODAS las prendas
+        // (tenga cotización o no)
         $descripciones = $this->prendas->map(function($prenda, $index) {
             return $prenda->generarDescripcionDetallada($index + 1);
         })->toArray();

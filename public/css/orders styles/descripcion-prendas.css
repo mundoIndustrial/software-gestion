@@ -85,6 +85,16 @@
     margin: 4px 0;
 }
 
+/* Descripción clickeable */
+.descripcion-clickeable {
+    cursor: pointer;
+}
+
+.descripcion-clickeable:hover {
+    text-decoration: underline;
+    opacity: 0.8;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .descripcion-prendas-cell {
@@ -101,5 +111,9 @@
     .prenda-detalles,
     .prenda-tallas {
         font-size: 10px;
+    }
+
+    .descripcion-clickeable::after {
+        font-size: 12px;
     }
 }

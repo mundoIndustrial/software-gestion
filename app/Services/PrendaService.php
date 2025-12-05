@@ -128,6 +128,11 @@ class PrendaService
             
             $variantes = $productoData['variantes'] ?? [];
             
+            \Log::info('🔍 Variantes recibidas para procesar', [
+                'keys' => array_keys($variantes),
+                'variantes' => $variantes
+            ]);
+            
             $datosVariante = [
                 'prenda_cotizacion_id' => $prenda->id,
                 'tipo_prenda_id' => $tipoPrenda ? $tipoPrenda->id : null,

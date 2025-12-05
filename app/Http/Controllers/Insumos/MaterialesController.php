@@ -43,7 +43,7 @@ class MaterialesController extends Controller
         $filtros = $request->only([
             'numero_pedido',
             'cliente',
-            'descripcion_armada',
+            'descripcion',
             'estado',
             'area',
             'fecha_de_creacion_de_orden'

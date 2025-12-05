@@ -104,7 +104,7 @@ class MaterialesService
         $columnasPermitidas = [
             'numero_pedido',
             'cliente',
-            'descripcion_armada',
+            'descripcion',
             'estado',
             'area',
             'fecha_de_creacion_de_orden'
@@ -153,7 +153,6 @@ class MaterialesService
         return [
             'numero_pedido' => $numeroPedido,
             'prenda_pedido_id' => $material['prenda_pedido_id'] ?? null,
-            'descripcion_armada' => $material['descripcion_armada'] ?? null,
             'talla' => $material['talla'] ?? null,
             'cantidad' => $material['cantidad'] ?? null,
             'observaciones' => $material['observaciones'] ?? null,

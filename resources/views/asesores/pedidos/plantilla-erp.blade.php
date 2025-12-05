@@ -314,7 +314,7 @@
                     <div class="prenda-info">
                         <div class="prenda-nombre">{{ $prenda->nombre_prenda }}</div>
                         @if($prenda->descripcion)
-                            <div class="prenda-descripcion">{{ $prenda->descripcion }}</div>
+                            <div class="prenda-descripcion" style="white-space: pre-wrap; word-wrap: break-word;">{!! nl2br(e($prenda->descripcion)) !!}</div>
                         @endif
                         <div class="prenda-cantidad">CANTIDAD: {{ $prenda->cantidad }} unidades</div>
                     </div>

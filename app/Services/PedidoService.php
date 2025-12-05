@@ -232,11 +232,11 @@ class PedidoService
         array $cantidadesPorTalla
     ): PrendaPedido {
         try {
-            // 🔧 Guardar la descripción formateada en descripcion_armada (no en descripcion)
-            \Log::info('DEBUG: Guardando prenda con descripcion_armada', [
+            // Guardar los datos de la prenda
+            \Log::info('DEBUG: Guardando prenda', [
                 'numero_pedido' => $pedido->numero_pedido,
                 'nombre_prenda' => $producto['nombre_producto'] ?? 'Sin nombre',
-                'descripcion_armada' => $descripcion,
+                'descripcion' => $descripcion,
                 'cantidad_talla' => json_encode($cantidadesPorTalla)
             ]);
             
@@ -244,7 +244,7 @@ class PedidoService
                 'numero_pedido' => $pedido->numero_pedido,
                 'nombre_prenda' => $producto['nombre_producto'] ?? 'Sin nombre',
                 'cantidad' => $cantidadTotal,
-                'descripcion_armada' => $descripcion,
+                'descripcion' => $descripcion,
                 'cantidad_talla' => json_encode($cantidadesPorTalla)
             ]);
 
@@ -252,7 +252,7 @@ class PedidoService
                 'prenda_id' => $prenda->id,
                 'pedido_id' => $pedido->id,
                 'nombre' => $prenda->nombre_prenda,
-                'descripcion_armada_guardada' => $prenda->descripcion_armada
+                'descripcion_guardada' => $prenda->descripcion
             ]);
 
             return $prenda;

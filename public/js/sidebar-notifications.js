@@ -11,7 +11,7 @@ function updateCotizacionesPendientesAprobador() {
     
     if (!badgeElement) return;
     
-    fetch('/cotizaciones/pendientes-count')
+    fetch('/pendientes-count')
         .then(response => response.json())
         .then(data => {
             if (data.success && data.count > 0) {
