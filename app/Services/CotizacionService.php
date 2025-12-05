@@ -190,6 +190,7 @@ class CotizacionService
     {
         $logoCotizacionData = [
             'cotizacion_id' => $cotizacion->id,
+            'descripcion' => $datosFormulario['descripcion_logo'] ?? $datosFormulario['descripcion'] ?? null,
             'imagenes' => $datosFormulario['imagenes'] ?? [],
             'tecnicas' => $datosFormulario['tecnicas'] ?? [],
             'observaciones_tecnicas' => $datosFormulario['observaciones_tecnicas'] ?? null,
@@ -199,6 +200,7 @@ class CotizacionService
         
         \Log::info('Creando LogoCotizacion', [
             'cotizacion_id' => $cotizacion->id,
+            'descripcion' => $logoCotizacionData['descripcion'],
             'tecnicas' => $logoCotizacionData['tecnicas'],
             'observaciones_generales' => $logoCotizacionData['observaciones_generales'],
             'ubicaciones' => $logoCotizacionData['ubicaciones']

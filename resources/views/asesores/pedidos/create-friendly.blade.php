@@ -95,14 +95,13 @@
                     <h2>PASO 2: PRENDAS DEL PEDIDO</h2>
                     <p>AGREGA LAS PRENDAS QUE TU CLIENTE QUIERE (OPCIONAL)</p>
                 </div>
-                <button type="button" id="btnAplicaPaso2" onclick="toggleAplicaPaso(2, this)" style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.3s; white-space: nowrap; margin-left: 20px;">APLICA</button>
             </div>
 
             <div style="background: linear-gradient(135deg, #0066cc, #0052a3); border: 2px solid #0052a3; border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);">
-                <label for="tipo_cotizacion" style="font-weight: 700; font-size: 0.9rem; color: white; white-space: nowrap; display: flex; align-items: center; gap: 8px;">
+                <label for="tipo_venta" style="font-weight: 700; font-size: 0.9rem; color: white; white-space: nowrap; display: flex; align-items: center; gap: 8px;">
                     <i class="fas fa-tag"></i> Elija el tipo de cotización
                 </label>
-                <select id="tipo_cotizacion" name="tipo_cotizacion" style="padding: 0.6rem 0.8rem; border: 2px solid white; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; text-align: center; color: #0066cc; font-weight: 600; min-width: 100px;">
+                <select id="tipo_venta" name="tipo_venta" style="padding: 0.6rem 0.8rem; border: 2px solid white; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; text-align: center; color: #0066cc; font-weight: 600; min-width: 100px;">
                     <option value="">Selecciona</option>
                     <option value="M">M</option>
                     <option value="D">D</option>
@@ -153,22 +152,22 @@
                 </div>
             </div>
 
-            <!-- Botón flotante tipo WhatsApp - Solo en PASO 2 -->
+            <!-- Botón flotante para agregar prenda -->
             <div style="position: fixed; bottom: 30px; right: 30px; z-index: 1000;">
                 <!-- Menú flotante -->
                 <div id="menuFlotante" style="display: none; position: absolute; bottom: 70px; right: 0; background: white; border-radius: 12px; box-shadow: 0 5px 40px rgba(0,0,0,0.16); overflow: hidden; min-width: 200px;">
                     <button type="button" onclick="agregarProductoFriendly(); document.getElementById('menuFlotante').style.display='none'; document.getElementById('btnFlotante').style.transform='scale(1) rotate(0deg)'" style="width: 100%; padding: 12px 16px; border: none; background: white; cursor: pointer; text-align: left; font-size: 0.9rem; color: #333; display: flex; align-items: center; gap: 12px; transition: all 0.2s; border-bottom: 1px solid #f0f0f0;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='white'">
-                        <i class="fas fa-plus" style="color: #10b981; font-size: 1.1rem;"></i>
+                        <i class="fas fa-plus" style="color: #1e40af; font-size: 1.1rem;"></i>
                         <span>Agregar Prenda</span>
                     </button>
                     <button type="button" onclick="abrirModalEspecificaciones(); document.getElementById('menuFlotante').style.display='none'; document.getElementById('btnFlotante').style.transform='scale(1) rotate(0deg)'" style="width: 100%; padding: 12px 16px; border: none; background: white; cursor: pointer; text-align: left; font-size: 0.9rem; color: #333; display: flex; align-items: center; gap: 12px; transition: all 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='white'">
-                        <i class="fas fa-clipboard-check" style="color: #f59e0b; font-size: 1.1rem;"></i>
+                        <i class="fas fa-sliders-h" style="color: #ff9800; font-size: 1.1rem;"></i>
                         <span>Especificaciones</span>
                     </button>
                 </div>
                 
                 <!-- Botón principal flotante -->
-                <button type="button" id="btnFlotante" onclick="const menu = document.getElementById('menuFlotante'); menu.style.display = menu.style.display === 'none' ? 'block' : 'none'; this.style.transform = menu.style.display === 'block' ? 'scale(1) rotate(45deg)' : 'scale(1) rotate(0deg)'" style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #0066cc, #0052a3); color: white; border: none; cursor: pointer; font-size: 1.8rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0, 102, 204, 0.4); transition: all 0.3s ease; position: relative;" onmouseover="this.style.boxShadow='0 6px 20px rgba(0, 102, 204, 0.5)'; this.style.transform='scale(1.1) ' + (document.getElementById('menuFlotante').style.display === 'block' ? 'rotate(45deg)' : 'rotate(0deg)')" onmouseout="this.style.boxShadow='0 4px 12px rgba(0, 102, 204, 0.4)'; this.style.transform='scale(1) ' + (document.getElementById('menuFlotante').style.display === 'block' ? 'rotate(45deg)' : 'rotate(0deg)')">
+                <button type="button" id="btnFlotante" onclick="const menu = document.getElementById('menuFlotante'); menu.style.display = menu.style.display === 'none' ? 'block' : 'none'; this.style.transform = menu.style.display === 'block' ? 'scale(1) rotate(45deg)' : 'scale(1) rotate(0deg)'" style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #1e40af, #0ea5e9); color: white; border: none; cursor: pointer; font-size: 1.8rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(30, 64, 175, 0.4); transition: all 0.3s ease; position: relative;" onmouseover="this.style.boxShadow='0 6px 20px rgba(30, 64, 175, 0.5)'; this.style.transform='scale(1.1) ' + (document.getElementById('menuFlotante').style.display === 'block' ? 'rotate(45deg)' : 'rotate(0deg)')" onmouseout="this.style.boxShadow='0 4px 12px rgba(30, 64, 175, 0.4)'; this.style.transform='scale(1) ' + (document.getElementById('menuFlotante').style.display === 'block' ? 'rotate(45deg)' : 'rotate(0deg)')">
                     <i class="fas fa-plus"></i>
                 </button>
             </div>
@@ -189,13 +188,15 @@
                 <h2>PASO 3: LOGO</h2>
                 <p>ESPECIFICA LOS DETALLES DE BORDADO Y ESTAMPADO (OPCIONAL)</p>
             </div>
-            
-            <div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 12px 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
-                <span style="color: #856404; font-size: 0.9rem;"><i class="fas fa-info-circle"></i> Esta sección es opcional</span>
-                <button type="button" id="btnAplicaPaso3" onclick="toggleAplicaPaso(3, this)" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.3s;">APLICA</button>
-            </div>
 
             <div class="form-section">
+                <!-- DESCRIPCIÓN DEL LOGO/BORDADO -->
+                <div class="form-group-large">
+                    <label for="descripcion_logo"><i class="fas fa-pen"></i> DESCRIPCIÓN DEL LOGO/BORDADO</label>
+                    <textarea id="descripcion_logo" name="descripcion_logo" class="input-large" rows="3" placeholder="Describe el logo, bordado o estampado que deseas..." style="width: 100%; padding: 12px; border: 2px solid #3498db; border-radius: 6px; font-size: 0.9rem; font-family: inherit;"></textarea>
+                    <small class="help-text">Incluye detalles sobre colores, tamaño, posición, etc.</small>
+                </div>
+
                 <!-- IMÁGENES -->
                 <div class="form-group-large">
                     <label for="imagenes_bordado"><i class="fas fa-images"></i> IMÁGENES (MÁXIMO 5)</label>

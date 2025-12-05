@@ -543,27 +543,26 @@
                                                 <span style="font-weight: 600; color: #0066cc;">Bolsillos:</span>
                                                 @if($variante->tiene_bolsillos)
                                                     <span style="background: #10b981; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.8rem; font-weight: 600;">Sí</span>
+                                                    @php
+                                                        $obsArray = $variante->descripcion_adicional ? explode(' | ', $variante->descripcion_adicional) : [];
+                                                        $obsBolsillos = null;
+                                                        foreach ($obsArray as $obs) {
+                                                            if (strpos($obs, 'Bolsillos:') === 0) {
+                                                                $obsBolsillos = trim(str_replace('Bolsillos:', '', $obs));
+                                                            }
+                                                        }
+                                                    @endphp
+                                                    @if($obsBolsillos)
+                                                        <div style="color: #64748b; font-size: 0.8rem; margin-top: 2px;">{{ $obsBolsillos }}</div>
+                                                    @endif
                                                 @else
                                                     <span style="background: #cbd5e1; color: #475569; padding: 2px 6px; border-radius: 3px; font-size: 0.8rem; font-weight: 600;">No</span>
-                                                @endif
-                                                @php
-                                                    $obsArray = $variante->descripcion_adicional ? explode(' | ', $variante->descripcion_adicional) : [];
-                                                    $obsBolsillos = null;
-                                                    foreach ($obsArray as $obs) {
-                                                        if (strpos($obs, 'Bolsillos:') === 0) {
-                                                            $obsBolsillos = trim(str_replace('Bolsillos:', '', $obs));
-                                                        }
-                                                    }
-                                                @endphp
-                                                @if($obsBolsillos)
-                                                    <div style="color: #64748b; font-size: 0.8rem; margin-top: 2px;">{{ $obsBolsillos }}</div>
                                                 @endif
                                             </div>
                                             <!-- Broche -->
                                             @if($variante->tipoBroche)
                                                 <div style="margin-bottom: 8px;">
-                                                    <span style="font-weight: 600; color: #0066cc;">Broche:</span>
-                                                    <span style="color: #1e293b;">{{ $variante->tipoBroche->nombre }}</span>
+                                                    <span style="font-weight: 600; color: #0066cc;">{{ $variante->tipoBroche->nombre }}</span>
                                                     @php
                                                         $obsBroche = null;
                                                         foreach ($obsArray as $obs) {
@@ -582,19 +581,20 @@
                                                 <span style="font-weight: 600; color: #0066cc;">Reflectivo:</span>
                                                 @if($variante->tiene_reflectivo)
                                                     <span style="background: #10b981; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.8rem; font-weight: 600;">Sí</span>
+                                                    @php
+                                                        $obsArray = $variante->descripcion_adicional ? explode(' | ', $variante->descripcion_adicional) : [];
+                                                        $obsReflectivo = null;
+                                                        foreach ($obsArray as $obs) {
+                                                            if (strpos($obs, 'Reflectivo:') === 0) {
+                                                                $obsReflectivo = trim(str_replace('Reflectivo:', '', $obs));
+                                                            }
+                                                        }
+                                                    @endphp
+                                                    @if($obsReflectivo)
+                                                        <div style="color: #64748b; font-size: 0.8rem; margin-top: 2px;">{{ $obsReflectivo }}</div>
+                                                    @endif
                                                 @else
                                                     <span style="background: #cbd5e1; color: #475569; padding: 2px 6px; border-radius: 3px; font-size: 0.8rem; font-weight: 600;">No</span>
-                                                @endif
-                                                @php
-                                                    $obsReflectivo = null;
-                                                    foreach ($obsArray as $obs) {
-                                                        if (strpos($obs, 'Reflectivo:') === 0) {
-                                                            $obsReflectivo = trim(str_replace('Reflectivo:', '', $obs));
-                                                        }
-                                                    }
-                                                @endphp
-                                                @if($obsReflectivo)
-                                                    <div style="color: #64748b; font-size: 0.8rem; margin-top: 2px;">{{ $obsReflectivo }}</div>
                                                 @endif
                                             </div>
                                         </div>

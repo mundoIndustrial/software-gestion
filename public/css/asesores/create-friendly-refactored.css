@@ -134,6 +134,35 @@
     .swal2-html-container {
         font-size: 0.95rem !important;
     }
+    
+    .imagen-preview {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .swal2-toast-container {
+        top: 10px !important;
+        right: 10px !important;
+        left: 10px !important;
+    }
+    
+    .swal-toast-popup {
+        max-width: none !important;
+    }
+}
+
+@media (min-width: 641px) and (max-width: 1023px) {
+    .imagen-preview {
+        width: 90px;
+        height: 90px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .imagen-preview {
+        width: 100px;
+        height: 100px;
+    }
 }
 
 /* ============ ESTILOS DE IMÁGENES ============ */

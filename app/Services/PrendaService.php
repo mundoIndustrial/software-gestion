@@ -14,9 +14,17 @@ use App\Models\TipoPrenda;
  * - Crear prendas
  * - Gestionar variantes
  * - Detectar tipos de prenda
+ * - Procesar imágenes Base64
  */
 class PrendaService
 {
+    private ImagenProcesadorService $imagenProcesador;
+    
+    public function __construct(ImagenProcesadorService $imagenProcesador = null)
+    {
+        $this->imagenProcesador = $imagenProcesador ?? new ImagenProcesadorService();
+    }
+    
     /**
      * Crear prendas para una cotización
      * 
@@ -40,6 +48,17 @@ class PrendaService
      */
     public function crearPrenda(Cotizacion $cotizacion, array $producto): PrendaCotizacionFriendly
     {
+        \Log::info('🔍 crearPrenda() - Datos recibidos:', [
+            'keys' => array_keys($producto),
+            'nombre_producto' => $producto['nombre_producto'] ?? null,
+            'tiene_fotos_base64' => isset($producto['fotos_base64']) ? 'SI' : 'NO',
+            'tiene_telas_base64' => isset($producto['telas_base64']) ? 'SI' : 'NO',
+            'tiene_fotos' => isset($producto['fotos']) ? 'SI' : 'NO',
+            'tiene_telas' => isset($producto['telas']) ? 'SI' : 'NO',
+            'cantidad_fotos_base64' => count($producto['fotos_base64'] ?? []),
+            'cantidad_telas_base64' => count($producto['telas_base64'] ?? [])
+        ]);
+        
         $tallas = is_array($producto['tallas'] ?? []) ? $producto['tallas'] : [];
         $nombrePrenda = $producto['nombre_producto'] ?? '';
         
@@ -52,7 +71,7 @@ class PrendaService
             $genero = $producto['variantes']['genero'];
         }
         
-        // Crear prenda
+        // Crear prenda con TODOS los datos
         $prenda = PrendaCotizacionFriendly::create([
             'cotizacion_id' => $cotizacion->id,
             'nombre_producto' => $nombrePrenda,
@@ -63,16 +82,124 @@ class PrendaService
                 : null,
             'descripcion' => $producto['descripcion'] ?? null,
             'tallas' => $tallas,
-            'fotos' => $producto['fotos'] ?? [],
-            'telas' => $producto['telas'] ?? [],
-            'estado' => 'Pendiente'
+            'fotos' => [],
+            'telas' => [],
+            'estado' => 'Pendiente',
+            'productos' => [
+                'cantidad' => $producto['cantidad'] ?? 1
+            ]
         ]);
+        
+        // 📸 Procesar imágenes Base64 (si existen)
+        $this->procesarImagenesBase64($prenda, $producto);
         
         // Guardar variantes
         $this->guardarVariantes($prenda, $producto);
         
         return $prenda;
     }
+    
+    /**
+     * Procesar imágenes Base64 y guardarlas como WebP
+     */
+    private function procesarImagenesBase64(PrendaCotizacionFriendly $prenda, array $producto): void
+    {
+        try {
+            \Log::info('🎬 INICIANDO procesarImagenesBase64()', [
+                'prenda_id' => $prenda->id,
+                'tiene_fotos_base64' => !empty($producto['fotos_base64']),
+                'cantidad_fotos_base64' => count($producto['fotos_base64'] ?? []),
+                'tiene_telas_base64' => !empty($producto['telas_base64']),
+                'cantidad_telas_base64' => count($producto['telas_base64'] ?? [])
+            ]);
+            
+            // Procesar fotos de prenda
+            $fotosUrls = [];
+            if (!empty($producto['fotos_base64'])) {
+                \Log::info('📸 Procesando fotos de prenda', [
+                    'cantidad' => count($producto['fotos_base64']),
+                    'prenda_id' => $prenda->id,
+                    'primer_item_keys' => $producto['fotos_base64'][0] ? array_keys((array)$producto['fotos_base64'][0]) : []
+                ]);
+                
+                $fotosUrls = $this->imagenProcesador->procesarMultiplesImagenes(
+                    $producto['fotos_base64'],
+                    'prenda',
+                    $prenda->id
+                );
+                
+                \Log::info('✅ Fotos de prenda procesadas', [
+                    'cantidad' => count($fotosUrls),
+                    'urls' => $fotosUrls
+                ]);
+            } else {
+                \Log::warning('⚠️ NO HAY fotos_base64 para procesar', [
+                    'prenda_id' => $prenda->id,
+                    'keys_disponibles' => array_keys($producto)
+                ]);
+            }
+            
+            // Procesar telas
+            $telasUrls = [];
+            if (!empty($producto['telas_base64'])) {
+                \Log::info('🧵 Procesando telas', [
+                    'cantidad' => count($producto['telas_base64']),
+                    'prenda_id' => $prenda->id,
+                    'primer_item_keys' => $producto['telas_base64'][0] ? array_keys((array)$producto['telas_base64'][0]) : []
+                ]);
+                
+                $telasUrls = $this->imagenProcesador->procesarMultiplesImagenes(
+                    $producto['telas_base64'],
+                    'tela',
+                    $prenda->id
+                );
+                
+                \Log::info('✅ Telas procesadas', [
+                    'cantidad' => count($telasUrls),
+                    'urls' => $telasUrls
+                ]);
+            } else {
+                \Log::warning('⚠️ NO HAY telas_base64 para procesar', [
+                    'prenda_id' => $prenda->id,
+                    'keys_disponibles' => array_keys($producto)
+                ]);
+            }
+            
+            // Actualizar prenda con URLs
+            if (!empty($fotosUrls) || !empty($telasUrls)) {
+                \Log::info('💾 Guardando URLs en prenda', [
+                    'prenda_id' => $prenda->id,
+                    'fotos_count' => count($fotosUrls),
+                    'telas_count' => count($telasUrls)
+                ]);
+                
+                $prenda->update([
+                    'fotos' => $fotosUrls,
+                    'telas' => $telasUrls
+                ]);
+                
+                \Log::info('✅ URLs guardadas en prenda', [
+                    'prenda_id' => $prenda->id,
+                    'fotos_count' => count($fotosUrls),
+                    'telas_count' => count($telasUrls)
+                ]);
+            } else {
+                \Log::warning('⚠️ No hay URLs procesadas para guardar', [
+                    'prenda_id' => $prenda->id
+                ]);
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('❌ Error procesando imágenes Base64', [
+                'prenda_id' => $prenda->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // No lanzar excepción, continuar sin imágenes
+        }
+    }
+
 
     /**
      * Guardar variantes de una prenda
@@ -139,14 +266,22 @@ class PrendaService
                 'cantidad_talla' => $prenda->tallas ? json_encode($prenda->tallas) : null
             ];
             
-            // Procesar color
+            // Procesar color - NORMALIZAR capitalización
             if (isset($variantes['color']) && !empty($variantes['color'])) {
-                $datosVariante['color_nombre'] = $variantes['color'];
+                $nombreColor = ucfirst(strtolower(trim($variantes['color']))); // Ej: "rojo" → "Rojo"
+                $datosVariante['color_nombre'] = $nombreColor;
                 
-                $color = \App\Models\ColorPrenda::firstOrCreate(
-                    ['nombre' => $variantes['color']],
-                    ['nombre' => $variantes['color']]
-                );
+                $color = \App\Models\ColorPrenda::whereRaw('LOWER(nombre) = ?', [strtolower($nombreColor)])
+                    ->first();
+                
+                if (!$color) {
+                    $color = \App\Models\ColorPrenda::create(['nombre' => $nombreColor]);
+                    \Log::info('✅ Color creado automáticamente', [
+                        'id' => $color->id,
+                        'nombre' => $color->nombre
+                    ]);
+                }
+                
                 $datosVariante['color_id'] = $color->id;
             }
             
@@ -177,14 +312,21 @@ class PrendaService
                 }
             }
             
-            // Procesar tela
+            // Procesar tela - NORMALIZAR capitalización
             if (isset($variantes['tela']) && !empty($variantes['tela'])) {
-                $datosVariante['tela_nombre'] = $variantes['tela'];
+                $nombreTela = ucfirst(strtolower(trim($variantes['tela']))); // Ej: "algodón" → "Algodón"
+                $datosVariante['tela_nombre'] = $nombreTela;
                 
-                $tela = \App\Models\TelaPrenda::firstOrCreate(
-                    ['nombre' => $variantes['tela']],
-                    ['nombre' => $variantes['tela']]
-                );
+                $tela = \App\Models\TelaPrenda::whereRaw('LOWER(nombre) = ?', [strtolower($nombreTela)])
+                    ->first();
+                
+                if (!$tela) {
+                    $tela = \App\Models\TelaPrenda::create(['nombre' => $nombreTela]);
+                    \Log::info('✅ Tela creada automáticamente', [
+                        'id' => $tela->id,
+                        'nombre' => $tela->nombre
+                    ]);
+                }
                 
                 $datosVariante['tela_id'] = $tela->id;
             }
@@ -214,7 +356,8 @@ class PrendaService
                     'variantes_keys' => array_keys($variantes)
                 ]);
                 
-                $manga = \App\Models\TipoManga::where('nombre', $variantes['tipo_manga_id'])
+                // Buscar case-insensitive
+                $manga = \App\Models\TipoManga::whereRaw('LOWER(nombre) = ?', [strtolower($variantes['tipo_manga_id'])])
                     ->orWhere('id', $variantes['tipo_manga_id'])
                     ->first();
                 
@@ -255,7 +398,8 @@ class PrendaService
             
             // Procesar broche
             if (isset($variantes['tipo_broche_id']) && !empty($variantes['tipo_broche_id'])) {
-                $broche = \App\Models\TipoBroche::where('nombre', $variantes['tipo_broche_id'])
+                // Buscar case-insensitive
+                $broche = \App\Models\TipoBroche::whereRaw('LOWER(nombre) = ?', [strtolower($variantes['tipo_broche_id'])])
                     ->orWhere('id', $variantes['tipo_broche_id'])
                     ->first();
                 
@@ -292,6 +436,9 @@ class PrendaService
             // Procesar observaciones
             $observacionesArray = [];
             
+            if (isset($variantes['obs_manga']) && !empty($variantes['obs_manga'])) {
+                $observacionesArray[] = "Manga: {$variantes['obs_manga']}";
+            }
             if (isset($variantes['obs_bolsillos']) && !empty($variantes['obs_bolsillos'])) {
                 $observacionesArray[] = "Bolsillos: {$variantes['obs_bolsillos']}";
             }

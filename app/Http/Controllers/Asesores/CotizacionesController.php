@@ -256,10 +256,12 @@ class CotizacionesController extends Controller
             
             $validado = $request->validated();
             
-            \Log::info('Datos validados en guardar', [
+            \Log::info('📥 Datos VALIDADOS en guardar:', [
                 'keys' => array_keys($validado),
-                'tipo' => $validado['tipo'] ?? null,
-                'cliente' => $validado['cliente'] ?? null
+                'productos_count' => count($validado['productos'] ?? []),
+                'primer_producto_keys' => isset($validado['productos'][0]) ? array_keys($validado['productos'][0]) : [],
+                'primer_producto_tiene_fotos_base64' => isset($validado['productos'][0]['fotos_base64']) ? 'SI' : 'NO',
+                'primer_producto_fotos_base64_count' => count($validado['productos'][0]['fotos_base64'] ?? [])
             ]);
             
             // Procesar inputs usando FormatterService
@@ -316,6 +318,9 @@ class CotizacionesController extends Controller
             
             // Crear logo/LOGO
             $this->cotizacionService->crearLogoCotizacion($cotizacion, $datosFormulario);
+            
+            // 📸 PROCESAR IMÁGENES DEL FormData (si existen archivos uploadados)
+            $this->procesarImagenesDesdeFormData($request, $cotizacion, $datosFormulario);
             
             \Log::info('Cotización completada', ['id' => $cotizacion->id, 'tipo' => $tipo]);
             
@@ -848,6 +853,157 @@ class CotizacionesController extends Controller
             'tipos' => $tipos,
             'estados' => $estados
         ]);
+    }
+
+    /**
+     * Procesar imágenes desde FormData uploadadas en el formulario
+     * 
+     * Busca archivos en el request con estructura:
+     * - productos[0][fotos][0]
+     * - productos[0][telas][0]
+     * - productos[1][fotos][0]
+     * etc.
+     * 
+     * @param \Illuminate\Http\Request $request
+     * @param \App\Models\Cotizacion $cotizacion
+     * @param array $datosFormulario
+     * @return void
+     */
+    private function procesarImagenesDesdeFormData(
+        \Illuminate\Http\Request $request,
+        Cotizacion $cotizacion,
+        array $datosFormulario
+    ): void {
+        try {
+            $totalImagenes = 0;
+            $totalProcesadas = 0;
+            
+            // Obtener prendas creadas
+            $prendas = $cotizacion->prendasCotizaciones;
+            if (!$prendas || $prendas->isEmpty()) {
+                \Log::info('No hay prendas para procesar imágenes');
+                return;
+            }
+            
+            \Log::info('🖼️ Iniciando procesamiento de imágenes desde FormData', [
+                'cotizacion_id' => $cotizacion->id,
+                'cantidad_prendas' => count($prendas),
+                'cantidad_productos' => count($datosFormulario['productos'] ?? [])
+            ]);
+            
+            // Obtener los productos del request (que contienen los archivos)
+            $productosDelRequest = $request->input('productos', []);
+            
+            // Iterar sobre cada producto/prenda
+            foreach ($productosDelRequest as $index => $producto) {
+                if (!isset($prendas[$index])) {
+                    \Log::warning('Prenda no encontrada en índice', ['index' => $index]);
+                    continue;
+                }
+                
+                $prenda = $prendas[$index];
+                
+                // PROCESAR FOTOS DE PRENDA
+                $fotos = $request->file("productos.{$index}.fotos", []);
+                if (!empty($fotos)) {
+                    // Convertir un solo archivo a array si es necesario
+                    if ($fotos instanceof \Illuminate\Http\UploadedFile) {
+                        $fotos = [$fotos];
+                    }
+                    
+                    \Log::info('📸 Guardando fotos de prenda', [
+                        'prenda_index' => $index,
+                        'cantidad' => count($fotos),
+                        'prenda_id' => $prenda->id
+                    ]);
+                    
+                    // Guardar las fotos usando el servicio
+                    $rutasGuardadas = $this->imagenService->guardarMultiples(
+                        $cotizacion->id,
+                        $fotos,
+                        'prenda'
+                    );
+                    
+                    // Actualizar la prenda con las rutas guardadas
+                    if (!empty($rutasGuardadas)) {
+                        $fotosActuales = $prenda->fotos ?? [];
+                        if (!is_array($fotosActuales)) {
+                            $fotosActuales = [];
+                        }
+                        
+                        $prenda->update([
+                            'fotos' => array_merge($fotosActuales, $rutasGuardadas)
+                        ]);
+                        
+                        $totalProcesadas += count($rutasGuardadas);
+                        $totalImagenes += count($fotos);
+                        
+                        \Log::info('✅ Fotos guardadas en prenda', [
+                            'prenda_id' => $prenda->id,
+                            'cantidad' => count($rutasGuardadas),
+                            'total_fotos' => count($prenda->fotos)
+                        ]);
+                    }
+                }
+                
+                // PROCESAR TELAS
+                $telas = $request->file("productos.{$index}.telas", []);
+                if (!empty($telas)) {
+                    // Convertir un solo archivo a array si es necesario
+                    if ($telas instanceof \Illuminate\Http\UploadedFile) {
+                        $telas = [$telas];
+                    }
+                    
+                    \Log::info('🧵 Guardando telas de prenda', [
+                        'prenda_index' => $index,
+                        'cantidad' => count($telas),
+                        'prenda_id' => $prenda->id
+                    ]);
+                    
+                    // Guardar las telas usando el servicio
+                    $rutasGuardadas = $this->imagenService->guardarMultiples(
+                        $cotizacion->id,
+                        $telas,
+                        'tela'
+                    );
+                    
+                    // Actualizar la prenda con las rutas guardadas
+                    if (!empty($rutasGuardadas)) {
+                        $telasActuales = $prenda->telas ?? [];
+                        if (!is_array($telasActuales)) {
+                            $telasActuales = [];
+                        }
+                        
+                        $prenda->update([
+                            'telas' => array_merge($telasActuales, $rutasGuardadas)
+                        ]);
+                        
+                        $totalProcesadas += count($rutasGuardadas);
+                        $totalImagenes += count($telas);
+                        
+                        \Log::info('✅ Telas guardadas en prenda', [
+                            'prenda_id' => $prenda->id,
+                            'cantidad' => count($rutasGuardadas),
+                            'total_telas' => count($prenda->telas)
+                        ]);
+                    }
+                }
+            }
+            
+            \Log::info('🎉 Procesamiento de imágenes completado', [
+                'cotizacion_id' => $cotizacion->id,
+                'total_imagenes_encontradas' => $totalImagenes,
+                'total_imagenes_procesadas' => $totalProcesadas
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('❌ Error procesando imágenes desde FormData', [
+                'cotizacion_id' => $cotizacion->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            // No lanzar excepción - las imágenes son opcionales
+        }
     }
 }
 

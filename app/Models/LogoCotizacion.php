@@ -11,6 +11,7 @@ class LogoCotizacion extends Model
 
     protected $fillable = [
         'cotizacion_id',
+        'descripcion',
         'imagenes',
         'tecnicas',
         'observaciones_tecnicas',

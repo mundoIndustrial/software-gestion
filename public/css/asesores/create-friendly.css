@@ -19,6 +19,7 @@
     padding: 0.28rem 0.8rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
     flex-shrink: 0;
+    overflow-x: auto;
 }
 
 .stepper {
@@ -28,6 +29,7 @@
     gap: 0.72rem;
     max-width: 1200px;
     margin: 0 auto;
+    min-width: min-content;
 }
 
 .step {
@@ -1947,4 +1949,463 @@ background: #ffc107;
 .form-step[data-step="3"] i[style*="font-size: 1.5rem"],
 .form-step[data-step="4"] i[style*="font-size: 1.5rem"] {
     font-size: 1.2rem !important;
+}
+
+/* ============ RESPONSIVE MEDIA QUERIES ============ */
+
+/* MOBILE: 320px - 767px */
+@media (max-width: 767px) {
+    .friendly-form-fullscreen {
+        padding: 0;
+        margin: 0;
+    }
+    
+    .stepper-container {
+        padding: 0.4rem 0.4rem;
+        overflow-x: auto;
+    }
+    
+    .stepper {
+        gap: 0.4rem;
+        justify-content: flex-start;
+    }
+    
+    .step {
+        min-width: auto;
+        flex-shrink: 0;
+        padding: 0.2rem;
+    }
+    
+    .step-number {
+        width: 24px;
+        height: 24px;
+        font-size: 0.6rem;
+    }
+    
+    .step-label {
+        font-size: 0.45rem;
+        min-width: 35px;
+        word-break: break-word;
+    }
+    
+    .step-line {
+        max-width: 40px;
+    }
+    
+    .friendly-form {
+        margin: 0.4rem;
+        border-radius: 6px;
+    }
+    
+    .form-step {
+        padding: 0.8rem;
+    }
+    
+    .step-header h2 {
+        font-size: 0.75rem;
+    }
+    
+    .step-header p {
+        font-size: 0.5rem;
+    }
+    
+    .form-group-large {
+        margin-bottom: 0.6rem;
+    }
+    
+    .form-group-large label {
+        font-size: 0.65rem;
+    }
+    
+    .input-large,
+    .input-medium {
+        padding: 0.4rem;
+        font-size: 0.62rem;
+        width: 100%;
+    }
+    
+    textarea {
+        font-size: 0.62rem !important;
+        padding: 0.4rem !important;
+        width: 100%;
+    }
+    
+    .btn-next,
+    .btn-prev,
+    .btn-submit {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.65rem;
+        width: auto;
+        flex: 1;
+    }
+    
+    .form-actions {
+        gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+    
+    .form-actions > div {
+        display: flex;
+        gap: 0.4rem;
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .producto-card {
+        margin-bottom: 0.8rem;
+    }
+    
+    .producto-header {
+        gap: 0.4rem;
+        flex-wrap: wrap;
+    }
+    
+    .producto-titulo {
+        font-size: 0.7rem;
+    }
+    
+    .prenda-search-container {
+        width: 100%;
+    }
+    
+    .prenda-suggestions {
+        width: 100%;
+        max-height: 120px;
+        z-index: 100;
+    }
+    
+    .prenda-suggestion-item {
+        padding: 0.5rem;
+        font-size: 0.65rem;
+    }
+    
+    /* Responsive table */
+    table {
+        font-size: 0.6rem !important;
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    table th,
+    table td {
+        padding: 0.4rem 0.3rem !important;
+    }
+    
+    table thead {
+        display: none;
+    }
+    
+    table tr {
+        display: block;
+        margin-bottom: 0.8rem;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+    }
+    
+    table td {
+        display: block;
+        text-align: left;
+        padding: 0.4rem !important;
+        border: none;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    table td:last-child {
+        border-bottom: none;
+    }
+    
+    table td:before {
+        content: attr(data-label);
+        font-weight: 600;
+        display: inline-block;
+        min-width: 100px;
+        color: #0066cc;
+    }
+    
+    .color-input,
+    .tela-input,
+    .referencia-input {
+        font-size: 0.62rem !important;
+        width: 100%;
+    }
+    
+    .color-suggestions,
+    .tela-suggestions,
+    .manga-suggestions {
+        max-height: 120px;
+        font-size: 0.62rem;
+        width: 100%;
+    }
+    
+    .talla-tipo-select,
+    .talla-genero-select,
+    .talla-modo-select,
+    .talla-desde,
+    .talla-hasta {
+        max-width: 100% !important;
+        font-size: 0.62rem;
+        padding: 0.4rem 0.6rem;
+        margin-bottom: 0.3rem;
+        width: 100%;
+    }
+    
+    .talla-rango-selectors {
+        flex-wrap: wrap;
+        width: 100%;
+    }
+    
+    .talla-botones {
+        display: flex !important;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+    }
+    
+    .talla-btn {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.6rem;
+    }
+    
+    .btn-toggle-product,
+    .btn-remove-product {
+        font-size: 1rem !important;
+    }
+    
+    /* Botón flotante responsivo */
+    div[style*="position: fixed; bottom: 30px; right: 30px"] {
+        bottom: 20px !important;
+        right: 20px !important;
+    }
+    
+    #btnFlotante {
+        width: 48px !important;
+        height: 48px !important;
+        font-size: 1.4rem !important;
+    }
+    
+    #menuFlotante {
+        right: 0 !important;
+        width: 150px;
+        min-width: 150px;
+    }
+    
+    /* Modal responsivo */
+    #modalEspecificaciones {
+        padding: 0.5rem;
+    }
+    
+    #modalEspecificaciones > div {
+        width: 95% !important;
+        max-height: 80vh !important;
+        padding: 1rem !important;
+    }
+    
+    .modal-especificaciones {
+        padding: 0.5rem !important;
+    }
+    
+    /* Campos de archivo drag-drop */
+    label[style*="display: block; min-height: 80px"],
+    label[style*="min-height: 80px"] {
+        min-height: 60px !important;
+        padding: 0.5rem !important;
+    }
+    
+    label[style*="display: block; min-height: 60px"],
+    label[style*="min-height: 60px"] {
+        min-height: 50px !important;
+    }
+    
+    /* Selectores de tipo de venta y técnicas */
+    div[style*="background: linear-gradient(135deg, #0066cc"] {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 0.5rem !important;
+    }
+    
+    div[style*="background: linear-gradient(135deg, #0066cc"] select {
+        width: 100% !important;
+        max-width: none !important;
+    }
+    
+    div[style*="background: linear-gradient(135deg, #0066cc"] label {
+        width: 100%;
+    }
+    
+    /* Help text */
+    .help-text {
+        font-size: 0.55rem !important;
+    }
+    
+    /* Grillas adaptables */
+    div[style*="display: flex; gap"] {
+        flex-wrap: wrap;
+    }
+    
+    div[style*="display: grid"] {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+    }
+}
+
+/* TABLET: 768px - 1023px */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .stepper-container {
+        padding: 0.3rem 0.6rem;
+    }
+    
+    .stepper {
+        gap: 0.6rem;
+    }
+    
+    .step-number {
+        width: 22px;
+        height: 22px;
+        font-size: 0.55rem;
+    }
+    
+    .step-label {
+        font-size: 0.48rem;
+        min-width: 40px;
+    }
+    
+    .friendly-form {
+        margin: 0.5rem;
+    }
+    
+    .form-step {
+        padding: 1rem;
+    }
+    
+    .form-group-large label {
+        font-size: 0.68rem;
+    }
+    
+    .input-large,
+    .input-medium {
+        padding: 0.44rem;
+        font-size: 0.65rem;
+    }
+    
+    .form-actions {
+        gap: 0.5rem;
+    }
+    
+    .btn-next,
+    .btn-prev,
+    .btn-submit {
+        padding: 0.5rem;
+        font-size: 0.62rem;
+    }
+    
+    /* Selectores de tipo de venta */
+    div[style*="background: linear-gradient(135deg, #0066cc"] {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+    
+    div[style*="background: linear-gradient(135deg, #0066cc"] select {
+        max-width: 250px;
+    }
+    
+    /* Grid de variaciones */
+    div[style*="display: grid; grid-template-columns: repeat"] {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+    }
+    
+    /* Tabla horizontal en tablet */
+    table {
+        font-size: 0.65rem;
+    }
+    
+    table th,
+    table td {
+        padding: 0.5rem 0.4rem;
+    }
+}
+
+/* DESKTOP: 1024px+ */
+@media (min-width: 1024px) {
+    .friendly-form-fullscreen {
+        padding: 0;
+    }
+    
+    .stepper-container {
+        padding: 0.28rem 0.8rem;
+    }
+    
+    .friendly-form {
+        margin: 0.6rem;
+    }
+    
+    .form-step {
+        padding: 1.2rem 1.52rem;
+    }
+    
+    table th,
+    table td {
+        padding: 0.6rem 0.8rem;
+    }
+}
+
+/* ============ UTILITY RESPONSIVE CLASSES ============ */
+
+/* Hace que divs con display: flex sean responsive */
+@media (max-width: 767px) {
+    [style*="display: flex"] {
+        flex-direction: column;
+    }
+    
+    [style*="display: flex; gap"],
+    [style*="display: flex;"][style*="gap"] {
+        flex-wrap: wrap;
+    }
+}
+
+/* Hace que las filas de formulario sean responsive */
+.form-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 767px) {
+    .form-row {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
+/* Contenedor de producto */
+.producto-body > div {
+    width: 100%;
+}
+
+@media (max-width: 767px) {
+    .producto-section {
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+    }
+    
+    .section-title {
+        font-size: 0.7rem;
+        margin-bottom: 0.75rem;
+    }
+}
+
+/* DESKTOP: 1024px+ */
+@media (min-width: 1024px) {
+    .friendly-form-fullscreen {
+        padding: 0;
+    }
+    
+    .stepper-container {
+        padding: 0.28rem 0.8rem;
+    }
+    
+    .friendly-form {
+        margin: 0.6rem;
+    }
+    
+    .form-step {
+        padding: 1.2rem 1.52rem;
+    }
 }

@@ -30,12 +30,14 @@ function actualizarSelectTallas(select) {
     botonesDiv.innerHTML = '';
     tallaBotones.style.display = 'none';
     tallaRangoSelectors.style.display = 'none';
-    if (generoSelect) generoSelect.style.display = 'none';
+    if (generoSelect) {
+        generoSelect.style.display = 'none';
+        generoSelect.value = '';  // RESETEAR GÉNERO
+    }
     modoSelect.style.display = 'none';
-    if (generoSelect) generoSelect.value = '';
     // IMPORTANTE: Resetear el modoSelect para evitar conflictos entre tipos
     modoSelect.value = '';
-    console.log('✅ Todo limpiado y ocultado (modoSelect reseteado)');
+    console.log('✅ Todo limpiado y ocultado (generoSelect y modoSelect reseteados)');
     
     if (tipo === 'letra') {
         console.log('📝 Mostrando selector de GÉNERO para LETRAS');

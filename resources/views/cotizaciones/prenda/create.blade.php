@@ -673,20 +673,20 @@
                                 <!-- MANGA -->
                                 <tr style="border-bottom: 1px solid #eee; background-color: #fafafa;">
                                     <td style="padding: 14px 12px; text-align: center; border-right: 1px solid #eee;">
-                                        <input type="checkbox" name="productos_prenda[][variantes][aplica_manga]" value="1" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
+                                        <input type="checkbox" name="productos_prenda[][variantes][tiene_manga]" value="1" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
                                     </td>
                                     <td style="padding: 14px 12px; border-right: 1px solid #eee; font-weight: 600; color: #0066cc; white-space: nowrap;">
                                         <i class="fas fa-shirt"></i> Manga
                                     </td>
                                     <td style="padding: 14px 12px; display: flex; gap: 8px;">
-                                        <select name="productos_prenda[][variantes][tipo_manga]" style="flex: 1; padding: 8px 12px; border: 1px solid #0066cc; border-radius: 4px; font-size: 0.9rem; background-color: white; color: #0066cc; font-weight: 600; cursor: pointer;">
+                                        <select name="productos_prenda[][variantes][tipo_manga_id]" style="flex: 1; padding: 8px 12px; border: 1px solid #0066cc; border-radius: 4px; font-size: 0.9rem; background-color: white; color: #0066cc; font-weight: 600; cursor: pointer;">
                                             <option value="">Selecciona tipo...</option>
-                                            <option value="CORTA">CORTA</option>
-                                            <option value="LARGA">LARGA</option>
+                                            <option value="Corta">Corta</option>
+                                            <option value="Larga">Larga</option>
                                             <option value="3/4">3/4</option>
-                                            <option value="RAGLAN">RAGLAN</option>
-                                            <option value="CAMPANA">CAMPANA</option>
-                                            <option value="OTRA">OTRA</option>
+                                            <option value="Raglan">Raglan</option>
+                                            <option value="Campana">Campana</option>
+                                            <option value="Otra">Otra</option>
                                         </select>
                                         <input type="text" name="productos_prenda[][variantes][obs_manga]" placeholder="Observaciones..." style="flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box;">
                                     </td>
@@ -695,7 +695,7 @@
                                 <!-- BOLSILLOS -->
                                 <tr style="border-bottom: 1px solid #eee; background-color: white;">
                                     <td style="padding: 14px 12px; text-align: center; border-right: 1px solid #eee;">
-                                        <input type="checkbox" name="productos_prenda[][variantes][aplica_bolsillos]" value="1" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
+                                        <input type="checkbox" name="productos_prenda[][variantes][tiene_bolsillos]" value="1" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
                                     </td>
                                     <td style="padding: 14px 12px; border-right: 1px solid #eee; font-weight: 600; color: #0066cc; white-space: nowrap;">
                                         <i class="fas fa-square"></i> Bolsillos
@@ -708,7 +708,7 @@
                                 <!-- BROCHE/BOTÓN -->
                                 <tr style="border-bottom: 1px solid #eee; background-color: #fafafa;">
                                     <td style="padding: 14px 12px; text-align: center; border-right: 1px solid #eee;">
-                                        <input type="checkbox" name="productos_prenda[][variantes][aplica_broche]" value="1" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
+                                        <input type="checkbox" name="productos_prenda[][variantes][tiene_broche]" value="1" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
                                     </td>
                                     <td style="padding: 14px 12px; border-right: 1px solid #eee; font-weight: 600; color: #0066cc; white-space: nowrap;">
                                         <i class="fas fa-link"></i> Broche/Botón
@@ -717,8 +717,8 @@
                                         <div style="display: flex; gap: 8px; align-items: center;">
                                             <select name="productos_prenda[][variantes][tipo_broche_id]" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; background-color: white; cursor: pointer; transition: border-color 0.2s;">
                                                 <option value="">Seleccionar...</option>
-                                                <option value="1">Broche</option>
-                                                <option value="2">Botón</option>
+                                                <option value="Broche">Broche</option>
+                                                <option value="Botón">Botón</option>
                                             </select>
                                             <input type="text" name="productos_prenda[][variantes][obs_broche]" placeholder="Ej: Botones de madera..." style="flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box;">
                                         </div>
@@ -728,7 +728,7 @@
                                 <!-- REFLECTIVO -->
                                 <tr style="border-bottom: 1px solid #eee; background-color: white;">
                                     <td style="padding: 14px 12px; text-align: center; border-right: 1px solid #eee;">
-                                        <input type="checkbox" name="productos_prenda[][variantes][aplica_reflectivo]" value="1" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
+                                        <input type="checkbox" name="productos_prenda[][variantes][tiene_reflectivo]" value="1" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
                                     </td>
                                     <td style="padding: 14px 12px; border-right: 1px solid #eee; font-weight: 600; color: #0066cc; white-space: nowrap;">
                                         <i class="fas fa-star"></i> Reflectivo
@@ -1291,9 +1291,15 @@ function guardarCotizacionPrenda(action) {
     
     console.log('=== FormData FINAL A ENVIAR ===');
     for (let pair of formData.entries()) {
-        console.log(`${pair[0]}: ${pair[1]}`);
+        if (typeof pair[1] === 'string' && pair[1].length > 100) {
+            console.log(`${pair[0]}: ${pair[1].substring(0, 100)}... (truncado)`);
+        } else {
+            console.log(`${pair[0]}: ${pair[1]}`);
+        }
     }
 
+    console.log('🚀 ENVIANDO FormData AL SERVIDOR...');
+    
     fetch('{{ route("asesores.cotizaciones.guardar") }}', {
         method: 'POST',
         body: formData,
@@ -1301,20 +1307,48 @@ function guardarCotizacionPrenda(action) {
             'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('📡 RESPUESTA DEL SERVIDOR:', response.status);
+        return response.json();
+    })
     .then(data => {
+        console.log('📥 DATOS RESPUESTA:', data);
         if (data.success) {
+            console.log('✅ COTIZACIÓN GUARDADA EXITOSAMENTE');
             alert(data.message);
             if (data.redirect) {
                 window.location.href = data.redirect;
             }
         } else {
-            alert('Error: ' + (data.message || 'Error desconocido'));
+            console.error('❌ ERROR EN RESPUESTA:', data.message);
+            console.error('🔴 ERRORES COMPLETOS:', data.errors || data.validation_errors);
+            
+            // Mostrar todos los errores de validación
+            if (data.errors) {
+                let mensajeErrores = 'Errores de validación:\n\n';
+                for (let campo in data.errors) {
+                    mensajeErrores += `${campo}:\n`;
+                    if (Array.isArray(data.errors[campo])) {
+                        data.errors[campo].forEach(error => {
+                            mensajeErrores += `  - ${error}\n`;
+                        });
+                    } else {
+                        mensajeErrores += `  - ${data.errors[campo]}\n`;
+                    }
+                }
+                console.error('📋 DETALLES:', mensajeErrores);
+                alert(mensajeErrores);
+            } else if (data.validation_errors) {
+                console.error('Errores de validación:', data.validation_errors);
+                alert('Error: ' + (data.message || 'Error desconocido'));
+            } else {
+                alert('Error: ' + (data.message || 'Error desconocido'));
+            }
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('Error al procesar la solicitud');
+        console.error('❌ ERROR EN FETCH:', error);
+        alert('Error al procesar la solicitud: ' + error.message);
     });
 }
 

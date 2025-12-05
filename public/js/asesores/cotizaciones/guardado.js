@@ -47,11 +47,30 @@ async function guardarCotizacion() {
         return;
     }
     
-    // Validar que tipo_cotizacion esté seleccionado
-    const tipoCotizacionSelect = document.getElementById('tipo_cotizacion');
-    const tipoCotizacion = tipoCotizacionSelect ? tipoCotizacionSelect.value : '';
+    // 📸 Procesar imágenes a Base64
+    console.log('🖼️ Procesando imágenes a Base64...');
+    try {
+        const datosConImagenes = await procesarImagenesABase64(datos);
+        console.log('✅ Imágenes procesadas correctamente');
+        Object.assign(datos, datosConImagenes);
+    } catch (error) {
+        console.error('❌ Error al procesar imágenes:', error);
+        Swal.fire({
+            title: 'Error al procesar imágenes',
+            text: 'No se pudieron convertir las imágenes. ' + error.message,
+            icon: 'error',
+            confirmButtonColor: '#1e40af'
+        });
+        if (btnGuardar) btnGuardar.disabled = false;
+        if (btnEnviar) btnEnviar.disabled = false;
+        return;
+    }
     
-    if (!tipoCotizacion) {
+    // Validar que tipo_venta esté seleccionado
+    const tipoVentaSelect = document.getElementById('tipo_venta');
+    const tipoVenta = tipoVentaSelect ? tipoVentaSelect.value : '';
+    
+    if (!tipoVenta) {
         Swal.fire({
             title: 'Tipo de cotización requerido',
             text: 'Por favor selecciona el tipo de cotización (M/D/X)',
@@ -85,7 +104,7 @@ async function guardarCotizacion() {
         const payloadEnvio = {
             tipo: 'borrador',
             cliente: datos.cliente,
-            tipo_venta: tipoCotizacion,
+            tipo_venta: tipoVenta,
             tipo_cotizacion: window.tipoCotizacionGlobal || 'P',
             productos: datos.productos,
             tecnicas: datos.tecnicas,
@@ -139,28 +158,7 @@ async function guardarCotizacion() {
         
         if (data.success && data.cotizacion_id) {
             console.log('✅ Cotización creada con ID:', data.cotizacion_id);
-            
-            // Contar imágenes: prendaConIndice, telaConIndice, y logo
-            const cantPrenda = window.imagenesEnMemoria.prendaConIndice ? window.imagenesEnMemoria.prendaConIndice.length : 0;
-            const cantTela = window.imagenesEnMemoria.telaConIndice ? window.imagenesEnMemoria.telaConIndice.length : 0;
-            const cantLogo = window.imagenesEnMemoria.logo ? window.imagenesEnMemoria.logo.length : 0;
-            const totalImagenes = cantPrenda + cantTela + cantLogo;
-            
-            console.log(`📸 Total imágenes: ${cantPrenda} prenda + ${cantTela} tela + ${cantLogo} logo = ${totalImagenes}`);
-            
-            if (totalImagenes > 0) {
-                console.log('📸 Subiendo', totalImagenes, 'imágenes...');
-                
-                if (cantPrenda > 0) {
-                    await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.prendaConIndice, 'prenda');
-                }
-                if (cantTela > 0) {
-                    await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.telaConIndice, 'tela');
-                }
-                if (cantLogo > 0) {
-                    await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.logo, 'logo');
-                }
-            }
+            console.log('✅ Imágenes procesadas y guardadas en el servidor');
             
             // ✅ LIMPIAR TODO DESPUÉS DEL GUARDADO EXITOSO
             if (typeof limpiarFormularioCompleto === 'function') {
@@ -184,18 +182,39 @@ async function guardarCotizacion() {
                 window.location.href = window.routes.cotizacionesIndex + '#borradores';
             }, 2000);
         } else {
+            // Construir mensaje de error detallado
+            let mensajeError = data.message || 'Error desconocido';
+            let htmlError = `<p>${mensajeError}</p>`;
+            
+            // Si hay errores de validación, mostrarlos
+            if (data.validation_errors) {
+                htmlError += '<div style="text-align: left; margin-top: 10px;">';
+                for (const [campo, errores] of Object.entries(data.validation_errors)) {
+                    if (Array.isArray(errores)) {
+                        errores.forEach(error => {
+                            htmlError += `<p style="margin: 5px 0; font-size: 0.9rem;"><strong>${campo}:</strong> ${error}</p>`;
+                        });
+                    }
+                }
+                htmlError += '</div>';
+            }
+            
+            console.error('❌ Error en la respuesta:', data);
+            
             Swal.fire({
-                title: 'Error',
-                text: 'Error al guardar: ' + (data.message || 'Error desconocido'),
+                title: 'Error al guardar',
+                html: htmlError,
                 icon: 'error',
-                confirmButtonColor: '#1e40af'
+                confirmButtonColor: '#1e40af',
+                width: '600px'
             });
         }
     } catch (error) {
         console.error('❌ Error en fetch:', error);
         Swal.fire({
-            title: 'Error',
-            text: 'Error al guardar la cotización: ' + error.message,
+            title: 'Error de conexión',
+            html: `<p>No se pudo completar la solicitud:</p>
+                   <p style="font-size: 0.9rem; color: #d32f2f; margin-top: 10px;">${error.message}</p>`,
             icon: 'error',
             confirmButtonColor: '#1e40af'
         });
@@ -269,6 +288,23 @@ async function enviarCotizacion() {
         return;
     }
     
+    // 📸 Procesar imágenes a Base64
+    console.log('🖼️ Procesando imágenes a Base64...');
+    try {
+        const datosConImagenes = await procesarImagenesABase64(datos);
+        console.log('✅ Imágenes procesadas correctamente');
+        Object.assign(datos, datosConImagenes);
+    } catch (error) {
+        console.error('❌ Error al procesar imágenes:', error);
+        Swal.fire({
+            title: 'Error al procesar imágenes',
+            text: 'No se pudieron convertir las imágenes. ' + error.message,
+            icon: 'error',
+            confirmButtonColor: '#1e40af'
+        });
+        return;
+    }
+    
     if (!datos.cliente.trim()) {
         Swal.fire({
             title: 'Campo requerido',
@@ -279,11 +315,11 @@ async function enviarCotizacion() {
         return;
     }
     
-    // Validar que el tipo de cotización esté seleccionado
-    const tipoCotizacionSelect = document.getElementById('tipo_cotizacion');
-    const tipoCotizacion = tipoCotizacionSelect ? tipoCotizacionSelect.value : '';
+    // Validar que el tipo de venta esté seleccionado
+    const tipoVentaSelect = document.getElementById('tipo_venta');
+    const tipoVenta = tipoVentaSelect ? tipoVentaSelect.value : '';
     
-    if (!tipoCotizacion) {
+    if (!tipoVenta) {
         Swal.fire({
             title: 'Tipo de cotización requerido',
             text: 'Por favor selecciona el tipo de cotización (M/D/X)',
@@ -405,16 +441,35 @@ async function procederEnviarCotizacion(datos) {
         showConfirmButton: false
     });
     
-    console.log('🔵 enviarCotizacion() llamado');
+    console.log('🔵 procederEnviarCotizacion() llamado');
     
-    // Obtener tipo de cotización
-    const tipoCotizacionSelect = document.getElementById('tipo_cotizacion');
-    const tipoCotizacion = tipoCotizacionSelect ? tipoCotizacionSelect.value : '';
+    // 📸 Procesar imágenes a Base64 ANTES de enviar
+    console.log('🖼️ Procesando imágenes a Base64...');
+    try {
+        const datosConImagenes = await procesarImagenesABase64(datos);
+        console.log('✅ Imágenes procesadas correctamente');
+        Object.assign(datos, datosConImagenes);
+    } catch (error) {
+        console.error('❌ Error al procesar imágenes:', error);
+        Swal.fire({
+            title: 'Error al procesar imágenes',
+            text: 'No se pudieron convertir las imágenes. ' + error.message,
+            icon: 'error',
+            confirmButtonColor: '#10b981'
+        });
+        if (btnGuardar) btnGuardar.disabled = false;
+        if (btnEnviar) btnEnviar.disabled = false;
+        return;
+    }
+    
+    // Obtener tipo de venta
+    const tipoVentaSelect = document.getElementById('tipo_venta');
+    const tipoVentaValue = tipoVentaSelect ? tipoVentaSelect.value : '';
     
     // Obtener especificaciones (puede ser objeto o array)
     const especificaciones = window.especificacionesSeleccionadas || {};
     
-    console.log('📋 Tipo de cotización:', tipoCotizacion);
+    console.log('📋 Tipo de venta:', tipoVenta);
     console.log('📋 Especificaciones guardadas en window:', window.especificacionesSeleccionadas);
     console.log('📋 Especificaciones a enviar:', especificaciones);
     console.log('📋 ¿Especificaciones vacías?', Object.keys(especificaciones).length === 0);
@@ -430,9 +485,9 @@ async function procederEnviarCotizacion(datos) {
     
     try {
         const payloadEnvio = {
-            tipo: 'enviada',
+            tipo: 'completa',
             cliente: datos.cliente,
-            tipo_venta: tipoCotizacion,
+            tipo_venta: tipoVenta,
             tipo_cotizacion: window.tipoCotizacionGlobal || 'P',
             productos: datos.productos,
             tecnicas: datos.tecnicas,
@@ -486,27 +541,8 @@ async function procederEnviarCotizacion(datos) {
         }
         
         if (data.success && data.cotizacion_id) {
-            console.log('✅ Cotización creada con ID:', data.cotizacion_id);
-            
-            // Contar imágenes: prendaConIndice, telaConIndice, y logo
-            const cantPrenda = window.imagenesEnMemoria.prendaConIndice ? window.imagenesEnMemoria.prendaConIndice.length : 0;
-            const cantTela = window.imagenesEnMemoria.telaConIndice ? window.imagenesEnMemoria.telaConIndice.length : 0;
-            const cantLogo = window.imagenesEnMemoria.logo ? window.imagenesEnMemoria.logo.length : 0;
-            const totalImagenes = cantPrenda + cantTela + cantLogo;
-            
-            console.log(`📸 Total imágenes: ${cantPrenda} prenda + ${cantTela} tela + ${cantLogo} logo = ${totalImagenes}`);
-            
-            if (totalImagenes > 0) {
-                if (cantPrenda > 0) {
-                    await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.prendaConIndice, 'prenda');
-                }
-                if (cantTela > 0) {
-                    await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.telaConIndice, 'tela');
-                }
-                if (cantLogo > 0) {
-                    await subirImagenesAlServidor(data.cotizacion_id, window.imagenesEnMemoria.logo, 'logo');
-                }
-            }
+            console.log('✅ Cotización enviada con ID:', data.cotizacion_id);
+            console.log('✅ Imágenes procesadas y guardadas en el servidor');
             
             // ✅ LIMPIAR TODO DESPUÉS DEL ENVÍO EXITOSO
             if (typeof limpiarFormularioCompleto === 'function') {
@@ -530,18 +566,39 @@ async function procederEnviarCotizacion(datos) {
                 window.location.href = window.routes.cotizacionesIndex + '#cotizaciones';
             }, 2000);
         } else {
+            // Construir mensaje de error detallado
+            let mensajeError = data.message || 'Error desconocido';
+            let htmlError = `<p>${mensajeError}</p>`;
+            
+            // Si hay errores de validación, mostrarlos
+            if (data.validation_errors) {
+                htmlError += '<div style="text-align: left; margin-top: 10px;">';
+                for (const [campo, errores] of Object.entries(data.validation_errors)) {
+                    if (Array.isArray(errores)) {
+                        errores.forEach(error => {
+                            htmlError += `<p style="margin: 5px 0; font-size: 0.9rem;"><strong>${campo}:</strong> ${error}</p>`;
+                        });
+                    }
+                }
+                htmlError += '</div>';
+            }
+            
+            console.error('❌ Error en la respuesta:', data);
+            
             Swal.fire({
-                title: 'Error',
-                text: 'Error al enviar: ' + (data.message || 'Error desconocido'),
+                title: 'Error al enviar',
+                html: htmlError,
                 icon: 'error',
-                confirmButtonColor: '#1e40af'
+                confirmButtonColor: '#1e40af',
+                width: '600px'
             });
         }
     } catch (error) {
         console.error('❌ Error en fetch:', error);
         Swal.fire({
-            title: 'Error',
-            text: 'Error al enviar la cotización: ' + error.message,
+            title: 'Error de conexión',
+            html: `<p>No se pudo completar la solicitud:</p>
+                   <p style="font-size: 0.9rem; color: #d32f2f; margin-top: 10px;">${error.message}</p>`,
             icon: 'error',
             confirmButtonColor: '#1e40af'
         });
@@ -573,17 +630,17 @@ function toggleAplicaPaso(paso, btn) {
     }
 }
 
-// ============ INICIALIZACIÓN DE VALIDACIÓN DE TIPO COTIZACIÓN ============
+// ============ INICIALIZACIÓN DE VALIDACIÓN DE TIPO DE VENTA ============
 
 document.addEventListener('DOMContentLoaded', function() {
     // Obtener elementos
-    const tipoCotizacionSelect = document.getElementById('tipo_cotizacion');
+    const tipoVentaSelect = document.getElementById('tipo_venta');
     const btnGuardar = document.querySelector('button[onclick="guardarCotizacion()"]');
     const btnEnviar = document.querySelector('button[onclick="enviarCotizacion()"]');
     
     // Función para actualizar estado de botones
     function actualizarEstadoBotones() {
-        const tipoSeleccionado = tipoCotizacionSelect && tipoCotizacionSelect.value;
+        const tipoSeleccionado = tipoVentaSelect && tipoVentaSelect.value;
         const deshabilitado = !tipoSeleccionado;
         
         if (btnGuardar) {
@@ -602,10 +659,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Deshabilitar botones inicialmente
-    if (tipoCotizacionSelect) {
+    if (tipoVentaSelect) {
         actualizarEstadoBotones();
         
         // Escuchar cambios en el select
-        tipoCotizacionSelect.addEventListener('change', actualizarEstadoBotones);
+        tipoVentaSelect.addEventListener('change', actualizarEstadoBotones);
     }
 });
