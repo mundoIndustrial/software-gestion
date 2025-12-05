@@ -41,7 +41,7 @@ class PedidoProduccion extends Model
 
     protected $casts = [
         'fecha_de_creacion_de_orden' => 'datetime',
-        'fecha_estimada_de_entrega' => 'date',
+        'fecha_estimada_de_entrega' => 'datetime',
     ];
 
     protected $appends = [

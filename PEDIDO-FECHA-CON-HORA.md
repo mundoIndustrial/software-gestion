@@ -48,7 +48,7 @@ fecha_de_creacion_de_orden: 2025-12-04 17:56:32
 
 3. **En reportes/PDFs**
    - Se puede formatear como se necesite
-   - Ejemplo: `$pedido->fecha_de_creacion_de_orden->format('d/m/Y H:i:s')`
+   - Ejemplo: `$pedido->fecha_de_creacion_de_orden->format('d/m/Y h:i:s A')`
 
 ## 📝 ARCHIVOS MODIFICADOS
 
@@ -84,13 +84,13 @@ SELECT fecha_de_creacion_de_orden FROM pedidos_produccion LIMIT 1;
 ```php
 $pedido = PedidoProduccion::first();
 echo $pedido->fecha_de_creacion_de_orden; // 2025-12-04 17:56:32
-echo $pedido->fecha_de_creacion_de_orden->format('d/m/Y H:i'); // 04/12/2025 17:56
+echo $pedido->fecha_de_creacion_de_orden->format('d/m/Y h:i A'); // 04/12/2025 05:56 PM
 ```
 
 ### En la vista:
 ```blade
-{{ $pedido->fecha_de_creacion_de_orden->format('d/m/Y H:i:s') }}
-<!-- Resultado: 04/12/2025 17:56:32 -->
+{{ $pedido->fecha_de_creacion_de_orden->format('d/m/Y h:i:s A') }}
+<!-- Resultado: 04/12/2025 05:56:32 PM -->
 ```
 
 ## 📅 Fecha: 4 de Diciembre de 2025

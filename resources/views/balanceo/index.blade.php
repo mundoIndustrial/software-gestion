@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('produccion.layout')
 
 @push('styles')
 <!-- Optimizaciones SOLO para módulo balanceo -->

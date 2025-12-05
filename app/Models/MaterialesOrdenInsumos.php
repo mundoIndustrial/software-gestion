@@ -23,11 +23,11 @@ class MaterialesOrdenInsumos extends Model
     ];
 
     protected $casts = [
-        'fecha_pedido' => 'date',
-        'fecha_llegada' => 'date',
-        'fecha_orden' => 'date',
-        'fecha_pago' => 'date',
-        'fecha_despacho' => 'date',
+        'fecha_pedido' => 'datetime',
+        'fecha_llegada' => 'datetime',
+        'fecha_orden' => 'datetime',
+        'fecha_pago' => 'datetime',
+        'fecha_despacho' => 'datetime',
         'recibido' => 'boolean',
     ];
 

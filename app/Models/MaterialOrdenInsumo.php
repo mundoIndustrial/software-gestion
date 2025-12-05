@@ -17,8 +17,8 @@ class MaterialOrdenInsumo extends Model
     ];
     
     protected $casts = [
-        'fecha_pedido' => 'date',
-        'fecha_llegada' => 'date',
+        'fecha_pedido' => 'datetime',
+        'fecha_llegada' => 'datetime',
         'recibido' => 'boolean',
     ];
     

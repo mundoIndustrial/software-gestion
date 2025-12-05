@@ -88,7 +88,29 @@ class TablerosController extends Controller
         // Preparar datos para la vista
         $viewData = $this->viewDataService->prepareIndexViewData(request());
         
-        return view('tableros', $viewData);
+        // Desempacar los datos para la vista
+        $data = [
+            'tables' => $viewData['tables'] ?? [],
+            'followup' => $viewData['followup'] ?? [],
+            'selects' => $viewData['selects'] ?? [],
+            'seguimientoProduccion' => $viewData['followup']['seguimientoProduccion'] ?? [],
+            'seguimientoPolos' => $viewData['followup']['seguimientoPolos'] ?? [],
+            'seguimientoCorte' => $viewData['followup']['seguimientoCorte'] ?? [],
+            'horasData' => $viewData['followup']['horasData'] ?? [],
+            'operariosData' => $viewData['followup']['operariosData'] ?? [],
+        ];
+        
+        // Agregar datos de tablas a nivel superior si existen
+        if (!empty($viewData['tables'])) {
+            $data = array_merge($data, $viewData['tables']);
+        }
+        
+        // Agregar datos de selects a nivel superior si existen
+        if (!empty($viewData['selects'])) {
+            $data = array_merge($data, $viewData['selects']);
+        }
+        
+        return view('tableros', $data);
     }
 
     public function store(Request $request)

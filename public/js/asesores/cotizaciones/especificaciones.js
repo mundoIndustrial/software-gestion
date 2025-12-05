@@ -102,7 +102,34 @@ function guardarEspecificaciones() {
     window.especificacionesSeleccionadas = especificaciones;
     console.log('✅ Especificaciones guardadas:', especificaciones);
     console.log('📊 Total categorías:', Object.keys(especificaciones).length);
+    
+    // ✅ ACTUALIZAR COLOR DEL BOTÓN ENVIAR
+    actualizarColorBotonEnviar();
+    
     cerrarModalEspecificaciones();
+}
+
+// ✅ FUNCIÓN PARA ACTUALIZAR COLOR DEL BOTÓN ENVIAR
+function actualizarColorBotonEnviar() {
+    const btnEnviar = document.querySelector('button[onclick="enviarCotizacion()"]');
+    if (!btnEnviar) return;
+    
+    const especificaciones = window.especificacionesSeleccionadas || {};
+    const tieneEspecificaciones = Object.keys(especificaciones).length > 0;
+    
+    if (tieneEspecificaciones) {
+        // Verde: tiene especificaciones
+        btnEnviar.style.background = '#10b981';
+        btnEnviar.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.4)';
+        btnEnviar.title = '✅ Especificaciones completadas - Listo para enviar';
+        console.log('✅ Botón ENVIAR en VERDE - Especificaciones completadas');
+    } else {
+        // Rojo: falta especificaciones
+        btnEnviar.style.background = '#ef4444';
+        btnEnviar.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.3)';
+        btnEnviar.title = '⚠️ Falta completar especificaciones';
+        console.log('🔴 Botón ENVIAR en ROJO - Falta completar especificaciones');
+    }
 }
 
 function agregarFilaEspecificacion(categoria) {
@@ -128,6 +155,13 @@ document.addEventListener('click', function(e) {
     if (e.target === modal) {
         cerrarModalEspecificaciones();
     }
+});
+
+// ✅ INICIALIZAR COLOR DEL BOTÓN AL CARGAR LA PÁGINA
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        actualizarColorBotonEnviar();
+    }, 500);
 });
 
 // ============ SECCIONES DE UBICACIÓN ============

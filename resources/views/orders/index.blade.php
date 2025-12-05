@@ -1,6 +1,9 @@
 @extends('layouts.app')
 
-@section('content')
+@section('title', 'Registro de Órdenes - MundoIndustrial')
+@section('page-title', 'Registro de Órdenes')
+
+@push('styles')
     <!-- Agregar referencia a FontAwesome para iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
         integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ=="
@@ -9,6 +12,9 @@
     <link rel="stylesheet" href="{{ asset('css/orders styles/dropdown-styles.css') }}">
     <link rel="stylesheet" href="{{ asset('css/orders styles/descripcion-prendas.css') }}">
     <link rel="stylesheet" href="{{ asset('css/viewButtonDropdown.css') }}">
+@endpush
+
+@section('content')
 
     <div class="table-container">
         <div class="table-header" id="tableHeader">
@@ -456,6 +462,9 @@
     <!-- Modal de Edición de Orden -->
     @include('components.orders-components.order-edit-modal')
 
+@endsection
+
+@push('scripts')
     <script>
         // DEBUG: Verificar estado de la tabla antes de cargar scripts
         console.log('%c=== DEBUG: ESTADO INICIAL DE LA TABLA ===', 'color: #ff0000; font-weight: bold; font-size: 16px;');
@@ -534,4 +543,5 @@
     <script src="{{ asset('js/orders js/historial-procesos.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/realtime-listeners.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders-scripts/image-gallery-zoom.js') }}?v={{ time() }}"></script>
-@endsection
+    </script>
+@endpush

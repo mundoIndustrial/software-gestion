@@ -26,7 +26,7 @@ class EntregaPedidoCorte extends Model
     ];
 
     protected $casts = [
-        'fecha_entrega' => 'date',
+        'fecha_entrega' => 'datetime',
         'cantidad_prendas' => 'integer',
         'piezas' => 'integer',
         'pasadas' => 'integer',

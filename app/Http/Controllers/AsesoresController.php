@@ -142,7 +142,18 @@ class AsesoresController extends Controller
 
         // Filtros
         if ($request->filled('estado')) {
-            $query->where('estado', $request->estado);
+            // Si el estado es "No iniciado", filtrar por pendientes de aprobación del supervisor
+            if ($request->estado === 'No iniciado') {
+                $query->where('estado', 'No iniciado')
+                      ->whereNull('aprobado_por_supervisor_en');
+            } 
+            // Si el estado es "En Ejecución", mostrar "No iniciado" y "En Ejecución"
+            elseif ($request->estado === 'En Ejecución') {
+                $query->whereIn('estado', ['No iniciado', 'En Ejecución']);
+            } 
+            else {
+                $query->where('estado', $request->estado);
+            }
         }
 
         if ($request->filled('search')) {

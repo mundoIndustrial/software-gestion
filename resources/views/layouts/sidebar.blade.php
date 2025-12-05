@@ -240,9 +240,11 @@
       <li class="menu-item">
         <a href="{{ route('cotizaciones.pendientes') }}"
            class="menu-link {{ request()->routeIs('cotizaciones.pendientes') ? 'active' : '' }}"
+           style="display:flex;align-items:center;gap:0.5rem;"
            aria-label="Ver cotizaciones">
           <span class="material-symbols-rounded" aria-hidden="true">receipt</span>
           <span class="menu-label">Cotizaciones</span>
+          <span class="badge-alert" id="cotizacionesPendientesAprobadorCount" style="display:none;">0</span>
         </a>
       </li>
       @endif

@@ -139,6 +139,7 @@ class ProduccionCalculadoraService extends BaseService
             foreach ($data['modulos'] as $modulo => &$modData) {
                 if ($modData['count'] > 0) {
                     $meta = $modData['meta_sum'];
+                    $modData['meta'] = $meta;
                     $modData['meta_promedio'] = $modData['count'] > 0 ? $meta / $modData['count'] : 0;
 
                     if ($meta > 0) {
@@ -150,6 +151,7 @@ class ProduccionCalculadoraService extends BaseService
                     // Calcular tiempo disponible
                     $modData['tiempo_disponible'] = $modData['porcion_tiempo_sum'] - $modData['tiempo_parada_no_programada_sum'];
                 } else {
+                    $modData['meta'] = 0;
                     $modData['eficiencia'] = 0;
                     $modData['meta_promedio'] = 0;
                     $modData['tiempo_disponible'] = 0;
@@ -163,6 +165,7 @@ class ProduccionCalculadoraService extends BaseService
         foreach ($totales['modulos'] as $modulo => &$modData) {
             if ($modData['count'] > 0) {
                 $meta = $modData['meta_sum'];
+                $modData['meta'] = $meta;
                 $modData['meta_promedio'] = $meta / $modData['count'];
 
                 if ($meta > 0) {
@@ -174,6 +177,7 @@ class ProduccionCalculadoraService extends BaseService
                 // Calcular tiempo disponible
                 $modData['tiempo_disponible'] = $modData['porcion_tiempo_sum'] - $modData['tiempo_parada_no_programada_sum'];
             } else {
+                $modData['meta'] = 0;
                 $modData['eficiencia'] = 0;
                 $modData['meta_promedio'] = 0;
                 $modData['tiempo_disponible'] = 0;
@@ -181,15 +185,13 @@ class ProduccionCalculadoraService extends BaseService
         }
         unset($modData);
 
-        // Ordenar módulos
-        ksort($dataPorHora);
-
         $this->log('Seguimiento de módulos calculado exitosamente', [
             'horas_unicas' => count($dataPorHora),
             'modulos_totales' => count($totales['modulos']),
         ]);
 
         return [
+            'modulosDisponibles' => $modulosDisponibles,
             'dataPorHora' => $dataPorHora,
             'totales' => $totales
         ];

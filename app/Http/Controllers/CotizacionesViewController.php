@@ -305,4 +305,31 @@ class CotizacionesViewController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Obtener contador de cotizaciones pendientes para aprobador
+     * Endpoint: GET /cotizaciones/pendientes-count
+     */
+    public function cotizacionesPendientesAprobadorCount()
+    {
+        try {
+            $count = Cotizacion::where('estado', 'ENVIADA_APROBADOR')->count();
+
+            return response()->json([
+                'success' => true,
+                'count' => $count,
+                'message' => $count > 0 ? "Hay $count cotización(es) pendiente(s) de aprobación" : 'No hay cotizaciones pendientes'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener contador de cotizaciones pendientes para aprobador', [
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'count' => 0,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

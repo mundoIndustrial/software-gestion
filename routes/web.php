@@ -188,6 +188,9 @@ Route::middleware(['auth'])->group(function () {
         
         return view('cotizaciones.pendientes', compact('cotizaciones'));
     })->name('cotizaciones.pendientes');
+
+    // Endpoint para obtener contador de cotizaciones pendientes
+    Route::get('/pendientes-count', [App\Http\Controllers\CotizacionesViewController::class, 'cotizacionesPendientesAprobadorCount'])->name('cotizaciones.pendientes-count');
 });
 
 // ========================================

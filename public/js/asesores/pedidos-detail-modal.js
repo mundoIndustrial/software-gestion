@@ -428,6 +428,16 @@ function closeModalOverlay() {
         modalWrapper.style.display = 'none';
     }
     
+    // ✅ Recargar filtros desde localStorage al cerrar modal
+    if (typeof loadFiltersFromLocalStorage === 'function') {
+        loadFiltersFromLocalStorage();
+        console.log('✅ Filtros recargados después de cerrar modal');
+        if (typeof applyTableFilters === 'function') {
+            applyTableFilters();
+            console.log('✅ Filtros reaplicados a la tabla');
+        }
+    }
+    
     // Notificar que el modal se cerró (sin causar recursión)
     const closeEvent = new CustomEvent('modal-closed', { detail: 'order-detail' });
     window.dispatchEvent(closeEvent);

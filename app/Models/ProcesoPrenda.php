@@ -26,8 +26,8 @@ class ProcesoPrenda extends Model
     ];
 
     protected $casts = [
-        'fecha_inicio' => 'date',
-        'fecha_fin' => 'date',
+        'fecha_inicio' => 'datetime',
+        'fecha_fin' => 'datetime',
     ];
 
     /**

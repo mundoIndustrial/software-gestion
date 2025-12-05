@@ -25,7 +25,7 @@ class EntregaBodegaCostura extends Model
     ];
 
     protected $casts = [
-        'fecha_entrega' => 'date',
+        'fecha_entrega' => 'datetime',
         'pedido' => 'integer',
         'cantidad_entregada' => 'integer',
     ];

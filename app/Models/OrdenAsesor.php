@@ -31,7 +31,7 @@ class OrdenAsesor extends Model
     ];
 
     protected $casts = [
-        'fecha_entrega' => 'date',
+        'fecha_entrega' => 'datetime',
         'monto_total' => 'decimal:2',
         'cantidad_prendas' => 'integer',
         'es_borrador' => 'boolean',

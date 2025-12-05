@@ -112,6 +112,61 @@
             background: #bdc3c7;
         }
 
+        /* ====================== FILTROS RÁPIDOS ====================== */
+        .filtros-rapidos-section {
+            background: white;
+            border-radius: var(--radius);
+            padding: 1rem 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filtros-rapidos-label {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            margin-right: 0.5rem;
+        }
+
+        .btn-filtro-rapido {
+            padding: 0.625rem 1.25rem;
+            border: 2px solid var(--border-color);
+            background: white;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+
+        .btn-filtro-rapido:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            background: rgba(52, 152, 219, 0.05);
+        }
+
+        .btn-filtro-rapido.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .btn-filtro-rapido .material-symbols-rounded {
+            font-size: 1.1rem;
+        }
+
         /* ====================== TABLA ====================== */
         .tabla-section {
             background: white;
@@ -868,6 +923,31 @@
         </form>
     </div>
 
+    <!-- Filtros Rápidos -->
+    <div class="filtros-rapidos-section">
+        <span class="filtros-rapidos-label">Filtrar por estado:</span>
+        <a href="{{ route('supervisor-pedidos.index', array_filter(array_merge(request()->query(), ['estado' => null]))) }}" class="btn-filtro-rapido {{ !request('estado') ? 'active' : '' }}">
+            <span class="material-symbols-rounded">home</span>
+            Todos
+        </a>
+        <a href="{{ route('supervisor-pedidos.index', array_merge(request()->query(), ['estado' => 'No iniciado'])) }}" class="btn-filtro-rapido {{ request('estado') === 'No iniciado' ? 'active' : '' }}">
+            <span class="material-symbols-rounded">schedule</span>
+            Pendientes
+        </a>
+        <a href="{{ route('supervisor-pedidos.index', array_merge(request()->query(), ['estado' => 'En Ejecución'])) }}" class="btn-filtro-rapido {{ request('estado') === 'En Ejecución' ? 'active' : '' }}">
+            <span class="material-symbols-rounded">build</span>
+            En ejecución
+        </a>
+        <a href="{{ route('supervisor-pedidos.index', array_merge(request()->query(), ['estado' => 'Entregado'])) }}" class="btn-filtro-rapido {{ request('estado') === 'Entregado' ? 'active' : '' }}">
+            <span class="material-symbols-rounded">check_circle</span>
+            Aprobados
+        </a>
+        <a href="{{ route('supervisor-pedidos.index', array_merge(request()->query(), ['estado' => 'Anulada'])) }}" class="btn-filtro-rapido {{ request('estado') === 'Anulada' ? 'active' : '' }}">
+            <span class="material-symbols-rounded">cancel</span>
+            Anulados
+        </a>
+    </div>
+
     <!-- Tabla de Órdenes -->
     <div class="tabla-section">
         <div class="tabla-header">
@@ -1092,7 +1172,7 @@
                     <button type="button" class="btn btn-secondary" onclick="cerrarModalAnulacion()">
                         Cancelar
                     </button>
-                    <button type="submit" class="btn btn-danger">
+                    <button type="submit" id="btnConfirmarAnulacion" class="btn btn-danger">
                         <span class="material-symbols-rounded">delete</span>
                         Confirmar Anulación
                     </button>
@@ -2240,7 +2320,10 @@
     // Contador de caracteres
     document.getElementById('motivoAnulacion')?.addEventListener('input', function() {
         document.getElementById('contadorActual').textContent = this.value.length;
-        document.getElementById('btnConfirmarAnulacion').disabled = this.value.length < 10 || this.value.length > 500;
+        const btnConfirmar = document.getElementById('btnConfirmarAnulacion');
+        if (btnConfirmar) {
+            btnConfirmar.disabled = this.value.length < 10 || this.value.length > 500;
+        }
     });
 
     // Cerrar modales al hacer clic fuera

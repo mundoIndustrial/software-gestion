@@ -9,6 +9,355 @@
     .top-nav {
         display: none !important;
     }
+
+    /* ====================== FILTROS RÁPIDOS ====================== */
+    .filtros-rapidos-asesores {
+        background: white;
+        border-radius: 12px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .filtros-rapidos-asesores-label {
+        font-weight: 600;
+        font-size: 0.875rem;
+        color: #2c3e50;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+        margin-right: 0.5rem;
+    }
+
+    .btn-filtro-rapido-asesores {
+        padding: 0.625rem 1.25rem;
+        border: 2px solid #e0e6ed;
+        background: white;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: #2c3e50;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        white-space: nowrap;
+    }
+
+    .btn-filtro-rapido-asesores:hover {
+        border-color: #3498db;
+        color: #3498db;
+        background: rgba(52, 152, 219, 0.05);
+    }
+
+    .btn-filtro-rapido-asesores.active {
+        background: #3498db;
+        color: white;
+        border-color: #3498db;
+    }
+
+    .btn-filtro-rapido-asesores .material-symbols-rounded {
+        font-size: 1.1rem;
+    }
+
+    /* ====================== BOTONES FILTRO EMBUDO ====================== */
+    .th-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+    }
+
+    .btn-filter-column {
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 0.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        opacity: 0.7;
+    }
+
+    .btn-filter-column:hover {
+        opacity: 1;
+        transform: scale(1.15);
+    }
+
+    .btn-filter-column .material-symbols-rounded {
+        font-size: 1.2rem;
+    }
+
+    /* ====================== INDICADOR DE FILTRO ACTIVO ====================== */
+    .btn-filter-column {
+        position: relative;
+    }
+
+    .filter-badge {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: #ef4444;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: 700;
+        border: 2px solid white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        opacity: 0;
+        transform: scale(0);
+        transition: all 0.3s ease;
+    }
+
+    .btn-filter-column.has-filter .filter-badge {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    /* ====================== BOTÓN FLOTANTE LIMPIAR FILTROS ====================== */
+    .floating-clear-filters {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 56px;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        transition: all 0.3s ease;
+        font-size: 1.5rem;
+        z-index: 999;
+        opacity: 0;
+        visibility: hidden;
+        transform: scale(0) translateY(20px);
+    }
+
+    .floating-clear-filters.visible {
+        opacity: 1;
+        visibility: visible;
+        transform: scale(1) translateY(0);
+    }
+
+    .floating-clear-filters:hover {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+        transform: scale(1.1) translateY(0);
+    }
+
+    .floating-clear-filters:active {
+        transform: scale(0.95) translateY(0);
+    }
+
+    .floating-clear-filters-tooltip {
+        position: absolute;
+        bottom: 70px;
+        right: 0;
+        background: #1f2937;
+        color: white;
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .floating-clear-filters:hover .floating-clear-filters-tooltip {
+        opacity: 1;
+    }
+
+    /* ====================== MODAL FILTROS ====================== */
+    .filter-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+    }
+
+    .filter-modal-overlay.active {
+        display: flex;
+    }
+
+    .filter-modal {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        max-height: 90vh;
+        overflow-y: auto;
+        animation: slideUp 0.3s ease;
+        width: 90%;
+        max-width: 450px;
+    }
+
+    @keyframes slideUp {
+        from {
+            transform: translateY(50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .filter-modal-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 10;
+    }
+
+    .filter-modal-header h3 {
+        margin: 0;
+        font-size: 1.125rem;
+        color: #1e40af;
+        font-weight: 700;
+    }
+
+    .filter-modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #6b7280;
+        transition: color 0.3s ease;
+    }
+
+    .filter-modal-close:hover {
+        color: #1e40af;
+    }
+
+    .filter-modal-body {
+        padding: 1.5rem;
+    }
+
+    .filter-search {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        margin-bottom: 1rem;
+        transition: border-color 0.3s ease;
+    }
+
+    .filter-search:focus {
+        outline: none;
+        border-color: #1e40af;
+        box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+    }
+
+    .filter-options {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .filter-option {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem;
+        border-radius: 6px;
+        transition: background 0.2s ease;
+    }
+
+    .filter-option:hover {
+        background: #f3f4f6;
+    }
+
+    .filter-option input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: #1e40af;
+    }
+
+    .filter-option label {
+        flex: 1;
+        cursor: pointer;
+        font-size: 0.95rem;
+        color: #374151;
+    }
+
+    .filter-modal-footer {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+        position: sticky;
+        bottom: 0;
+        background: white;
+    }
+
+    .btn-filter-apply,
+    .btn-filter-reset {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.875rem;
+    }
+
+    .btn-filter-apply {
+        background: #1e40af;
+        color: white;
+    }
+
+    .btn-filter-apply:hover {
+        background: #1e3a8a;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(30, 64, 175, 0.2);
+    }
+
+    .btn-filter-reset {
+        background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+        color: white;
+        border: none;
+        box-shadow: 0 2px 4px rgba(249, 115, 22, 0.2);
+    }
+
+    .btn-filter-reset:hover {
+        background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(249, 115, 22, 0.3);
+    }
 </style>
 
 <div style="padding: 0 0.5rem 0 0; max-width: 100%; margin: 0 auto;">
@@ -37,6 +386,31 @@
         </div>
     </div>
 
+    <!-- Filtros Rápidos -->
+    <div class="filtros-rapidos-asesores">
+        <span class="filtros-rapidos-asesores-label">Filtrar por estado:</span>
+        <a href="{{ route('asesores.pedidos.index') }}" class="btn-filtro-rapido-asesores {{ !request('estado') ? 'active' : '' }}">
+            <span class="material-symbols-rounded">home</span>
+            Todos
+        </a>
+        <a href="{{ route('asesores.pedidos.index', ['estado' => 'No iniciado']) }}" class="btn-filtro-rapido-asesores {{ request('estado') === 'No iniciado' ? 'active' : '' }}">
+            <span class="material-symbols-rounded">schedule</span>
+            Pendientes
+        </a>
+        <a href="{{ route('asesores.pedidos.index', ['estado' => 'En Ejecución']) }}" class="btn-filtro-rapido-asesores {{ request('estado') === 'En Ejecución' ? 'active' : '' }}">
+            <span class="material-symbols-rounded">build</span>
+            En Producción
+        </a>
+        <a href="{{ route('asesores.pedidos.index', ['estado' => 'Entregado']) }}" class="btn-filtro-rapido-asesores {{ request('estado') === 'Entregado' ? 'active' : '' }}">
+            <span class="material-symbols-rounded">check_circle</span>
+            Entregados
+        </a>
+        <a href="{{ route('asesores.pedidos.index', ['estado' => 'Anulada']) }}" class="btn-filtro-rapido-asesores {{ request('estado') === 'Anulada' ? 'active' : '' }}">
+            <span class="material-symbols-rounded">cancel</span>
+            Anulados
+        </a>
+    </div>
+
     <!-- Tabla con Scroll Horizontal -->
     <div style="background: #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem;">
         <!-- Contenedor con Scroll -->
@@ -56,16 +430,66 @@
                 min-width: min-content;
                 border-radius: 6px;
             ">
-                <div>Acciones</div>
-                <div>Estado</div>
-                <div>Área</div>
-                <div>Fecha Estimada</div>
-                <div>Pedido</div>
-                <div>Cliente</div>
-                <div>Descripción</div>
-                <div>Cantidad</div>
-                <div>Forma Pago</div>
-                <div>Fecha Creación</div>
+                <div class="th-wrapper">
+                    <span>Acciones</span>
+                    <button type="button" class="btn-filter-column" title="Filtrar Acciones">
+                        <span class="material-symbols-rounded">filter_alt</span>
+                    </button>
+                </div>
+                <div class="th-wrapper">
+                    <span>Estado</span>
+                    <button type="button" class="btn-filter-column" title="Filtrar Estado">
+                        <span class="material-symbols-rounded">filter_alt</span>
+                    </button>
+                </div>
+                <div class="th-wrapper">
+                    <span>Área</span>
+                    <button type="button" class="btn-filter-column" title="Filtrar Área">
+                        <span class="material-symbols-rounded">filter_alt</span>
+                    </button>
+                </div>
+                <div class="th-wrapper">
+                    <span>Fecha Estimada</span>
+                    <button type="button" class="btn-filter-column" title="Filtrar Fecha">
+                        <span class="material-symbols-rounded">filter_alt</span>
+                    </button>
+                </div>
+                <div class="th-wrapper">
+                    <span>Pedido</span>
+                    <button type="button" class="btn-filter-column" title="Filtrar Pedido">
+                        <span class="material-symbols-rounded">filter_alt</span>
+                    </button>
+                </div>
+                <div class="th-wrapper">
+                    <span>Cliente</span>
+                    <button type="button" class="btn-filter-column" title="Filtrar Cliente">
+                        <span class="material-symbols-rounded">filter_alt</span>
+                    </button>
+                </div>
+                <div class="th-wrapper">
+                    <span>Descripción</span>
+                    <button type="button" class="btn-filter-column" title="Filtrar Descripción">
+                        <span class="material-symbols-rounded">filter_alt</span>
+                    </button>
+                </div>
+                <div class="th-wrapper">
+                    <span>Cantidad</span>
+                    <button type="button" class="btn-filter-column" title="Filtrar Cantidad">
+                        <span class="material-symbols-rounded">filter_alt</span>
+                    </button>
+                </div>
+                <div class="th-wrapper">
+                    <span>Forma Pago</span>
+                    <button type="button" class="btn-filter-column" title="Filtrar Forma Pago">
+                        <span class="material-symbols-rounded">filter_alt</span>
+                    </button>
+                </div>
+                <div class="th-wrapper">
+                    <span>Fecha Creación</span>
+                    <button type="button" class="btn-filter-column" title="Filtrar Fecha Creación">
+                        <span class="material-symbols-rounded">filter_alt</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Filas -->
@@ -155,6 +579,26 @@
                             " onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='transparent'">
                                 <i class="fas fa-tasks" style="color: #10b981;"></i> Seguimiento
                             </button>
+                            @if ($pedido->estado === 'Anulada')
+                                <div style="height: 1px; background: #e5e7eb;"></div>
+                                <button onclick="verMotivoanulacion({{ $pedido->numero_pedido }}, '{{ $pedido->motivo_anulacion ?? 'No especificado' }}', '{{ $pedido->usuario_anulacion ?? 'Sistema' }}', '{{ $pedido->fecha_anulacion ? \Carbon\Carbon::parse($pedido->fecha_anulacion)->format('d/m/Y h:i A') : '' }}'); closeDropdown()" style="
+                                    width: 100%;
+                                    text-align: left;
+                                    padding: 0.875rem 1rem;
+                                    border: none;
+                                    background: transparent;
+                                    cursor: pointer;
+                                    color: #374151;
+                                    font-size: 0.875rem;
+                                    transition: background 0.2s ease;
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 0.75rem;
+                                    font-weight: 500;
+                                " onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
+                                    <i class="fas fa-ban" style="color: #ef4444;"></i> Ver Motivo
+                                </button>
+                            @endif
                         </div>
                     </div>
 
@@ -234,6 +678,30 @@
     @endif
 </div>
 
+<!-- Botón Flotante para Limpiar Filtros -->
+<button id="clearFiltersBtn" class="floating-clear-filters" onclick="resetFilters(); updateClearButtonVisibility();" title="Limpiar todos los filtros">
+    <span class="material-symbols-rounded">filter_alt_off</span>
+    <div class="floating-clear-filters-tooltip">Limpiar filtros</div>
+</button>
+
+<!-- Modal de Filtros -->
+<div id="filterModal" class="filter-modal-overlay" onclick="closeFilterModal(event)">
+    <div class="filter-modal" onclick="event.stopPropagation()">
+        <div class="filter-modal-header">
+            <h3 id="filterModalTitle">Filtrar por Estado</h3>
+            <button class="filter-modal-close" onclick="closeFilterModal()">&times;</button>
+        </div>
+        <div class="filter-modal-body">
+            <input type="text" class="filter-search" id="filterSearch" placeholder="Buscar...">
+            <div class="filter-options" id="filterOptions"></div>
+        </div>
+        <div class="filter-modal-footer">
+            <button class="btn-filter-reset" onclick="resetFilters()">Limpiar</button>
+            <button class="btn-filter-apply" onclick="applyFilters()">Aplicar</button>
+        </div>
+    </div>
+</div>
+
 <!-- Modal de Imagen -->
 @include('components.modal-imagen')
 
@@ -259,12 +727,239 @@
     // Configurar variables globales para los modales
     window.fetchUrl = '/registros';
     window.modalContext = 'pedidos';
+
+    // Función para mostrar modal de motivo de anulación
+    function verMotivoanulacion(numeroPedido, motivo, usuario, fecha) {
+        // Crear modal dinámicamente
+        const modalHTML = `
+            <div id="motivoAnulacionModal" style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 100000;
+                backdrop-filter: blur(4px);
+                animation: fadeIn 0.2s ease;
+            " onclick="if(event.target.id === 'motivoAnulacionModal') cerrarModalMotivo()">
+                <div style="
+                    background: white;
+                    border-radius: 12px;
+                    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+                    max-width: 500px;
+                    width: 90%;
+                    overflow: hidden;
+                    animation: slideIn 0.3s ease;
+                ">
+                    <!-- Header -->
+                    <div style="
+                        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                        color: white;
+                        padding: 1.5rem;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    ">
+                        <div style="display: flex; align-items: center; gap: 0.75rem;">
+                            <i class="fas fa-ban" style="font-size: 1.25rem;"></i>
+                            <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600;">Motivo de Anulación</h3>
+                        </div>
+                        <button onclick="cerrarModalMotivo()" style="
+                            background: rgba(255, 255, 255, 0.2);
+                            border: none;
+                            color: white;
+                            cursor: pointer;
+                            font-size: 1.25rem;
+                            width: 32px;
+                            height: 32px;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            transition: background 0.2s ease;
+                        " onmouseover="this.style.background='rgba(255, 255, 255, 0.3)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.2)'">
+                            ✕
+                        </button>
+                    </div>
+
+                    <!-- Content -->
+                    <div style="padding: 1.5rem;">
+                        <!-- Número de Pedido -->
+                        <div style="margin-bottom: 1.25rem;">
+                            <label style="
+                                display: block;
+                                font-size: 0.75rem;
+                                font-weight: 700;
+                                color: #6b7280;
+                                text-transform: uppercase;
+                                letter-spacing: 0.05em;
+                                margin-bottom: 0.375rem;
+                            ">Número de Pedido</label>
+                            <div style="
+                                font-size: 1rem;
+                                font-weight: 600;
+                                color: #1f2937;
+                                background: #f3f4f6;
+                                padding: 0.75rem;
+                                border-radius: 6px;
+                            ">#${numeroPedido}</div>
+                        </div>
+
+                        <!-- Motivo -->
+                        <div style="margin-bottom: 1.25rem;">
+                            <label style="
+                                display: block;
+                                font-size: 0.75rem;
+                                font-weight: 700;
+                                color: #6b7280;
+                                text-transform: uppercase;
+                                letter-spacing: 0.05em;
+                                margin-bottom: 0.375rem;
+                            ">Motivo</label>
+                            <div style="
+                                font-size: 0.95rem;
+                                color: #374151;
+                                background: #fef2f2;
+                                padding: 0.875rem;
+                                border-radius: 6px;
+                                border-left: 3px solid #ef4444;
+                                line-height: 1.5;
+                            ">${motivo || 'No especificado'}</div>
+                        </div>
+
+                        <!-- Usuario -->
+                        <div style="margin-bottom: 1.25rem;">
+                            <label style="
+                                display: block;
+                                font-size: 0.75rem;
+                                font-weight: 700;
+                                color: #6b7280;
+                                text-transform: uppercase;
+                                letter-spacing: 0.05em;
+                                margin-bottom: 0.375rem;
+                            ">Anulado por</label>
+                            <div style="
+                                font-size: 0.95rem;
+                                color: #374151;
+                                background: #f3f4f6;
+                                padding: 0.75rem;
+                                border-radius: 6px;
+                                display: flex;
+                                align-items: center;
+                                gap: 0.5rem;
+                            ">
+                                <i class="fas fa-user" style="color: #6b7280;"></i>
+                                ${usuario || 'Sistema'}
+                            </div>
+                        </div>
+
+                        <!-- Fecha -->
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="
+                                display: block;
+                                font-size: 0.75rem;
+                                font-weight: 700;
+                                color: #6b7280;
+                                text-transform: uppercase;
+                                letter-spacing: 0.05em;
+                                margin-bottom: 0.375rem;
+                            ">Fecha y Hora</label>
+                            <div style="
+                                font-size: 0.95rem;
+                                color: #374151;
+                                background: #f3f4f6;
+                                padding: 0.75rem;
+                                border-radius: 6px;
+                                display: flex;
+                                align-items: center;
+                                gap: 0.5rem;
+                            ">
+                                <i class="fas fa-calendar" style="color: #6b7280;"></i>
+                                ${fecha || 'No disponible'}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div style="
+                        background: #f9fafb;
+                        padding: 1rem 1.5rem;
+                        border-top: 1px solid #e5e7eb;
+                        display: flex;
+                        justify-content: flex-end;
+                        gap: 0.75rem;
+                    ">
+                        <button onclick="cerrarModalMotivo()" style="
+                            background: white;
+                            border: 1px solid #d1d5db;
+                            color: #374151;
+                            padding: 0.625rem 1.25rem;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-weight: 500;
+                            font-size: 0.875rem;
+                            transition: all 0.2s ease;
+                        " onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='#9ca3af'" onmouseout="this.style.background='white'; this.style.borderColor='#d1d5db'">
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
+
+                <style>
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    @keyframes slideIn {
+                        from { 
+                            transform: scale(0.95) translateY(-20px);
+                            opacity: 0;
+                        }
+                        to { 
+                            transform: scale(1) translateY(0);
+                            opacity: 1;
+                        }
+                    }
+                </style>
+            </div>
+        `;
+
+        // Insertar modal en el DOM
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Enfocar en el modal para mejorar accesibilidad
+        document.getElementById('motivoAnulacionModal').focus();
+    }
+
+    // Función para cerrar el modal de motivo de anulación
+    function cerrarModalMotivo() {
+        const modal = document.getElementById('motivoAnulacionModal');
+        if (modal) {
+            modal.style.animation = 'fadeIn 0.2s ease reverse';
+            setTimeout(() => modal.remove(), 200);
+        }
+    }
+
+    // Cerrar modal con tecla ESC
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            const modal = document.getElementById('motivoAnulacionModal');
+            if (modal) {
+                cerrarModalMotivo();
+            }
+        }
+    });
 </script>
 <script src="{{ asset('js/asesores/pedidos-list.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-modal.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-dropdown.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
+<script src="{{ asset('js/asesores/pedidos-table-filters.js') }}"></script>
 <!-- MODULAR ORDER TRACKING (SOLID Architecture) -->
 <script src="{{ asset('js/order-tracking/modules/dateUtils.js') }}"></script>
 <script src="{{ asset('js/order-tracking/modules/holidayManager.js') }}"></script>

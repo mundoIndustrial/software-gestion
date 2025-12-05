@@ -300,6 +300,82 @@ async function enviarCotizacion() {
         return;
     }
     
+    // ✅ VALIDAR ESPECIFICACIONES
+    const especificaciones = window.especificacionesSeleccionadas || {};
+    const tieneEspecificaciones = Object.keys(especificaciones).length > 0;
+    
+    if (!tieneEspecificaciones) {
+        // Marcar botón flotante en rojo como recordatorio
+        const btnEnviar = document.querySelector('button[onclick="enviarCotizacion()"]');
+        if (btnEnviar) {
+            btnEnviar.style.background = '#ef4444';
+            btnEnviar.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.3)';
+        }
+        
+        Swal.fire({
+            title: '⚠️ Falta completar especificaciones',
+            html: `
+                <div style="text-align: left; margin: 20px 0;">
+                    <p style="margin: 0 0 15px 0; font-size: 0.95rem; color: #4b5563;">
+                        <strong>No has completado las especificaciones de la cotización.</strong>
+                    </p>
+                    <p style="margin: 0 0 15px 0; font-size: 0.9rem; color: #666;">
+                        Las especificaciones son importantes para que el cliente entienda todos los detalles de su pedido.
+                    </p>
+                    <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 12px; border-radius: 4px; margin: 15px 0;">
+                        <p style="margin: 0; font-size: 0.85rem; color: #856404;">
+                            <strong>📋 Especificaciones requeridas:</strong><br>
+                            • Régimen<br>
+                            • Se ha vendido<br>
+                            • Última venta<br>
+                            • Flete de envío
+                        </p>
+                    </div>
+                    <p style="margin: 15px 0 0 0; font-size: 0.9rem; color: #666;">
+                        ¿Deseas continuar sin completarlas?
+                    </p>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#d1d5db',
+            confirmButtonText: 'Enviar sin especificaciones',
+            cancelButtonText: 'Completar especificaciones'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Usuario confirma enviar sin especificaciones
+                procederEnviarCotizacion(datos);
+            } else {
+                // Usuario quiere completar especificaciones
+                // Cambiar botón a rojo y mostrar en PASO 4
+                if (btnEnviar) {
+                    btnEnviar.style.background = '#ef4444';
+                    btnEnviar.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.3)';
+                }
+                
+                // Mostrar toast recordatorio
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'info',
+                    title: '📋 Completa las especificaciones en PASO 3',
+                    showConfirmButton: false,
+                    timer: 4000,
+                    timerProgressBar: true
+                });
+            }
+        });
+        return;
+    }
+    
+    // Si hay especificaciones, cambiar botón a verde
+    const btnEnviar = document.querySelector('button[onclick="enviarCotizacion()"]');
+    if (btnEnviar) {
+        btnEnviar.style.background = '';
+        btnEnviar.style.boxShadow = '';
+    }
+    
     Swal.fire({
         title: '¿Listo para enviar?',
         html: '<p style="margin: 0; font-size: 0.95rem; color: #4b5563;">Una vez enviada la cotización <span style="color: #ef4444; font-weight: 700;">no podrá editarse</span>.</p>',

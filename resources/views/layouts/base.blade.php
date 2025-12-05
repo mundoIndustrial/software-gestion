@@ -88,6 +88,9 @@
 
     <!-- Core JS -->
     <script src="{{ asset('js/sidebar.js') }}"></script>
+    
+    <!-- Notificaciones del Sidebar -->
+    <script src="{{ asset('js/sidebar-notifications.js') }}"></script>
 
     <!-- Page-specific scripts -->
     @stack('scripts')

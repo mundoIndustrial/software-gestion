@@ -21,8 +21,8 @@ class Reporte extends Model
 
     protected $casts = [
         'datos' => 'array',
-        'fecha_inicio' => 'date',
-        'fecha_fin' => 'date'
+        'fecha_inicio' => 'datetime',
+        'fecha_fin' => 'datetime'
     ];
 
     // Relación con usuario

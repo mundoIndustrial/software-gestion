@@ -37,41 +37,13 @@
         </div>
 
         <div class="menu-section">
-            <span class="menu-section-title">Filtros Rápidos</span>
+            <span class="menu-section-title">Menú</span>
             <ul class="menu-list" role="navigation">
                 <li class="menu-item">
                     <a href="{{ route('supervisor-pedidos.index') }}"
                        class="menu-link {{ request()->routeIs('supervisor-pedidos.index') && !request()->query('estado') && !request()->query('aprobacion') ? 'active' : '' }}">
                         <span class="material-symbols-rounded">dashboard</span>
                         <span class="menu-label">Órdenes de Producción</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="{{ route('supervisor-pedidos.index', ['estado' => 'No iniciado']) }}"
-                       class="menu-link {{ request()->query('estado') === 'No iniciado' ? 'active' : '' }}">
-                        <span class="material-symbols-rounded">schedule</span>
-                        <span class="menu-label">No Iniciadas</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="{{ route('supervisor-pedidos.index', ['estado' => 'En Ejecución']) }}"
-                       class="menu-link {{ request()->query('estado') === 'En Ejecución' ? 'active' : '' }}">
-                        <span class="material-symbols-rounded">hourglass_top</span>
-                        <span class="menu-label">En Ejecución</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="{{ route('supervisor-pedidos.index', ['estado' => 'Entregado']) }}"
-                       class="menu-link {{ request()->query('estado') === 'Entregado' ? 'active' : '' }}">
-                        <span class="material-symbols-rounded">check_circle</span>
-                        <span class="menu-label">Entregadas</span>
-                    </a>
-                </li>
-                <li class="menu-item">
-                    <a href="{{ route('supervisor-pedidos.index', ['estado' => 'Anulada']) }}"
-                       class="menu-link {{ request()->query('estado') === 'Anulada' ? 'active' : '' }}">
-                        <span class="material-symbols-rounded">cancel</span>
-                        <span class="menu-label">Anuladas</span>
                     </a>
                 </li>
             </ul>
