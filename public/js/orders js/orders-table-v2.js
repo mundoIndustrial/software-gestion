@@ -469,36 +469,84 @@ async function viewDetail(pedido) {
             
             // Función para formatear una prenda
             function formatearPrenda(prendaText, index) {
-                // Parsear cada prenda
-                const prendaMatch = prendaText.match(/^Prenda\s+(\d+):\s*(.+?)(?:\n|$)/);
-                const prendaNum = prendaMatch ? prendaMatch[1] : (index + 1);
-                const prendaNombre = prendaMatch ? prendaMatch[2].trim() : '';
+                // Detectar formato: sin cotización (solo DESCRIPCION/TALLAS) vs con cotización (Color/Tela/Manga)
+                const lineas = prendaText.split('\n');
+                const isSimpleFormat = lineas.length <= 2 || !lineas[1].match(/Color:|Tela:|Manga:/i);
                 
-                // Buscar Color
-                const colorMatch = prendaText.match(/Color:\s*(.+?)(?:\n|$)/);
-                const color = colorMatch ? colorMatch[1].trim() : '';
+                let prendaNum, prendaNombre, color, tela, manga, desc, especificaciones, tallas;
                 
-                // Buscar Tela
-                const telaMatch = prendaText.match(/Tela:\s*(.+?)(?:\n|$)/);
-                const tela = telaMatch ? telaMatch[1].trim() : '';
-                
-                // Buscar Manga
-                const mangaMatch = prendaText.match(/Manga:\s*(.+?)(?:\n|$)/);
-                const manga = mangaMatch ? mangaMatch[1].trim() : '';
-                
-                // Buscar "Especificaciones:" (contiene Bolsillos, Reflectivo, etc.)
-                const especificacionesMatch = prendaText.match(/Especificaciones:\s*(.+?)(?=Descripción:|Tallas:|$)/s);
-                const especificaciones = especificacionesMatch ? especificacionesMatch[1].trim() : '';
-                
-                // Buscar Descripción
-                const descMatch = prendaText.match(/Descripción:\s*(.+?)(?=\n\s*Tallas:|$)/s);
-                let desc = descMatch ? descMatch[1].trim() : '';
-                desc = desc.replace(/^Prenda\s+\d+:.*?\n/, '').trim();
-                desc = desc.replace(/^Descripción:\s*/, '').trim();
-                
-                // Buscar Tallas
-                const tallasMatch = prendaText.match(/Tallas:\s*(.+?)$/s);
-                const tallas = tallasMatch ? tallasMatch[1].trim() : '';
+                if (isSimpleFormat) {
+                    // Formato simple (sin cotización): PRENDA 1: NOMBRE
+                    const prendaMatch = prendaText.match(/^PRENDA\s+(\d+):\s*(.+?)(?:\n|$)/i);
+                    prendaNum = prendaMatch ? prendaMatch[1] : (index + 1);
+                    prendaNombre = prendaMatch ? prendaMatch[2].trim() : '';
+                    
+                    // Buscar DESCRIPCION:
+                    const descMatch = prendaText.match(/DESCRIPCION:\s*(.+?)(?=\n\s*TALLAS:|$)/i);
+                    desc = descMatch ? descMatch[1].trim() : '';
+                    
+                    // Buscar TALLAS:
+                    const tallasMatch = prendaText.match(/TALLAS:\s*(.+?)$/i);
+                    tallas = tallasMatch ? tallasMatch[1].trim() : '';
+                    
+                    color = '';
+                    tela = '';
+                    manga = '';
+                    especificaciones = '';
+                } else {
+                    // Formato completo (con cotización): PRENDA X: NOMBRE
+                    const prendaMatch = prendaText.match(/^PRENDA\s+(\d+):\s*(.+?)(?:\n|$)/i);
+                    prendaNum = prendaMatch ? prendaMatch[1] : (index + 1);
+                    prendaNombre = prendaMatch ? prendaMatch[2].trim() : '';
+                    
+                    // Buscar Color | Tela | Manga en la misma línea (línea 2)
+                    if (lineas.length > 1) {
+                        const lineaAtributos = lineas[1];
+                        
+                        // Buscar Color
+                        const colorMatch = lineaAtributos.match(/Color:\s*([^|]+?)(?:\||$)/i);
+                        color = colorMatch ? colorMatch[1].trim() : '';
+                        
+                        // Buscar Tela
+                        const telaMatch = lineaAtributos.match(/Tela:\s*([^|]+?)(?:\||$)/i);
+                        tela = telaMatch ? telaMatch[1].trim() : '';
+                        
+                        // Buscar Manga
+                        const mangaMatch = lineaAtributos.match(/Manga:\s*([^|]+?)(?:\||$)/i);
+                        manga = mangaMatch ? mangaMatch[1].trim() : '';
+                    }
+                    
+                    // Buscar Descripción + Bolsillos + Reflectivo (línea 3)
+                    if (lineas.length > 2) {
+                        const lineaDesc = lineas[2];
+                        
+                        // Buscar DESCRIPCION:
+                        const descMatch = lineaDesc.match(/DESCRIPCION:\s*([^|]+?)(?:\||$)/i);
+                        desc = descMatch ? descMatch[1].trim() : '';
+                        
+                        // Buscar Bolsillos:
+                        const bolsillosMatch = lineaDesc.match(/Bolsillos:\s*([^|]+?)(?:\||$)/i);
+                        const bolsillos = bolsillosMatch ? bolsillosMatch[1].trim() : '';
+                        
+                        // Buscar Reflectivo:
+                        const reflectivoMatch = lineaDesc.match(/Reflectivo:\s*([^|]+?)(?:\||$)/i);
+                        const reflectivo = reflectivoMatch ? reflectivoMatch[1].trim() : '';
+                        
+                        // Combinar en especificaciones
+                        if (bolsillos || reflectivo) {
+                            especificaciones = '';
+                            if (bolsillos) especificaciones += `Bolsillos: ${bolsillos}`;
+                            if (reflectivo) especificaciones += (especificaciones ? ' | ' : '') + `Reflectivo: ${reflectivo}`;
+                        }
+                    }
+                    
+                    // Buscar Tallas (línea 4)
+                    if (lineas.length > 3) {
+                        const lineaTallas = lineas[3];
+                        const tallasMatch = lineaTallas.match(/TALLAS:\s*(.+?)$/i);
+                        tallas = tallasMatch ? tallasMatch[1].trim() : '';
+                    }
+                }
                 
                 // Construir línea de atributos (Color | Tela | Manga)
                 const atributos = [];

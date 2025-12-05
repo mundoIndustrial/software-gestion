@@ -29,6 +29,10 @@ class PrendaPedido extends Model
         'tiene_reflectivo',
     ];
 
+    protected $casts = [
+        'cantidad_talla' => 'array',
+    ];
+
     protected $appends = [
         'formatted_description',
     ];
@@ -93,17 +97,15 @@ class PrendaPedido extends Model
     /**
      * Generar descripción detallada con formato especificado
      * Formato:
-     * Prenda 1: CAMISA DRILL
+     * PRENDA 1: CAMISA DRILL
      * Color: NARANJA | Tela: DRILL BORNEO REF:REF-DB-001 | Manga: LARGA
-     * Descripción: LOGO BORDADO EN ESPALDA...
-     * Tallas: S:50, M:50, L:50...
      */
-    public function generarDescripcionDetallada()
+    public function generarDescripcionDetallada($index = 1)
     {
         $lineas = [];
         
-        // Línea 1: Nombre de la prenda (Prenda X:)
-        $lineas[] = "Prenda {$this->id}:";
+        // Línea 1: Nombre de la prenda (PRENDA X: NOMBRE)
+        $lineas[] = "PRENDA " . $index . ": " . strtoupper($this->nombre_prenda);
         
         // Línea 2: Atributos (Color, Tela, Manga) separados por pipe
         $atributos = [];
@@ -146,8 +148,17 @@ class PrendaPedido extends Model
             }
         }
         
-        // Manga
-        if ($this->tipo_manga_id) {
+        // Manga - extraer de descripcion_variaciones
+        if ($this->descripcion_variaciones) {
+            // Buscar patrón "Manga: VALOR"
+            if (preg_match('/Manga:\s*([^|]+?)(?:\||$)/i', $this->descripcion_variaciones, $matches)) {
+                $mangaNombre = trim($matches[1]);
+                if ($mangaNombre) {
+                    $atributos[] = "Manga: {$mangaNombre}";
+                }
+            }
+        } elseif ($this->tipo_manga_id) {
+            // Fallback a tipo_manga_id si no está en descripcion_variaciones
             $mangaNombre = null;
             if ($this->relationLoaded('tipoManga') && $this->tipoManga) {
                 $mangaNombre = $this->tipoManga->nombre;
@@ -166,23 +177,45 @@ class PrendaPedido extends Model
             $lineas[] = implode(" | ", $atributos);
         }
         
-        // Línea 3: Descripción + Bolsillos + Reflectivo combinados
-        $descripcionCompleta = [];
+        // Línea 3: Descripción + Bolsillos - extraer de columnas descripcion y descripcion_variaciones
+        $lineaDescripcion = "";
         
         if ($this->descripcion) {
-            $descripcionCompleta[] = $this->descripcion;
+            // Buscar patrón "Descripción: VALOR"
+            if (preg_match('/Descripción:\s*([^T]+?)(?:Tela:|Color:|Bolsillos:|Reflectivo:|Tallas:|$)/i', $this->descripcion, $matches)) {
+                $descTexto = trim($matches[1]);
+                if ($descTexto) {
+                    $lineaDescripcion = "DESCRIPCION: {$descTexto}";
+                }
+            }
         }
         
-        if ($this->tiene_bolsillos) {
-            $descripcionCompleta[] = "Bolsillos: SI";
+        // Agregar Bolsillos si existe en descripcion_variaciones
+        if ($this->descripcion_variaciones) {
+            if (preg_match('/Bolsillos:\s*([^|]+?)(?:\||$)/i', $this->descripcion_variaciones, $matches)) {
+                $bolsillosTexto = trim($matches[1]);
+                if ($bolsillosTexto) {
+                    if ($lineaDescripcion) {
+                        $lineaDescripcion .= " | Bolsillos: {$bolsillosTexto}";
+                    } else {
+                        $lineaDescripcion = "Bolsillos: {$bolsillosTexto}";
+                    }
+                }
+            }
         }
         
-        if ($this->tiene_reflectivo) {
-            $descripcionCompleta[] = "Reflectivo: SI";
+        // Agregar Reflectivo si existe en descripcion_variaciones
+        if ($this->descripcion_variaciones) {
+            if (preg_match('/Reflectivo:\s*([^|]+?)(?:\||$)/i', $this->descripcion_variaciones, $matches)) {
+                $reflectivoTexto = trim($matches[1]);
+                if ($reflectivoTexto) {
+                    $lineaDescripcion .= " | Reflectivo: {$reflectivoTexto}";
+                }
+            }
         }
         
-        if (!empty($descripcionCompleta)) {
-            $lineas[] = "Descripción: " . implode(" ", $descripcionCompleta);
+        if ($lineaDescripcion) {
+            $lineas[] = $lineaDescripcion;
         }
         
         // Línea 4: Tallas y cantidades
@@ -194,7 +227,7 @@ class PrendaPedido extends Model
                 }
             }
             if (!empty($tallas)) {
-                $lineas[] = "Tallas: " . implode(", ", $tallas);
+                $lineas[] = "TALLAS: " . implode(", ", $tallas);
             }
         }
         

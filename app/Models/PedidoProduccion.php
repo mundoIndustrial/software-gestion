@@ -126,8 +126,18 @@ class PedidoProduccion extends Model
 
     /**
      * Obtener descripción de prendas (concatenadas con detalles)
-     * Extrae información de la cotización si está disponible
-     * Formato:
+     * 
+     * Si la orden TIENE cotización: muestra descripción completa con detalles
+     * Si la orden NO tiene cotización: muestra solo nombres de prendas enumerados
+     * 
+     * Formato SIN cotización:
+     * PRENDA 1: CAMISA DRILL
+     * DESCRIPCION: Logo bordado en espalda
+     * 
+     * PRENDA 2: JEANS
+     * DESCRIPCION: Con bolsillos
+     * 
+     * Formato CON cotización:
      * Prenda 1: NOMBRE
      * Descripción: descripcion completa
      * Tallas: S:1, M:4, L:3, ...
@@ -135,12 +145,40 @@ class PedidoProduccion extends Model
     public function getDescripcionPrendasAttribute()
     {
         if (!$this->relationLoaded('prendas') || $this->prendas->isEmpty()) {
-            return 'Sin prendas';
+            return '';
         }
 
-        // Generar descripción detallada para cada prenda
+        // Si NO tiene cotización, mostrar solo nombres de prendas con descripción y tallas
+        if (!$this->cotizacion_id) {
+            $descripciones = $this->prendas->map(function($prenda, $index) {
+                $lineas = [];
+                $lineas[] = "PRENDA " . ($index + 1) . ": " . strtoupper($prenda->nombre_prenda);
+                if ($prenda->descripcion) {
+                    $lineas[] = "DESCRIPCION: " . $prenda->descripcion;
+                }
+                
+                // Agregar tallas si existen
+                if ($prenda->cantidad_talla && is_array($prenda->cantidad_talla)) {
+                    $tallas = [];
+                    foreach ($prenda->cantidad_talla as $talla => $cantidad) {
+                        if ($cantidad > 0) {
+                            $tallas[] = "{$talla}:{$cantidad}";
+                        }
+                    }
+                    if (!empty($tallas)) {
+                        $lineas[] = "TALLAS: " . implode(", ", $tallas);
+                    }
+                }
+                
+                return implode("\n", $lineas);
+            })->toArray();
+            
+            return implode("\n\n", $descripciones);
+        }
+
+        // Si TIENE cotización, generar descripción detallada
         $descripciones = $this->prendas->map(function($prenda, $index) {
-            return ($index + 1) . ". " . $prenda->generarDescripcionDetallada();
+            return $prenda->generarDescripcionDetallada($index + 1);
         })->toArray();
 
         return implode("\n\n", $descripciones);

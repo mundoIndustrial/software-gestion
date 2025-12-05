@@ -140,7 +140,8 @@ class RegistroOrdenController extends Controller
             ->with([
                 'asesora:id,name',
                 'prendas' => function($q) {
-                    $q->select('id', 'numero_pedido', 'nombre_prenda', 'cantidad', 'descripcion', 'cantidad_talla', 'descripcion_armada', 'color_id', 'tela_id', 'tipo_manga_id', 'tiene_bolsillos', 'tiene_reflectivo');
+                    $q->select('id', 'numero_pedido', 'nombre_prenda', 'cantidad', 'descripcion', 'descripcion_variaciones', 'cantidad_talla', 'descripcion_armada', 'color_id', 'tela_id', 'tipo_manga_id', 'tiene_bolsillos', 'tiene_reflectivo')
+                      ->with('color:id,nombre', 'tela:id,nombre,referencia', 'tipoManga:id,nombre');
                 }
             ]);
 

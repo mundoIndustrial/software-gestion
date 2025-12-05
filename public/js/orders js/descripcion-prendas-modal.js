@@ -107,14 +107,16 @@ function renderDescripcionPrendasEnModal(content) {
         .replace(/\n\n/g, '</div><div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e0e0e0;">')
         .replace(/^/, '<div>')
         .replace(/$/, '</div>')
+        .replace(/PRENDA (\d+):/gi, '<strong>PRENDA $1:</strong>')
         .replace(/Prenda (\d+):/g, '<strong>Prenda $1:</strong>')
-        .replace(/Color:/g, '<strong>Color:</strong>')
-        .replace(/Tela:/g, '<strong>Tela:</strong>')
-        .replace(/Manga:/g, '<strong>Manga:</strong>')
-        .replace(/Descripción:/g, '<strong>Descripción:</strong>')
-        .replace(/Bolsillos:/g, '<strong>Bolsillos:</strong>')
-        .replace(/Reflectivo:/g, '<strong>Reflectivo:</strong>')
-        .replace(/Tallas:/g, '<strong style="color: #d32f2f;">Tallas:</strong>');
+        .replace(/Color:/gi, '<strong>Color:</strong>')
+        .replace(/Tela:/gi, '<strong>Tela:</strong>')
+        .replace(/Manga:/gi, '<strong>Manga:</strong>')
+        .replace(/Descripción:/gi, '<strong>Descripción:</strong>')
+        .replace(/DESCRIPCION:/gi, '<strong>DESCRIPCION:</strong>')
+        .replace(/Bolsillos:/gi, '<strong>Bolsillos:</strong>')
+        .replace(/Reflectivo:/gi, '<strong>Reflectivo:</strong>')
+        .replace(/Tallas:/gi, '<strong style="color: #d32f2f;">Tallas:</strong>');
     
     console.log('✅ Descripción renderizada en modal');
 }

@@ -139,14 +139,16 @@ function renderizarContenidoFormateado(content) {
         .replaceAll(/\n\n/g, '</div><div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e0e0e0;">')
         .replaceAll(/^/, '<div>')
         .replaceAll(/$/, '</div>')
+        .replaceAll(/PRENDA (\d+):/gi, '<strong style="font-size: 13px; color: #000;">PRENDA $1:</strong>')
         .replaceAll(/Prenda (\d+):/g, '<strong style="font-size: 13px; color: #000;">Prenda $1:</strong>')
-        .replaceAll(/Color:/g, '<strong style="color: #333;">Color:</strong>')
-        .replaceAll(/Tela:/g, '<strong style="color: #333;">Tela:</strong>')
-        .replaceAll(/Manga:/g, '<strong style="color: #333;">Manga:</strong>')
-        .replaceAll(/Descripción:/g, '<strong style="color: #333;">Descripción:</strong>')
-        .replaceAll(/Bolsillos:/g, '<strong style="color: #d32f2f;">Bolsillos:</strong>')
-        .replaceAll(/Reflectivo:/g, '<strong style="color: #d32f2f;">Reflectivo:</strong>')
-        .replaceAll(/Tallas:/g, '<strong style="color: #d32f2f; font-size: 13px;">Tallas:</strong>');
+        .replaceAll(/Color:/gi, '<strong style="color: #333;">Color:</strong>')
+        .replaceAll(/Tela:/gi, '<strong style="color: #333;">Tela:</strong>')
+        .replaceAll(/Manga:/gi, '<strong style="color: #333;">Manga:</strong>')
+        .replaceAll(/Descripción:/gi, '<strong style="color: #333;">Descripción:</strong>')
+        .replaceAll(/DESCRIPCION:/gi, '<strong style="color: #333;">DESCRIPCION:</strong>')
+        .replaceAll(/Bolsillos:/gi, '<strong style="color: #d32f2f;">Bolsillos:</strong>')
+        .replaceAll(/Reflectivo:/gi, '<strong style="color: #d32f2f;">Reflectivo:</strong>')
+        .replaceAll(/Tallas:/gi, '<strong style="color: #d32f2f; font-size: 13px;">Tallas:</strong>');
     
     const input = document.getElementById('cell-input');
     if (input && input.parentElement) {
