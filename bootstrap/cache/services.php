@@ -38,6 +38,7 @@
     34 => 'App\\Providers\\AppServiceProvider',
     35 => 'App\\Providers\\EventServiceProvider',
     36 => 'App\\Providers\\BladeDirectivesServiceProvider',
+    37 => 'App\\Providers\\DomainServiceProvider',
   ),
   'eager' => 
   array (
@@ -60,6 +61,7 @@
     16 => 'App\\Providers\\AppServiceProvider',
     17 => 'App\\Providers\\EventServiceProvider',
     18 => 'App\\Providers\\BladeDirectivesServiceProvider',
+    19 => 'App\\Providers\\DomainServiceProvider',
   ),
   'deferred' => 
   array (
