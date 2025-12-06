@@ -73,6 +73,8 @@ class RegistroBodegaController extends Controller
         $query = $this->filterService->applyFiltersToQuery($query, $filterData['filters']);
         $query = $this->filterService->applyPedidoIdFilter($query, $filterData['pedidoIds']);
         $filterTotalDias = $filterData['totalDiasFilter'];
+
+        $festivos = Festivo::pluck('fecha')->toArray();
         
         // Si hay filtro de total_de_dias_, necesitamos obtener todos los registros para calcular y filtrar
         if ($filterTotalDias !== null) {
