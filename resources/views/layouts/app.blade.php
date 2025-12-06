@@ -94,7 +94,6 @@
 @endsection
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('css/orders styles/registros.css') }}">
     <link rel="stylesheet" href="{{ asset('css/top-nav.css') }}">
 @endpush
 
