@@ -3,7 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Constants\AreaOptions;
-
+use App\Exceptions\RegistroOrdenException;
+use App\Exceptions\RegistroOrdenValidationException;
+use App\Exceptions\RegistroOrdenNotFoundException;
+use App\Exceptions\RegistroOrdenPedidoNumberException;
+use App\Exceptions\RegistroOrdenCreationException;
+use App\Exceptions\RegistroOrdenUpdateException;
+use App\Exceptions\RegistroOrdenDeletionException;
+use App\Exceptions\RegistroOrdenPrendaException;
 use Illuminate\Http\Request;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
@@ -33,6 +40,8 @@ use Carbon\Carbon;
 
 class RegistroOrdenController extends Controller
 {
+    use RegistroOrdenExceptionHandler;
+
     protected $queryService;
     protected $searchService;
     protected $filterService;
@@ -346,7 +355,7 @@ class RegistroOrdenController extends Controller
 
     public function store(Request $request)
     {
-        try {
+        return $this->tryExec(function() use ($request) {
             // Validar datos
             $validatedData = $this->validationService->validateStoreRequest($request);
 
@@ -355,10 +364,10 @@ class RegistroOrdenController extends Controller
             
             if (!$request->input('allow_any_pedido', false)) {
                 if ($request->pedido != $nextPedido) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => "El número consecutivo disponible es $nextPedido"
-                    ], 422);
+                    throw RegistroOrdenPedidoNumberException::unexpectedNumber(
+                        $nextPedido,
+                        $request->pedido
+                    );
                 }
             }
 
@@ -375,26 +384,20 @@ class RegistroOrdenController extends Controller
             // Broadcast evento
             $this->creationService->broadcastOrderCreated($pedido);
 
-            return response()->json(['success' => true, 'message' => 'Orden registrada correctamente']);
-        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
-                'success' => false,
-                'message' => $e->errors()
-            ], 422);
-        } catch (\Exception $e) {
-            \Log::error('Error al crear orden', ['error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Error inesperado: ' . $e->getMessage()
-            ], 500);
-        }
+                'success' => true,
+                'message' => 'Orden registrada correctamente',
+                'pedido' => $pedido->numero_pedido
+            ]);
+        });
     }
 
     public function update(Request $request, $pedido)
     {
-        try {
+        return $this->tryExec(function() use ($request, $pedido) {
             // Obtener la orden
-            $orden = PedidoProduccion::where('numero_pedido', $pedido)->firstOrFail();
+            $orden = PedidoProduccion::where('numero_pedido', $pedido)
+                ->firstOrFail();
 
             // Validar datos
             $validatedData = $this->validationService->validateUpdateRequest($request);
@@ -406,47 +409,23 @@ class RegistroOrdenController extends Controller
             $this->updateService->broadcastOrderUpdated($orden, $validatedData);
 
             return response()->json($response);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->errors()
-            ], 422);
-        } catch (\Exception $e) {
-            \Log::error('Error al actualizar orden', [
-                'pedido' => $pedido,
-                'error' => $e->getMessage()
-            ]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al actualizar la orden: ' . $e->getMessage(),
-                'error_details' => config('app.debug') ? $e->getTraceAsString() : null
-            ], 500);
-        }
+        });
     }
 
     public function destroy($pedido)
     {
-        try {
+        return $this->tryExec(function() use ($pedido) {
             $this->deletionService->deleteOrder($pedido);
             
             // Broadcast evento
             $this->deletionService->broadcastOrderDeleted($pedido);
 
-            return response()->json(['success' => true, 'message' => 'Orden eliminada correctamente']);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
-                'success' => false,
-                'message' => 'Orden no encontrada'
-            ], 404);
-        } catch (\Exception $e) {
-            \Log::error('Error al eliminar orden', ['pedido' => $pedido, 'error' => $e->getMessage()]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al eliminar la orden: ' . $e->getMessage()
-            ], 500);
-        }
+                'success' => true,
+                'message' => 'Orden eliminada correctamente',
+                'pedido' => $pedido
+            ]);
+        });
     }
 
     public function getEntregas($pedido)
@@ -566,7 +545,7 @@ class RegistroOrdenController extends Controller
      */
     public function updatePedido(Request $request)
     {
-        try {
+        return $this->tryExec(function() use ($request) {
             $validatedData = $request->validate([
                 'old_pedido' => 'required|integer',
                 'new_pedido' => 'required|integer|min:1',
@@ -589,22 +568,7 @@ class RegistroOrdenController extends Controller
                 'old_pedido' => $validatedData['old_pedido'],
                 'new_pedido' => $validatedData['new_pedido']
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Datos inválidos: ' . json_encode($e->errors())
-            ], 422);
-        } catch (\Exception $e) {
-            \Log::error('Error al actualizar pedido', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 422);
-        }
+        });
     }
 
     /**
@@ -613,22 +577,10 @@ class RegistroOrdenController extends Controller
      */
     public function getRegistrosPorOrden($pedido)
     {
-        try {
+        return $this->tryExec(function() use ($pedido) {
             $prendas = $this->prendaService->getPrendasArray($pedido);
             return response()->json($prendas);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json(['error' => 'Pedido no encontrado'], 404);
-        } catch (\Exception $e) {
-            \Log::error('Error al obtener registros por orden', [
-                'pedido' => $pedido,
-                'error' => $e->getMessage()
-            ]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Error al cargar los registros'
-            ], 500);
-        }
+        });
     }
 
     /**
@@ -636,7 +588,7 @@ class RegistroOrdenController extends Controller
      */
     public function editFullOrder(Request $request, $pedido)
     {
-        try {
+        return $this->tryExec(function() use ($request, $pedido) {
             // Validar datos
             $validatedData = $this->validationService->validateEditFullOrderRequest($request);
 
@@ -682,29 +634,7 @@ class RegistroOrdenController extends Controller
                 'pedido' => $pedido,
                 'orden' => $orden
             ]);
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            DB::rollBack();
-            \Log::error('Error de validación al editar orden', ['pedido' => $pedido, 'errors' => $e->errors()]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Datos inválidos',
-                'errors' => $e->errors()
-            ], 422);
-
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            DB::rollBack();
-            return response()->json(['success' => false, 'message' => 'Orden no encontrada'], 404);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('Error al editar orden completa', ['pedido' => $pedido, 'error' => $e->getMessage()]);
-
-            return response()->json([
-                'success' => false,
-                'message' => '🚨 Error interno del servidor: No se pudo actualizar la orden. Por favor, intente nuevamente o contacte al administrador si el problema persiste.'
-            ], 500);
-        }
+        });
     }
 
     /**
@@ -712,7 +642,7 @@ class RegistroOrdenController extends Controller
      */
     public function updateDescripcionPrendas(Request $request)
     {
-        try {
+        return $this->tryExec(function() use ($request) {
             // Validar datos
             $validatedData = $this->validationService->validateUpdateDescripcionRequest($request);
 
@@ -762,27 +692,7 @@ class RegistroOrdenController extends Controller
                 'prendas_procesadas' => count($prendas),
                 'registros_regenerados' => $procesarRegistros
             ]);
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => '❌ Error de validación: Los datos proporcionados no son válidos. Verifique el formato e intente nuevamente.',
-                'errors' => $e->errors()
-            ], 422);
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            \Log::error('Error al actualizar descripción y prendas', [
-                'pedido' => $request->pedido ?? 'N/A',
-                'error' => $e->getMessage()
-            ]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => '🚨 Error interno del servidor: No se pudo actualizar la descripción y prendas. Por favor, intente nuevamente o contacte al administrador si el problema persiste.'
-            ], 500);
-        }
+        });
     }
 
     /**
