@@ -6,9 +6,27 @@ use Illuminate\Http\Request;
 use App\Models\TablaOriginalBodega;
 use App\Models\Festivo;
 use Illuminate\Support\Facades\DB;
+use App\Services\RegistroBodegaQueryService;
+use App\Services\RegistroBodegaSearchService;
+use App\Services\RegistroBodegaFilterService;
 
 class RegistroBodegaController extends Controller
 {
+    protected $queryService;
+    protected $searchService;
+    protected $filterService;
+
+    public function __construct(
+        RegistroBodegaQueryService $queryService,
+        RegistroBodegaSearchService $searchService,
+        RegistroBodegaFilterService $filterService
+    )
+    {
+        $this->queryService = $queryService;
+        $this->searchService = $searchService;
+        $this->filterService = $filterService;
+    }
+
     private function getEnumOptions($table, $column)
     {
         $columnInfo = DB::select("SHOW COLUMNS FROM {$table} WHERE Field = ?", [$column]);
@@ -21,205 +39,40 @@ class RegistroBodegaController extends Controller
 
     public function index(Request $request)
     {
-        // Definir columnas de fecha
-        $dateColumns = [
-            'fecha_de_creacion_de_orden', 'inventario', 'insumos_y_telas', 'corte',
-            'bordado', 'estampado', 'costura', 'reflectivo', 'lavanderia',
-            'arreglos', 'marras', 'control_de_calidad', 'entrega'
-        ];
-
         // Handle request for unique values for filters
         if ($request->has('get_unique_values') && $request->column) {
-            $column = $request->column;
-        $allowedColumns = [
-            'pedido', 'estado', 'area', 'total_de_dias_', 'cliente',
-            'descripcion', 'cantidad', 'novedades', 'forma_de_pago',
-            'fecha_de_creacion_de_orden', 'encargado_orden', 'dias_orden', 'inventario',
-            'encargados_inventario', 'dias_inventario', 'insumos_y_telas', 'encargados_insumos',
-            'dias_insumos', 'corte', 'encargados_de_corte', 'dias_corte', 'bordado',
-            'codigo_de_bordado', 'dias_bordado', 'estampado', 'encargados_estampado',
-            'dias_estampado', 'costura', 'modulo', 'dias_costura', 'reflectivo',
-            'encargado_reflectivo', 'total_de_dias_reflectivo', 'lavanderia',
-            'encargado_lavanderia', 'dias_lavanderia', 'arreglos', 'encargado_arreglos',
-            'total_de_dias_arreglos', 'marras', 'encargados_marras', 'total_de_dias_marras',
-            'control_de_calidad', 'encargados_calidad', 'dias_c_c', 'entrega',
-            'encargados_entrega', 'despacho', 'column_52', '_pedido'
-        ];
-
-            if (in_array($column, $allowedColumns)) {
-                // Si es la columna calculada total_de_dias_, obtener todos los registros y calcular
-                if ($column === 'total_de_dias_') {
-                    $festivos = \App\Models\Festivo::pluck('fecha')->toArray();
-                    $ordenes = TablaOriginalBodega::all();
-                    foreach ($ordenes as $orden) {
-                        $orden->setFestivos($festivos);
-                    }
-                    $uniqueValues = $ordenes->map(function($orden) {
-                        return $orden->total_de_dias;
-                    })->unique()->sort()->values()->toArray();
-                } else {
-                    $uniqueValues = TablaOriginalBodega::distinct()->pluck($column)->filter()->values()->toArray();
-                }
-                
-                // Si es una columna de fecha, formatear los valores a d/m/Y
-                if (in_array($column, $dateColumns)) {
-                    $uniqueValues = array_map(function($value) {
-                        try {
-                            if (!empty($value)) {
-                                $date = \Carbon\Carbon::parse($value);
-                                return $date->format('d/m/Y');
-                            }
-                        } catch (\Exception $e) {
-                            // Si no se puede parsear, devolver el valor original
-                        }
-                        return $value;
-                    }, $uniqueValues);
-                    // Eliminar duplicados y reindexar
-                    $uniqueValues = array_values(array_unique($uniqueValues));
-                }
+            try {
+                $values = $this->queryService->getUniqueValues($request->column);
                 
                 // Si es descripcion, devolver también los IDs asociados
-                if ($column === 'descripcion') {
+                if ($request->column === 'descripcion') {
                     $result = [];
-                    foreach ($uniqueValues as $desc) {
+                    foreach ($values as $desc) {
                         $ids = TablaOriginalBodega::where('descripcion', $desc)->pluck('pedido')->toArray();
                         $result[] = [
                             'value' => $desc,
                             'ids' => $ids
                         ];
                     }
-                    return response()->json(['unique_values' => $uniqueValues, 'value_ids' => $result]);
+                    return response()->json(['unique_values' => $values, 'value_ids' => $result]);
                 }
                 
-                return response()->json(['unique_values' => $uniqueValues]);
-            }
-            return response()->json(['error' => 'Invalid column'], 400);
-        }
-
-        $query = TablaOriginalBodega::query();
-
-        // Apply search filter - search by 'pedido' or 'cliente'
-        if ($request->has('search') && !empty($request->search)) {
-            $searchTerm = $request->search;
-            $query->where(function($q) use ($searchTerm) {
-                $q->where('pedido', 'LIKE', '%' . $searchTerm . '%')
-                  ->orWhere('cliente', 'LIKE', '%' . $searchTerm . '%');
-            });
-        }
-
-        // Detectar si hay filtro de total_de_dias_ para procesarlo después
-        $filterTotalDias = null;
-        
-        // Manejar filtro especial de IDs de pedidos (para descripción)
-        if ($request->has('filter_pedido_ids') && !empty($request->filter_pedido_ids)) {
-            $pedidoIds = explode(',', $request->filter_pedido_ids);
-            $pedidoIds = array_filter(array_map('trim', $pedidoIds));
-            
-            \Log::info("🆔 FILTRO POR IDS DE PEDIDOS", [
-                'ids_recibidos' => $pedidoIds,
-                'cantidad_ids' => count($pedidoIds)
-            ]);
-            
-            if (!empty($pedidoIds)) {
-                $query->whereIn('pedido', $pedidoIds);
-            }
-        }
-        
-        // Apply column filters (dynamic for all columns)
-        foreach ($request->all() as $key => $value) {
-            if (str_starts_with($key, 'filter_') && !empty($value)) {
-                $column = str_replace('filter_', '', $key);
-                
-                // LOG: Registrar valor RAW recibido
-                \Log::info("📥 VALOR RAW RECIBIDO", [
-                    'columna' => $column,
-                    'longitud' => strlen($value),
-                    'primeros_100_chars' => substr($value, 0, 100),
-                    'ultimos_100_chars' => substr($value, -100)
-                ]);
-                
-                // Usar separador especial para valores que pueden contener comas y saltos de línea
-                $separator = '|||FILTER_SEPARATOR|||';
-                $values = explode($separator, $value);
-                
-                // LOG: Registrar después de explode
-                \Log::info("🔀 DESPUÉS DE EXPLODE", [
-                    'cantidad_valores_antes_filter' => count($values),
-                    'valores_raw' => array_map(function($v) { return substr($v, 0, 50); }, $values)
-                ]);
-                
-                // Limpiar valores vacíos y trimear espacios
-                $values = array_filter(array_map('trim', $values));
-                
-                if (empty($values)) continue;
-
-                // LOG: Registrar valores del filtro
-                \Log::info("🔍 FILTRO APLICADO", [
-                    'columna' => $column,
-                    'valores_recibidos' => array_map(function($v) { return substr($v, 0, 50); }, $values),
-                    'cantidad_valores' => count($values)
-                ]);
-
-                // Whitelist de columnas permitidas para seguridad
-                $allowedColumns = [
-                    'id', 'estado', 'area', 'total_de_dias_', 'pedido', 'cliente',
-                    'descripcion', 'cantidad', 'novedades', 'asesora', 'forma_de_pago',
-                    'fecha_de_creacion_de_orden', 'encargado_orden', 'dias_orden', 'inventario',
-                    'encargados_inventario', 'dias_inventario', 'insumos_y_telas', 'encargados_insumos',
-                    'dias_insumos', 'corte', 'encargados_de_corte', 'dias_corte', 'bordado',
-                    'codigo_de_bordado', 'dias_bordado', 'estampado', 'encargados_estampado',
-                    'dias_estampado', 'costura', 'modulo', 'dias_costura', 'reflectivo',
-                    'encargado_reflectivo', 'total_de_dias_reflectivo', 'lavanderia',
-                    'encargado_lavanderia', 'dias_lavanderia', 'arreglos', 'encargado_arreglos',
-                    'total_de_dias_arreglos', 'marras', 'encargados_marras', 'total_de_dias_marras',
-                    'control_de_calidad', 'encargados_calidad', 'dias_c_c', 'entrega',
-                    'encargados_entrega', 'despacho', 'column_52'
-                ];
-
-                if (in_array($column, $allowedColumns)) {
-                    // Si es total_de_dias_, guardarlo para filtrar después del cálculo
-                    if ($column === 'total_de_dias_') {
-                        $filterTotalDias = array_map('intval', $values);
-                        \Log::info("📊 FILTRO TOTAL DÍAS", ['valores' => $filterTotalDias]);
-                        continue;
-                    }
-                    
-                    // Si es una columna de fecha, convertir los valores de d/m/Y a formato de base de datos
-                    if (in_array($column, $dateColumns)) {
-                        $query->where(function($q) use ($column, $values) {
-                            foreach ($values as $dateValue) {
-                                try {
-                                    // Intentar parsear la fecha en formato d/m/Y
-                                    $date = \Carbon\Carbon::createFromFormat('d/m/Y', $dateValue);
-                                    $q->orWhereDate($column, $date->format('Y-m-d'));
-                                } catch (\Exception $e) {
-                                    // Si falla, intentar buscar el valor tal cual
-                                    $q->orWhere($column, $dateValue);
-                                }
-                            }
-                        });
-                        \Log::info("📅 FILTRO FECHA APLICADO", ['columna' => $column, 'valores' => $values]);
-                    } else {
-                        // Para columnas de texto, buscar coincidencia exacta
-                        // Los valores vienen de get_unique_values, así que son valores completos
-                        // Usar TRIM para ignorar espacios adicionales
-                        $query->where(function($q) use ($column, $values) {
-                            foreach ($values as $value) {
-                                // Buscar coincidencia exacta (case-insensitive)
-                                $q->orWhereRaw("TRIM(LOWER({$column})) = LOWER(?)", [trim($value)]);
-                            }
-                        });
-                        \Log::info("📝 FILTRO TEXTO APLICADO", [
-                            'columna' => $column,
-                            'valores_trimmed' => $values,
-                            'sql_generado' => "TRIM(LOWER({$column})) = LOWER(?)"
-                        ]);
-                    }
-                }
+                return response()->json(['unique_values' => $values]);
+            } catch (\InvalidArgumentException $e) {
+                return response()->json(['error' => 'Invalid column'], 400);
+            } catch (\Exception $e) {
+                return response()->json(['error' => 'Error fetching values: ' . $e->getMessage()], 500);
             }
         }
 
-        $festivos = Festivo::pluck('fecha')->toArray();
+        $query = $this->queryService->buildBaseQuery();
+        $query = $this->searchService->applySearchFilter($query, $request->input('search'));
+
+        // Extraer y aplicar filtros dinámicos
+        $filterData = $this->filterService->extractFiltersFromRequest($request);
+        $query = $this->filterService->applyFiltersToQuery($query, $filterData['filters']);
+        $query = $this->filterService->applyPedidoIdFilter($query, $filterData['pedidoIds']);
+        $filterTotalDias = $filterData['totalDiasFilter'];
         
         // Si hay filtro de total_de_dias_, necesitamos obtener todos los registros para calcular y filtrar
         if ($filterTotalDias !== null) {
