@@ -13,6 +13,9 @@ use App\Services\CacheCalculosService;
 use App\Services\RegistroOrdenQueryService;
 use App\Services\RegistroOrdenSearchService;
 use App\Services\RegistroOrdenFilterService;
+use App\Services\RegistroOrdenExtendedQueryService;
+use App\Services\RegistroOrdenSearchExtendedService;
+use App\Services\RegistroOrdenFilterExtendedService;
 use App\Models\News;
 use App\Models\Festivo;
 use Illuminate\Support\Facades\DB;
@@ -25,16 +28,25 @@ class RegistroOrdenController extends Controller
     protected $queryService;
     protected $searchService;
     protected $filterService;
+    protected $extendedQueryService;
+    protected $extendedSearchService;
+    protected $extendedFilterService;
 
     public function __construct(
         RegistroOrdenQueryService $queryService,
         RegistroOrdenSearchService $searchService,
-        RegistroOrdenFilterService $filterService
+        RegistroOrdenFilterService $filterService,
+        RegistroOrdenExtendedQueryService $extendedQueryService,
+        RegistroOrdenSearchExtendedService $extendedSearchService,
+        RegistroOrdenFilterExtendedService $extendedFilterService
     )
     {
         $this->queryService = $queryService;
         $this->searchService = $searchService;
         $this->filterService = $filterService;
+        $this->extendedQueryService = $extendedQueryService;
+        $this->extendedSearchService = $extendedSearchService;
+        $this->extendedFilterService = $extendedFilterService;
     }
 
     private function getEnumOptions($table, $column)
@@ -49,17 +61,10 @@ class RegistroOrdenController extends Controller
 
     public function index(Request $request)
     {
-        // Definir columnas de fecha
-        $dateColumns = [
-            'fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega', 'inventario', 'insumos_y_telas', 'corte',
-            'bordado', 'estampado', 'costura', 'reflectivo', 'lavanderia',
-            'arreglos', 'marras', 'control_de_calidad', 'entrega'
-        ];
-
         // Handle request for unique values for filters
         if ($request->has('get_unique_values') && $request->has('column')) {
             try {
-                $values = $this->queryService->getUniqueValues($request->input('column'));
+                $values = $this->extendedQueryService->getUniqueValues($request->input('column'));
                 return response()->json(['unique_values' => $values]);
             } catch (\InvalidArgumentException $e) {
                 return response()->json(['error' => 'Invalid column'], 400);
@@ -68,13 +73,13 @@ class RegistroOrdenController extends Controller
             }
         }
 
-        $query = $this->queryService->buildBaseQuery();
-        $query = $this->queryService->applyRoleFilters($query, auth()->user(), $request);
-        $query = $this->searchService->applySearchFilter($query, $request->input('search'));
+        $query = $this->extendedQueryService->buildBaseQuery();
+        $query = $this->extendedQueryService->applyRoleFilters($query, auth()->user(), $request);
+        $query = $this->extendedSearchService->applySearchFilter($query, $request->input('search'));
 
         // Extraer y aplicar filtros dinámicos
-        $filterData = $this->filterService->extractFiltersFromRequest($request);
-        $query = $this->filterService->applyFiltersToQuery($query, $filterData['filters']);
+        $filterData = $this->extendedFilterService->extractFiltersFromRequest($request);
+        $query = $this->extendedFilterService->applyFiltersToQuery($query, $filterData['filters']);
         $filterTotalDias = $filterData['totalDiasFilter'];
 
         $currentYear = now()->year;
