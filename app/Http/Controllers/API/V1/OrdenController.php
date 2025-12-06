@@ -1,136 +1,136 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api\V1;
 
-use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
+use App\Http\Controllers\Controller;
 use App\Domain\Ordenes\Services\CrearOrdenService;
 use App\Domain\Ordenes\Services\ActualizarEstadoOrdenService;
 use App\Domain\Ordenes\Services\CancelarOrdenService;
 use App\Domain\Ordenes\Services\ObtenerOrdenService;
-use App\Domain\Ordenes\ValueObjects\NumeroOrden;
-use App\Domain\Ordenes\ValueObjects\EstadoOrden;
-use App\Domain\Ordenes\ValueObjects\FormaPago;
-use App\Domain\Ordenes\ValueObjects\Area;
-use App\Http\Requests\CrearOrdenRequest;
-use App\Http\Requests\ActualizarOrdenRequest;
+use Illuminate\Http\Request;
 
 /**
- * Controller: RegistroOrdenDDDController
+ * OrdenController - API DDD Layer (FASE 3)
  * 
- * Version refactorizada con DDD.
- * Solo coordina entre HTTP y Application Services.
- * Sin lógica de negocio, sin DB directo.
+ * Responsabilidad única: Exponer Application Services de DDD vía HTTP
+ * Cumple: SRP, DIP, OCP
+ * 
+ * Endpoints:
+ * - GET    /api/v1/ordenes              (indexDDD)
+ * - GET    /api/v1/ordenes/{numero}     (showDDD)
+ * - POST   /api/v1/ordenes              (storeDDD)
+ * - PATCH  /api/v1/ordenes/{numero}/aprobar        (aprobarDDD)
+ * - PATCH  /api/v1/ordenes/{numero}/iniciar-produccion (iniciarProduccionDDD)
+ * - PATCH  /api/v1/ordenes/{numero}/completar (completarDDD)
+ * - DELETE /api/v1/ordenes/{numero}     (destroyDDD)
+ * - GET    /api/v1/ordenes/cliente/{cliente} (porClienteDDD)
+ * - GET    /api/v1/ordenes/estado/{estado} (porEstadoDDD)
  */
-class RegistroOrdenDDDController extends Controller
+class OrdenController extends Controller
 {
+    protected $crearOrdenService;
+    protected $actualizarEstadoService;
+    protected $cancelarOrdenService;
+    protected $obtenerOrdenService;
+
     public function __construct(
-        private CrearOrdenService $crearOrdenService,
-        private ActualizarEstadoOrdenService $actualizarEstadoService,
-        private CancelarOrdenService $cancelarOrdenService,
-        private ObtenerOrdenService $obtenerOrdenService,
-    ) {}
+        CrearOrdenService $crearOrdenService,
+        ActualizarEstadoOrdenService $actualizarEstadoService,
+        CancelarOrdenService $cancelarOrdenService,
+        ObtenerOrdenService $obtenerOrdenService
+    )
+    {
+        $this->crearOrdenService = $crearOrdenService;
+        $this->actualizarEstadoService = $actualizarEstadoService;
+        $this->cancelarOrdenService = $cancelarOrdenService;
+        $this->obtenerOrdenService = $obtenerOrdenService;
+    }
 
     /**
-     * GET /api/ordenes
-     * Listar todas las órdenes
+     * Obtener todas las órdenes (mediante Domain Model)
+     * GET /api/v1/ordenes
      */
-    public function index(): JsonResponse
+    public function index()
     {
         try {
             $ordenes = $this->obtenerOrdenService->todas();
 
             return response()->json([
                 'success' => true,
-                'data' => $ordenes->map(fn($orden) => $this->serializarOrden($orden))->values(),
+                'data' => $ordenes->map(fn($orden) => $this->serializar($orden))->values(),
                 'count' => $ordenes->count(),
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
     /**
-     * GET /api/ordenes/{numero}
-     * Obtener orden específica
+     * Obtener orden específica (mediante Domain Model)
+     * GET /api/v1/ordenes/{numero}
      */
-    public function show(int $numero): JsonResponse
+    public function show(int $numero)
     {
         try {
             $orden = $this->obtenerOrdenService->porNumero($numero);
 
             return response()->json([
                 'success' => true,
-                'data' => $this->serializarOrden($orden),
+                'data' => $this->serializar($orden),
             ]);
         } catch (\DomainException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 404);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 404);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
     /**
-     * GET /api/ordenes/cliente/{cliente}
      * Obtener órdenes por cliente
+     * GET /api/v1/ordenes/cliente/{cliente}
      */
-    public function porCliente(string $cliente): JsonResponse
+    public function porCliente(string $cliente)
     {
         try {
             $ordenes = $this->obtenerOrdenService->porCliente($cliente);
 
             return response()->json([
                 'success' => true,
-                'data' => $ordenes->map(fn($orden) => $this->serializarOrden($orden))->values(),
+                'data' => $ordenes->map(fn($orden) => $this->serializar($orden))->values(),
                 'count' => $ordenes->count(),
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
     /**
-     * GET /api/ordenes/estado/{estado}
      * Obtener órdenes por estado
+     * GET /api/v1/ordenes/estado/{estado}
      */
-    public function porEstado(string $estado): JsonResponse
+    public function porEstado(string $estado)
     {
         try {
             $ordenes = $this->obtenerOrdenService->porEstado($estado);
 
             return response()->json([
                 'success' => true,
-                'data' => $ordenes->map(fn($orden) => $this->serializarOrden($orden))->values(),
+                'data' => $ordenes->map(fn($orden) => $this->serializar($orden))->values(),
                 'count' => $ordenes->count(),
             ]);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
     /**
-     * POST /api/ordenes
      * Crear nueva orden
+     * POST /api/v1/ordenes
      */
-    public function store(CrearOrdenRequest $request): JsonResponse
+    public function store(Request $request)
     {
         try {
-            $numeroPedido = $this->crearOrdenService->ejecutar($request->validated());
+            $numeroPedido = $this->crearOrdenService->ejecutar($request->all());
 
             return response()->json([
                 'success' => true,
@@ -138,23 +138,17 @@ class RegistroOrdenDDDController extends Controller
                 'data' => ['numero_pedido' => $numeroPedido],
             ], 201);
         } catch (\DomainException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
     /**
-     * PATCH /api/ordenes/{numero}/aprobar
      * Aprobar orden
+     * PATCH /api/v1/ordenes/{numero}/aprobar
      */
-    public function aprobar(int $numero): JsonResponse
+    public function aprobar(int $numero)
     {
         try {
             $this->actualizarEstadoService->aprobar($numero);
@@ -164,23 +158,17 @@ class RegistroOrdenDDDController extends Controller
                 'message' => "Orden {$numero} aprobada",
             ]);
         } catch (\DomainException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
     /**
-     * PATCH /api/ordenes/{numero}/iniciar-produccion
      * Iniciar producción
+     * PATCH /api/v1/ordenes/{numero}/iniciar-produccion
      */
-    public function iniciarProduccion(int $numero): JsonResponse
+    public function iniciarProduccion(int $numero)
     {
         try {
             $this->actualizarEstadoService->iniciarProduccion($numero);
@@ -190,23 +178,17 @@ class RegistroOrdenDDDController extends Controller
                 'message' => "Orden {$numero} en producción",
             ]);
         } catch (\DomainException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
     /**
-     * PATCH /api/ordenes/{numero}/completar
      * Completar orden
+     * PATCH /api/v1/ordenes/{numero}/completar
      */
-    public function completar(int $numero): JsonResponse
+    public function completar(int $numero)
     {
         try {
             $this->actualizarEstadoService->completar($numero);
@@ -216,23 +198,17 @@ class RegistroOrdenDDDController extends Controller
                 'message' => "Orden {$numero} completada",
             ]);
         } catch (\DomainException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
     /**
-     * DELETE /api/ordenes/{numero}
      * Cancelar orden
+     * DELETE /api/v1/ordenes/{numero}
      */
-    public function destroy(int $numero): JsonResponse
+    public function destroy(int $numero)
     {
         try {
             $this->cancelarOrdenService->ejecutar($numero);
@@ -242,22 +218,16 @@ class RegistroOrdenDDDController extends Controller
                 'message' => "Orden {$numero} cancelada",
             ]);
         } catch (\DomainException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 422);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage(),
-            ], 500);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
 
     /**
      * Serializar una orden para respuesta JSON
      */
-    private function serializarOrden($orden): array
+    private function serializar($orden): array
     {
         return [
             'numero_pedido' => $orden->getNumeroPedido()->toInt(),
