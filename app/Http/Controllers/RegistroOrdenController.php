@@ -10,6 +10,9 @@ use App\Models\PrendaPedido;
 use App\Models\ProcesoPrenda;
 use App\Models\Cotizacion;
 use App\Services\CacheCalculosService;
+use App\Services\RegistroOrdenQueryService;
+use App\Services\RegistroOrdenSearchService;
+use App\Services\RegistroOrdenFilterService;
 use App\Models\News;
 use App\Models\Festivo;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +22,21 @@ use Carbon\Carbon;
 
 class RegistroOrdenController extends Controller
 {
+    protected $queryService;
+    protected $searchService;
+    protected $filterService;
+
+    public function __construct(
+        RegistroOrdenQueryService $queryService,
+        RegistroOrdenSearchService $searchService,
+        RegistroOrdenFilterService $filterService
+    )
+    {
+        $this->queryService = $queryService;
+        $this->searchService = $searchService;
+        $this->filterService = $filterService;
+    }
+
     private function getEnumOptions($table, $column)
     {
         $columnInfo = DB::select("SHOW COLUMNS FROM {$table} WHERE Field = ?", [$column]);
@@ -40,233 +58,24 @@ class RegistroOrdenController extends Controller
 
         // Handle request for unique values for filters
         if ($request->has('get_unique_values') && $request->has('column')) {
-            $column = $request->input('column');
-            
-            // Columnas permitidas de pedidos_produccion
-            $allowedColumns = [
-                'numero_pedido', 'estado', 'area', 'cliente', 'forma_de_pago',
-                'novedades', 'dia_de_entrega', 'fecha_de_creacion_de_orden',
-                'fecha_estimada_de_entrega', 'fecha_ultimo_proceso', 'descripcion_prendas',
-                'asesora', 'encargado_orden'
-            ];
-
-            if (in_array($column, $allowedColumns)) {
-                try {
-                    $uniqueValues = [];
-
-                    // Columnas especiales que requieren JOIN
-                    if ($column === 'asesora') {
-                        // Obtener nombres únicos de asesores
-                        $uniqueValues = PedidoProduccion::join('users', 'pedidos_produccion.asesor_id', '=', 'users.id')
-                            ->whereNotNull('users.name')
-                            ->distinct()
-                            ->pluck('users.name')
-                            ->filter(function($value) {
-                                return $value !== null && $value !== '';
-                            })
-                            ->values()
-                            ->toArray();
-                    } elseif ($column === 'descripcion_prendas') {
-                        // Obtener descripciones únicas de prendas
-                        $uniqueValues = \DB::table('prendas_pedido')
-                            ->whereNotNull('descripcion')
-                            ->where('descripcion', '!=', '')
-                            ->distinct()
-                            ->pluck('descripcion')
-                            ->filter(function($value) {
-                                return $value !== null && $value !== '';
-                            })
-                            ->values()
-                            ->toArray();
-                    } elseif ($column === 'encargado_orden') {
-                        // Obtener encargados de orden únicos (procesos_prenda - Creación de Orden)
-                        $uniqueValues = ProcesoPrenda::where('proceso', 'Creación de Orden')
-                            ->whereNotNull('encargado')
-                            ->distinct()
-                            ->pluck('encargado')
-                            ->filter(function($value) {
-                                return $value !== null && $value !== '';
-                            })
-                            ->values()
-                            ->toArray();
-                    } else {
-                        // Columnas normales de pedidos_produccion
-                        $uniqueValues = PedidoProduccion::whereNotNull($column)
-                            ->distinct()
-                            ->pluck($column)
-                            ->filter(function($value) {
-                                return $value !== null && $value !== '';
-                            })
-                            ->values()
-                            ->toArray();
-                    }
-                    
-                    // Si es una columna de fecha, formatear los valores a d/m/Y
-                    if (in_array($column, $dateColumns)) {
-                        $uniqueValues = array_map(function($value) {
-                            try {
-                                if (!empty($value)) {
-                                    $date = \Carbon\Carbon::parse($value);
-                                    return $date->format('d/m/Y');
-                                }
-                            } catch (\Exception $e) {
-                                // Si no se puede parsear, devolver el valor original
-                            }
-                            return $value;
-                        }, $uniqueValues);
-                        // Eliminar duplicados y reindexar
-                        $uniqueValues = array_values(array_unique($uniqueValues));
-                    }
-                    
-                    // Ordenar alfabéticamente
-                    sort($uniqueValues);
-                    
-                    return response()->json(['unique_values' => $uniqueValues]);
-                } catch (\Exception $e) {
-                    return response()->json(['error' => 'Error fetching values: ' . $e->getMessage()], 500);
-                }
-            }
-            return response()->json(['error' => 'Invalid column'], 400);
-        }
-
-        $query = PedidoProduccion::query()
-            ->select([
-                'id', 'numero_pedido', 'estado', 'area', 'cliente', 'cliente_id',
-                'fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega',
-                'fecha_ultimo_proceso',
-                'dia_de_entrega', 'asesor_id', 'forma_de_pago',
-                'novedades', 'cotizacion_id', 'numero_cotizacion', 'aprobado_por_supervisor_en'
-            ])
-            ->with([
-                'asesora:id,name',
-                'prendas' => function($q) {
-                    $q->select('id', 'numero_pedido', 'nombre_prenda', 'cantidad', 'descripcion', 'descripcion_variaciones', 'cantidad_talla', 'color_id', 'tela_id', 'tipo_manga_id', 'tiene_bolsillos', 'tiene_reflectivo')
-                      ->with('color:id,nombre', 'tela:id,nombre,referencia', 'tipoManga:id,nombre');
-                }
-            ]);
-
-        // FILTRO CRÍTICO: Las órdenes solo deben aparecer si:
-        // 1. El supervisor ha tomado una acción (aprobado, anulado, etc. - aprobado_por_supervisor_en NOT NULL)
-        // 2. O si NO tienen cotización asociada (pedidos creados directamente sin pasar por cotización)
-        $query->where(function($q) {
-            $q->whereNotNull('aprobado_por_supervisor_en')
-              ->orWhereNull('cotizacion_id');
-        });
-
-        // Filtro por defecto para supervisores: "En Ejecución" (pero puede cambiarse)
-        if (auth()->user() && auth()->user()->role && auth()->user()->role->name === 'supervisor') {
-            // Si no hay filtro de estado en la URL, aplicar "En Ejecución" por defecto
-            if (!$request->has('filter_estado')) {
-                $query->where('estado', 'En Ejecución');
+            try {
+                $values = $this->queryService->getUniqueValues($request->input('column'));
+                return response()->json(['unique_values' => $values]);
+            } catch (\InvalidArgumentException $e) {
+                return response()->json(['error' => 'Invalid column'], 400);
+            } catch (\Exception $e) {
+                return response()->json(['error' => 'Error fetching values: ' . $e->getMessage()], 500);
             }
         }
 
-        // Apply search filter - search by 'numero_pedido' or 'cliente'
-        if ($request->has('search') && !empty($request->search)) {
-            $searchTerm = $request->search;
-            $query->where(function($q) use ($searchTerm) {
-                $q->where('numero_pedido', 'LIKE', '%' . $searchTerm . '%')
-                  ->orWhere('cliente', 'LIKE', '%' . $searchTerm . '%');
-            });
-        }
+        $query = $this->queryService->buildBaseQuery();
+        $query = $this->queryService->applyRoleFilters($query, auth()->user(), $request);
+        $query = $this->searchService->applySearchFilter($query, $request->input('search'));
 
-        // Detectar si hay filtro de total_de_dias_ para procesarlo después
-        $filterTotalDias = null;
-        
-        // Apply column filters (dynamic for all columns)
-        foreach ($request->all() as $key => $value) {
-            if (str_starts_with($key, 'filter_') && !empty($value)) {
-                $column = str_replace('filter_', '', $key);
-                // Usar separador especial para valores que pueden contener comas y saltos de línea
-                $separator = '|||FILTER_SEPARATOR|||';
-                $values = explode($separator, $value);
-                
-                // Limpiar valores vacíos y trimear espacios
-                $values = array_filter(array_map('trim', $values));
-
-                // Whitelist de columnas permitidas para seguridad
-                $allowedColumns = [
-                    'id', 'estado', 'area', 'total_de_dias_', 'dia_de_entrega', 'fecha_estimada_de_entrega', 'numero_pedido', 'cliente',
-                    'descripcion_prendas', 'cantidad', 'novedades', 'forma_de_pago', 'asesora', 'encargado_orden',
-                    'fecha_de_creacion_de_orden', 'fecha_ultimo_proceso'
-                ];
-
-                if (in_array($column, $allowedColumns)) {
-                    // Si es total_de_dias_, guardarlo para filtrar después del cálculo
-                    if ($column === 'total_de_dias_') {
-                        $filterTotalDias = array_map('intval', $values);
-                        continue;
-                    }
-                    
-                    // Si es asesora, filtrar por nombre de usuario
-                    if ($column === 'asesora') {
-                        $query->whereIn('asesor_id', function($subquery) use ($values) {
-                            $subquery->select('id')
-                                ->from('users')
-                                ->whereIn('name', $values);
-                        });
-                        continue;
-                    }
-                    
-                    // Si es descripcion_prendas, filtrar por descripcion
-                    if ($column === 'descripcion_prendas') {
-                        // Usar la columna descripcion de prendas_pedido
-                        // Buscar todas las descripciones que contengan cualquiera de los valores ingresados
-                        if (!empty($values)) {
-                            $query->whereIn('numero_pedido', function($subquery) use ($values) {
-                                $subquery->select('numero_pedido')
-                                    ->from('prendas_pedido')
-                                    ->where(function($q) use ($values) {
-                                        foreach ($values as $value) {
-                                            $q->orWhere('descripcion', 'LIKE', '%' . $value . '%');
-                                        }
-                                    })
-                                    ->distinct();
-                            });
-                        }
-                        continue;
-                    }
-                    
-                    // Si es encargado_orden, filtrar por procesos
-                    if ($column === 'encargado_orden') {
-                        $query->whereIn('numero_pedido', function($subquery) use ($values) {
-                            $subquery->select('numero_pedido')
-                                ->from('procesos_prenda')
-                                ->where('proceso', 'Creación de Orden')
-                                ->whereIn('encargado', $values)
-                                ->distinct();
-                        });
-                        continue;
-                    }
-                    
-                    // Si es una columna de fecha, convertir los valores de d/m/Y a formato de base de datos
-                    if (in_array($column, $dateColumns)) {
-                        $query->where(function($q) use ($column, $values) {
-                            foreach ($values as $dateValue) {
-                                try {
-                                    // Intentar parsear la fecha en formato d/m/Y
-                                    $date = \Carbon\Carbon::createFromFormat('d/m/Y', $dateValue);
-                                    $q->orWhereDate($column, $date->format('Y-m-d'));
-                                } catch (\Exception $e) {
-                                    // Si falla, intentar buscar el valor tal cual
-                                    $q->orWhere($column, $dateValue);
-                                }
-                            }
-                        });
-                    } elseif ($column === 'cliente') {
-                        // Para cliente, usar LIKE para búsqueda parcial (como en el buscador)
-                        $query->where(function($q) use ($values) {
-                            foreach ($values as $value) {
-                                $q->orWhere('cliente', 'LIKE', '%' . $value . '%');
-                            }
-                        });
-                    } else {
-                        $query->whereIn($column, $values);
-                    }
-                }
-            }
-        }
-
+        // Extraer y aplicar filtros dinámicos
+        $filterData = $this->filterService->extractFiltersFromRequest($request);
+        $query = $this->filterService->applyFiltersToQuery($query, $filterData['filters']);
+        $filterTotalDias = $filterData['totalDiasFilter'];
 
         $currentYear = now()->year;
         $nextYear = now()->addYear()->year;
