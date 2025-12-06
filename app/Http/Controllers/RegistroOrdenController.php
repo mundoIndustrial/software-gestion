@@ -16,6 +16,8 @@ use App\Services\RegistroOrdenFilterService;
 use App\Services\RegistroOrdenExtendedQueryService;
 use App\Services\RegistroOrdenSearchExtendedService;
 use App\Services\RegistroOrdenFilterExtendedService;
+use App\Services\RegistroOrdenTransformService;
+use App\Services\RegistroOrdenProcessService;
 use App\Models\News;
 use App\Models\Festivo;
 use Illuminate\Support\Facades\DB;
@@ -31,6 +33,8 @@ class RegistroOrdenController extends Controller
     protected $extendedQueryService;
     protected $extendedSearchService;
     protected $extendedFilterService;
+    protected $transformService;
+    protected $processService;
 
     public function __construct(
         RegistroOrdenQueryService $queryService,
@@ -38,7 +42,9 @@ class RegistroOrdenController extends Controller
         RegistroOrdenFilterService $filterService,
         RegistroOrdenExtendedQueryService $extendedQueryService,
         RegistroOrdenSearchExtendedService $extendedSearchService,
-        RegistroOrdenFilterExtendedService $extendedFilterService
+        RegistroOrdenFilterExtendedService $extendedFilterService,
+        RegistroOrdenTransformService $transformService,
+        RegistroOrdenProcessService $processService
     )
     {
         $this->queryService = $queryService;
@@ -47,6 +53,8 @@ class RegistroOrdenController extends Controller
         $this->extendedQueryService = $extendedQueryService;
         $this->extendedSearchService = $extendedSearchService;
         $this->extendedFilterService = $extendedFilterService;
+        $this->transformService = $transformService;
+        $this->processService = $processService;
     }
 
     private function getEnumOptions($table, $column)
@@ -153,10 +161,10 @@ class RegistroOrdenController extends Controller
         $numeroPedidosPagina = array_map(function($orden) {
             return $orden->numero_pedido;
         }, $ordenes->items());
-        $areasMap = $this->getLastProcessByOrderByNumbers($numeroPedidosPagina);
+        $areasMap = $this->processService->getLastProcessByOrderNumbers($numeroPedidosPagina);
         
         // Obtener encargados de "Creación Orden" para cada pedido
-        $encargadosCreacionOrdenMap = $this->getCreacionOrdenEncargados($numeroPedidosPagina);
+        $encargadosCreacionOrdenMap = $this->processService->getCreacionOrdenEncargados($numeroPedidosPagina);
 
         // Opciones de áreas disponibles (áreas de procesos)
         $areaOptions = AreaOptions::getArray();
@@ -179,53 +187,7 @@ class RegistroOrdenController extends Controller
         if ($request->wantsJson()) {
             // Filtrar campos sensibles según el rol del usuario
             $ordenesFiltered = array_map(function($orden) use ($areasMap, $encargadosCreacionOrdenMap) {
-                $ordenArray = is_object($orden) ? $orden->toArray() : (array) $orden;
-                
-                // Campos que se ocultan para todos los usuarios
-                $camposOcultosGlobal = ['created_at', 'updated_at', 'deleted_at', 'asesor_id', 'cliente_id'];
-                
-                // Campos que se ocultan para no-asesores
-                $camposOcultosNoAsesor = ['cotizacion_id', 'numero_cotizacion'];
-                
-                // Agregar nombres en lugar de IDs
-                if ($orden->asesora) {
-                    $ordenArray['asesor'] = $orden->asesora->name ?? '';
-                } else {
-                    $ordenArray['asesor'] = '';
-                }
-                
-                // Para cliente, usar el campo 'cliente' directo (que es el nombre del cliente en la tabla)
-                // Si existe cliente_id, intentar obtener el nombre de la tabla clientes
-                if (!empty($ordenArray['cliente_id'])) {
-                    try {
-                        $cliente = \App\Models\Cliente::find($ordenArray['cliente_id']);
-                        $ordenArray['cliente_nombre'] = $cliente ? $cliente->nombre : ($ordenArray['cliente'] ?? '');
-                    } catch (\Exception $e) {
-                        $ordenArray['cliente_nombre'] = $ordenArray['cliente'] ?? '';
-                    }
-                } else {
-                    $ordenArray['cliente_nombre'] = $ordenArray['cliente'] ?? '';
-                }
-                
-                // Agregar el área (último proceso) desde procesos_prenda
-                $ordenArray['area'] = $areasMap[$orden->numero_pedido] ?? 'Creación Orden';
-                
-                // Agregar el encargado de "Creación Orden" desde procesos_prenda
-                $ordenArray['encargado_orden'] = $encargadosCreacionOrdenMap[$orden->numero_pedido] ?? '';
-                
-                // Eliminar campos ocultos globales
-                foreach ($camposOcultosGlobal as $campo) {
-                    unset($ordenArray[$campo]);
-                }
-                
-                // Eliminar campos sensibles para no-asesores
-                if (!auth()->user() || !auth()->user()->role || auth()->user()->role->name !== 'asesor') {
-                    foreach ($camposOcultosNoAsesor as $campo) {
-                        unset($ordenArray[$campo]);
-                    }
-                }
-                
-                return $ordenArray;
+                return $this->transformService->transformarOrden($orden, $areasMap, $encargadosCreacionOrdenMap);
             }, $ordenes->items());
             
             // Retornar string vacío para que paginationManager.js genere el HTML con los estilos correctos
@@ -1394,112 +1356,14 @@ class RegistroOrdenController extends Controller
      * Obtener el último proceso (área) para cada orden desde procesos_prenda y procesos_historial
      * Obtiene el proceso más reciente (por updated_at) de cada pedido
      */
-    private function getLastProcessByOrder($ordenes)
-    {
-        $areasMap = [];
-        
-        if (empty($ordenes)) {
-            return $areasMap;
-        }
-        
-        // Obtener números de pedido
-        $numeroPedidos = array_map(function($orden) {
-            return $orden->numero_pedido ?? $orden['numero_pedido'];
-        }, $ordenes);
-        
-        // Filtrar valores null y eliminar duplicados
-        $numeroPedidos = array_filter(array_unique($numeroPedidos));
-        
-        if (empty($numeroPedidos)) {
-            return $areasMap;
-        }
-        
-        // Obtener procesos ordenados por fecha_inicio DESC (más reciente)
-        $procesosActuales = DB::table('procesos_prenda')
-            ->whereIn('numero_pedido', $numeroPedidos)
-            ->orderBy('numero_pedido', 'asc')
-            ->orderBy('fecha_inicio', 'DESC')
-            ->orderBy('id', 'DESC')
-            ->select('numero_pedido', 'proceso', 'fecha_inicio', 'id')
-            ->get();
-        
-        // Agrupar por numero_pedido - tomar el primero (más reciente por fecha)
-        foreach ($procesosActuales as $p) {
-            if (!isset($areasMap[$p->numero_pedido])) {
-                $areasMap[$p->numero_pedido] = $p->proceso;
-            }
-        }
-        
-        return $areasMap;
-    }
-
     /**
-     * Obtener el último proceso (área) para cada número de pedido desde procesos_prenda
-     * Versión optimizada que recibe directamente array de números de pedido
+     * DEPRECATED: Los siguientes métodos se han movido a RegistroOrdenProcessService
+     * Se mantienen aquí como referencia pero ya no son utilizados
+     * 
+     * - getLastProcessByOrder() -> RegistroOrdenProcessService::getLastProcessByOrderNumbers()
+     * - getCreacionOrdenEncargados() -> RegistroOrdenProcessService::getCreacionOrdenEncargados()
+     * - getLastProcessByOrderByNumbers() -> RegistroOrdenProcessService::getLastProcessByOrderNumbers()
      */
-    private function getCreacionOrdenEncargados($numeroPedidos = [])
-    {
-        $encargadosMap = [];
-        
-        if (empty($numeroPedidos)) {
-            return $encargadosMap;
-        }
-        
-        // Filtrar valores null y eliminar duplicados
-        $numeroPedidos = array_filter(array_unique($numeroPedidos));
-        
-        if (empty($numeroPedidos)) {
-            return $encargadosMap;
-        }
-        
-        // Obtener el encargado del proceso "Creación de Orden" para cada pedido
-        $procesos = DB::table('procesos_prenda')
-            ->whereIn('numero_pedido', $numeroPedidos)
-            ->where('proceso', 'Creación de Orden')
-            ->select('numero_pedido', 'encargado')
-            ->get();
-        
-        // Mapear numero_pedido a encargado
-        foreach ($procesos as $p) {
-            $encargadosMap[$p->numero_pedido] = $p->encargado ?? '';
-        }
-        
-        return $encargadosMap;
-    }
-
-    private function getLastProcessByOrderByNumbers($numeroPedidos = [])
-    {
-        $areasMap = [];
-        
-        if (empty($numeroPedidos)) {
-            return $areasMap;
-        }
-        
-        // Filtrar valores null y eliminar duplicados
-        $numeroPedidos = array_filter(array_unique($numeroPedidos));
-        
-        if (empty($numeroPedidos)) {
-            return $areasMap;
-        }
-        
-        // Obtener procesos ordenados por fecha_inicio DESC (más reciente)
-        $procesosActuales = DB::table('procesos_prenda')
-            ->whereIn('numero_pedido', $numeroPedidos)
-            ->orderBy('numero_pedido', 'asc')
-            ->orderBy('fecha_inicio', 'DESC')
-            ->orderBy('id', 'DESC')
-            ->select('numero_pedido', 'proceso', 'fecha_inicio', 'id')
-            ->get();
-        
-        // Agrupar por numero_pedido - tomar el primero (más reciente por fecha)
-        foreach ($procesosActuales as $p) {
-            if (!isset($areasMap[$p->numero_pedido])) {
-                $areasMap[$p->numero_pedido] = $p->proceso;
-            }
-        }
-        
-        return $areasMap;
-    }
 
     /**
      * API endpoint para calcular días en tiempo real
