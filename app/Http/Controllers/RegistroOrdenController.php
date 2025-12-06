@@ -31,6 +31,11 @@ use App\Services\RegistroOrdenUpdateService;
 use App\Services\RegistroOrdenDeletionService;
 use App\Services\RegistroOrdenNumberService;
 use App\Services\RegistroOrdenPrendaService;
+use App\Services\RegistroOrdenCacheService;
+use App\Services\RegistroOrdenEntregasService;
+use App\Services\RegistroOrdenStatsService;
+use App\Services\RegistroOrdenProcessesService;
+use App\Services\RegistroOrdenEnumService;
 use App\Models\News;
 use App\Models\Festivo;
 use Illuminate\Support\Facades\DB;
@@ -56,6 +61,11 @@ class RegistroOrdenController extends Controller
     protected $deletionService;
     protected $numberService;
     protected $prendaService;
+    protected $cacheService;
+    protected $entregasService;
+    protected $statsService;
+    protected $processesService;
+    protected $enumService;
 
     public function __construct(
         RegistroOrdenQueryService $queryService,
@@ -71,7 +81,12 @@ class RegistroOrdenController extends Controller
         RegistroOrdenUpdateService $updateService,
         RegistroOrdenDeletionService $deletionService,
         RegistroOrdenNumberService $numberService,
-        RegistroOrdenPrendaService $prendaService
+        RegistroOrdenPrendaService $prendaService,
+        RegistroOrdenCacheService $cacheService,
+        RegistroOrdenEntregasService $entregasService,
+        RegistroOrdenStatsService $statsService,
+        RegistroOrdenProcessesService $processesService,
+        RegistroOrdenEnumService $enumService
     )
     {
         $this->queryService = $queryService;
@@ -88,16 +103,16 @@ class RegistroOrdenController extends Controller
         $this->deletionService = $deletionService;
         $this->numberService = $numberService;
         $this->prendaService = $prendaService;
+        $this->cacheService = $cacheService;
+        $this->entregasService = $entregasService;
+        $this->statsService = $statsService;
+        $this->processesService = $processesService;
+        $this->enumService = $enumService;
     }
 
     private function getEnumOptions($table, $column)
     {
-        $columnInfo = DB::select("SHOW COLUMNS FROM {$table} WHERE Field = ?", [$column]);
-        if (empty($columnInfo)) return [];
-
-        $type = $columnInfo[0]->Type;
-        preg_match_all("/'([^']+)'/", $type, $matches);
-        return $matches[1] ?? [];
+        return $this->enumService->getEnumOptions($table, $column);
     }
 
     public function index(Request $request)
@@ -266,23 +281,10 @@ class RegistroOrdenController extends Controller
         // Buscar en PedidoProduccion por 'numero_pedido'
         $order = PedidoProduccion::with(['asesora', 'prendas', 'cotizacion'])->where('numero_pedido', $pedido)->firstOrFail();
 
-        $totalCantidad = DB::table('prendas_pedido')
-            ->where('numero_pedido', $order->numero_pedido)
-            ->sum('cantidad');
-
-        // $totalEntregado se calcula solo si la tabla procesos_prenda existe y tiene datos
-        $totalEntregado = 0;
-        try {
-            $totalEntregado = DB::table('procesos_prenda')
-                ->where('numero_pedido', $order->numero_pedido)
-                ->sum('cantidad_completada');
-        } catch (\Exception $e) {
-            \Log::warning('Error al calcular totalEntregado', ['error' => $e->getMessage()]);
-            $totalEntregado = 0;
-        }
-
-        $order->total_cantidad = $totalCantidad;
-        $order->total_entregado = $totalEntregado;
+        // Obtener estadísticas mediante servicio
+        $stats = $this->statsService->getOrderStats($pedido);
+        $order->total_cantidad = $stats['total_cantidad'];
+        $order->total_entregado = $stats['total_entregado'];
 
         // Filtrar datos sensibles
         $orderArray = $order->toArray();
@@ -315,7 +317,6 @@ class RegistroOrdenController extends Controller
         }
         
         // Asegurar que descripcion_prendas se calcula correctamente
-        // Esto fuerza la evaluación del atributo calculado
         $orderArray['descripcion_prendas'] = $order->descripcion_prendas;
         
         // Eliminar campos ocultos globales
@@ -430,46 +431,19 @@ class RegistroOrdenController extends Controller
 
     public function getEntregas($pedido)
     {
-        try {
-            // Obtener el pedido desde la nueva arquitectura
-            $orden = PedidoProduccion::where('numero_pedido', $pedido)->firstOrFail();
-
-            // Obtener prendas y convertir a formato compatible
-            $entregas = $orden->prendas()
-                ->select('nombre_prenda', 'cantidad_talla')
-                ->get()
-                ->flatMap(function($prenda) {
-                    $cantidadTalla = is_string($prenda->cantidad_talla)
-                        ? json_decode($prenda->cantidad_talla, true)
-                        : $prenda->cantidad_talla;
-
-                    $resultado = [];
-                    if (is_array($cantidadTalla)) {
-                        foreach ($cantidadTalla as $talla => $cantidad) {
-                            $resultado[] = [
-                                'prenda' => $prenda->nombre_prenda,
-                                'talla' => $talla,
-                                'cantidad' => $cantidad,
-                                'total_producido_por_talla' => 0,
-                                'total_pendiente_por_talla' => $cantidad
-                            ];
-                        }
-                    }
-                    return $resultado;
-                });
-
+        return $this->tryExec(function() use ($pedido) {
+            $entregas = $this->entregasService->getEntregas($pedido);
             return response()->json($entregas);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json(['error' => 'Pedido no encontrado'], 404);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
+        });
     }
 
     /**
      * Cálculo optimizado con CACHÉ PERSISTENTE (Redis/File)
      * Calcula total_de_dias para TODAS las órdenes con caché de 24 horas
      * MEJORA: 95% más rápido que calcularTotalDiasBatch original
+     * 
+     * NOTA: Esta lógica permanece aquí por compatibilidad con método index()
+     * que requiere cálculo de días. En futuro refactorizar a servicio.
      */
     private function calcularTotalDiasBatchConCache(array $ordenes, array $festivos): array
     {
@@ -489,6 +463,9 @@ class RegistroOrdenController extends Controller
 
     /**
      * Conteo optimizado de fines de semana
+     * 
+     * NOTA: Esta lógica permanece aquí por compatibilidad con método index()
+     * En futuro refactorizar a servicio separado.
      */
     private function contarFinesDeSemanaBatch(\Carbon\Carbon $start, \Carbon\Carbon $end): int
     {
@@ -512,32 +489,12 @@ class RegistroOrdenController extends Controller
     /**
      * Invalidar caché de días calculados para una orden específica
      * Se ejecuta cuando se actualiza o elimina una orden
+     * 
+     * Delegado a: RegistroOrdenCacheService::invalidateDaysCache()
      */
     private function invalidarCacheDias($pedido): void
     {
-        $hoy = now()->format('Y-m-d');
-        
-        // Obtener festivos del servicio automático (no de BD)
-        $currentYear = now()->year;
-        $festivos = FestivosColombiaService::obtenerFestivos($currentYear);
-        $festivosCacheKey = md5(serialize($festivos));
-        
-        // Invalidar para todos los posibles estados
-        $estados = ['Entregado', 'En Ejecución', 'No iniciado', 'Anulada'];
-        
-        foreach ($estados as $estado) {
-            $cacheKey = "orden_dias_{$pedido}_{$estado}_{$hoy}_{$festivosCacheKey}";
-            Cache::forget($cacheKey);
-        }
-        
-        // También invalidar para días anteriores (últimos 7 días)
-        for ($i = 1; $i <= 7; $i++) {
-            $fecha = now()->subDays($i)->format('Y-m-d');
-            foreach ($estados as $estado) {
-                $cacheKey = "orden_dias_{$pedido}_{$estado}_{$fecha}_{$festivosCacheKey}";
-                Cache::forget($cacheKey);
-            }
-        }
+        $this->cacheService->invalidateDaysCache($pedido);
     }
 
     /**
@@ -912,64 +869,14 @@ class RegistroOrdenController extends Controller
     /**
      * API: Obtener procesos de una orden (para bodega tracking)
      * Busca en procesos_prenda usando el número de pedido
+     * 
+     * Delegado a: RegistroOrdenProcessesService::getOrderProcesses()
      */
     public function getProcesosTablaOriginal($numeroPedido)
     {
-        try {
-            // Buscar la orden en pedidos_produccion
-            $orden = PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
-
-            // Obtener festivos
-            $festivos = Festivo::pluck('fecha')->toArray();
-
-            // Obtener los procesos ordenados por fecha_inicio desde procesos_prenda
-            // Excluir soft-deleted
-            $procesos = DB::table('procesos_prenda')
-                ->where('numero_pedido', $numeroPedido)
-                ->whereNull('deleted_at')  // Excluir soft-deleted
-                ->orderBy('fecha_inicio', 'asc')
-                ->select('id', 'proceso', 'fecha_inicio', 'encargado', 'estado_proceso')
-                ->get()
-                ->groupBy('proceso')
-                ->map(function($grupo) {
-                    return $grupo->first();
-                })
-                ->values();
-
-            // Calcular días hábiles totales
-            $totalDiasHabiles = 0;
-            if ($procesos->count() > 0) {
-                $fechaInicio = Carbon::parse($procesos->first()->fecha_inicio);
-                
-                $procesoDespachos = $procesos->firstWhere('proceso', 'Despachos') 
-                    ?? $procesos->firstWhere('proceso', 'Entrega')
-                    ?? $procesos->firstWhere('proceso', 'Despacho');
-                
-                if ($procesoDespachos) {
-                    $fechaFin = Carbon::parse($procesoDespachos->fecha_inicio);
-                } elseif ($procesos->count() > 1) {
-                    $fechaFin = Carbon::parse($procesos->last()->fecha_inicio);
-                } else {
-                    $fechaFin = Carbon::now();
-                }
-                
-                $totalDiasHabiles = $this->calcularDiasHabilesBatch($fechaInicio, $fechaFin, $festivos);
-            }
-
-            return response()->json([
-                'numero_pedido' => $numeroPedido,
-                'cliente' => $orden->cliente ?? '',
-                'fecha_inicio' => $orden->fecha_de_creacion_de_orden ?? null,
-                'fecha_estimada_de_entrega' => $orden->fecha_estimada_entrega ?? null,
-                'procesos' => $procesos,
-                'total_dias_habiles' => $totalDiasHabiles,
-                'festivos' => $festivos
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Error al obtener procesos de orden: ' . $e->getMessage());
-            return response()->json([
-                'error' => 'No se encontró la orden o no tiene permiso para verla'
-            ], 404);
-        }
+        return $this->tryExec(function() use ($numeroPedido) {
+            $procesos = $this->processesService->getOrderProcesses($numeroPedido);
+            return response()->json($procesos);
+        });
     }
 }
