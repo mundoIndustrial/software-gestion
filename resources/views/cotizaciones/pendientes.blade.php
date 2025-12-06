@@ -251,6 +251,22 @@
 </style>
 
 <script>
+// Mapeo de estados en enums a labels legibles
+const estadosLabel = {
+    'BORRADOR': 'Borrador',
+    'ENVIADA_CONTADOR': 'Enviada a Contador',
+    'APROBADA_CONTADOR': 'Aprobada por Contador',
+    'APROBADA_COTIZACIONES': 'Aprobada por Aprobador',
+    'EN_CORRECCION': 'En Corrección',
+    'CONVERTIDA_PEDIDO': 'Convertida a Pedido',
+    'FINALIZADA': 'Finalizada',
+    'EN_PRODUCCION': 'En Producción'
+};
+
+function transformarEstado(estado) {
+    return estadosLabel[estado] || estado;
+}
+
 function toggleVerMenu(event, cotizacionId) {
     event.stopPropagation();
     const menu = document.getElementById(`ver-menu-${cotizacionId}`);
@@ -327,7 +343,7 @@ function mostrarComparacionCotizacion(data) {
                 <p><strong>Empresa:</strong> ${cotizacion.empresa || 'N/A'}</p>
                 <p><strong>Cliente:</strong> ${cotizacion.nombre_cliente || 'N/A'}</p>
                 <p><strong>Fecha:</strong> ${new Date(cotizacion.created_at).toLocaleDateString()}</p>
-                <p><strong>Estado:</strong> <span style="background: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 4px; font-size: 0.875rem;">${cotizacion.estado}</span></p>
+                <p><strong>Estado:</strong> <span style="background: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 4px; font-size: 0.875rem;">${transformarEstado(cotizacion.estado)}</span></p>
             </div>
 
             <h4 style="font-weight: bold; margin-bottom: 12px; color: #374151;">Prendas:</h4>
@@ -365,7 +381,7 @@ function mostrarComparacionCotizacion(data) {
                 <div style="background: #f0fdf4; padding: 16px; border-radius: 8px; margin-bottom: 12px; border-left: 4px solid #059669;">
                     <p><strong>Orden #${orden.numero_orden}</strong></p>
                     <p style="font-size: 0.875rem; color: #6b7280;">Fecha: ${new Date(orden.created_at).toLocaleDateString()}</p>
-                    <p style="font-size: 0.875rem; color: #6b7280;">Estado: ${orden.estado}</p>
+                    <p style="font-size: 0.875rem; color: #6b7280;">Estado: ${transformarEstado(orden.estado)}</p>
                 </div>
             `;
         });
@@ -382,9 +398,8 @@ function mostrarDetallesCotizacion(data) {
     const prendas = data.prendas_cotizaciones || [];
     
     let estadoBadge = '';
-    if (cotizacion.estado === 'APROBADA_CONTADOR') {
-        estadoBadge = '<span style="background: #dbeafe; color: #1e40af; padding: 6px 12px; border-radius: 6px; font-weight: bold;">Aprobado por Contador</span>';
-    }
+    const estadoLabel = transformarEstado(cotizacion.estado);
+    estadoBadge = `<span style="background: #dbeafe; color: #1e40af; padding: 6px 12px; border-radius: 6px; font-weight: bold;">${estadoLabel}</span>`;
     
     let html = `
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">

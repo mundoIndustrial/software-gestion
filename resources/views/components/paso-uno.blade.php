@@ -1,0 +1,38 @@
+<!-- PASO 1 -->
+<div class="form-step active" data-step="1">
+    <div class="step-header">
+        <h2>PASO 1: INFORMACIÓN DEL CLIENTE</h2>
+        <p>CUÉNTANOS QUIÉN ES TU CLIENTE</p>
+    </div>
+
+    <div style="background: #f0f7ff; border-left: 4px solid #3498db; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+            <div>
+                <p style="margin: 0; font-size: 0.9rem; color: #666;">
+                    <strong>{{ Auth::user()->genero === 'F' ? 'ASESORA COMERCIAL' : 'ASESOR COMERCIAL' }}:</strong>
+                    {{ Auth::user()->name }}
+                </p>
+            </div>
+            <div>
+                <p style="margin: 0; font-size: 0.9rem; color: #666;">
+                    <strong>FECHA:</strong>
+                    <span id="fechaActual"></span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="form-group-large">
+            <label for="cliente"><i class="fas fa-user"></i> NOMBRE DEL CLIENTE *</label>
+            <input type="text" id="cliente" name="cliente" class="input-large" placeholder="EJ: JUAN GARCÍA, EMPRESA ABC..." value="{{ isset($esEdicion) && $esEdicion && isset($cotizacion) ? $cotizacion->cliente : '' }}" required>
+            <small class="help-text">EL NOMBRE DE TU CLIENTE O EMPRESA</small>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="button" class="btn-next" onclick="irAlPaso(2)">
+            SIGUIENTE <i class="fas fa-arrow-right"></i>
+        </button>
+    </div>
+</div>

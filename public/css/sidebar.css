@@ -496,6 +496,7 @@ body.dark-theme .sidebar-header .header-logo {
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 1.3rem;
   color: var(--color-text-placeholder);
+  transform: rotate(0deg);
 }
 
 .submenu-toggle:hover .submenu-arrow {
@@ -503,7 +504,7 @@ body.dark-theme .sidebar-header .header-logo {
 }
 
 .submenu-toggle.active .submenu-arrow {
-  transform: rotate(180deg);
+  transform: rotate(0deg);
   color: var(--color-hover-primary);
 }
 

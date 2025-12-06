@@ -1,0 +1,408 @@
+/**
+ * crear-pedido.css
+ * 
+ * Estilos para la página de crear pedido desde cotización
+ * Separados en un archivo para mejor mantenimiento
+ */
+
+/* Variables de color */
+:root {
+    --primary: #1e40af;
+    --secondary: #0ea5e9;
+    --accent: #06b6d4;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+}
+
+/* Header de página */
+.page-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    color: white;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    border-radius: 9px;
+    box-shadow: 0 10px 30px rgba(30, 64, 175, 0.15);
+}
+
+.page-header h1 {
+    font-size: 1.25rem;
+    font-weight: 800;
+    margin: 0 0 0.25rem 0;
+}
+
+.page-header p {
+    font-size: 0.65rem;
+    opacity: 0.95;
+    margin: 0;
+}
+
+/* Secciones de formulario */
+.form-section {
+    background: white;
+    border-radius: 7.5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    padding: 0.9rem;
+    margin-bottom: 0.9rem;
+    border-left: 3px solid var(--primary);
+}
+
+.form-section h2 {
+    font-size: 0.975rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 1.125rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5625rem;
+}
+
+.form-section h2 span {
+    background: var(--primary);
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.675rem;
+}
+
+/* Grupos de formulario */
+.form-group {
+    margin-bottom: 0.75rem;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.6375rem;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 0.375rem;
+    text-transform: uppercase;
+    letter-spacing: 0.375px;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 0.5625rem 0.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 4.5px;
+    font-size: 0.7125rem;
+    transition: all 0.3s ease;
+    background-color: #f8fafc;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--primary);
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+}
+
+.form-group input:disabled,
+.form-group input[readonly] {
+    background-color: #f1f5f9;
+    color: #64748b;
+    cursor: not-allowed;
+    border-color: #e2e8f0;
+}
+
+/* Grid de formulario responsivo */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.125rem;
+}
+
+@media (min-width: 768px) {
+    .form-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .form-row {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Espaciamiento */
+.space-y-6 > * + * {
+    margin-top: 1.5rem;
+}
+
+/* Botones */
+.btn {
+    padding: 0.5625rem 1.125rem;
+    border-radius: 4.5px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    text-align: center;
+    font-size: 0.75rem;
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    color: white;
+    box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2);
+}
+
+.btn-primary:hover {
+    background-color: #1e3a8a;
+    box-shadow: 0 4px 8px rgba(30, 64, 175, 0.3);
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background-color: #64748b;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #475569;
+}
+
+/* Acciones de botones */
+.btn-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.btn-actions .btn {
+    flex: 1;
+    padding: 0.75rem;
+    font-size: 0.75rem;
+}
+
+/* Contenedor vacío */
+.empty-state {
+    text-align: center;
+    padding: 2.25rem;
+    color: #64748b;
+}
+
+.empty-state p {
+    margin: 0;
+    font-size: 0.7125rem;
+}
+
+/* Tarjeta de prenda */
+.prenda-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.prenda-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: var(--primary);
+}
+
+/* Descripción de prenda */
+.prenda-descripcion {
+    color: #64748b;
+    font-size: 0.6375rem;
+    margin-bottom: 0.75rem;
+}
+
+/* Grid de tallas */
+.tallas-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    align-items: center;
+}
+
+/* Grupo de talla */
+.talla-group {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    display: inline-flex;
+    flex-direction: column;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.talla-group:hover {
+    border-color: var(--primary);
+    box-shadow: 0 2px 6px rgba(30, 64, 175, 0.1);
+}
+
+.talla-group.talla-eliminada {
+    opacity: 0.4;
+    background: #f1f5f9;
+}
+
+/* Header de talla */
+.talla-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+/* Etiqueta de talla */
+.talla-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #1e293b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    min-width: 30px;
+    text-align: center;
+}
+
+/* Botón eliminar talla */
+.btn-eliminar-talla {
+    background: var(--danger) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 2px !important;
+    width: 16px !important;
+    height: 16px !important;
+    min-width: 16px !important;
+    padding: 0 !important;
+    cursor: pointer !important;
+    font-size: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.2s !important;
+    flex-shrink: 0;
+}
+
+.btn-eliminar-talla:hover {
+    background: #dc2626 !important;
+}
+
+/* Input de talla */
+.talla-input {
+    padding: 0.35rem 0.5rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    background-color: white;
+    text-align: center;
+    font-weight: 600;
+    transition: all 0.2s;
+    width: 50px;
+}
+
+.talla-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.1);
+}
+
+.talla-input:disabled {
+    background-color: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+/* Botón agregar talla */
+.btn-agregar-talla {
+    background: var(--success) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 4px !important;
+    padding: 0.5rem 1rem !important;
+    cursor: pointer !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    transition: all 0.2s !important;
+    margin-top: 0.75rem !important;
+}
+
+.btn-agregar-talla:hover {
+    background: #059669 !important;
+}
+
+/* Acciones de tallas */
+.tallas-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+/* Input de nueva talla */
+.input-nueva-talla {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+/* Buscador de cotización */
+#cotizacion_search {
+    font-size: 0.875rem !important;
+    padding: 0.625rem 0.75rem !important;
+}
+
+#cotizacion_search:focus {
+    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1) !important;
+}
+
+/* Dropdown de cotizaciones */
+#cotizacion_dropdown {
+    border: 1px solid #e5e7eb;
+    border-top: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+#cotizacion_dropdown > div {
+    font-size: 0.875rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #f3f4f6;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+#cotizacion_dropdown > div:hover {
+    background-color: #f0f9ff;
+}
+
+#cotizacion_dropdown > div:last-child {
+    border-bottom: none;
+}
+
+/* Cotización seleccionada */
+#cotizacion_selected {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: #f0f9ff;
+    border-left: 3px solid #0066cc;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    color: var(--primary);
+}
+
+/* Ocultar top nav */
+.top-nav {
+    display: none !important;
+}
+
+/* Container */
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+}

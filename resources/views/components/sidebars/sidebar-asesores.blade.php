@@ -32,11 +32,30 @@
             <span class="menu-section-title">Cotizaciones</span>
             <ul class="menu-list" role="navigation">
                 <li class="menu-item">
-                    <a href="{{ route('asesores.cotizaciones.index') }}"
-                       class="menu-link {{ request()->routeIs('asesores.cotizaciones.*') ? 'active' : '' }}">
+                    <button class="menu-link submenu-toggle {{ request()->routeIs('asesores.cotizaciones.*') ? 'active' : '' }}"
+                            aria-label="Ver mis cotizaciones">
                         <span class="material-symbols-rounded">description</span>
                         <span class="menu-label">Mis Cotizaciones</span>
-                    </a>
+                        <span class="material-symbols-rounded submenu-arrow">expand_more</span>
+                    </button>
+                    <ul class="submenu">
+                        <li class="submenu-item">
+                            <a href="{{ route('asesores.cotizaciones.index', ['tab' => 'cotizaciones']) }}"
+                               class="menu-link {{ request()->routeIs('asesores.cotizaciones.index') ? 'active' : '' }}"
+                               aria-label="Ver todas las cotizaciones">
+                                <span class="material-symbols-rounded">list</span>
+                                <span class="menu-label">Todas</span>
+                            </a>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="{{ route('asesores.cotizaciones.index', ['tab' => 'borradores']) }}"
+                               class="menu-link"
+                               aria-label="Ver borradores">
+                                <span class="material-symbols-rounded">draft</span>
+                                <span class="menu-label">Borradores</span>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
                 <li class="menu-item">
                     <button class="menu-link submenu-toggle {{ request()->routeIs('asesores.pedidos.create') ? 'active' : '' }}"

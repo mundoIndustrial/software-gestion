@@ -35,7 +35,7 @@ class CotizacionRechazadaNotification extends Notification implements ShouldQueu
             ->line("Tu cotización ha sido **devuelta** por el aprobador de cotizaciones requiere correcciones.")
             ->line("**Detalles de la Cotización:**")
             ->line("- **Número**: {$this->cotizacion->numero_cotizacion}")
-            ->line("- **Cliente**: {$this->cotizacion->cliente ?? 'N/A'}")
+            ->line("- **Cliente**: " . ($this->cotizacion->cliente ?? 'N/A'))
             ->line("- **Estado**: Requiere Correcciones")
             ->line("**Observaciones:**")
             ->line($this->observaciones)

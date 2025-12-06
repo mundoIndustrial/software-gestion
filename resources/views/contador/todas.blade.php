@@ -462,7 +462,7 @@ document.addEventListener('click', function(event) {
                                 background: #E5E7EB; color: #374151;
                             @endif
                             ">
-                                {{ $cotizacion->estado }}
+                                @estadoLabelCotizacion($cotizacion->estado)
                             </span>
                         </td>
                         <td>

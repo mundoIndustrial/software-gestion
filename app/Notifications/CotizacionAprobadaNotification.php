@@ -34,7 +34,7 @@ class CotizacionAprobadaNotification extends Notification implements ShouldQueue
             ->line("Tu cotización ha sido **aprobada** por el aprobador de cotizaciones.")
             ->line("**Detalles de la Cotización:**")
             ->line("- **Número**: {$this->cotizacion->numero_cotizacion}")
-            ->line("- **Cliente**: {$this->cotizacion->cliente ?? 'N/A'}")
+            ->line("- **Cliente**: " . ($this->cotizacion->cliente ? $this->cotizacion->cliente : 'N/A'))
             ->line("- **Estado**: Aprobada")
             ->line("- **Fecha de Aprobación**: " . now()->format('d/m/Y h:i A'))
             ->line("El cliente puede proceder con su pedido en el sistema.")

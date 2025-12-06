@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Asesores;
 
+use App\Helpers\EstadoHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCotizacionRequest;
 use App\Models\Cotizacion;
@@ -842,7 +843,7 @@ class CotizacionesController extends Controller
             ->distinct()
             ->pluck('estado')
             ->unique()
-            ->map(fn($estado) => ucfirst($estado))
+            ->map(fn($estado) => EstadoHelper::labelCotizacion($estado))
             ->sort()
             ->values();
 
