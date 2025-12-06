@@ -6,6 +6,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\RegistroOrdenController;
 use App\Http\Controllers\RegistroOrdenQueryController;
 use App\Http\Controllers\RegistroBodegaController;
+use App\Http\Controllers\RegistroBodegaQueryController;
+use App\Http\Controllers\Api\V1\OrdenBodegaController;
 use App\Http\Controllers\ConfiguracionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EntregaController;
@@ -63,14 +65,16 @@ Route::middleware(['auth', 'supervisor-access'])->group(function () {
 Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     // Query/Search routes (RegistroOrdenQueryController)
     Route::get('/registros', [RegistroOrdenQueryController::class, 'index'])->name('registros.index');
+    
+    // CRUD routes (RegistroOrdenController) - Rutas específicas ANTES de rutas parametrizadas
+    Route::get('/registros/next-pedido', [RegistroOrdenController::class, 'getNextPedido'])->name('registros.next-pedido');
+    
+    // Rutas parametrizadas DESPUÉS de rutas específicas
     Route::get('/registros/{pedido}', [RegistroOrdenQueryController::class, 'show'])->name('registros.show');
     Route::get('/registros/{pedido}/images', [RegistroOrdenQueryController::class, 'getOrderImages'])->name('registros.images');
     Route::get('/registros/{pedido}/descripcion-prendas', [RegistroOrdenQueryController::class, 'getDescripcionPrendas'])->name('registros.descripcion-prendas');
     Route::get('/api/registros/{numero_pedido}/dias', [RegistroOrdenQueryController::class, 'calcularDiasAPI'])->name('api.registros.dias');
     Route::post('/api/registros/dias-batch', [RegistroOrdenQueryController::class, 'calcularDiasBatchAPI'])->name('api.registros.dias-batch');
-
-    // CRUD routes (RegistroOrdenController)
-    Route::get('/registros/next-pedido', [RegistroOrdenController::class, 'getNextPedido'])->name('registros.next-pedido');
     Route::post('/registros', [RegistroOrdenController::class, 'store'])->name('registros.store');
     Route::post('/registros/validate-pedido', [RegistroOrdenController::class, 'validatePedido'])->name('registros.validatePedido');
     Route::post('/registros/update-pedido', [RegistroOrdenController::class, 'updatePedido'])->name('registros.updatePedido');
@@ -83,24 +87,30 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/api/tabla-original/{numeroPedido}/procesos', [RegistroOrdenController::class, 'getProcesosTablaOriginal'])->name('api.tabla-original.procesos');
     Route::post('/registros/{pedido}/edit-full', [RegistroOrdenController::class, 'editFullOrder'])->name('registros.editFull');
 
-    Route::get('/api/bodega/{numero_pedido}/dias', [RegistroBodegaController::class, 'calcularDiasAPI'])->name('api.bodega.dias');
+    Route::get('/api/bodega/{numero_pedido}/dias', [RegistroBodegaQueryController::class, 'calcularDiasAPI'])->name('api.bodega.dias');
     Route::get('/api/ordenes/{id}/procesos', [App\Http\Controllers\OrdenController::class, 'getProcesos'])->name('api.ordenes.procesos');
     Route::put('/api/procesos/{id}/editar', [App\Http\Controllers\OrdenController::class, 'editarProceso'])->name('api.procesos.editar');
     Route::delete('/api/procesos/{id}/eliminar', [App\Http\Controllers\OrdenController::class, 'eliminarProceso'])->name('api.procesos.eliminar');
     Route::post('/api/procesos/buscar', [App\Http\Controllers\OrdenController::class, 'buscarProceso'])->name('api.procesos.buscar');
-    Route::get('/api/tabla-original-bodega/{numeroPedido}/procesos', [RegistroBodegaController::class, 'getProcesosTablaOriginal'])->name('api.tabla-original-bodega.procesos');
-    Route::get('/bodega', [RegistroBodegaController::class, 'index'])->name('bodega.index');
+    Route::get('/api/tabla-original-bodega/{numeroPedido}/procesos', [RegistroBodegaQueryController::class, 'getProcesosTablaOriginal'])->name('api.tabla-original-bodega.procesos');
+    
+    // Query routes - RegistroBodegaQueryController
+    Route::get('/bodega', [RegistroBodegaQueryController::class, 'index'])->name('bodega.index');
+    Route::get('/bodega/{pedido}', [RegistroBodegaQueryController::class, 'show'])->name('bodega.show');
+    Route::get('/bodega/{pedido}/prendas', [RegistroBodegaQueryController::class, 'getPrendas'])->name('bodega.prendas');
+    Route::get('/bodega/{pedido}/entregas', [RegistroBodegaQueryController::class, 'getEntregas'])->name('bodega.entregas');
+    Route::get('/api/registros-por-orden-bodega/{pedido}', [RegistroBodegaQueryController::class, 'getRegistrosPorOrden'])->name('api.registros-por-orden-bodega');
+    
+    // CRUD routes - RegistroBodegaController - Rutas específicas ANTES de rutas parametrizadas
     Route::get('/bodega/next-pedido', [RegistroBodegaController::class, 'getNextPedido'])->name('bodega.next-pedido');
-    Route::get('/bodega/{pedido}', [RegistroBodegaController::class, 'show'])->name('bodega.show');
-    Route::get('/bodega/{pedido}/prendas', [RegistroBodegaController::class, 'getPrendas'])->name('bodega.prendas');
-    Route::get('/bodega/{pedido}/entregas', [RegistroBodegaController::class, 'getEntregas'])->name('bodega.entregas');
-    Route::get('/api/registros-por-orden-bodega/{pedido}', [RegistroBodegaController::class, 'getRegistrosPorOrden'])->name('api.registros-por-orden-bodega');
+    
     Route::post('/bodega/{pedido}/edit-full', [RegistroBodegaController::class, 'editFullOrder'])->name('bodega.editFull');
     Route::post('/bodega', [RegistroBodegaController::class, 'store'])->name('bodega.store');
     Route::post('/bodega/validate-pedido', [RegistroBodegaController::class, 'validatePedido'])->name('bodega.validatePedido');
     Route::post('/bodega/update-pedido', [RegistroBodegaController::class, 'updatePedido'])->name('bodega.updatePedido');
-    Route::post('/bodega/update-descripcion-prendas', [RegistroBodegaController::class, 'updateDescripcionPrendas'])->name('bodega.updateDescripcionPrendas');
+    Route::post('/bodega/update-descripcion-prendas', [RegistroBodegaQueryController::class, 'updateDescripcionPrendas'])->name('bodega.updateDescripcionPrendas');
     Route::patch('/bodega/{pedido}', [RegistroBodegaController::class, 'update'])->name('bodega.update');
+    Route::delete('/bodega/{pedido}', [RegistroBodegaController::class, 'destroy'])->name('bodega.destroy');
     Route::get('/configuracion', [ConfiguracionController::class, 'index'])->name('configuracion.index');
     Route::post('/configuracion/create-database', [ConfiguracionController::class, 'createDatabase'])->name('configuracion.createDatabase');
     Route::post('/configuracion/select-database', [ConfiguracionController::class, 'selectDatabase'])->name('configuracion.selectDatabase');
