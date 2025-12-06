@@ -113,7 +113,7 @@
 
 .form-step {
     display: none;
-    padding: 1.2rem 1.52rem;
+    padding: 1.2rem 2.5rem;
     animation: fadeIn 0.3s ease;
     flex: 1;
     overflow: visible;
@@ -712,6 +712,9 @@
 textarea.input-medium {
     resize: vertical;
     font-family: inherit;
+    height: 60px;
+    max-height: 60px;
+    overflow-y: auto;
 }
 
 /* ============ BOTÓN AGREGAR PRODUCTO ============ */
@@ -1949,6 +1952,21 @@ background: #ffc107;
 .form-step[data-step="3"] i[style*="font-size: 1.5rem"],
 .form-step[data-step="4"] i[style*="font-size: 1.5rem"] {
     font-size: 1.2rem !important;
+}
+
+/* ============ TABLA COLOR, TELA Y REFERENCIA ============ */
+table[style*="width: 100%; border-collapse: collapse; background: white;"] {
+    table-layout: fixed;
+}
+
+table[style*="width: 100%; border-collapse: collapse; background: white;"] td:nth-child(1),
+table[style*="width: 100%; border-collapse: collapse; background: white;"] td:nth-child(2),
+table[style*="width: 100%; border-collapse: collapse; background: white;"] td:nth-child(3) {
+    width: 25%;
+}
+
+table[style*="width: 100%; border-collapse: collapse; background: white;"] td:nth-child(4) {
+    width: 25%;
 }
 
 /* ============ RESPONSIVE MEDIA QUERIES ============ */

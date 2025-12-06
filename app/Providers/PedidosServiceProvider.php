@@ -1,0 +1,50 @@
+<?php
+
+namespace App\Providers;
+
+use App\Services\Pedidos\CotizacionSearchService;
+use App\Services\Pedidos\PedidoProduccionCreatorService;
+use App\Services\Pedidos\PrendaProcessorService;
+use Illuminate\Support\ServiceProvider;
+
+/**
+ * Service Provider para servicios de Pedidos
+ * 
+ * Responsabilidad: Registrar y configurar servicios con binding
+ * Patrón: Service Provider + Dependency Injection
+ * Principio: DIP - Dependency Inversion Principle
+ */
+class PedidosServiceProvider extends ServiceProvider
+{
+    /**
+     * Register services.
+     */
+    public function register(): void
+    {
+        // Registrar PrendaProcessorService como singleton
+        // (reutilizable sin estado)
+        $this->app->singleton(PrendaProcessorService::class, function ($app) {
+            return new PrendaProcessorService();
+        });
+
+        // Registrar CotizacionSearchService como singleton
+        $this->app->singleton(CotizacionSearchService::class, function ($app) {
+            return new CotizacionSearchService();
+        });
+
+        // Registrar PedidoProduccionCreatorService con inyección de PrendaProcessorService
+        $this->app->bind(PedidoProduccionCreatorService::class, function ($app) {
+            return new PedidoProduccionCreatorService(
+                $app->make(PrendaProcessorService::class)
+            );
+        });
+    }
+
+    /**
+     * Bootstrap services.
+     */
+    public function boot(): void
+    {
+        //
+    }
+}

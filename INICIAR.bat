@@ -88,7 +88,8 @@ timeout /t 2 /nobreak >nul
 
 REM Iniciar Laravel serve en segundo plano
 echo       - Laravel Server (HTTP)...
-start /B php artisan serve --host=0.0.0.0 --port=8000 >nul 2>&1
+start /B php artisan reverb:start --host=0.0.0.0 --port=8080 >nul 2>&1
+php artisan serve --host=0.0.0.0 --port=8000
 
 echo.
 echo ========================================

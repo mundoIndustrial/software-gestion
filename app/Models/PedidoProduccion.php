@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Traits\HasLegibleEstado;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -14,7 +15,7 @@ use App\Events\PedidoCreado;
 
 class PedidoProduccion extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, HasLegibleEstado;
 
     protected $table = 'pedidos_produccion';
 

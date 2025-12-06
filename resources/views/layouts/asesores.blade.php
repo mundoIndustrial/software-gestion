@@ -24,6 +24,7 @@
     <link rel="stylesheet" href="{{ asset('css/asesores/layout.css') }}">
     <link rel="stylesheet" href="{{ asset('css/asesores/module.css') }}">
     <link rel="stylesheet" href="{{ asset('css/asesores/dashboard.css') }}">
+    @yield('extra_styles')
 @endpush
 
 @push('scripts')

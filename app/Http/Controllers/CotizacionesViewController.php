@@ -90,7 +90,7 @@ class CotizacionesViewController extends Controller
             $ordenesRelacionadas = [];
             try {
                 $ordenesRelacionadas = \DB::table('pedidos_produccion')
-                    ->where('cotizacion_id', $id)
+                    ->where('cotizacion_id', $cotizacion->id)
                     ->select('id', 'numero_orden', 'estado', 'created_at')
                     ->get()
                     ->map(function($orden) {
@@ -138,7 +138,7 @@ class CotizacionesViewController extends Controller
             ]);
         } catch (\Exception $e) {
             \Log::error('getDatosForModal error: ' . $e->getMessage(), [
-                'cotizacion_id' => $id,
+                'cotizacion_id' => $cotizacion->id,
                 'trace' => $e->getTraceAsString()
             ]);
             return response()->json([

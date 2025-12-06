@@ -1,0 +1,71 @@
+/* Show Cotización - Estilos principales */
+:root {
+    --primary: #1e40af;
+    --secondary: #0ea5e9;
+    --accent: #06b6d4;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+}
+
+* {
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
+}
+
+.page-wrapper {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    min-height: 100vh;
+    padding: 2rem 0;
+    transform: scale(0.75);
+    transform-origin: top center;
+    width: 133.33%;
+    margin-left: -16.665%;
+    user-select: auto;
+}
+
+.container-fluid {
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+/* Tabs */
+.tab-button:hover {
+    background: #f8fafc;
+    color: var(--primary);
+}
+
+.tab-button.active {
+    color: white;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    border-bottom-color: var(--secondary);
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.tab-content-wrapper {
+    background: white;
+    border-radius: 0 0 12px 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
