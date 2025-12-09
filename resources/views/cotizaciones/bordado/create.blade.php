@@ -466,6 +466,16 @@
             <input type="text" id="asesora" name="asesora" value="{{ auth()->user()->name }}" readonly style="display: none;">
             <input type="date" id="fecha" name="fecha" style="display: none;">
 
+            <!-- DESCRIPCIÓN -->
+            <div class="form-section">
+                <div class="form-section-title">
+                    <i class="fas fa-sticky-note"></i> DESCRIPCIÓN
+                </div>
+                <div class="form-group-large">
+                    <textarea id="descripcion" name="descripcion" class="input-large" rows="3" placeholder="Describe el bordado, detalles especiales, logo, diseño, etc."></textarea>
+                </div>
+            </div>
+
             <!-- IMÁGENES -->
             <div class="form-section">
                 <div class="form-section-title">

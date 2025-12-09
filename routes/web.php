@@ -12,7 +12,6 @@ use App\Http\Controllers\EntregaController;
 use App\Http\Controllers\TablerosController;
 use App\Http\Controllers\VistasController;
 use App\Http\Controllers\BalanceoController;
-use App\Http\Controllers\AsesorController;
 use App\Http\Controllers\CotizacionPrendaController;
 use App\Http\Controllers\CotizacionBordadoController;
 use App\Http\Controllers\CotizacionesViewController;
@@ -402,12 +401,6 @@ Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.
     Route::get('/metrajes', function () {
         return view('insumos.metrajes.index');
     })->name('metrajes.index');
-});
-
-// Rutas de Asesores (Notificaciones)
-Route::middleware('auth')->prefix('asesores')->name('asesores.')->group(function () {
-    Route::get('/notifications', [AsesorController::class, 'getNotifications'])->name('notifications');
-    Route::post('/notifications/mark-all-read', [AsesorController::class, 'markAllNotificationsAsRead'])->name('notifications.mark-all-read');
 });
 
 // ========================================

@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreCotizacionRequest;
 use App\Models\Cotizacion;
 use App\Services\ImagenCotizacionService;
+use App\Services\ImagenProcesadorService;
 use App\Services\CotizacionService;
 use App\Services\PrendaService;
 use App\Services\PedidoService;
@@ -24,6 +25,7 @@ class CotizacionesController extends Controller
         private CotizacionService $cotizacionService,
         private PrendaService $prendaService,
         private ImagenCotizacionService $imagenService,
+        private ImagenProcesadorService $imagenProcesador,
         private PedidoService $pedidoService,
         private FormatterService $formatterService,
     ) {}
@@ -320,8 +322,8 @@ class CotizacionesController extends Controller
             // Crear logo/LOGO
             $this->cotizacionService->crearLogoCotizacion($cotizacion, $datosFormulario);
             
-            // 📸 PROCESAR IMÁGENES DEL FormData (si existen archivos uploadados)
-            $this->procesarImagenesDesdeFormData($request, $cotizacion, $datosFormulario);
+            // 📸 PROCESAR IMÁGENES DEL FormData (archivos File)
+            $this->procesarImagenesArchivos($request, $cotizacion, $datosFormulario);
             
             \Log::info('Cotización completada', ['id' => $cotizacion->id, 'tipo' => $tipo]);
             
@@ -857,16 +859,160 @@ class CotizacionesController extends Controller
     }
 
     /**
-     * Procesar imágenes desde FormData uploadadas en el formulario
-     * 
-     * Busca archivos en el request con estructura:
-     * - productos[0][fotos][0]
-     * - productos[0][telas][0]
-     * - productos[1][fotos][0]
-     * etc.
+     * Procesa imágenes desde FormData (archivos File)
      * 
      * @param \Illuminate\Http\Request $request
-     * @param \App\Models\Cotizacion $cotizacion
+     * @param Cotizacion $cotizacion
+     * @param array $datosFormulario
+     * @return void
+     */
+    private function procesarImagenesArchivos(
+        \Illuminate\Http\Request $request,
+        Cotizacion $cotizacion,
+        array $datosFormulario
+    ): void {
+        try {
+            $prendas = $cotizacion->prendasCotizaciones;
+            if (!$prendas || $prendas->isEmpty()) {
+                \Log::info('No hay prendas para procesar imágenes');
+                return;
+            }
+            
+            \Log::info('🖼️ Procesando imágenes (archivos File)', [
+                'cotizacion_id' => $cotizacion->id,
+                'cantidad_prendas' => count($prendas)
+            ]);
+            
+            // Iterar sobre cada prenda
+            foreach ($prendas as $index => $prenda) {
+                \Log::info("Procesando prenda {$index}", ['prenda_id' => $prenda->id]);
+                
+                // PROCESAR FOTOS
+                $fotosArray = $request->file("productos.{$index}.fotos") ?? [];
+                \Log::info("Fotos encontradas (raw)", [
+                    'tipo' => gettype($fotosArray),
+                    'es_array' => is_array($fotosArray),
+                    'cantidad' => is_array($fotosArray) ? count($fotosArray) : 'N/A'
+                ]);
+                
+                $fotos = [];
+                if (is_array($fotosArray)) {
+                    $fotos = array_filter($fotosArray, fn($f) => $f instanceof \Illuminate\Http\UploadedFile);
+                } elseif ($fotosArray instanceof \Illuminate\Http\UploadedFile) {
+                    $fotos = [$fotosArray];
+                }
+                
+                if (!empty($fotos)) {
+                    \Log::info("Fotos encontradas para prenda {$index}", ['cantidad' => count($fotos)]);
+                    
+                    $fotosUrls = [];
+                    foreach ($fotos as $foto) {
+                        try {
+                            $url = $this->imagenProcesador->procesarImagenBase64(
+                                [
+                                    'nombre' => $foto->getClientOriginalName(),
+                                    'base64' => 'data:' . $foto->getMimeType() . ';base64,' . base64_encode(file_get_contents($foto->getRealPath())),
+                                    'tipo' => $foto->getMimeType(),
+                                    'size' => $foto->getSize()
+                                ],
+                                'prenda',
+                                $prenda->id
+                            );
+                            $fotosUrls[] = $url;
+                            \Log::info("✅ Foto guardada: {$url}");
+                        } catch (\Exception $e) {
+                            \Log::error('❌ Error procesando foto', [
+                                'error' => $e->getMessage(),
+                                'file' => $e->getFile(),
+                                'line' => $e->getLine()
+                            ]);
+                        }
+                    }
+                    
+                    if (!empty($fotosUrls)) {
+                        $fotosActuales = $prenda->fotos ?? [];
+                        if (!is_array($fotosActuales)) {
+                            $fotosActuales = [];
+                        }
+                        $prenda->update(['fotos' => array_merge($fotosActuales, $fotosUrls)]);
+                        \Log::info("✅ Fotos actualizadas en prenda", ['cantidad' => count($fotosUrls)]);
+                    }
+                } else {
+                    \Log::info("No hay fotos para prenda {$index}");
+                }
+                
+                // PROCESAR TELAS
+                $telasArray = $request->file("productos.{$index}.telas") ?? [];
+                \Log::info("Telas encontradas (raw)", [
+                    'tipo' => gettype($telasArray),
+                    'es_array' => is_array($telasArray),
+                    'cantidad' => is_array($telasArray) ? count($telasArray) : 'N/A'
+                ]);
+                
+                $telas = [];
+                if (is_array($telasArray)) {
+                    $telas = array_filter($telasArray, fn($t) => $t instanceof \Illuminate\Http\UploadedFile);
+                } elseif ($telasArray instanceof \Illuminate\Http\UploadedFile) {
+                    $telas = [$telasArray];
+                }
+                
+                if (!empty($telas)) {
+                    \Log::info("Telas encontradas para prenda {$index}", ['cantidad' => count($telas)]);
+                    
+                    $telasUrls = [];
+                    foreach ($telas as $tela) {
+                        try {
+                            $url = $this->imagenProcesador->procesarImagenBase64(
+                                [
+                                    'nombre' => $tela->getClientOriginalName(),
+                                    'base64' => 'data:' . $tela->getMimeType() . ';base64,' . base64_encode(file_get_contents($tela->getRealPath())),
+                                    'tipo' => $tela->getMimeType(),
+                                    'size' => $tela->getSize()
+                                ],
+                                'tela',
+                                $prenda->id
+                            );
+                            $telasUrls[] = $url;
+                            \Log::info("✅ Tela guardada: {$url}");
+                        } catch (\Exception $e) {
+                            \Log::error('❌ Error procesando tela', [
+                                'error' => $e->getMessage(),
+                                'file' => $e->getFile(),
+                                'line' => $e->getLine()
+                            ]);
+                        }
+                    }
+                    
+                    if (!empty($telasUrls)) {
+                        $telasActuales = $prenda->telas ?? [];
+                        if (!is_array($telasActuales)) {
+                            $telasActuales = [];
+                        }
+                        $prenda->update(['telas' => array_merge($telasActuales, $telasUrls)]);
+                        \Log::info("✅ Telas actualizadas en prenda", ['cantidad' => count($telasUrls)]);
+                    }
+                } else {
+                    \Log::info("No hay telas para prenda {$index}");
+                }
+            }
+            
+            \Log::info('✅ Procesamiento de imágenes completado');
+            
+        } catch (\Exception $e) {
+            \Log::error('❌ Error procesando imágenes', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    /**
+     * Procesa imágenes desde FormData (Base64 JSON - DEPRECATED)
+     * 
+     * @param \Illuminate\Http\Request $request
+     * @param Cotizacion $cotizacion
      * @param array $datosFormulario
      * @return void
      */
@@ -886,14 +1032,21 @@ class CotizacionesController extends Controller
                 return;
             }
             
-            \Log::info('🖼️ Iniciando procesamiento de imágenes desde FormData', [
+            \Log::info('🖼️ Iniciando procesamiento de imágenes desde FormData (Base64)', [
                 'cotizacion_id' => $cotizacion->id,
                 'cantidad_prendas' => count($prendas),
                 'cantidad_productos' => count($datosFormulario['productos'] ?? [])
             ]);
             
-            // Obtener los productos del request (que contienen los archivos)
+            // Obtener los productos del request (que contienen los datos Base64)
             $productosDelRequest = $request->input('productos', []);
+            
+            \Log::info('📦 Productos del request:', [
+                'cantidad' => count($productosDelRequest),
+                'primer_producto_keys' => isset($productosDelRequest[0]) ? array_keys($productosDelRequest[0]) : [],
+                'tiene_fotos_base64' => isset($productosDelRequest[0]['fotos_base64']) ? 'SI' : 'NO',
+                'tiene_telas_base64' => isset($productosDelRequest[0]['telas_base64']) ? 'SI' : 'NO'
+            ]);
             
             // Iterar sobre cada producto/prenda
             foreach ($productosDelRequest as $index => $producto) {
@@ -904,88 +1057,122 @@ class CotizacionesController extends Controller
                 
                 $prenda = $prendas[$index];
                 
-                // PROCESAR FOTOS DE PRENDA
-                $fotos = $request->file("productos.{$index}.fotos", []);
-                if (!empty($fotos)) {
-                    // Convertir un solo archivo a array si es necesario
-                    if ($fotos instanceof \Illuminate\Http\UploadedFile) {
-                        $fotos = [$fotos];
-                    }
-                    
-                    \Log::info('📸 Guardando fotos de prenda', [
-                        'prenda_index' => $index,
-                        'cantidad' => count($fotos),
-                        'prenda_id' => $prenda->id
-                    ]);
-                    
-                    // Guardar las fotos usando el servicio
-                    $rutasGuardadas = $this->imagenService->guardarMultiples(
-                        $cotizacion->id,
-                        $fotos,
-                        'prenda'
-                    );
-                    
-                    // Actualizar la prenda con las rutas guardadas
-                    if (!empty($rutasGuardadas)) {
-                        $fotosActuales = $prenda->fotos ?? [];
-                        if (!is_array($fotosActuales)) {
-                            $fotosActuales = [];
+                // PROCESAR FOTOS DE PRENDA (Base64)
+                $fotosBase64String = $request->input("productos.{$index}.fotos_base64");
+                if ($fotosBase64String) {
+                    try {
+                        $fotosBase64 = json_decode($fotosBase64String, true);
+                        
+                        if (!empty($fotosBase64) && is_array($fotosBase64)) {
+                            \Log::info('📸 Procesando fotos de prenda (Base64)', [
+                                'prenda_index' => $index,
+                                'cantidad' => count($fotosBase64),
+                                'prenda_id' => $prenda->id
+                            ]);
+                            
+                            // Procesar cada foto Base64
+                            $fotosUrls = [];
+                            foreach ($fotosBase64 as $fotoData) {
+                                try {
+                                    $url = $this->imagenProcesador->procesarImagenBase64(
+                                        $fotoData,
+                                        'prenda',
+                                        $prenda->id
+                                    );
+                                    $fotosUrls[] = $url;
+                                    $totalProcesadas++;
+                                } catch (\Exception $e) {
+                                    \Log::error('Error procesando foto Base64', [
+                                        'prenda_id' => $prenda->id,
+                                        'error' => $e->getMessage()
+                                    ]);
+                                }
+                            }
+                            
+                            // Actualizar la prenda con las URLs guardadas
+                            if (!empty($fotosUrls)) {
+                                $fotosActuales = $prenda->fotos ?? [];
+                                if (!is_array($fotosActuales)) {
+                                    $fotosActuales = [];
+                                }
+                                
+                                $prenda->update([
+                                    'fotos' => array_merge($fotosActuales, $fotosUrls)
+                                ]);
+                                
+                                $totalImagenes += count($fotosBase64);
+                                
+                                \Log::info('✅ Fotos guardadas en prenda', [
+                                    'prenda_id' => $prenda->id,
+                                    'cantidad' => count($fotosUrls),
+                                    'total_fotos' => count($prenda->fotos)
+                                ]);
+                            }
                         }
-                        
-                        $prenda->update([
-                            'fotos' => array_merge($fotosActuales, $rutasGuardadas)
-                        ]);
-                        
-                        $totalProcesadas += count($rutasGuardadas);
-                        $totalImagenes += count($fotos);
-                        
-                        \Log::info('✅ Fotos guardadas en prenda', [
+                    } catch (\Exception $e) {
+                        \Log::error('Error decodificando fotos Base64', [
                             'prenda_id' => $prenda->id,
-                            'cantidad' => count($rutasGuardadas),
-                            'total_fotos' => count($prenda->fotos)
+                            'error' => $e->getMessage()
                         ]);
                     }
                 }
                 
-                // PROCESAR TELAS
-                $telas = $request->file("productos.{$index}.telas", []);
-                if (!empty($telas)) {
-                    // Convertir un solo archivo a array si es necesario
-                    if ($telas instanceof \Illuminate\Http\UploadedFile) {
-                        $telas = [$telas];
-                    }
-                    
-                    \Log::info('🧵 Guardando telas de prenda', [
-                        'prenda_index' => $index,
-                        'cantidad' => count($telas),
-                        'prenda_id' => $prenda->id
-                    ]);
-                    
-                    // Guardar las telas usando el servicio
-                    $rutasGuardadas = $this->imagenService->guardarMultiples(
-                        $cotizacion->id,
-                        $telas,
-                        'tela'
-                    );
-                    
-                    // Actualizar la prenda con las rutas guardadas
-                    if (!empty($rutasGuardadas)) {
-                        $telasActuales = $prenda->telas ?? [];
-                        if (!is_array($telasActuales)) {
-                            $telasActuales = [];
+                // PROCESAR TELAS (Base64)
+                $telasBase64String = $request->input("productos.{$index}.telas_base64");
+                if ($telasBase64String) {
+                    try {
+                        $telasBase64 = json_decode($telasBase64String, true);
+                        
+                        if (!empty($telasBase64) && is_array($telasBase64)) {
+                            \Log::info('🧵 Procesando telas (Base64)', [
+                                'prenda_index' => $index,
+                                'cantidad' => count($telasBase64),
+                                'prenda_id' => $prenda->id
+                            ]);
+                            
+                            // Procesar cada tela Base64
+                            $telasUrls = [];
+                            foreach ($telasBase64 as $telaData) {
+                                try {
+                                    $url = $this->imagenProcesador->procesarImagenBase64(
+                                        $telaData,
+                                        'tela',
+                                        $prenda->id
+                                    );
+                                    $telasUrls[] = $url;
+                                    $totalProcesadas++;
+                                } catch (\Exception $e) {
+                                    \Log::error('Error procesando tela Base64', [
+                                        'prenda_id' => $prenda->id,
+                                        'error' => $e->getMessage()
+                                    ]);
+                                }
+                            }
+                            
+                            // Actualizar la prenda con las URLs guardadas
+                            if (!empty($telasUrls)) {
+                                $telasActuales = $prenda->telas ?? [];
+                                if (!is_array($telasActuales)) {
+                                    $telasActuales = [];
+                                }
+                                
+                                $prenda->update([
+                                    'telas' => array_merge($telasActuales, $telasUrls)
+                                ]);
+                                
+                                $totalImagenes += count($telasBase64);
+                                
+                                \Log::info('✅ Telas guardadas en prenda', [
+                                    'prenda_id' => $prenda->id,
+                                    'cantidad' => count($telasUrls),
+                                    'total_telas' => count($prenda->telas)
+                                ]);
+                            }
                         }
-                        
-                        $prenda->update([
-                            'telas' => array_merge($telasActuales, $rutasGuardadas)
-                        ]);
-                        
-                        $totalProcesadas += count($rutasGuardadas);
-                        $totalImagenes += count($telas);
-                        
-                        \Log::info('✅ Telas guardadas en prenda', [
+                    } catch (\Exception $e) {
+                        \Log::error('Error decodificando telas Base64', [
                             'prenda_id' => $prenda->id,
-                            'cantidad' => count($rutasGuardadas),
-                            'total_telas' => count($prenda->telas)
+                            'error' => $e->getMessage()
                         ]);
                     }
                 }

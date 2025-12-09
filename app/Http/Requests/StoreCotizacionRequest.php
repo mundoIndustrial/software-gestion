@@ -115,6 +115,18 @@ class StoreCotizacionRequest extends FormRequest
             ]);
         }
         
+        // Procesar tallas dentro de productos
+        $productos = $this->input('productos', []);
+        if (is_array($productos)) {
+            foreach ($productos as &$producto) {
+                // Si tallas es un string JSON, decodificar
+                if (isset($producto['tallas']) && is_string($producto['tallas'])) {
+                    $producto['tallas'] = json_decode($producto['tallas'], true) ?? [];
+                }
+            }
+            $this->merge(['productos' => $productos]);
+        }
+        
         if (is_string($this->tecnicas ?? null)) {
             $this->merge([
                 'tecnicas' => json_decode($this->tecnicas, true) ?? []

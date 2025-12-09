@@ -237,4 +237,14 @@ class User extends Authenticatable
     {
         return config('auth.remember_duration', 43200); // 30 días por defecto
     }
+
+    /**
+     * Obtener solo el nombre del usuario (para usar como asesor)
+     *
+     * @return string
+     */
+    public function getNombreAsesor(): string
+    {
+        return $this->name ?? 'N/A';
+    }
 }

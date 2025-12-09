@@ -55,7 +55,10 @@
     <!-- Page-specific styles -->
     @stack('styles')
 </head>
-<body class="{{ isset($_COOKIE['theme']) && $_COOKIE['theme'] === 'dark' ? 'dark-theme' : '' }}" 
+<body class="
+    {{ isset($_COOKIE['theme']) && $_COOKIE['theme'] === 'dark' ? 'dark-theme' : '' }}
+    {{ request()->routeIs('cotizaciones-prenda.create') ? 'cotizaciones-prenda-create' : '' }}
+" 
       data-user-role="{{ auth()->user()->role?->name ?? 'guest' }}"
       data-module="@yield('module', 'default')">
 

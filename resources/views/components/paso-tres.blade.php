@@ -2,7 +2,7 @@
 <div class="form-step" data-step="3">
     <div class="step-header">
         <h2>PASO 3: LOGO</h2>
-        <p>ESPECIFICA LOS DETALLES DE BORDADO Y ESTAMPADO (OPCIONAL)</p>
+        <p>ESPECIFICA LOS DETALLES DE BORDADO Y ESTAMPADO</p>
     </div>
 
     <div class="form-section">

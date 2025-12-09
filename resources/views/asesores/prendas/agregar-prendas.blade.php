@@ -2,174 +2,257 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-8">
-    <div class="max-w-4xl mx-auto">
+    <div class="max-w-6xl mx-auto">
         <!-- Header -->
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 ➕ Agregar Prendas a Cotización
             </h1>
             <p class="text-gray-600 dark:text-gray-400">
-                Escribe el nombre de la prenda y el sistema reconocerá automáticamente el tipo
+                Completa los datos de la prenda con especificaciones, color, tela y variaciones
             </p>
         </div>
 
         <!-- Formulario de Entrada -->
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8">
-            <div class="space-y-4">
-                <!-- Input de Nombre -->
+            <div class="space-y-6">
+                <!-- TIPO DE PRENDA -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Nombre de Prenda
+                    <label class="block text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                        <i class="fas fa-shirt"></i> TIPO DE PRENDA *
                     </label>
-                    <input 
-                        type="text" 
-                        id="nombre-prenda"
-                        placeholder="Ej: JEAN NAPOLES AZUL, CAMISA DRILL BORNEO NARANJA"
-                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                        @keyup="reconocerPrenda"
-                    >
-                </div>
-
-                <!-- Mensaje de Reconocimiento -->
-                <div id="reconocimiento-container" class="hidden">
-                    <div class="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
-                        <p class="text-sm text-blue-800 dark:text-blue-300">
-                            ✅ Sistema reconoce: <strong id="tipo-reconocido"></strong>
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Selector Dinámico -->
-                <div id="selector-container" class="hidden">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Manga -->
-                        <div id="campo-manga" class="hidden">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Manga
-                            </label>
-                            <select id="manga" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
-                                <option value="">Seleccionar...</option>
-                                <option value="Larga">Larga</option>
-                                <option value="Corta">Corta</option>
-                                <option value="3/4">3/4</option>
-                            </select>
-                        </div>
-
-                        <!-- Bolsillos -->
-                        <div id="campo-bolsillos" class="hidden">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Bolsillos
-                            </label>
-                            <select id="bolsillos" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
-                                <option value="">Seleccionar...</option>
-                                <option value="Sí">Sí</option>
-                                <option value="No">No</option>
-                            </select>
-                        </div>
-
-                        <!-- Broche -->
-                        <div id="campo-broche" class="hidden">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Broche
-                            </label>
-                            <select id="broche" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
-                                <option value="">Seleccionar...</option>
-                                <option value="Metálico">Metálico</option>
-                                <option value="Plástico">Plástico</option>
-                            </select>
-                        </div>
-
-                        <!-- Género -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Género
-                            </label>
-                            <select id="genero" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
-                                <option value="">Seleccionar...</option>
-                                <option value="Dama">Dama</option>
-                                <option value="Caballero">Caballero</option>
-                                <option value="Unisex">Unisex</option>
-                            </select>
-                        </div>
-
-                        <!-- Color -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Color
-                            </label>
-                            <select id="color" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
-                                <option value="">Seleccionar...</option>
-                                <option value="Azul">Azul</option>
-                                <option value="Negro">Negro</option>
-                                <option value="Gris">Gris</option>
-                                <option value="Blanco">Blanco</option>
-                                <option value="Naranja">Naranja</option>
-                                <option value="Rojo">Rojo</option>
-                            </select>
-                        </div>
-
-                        <!-- Tela -->
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Tela
-                            </label>
-                            <select id="tela" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
-                                <option value="">Seleccionar...</option>
-                                <option value="NAPOLES">NAPOLES (REF-NAP-001)</option>
-                                <option value="DRILL BORNEO">DRILL BORNEO (REF-DB-001)</option>
-                                <option value="OXFORD">OXFORD (REF-OX-001)</option>
-                                <option value="JERSEY">JERSEY (REF-JER-001)</option>
-                                <option value="LINO">LINO (REF-LIN-001)</option>
-                            </select>
-                        </div>
-
-                        <!-- Reflectivo -->
-                        <div id="campo-reflectivo" class="hidden">
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Reflectivo
-                            </label>
-                            <select id="reflectivo" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
-                                <option value="">Seleccionar...</option>
-                                <option value="Sí">Sí</option>
-                                <option value="No">No</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Tallas y Cantidades -->
-                    <div class="mt-6">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                            Tallas y Cantidades
-                        </label>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            <div>
-                                <label class="text-xs text-gray-600 dark:text-gray-400">S</label>
-                                <input type="number" id="talla-s" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
-                            </div>
-                            <div>
-                                <label class="text-xs text-gray-600 dark:text-gray-400">M</label>
-                                <input type="number" id="talla-m" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
-                            </div>
-                            <div>
-                                <label class="text-xs text-gray-600 dark:text-gray-400">L</label>
-                                <input type="number" id="talla-l" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
-                            </div>
-                            <div>
-                                <label class="text-xs text-gray-600 dark:text-gray-400">XL</label>
-                                <input type="number" id="talla-xl" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Botón Agregar -->
-                    <div class="mt-6">
-                        <button 
-                            onclick="agregarPrenda()"
-                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
+                    <div class="prenda-search-container">
+                        <input 
+                            type="text" 
+                            id="nombre-prenda"
+                            placeholder="BUSCA O ESCRIBE (CAMISA, CAMISETA, POLO...)"
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                            onkeyup="buscarPrendas(this); mostrarSelectorVariantes(this);"
+                            onchange="actualizarResumenFriendly(); mostrarSelectorVariantes(this);"
                         >
-                            ➕ Agregar Prenda
-                        </button>
+                        <div class="prenda-suggestions mt-2 space-y-1">
+                            <div class="prenda-suggestion-item p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer rounded" onclick="seleccionarPrenda('👔 CAMISA', this)">👔 CAMISA</div>
+                            <div class="prenda-suggestion-item p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer rounded" onclick="seleccionarPrenda('👕 CAMISETA', this)">👕 CAMISETA</div>
+                            <div class="prenda-suggestion-item p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer rounded" onclick="seleccionarPrenda('🎽 POLO', this)">🎽 POLO</div>
+                            <div class="prenda-suggestion-item p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer rounded" onclick="seleccionarPrenda('👖 PANTALÓN', this)">👖 PANTALÓN</div>
+                        </div>
                     </div>
+                </div>
+
+                <!-- DESCRIPCIÓN -->
+                <div>
+                    <label class="block text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                        <i class="fas fa-sticky-note"></i> DESCRIPCIÓN
+                    </label>
+                    <textarea 
+                        id="descripcion"
+                        placeholder="DESCRIPCIÓN DE LA PRENDA, DETALLES ESPECIALES, LOGO, BORDADO, ESTAMPADO, ETC."
+                        class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                        rows="3"
+                    ></textarea>
+                </div>
+
+                <!-- FOTOS DE LA PRENDA -->
+                <div>
+                    <label class="block text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                        <i class="fas fa-images"></i> FOTOS DE LA PRENDA (MÁX. 3)
+                    </label>
+                    <label class="block min-height-80 p-3 border-2 border-dashed border-blue-500 rounded-lg cursor-pointer text-center bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition" ondrop="manejarDrop(event)" ondragover="event.preventDefault()" ondragleave="this.classList.remove('drag-over')">
+                        <input type="file" id="fotos-prenda" class="input-file-single" accept="image/*" multiple onchange="agregarFotos(this.files, this.closest('label').nextElementSibling)" style="display: none;">
+                        <div class="drop-zone-content">
+                            <i class="fas fa-cloud-upload-alt text-2xl text-blue-500 mb-2"></i>
+                            <p class="text-blue-600 dark:text-blue-400 font-semibold">ARRASTRA O CLIC</p>
+                        </div>
+                    </label>
+                    <div class="fotos-preview mt-3 grid grid-cols-3 gap-2"></div>
+                </div>
+
+                <!-- COLOR, TELA Y REFERENCIA -->
+                <div>
+                    <label class="block text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                        <i class="fas fa-palette"></i> COLOR, TELA Y REFERENCIA
+                    </label>
+                    <div class="overflow-x-auto">
+                        <table style="width: 100%; border-collapse: collapse; background: white; dark:bg-gray-700;">
+                            <thead>
+                                <tr style="background-color: #f0f0f0; dark:bg-gray-600 border-bottom: 2px solid #0066cc;">
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #0066cc; border-right: 1px solid #ddd;">
+                                        <i class="fas fa-palette"></i> Color
+                                    </th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #0066cc; border-right: 1px solid #ddd;">
+                                        <i class="fas fa-cloth"></i> Tela
+                                    </th>
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #0066cc; border-right: 1px solid #ddd;">
+                                        <i class="fas fa-barcode"></i> Referencia
+                                    </th>
+                                    <th style="padding: 12px; text-align: center; font-weight: 600; color: #0066cc;">
+                                        <i class="fas fa-image"></i> Imagen Tela
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom: 1px solid #ddd;">
+                                    <td style="padding: 12px; border-right: 1px solid #ddd;">
+                                        <input type="text" id="color" placeholder="Buscar o crear color..." style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-700 dark:text-white" onkeyup="buscarColor(this)">
+                                    </td>
+                                    <td style="padding: 12px; border-right: 1px solid #ddd;">
+                                        <input type="text" id="tela" placeholder="Buscar o crear tela..." style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-700 dark:text-white" onkeyup="buscarTela(this)">
+                                    </td>
+                                    <td style="padding: 12px; border-right: 1px solid #ddd;">
+                                        <input type="text" id="referencia" placeholder="Ej: REF-NAP-001" style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-700 dark:text-white">
+                                    </td>
+                                    <td style="padding: 12px; text-align: center;">
+                                        <label style="display: block; min-height: 60px; padding: 0.5rem; border: 2px dashed #0066cc; border-radius: 6px; cursor: pointer; text-align: center; background: #f0f7ff; dark:bg-blue-900/20">
+                                            <input type="file" id="foto-tela" class="input-file-tela" accept="image/*" multiple onchange="agregarFotoTela(this)" style="display: none;">
+                                            <div class="drop-zone-content" style="font-size: 0.7rem;">
+                                                <i class="fas fa-cloud-upload-alt" style="font-size: 0.9rem; color: #0066cc;"></i>
+                                                <p style="margin: 0.25rem 0; color: #0066cc; font-weight: 500;">ARRASTRA O CLIC</p>
+                                            </div>
+                                        </label>
+                                        <div class="foto-tela-preview mt-2 grid grid-cols-3 gap-2"></div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- VARIACIONES ESPECÍFICAS -->
+                <div>
+                    <label class="block text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                        <i class="fas fa-sliders-h"></i> VARIACIONES ESPECÍFICAS
+                    </label>
+                    <div class="overflow-x-auto">
+                        <table style="width: 100%; border-collapse: collapse; background: white; dark:bg-gray-700; border: 1px solid #ddd; border-radius: 4px; overflow: hidden;">
+                            <thead>
+                                <tr style="background: linear-gradient(135deg, #0066cc, #0052a3); border-bottom: 2px solid #0066cc;">
+                                    <th style="padding: 14px 12px; text-align: center; font-weight: 600; color: white; border-right: 1px solid #0052a3; width: 60px;">
+                                        <i class="fas fa-check-circle"></i>
+                                    </th>
+                                    <th style="padding: 14px 12px; text-align: left; font-weight: 600; color: white; border-right: 1px solid #0052a3; width: 160px;">
+                                        <i class="fas fa-list"></i> Variación
+                                    </th>
+                                    <th style="padding: 14px 12px; text-align: left; font-weight: 600; color: white;">
+                                        <i class="fas fa-comment"></i> Observación
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- MANGA -->
+                                <tr style="border-bottom: 1px solid #eee; background-color: #fafafa;">
+                                    <td style="padding: 14px 12px; text-align: center; border-right: 1px solid #eee;">
+                                        <input type="checkbox" class="aplica-manga" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;" onchange="toggleMangaInput(this)">
+                                    </td>
+                                    <td style="padding: 14px 12px; border-right: 1px solid #eee; font-weight: 600; color: #0066cc; white-space: nowrap;">
+                                        <i class="fas fa-shirt"></i> Manga
+                                    </td>
+                                    <td style="padding: 14px 12px;">
+                                        <input type="text" class="manga-input" placeholder="Ej: manga larga..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; opacity: 0.5; pointer-events: none; dark:bg-gray-700 dark:text-white" disabled>
+                                    </td>
+                                </tr>
+                                
+                                <!-- BOLSILLOS -->
+                                <tr style="border-bottom: 1px solid #eee; background-color: white;">
+                                    <td style="padding: 14px 12px; text-align: center; border-right: 1px solid #eee;">
+                                        <input type="checkbox" class="aplica-bolsillos" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
+                                    </td>
+                                    <td style="padding: 14px 12px; border-right: 1px solid #eee; font-weight: 600; color: #0066cc; white-space: nowrap;">
+                                        <i class="fas fa-square"></i> Bolsillos
+                                    </td>
+                                    <td style="padding: 14px 12px;">
+                                        <input type="text" class="bolsillos-input" placeholder="Ej: 4 bolsillos, con cierre..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-700 dark:text-white">
+                                    </td>
+                                </tr>
+                                
+                                <!-- BROCHE/BOTÓN -->
+                                <tr style="border-bottom: 1px solid #eee; background-color: #fafafa;">
+                                    <td style="padding: 14px 12px; text-align: center; border-right: 1px solid #eee;">
+                                        <input type="checkbox" class="aplica-broche" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
+                                    </td>
+                                    <td style="padding: 14px 12px; border-right: 1px solid #eee; font-weight: 600; color: #0066cc; white-space: nowrap;">
+                                        <i class="fas fa-link"></i> Broche/Botón
+                                    </td>
+                                    <td style="padding: 14px 12px;">
+                                        <input type="text" class="broche-input" placeholder="Ej: botones metálicos..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-700 dark:text-white">
+                                    </td>
+                                </tr>
+
+                                <!-- PUÑO -->
+                                <tr style="border-bottom: 1px solid #eee; background-color: white;">
+                                    <td style="padding: 14px 12px; text-align: center; border-right: 1px solid #eee;">
+                                        <input type="checkbox" class="aplica-puno" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
+                                    </td>
+                                    <td style="padding: 14px 12px; border-right: 1px solid #eee; font-weight: 600; color: #0066cc; white-space: nowrap;">
+                                        <i class="fas fa-ring"></i> Puño
+                                    </td>
+                                    <td style="padding: 14px 12px;">
+                                        <input type="text" class="puno-input" placeholder="Ej: puño elástico..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-700 dark:text-white">
+                                    </td>
+                                </tr>
+
+                                <!-- PROCESO -->
+                                <tr style="border-bottom: 1px solid #eee; background-color: #fafafa;">
+                                    <td style="padding: 14px 12px; text-align: center; border-right: 1px solid #eee;">
+                                        <input type="checkbox" class="aplica-proceso" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
+                                    </td>
+                                    <td style="padding: 14px 12px; border-right: 1px solid #eee; font-weight: 600; color: #0066cc; white-space: nowrap;">
+                                        <i class="fas fa-cogs"></i> Proceso
+                                    </td>
+                                    <td style="padding: 14px 12px;">
+                                        <input type="text" class="proceso-input" placeholder="Ej: lavado especial..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-700 dark:text-white">
+                                    </td>
+                                </tr>
+
+                                <!-- REFLECTIVO -->
+                                <tr style="border-bottom: 1px solid #eee; background-color: white;">
+                                    <td style="padding: 14px 12px; text-align: center; border-right: 1px solid #eee;">
+                                        <input type="checkbox" class="aplica-reflectivo" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
+                                    </td>
+                                    <td style="padding: 14px 12px; border-right: 1px solid #eee; font-weight: 600; color: #0066cc; white-space: nowrap;">
+                                        <i class="fas fa-lightbulb"></i> Reflectivo
+                                    </td>
+                                    <td style="padding: 14px 12px;">
+                                        <input type="text" class="reflectivo-input" placeholder="Ej: reflectivo en espalda..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-700 dark:text-white">
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TALLAS Y CANTIDADES -->
+                <div>
+                    <label class="block text-sm font-bold text-gray-900 dark:text-white mb-3">
+                        Tallas y Cantidades
+                    </label>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div>
+                            <label class="text-xs text-gray-600 dark:text-gray-400">S</label>
+                            <input type="number" id="talla-s" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-600 dark:text-gray-400">M</label>
+                            <input type="number" id="talla-m" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-600 dark:text-gray-400">L</label>
+                            <input type="number" id="talla-l" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-600 dark:text-gray-400">XL</label>
+                            <input type="number" id="talla-xl" min="0" value="0" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botón Agregar -->
+                <div>
+                    <button 
+                        onclick="agregarPrenda()"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-colors"
+                    >
+                        ➕ Agregar Prenda
+                    </button>
                 </div>
             </div>
         </div>
@@ -182,7 +265,7 @@
 
             <div id="prendas-tabla" class="space-y-3">
                 <p class="text-gray-500 dark:text-gray-400 text-center py-8">
-                    No hay prendas agregadas aún. Comienza escribiendo el nombre de una prenda.
+                    No hay prendas agregadas aún. Completa los datos y haz clic en "Agregar Prenda".
                 </p>
             </div>
 
@@ -202,63 +285,85 @@
 <script>
 let prendas = [];
 
-function reconocerPrenda() {
-    const nombre = document.getElementById('nombre-prenda').value.trim();
-    
-    if (!nombre) {
-        document.getElementById('reconocimiento-container').classList.add('hidden');
-        document.getElementById('selector-container').classList.add('hidden');
-        return;
-    }
+function seleccionarPrenda(nombre, element) {
+    document.getElementById('nombre-prenda').value = nombre;
+    document.querySelectorAll('.prenda-suggestion-item').forEach(el => el.style.background = '');
+    element.style.background = '#e3f2fd';
+}
 
-    // Fetch a API para reconocer
-    fetch('/api/prenda/reconocer', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-        },
-        body: JSON.stringify({ nombre: nombre })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            document.getElementById('tipo-reconocido').textContent = data.tipo.nombre;
-            document.getElementById('reconocimiento-container').classList.remove('hidden');
-            
-            // Mostrar selector dinámico
-            mostrarSelector(data.variaciones);
-        } else {
-            document.getElementById('reconocimiento-container').classList.add('hidden');
-            document.getElementById('selector-container').classList.add('hidden');
-        }
-    })
-    .catch(err => {
-        console.error('Error:', err);
-        document.getElementById('reconocimiento-container').classList.add('hidden');
-        document.getElementById('selector-container').classList.add('hidden');
+function buscarPrendas(input) {
+    // Implementar búsqueda de prendas
+}
+
+function buscarColor(input) {
+    // Implementar búsqueda de colores
+}
+
+function buscarTela(input) {
+    // Implementar búsqueda de telas
+}
+
+function mostrarSelectorVariantes(input) {
+    // Mostrar selectores dinámicos según tipo de prenda
+}
+
+function actualizarResumenFriendly() {
+    // Actualizar resumen de prenda
+}
+
+function toggleMangaInput(checkbox) {
+    const input = checkbox.closest('tr').querySelector('.manga-input');
+    input.disabled = !checkbox.checked;
+    input.style.opacity = checkbox.checked ? '1' : '0.5';
+    input.style.pointerEvents = checkbox.checked ? 'auto' : 'none';
+}
+
+function agregarFotos(files, container) {
+    const preview = container.querySelector('.fotos-preview') || container.nextElementSibling;
+    Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.width = '80px';
+            img.style.height = '80px';
+            img.style.objectFit = 'cover';
+            img.style.borderRadius = '4px';
+            preview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
     });
 }
 
-function mostrarSelector(variaciones) {
-    // Mostrar/ocultar campos según variaciones
-    document.getElementById('campo-manga').classList.toggle('hidden', !variaciones.tiene_manga);
-    document.getElementById('campo-bolsillos').classList.toggle('hidden', !variaciones.tiene_bolsillos);
-    document.getElementById('campo-broche').classList.toggle('hidden', !variaciones.tiene_broche);
-    document.getElementById('campo-reflectivo').classList.toggle('hidden', !variaciones.tiene_reflectivo);
-    
-    document.getElementById('selector-container').classList.remove('hidden');
+function agregarFotoTela(input) {
+    const container = input.closest('td');
+    const preview = container.querySelector('.foto-tela-preview');
+    Array.from(input.files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.width = '60px';
+            img.style.height = '60px';
+            img.style.objectFit = 'cover';
+            img.style.borderRadius = '4px';
+            preview.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function manejarDrop(event) {
+    event.preventDefault();
+    event.stopPropagation();
 }
 
 function agregarPrenda() {
     const nombre = document.getElementById('nombre-prenda').value.trim();
-    const manga = document.getElementById('manga').value;
-    const bolsillos = document.getElementById('bolsillos').value;
-    const broche = document.getElementById('broche').value;
-    const genero = document.getElementById('genero').value;
-    const color = document.getElementById('color').value;
-    const tela = document.getElementById('tela').value;
-    const reflectivo = document.getElementById('reflectivo').value;
+    const descripcion = document.getElementById('descripcion').value.trim();
+    const color = document.getElementById('color').value.trim();
+    const tela = document.getElementById('tela').value.trim();
+    const referencia = document.getElementById('referencia').value.trim();
     
     const tallas = {
         S: parseInt(document.getElementById('talla-s').value) || 0,
@@ -267,22 +372,27 @@ function agregarPrenda() {
         XL: parseInt(document.getElementById('talla-xl').value) || 0
     };
 
-    if (!nombre || !genero || !color || !tela) {
-        alert('Por favor completa los campos obligatorios');
+    if (!nombre || !color || !tela) {
+        alert('Por favor completa los campos obligatorios (Prenda, Color, Tela)');
         return;
     }
 
     const prenda = {
         id: Date.now(),
         nombre,
-        manga: manga || '-',
-        bolsillos: bolsillos || '-',
-        broche: broche || '-',
-        genero,
+        descripcion,
         color,
         tela,
-        reflectivo: reflectivo || '-',
-        tallas
+        referencia,
+        tallas,
+        variaciones: {
+            manga: document.querySelector('.aplica-manga').checked ? document.querySelector('.manga-input').value : null,
+            bolsillos: document.querySelector('.aplica-bolsillos').checked ? document.querySelector('.bolsillos-input').value : null,
+            broche: document.querySelector('.aplica-broche').checked ? document.querySelector('.broche-input').value : null,
+            puno: document.querySelector('.aplica-puno').checked ? document.querySelector('.puno-input').value : null,
+            proceso: document.querySelector('.aplica-proceso').checked ? document.querySelector('.proceso-input').value : null,
+            reflectivo: document.querySelector('.aplica-reflectivo').checked ? document.querySelector('.reflectivo-input').value : null,
+        }
     };
 
     prendas.push(prenda);
@@ -316,14 +426,11 @@ function actualizarTabla() {
                 </button>
             </div>
             
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm mb-3">
-                ${prenda.manga !== '-' ? `<p><strong>Manga:</strong> ${prenda.manga}</p>` : ''}
-                ${prenda.bolsillos !== '-' ? `<p><strong>Bolsillos:</strong> ${prenda.bolsillos}</p>` : ''}
-                ${prenda.broche !== '-' ? `<p><strong>Broche:</strong> ${prenda.broche}</p>` : ''}
-                <p><strong>Género:</strong> ${prenda.genero}</p>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm mb-3">
                 <p><strong>Color:</strong> ${prenda.color}</p>
                 <p><strong>Tela:</strong> ${prenda.tela}</p>
-                ${prenda.reflectivo !== '-' ? `<p><strong>Reflectivo:</strong> ${prenda.reflectivo}</p>` : ''}
+                <p><strong>Referencia:</strong> ${prenda.referencia || 'N/A'}</p>
+                ${prenda.descripcion ? `<p class="col-span-full"><strong>Descripción:</strong> ${prenda.descripcion}</p>` : ''}
             </div>
 
             <div class="bg-white dark:bg-gray-800 rounded p-3">
@@ -346,19 +453,16 @@ function eliminarPrenda(id) {
 
 function limpiarFormulario() {
     document.getElementById('nombre-prenda').value = '';
-    document.getElementById('manga').value = '';
-    document.getElementById('bolsillos').value = '';
-    document.getElementById('broche').value = '';
-    document.getElementById('genero').value = '';
+    document.getElementById('descripcion').value = '';
     document.getElementById('color').value = '';
     document.getElementById('tela').value = '';
-    document.getElementById('reflectivo').value = '';
+    document.getElementById('referencia').value = '';
     document.getElementById('talla-s').value = '0';
     document.getElementById('talla-m').value = '0';
     document.getElementById('talla-l').value = '0';
     document.getElementById('talla-xl').value = '0';
-    document.getElementById('reconocimiento-container').classList.add('hidden');
-    document.getElementById('selector-container').classList.add('hidden');
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+    document.querySelectorAll('.manga-input, .bolsillos-input, .broche-input, .puno-input, .proceso-input, .reflectivo-input').forEach(input => input.value = '');
     document.getElementById('nombre-prenda').focus();
 }
 </script>

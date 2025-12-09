@@ -12,7 +12,7 @@
                 <div class="section-title"><i class="fas fa-shirt"></i> TIPO DE PRENDA</div>
                 <div class="form-row tipo-prenda-row" style="display: flex; gap: 12px; align-items: flex-start;">
                     <div class="form-col full" style="flex: 1;">
-                        <label><i class="fas fa-list"></i> SELECCIONA O ESCRIBE EL TIPO *</label>
+                        <label style="font-size: 0.65rem; font-weight: 600; display: flex; align-items: center; gap: 0.3rem; margin-bottom: 0.3rem;"><i class="fas fa-list"></i> SELECCIONA O ESCRIBE EL TIPO *</label>
                         <div class="prenda-search-container">
                             <input type="text" name="productos_friendly[][nombre_producto]" class="prenda-search-input input-large" placeholder="BUSCA O ESCRIBE (CAMISA, CAMISETA, POLO...)" required onkeyup="buscarPrendas(this); mostrarSelectorVariantes(this);" onchange="actualizarResumenFriendly(); mostrarSelectorVariantes(this);">
                             <div class="prenda-suggestions">
@@ -196,12 +196,12 @@
                                     </td>
                                     <td style="padding: 14px 12px;">
                                         <div style="display: flex; gap: 8px; align-items: center;">
-                                            <select name="productos_friendly[][variantes][tipo_broche_id]" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; background-color: white; cursor: pointer; transition: border-color 0.2s;">
+                                            <select name="productos_friendly[][variantes][tipo_broche_id]" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.65rem; background-color: white; cursor: pointer; transition: border-color 0.2s;">
                                                 <option value="">Seleccionar...</option>
                                                 <option value="1">Broche</option>
                                                 <option value="2">Botón</option>
                                             </select>
-                                            <input type="text" name="productos_friendly[][variantes][obs_broche]" placeholder="Ej: Botones de madera..." style="flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; transition: border-color 0.2s;">
+                                            <input type="text" name="productos_friendly[][variantes][obs_broche]" placeholder="Ej: Botones de madera..." style="flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.65rem; box-sizing: border-box; transition: border-color 0.2s;">
                                         </div>
                                     </td>
                                 </tr>

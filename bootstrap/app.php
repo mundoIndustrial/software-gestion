@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'supervisor-access' => \App\Http\Middleware\SupervisorAccessControl::class,
             'supervisor-readonly' => \App\Http\Middleware\SupervisorReadOnly::class,
             'insumos-access' => \App\Http\Middleware\InsumosAccess::class,
+            'redirect-to-login' => \App\Http\Middleware\RedirectToLoginIfUnauthenticated::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

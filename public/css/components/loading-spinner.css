@@ -1,0 +1,276 @@
+/* ============================================
+   LOADING SPINNER - ESTILOS PROFESIONALES
+   Paleta: Azul (#3498db) y Blanco
+   ============================================ */
+
+:root {
+    --spinner-primary: #3498db;
+    --spinner-dark: #2c3e50;
+    --spinner-light: #ecf0f1;
+    --spinner-white: #ffffff;
+    --spinner-overlay: rgba(44, 62, 80, 0.95);
+}
+
+/* ============================================
+   OVERLAY
+   ============================================ */
+
+.loading-spinner-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--spinner-overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    backdrop-filter: blur(2px);
+}
+
+.loading-spinner-overlay.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* ============================================
+   CONTENEDOR PRINCIPAL
+   ============================================ */
+
+.loading-spinner-container {
+    text-align: center;
+    animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   SPINNER SVG
+   ============================================ */
+
+.spinner-wrapper {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 30px;
+    position: relative;
+}
+
+.spinner-svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 4px 15px rgba(52, 152, 219, 0.3));
+}
+
+/* Círculo de fondo */
+.spinner-bg {
+    fill: none;
+    stroke: rgba(255, 255, 255, 0.1);
+    stroke-width: 3;
+}
+
+/* Círculo animado principal */
+.spinner-main {
+    fill: none;
+    stroke: url(#spinnerGradient);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-dasharray: 141;
+    stroke-dashoffset: 0;
+    animation: spin 2s linear infinite;
+    transform-origin: 50% 50%;
+}
+
+@keyframes spin {
+    0% {
+        stroke-dashoffset: 0;
+        transform: rotate(0deg);
+    }
+    100% {
+        stroke-dashoffset: -141;
+        transform: rotate(360deg);
+    }
+}
+
+/* Puntos decorativos */
+.spinner-dot {
+    fill: var(--spinner-primary);
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.spinner-dot:nth-child(2) {
+    animation-delay: 0.1s;
+}
+
+.spinner-dot:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.spinner-dot:nth-child(4) {
+    animation-delay: 0.3s;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        r: 4;
+        opacity: 0.4;
+    }
+    50% {
+        r: 6;
+        opacity: 1;
+    }
+}
+
+/* ============================================
+   TEXTO
+   ============================================ */
+
+.loading-text {
+    margin-bottom: 30px;
+}
+
+.loading-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--spinner-white);
+    margin: 0 0 8px 0;
+    letter-spacing: 0.5px;
+    animation: fadeInDown 0.6s ease-out 0.2s both;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.loading-subtitle {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+    font-weight: 400;
+    animation: fadeInUp 0.6s ease-out 0.3s both;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   BARRA DE PROGRESO
+   ============================================ */
+
+.progress-bar {
+    width: 200px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    margin: 0 auto;
+    overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--spinner-primary), #2980b9, var(--spinner-primary));
+    background-size: 200% 100%;
+    border-radius: 2px;
+    animation: progress 2s ease-in-out infinite;
+    box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+}
+
+@keyframes progress {
+    0% {
+        width: 0%;
+        background-position: 0% 0%;
+    }
+    50% {
+        width: 100%;
+        background-position: 100% 0%;
+    }
+    100% {
+        width: 0%;
+        background-position: 0% 0%;
+    }
+}
+
+/* ============================================
+   TEMA OSCURO
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+    .loading-spinner-overlay {
+        --spinner-overlay: rgba(20, 30, 40, 0.98);
+    }
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+    .spinner-wrapper {
+        width: 100px;
+        height: 100px;
+        margin: 0 auto 20px;
+    }
+
+    .loading-title {
+        font-size: 24px;
+    }
+
+    .loading-subtitle {
+        font-size: 13px;
+    }
+
+    .progress-bar {
+        width: 150px;
+    }
+}
+
+@media (max-width: 480px) {
+    .spinner-wrapper {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 15px;
+    }
+
+    .loading-title {
+        font-size: 20px;
+    }
+
+    .loading-subtitle {
+        font-size: 12px;
+    }
+
+    .progress-bar {
+        width: 120px;
+    }
+}

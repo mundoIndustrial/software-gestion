@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo - Loading Spinner Profesional</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 50px;
+        }
+
+        .header h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .demo-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .demo-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .demo-card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .demo-card p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            text-align: center;
+        }
+
+        .btn:hover {
+            transform: scale(1.02);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .code-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .code-section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+
+        .code-block {
+            background: #f5f5f5;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .code-block code {
+            color: #d63031;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+
+        .feature::before {
+            content: "✓";
+            color: #27ae60;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        /* Loading Spinner Styles */
+        :root {
+            --spinner-primary: #3498db;
+            --spinner-dark: #2c3e50;
+            --spinner-light: #ecf0f1;
+            --spinner-white: #ffffff;
+            --spinner-overlay: rgba(44, 62, 80, 0.95);
+        }
+
+        .loading-spinner-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--spinner-overlay);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            backdrop-filter: blur(2px);
+        }
+
+        .loading-spinner-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .loading-spinner-container {
+            text-align: center;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .spinner-wrapper {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 30px;
+            position: relative;
+        }
+
+        .spinner-svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 4px 15px rgba(52, 152, 219, 0.3));
+        }
+
+        .spinner-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 3;
+        }
+
+        .spinner-main {
+            fill: none;
+            stroke: url(#spinnerGradient);
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-dasharray: 141;
+            stroke-dashoffset: 0;
+            animation: spin 2s linear infinite;
+            transform-origin: 50% 50%;
+        }
+
+        @keyframes spin {
+            0% {
+                stroke-dashoffset: 0;
+                transform: rotate(0deg);
+            }
+            100% {
+                stroke-dashoffset: -141;
+                transform: rotate(360deg);
+            }
+        }
+
+        .spinner-dot {
+            fill: var(--spinner-primary);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .spinner-dot:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .spinner-dot:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+
+        .spinner-dot:nth-child(4) {
+            animation-delay: 0.3s;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                r: 4;
+                opacity: 0.4;
+            }
+            50% {
+                r: 6;
+                opacity: 1;
+            }
+        }
+
+        .loading-text {
+            margin-bottom: 30px;
+        }
+
+        .loading-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--spinner-white);
+            margin: 0 0 8px 0;
+            letter-spacing: 0.5px;
+            animation: fadeInDown 0.6s ease-out 0.2s both;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .loading-subtitle {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            margin: 0;
+            font-weight: 400;
+            animation: fadeInUp 0.6s ease-out 0.3s both;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .progress-bar {
+            width: 200px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            margin: 0 auto;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--spinner-primary), #2980b9, var(--spinner-primary));
+            background-size: 200% 100%;
+            border-radius: 2px;
+            animation: progress 2s ease-in-out infinite;
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.5);
+        }
+
+        @keyframes progress {
+            0% {
+                width: 0%;
+                background-position: 0% 0%;
+            }
+            50% {
+                width: 100%;
+                background-position: 100% 0%;
+            }
+            100% {
+                width: 0%;
+                background-position: 0% 0%;
+            }
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .footer p {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Spinner -->
+    <div class="loading-spinner-overlay hidden" id="loadingSpinner">
+        <div class="loading-spinner-container">
+            <div class="spinner-wrapper">
+                <svg class="spinner-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="50" cy="50" r="45" class="spinner-bg" />
+                    <circle cx="50" cy="50" r="45" class="spinner-main" />
+                    <circle cx="50" cy="10" r="4" class="spinner-dot" opacity="1" />
+                    <circle cx="85" cy="50" r="4" class="spinner-dot" opacity="0.8" />
+                    <circle cx="50" cy="90" r="4" class="spinner-dot" opacity="0.6" />
+                    <circle cx="15" cy="50" r="4" class="spinner-dot" opacity="0.4" />
+                </svg>
+            </div>
+            <div class="loading-text">
+                <h3 class="loading-title">Espere, es posible</h3>
+                <p class="loading-subtitle">Procesando su solicitud...</p>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gradiente SVG -->
+    <svg style="display: none;">
+        <defs>
+            <linearGradient id="spinnerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color: #3498db; stop-opacity: 1" />
+                <stop offset="50%" style="stop-color: #2980b9; stop-opacity: 1" />
+                <stop offset="100%" style="stop-color: #3498db; stop-opacity: 0.3" />
+            </linearGradient>
+        </defs>
+    </svg>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎯 Loading Spinner Profesional</h1>
+            <p>Spinner elegante con paleta azul y blanco - "Espere, es posible"</p>
+        </div>
+
+        <!-- Demo Cards -->
+        <div class="demo-grid">
+            <div class="demo-card">
+                <h3>Mensaje por Defecto</h3>
+                <p>Muestra el spinner con el mensaje por defecto "Espere, es posible"</p>
+                <button class="btn" onclick="showLoadingSpinner()">Mostrar Spinner</button>
+            </div>
+
+            <div class="demo-card">
+                <h3>Guardando Datos</h3>
+                <p>Simula el guardado de datos con mensaje personalizado</p>
+                <button class="btn" onclick="demoGuardar()">Guardar</button>
+            </div>
+
+            <div class="demo-card">
+                <h3>Cargando Datos</h3>
+                <p>Simula la carga de datos desde el servidor</p>
+                <button class="btn" onclick="demoCarga()">Cargar</button>
+            </div>
+
+            <div class="demo-card">
+                <h3>Procesando Archivo</h3>
+                <p>Simula el procesamiento de un archivo</p>
+                <button class="btn" onclick="demoProcesar()">Procesar</button>
+            </div>
+
+            <div class="demo-card">
+                <h3>Enviando Solicitud</h3>
+                <p>Simula el envío de una solicitud HTTP</p>
+                <button class="btn" onclick="demoEnviar()">Enviar</button>
+            </div>
+
+            <div class="demo-card">
+                <h3>Operación Personalizada</h3>
+                <p>Muestra el spinner con un mensaje personalizado</p>
+                <button class="btn" onclick="demoPersonalizado()">Personalizado</button>
+            </div>
+        </div>
+
+        <!-- Code Section -->
+        <div class="code-section">
+            <h2>📝 Código de Ejemplo</h2>
+            
+            <h3 style="color: #2c3e50; margin-top: 20px; margin-bottom: 10px;">Mostrar Spinner</h3>
+            <div class="code-block">
+<code>showLoadingSpinner('Guardando datos...');</code>
+            </div>
+
+            <h3 style="color: #2c3e50; margin-top: 20px; margin-bottom: 10px;">Ocultar Spinner</h3>
+            <div class="code-block">
+<code>hideLoadingSpinner();</code>
+            </div>
+
+            <h3 style="color: #2c3e50; margin-top: 20px; margin-bottom: 10px;">Con Fetch API</h3>
+            <div class="code-block">
+<code>showLoadingSpinner('Cargando...');
+
+fetch('/api/datos')
+    .then(r => r.json())
+    .then(data => {
+        hideLoadingSpinner();
+        console.log(data);
+    })
+    .catch(e => {
+        hideLoadingSpinner();
+        alert('Error: ' + e.message);
+    });</code>
+            </div>
+
+            <h3 style="color: #2c3e50; margin-top: 20px; margin-bottom: 10px;">Características</h3>
+            <div class="features">
+                <div class="feature">Spinner animado</div>
+                <div class="feature">Gradiente azul</div>
+                <div class="feature">Puntos pulsantes</div>
+                <div class="feature">Barra de progreso</div>
+                <div class="feature">Overlay blur</div>
+                <div class="feature">Responsive</div>
+                <div class="feature">Tema oscuro</div>
+                <div class="feature">Personalizable</div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>🎨 Paleta: Azul (#3498db) y Blanco | 📱 Responsive | 🌙 Tema Oscuro Soportado</p>
+        </div>
+    </div>
+
+    <script>
+        // Funciones para controlar el spinner
+        window.showLoadingSpinner = function(message = 'Espere, es posible') {
+            const spinner = document.getElementById('loadingSpinner');
+            if (spinner) {
+                const title = spinner.querySelector('.loading-title');
+                if (title) {
+                    title.textContent = message;
+                }
+                spinner.classList.remove('hidden');
+            }
+        };
+
+        window.hideLoadingSpinner = function() {
+            const spinner = document.getElementById('loadingSpinner');
+            if (spinner) {
+                spinner.classList.add('hidden');
+            }
+        };
+
+        window.setLoadingMessage = function(message) {
+            const spinner = document.getElementById('loadingSpinner');
+            if (spinner) {
+                const title = spinner.querySelector('.loading-title');
+                if (title) {
+                    title.textContent = message;
+                }
+            }
+        };
+
+        // Demos
+        function demoGuardar() {
+            showLoadingSpinner('Guardando datos...');
+            setTimeout(() => {
+                hideLoadingSpinner();
+                alert('✅ Datos guardados exitosamente');
+            }, 2000);
+        }
+
+        function demoCarga() {
+            showLoadingSpinner('Cargando datos...');
+            setTimeout(() => {
+                hideLoadingSpinner();
+                alert('✅ Datos cargados correctamente');
+            }, 2500);
+        }
+
+        function demoProcesar() {
+            showLoadingSpinner('Procesando archivo...');
+            setTimeout(() => {
+                hideLoadingSpinner();
+                alert('✅ Archivo procesado');
+            }, 3000);
+        }
+
+        function demoEnviar() {
+            showLoadingSpinner('Enviando solicitud...');
+            setTimeout(() => {
+                hideLoadingSpinner();
+                alert('✅ Solicitud enviada');
+            }, 2000);
+        }
+
+        function demoPersonalizado() {
+            showLoadingSpinner('Realizando operación personalizada...');
+            setTimeout(() => {
+                hideLoadingSpinner();
+                alert('✅ Operación completada');
+            }, 2500);
+        }
+
+        // Cerrar spinner al hacer click fuera
+        document.getElementById('loadingSpinner').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideLoadingSpinner();
+            }
+        });
+    </script>
+</body>
+</html>

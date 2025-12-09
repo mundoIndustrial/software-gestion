@@ -412,9 +412,9 @@
     </div>
 
     <!-- Tabla con Scroll Horizontal -->
-    <div style="background: #e5e7eb; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem;">
+    <div style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem;">
         <!-- Contenedor con Scroll -->
-        <div class="table-scroll-container">
+        <div class="table-scroll-container" style="overflow-x: auto; overflow-y: visible;">
             <!-- Header Azul -->
             <div style="
                 background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
@@ -512,95 +512,28 @@
                         border-radius: 6px;
                         margin-bottom: 0.75rem;
                         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+                        position: relative;
+                        z-index: 1;
                     " onmouseover="this.style.boxShadow='0 4px 12px rgba(0, 0, 0, 0.1)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='0 2px 4px rgba(0, 0, 0, 0.05)'; this.style.transform='translateY(0)'">
                     
                     <!-- Acciones -->
-                    <div style="position: relative; display: inline-block;">
-                        <button onclick="toggleDropdown(event)" data-menu-id="menu-{{ $pedido->numero_pedido }}" style="
-                            background: linear-gradient(135deg, #10b981, #059669);
-                            color: white;
-                            border: none;
-                            padding: 0.5rem 1rem;
-                            border-radius: 6px;
-                            cursor: pointer;
-                            font-weight: 600;
-                            font-size: 0.75rem;
-                            transition: all 0.2s ease;
-                            display: flex;
-                            align-items: center;
-                            gap: 0.5rem;
-                            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
-                        " onmouseover="this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.3)'; this.style.transform='translateY(-1px)'" onmouseout="this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.2)'; this.style.transform='translateY(0)'">
-                            <i class="fas fa-eye"></i> Ver
-                        </button>
-                        <div class="dropdown-menu" id="menu-{{ $pedido->numero_pedido }}" style="
-                            position: fixed;
-                            background: white;
-                            border: 2px solid #e5e7eb;
-                            border-radius: 8px;
-                            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-                            min-width: 160px;
-                            display: none;
-                            z-index: 99999 !important;
-                            overflow: visible !important;
-                        ">
-                            <button onclick="verFactura({{ $pedido->numero_pedido }}); closeDropdown()" style="
-                                width: 100%;
-                                text-align: left;
-                                padding: 0.875rem 1rem;
-                                border: none;
-                                background: transparent;
-                                cursor: pointer;
-                                color: #374151;
-                                font-size: 0.875rem;
-                                transition: background 0.2s ease;
-                                display: flex;
-                                align-items: center;
-                                gap: 0.75rem;
-                                font-weight: 500;
-                            " onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='transparent'">
-                                <i class="fas fa-eye" style="color: #2563eb;"></i> Detalle
-                            </button>
-                            <div style="height: 1px; background: #e5e7eb;"></div>
-                            <button onclick="verSeguimiento({{ $pedido->numero_pedido }}); closeDropdown()" style="
-                                width: 100%;
-                                text-align: left;
-                                padding: 0.875rem 1rem;
-                                border: none;
-                                background: transparent;
-                                cursor: pointer;
-                                color: #374151;
-                                font-size: 0.875rem;
-                                transition: background 0.2s ease;
-                                display: flex;
-                                align-items: center;
-                                gap: 0.75rem;
-                                font-weight: 500;
-                            " onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='transparent'">
-                                <i class="fas fa-tasks" style="color: #10b981;"></i> Seguimiento
-                            </button>
-                            @if ($pedido->estado === 'Anulada')
-                                <div style="height: 1px; background: #e5e7eb;"></div>
-                                <button onclick="verMotivoanulacion({{ $pedido->numero_pedido }}, '{{ $pedido->motivo_anulacion ?? 'No especificado' }}', '{{ $pedido->usuario_anulacion ?? 'Sistema' }}', '{{ $pedido->fecha_anulacion ? \Carbon\Carbon::parse($pedido->fecha_anulacion)->format('d/m/Y h:i A') : '' }}'); closeDropdown()" style="
-                                    width: 100%;
-                                    text-align: left;
-                                    padding: 0.875rem 1rem;
-                                    border: none;
-                                    background: transparent;
-                                    cursor: pointer;
-                                    color: #374151;
-                                    font-size: 0.875rem;
-                                    transition: background 0.2s ease;
-                                    display: flex;
-                                    align-items: center;
-                                    gap: 0.75rem;
-                                    font-weight: 500;
-                                " onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
-                                    <i class="fas fa-ban" style="color: #ef4444;"></i> Ver Motivo
-                                </button>
-                            @endif
-                        </div>
-                    </div>
+                    <button class="btn-acciones-dropdown" data-menu-id="menu-{{ $pedido->numero_pedido }}" data-pedido="{{ $pedido->numero_pedido }}" data-estado="{{ $pedido->estado }}" data-motivo="{{ $pedido->motivo_anulacion ?? '' }}" data-usuario="{{ $pedido->usuario_anulacion ?? '' }}" data-fecha="{{ $pedido->fecha_anulacion ? \Carbon\Carbon::parse($pedido->fecha_anulacion)->format('d/m/Y h:i A') : '' }}" style="
+                        background: linear-gradient(135deg, #10b981, #059669);
+                        color: white;
+                        border: none;
+                        padding: 0.5rem 1rem;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-weight: 600;
+                        font-size: 0.75rem;
+                        transition: all 0.2s ease;
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                        box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+                    " onmouseover="this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.3)'; this.style.transform='translateY(-1px)'" onmouseout="this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.2)'; this.style.transform='translateY(0)'">
+                        <i class="fas fa-eye"></i> Ver
+                    </button>
 
                     <!-- Estado -->
                     <div>
@@ -715,6 +648,8 @@
 <!-- Modal de Seguimiento del Pedido (Tracking Simplificado para Asesoras) -->
 <x-orders-components.asesoras-tracking-modal />
 
+<!-- Contenedor para Dropdowns (Fuera de la tabla) -->
+<div id="dropdowns-container" style="position: fixed; top: 0; left: 0; z-index: 999999; pointer-events: none;"></div>
 
 @endsection
 
@@ -957,7 +892,7 @@
 <script src="{{ asset('js/asesores/pedidos-list.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-modal.js') }}"></script>
-<script src="{{ asset('js/asesores/pedidos-dropdown.js') }}"></script>
+<script src="{{ asset('js/asesores/pedidos-dropdown-simple.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-table-filters.js') }}"></script>
 <!-- MODULAR ORDER TRACKING (SOLID Architecture) -->

@@ -8,6 +8,7 @@
                  data-logo-light="{{ asset('images/logo2.png') }}"
                  data-logo-dark="https://prueba.mundoindustrial.co/wp-content/uploads/2024/07/logo-mundo-industrial-white.png" />
         </a>
+        <!-- Botón chevron para colapsar (visible en desktop, oculto en móvil) -->
         <button class="sidebar-toggle" id="sidebarToggle" aria-label="Colapsar menú">
             <span class="material-symbols-rounded">chevron_left</span>
         </button>

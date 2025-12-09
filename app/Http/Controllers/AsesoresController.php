@@ -586,11 +586,7 @@ class AsesoresController extends Controller
                 'success' => true,
                 'message' => 'Perfil actualizado correctamente',
                 'avatar_url' => $avatarUrl,
-                'user' => [
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'avatar' => $user->avatar
-                ]
+                'asesor' => $user->getNombreAsesor()
             ]);
 
         } catch (\Illuminate\Validation\ValidationException $e) {

@@ -28,7 +28,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        // Redirigir según el rol del usuario
+        // Redirigir según el rol del usuario (SIN permitir rutas no autorizadas)
         $user = Auth::user();
         
         if ($user && $user->role) {
@@ -36,42 +36,42 @@ class AuthenticatedSessionController extends Controller
             
             // Asesor - Dashboard de asesores
             if ($roleName === 'asesor') {
-                return redirect()->intended(route('asesores.dashboard', absolute: false));
+                return redirect(route('asesores.dashboard', absolute: false));
             }
 
             // Contador - Dashboard de contador
             if ($roleName === 'contador') {
-                return redirect()->intended(route('contador.index', absolute: false));
+                return redirect(route('contador.index', absolute: false));
             }
 
             // Supervisor - Gestión de órdenes
             if ($roleName === 'supervisor') {
-                return redirect()->intended(route('registros.index', absolute: false));
+                return redirect(route('registros.index', absolute: false));
             }
 
             // Supervisor Planta - Gestión de órdenes
             if ($roleName === 'supervisor_planta') {
-                return redirect()->intended(route('registros.index', absolute: false));
+                return redirect(route('registros.index', absolute: false));
             }
             
             // Insumos - Control de insumos
             if ($roleName === 'insumos') {
-                return redirect()->intended(route('insumos.materiales.index', absolute: false));
+                return redirect(route('insumos.materiales.index', absolute: false));
             }
 
             // Aprobador de Cotizaciones - Cotizaciones pendientes
             if ($roleName === 'aprobador_cotizaciones') {
-                return redirect()->intended(route('cotizaciones.pendientes', absolute: false));
+                return redirect(route('cotizaciones.pendientes', absolute: false));
             }
 
             // Supervisor de Pedidos - Supervisión de órdenes
             if ($roleName === 'supervisor_pedidos') {
-                return redirect()->intended(route('supervisor-pedidos.index', absolute: false));
+                return redirect(route('supervisor-pedidos.index', absolute: false));
             }
         }
 
         // Admin y otros - Dashboard principal
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect(route('dashboard', absolute: false));
     }
 
     /**
@@ -79,12 +79,17 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        Auth::guard('web')->logout();
-
-        $request->session()->invalidate();
-
+        // Regenerar token ANTES de invalidar la sesión
+        // Esto previene el error 419 si la sesión está a punto de expirar
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        // Hacer logout
+        Auth::guard('web')->logout();
+
+        // Invalidar sesión
+        $request->session()->invalidate();
+
+        // Redirigir con mensaje de éxito
+        return redirect('/')->with('success', 'Sesión cerrada correctamente');
     }
 }

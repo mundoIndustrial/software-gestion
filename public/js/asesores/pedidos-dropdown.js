@@ -33,6 +33,14 @@ function toggleDropdown(event) {
     
     // Toggle el dropdown actual
     if (menu.style.display === 'none' || menu.style.display === '') {
+        // Primero mover al body si no está ya
+        if (menu.parentElement !== document.body) {
+            movedMenus.set(menuId, menu.parentElement); // Guardar referencia del padre original
+            document.body.appendChild(menu);
+        }
+        
+        // Configurar posicionamiento
+        menu.style.position = 'fixed';
         menu.style.display = 'block';
         
         // Calcular posición del botón en la pantalla
@@ -42,11 +50,6 @@ function toggleDropdown(event) {
         menu.style.top = (buttonRect.bottom + 8) + 'px'; // 8px de separación
         menu.style.left = buttonRect.left + 'px';
         
-        // Mover el dropdown al body para que no sea afectado por overflow
-        if (menu.parentElement !== document.body) {
-            movedMenus.set(menuId, menu.parentElement); // Guardar referencia del padre original
-            document.body.appendChild(menu);
-        }
     } else {
         menu.style.display = 'none';
     }
@@ -60,7 +63,10 @@ function closeDropdown() {
 
 // Cerrar dropdown al hacer clic fuera
 document.addEventListener('click', function(event) {
-    if (!event.target.closest('.dropdown-menu') && !event.target.closest('button[onclick*="toggleDropdown"]')) {
+    const clickedDropdown = event.target.closest('.dropdown-menu');
+    const clickedButton = event.target.closest('button[data-menu-id]');
+    
+    if (!clickedDropdown && !clickedButton) {
         closeDropdown();
     }
 });

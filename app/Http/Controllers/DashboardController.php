@@ -16,8 +16,15 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
 
-        if ($user && $user->role) {
-            $roleName = is_object($user->role) ? $user->role->name : $user->role;
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
+        // Obtener el nombre del rol del usuario (primer rol en roles_ids)
+        $userRoles = $user->roles();
+        
+        if ($userRoles && $userRoles->count() > 0) {
+            $roleName = $userRoles->first()->name;
 
             if ($roleName === 'asesor') {
                 return redirect()->route('asesores.dashboard');

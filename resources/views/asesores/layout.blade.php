@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="{{ asset('css/asesores/layout.css') }}">
     <link rel="stylesheet" href="{{ asset('css/asesores/module.css') }}">
     <link rel="stylesheet" href="{{ asset('css/asesores/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/asesores/sidebar-responsive.css') }}">
     
     <!-- Chart.js para gráficas -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -161,6 +162,7 @@
     <script src="{{ asset('js/toast-notifications.js') }}"></script>
     <script src="{{ asset('js/asesores/layout.js') }}"></script>
     <script src="{{ asset('js/asesores/notifications.js') }}"></script>
+    <script src="{{ asset('js/asesores/sidebar-responsive.js') }}"></script>
     @stack('scripts')
 </body>
 </html>

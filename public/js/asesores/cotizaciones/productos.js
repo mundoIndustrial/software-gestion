@@ -4,8 +4,14 @@
  */
 
 let productosCount = 0;
-let fotosSeleccionadas = {};
-let telasSeleccionadas = {}; // Nueva variable para guardar telas por prenda
+
+// Usar window para que sean accesibles desde otros módulos
+if (!window.fotosSeleccionadas) {
+    window.fotosSeleccionadas = {};
+}
+if (!window.telasSeleccionadas) {
+    window.telasSeleccionadas = {};
+}
 
 // ============ PRODUCTOS ============
 
@@ -16,8 +22,8 @@ function agregarProductoFriendly() {
     clone.querySelector('.numero-producto').textContent = productosCount;
     const productoId = 'producto-' + Date.now() + '-' + productosCount;
     clone.querySelector('.producto-card').dataset.productoId = productoId;
-    fotosSeleccionadas[productoId] = [];
-    telasSeleccionadas[productoId] = []; // Inicializar telas para esta prenda
+    window.fotosSeleccionadas[productoId] = [];
+    window.telasSeleccionadas[productoId] = []; // Inicializar telas para esta prenda
     document.getElementById('productosContainer').appendChild(clone);
 }
 
@@ -67,7 +73,7 @@ function manejarDrop(event) {
 function agregarFotos(files, dropZone) {
     const productoCard = dropZone.closest('.producto-card');
     const productoId = productoCard ? productoCard.dataset.productoId : 'default';
-    if (!fotosSeleccionadas[productoId]) fotosSeleccionadas[productoId] = [];
+    if (!window.fotosSeleccionadas[productoId]) window.fotosSeleccionadas[productoId] = [];
     
     // Obtener índice de prenda (posición en la lista de productos)
     // Usar querySelectorAll con el índice real
@@ -85,8 +91,8 @@ function agregarFotos(files, dropZone) {
     console.log('📁 Índice de prenda:', prendaIndex);
     
     Array.from(files).forEach((file, fileIndex) => {
-        if (fotosSeleccionadas[productoId].length < 3) {
-            fotosSeleccionadas[productoId].push(file);
+        if (window.fotosSeleccionadas[productoId].length < 3) {
+            window.fotosSeleccionadas[productoId].push(file);
             
             // Guardar con índice de prenda (similar a telaConIndice)
             if (!window.imagenesEnMemoria.prendaConIndice) {
@@ -132,7 +138,7 @@ function actualizarPreviewFotos(input) {
     console.log('✓ Contenedor encontrado:', container);
     
     container.innerHTML = '';
-    const fotos = fotosSeleccionadas[productoId] || [];
+    const fotos = window.fotosSeleccionadas[productoId] || [];
     
     console.log(`📸 Mostrando ${fotos.length} fotos para producto ${productoId}`);
     

@@ -56,14 +56,14 @@ class PedidosProduccionController extends Controller
     {
         $pedido = PedidoProduccion::findOrFail($id);
         
-        // Verificar que el pedido pertenece al asesor
-        if ($pedido->cotizacion->user_id !== Auth::id()) {
+        // Verificar que el pedido pertenece al asesor autenticado
+        if ($pedido->asesor_id !== Auth::id()) {
             abort(403);
         }
 
         $prendas = $pedido->prendas()->with('procesos')->get();
         $cotizacion = $pedido->cotizacion;
-        $prendasCotizacion = $cotizacion->prendasCotizaciones;
+        $prendasCotizacion = $cotizacion ? $cotizacion->prendasCotizaciones : [];
 
         return view('asesores.pedidos.plantilla-erp', compact('pedido', 'prendas', 'cotizacion', 'prendasCotizacion'));
     }
@@ -75,14 +75,14 @@ class PedidosProduccionController extends Controller
     {
         $pedido = PedidoProduccion::findOrFail($id);
         
-        // Verificar que el pedido pertenece al asesor
-        if ($pedido->cotizacion->user_id !== Auth::id()) {
+        // Verificar que el pedido pertenece al asesor autenticado
+        if ($pedido->asesor_id !== Auth::id()) {
             abort(403);
         }
 
         $prendas = $pedido->prendas()->with('procesos')->get();
         $cotizacion = $pedido->cotizacion;
-        $prendasCotizacion = $cotizacion->prendasCotizaciones;
+        $prendasCotizacion = $cotizacion ? $cotizacion->prendasCotizaciones : [];
 
         return view('asesores.pedidos.plantilla-erp', compact('pedido', 'prendas', 'cotizacion', 'prendasCotizacion'));
     }

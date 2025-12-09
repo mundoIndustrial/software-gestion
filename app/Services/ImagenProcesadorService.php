@@ -87,7 +87,9 @@ class ImagenProcesadorService
             
             // Crear directorio si no existe
             $directorio = dirname($rutaRelativa);
-            Storage::disk('public')->ensureDirectoryExists($directorio);
+            if (!Storage::disk('public')->exists($directorio)) {
+                Storage::disk('public')->makeDirectory($directorio, 0755, true);
+            }
             
             \Log::info('✓ Directorio asegurado', [
                 'directorio' => $directorio,
@@ -104,10 +106,8 @@ class ImagenProcesadorService
                 'size' => Storage::disk('public')->size($rutaRelativa)
             ]);
             
-            // Retornar ruta pública
-            $rutaPublica = asset("storage/{$rutaRelativa}");
-            
-            return $rutaPublica;
+            // Retornar ruta relativa (sin URL completa para portabilidad)
+            return "storage/{$rutaRelativa}";
             
         } catch (\Exception $e) {
             \Log::error('❌ Error al procesar imagen', [

@@ -47,15 +47,21 @@ class Handler extends ExceptionHandler
             return $this->renderDomainException($request, $e);
         }
 
-        // Si usuario no está autenticado y accede a ruta protegida o no existe, redirigir a login
-        if (!auth()->check() && ($e instanceof NotFoundHttpException || $e instanceof AccessDeniedHttpException)) {
-            return redirect()->route('login')->with('error', 'No puedes acceder a esta página. Debes estar autenticado.');
+        // Si la sesión expiró, token CSRF inválido o no está autenticado, redirigir a login
+        if ($e instanceof AuthenticationException || $e instanceof TokenMismatchException) {
+            // Si es logout y hay error de token, permitir que continúe
+            if ($request->path() === 'logout' || $request->routeIs('logout')) {
+                Auth::guard('web')->logout();
+                $request->session()->invalidate();
+                return redirect('/')->with('error', 'Tu sesión expiró. Por favor, inicia sesión nuevamente.');
+            }
+            
+            return redirect()->route('login')->with('error', 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
         }
 
-        // Si la sesión expiró o token CSRF inválido, redirigir a login
-        // (solo si el usuario ESTABA autenticado antes)
-        if ($e instanceof AuthenticationException || $e instanceof TokenMismatchException) {
-            return redirect()->route('login')->with('error', 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
+        // Si usuario no está autenticado y accede a ruta protegida, redirigir a login
+        if (!auth()->check() && ($e instanceof NotFoundHttpException || $e instanceof AccessDeniedHttpException)) {
+            return redirect()->route('login')->with('error', 'No tienes acceso a esta página. Debes estar autenticado.');
         }
 
         // Si es una petición AJAX o API, devolver JSON

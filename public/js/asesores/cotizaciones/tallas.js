@@ -27,33 +27,67 @@ function actualizarSelectTallas(select) {
     });
     
     // LIMPIAR COMPLETAMENTE TODO ANTES DE CAMBIAR
+    // 1. Limpiar botones
     botonesDiv.innerHTML = '';
+    console.log('✅ botonesDiv limpiado');
+    
+    // 2. Ocultar todos los elementos
     tallaBotones.style.display = 'none';
     tallaRangoSelectors.style.display = 'none';
+    modoSelect.style.display = 'none';
+    console.log('✅ tallaBotones, tallaRangoSelectors y modoSelect ocultados');
+    
+    // 3. Resetear género
     if (generoSelect) {
         generoSelect.style.display = 'none';
         generoSelect.value = '';  // RESETEAR GÉNERO
+        console.log('✅ generoSelect ocultado y reseteado');
     }
-    modoSelect.style.display = 'none';
-    // IMPORTANTE: Resetear el modoSelect para evitar conflictos entre tipos
+    
+    // 4. Resetear modo
     modoSelect.value = '';
-    console.log('✅ Todo limpiado y ocultado (generoSelect y modoSelect reseteados)');
+    console.log('✅ modoSelect reseteado');
+    
+    // 5. Remover TODOS los event listeners anteriores
+    if (modoSelect._handlerLetras) {
+        modoSelect.removeEventListener('change', modoSelect._handlerLetras);
+        modoSelect._handlerLetras = null;
+    }
+    if (modoSelect._handlerNumeros) {
+        modoSelect.removeEventListener('change', modoSelect._handlerNumeros);
+        modoSelect._handlerNumeros = null;
+    }
+    if (modoSelect._handler) {
+        modoSelect.removeEventListener('change', modoSelect._handler);
+        modoSelect._handler = null;
+    }
+    console.log('✅ Todos los event listeners del modoSelect removidos');
+    
+    // 6. Remover event listeners del generoSelect
+    if (generoSelect) {
+        if (generoSelect._handlerLetras) {
+            generoSelect.removeEventListener('change', generoSelect._handlerLetras);
+            generoSelect._handlerLetras = null;
+        }
+        if (generoSelect._handler) {
+            generoSelect.removeEventListener('change', generoSelect._handler);
+            generoSelect._handler = null;
+        }
+        console.log('✅ Todos los event listeners del generoSelect removidos');
+    }
+    
+    console.log('✅ LIMPIEZA COMPLETA FINALIZADA');
     
     if (tipo === 'letra') {
-        console.log('📝 Mostrando selector de GÉNERO para LETRAS');
+        console.log('📝 Configurando LETRAS');
         if (generoSelect) {
             generoSelect.style.display = 'block';
+            generoSelect.value = '';  // Asegurar que esté vacío
             console.log('✅ generoSelect mostrado para LETRAS');
-        }
-        
-        if (modoSelect._handlerNumeros) {
-            modoSelect.removeEventListener('change', modoSelect._handlerNumeros);
-            modoSelect._handlerNumeros = null;
         }
         
         if (generoSelect) {
             console.log('📝 Agregando evento onchange para GÉNERO (LETRAS)');
-            generoSelect.removeEventListener('change', generoSelect._handlerLetras);
             generoSelect._handlerLetras = function() {
                 console.log('📝 Género seleccionado (LETRAS):', this.value);
                 actualizarBotonesPorGeneroLetras(container, this.value);
@@ -62,21 +96,17 @@ function actualizarSelectTallas(select) {
         }
         
     } else if (tipo === 'numero') {
-        console.log('🔢 Mostrando selector de GÉNERO para NÚMEROS');
+        console.log('🔢 Configurando NÚMEROS');
         if (generoSelect) {
             generoSelect.style.display = 'block';
-        }
-        
-        if (modoSelect._handlerLetras) {
-            modoSelect.removeEventListener('change', modoSelect._handlerLetras);
-            modoSelect._handlerLetras = null;
+            generoSelect.value = '';  // Asegurar que esté vacío
+            console.log('✅ generoSelect mostrado para NÚMEROS');
         }
         
         if (generoSelect) {
-            console.log('🔢 Agregando evento onchange para GÉNERO');
-            generoSelect.removeEventListener('change', generoSelect._handler);
+            console.log('🔢 Agregando evento onchange para GÉNERO (NÚMEROS)');
             generoSelect._handler = function() {
-                console.log('🔢 Género seleccionado:', this.value);
+                console.log('🔢 Género seleccionado (NÚMEROS):', this.value);
                 actualizarBotonesPorGenero(container, this.value);
             };
             generoSelect.addEventListener('change', generoSelect._handler);
@@ -339,8 +369,19 @@ function actualizarBotonesPorGenero(container, genero) {
     });
     console.log('🔍 Valor actual de modoSelect:', modoSelect.value);
     
+    // LIMPIAR COMPLETAMENTE ANTES DE CAMBIAR
     botonesDiv.innerHTML = '';
     console.log('✅ botonesDiv limpiado');
+    
+    // Resetear modoSelect
+    modoSelect.value = '';
+    console.log('✅ modoSelect reseteado');
+    
+    // Remover listeners anteriores
+    if (modoSelect._handlerLetras) {
+        modoSelect.removeEventListener('change', modoSelect._handlerLetras);
+        modoSelect._handlerLetras = null;
+    }
     
     modoSelect.style.display = 'block';
     console.log('✅ modoSelect mostrado (valor actual:', modoSelect.value, ')');
@@ -433,16 +474,37 @@ function actualizarBotonesPorGeneroLetras(container, genero) {
     console.log('📝 actualizarBotonesPorGeneroLetras() llamado con genero:', genero);
     
     const modoSelect = container.querySelector('.talla-modo-select');
+    const botonesDiv = container.querySelector('.talla-botones-container');
+    const tallaBotones = container.querySelector('.talla-botones');
+    const tallaRangoSelectors = container.querySelector('.talla-rango-selectors');
+    
+    // LIMPIAR COMPLETAMENTE ANTES DE CAMBIAR
+    botonesDiv.innerHTML = '';
+    console.log('📝 botonesDiv limpiado');
+    
+    // Ocultar secciones
+    tallaBotones.style.display = 'none';
+    tallaRangoSelectors.style.display = 'none';
+    console.log('📝 tallaBotones y tallaRangoSelectors ocultados');
     
     // Resetear el modoSelect al cambiar de género en LETRAS
     modoSelect.value = '';
     console.log('📝 Valor actual de modoSelect:', modoSelect.value);
     
+    // Remover listeners anteriores
+    if (modoSelect._handler) {
+        modoSelect.removeEventListener('change', modoSelect._handler);
+        modoSelect._handler = null;
+    }
+    if (modoSelect._handlerNumeros) {
+        modoSelect.removeEventListener('change', modoSelect._handlerNumeros);
+        modoSelect._handlerNumeros = null;
+    }
+    
     modoSelect.style.display = 'block';
     console.log('📝 modoSelect mostrado (valor actual:', modoSelect.value, ')');
     
     console.log('📝 Agregando evento onchange al modoSelect para LETRAS');
-    modoSelect.removeEventListener('change', modoSelect._handlerLetras);
     modoSelect._handlerLetras = function() {
         console.log('📝 LETRAS: Modo cambiado a:', this.value);
         actualizarModoLetras(container, this.value);

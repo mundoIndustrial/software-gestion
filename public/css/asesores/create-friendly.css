@@ -146,15 +146,15 @@
 .step-header h2 {
     margin: 0 0 0.28rem 0;
     color: #0066cc;
-    font-size: 0.84rem;
-    font-weight: 800;
+    font-size: 0.7rem;
+    font-weight: 700;
     letter-spacing: -0.5px;
 }
 
 .step-header p {
     margin: 0;
     color: #666;
-    font-size: 0.56rem;
+    font-size: 0.5rem;
     font-weight: 500;
 }
 
@@ -176,10 +176,10 @@
     display: flex;
     align-items: center;
     gap: 0.3rem;
-    font-weight: 700;
-    margin-bottom: 0.2625rem;
-    color: #333;
-    font-size: 0.72rem;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 0.3rem;
+    font-size: 0.65rem;
 }
 
 .form-group-large label i {
@@ -193,13 +193,14 @@
     padding: 0.48rem;
     border: 2px solid #e0e0e0;
     border-radius: 6px;
-    font-size: 0.68rem;
+    font-size: 0.75rem;
     font-family: inherit;
     transition: all 0.3s ease;
+    text-transform: uppercase;
 }
 
 .input-large {
-    font-size: 0.68rem;
+    font-size: 0.80rem !important;
 }
 
 .input-large:focus,
@@ -213,7 +214,8 @@
     display: block;
     margin-top: 0.2rem;
     color: #999;
-    font-size: 0.56rem;
+    font-size: 0.6rem;
+    font-weight: 400;
 }
 
 /* ============ PRODUCTOS ============ */
@@ -320,13 +322,12 @@
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    font-size: 0.76rem;
     font-weight: 700;
     color: #0066cc;
-    margin-bottom: 1rem;
-    padding-bottom: 0.75rem;
+    font-size: 0.80rem !important;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
     border-bottom: 2px solid #0066cc;
-    text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
@@ -347,10 +348,10 @@
 .prenda-search-input {
     width: 100%;
     padding: 0.56rem 0.64rem;
-    font-size: 0.72rem;
+    font-size: 0.80rem !important;
     border: 2px solid #e0e0e0;
     border-radius: 6px;
-    transition: all 0.3s ease;
+    text-transform: uppercase;
 }
 
 .prenda-search-input:focus {
@@ -522,6 +523,7 @@
     border-radius: 4px;
     font-family: inherit;
     transition: all 0.2s ease;
+    text-transform: uppercase;
 }
 
 .input-small:focus {
@@ -659,7 +661,7 @@
 
 .form-row {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: 1fr;
     gap: 1rem;
     margin-bottom: 1rem;
 }
@@ -675,11 +677,6 @@
 
 .form-col.full {
     grid-column: 1 / -1;
-}
-
-/* Cuando hay 4 columnas, los campos full ocupan solo 2 columnas */
-.form-row:has(.form-col:nth-child(4)) .form-col.full {
-    grid-column: span 2;
 }
 
 .form-col label {
@@ -707,6 +704,15 @@
     font-size: 0.72rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+}
+
+select,
+input[type="text"],
+input[type="email"],
+input[type="number"],
+input[type="date"],
+textarea {
+    text-transform: uppercase;
 }
 
 textarea.input-medium {
@@ -1215,7 +1221,7 @@ button[onclick="abrirModalEspecificaciones()"]:hover {
     .input-large,
     .input-medium {
         padding: 0.85rem;
-        font-size: 1rem;
+        font-size: 0.75rem;
     }
 
     .form-group-large label {
@@ -1267,7 +1273,7 @@ button[onclick="abrirModalEspecificaciones()"]:hover {
     .input-large,
     .input-medium {
         padding: 0.75rem;
-        font-size: 0.95rem;
+        font-size: 0.75rem;
     }
 }
 
@@ -2038,7 +2044,7 @@ table[style*="width: 100%; border-collapse: collapse; background: white;"] td:nt
     .input-large,
     .input-medium {
         padding: 0.4rem;
-        font-size: 0.62rem;
+        font-size: 0.75rem;
         width: 100%;
     }
     
@@ -2300,7 +2306,7 @@ table[style*="width: 100%; border-collapse: collapse; background: white;"] td:nt
     .input-large,
     .input-medium {
         padding: 0.44rem;
-        font-size: 0.65rem;
+        font-size: 0.75rem;
     }
     
     .form-actions {

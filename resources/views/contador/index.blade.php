@@ -177,6 +177,17 @@
             transform: scale(1.1);
         }
 
+        .btn-edit {
+            background: #fef3c7;
+            color: #f59e0b;
+        }
+
+        .btn-edit:hover {
+            background: #f59e0b;
+            color: white;
+            transform: scale(1.1);
+        }
+
         .btn-danger {
             background: #fadbd8;
             color: #c0392b;
@@ -543,11 +554,12 @@ document.addEventListener('click', function(event) {
                         <td>{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? 'N/A') }}</td>
                         <td>
                             <div class="actions-group">
-                                @if($cotizacion->estado === 'ENVIADA_CONTADOR')
                                 <button class="btn-action btn-success" onclick="aprobarCotizacionEnLinea({{ $cotizacion->id }})" title="Aprobar Cotización">
                                     <span class="material-symbols-rounded">check_circle</span>
                                 </button>
-                                @endif
+                                <button class="btn-action btn-edit" onclick="abrirModalCalculoCostos({{ $cotizacion->id }}, '{{ $cotizacion->cliente }}')" title="Editar Costos">
+                                    <span class="material-symbols-rounded">edit</span>
+                                </button>
                                 <!-- Dropdown de Ver -->
                                 <div style="position: relative; display: inline-block;">
                                     <button class="btn-action btn-view" onclick="toggleViewDropdown(this)" title="Ver Opciones">
