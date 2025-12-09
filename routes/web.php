@@ -62,14 +62,19 @@ Route::middleware(['auth', 'supervisor-access'])->group(function () {
 Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     // Query/Search routes (RegistroOrdenQueryController)
     Route::get('/registros', [RegistroOrdenQueryController::class, 'index'])->name('registros.index');
+    
+    // CRUD routes (RegistroOrdenController) - Rutas sin parámetros primero
+    Route::get('/registros/next-pedido', [RegistroOrdenController::class, 'getNextPedido'])->name('registros.next-pedido');
+    Route::get('/registros/filter-options', [RegistroOrdenController::class, 'getFilterOptions'])->name('registros.filter-options');
+    Route::get('/registros/filter-column-options/{column}', [RegistroOrdenController::class, 'getColumnFilterOptions'])->name('registros.filter-column-options');
+    Route::post('/registros/filter-orders', [RegistroOrdenController::class, 'filterOrders'])->name('registros.filter-orders');
+    
+    // Rutas con parámetros {pedido}
     Route::get('/registros/{pedido}', [RegistroOrdenQueryController::class, 'show'])->name('registros.show');
     Route::get('/registros/{pedido}/images', [RegistroOrdenQueryController::class, 'getOrderImages'])->name('registros.images');
     Route::get('/registros/{pedido}/descripcion-prendas', [RegistroOrdenQueryController::class, 'getDescripcionPrendas'])->name('registros.descripcion-prendas');
     Route::get('/api/registros/{numero_pedido}/dias', [RegistroOrdenQueryController::class, 'calcularDiasAPI'])->name('api.registros.dias');
     Route::post('/api/registros/dias-batch', [RegistroOrdenQueryController::class, 'calcularDiasBatchAPI'])->name('api.registros.dias-batch');
-
-    // CRUD routes (RegistroOrdenController)
-    Route::get('/registros/next-pedido', [RegistroOrdenController::class, 'getNextPedido'])->name('registros.next-pedido');
     Route::post('/registros', [RegistroOrdenController::class, 'store'])->name('registros.store');
     Route::post('/registros/validate-pedido', [RegistroOrdenController::class, 'validatePedido'])->name('registros.validatePedido');
     Route::post('/registros/update-pedido', [RegistroOrdenController::class, 'updatePedido'])->name('registros.updatePedido');

@@ -436,6 +436,237 @@ class RegistroOrdenController extends Controller
     }
 
     /**
+     * Obtener todas las opciones disponibles para filtros
+     * GET /registros/filter-options
+     */
+    public function getFilterOptions()
+    {
+        try {
+            $options = [
+                'estados' => PedidoProduccion::ESTADOS,
+                'dias_entrega' => PedidoProduccion::DIAS_ENTREGA,
+                'areas' => PedidoProduccion::distinct()->pluck('area')->filter()->sort()->values()->toArray(),
+                'clientes' => PedidoProduccion::distinct()->pluck('cliente')->filter()->sort()->values()->toArray(),
+                'asesores' => PedidoProduccion::with('asesora')->get()->pluck('asesora.name')->filter()->unique()->sort()->values()->toArray(),
+                'formas_pago' => PedidoProduccion::distinct()->pluck('forma_de_pago')->filter()->sort()->values()->toArray(),
+                'encargados' => PedidoProduccion::distinct()->pluck('encargado_orden')->filter()->sort()->values()->toArray(),
+            ];
+
+            return response()->json([
+                'success' => true,
+                'options' => $options
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener opciones de filtro: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener opciones de filtro'
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener opciones de una columna específica con paginación y búsqueda
+     * GET /registros/filter-column-options/{column}
+     */
+    public function getColumnFilterOptions($column, Request $request)
+    {
+        try {
+            $page = $request->input('page', 1);
+            $limit = $request->input('limit', 25);
+            $search = $request->input('search', '');
+            
+            $options = [];
+            $total = 0;
+
+            switch ($column) {
+                case 'estado':
+                    $options = PedidoProduccion::ESTADOS;
+                    break;
+                case 'area':
+                    $options = PedidoProduccion::distinct()->pluck('area')->filter()->sort()->values()->toArray();
+                    break;
+                case 'dia_entrega':
+                    $options = PedidoProduccion::DIAS_ENTREGA;
+                    break;
+                case 'pedido':
+                    $options = PedidoProduccion::distinct()->pluck('numero_pedido')->filter()->sort()->values()->toArray();
+                    break;
+                case 'cliente':
+                    $options = PedidoProduccion::distinct()->pluck('cliente')->filter()->sort()->values()->toArray();
+                    break;
+                case 'descripcion':
+                    // Para descripción, agrupar por descripción única
+                    $ordenes = PedidoProduccion::all();
+                    $descripcionesMap = [];
+                    
+                    foreach ($ordenes as $orden) {
+                        $descripcion = $orden->getNombresPrendas();
+                        if ($descripcion !== '-') {
+                            // Si la descripción ya existe, agregar el pedido a la lista
+                            if (!isset($descripcionesMap[$descripcion])) {
+                                $descripcionesMap[$descripcion] = [];
+                            }
+                            $descripcionesMap[$descripcion][] = $orden->numero_pedido;
+                        }
+                    }
+                    
+                    // Convertir a array de opciones
+                    $options = array_map(function($desc, $pedidos) {
+                        return [
+                            'value' => implode(',', $pedidos), // Guardar todos los pedidos con esa descripción
+                            'display' => $desc
+                        ];
+                    }, array_keys($descripcionesMap), array_values($descripcionesMap));
+                    break;
+                case 'asesor':
+                    $options = PedidoProduccion::with('asesora')->get()->pluck('asesora.name')->filter()->unique()->sort()->values()->toArray();
+                    break;
+                case 'forma_pago':
+                    $options = PedidoProduccion::distinct()->pluck('forma_de_pago')->filter()->sort()->values()->toArray();
+                    break;
+                case 'encargado':
+                    $options = PedidoProduccion::distinct()->pluck('encargado_orden')->filter()->sort()->values()->toArray();
+                    break;
+                default:
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Columna no válida'
+                    ], 400);
+            }
+
+            // Filtrar por búsqueda si existe
+            if (!empty($search)) {
+                $options = array_filter($options, function($item) use ($search) {
+                    $text = is_array($item) ? $item['display'] : $item;
+                    return stripos($text, $search) !== false;
+                });
+                $options = array_values($options); // Reindexar array
+            }
+
+            $total = count($options);
+            
+            // Aplicar paginación
+            $offset = ($page - 1) * $limit;
+            $paginatedOptions = array_slice($options, $offset, $limit);
+
+            return response()->json([
+                'success' => true,
+                'column' => $column,
+                'options' => $paginatedOptions,
+                'total' => $total,
+                'page' => $page,
+                'limit' => $limit
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener opciones de columna: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener opciones de columna'
+            ], 500);
+        }
+    }
+
+    /**
+     * Filtrar órdenes por criterios específicos
+     * POST /registros/filter-orders
+     */
+    public function filterOrders(Request $request)
+    {
+        try {
+            $filters = $request->input('filters', []);
+            $page = $request->input('page', 1);
+            $perPage = 15;
+
+            $query = PedidoProduccion::query();
+
+            // Aplicar filtros
+            if (!empty($filters)) {
+                foreach ($filters as $column => $values) {
+                    if (empty($values)) continue;
+
+                    switch ($column) {
+                        case 'estado':
+                            $query->whereIn('estado', $values);
+                            break;
+                        case 'area':
+                            $query->whereIn('area', $values);
+                            break;
+                        case 'dia_entrega':
+                            // Convertir "X días" a número
+                            $dias = array_map(function($v) {
+                                return (int) str_replace(' días', '', $v);
+                            }, $values);
+                            $query->whereIn('dia_de_entrega', $dias);
+                            break;
+                        case 'pedido':
+                            $query->whereIn('numero_pedido', $values);
+                            break;
+                        case 'descripcion':
+                            // Filtrar por descripciones (que pueden contener múltiples pedidos)
+                            // Los valores vienen como "14342,14328,14329"
+                            $allPedidos = [];
+                            foreach ($values as $value) {
+                                $pedidos = explode(',', $value);
+                                $allPedidos = array_merge($allPedidos, $pedidos);
+                            }
+                            $query->whereIn('numero_pedido', $allPedidos);
+                            break;
+                        case 'cliente':
+                            foreach ($values as $value) {
+                                $query->orWhere('cliente', 'LIKE', '%' . $value . '%');
+                            }
+                            break;
+                    }
+                }
+            }
+
+            // Obtener resultados paginados
+            $ordenes = $query->orderBy('created_at', 'desc')->paginate($perPage, ['*'], 'page', $page);
+
+            // Transformar datos para la vista
+            $ordenesData = $ordenes->map(function($orden) {
+                return [
+                    'id' => $orden->id,
+                    'numero_pedido' => $orden->numero_pedido,
+                    'cliente' => $orden->cliente,
+                    'estado' => $orden->estado,
+                    'area' => $orden->area,
+                    'dia_de_entrega' => $orden->dia_de_entrega,
+                    'dias_habiles' => $orden->calcularDiasHabiles(),
+                    'descripcion' => $orden->getNombresPrendas(),
+                    'cantidad' => $orden->prendas->sum('cantidad'),
+                    'novedades' => $orden->novedades,
+                    'asesor' => $orden->asesora ? $orden->asesora->name : '-',
+                    'forma_de_pago' => $orden->forma_de_pago,
+                    'fecha_creacion' => $orden->fecha_de_creacion_de_orden ? $orden->fecha_de_creacion_de_orden->format('d/m/Y') : '-',
+                    'fecha_estimada' => $orden->fecha_estimada_entrega ? $orden->fecha_estimada_entrega->format('d/m/Y') : '-',
+                    'encargado' => $orden->encargado_orden ?? '-',
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $ordenesData,
+                'pagination' => [
+                    'current_page' => $ordenes->currentPage(),
+                    'total' => $ordenes->total(),
+                    'per_page' => $ordenes->perPage(),
+                    'last_page' => $ordenes->lastPage(),
+                    'from' => $ordenes->firstItem(),
+                    'to' => $ordenes->lastItem(),
+                ]
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al filtrar órdenes: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al filtrar órdenes: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Obtener imágenes de una orden (DEPRECATED - Usar RegistroOrdenQueryController)
      */
 }

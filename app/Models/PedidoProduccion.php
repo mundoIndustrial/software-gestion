@@ -383,4 +383,83 @@ class PedidoProduccion extends Model
 
         return $dias;
     }
+
+    /**
+     * Calcular días hábiles desde la creación de la orden
+     */
+    public function calcularDiasHabiles()
+    {
+        if (!$this->fecha_de_creacion_de_orden) {
+            return '-';
+        }
+
+        $diasCalculados = 0;
+        $fechaInicio = $this->fecha_de_creacion_de_orden;
+        $fechaFin = now();
+        
+        // Festivos colombianos fijos
+        $anio = $fechaInicio->year;
+        $festivos = [
+            $fechaInicio->copy()->setMonth(1)->setDay(1)->toDateString(),   // Año Nuevo
+            $fechaInicio->copy()->setMonth(5)->setDay(1)->toDateString(),   // Día del Trabajo
+            $fechaInicio->copy()->setMonth(7)->setDay(1)->toDateString(),   // Día de la Independencia
+            $fechaInicio->copy()->setMonth(7)->setDay(20)->toDateString(),  // Grito de Independencia
+            $fechaInicio->copy()->setMonth(8)->setDay(7)->toDateString(),   // Batalla de Boyacá
+            $fechaInicio->copy()->setMonth(12)->setDay(8)->toDateString(),  // Inmaculada Concepción
+            $fechaInicio->copy()->setMonth(12)->setDay(25)->toDateString(), // Navidad
+        ];
+        
+        // Agregar festivos del siguiente año si es necesario
+        if ($fechaFin->year > $fechaInicio->year) {
+            $anioFin = $fechaFin->year;
+            $festivos = array_merge($festivos, [
+                $fechaInicio->copy()->setYear($anioFin)->setMonth(1)->setDay(1)->toDateString(),
+                $fechaInicio->copy()->setYear($anioFin)->setMonth(5)->setDay(1)->toDateString(),
+                $fechaInicio->copy()->setYear($anioFin)->setMonth(7)->setDay(1)->toDateString(),
+                $fechaInicio->copy()->setYear($anioFin)->setMonth(7)->setDay(20)->toDateString(),
+                $fechaInicio->copy()->setYear($anioFin)->setMonth(8)->setDay(7)->toDateString(),
+                $fechaInicio->copy()->setYear($anioFin)->setMonth(12)->setDay(8)->toDateString(),
+                $fechaInicio->copy()->setYear($anioFin)->setMonth(12)->setDay(25)->toDateString(),
+            ]);
+        }
+        
+        // Calcular días hábiles
+        $actual = $fechaInicio->copy();
+        while ($actual <= $fechaFin) {
+            // Verificar si no es sábado (6) ni domingo (0)
+            if ($actual->dayOfWeek !== 0 && $actual->dayOfWeek !== 6) {
+                // Verificar si no es festivo
+                if (!in_array($actual->toDateString(), $festivos)) {
+                    $diasCalculados++;
+                }
+            }
+            $actual->addDay();
+        }
+        
+        // Restar 1 porque no se cuenta el día de inicio
+        $diasCalculados = max(0, $diasCalculados - 1);
+        
+        return $diasCalculados > 0 ? $diasCalculados . ' día' . ($diasCalculados > 1 ? 's' : '') : '-';
+    }
+
+    /**
+     * Obtener nombres de prendas separados por coma
+     */
+    public function getNombresPrendas()
+    {
+        if (!$this->prendas || $this->prendas->count() === 0) {
+            return '-';
+        }
+
+        return $this->prendas
+            ->pluck('nombre_prenda')
+            ->unique()
+            ->implode(', ') ?: '-';
+    }
+
+    /**
+     * Constantes de estados y opciones
+     */
+    const ESTADOS = ['No iniciado', 'En Ejecución', 'Entregado', 'Anulada'];
+    const DIAS_ENTREGA = [15, 20, 25, 30];
 }

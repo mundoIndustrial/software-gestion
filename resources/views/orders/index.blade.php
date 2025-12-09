@@ -8,8 +8,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
         integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <link rel="stylesheet" href="{{ asset('css/orders styles/registros.css') }}">
     <link rel="stylesheet" href="{{ asset('css/orders styles/action-menu.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/orders styles/filter-system.css') }}">
 @endpush
 
 @section('content')
@@ -18,51 +20,37 @@
         <div class="modern-table-wrapper">
             <div class="table-head">
                 <div style="display: flex; align-items: center; width: 100%; gap: 12px; padding: 14px 12px;">
-                    <div class="table-header-cell acciones-column" style="flex: 0 0 100px; justify-content: flex-start;">
-                        <span class="header-text">Acciones</span>
-                    </div>
-                    <div class="table-header-cell" style="flex: 0 0 120px; justify-content: center;">
-                        <span class="header-text">Estado</span>
-                    </div>
-                    <div class="table-header-cell" style="flex: 0 0 auto; min-width: 180px; justify-content: center;">
-                        <span class="header-text">Área</span>
-                    </div>
-                    <div class="table-header-cell" style="flex: 0 0 150px; justify-content: center;">
-                        <span class="header-text">Día de entrega</span>
-                    </div>
-                    <div class="table-header-cell" style="flex: 0 0 120px; justify-content: center;">
-                        <span class="header-text">Total de días</span>
-                    </div>
-                    <div class="table-header-cell" style="flex: 0 0 120px; justify-content: center;">
-                        <span class="header-text">Pedido</span>
-                    </div>
-                    <div class="table-header-cell" style="flex: 0 0 150px; justify-content: center;">
-                        <span class="header-text">Cliente</span>
-                    </div>
-                    <div class="table-header-cell" style="flex: 1; margin-left: 50px;>
-                        <span class="header-text">Descripción</span>
-                    </div>
-                    <div class="table-header-cell" style="flex: 0 0 100px; justify-content: start;">
-                        <span class="header-text">Cantidad</span>
-                    </div>
-                    <div class="table-header-cell" style="flex: 0 0 120px; justify-content: flex-start;">
-                        <span class="header-text">Novedades</span>
-                    </div>
-                    <div class="table-header-cell" style="flex: 0 0 120px; justify-content: flex-start;">
-                        <span class="header-text">Asesor</span>
-                    </div>
-                    <div class="table-header-cell" style="flex: 0 0 150px; justify-content: flex-start;">
-                        <span class="header-text">Forma de pago</span>
-                    </div>
-                    <div class="table-header-cell" style="flex: 0 0 150px; justify-content: flex-start;">
-                        <span class="header-text">Fecha de creación</span>
-                    </div>
-                    <div class="table-header-cell" style="flex: 0 0 180px; justify-content: flex-start;">
-                        <span class="header-text">Fecha estimada entrega</span>
-                    </div>
-                    <div class="table-header-cell" style="flex: 0 0 150px; justify-content: flex-start;">
-                        <span class="header-text">Encargado orden</span>
-                    </div>
+                    @php
+                        $columns = [
+                            ['key' => 'acciones', 'label' => 'Acciones', 'flex' => '0 0 100px', 'justify' => 'flex-start'],
+                            ['key' => 'estado', 'label' => 'Estado', 'flex' => '0 0 120px', 'justify' => 'center'],
+                            ['key' => 'area', 'label' => 'Área', 'flex' => '0 0 auto; min-width: 180px', 'justify' => 'center'],
+                            ['key' => 'dia_entrega', 'label' => 'Día de entrega', 'flex' => '0 0 150px', 'justify' => 'center'],
+                            ['key' => 'total_dias', 'label' => 'Total de días', 'flex' => '0 0 120px', 'justify' => 'center'],
+                            ['key' => 'pedido', 'label' => 'Pedido', 'flex' => '0 0 120px', 'justify' => 'center'],
+                            ['key' => 'cliente', 'label' => 'Cliente', 'flex' => '0 0 150px', 'justify' => 'center'],
+                            ['key' => 'descripcion', 'label' => 'Descripción', 'flex' => '1; margin-left: 50px', 'justify' => 'center'],
+                            ['key' => 'cantidad', 'label' => 'Cantidad', 'flex' => '0 0 100px', 'justify' => 'start'],
+                            ['key' => 'novedades', 'label' => 'Novedades', 'flex' => '0 0 120px', 'justify' => 'flex-start'],
+                            ['key' => 'asesor', 'label' => 'Asesor', 'flex' => '0 0 120px', 'justify' => 'flex-start'],
+                            ['key' => 'forma_pago', 'label' => 'Forma de pago', 'flex' => '0 0 150px', 'justify' => 'flex-start'],
+                            ['key' => 'fecha_creacion', 'label' => 'Fecha de creación', 'flex' => '0 0 150px', 'justify' => 'flex-start'],
+                            ['key' => 'fecha_estimada', 'label' => 'Fecha estimada entrega', 'flex' => '0 0 180px', 'justify' => 'flex-start'],
+                            ['key' => 'encargado', 'label' => 'Encargado orden', 'flex' => '0 0 150px', 'justify' => 'flex-start'],
+                        ];
+                    @endphp
+                    
+                    @foreach($columns as $column)
+                        <div class="table-header-cell{{ $column['key'] === 'acciones' ? ' acciones-column' : '' }}" style="flex: {{ $column['flex'] }}; justify-content: {{ $column['justify'] }};">
+                            <div class="th-wrapper">
+                                <span class="header-text">{{ $column['label'] }}</span>
+                                <button type="button" class="btn-filter-column" title="Filtrar {{ $column['label'] }}" onclick="openFilterModal('{{ $column['key'] }}')">
+                                    <span class="material-symbols-rounded">filter_alt</span>
+                                    <span class="filter-badge">0</span>
+                                </button>
+                            </div>
+                        </div>
+                    @endforeach
                 </div>
             </div>
             <div class="table-scroll-container">
@@ -91,10 +79,9 @@
                                 <div class="table-cell" style="flex: 0 0 auto;">
                                     <div class="cell-content">
                                         <select class="estado-dropdown estado-{{ str_replace(' ', '-', strtolower($orden->estado)) }}" data-orden-id="{{ $orden->id }}">
-                                            <option value="No iniciado" {{ $orden->estado === 'No iniciado' ? 'selected' : '' }}>No iniciado</option>
-                                            <option value="En Ejecución" {{ $orden->estado === 'En Ejecución' ? 'selected' : '' }}>En Ejecución</option>
-                                            <option value="Entregado" {{ $orden->estado === 'Entregado' ? 'selected' : '' }}>Entregado</option>
-                                            <option value="Anulada" {{ $orden->estado === 'Anulada' ? 'selected' : '' }}>Anulada</option>
+                                            @foreach(\App\Models\PedidoProduccion::ESTADOS as $estado)
+                                                <option value="{{ $estado }}" {{ $orden->estado === $estado ? 'selected' : '' }}>{{ $estado }}</option>
+                                            @endforeach
                                         </select>
                                     </div>
                                 </div>
@@ -102,7 +89,7 @@
                                 <!-- Área (Dropdown) -->
                                 <div class="table-cell" style="flex: 0 0 auto;">
                                     <div class="cell-content">
-                                        <select class="area-dropdown" data-orden-id="{{ $orden->id }}" style="padding: 6px 12px; border-radius: 20px; border: none; background: #f8d376ff; color: #1f2937; font-weight: 600; font-size: 12px; cursor: pointer; width: auto; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); transition: all 0.2s ease;">
+                                        <select class="area-dropdown" data-orden-id="{{ $orden->id }}">
                                             @foreach($areaOptions as $area)
                                                 <option value="{{ $area }}" {{ $orden->area === $area ? 'selected' : '' }}>{{ $area }}</option>
                                             @endforeach
@@ -113,12 +100,11 @@
                                 <!-- Día de entrega (Dropdown) -->
                                 <div class="table-cell" style="flex: 0 0 auto;">
                                     <div class="cell-content">
-                                        <select class="dia-entrega-dropdown" data-orden-id="{{ $orden->id }}" style="padding: 6px 12px; border-radius: 20px; border: none; background: #919191ff; color: white; font-weight: 600; font-size: 12px; cursor: pointer; width: auto; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); transition: all 0.2s ease;">
+                                        <select class="dia-entrega-dropdown" data-orden-id="{{ $orden->id }}">
                                             <option value="">Seleccionar</option>
-                                            <option value="15" {{ $orden->dia_de_entrega == 15 ? 'selected' : '' }}>15 días</option>
-                                            <option value="20" {{ $orden->dia_de_entrega == 20 ? 'selected' : '' }}>20 días</option>
-                                            <option value="25" {{ $orden->dia_de_entrega == 25 ? 'selected' : '' }}>25 días</option>
-                                            <option value="30" {{ $orden->dia_de_entrega == 30 ? 'selected' : '' }}>30 días</option>
+                                            @foreach(\App\Models\PedidoProduccion::DIAS_ENTREGA as $dia)
+                                                <option value="{{ $dia }}" {{ $orden->dia_de_entrega == $dia ? 'selected' : '' }}>{{ $dia }} días</option>
+                                            @endforeach
                                         </select>
                                     </div>
                                 </div>
@@ -126,59 +112,7 @@
                                 <!-- Total de días -->
                                 <div class="table-cell" style="flex: 0 0 120px;">
                                     <div class="cell-content" style="justify-content: center;">
-                                        <span>
-                                            @php
-                                                $diasCalculados = 0;
-                                                if ($orden->fecha_de_creacion_de_orden) {
-                                                    $fechaInicio = \Carbon\Carbon::parse($orden->fecha_de_creacion_de_orden);
-                                                    $fechaFin = \Carbon\Carbon::now();
-                                                    
-                                                    // Festivos colombianos fijos
-                                                    $anio = $fechaInicio->year;
-                                                    $festivos = [
-                                                        \Carbon\Carbon::create($anio, 1, 1)->toDateString(),   // Año Nuevo
-                                                        \Carbon\Carbon::create($anio, 5, 1)->toDateString(),   // Día del Trabajo
-                                                        \Carbon\Carbon::create($anio, 7, 1)->toDateString(),   // Día de la Independencia
-                                                        \Carbon\Carbon::create($anio, 7, 20)->toDateString(),  // Grito de Independencia
-                                                        \Carbon\Carbon::create($anio, 8, 7)->toDateString(),   // Batalla de Boyacá
-                                                        \Carbon\Carbon::create($anio, 12, 8)->toDateString(),  // Inmaculada Concepción
-                                                        \Carbon\Carbon::create($anio, 12, 25)->toDateString(), // Navidad
-                                                    ];
-                                                    
-                                                    // Agregar festivos del siguiente año si es necesario
-                                                    if ($fechaFin->year > $fechaInicio->year) {
-                                                        $anioFin = $fechaFin->year;
-                                                        $festivos = array_merge($festivos, [
-                                                            \Carbon\Carbon::create($anioFin, 1, 1)->toDateString(),
-                                                            \Carbon\Carbon::create($anioFin, 5, 1)->toDateString(),
-                                                            \Carbon\Carbon::create($anioFin, 7, 1)->toDateString(),
-                                                            \Carbon\Carbon::create($anioFin, 7, 20)->toDateString(),
-                                                            \Carbon\Carbon::create($anioFin, 8, 7)->toDateString(),
-                                                            \Carbon\Carbon::create($anioFin, 12, 8)->toDateString(),
-                                                            \Carbon\Carbon::create($anioFin, 12, 25)->toDateString(),
-                                                        ]);
-                                                    }
-                                                    
-                                                    // Calcular días hábiles
-                                                    $actual = $fechaInicio->copy();
-                                                    while ($actual <= $fechaFin) {
-                                                        // Verificar si no es sábado (6) ni domingo (0)
-                                                        if ($actual->dayOfWeek !== 0 && $actual->dayOfWeek !== 6) {
-                                                            // Verificar si no es festivo
-                                                            if (!in_array($actual->toDateString(), $festivos)) {
-                                                                $diasCalculados++;
-                                                            }
-                                                        }
-                                                        $actual->addDay();
-                                                    }
-                                                    
-                                                    // Restar 1 porque no se cuenta el día de inicio
-                                                    $diasCalculados = max(0, $diasCalculados - 1);
-                                                }
-                                                
-                                                echo $diasCalculados > 0 ? $diasCalculados . ' día' . ($diasCalculados > 1 ? 's' : '') : '-';
-                                            @endphp
-                                        </span>
+                                        <span>{{ $orden->calcularDiasHabiles() }}</span>
                                     </div>
                                 </div>
                                 
@@ -199,19 +133,7 @@
                                 <!-- Descripción -->
                                 <div class="table-cell" style="flex: 10;">
                                     <div class="cell-content" style="justify-content: center;">
-                                        <span>
-                                            @php
-                                                if ($orden->prendas && $orden->prendas->count() > 0) {
-                                                    // Mostrar nombres de prendas con formato
-                                                    $prendasInfo = $orden->prendas->map(function($prenda) {
-                                                        return $prenda->nombre_prenda ?? 'Prenda sin nombre';
-                                                    })->unique()->toArray();
-                                                    echo !empty($prendasInfo) ? implode(', ', $prendasInfo) : '-';
-                                                } else {
-                                                    echo '-';
-                                                }
-                                            @endphp
-                                        </span>
+                                        <span>{{ $orden->getNombresPrendas() }}</span>
                                     </div>
                                 </div>
                                 
@@ -369,13 +291,27 @@
     <!-- Modal de Edición de Orden -->
     @include('components.orders-components.order-edit-modal')
 
+    <!-- Modal de Filtros -->
+    <div class="filter-modal-overlay" id="filterModalOverlay">
+        <div class="filter-modal">
+            <div class="filter-modal-header">
+                <h3 id="filterModalTitle">Filtrar por</h3>
+                <button type="button" class="filter-modal-close" onclick="closeFilterModal()">×</button>
+            </div>
+            <div class="filter-modal-body">
+                <input type="text" class="filter-search" id="filterSearch" placeholder="Buscar...">
+                <div class="filter-options" id="filterOptions"></div>
+            </div>
+            <div class="filter-modal-footer">
+                <button type="button" class="btn-filter-reset" onclick="resetFilters()">Limpiar</button>
+                <button type="button" class="btn-filter-apply" onclick="applyFilters()">Aplicar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Pasar opciones de area a JS
         window.areaOptions = @json($areaOptions);
-        window.modalContext = '{{ $modalContext }}';
-        window.context = '{{ $context ?? '' }}';
-        window.fetchUrl = '{{ $fetchUrl }}';
-        window.updateUrl = '{{ $updateUrl }}';
 
         // Sincronizar scroll horizontal del header con el contenido
         document.addEventListener('DOMContentLoaded', function() {
@@ -394,33 +330,8 @@
 
 @push('scripts')
 
-    <!-- MODULAR MODERN TABLE (SOLID Architecture) -->
-    <script src="{{ asset('js/modern-table/modules/storageManager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modern-table/modules/tableRenderer.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modern-table/modules/styleManager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modern-table/modules/filterManager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modern-table/modules/dragManager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modern-table/modules/columnManager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modern-table/modules/dropdownManager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modern-table/modules/notificationManager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modern-table/modules/paginationManager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modern-table/modules/searchManager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/modern-table/modern-table-v2.js') }}?v={{ time() }}"></script>
-    
-    <!-- ORDER DETAIL MODAL MANAGER (debe cargarse antes de order tracking) -->
+    <!-- ORDER DETAIL MODAL MANAGER (debe cargarse antes de otros scripts) -->
     <script src="{{ asset('js/orders js/order-detail-modal-manager.js') }}?v={{ time() }}"></script>
-    
-    <!-- ORDER TRACKING MODULES (SOLID Architecture) -->
-    <script src="{{ asset('js/order-tracking/modules/dateUtils.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/order-tracking/modules/holidayManager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/order-tracking/modules/areaMapper.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/order-tracking/modules/apiClient.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/order-tracking/modules/trackingService.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/order-tracking/modules/trackingUI.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/order-tracking/modules/tableManager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/order-tracking/modules/processManager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/order-tracking/modules/dropdownManager.js') }}?v={{ time() }}"></script>
-    <script src="{{ asset('js/order-tracking/orderTracking-v2.js') }}?v={{ time() }}"></script>
     
     <!-- ORDERS TABLE MODULES (SOLID Architecture) -->
     <script src="{{ asset('js/orders js/modules/formatting.js') }}?v={{ time() }}"></script>
@@ -452,4 +363,7 @@
     
     <!-- ACTION MENU HANDLER -->
     <script src="{{ asset('js/orders js/action-menu.js') }}?v={{ time() }}"></script>
+
+    <!-- FILTER SYSTEM -->
+    <script src="{{ asset('js/orders js/filter-system.js') }}?v={{ time() }}"></script>
 @endpush
