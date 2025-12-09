@@ -67,7 +67,7 @@ async function guardarCotizacion() {
     }
     
     // Validar que tipo_venta esté seleccionado
-    const tipoVentaSelect = document.getElementById('tipo_venta');
+    const tipoVentaSelect = document.getElementById('tipo_cotizacion');
     const tipoVenta = tipoVentaSelect ? tipoVentaSelect.value : '';
     
     if (!tipoVenta) {
@@ -101,33 +101,79 @@ async function guardarCotizacion() {
     });
     
     try {
-        const payloadEnvio = {
+        // ✅ USAR FormData PARA ENVIAR ARCHIVOS File
+        const formData = new FormData();
+        
+        // Datos básicos
+        formData.append('tipo', 'borrador');
+        formData.append('cliente', datos.cliente);
+        formData.append('tipo_venta', tipoVenta);
+        formData.append('tipo_cotizacion', window.tipoCotizacionGlobal || 'P');
+        
+        // Secciones de texto
+        formData.append('tecnicas', JSON.stringify(datos.tecnicas || []));
+        formData.append('observaciones_tecnicas', datos.observaciones_tecnicas || '');
+        formData.append('ubicaciones', JSON.stringify(datos.ubicaciones || []));
+        formData.append('observaciones_generales', JSON.stringify(datos.observaciones_generales || []));
+        // Solo enviar observaciones_check y observaciones_valor si hay observaciones generales
+        if (datos.observaciones_generales && datos.observaciones_generales.length > 0) {
+            formData.append('observaciones_check', JSON.stringify(datos.observaciones_check || []));
+            formData.append('observaciones_valor', JSON.stringify(datos.observaciones_valor || []));
+        } else {
+            formData.append('observaciones_check', JSON.stringify([]));
+            formData.append('observaciones_valor', JSON.stringify([]));
+        }
+        formData.append('especificaciones', JSON.stringify(datos.especificaciones || {}));
+        
+        // ✅ PRODUCTOS CON ARCHIVOS File
+        if (datos.productos && Array.isArray(datos.productos)) {
+            datos.productos.forEach((producto, index) => {
+                // Datos de producto
+                formData.append(`productos[${index}][nombre_producto]`, producto.nombre_producto || '');
+                formData.append(`productos[${index}][descripcion]`, producto.descripcion || '');
+                formData.append(`productos[${index}][cantidad]`, producto.cantidad || 1);
+                formData.append(`productos[${index}][tallas]`, JSON.stringify(producto.tallas || []));
+                formData.append(`productos[${index}][variantes]`, JSON.stringify(producto.variantes || {}));
+                
+                // ✅ FOTOS (File objects)
+                if (producto.fotos && Array.isArray(producto.fotos)) {
+                    producto.fotos.forEach((foto, fotoIndex) => {
+                        if (foto instanceof File) {
+                            formData.append(`productos[${index}][fotos]`, foto);
+                            console.log(`✅ Foto agregada a FormData [${index}][${fotoIndex}]:`, foto.name);
+                        }
+                    });
+                }
+                
+                // ✅ TELAS (File objects)
+                if (producto.telas && Array.isArray(producto.telas)) {
+                    producto.telas.forEach((tela, telaIndex) => {
+                        if (tela instanceof File) {
+                            formData.append(`productos[${index}][telas]`, tela);
+                            console.log(`✅ Tela agregada a FormData [${index}][${telaIndex}]:`, tela.name);
+                        }
+                    });
+                }
+            });
+        }
+        
+        console.log('📤 FORMDATA A ENVIAR:', {
             tipo: 'borrador',
             cliente: datos.cliente,
             tipo_venta: tipoVenta,
-            tipo_cotizacion: window.tipoCotizacionGlobal || 'P',
-            productos: datos.productos,
-            tecnicas: datos.tecnicas,
-            observaciones_tecnicas: datos.observaciones_tecnicas,
-            ubicaciones: datos.ubicaciones,
-            observaciones_generales: datos.observaciones_generales,
-            observaciones_check: datos.observaciones_check,
-            observaciones_valor: datos.observaciones_valor,
-            especificaciones: datos.especificaciones || {}
-        };
-        
-        console.log('📤 PAYLOAD A ENVIAR:', payloadEnvio);
-        console.log('📤 Especificaciones en payload:', payloadEnvio.especificaciones);
-        console.log('📤 ¿Especificaciones vacías?', Object.keys(payloadEnvio.especificaciones).length === 0);
+            productos_count: datos.productos?.length || 0,
+            tecnicas: datos.tecnicas?.length || 0,
+            especificaciones_keys: Object.keys(datos.especificaciones || {})
+        });
         
         const response = await fetch(window.routes.guardarCotizacion, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                // ⚠️ NO incluir 'Content-Type': 'application/json' - FormData lo establece automáticamente
             },
-            body: JSON.stringify(payloadEnvio)
+            body: formData
         });
         
         console.log('📡 Status de respuesta:', response.status);
@@ -316,7 +362,7 @@ async function enviarCotizacion() {
     }
     
     // Validar que el tipo de venta esté seleccionado
-    const tipoVentaSelect = document.getElementById('tipo_venta');
+    const tipoVentaSelect = document.getElementById('tipo_cotizacion');
     const tipoVenta = tipoVentaSelect ? tipoVentaSelect.value : '';
     
     if (!tipoVenta) {
@@ -385,8 +431,13 @@ async function enviarCotizacion() {
             allowEscapeKey: false
         }).then((result) => {
             if (result.isConfirmed) {
-                // Ir a PASO 3 automáticamente
-                irAlPaso(3);
+                // Ir a PASO 2 automáticamente
+                irAlPaso(2);
+                
+                // Abrir modal de especificaciones
+                setTimeout(() => {
+                    abrirModalEspecificaciones();
+                }, 300);
                 
                 // Mostrar toast recordatorio
                 Swal.fire({
@@ -463,13 +514,13 @@ async function procederEnviarCotizacion(datos) {
     }
     
     // Obtener tipo de venta
-    const tipoVentaSelect = document.getElementById('tipo_venta');
+    const tipoVentaSelect = document.getElementById('tipo_cotizacion');
     const tipoVentaValue = tipoVentaSelect ? tipoVentaSelect.value : '';
     
     // Obtener especificaciones (puede ser objeto o array)
     const especificaciones = window.especificacionesSeleccionadas || {};
     
-    console.log('📋 Tipo de venta:', tipoVenta);
+    console.log('📋 Tipo de venta:', tipoVentaValue);
     console.log('📋 Especificaciones guardadas en window:', window.especificacionesSeleccionadas);
     console.log('📋 Especificaciones a enviar:', especificaciones);
     console.log('📋 ¿Especificaciones vacías?', Object.keys(especificaciones).length === 0);
@@ -484,34 +535,80 @@ async function procederEnviarCotizacion(datos) {
     }
     
     try {
-        const payloadEnvio = {
-            tipo: 'completa',
-            cliente: datos.cliente,
-            tipo_venta: tipoVenta,
-            tipo_cotizacion: window.tipoCotizacionGlobal || 'P',
-            productos: datos.productos,
-            tecnicas: datos.tecnicas,
-            observaciones_tecnicas: datos.observaciones_tecnicas,
-            ubicaciones: datos.ubicaciones,
-            observaciones_generales: datos.observaciones_generales,
-            observaciones_check: datos.observaciones_check,
-            observaciones_valor: datos.observaciones_valor,
-            imagenes: datos.logo?.imagenes || [],
-            especificaciones: especificaciones
-        };
+        // ✅ USAR FormData PARA ENVIAR ARCHIVOS File
+        const formData = new FormData();
         
-        console.log('📤 PAYLOAD A ENVIAR (ENVIAR):', payloadEnvio);
-        console.log('📤 Especificaciones en payload:', payloadEnvio.especificaciones);
-        console.log('📤 ¿Especificaciones vacías?', Object.keys(payloadEnvio.especificaciones).length === 0);
+        // Datos básicos
+        formData.append('tipo', 'enviada');
+        formData.append('cliente', datos.cliente);
+        formData.append('tipo_venta', tipoVentaValue);
+        formData.append('tipo_cotizacion', window.tipoCotizacionGlobal || 'P');
+        
+        // Secciones de texto
+        formData.append('tecnicas', JSON.stringify(datos.tecnicas || []));
+        formData.append('observaciones_tecnicas', datos.observaciones_tecnicas || '');
+        formData.append('ubicaciones', JSON.stringify(datos.ubicaciones || []));
+        formData.append('observaciones_generales', JSON.stringify(datos.observaciones_generales || []));
+        // Solo enviar observaciones_check y observaciones_valor si hay observaciones generales
+        if (datos.observaciones_generales && datos.observaciones_generales.length > 0) {
+            formData.append('observaciones_check', JSON.stringify(datos.observaciones_check || []));
+            formData.append('observaciones_valor', JSON.stringify(datos.observaciones_valor || []));
+        } else {
+            formData.append('observaciones_check', JSON.stringify([]));
+            formData.append('observaciones_valor', JSON.stringify([]));
+        }
+        formData.append('especificaciones', JSON.stringify(especificaciones || {}));
+        formData.append('imagenes', JSON.stringify(datos.logo?.imagenes || []));
+        
+        // ✅ PRODUCTOS CON ARCHIVOS File
+        if (datos.productos && Array.isArray(datos.productos)) {
+            datos.productos.forEach((producto, index) => {
+                // Datos de producto
+                formData.append(`productos[${index}][nombre_producto]`, producto.nombre_producto || '');
+                formData.append(`productos[${index}][descripcion]`, producto.descripcion || '');
+                formData.append(`productos[${index}][cantidad]`, producto.cantidad || 1);
+                formData.append(`productos[${index}][tallas]`, JSON.stringify(producto.tallas || []));
+                formData.append(`productos[${index}][variantes]`, JSON.stringify(producto.variantes));
+                
+                // ✅ FOTOS (File objects)
+                if (producto.fotos && Array.isArray(producto.fotos)) {
+                    producto.fotos.forEach((foto, fotoIndex) => {
+                        if (foto instanceof File) {
+                            formData.append(`productos[${index}][fotos]`, foto);
+                            console.log(`✅ Foto agregada a FormData [${index}][${fotoIndex}]:`, foto.name);
+                        }
+                    });
+                }
+                
+                // ✅ TELAS (File objects)
+                if (producto.telas && Array.isArray(producto.telas)) {
+                    producto.telas.forEach((tela, telaIndex) => {
+                        if (tela instanceof File) {
+                            formData.append(`productos[${index}][telas]`, tela);
+                            console.log(`✅ Tela agregada a FormData [${index}][${telaIndex}]:`, tela.name);
+                        }
+                    });
+                }
+            });
+        }
+        
+        console.log('📤 FORMDATA A ENVIAR (ENVIAR):', {
+            tipo: 'enviada',
+            cliente: datos.cliente,
+            tipo_venta: tipoVentaValue,
+            productos_count: datos.productos?.length || 0,
+            tecnicas: datos.tecnicas?.length || 0,
+            especificaciones_keys: Object.keys(especificaciones || {})
+        });
         
         const response = await fetch(window.routes.guardarCotizacion, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                // ⚠️ NO incluir 'Content-Type': 'application/json' - FormData lo establece automáticamente
             },
-            body: JSON.stringify(payloadEnvio)
+            body: formData
         });
         
         console.log('📡 Status de respuesta:', response.status);
@@ -634,7 +731,7 @@ function toggleAplicaPaso(paso, btn) {
 
 document.addEventListener('DOMContentLoaded', function() {
     // Obtener elementos
-    const tipoVentaSelect = document.getElementById('tipo_venta');
+    const tipoVentaSelect = document.getElementById('tipo_cotizacion');
     const btnGuardar = document.querySelector('button[onclick="guardarCotizacion()"]');
     const btnEnviar = document.querySelector('button[onclick="enviarCotizacion()"]');
     

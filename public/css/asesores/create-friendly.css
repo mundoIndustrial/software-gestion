@@ -179,7 +179,7 @@
     font-weight: 600;
     color: #334155;
     margin-bottom: 0.3rem;
-    font-size: 0.65rem;
+    font-size: 0.80rem;
 }
 
 .form-group-large label i {
@@ -2038,7 +2038,7 @@ table[style*="width: 100%; border-collapse: collapse; background: white;"] td:nt
     }
     
     .form-group-large label {
-        font-size: 0.65rem;
+        font-size: 0.80rem;
     }
     
     .input-large,
@@ -2300,7 +2300,7 @@ table[style*="width: 100%; border-collapse: collapse; background: white;"] td:nt
     }
     
     .form-group-large label {
-        font-size: 0.68rem;
+        font-size: 0.80rem;
     }
     
     .input-large,

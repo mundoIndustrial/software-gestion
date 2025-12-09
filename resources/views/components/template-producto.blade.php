@@ -37,6 +37,18 @@
                 </div>
             </div>
 
+            <!-- SECCIÓN DE DESCRIPCIÓN -->
+            <div class="producto-section">
+                <div class="section-title"><i class="fas fa-sticky-note"></i> DESCRIPCIÓN</div>
+                <div class="form-row">
+                    <div class="form-col full">
+                        <label><i class="fas fa-pen"></i> DESCRIPCIÓN</label>
+                        <textarea name="productos_friendly[][descripcion]" class="input-medium" placeholder="DESCRIPCIÓN DE LA PRENDA..." rows="2"></textarea>
+                        <small class="help-text">DESCRIBE LA PRENDA, DETALLES ESPECIALES, LOGO, BORDADO, ESTAMPADO, ETC.</small>
+                    </div>
+                </div>
+            </div>
+
             <!-- SECCIÓN DE FOTOS DE LA PRENDA -->
             <div class="producto-section">
                 <button type="button" class="section-title-btn" onclick="toggleSeccion(this)">
@@ -58,18 +70,6 @@
                             </div>
                         </label>
                         <div class="fotos-preview" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; margin-top: 0.5rem;"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECCIÓN DE DESCRIPCIÓN -->
-            <div class="producto-section">
-                <div class="section-title"><i class="fas fa-sticky-note"></i> DESCRIPCIÓN</div>
-                <div class="form-row">
-                    <div class="form-col full">
-                        <label><i class="fas fa-pen"></i> DESCRIPCIÓN</label>
-                        <textarea name="productos_friendly[][descripcion]" class="input-medium" placeholder="DESCRIPCIÓN DE LA PRENDA..." rows="2"></textarea>
-                        <small class="help-text">DESCRIBE LA PRENDA, DETALLES ESPECIALES, LOGO, BORDADO, ESTAMPADO, ETC.</small>
                     </div>
                 </div>
             </div>

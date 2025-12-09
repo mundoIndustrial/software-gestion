@@ -24,13 +24,74 @@ function agregarProductoFriendly() {
     clone.querySelector('.producto-card').dataset.productoId = productoId;
     window.fotosSeleccionadas[productoId] = [];
     window.telasSeleccionadas[productoId] = []; // Inicializar telas para esta prenda
-    document.getElementById('productosContainer').appendChild(clone);
+    const container = document.getElementById('productosContainer');
+    container.appendChild(clone);
+    
+    // Scroll automático a la nueva prenda agregada
+    setTimeout(() => {
+        const nuevaPrenda = container.lastElementChild;
+        if (nuevaPrenda) {
+            nuevaPrenda.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, 100);
 }
 
 function eliminarProductoFriendly(btn) {
-    btn.closest('.producto-card').remove();
-    renumerarPrendas();
-    actualizarResumenFriendly();
+    const productoCard = btn.closest('.producto-card');
+    const numeroPrenda = productoCard.querySelector('.numero-producto').textContent;
+    
+    // Modal de confirmación con SweetAlert
+    Swal.fire({
+        title: '¿Eliminar Prenda?',
+        text: `¿Estás seguro de que deseas eliminar la PRENDA ${numeroPrenda}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#e74c3c',
+        cancelButtonColor: '#95a5a6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            productoCard.remove();
+            renumerarPrendas();
+            actualizarResumenFriendly();
+            
+            // Toast de éxito
+            Swal.fire({
+                title: '¡Eliminada!',
+                text: `Prenda ${numeroPrenda} eliminada exitosamente`,
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        }
+    });
+}
+
+// Función para mostrar toast
+function mostrarToast(mensaje, tipo = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${tipo}`;
+    toast.textContent = mensaje;
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 15px 20px;
+        border-radius: 6px;
+        font-weight: 600;
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+        ${tipo === 'success' ? 'background: #10b981; color: white;' : 'background: #3498db; color: white;'}
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Remover toast después de 3 segundos
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
 }
 
 function renumerarPrendas() {

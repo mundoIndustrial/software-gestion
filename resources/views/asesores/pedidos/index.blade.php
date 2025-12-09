@@ -421,7 +421,7 @@
                 color: white;
                 padding: 1rem 1.5rem;
                 display: grid;
-                grid-template-columns: 130px 110px 110px 130px 90px 160px 220px 90px 130px 130px;
+                grid-template-columns: 130px 110px 110px 130px 90px 160px 150px 110px 110px 110px;
                 gap: 1.2rem;
                 font-weight: 600;
                 font-size: 0.875rem;
@@ -445,12 +445,6 @@
                 <div class="th-wrapper">
                     <span>Área</span>
                     <button type="button" class="btn-filter-column" title="Filtrar Área">
-                        <span class="material-symbols-rounded">filter_alt</span>
-                    </button>
-                </div>
-                <div class="th-wrapper">
-                    <span>Fecha Estimada</span>
-                    <button type="button" class="btn-filter-column" title="Filtrar Fecha">
                         <span class="material-symbols-rounded">filter_alt</span>
                     </button>
                 </div>
@@ -490,6 +484,12 @@
                         <span class="material-symbols-rounded">filter_alt</span>
                     </button>
                 </div>
+                <div class="th-wrapper">
+                    <span>Fecha Estimada</span>
+                    <button type="button" class="btn-filter-column" title="Filtrar Fecha">
+                        <span class="material-symbols-rounded">filter_alt</span>
+                    </button>
+                </div>
             </div>
 
             <!-- Filas -->
@@ -502,7 +502,7 @@
                 @foreach($pedidos as $pedido)
                     <div style="
                         display: grid;
-                        grid-template-columns: 130px 110px 110px 130px 90px 160px 220px 90px 130px 130px;
+                        grid-template-columns: 130px 110px 110px 130px 90px 160px 150px 110px 110px 110px;
                         gap: 1.2rem;
                         padding: 1rem 1.5rem;
                         align-items: center;
@@ -518,21 +518,23 @@
                     
                     <!-- Acciones -->
                     <button class="btn-acciones-dropdown" data-menu-id="menu-{{ $pedido->numero_pedido }}" data-pedido="{{ $pedido->numero_pedido }}" data-estado="{{ $pedido->estado }}" data-motivo="{{ $pedido->motivo_anulacion ?? '' }}" data-usuario="{{ $pedido->usuario_anulacion ?? '' }}" data-fecha="{{ $pedido->fecha_anulacion ? \Carbon\Carbon::parse($pedido->fecha_anulacion)->format('d/m/Y h:i A') : '' }}" style="
-                        background: linear-gradient(135deg, #10b981, #059669);
+                        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
                         color: white;
                         border: none;
-                        padding: 0.5rem 1rem;
+                        padding: 0.5rem 0.75rem;
                         border-radius: 6px;
                         cursor: pointer;
                         font-weight: 600;
                         font-size: 0.75rem;
-                        transition: all 0.2s ease;
+                        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                         display: flex;
                         align-items: center;
-                        gap: 0.5rem;
-                        box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
-                    " onmouseover="this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.3)'; this.style.transform='translateY(-1px)'" onmouseout="this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.2)'; this.style.transform='translateY(0)'">
-                        <i class="fas fa-eye"></i> Ver
+                        justify-content: center;
+                        gap: 0.4rem;
+                        box-shadow: 0 4px 6px rgba(16, 185, 129, 0.25);
+                        letter-spacing: 0.2px;
+                    " onmouseover="this.style.boxShadow='0 8px 12px rgba(16, 185, 129, 0.4)'; this.style.transform='translateY(-2px)'; this.style.background='linear-gradient(135deg, #059669 0%, #047857 100%)'" onmouseout="this.style.boxShadow='0 4px 6px rgba(16, 185, 129, 0.25)'; this.style.transform='translateY(0)'; this.style.background='linear-gradient(135deg, #10b981 0%, #059669 100%)'">
+                        <i class="fas fa-eye" style="font-size: 0.8rem;"></i> Ver
                     </button>
 
                     <!-- Estado -->
@@ -551,13 +553,18 @@
                     </div>
 
                     <!-- Área -->
-                    <div style="color: #374151; font-size: 0.875rem;">
-                        {{ $pedido->procesoActualOptimizado() ?? '-' }}
-                    </div>
-
-                    <!-- Fecha Estimada de Entrega -->
-                    <div style="color: #374151; font-size: 0.875rem;">
-                        {{ $pedido->fecha_estimada_de_entrega ?? '-' }}
+                    <div>
+                        <span style="
+                            background: #dbeafe;
+                            color: #1e40af;
+                            padding: 0.25rem 0.75rem;
+                            border-radius: 12px;
+                            font-size: 0.75rem;
+                            font-weight: 600;
+                            display: inline-block;
+                        ">
+                            {{ $pedido->procesoActualOptimizado() ?? '-' }}
+                        </span>
                     </div>
 
                     <!-- Pedido -->
@@ -566,36 +573,59 @@
                     </div>
 
                     <!-- Cliente -->
-                    <div style="color: #374151; font-size: 0.875rem; font-weight: 500;">
+                    <div style="color: #374151; font-size: 0.875rem; font-weight: 500; cursor: pointer;" onclick="abrirModalCelda('Cliente', '{{ $pedido->cliente }}')" title="Click para ver completo">
                         {{ $pedido->cliente }}
                     </div>
 
                     <!-- Descripción -->
-                    <div style="color: #6b7280; font-size: 0.875rem;">
-                        @if($pedido->prendas->first())
-                            {{ $pedido->prendas->first()->nombre_prenda }}
-                        @else
-                            <span style="color: #d1d5db;">-</span>
-                        @endif
+                    <div style="color: #6b7280; font-size: 0.875rem; cursor: pointer; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="abrirModalCelda('Descripción', `{{ addslashes($pedido->descripcion_prendas ?? '-') }}`)" title="Click para ver completo">
+                        @php
+                            if ($pedido->prendas && $pedido->prendas->count() > 0) {
+                                // Mostrar nombres de prendas con formato
+                                $prendasInfo = $pedido->prendas->map(function($prenda) {
+                                    return $prenda->nombre_prenda ?? 'Prenda sin nombre';
+                                })->unique()->toArray();
+                                $descripcion = !empty($prendasInfo) ? implode(', ', $prendasInfo) : '-';
+                                echo $descripcion . ' <span style="color: #3b82f6; font-weight: 600;">...</span>';
+                            } else {
+                                echo '-';
+                            }
+                        @endphp
                     </div>
 
                     <!-- Cantidad -->
-                    <div style="color: #374151; font-weight: 600; font-size: 0.875rem;">
+                    <div style="color: #374151; font-weight: 600; font-size: 0.875rem; text-align: center;">
                         @if($pedido->prendas->first())
-                            {{ $pedido->prendas->first()->cantidad }} <small style="color: #9ca3af;">und</small>
+                            <span style="white-space: nowrap;">{{ $pedido->prendas->first()->cantidad }} <small style="color: #9ca3af;">und</small></span>
                         @else
                             <span style="color: #d1d5db;">-</span>
                         @endif
                     </div>
 
                     <!-- Forma Pago -->
-                    <div style="color: #374151; font-size: 0.875rem;">
+                    <div style="color: #374151; font-size: 0.875rem; cursor: pointer;" onclick="abrirModalCelda('Forma de Pago', '{{ $pedido->forma_de_pago ?? '-' }}')" title="Click para ver completo">
                         {{ $pedido->forma_de_pago ?? '-' }}
                     </div>
 
                     <!-- Fecha Creación -->
                     <div style="color: #6b7280; font-size: 0.75rem;">
                         {{ $pedido->fecha_de_creacion_de_orden ? $pedido->fecha_de_creacion_de_orden->format('d/m/Y') : '-' }}
+                    </div>
+
+                    <!-- Fecha Estimada de Entrega -->
+                    <div style="color: #6b7280; font-size: 0.75rem;">
+                        @php
+                            if ($pedido->fecha_estimada_de_entrega) {
+                                try {
+                                    $fecha = \Carbon\Carbon::parse($pedido->fecha_estimada_de_entrega);
+                                    echo $fecha->format('d/m/Y');
+                                } catch (\Exception $e) {
+                                    echo $pedido->fecha_estimada_de_entrega;
+                                }
+                            } else {
+                                echo '-';
+                            }
+                        @endphp
                     </div>
                 </div>
                 @endforeach
@@ -634,6 +664,9 @@
         </div>
     </div>
 </div>
+
+<!-- Modal de Descripción de Prendas (reutilizado de órdenes) -->
+<x-orders-components.order-description-modal />
 
 <!-- Modal de Imagen -->
 @include('components.modal-imagen')
@@ -888,11 +921,182 @@
             }
         }
     });
+
+    // ==================== MODAL DE CELDA ====================
+    function abrirModalCelda(titulo, contenido) {
+        // Limpiar y formatear el contenido
+        let contenidoLimpio = contenido || '-';
+        
+        // Remover asteriscos de formato
+        contenidoLimpio = contenidoLimpio.replace(/\*\*\*/g, '');
+        
+        // Remover etiquetas de formato como "*** DESCRIPCIÓN: ***"
+        contenidoLimpio = contenidoLimpio.replace(/\*\*\*\s*[A-Z\s]+:\s*\*\*\*/g, '');
+        
+        // Dividir por prendas (separadas por \n\n)
+        let prendas = contenidoLimpio.split('\n\n').filter(p => p.trim());
+        
+        let htmlContenido = '';
+        
+        prendas.forEach((prenda, index) => {
+            let lineas = prenda.split('\n').map(l => l.trim()).filter(l => l);
+            
+            htmlContenido += '<div style="margin-bottom: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border-left: 4px solid #3b82f6;">';
+            
+            lineas.forEach((linea, i) => {
+                // Nombre de prenda
+                if (linea.match(/^(\d+)\.\s+Prenda:/i) || linea.match(/^Prenda \d+:/i)) {
+                    htmlContenido += `<div style="font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; color: #1f2937;">${linea}</div>`;
+                }
+                // Atributos (Color, Tela, Manga)
+                else if (linea.match(/^Color:|^Tela:|^Manga:/i)) {
+                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;">${linea}</div>`;
+                }
+                // Descripción
+                else if (linea.match(/^DESCRIPCIÓN:/i)) {
+                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
+                }
+                // Detalles (Reflectivo, Bolsillos, etc)
+                else if (linea.match(/^(Reflectivo|Bolsillos|Broche|Ojal):/i)) {
+                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
+                }
+                // Viñetas
+                else if (linea.startsWith('•') || linea.startsWith('-')) {
+                    htmlContenido += `<div style="margin-left: 1.5rem; margin-bottom: 0.25rem; color: #374151;">• ${linea.substring(1).trim()}</div>`;
+                }
+                // Tallas
+                else if (linea.match(/^Tallas:/i)) {
+                    htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
+                }
+                // Otras líneas
+                else if (linea) {
+                    htmlContenido += `<div style="margin-bottom: 0.25rem; color: #374151;">${linea}</div>`;
+                }
+            });
+            
+            htmlContenido += '</div>';
+        });
+        
+        // Crear modal
+        const modalHTML = `
+            <div id="celdaModal" style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                animation: fadeIn 0.3s ease;
+            " onclick="if(event.target.id === 'celdaModal') cerrarModalCelda()">
+                <div style="
+                    background: white;
+                    border-radius: 12px;
+                    padding: 2rem;
+                    max-width: 600px;
+                    width: 90%;
+                    max-height: 80vh;
+                    overflow-y: auto;
+                    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                    animation: slideIn 0.3s ease;
+                ">
+                    <!-- Header -->
+                    <div style="
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: 1.5rem;
+                        border-bottom: 2px solid #e5e7eb;
+                        padding-bottom: 1rem;
+                    ">
+                        <h2 style="
+                            margin: 0;
+                            font-size: 1.25rem;
+                            font-weight: 700;
+                            color: #1f2937;
+                        ">${titulo}</h2>
+                        <button onclick="cerrarModalCelda()" style="
+                            background: none;
+                            border: none;
+                            font-size: 1.5rem;
+                            cursor: pointer;
+                            color: #6b7280;
+                            padding: 0;
+                            width: 32px;
+                            height: 32px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            border-radius: 6px;
+                            transition: all 0.2s ease;
+                        " onmouseover="this.style.background='#f3f4f6'; this.style.color='#1f2937'" onmouseout="this.style.background='none'; this.style.color='#6b7280'">
+                            ✕
+                        </button>
+                    </div>
+
+                    <!-- Contenido -->
+                    <div style="
+                        color: #374151;
+                        font-size: 0.95rem;
+                        line-height: 1.8;
+                    ">
+                        ${htmlContenido}
+                    </div>
+
+                    <!-- Footer -->
+                    <div style="
+                        margin-top: 1.5rem;
+                        display: flex;
+                        justify-content: flex-end;
+                        gap: 0.75rem;
+                    ">
+                        <button onclick="cerrarModalCelda()" style="
+                            background: white;
+                            border: 2px solid #d1d5db;
+                            color: #374151;
+                            padding: 0.625rem 1.25rem;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-weight: 600;
+                            font-size: 0.875rem;
+                            transition: all 0.2s ease;
+                        " onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='#9ca3af'" onmouseout="this.style.background='white'; this.style.borderColor='#d1d5db'">
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Insertar modal en el DOM
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Cerrar con ESC
+        document.addEventListener('keydown', function cerrarConEsc(event) {
+            if (event.key === 'Escape') {
+                cerrarModalCelda();
+                document.removeEventListener('keydown', cerrarConEsc);
+            }
+        });
+    }
+
+    function cerrarModalCelda() {
+        const modal = document.getElementById('celdaModal');
+        if (modal) {
+            modal.style.animation = 'fadeIn 0.3s ease reverse';
+            setTimeout(() => modal.remove(), 300);
+        }
+    }
 </script>
 <script src="{{ asset('js/asesores/pedidos-list.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-modal.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-dropdown-simple.js') }}"></script>
+<!-- Modal Manager para renderizar detalles del pedido (igual que órdenes) -->
+<script src="{{ asset('js/orders js/order-detail-modal-manager.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-table-filters.js') }}"></script>
 <!-- MODULAR ORDER TRACKING (SOLID Architecture) -->

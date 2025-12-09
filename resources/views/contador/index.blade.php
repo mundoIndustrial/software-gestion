@@ -163,7 +163,7 @@
         .btn-success:hover {
             background: var(--success-color);
             color: white;
-            transform: scale(1.1);
+            transform: scale(0.9);
         }
 
         .btn-view {
@@ -174,7 +174,7 @@
         .btn-view:hover {
             background: var(--primary-color);
             color: white;
-            transform: scale(1.1);
+            transform: scale(0.9);
         }
 
         .btn-edit {
@@ -185,7 +185,7 @@
         .btn-edit:hover {
             background: #f59e0b;
             color: white;
-            transform: scale(1.1);
+            transform: scale(0.9);
         }
 
         .btn-danger {

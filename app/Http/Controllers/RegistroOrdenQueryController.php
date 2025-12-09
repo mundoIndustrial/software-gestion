@@ -252,6 +252,10 @@ class RegistroOrdenQueryController extends Controller
         // Filtrar datos sensibles
         $orderArray = $order->toArray();
         
+        // Verificar si es una cotización
+        $esCotizacion = !empty($order->cotizacion_id);
+        $orderArray['es_cotizacion'] = $esCotizacion;
+        
         // Campos que se ocultan para todos
         $camposOcultosGlobal = ['created_at', 'updated_at', 'deleted_at', 'asesor_id', 'cliente_id'];
         
@@ -280,7 +284,56 @@ class RegistroOrdenQueryController extends Controller
         }
         
         // Asegurar que descripcion_prendas se calcula correctamente
-        $orderArray['descripcion_prendas'] = $order->descripcion_prendas;
+        // Si no existe, armarla desde las prendas
+        if (empty($order->descripcion_prendas)) {
+            $prendas = $order->prendas ?? [];
+            $descripcionPrendas = '';
+            foreach ($prendas as $index => $prenda) {
+                if ($index > 0) {
+                    $descripcionPrendas .= "\n\n";
+                }
+                $descripcionPrendas .= "Prenda " . ($index + 1) . ": " . ($prenda->nombre_prenda ?? 'Sin nombre') . "\n";
+                if ($prenda->descripcion) {
+                    $descripcionPrendas .= "Descripción: " . $prenda->descripcion . "\n";
+                }
+                if ($prenda->cantidad_talla) {
+                    $descripcionPrendas .= "Tallas: " . $prenda->cantidad_talla;
+                }
+            }
+            $orderArray['descripcion_prendas'] = $descripcionPrendas ?: '';
+        } else {
+            $orderArray['descripcion_prendas'] = $order->descripcion_prendas;
+        }
+        
+        // Obtener prendas formateadas para el modal
+        try {
+            if ($esCotizacion) {
+                // Usar plantilla para cotizaciones
+                $templateService = new \App\Services\PrendaCotizacionTemplateService();
+                $orderArray['prendas'] = $templateService->generarPlantillaPrendas($pedido);
+            } else {
+                // Usar formato simple para pedidos sin cotización
+                $prendas = \DB::table('prendas_pedido')
+                    ->where('numero_pedido', $pedido)
+                    ->orderBy('id', 'asc')
+                    ->get(['nombre_prenda', 'descripcion', 'cantidad_talla']);
+
+                // Formatear prendas con enumeración
+                $prendasFormato = [];
+                foreach ($prendas as $index => $prenda) {
+                    $prendasFormato[] = [
+                        'numero' => $index + 1,
+                        'nombre' => $prenda->nombre_prenda ?? '-',
+                        'descripcion' => $prenda->descripcion ?? '-',
+                        'cantidad_talla' => $prenda->cantidad_talla ?? '-'
+                    ];
+                }
+                $orderArray['prendas'] = $prendasFormato;
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Error obteniendo prendas: ' . $e->getMessage());
+            $orderArray['prendas'] = [];
+        }
         
         // Eliminar campos ocultos globales
         foreach ($camposOcultosGlobal as $campo) {

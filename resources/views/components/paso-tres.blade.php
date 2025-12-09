@@ -1,8 +1,8 @@
 <!-- PASO 3: LOGO -->
 <div class="form-step" data-step="3">
     <div class="step-header">
-        <h2>PASO 3: LOGO</h2>
-        <p>ESPECIFICA LOS DETALLES DE BORDADO Y ESTAMPADO</p>
+        <h2 style="font-size: 1rem !important; margin: 0 0 0.2rem 0 !important;">PASO 3: LOGO</h2>
+        <p style="font-size: 0.45rem !important; margin: 0 !important; color: #666 !important;">ESPECIFICA LOS DETALLES DE BORDADO Y ESTAMPADO</p>
     </div>
 
     <div class="form-section">
@@ -32,7 +32,7 @@
                 <button type="button" onclick="agregarTecnica()" style="background: #3498db; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 1.5rem; font-weight: bold; display: flex; align-items: center; justify-content: center; line-height: 1;">+</button>
             </div>
             
-            <select id="selector_tecnicas" class="input-large" style="width: 100%; margin-bottom: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+            <select id="selector_tecnicas" class="input-large" style="width: 100%; margin-bottom: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" onchange="if(this.value) { agregarTecnica(); }">
                 <option value="">-- SELECCIONA UNA TÉCNICA --</option>
                 <option value="BORDADO">BORDADO</option>
                 <option value="DTF">DTF</option>

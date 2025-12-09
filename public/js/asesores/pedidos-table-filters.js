@@ -148,6 +148,30 @@ function openFilterModal(columnName) {
     if (values.length === 0) {
         optionsContainer.innerHTML = '<div style="padding: 1rem; text-align: center; color: #9ca3af;">No hay datos disponibles</div>';
     } else {
+        // Agregar opción "Seleccionar Todo"
+        const selectAllDiv = document.createElement('div');
+        selectAllDiv.className = 'filter-option select-all-option';
+        selectAllDiv.style.borderBottom = '1px solid #e5e7eb';
+        selectAllDiv.style.paddingBottom = '0.75rem';
+        selectAllDiv.style.marginBottom = '0.75rem';
+        
+        const allChecked = selectedFilters[columnName] && selectedFilters[columnName].length === values.length;
+        selectAllDiv.innerHTML = `
+            <input type="checkbox" id="select-all-${columnName}" ${allChecked ? 'checked' : ''}>
+            <label for="select-all-${columnName}" style="font-weight: 600; color: #1f2937;">Seleccionar Todo</label>
+        `;
+        optionsContainer.appendChild(selectAllDiv);
+        
+        // Agregar evento al checkbox "Seleccionar Todo"
+        const selectAllCheckbox = selectAllDiv.querySelector('input[type="checkbox"]');
+        selectAllCheckbox.addEventListener('change', function() {
+            const allCheckboxes = optionsContainer.querySelectorAll('.filter-option:not(.select-all-option) input[type="checkbox"]');
+            allCheckboxes.forEach(cb => {
+                cb.checked = this.checked;
+            });
+        });
+        
+        // Agregar opciones individuales
         values.forEach(value => {
             if (!value || value === columnName) return;
             
@@ -283,7 +307,19 @@ function applyTableFilters() {
                 }
                 
                 // Verificar si el valor está en los filtros seleccionados
-                if (!filterValues.includes(cellValue)) {
+                // Para Descripción, usar búsqueda parcial (contiene)
+                let matches = false;
+                if (columnName === 'Descripción') {
+                    // Búsqueda parcial: verificar si algún filtro está contenido en el valor
+                    matches = filterValues.some(filter => 
+                        cellValue.toLowerCase().includes(filter.toLowerCase())
+                    );
+                } else {
+                    // Búsqueda exacta para otras columnas
+                    matches = filterValues.includes(cellValue);
+                }
+                
+                if (!matches) {
                     console.log(`  ❌ No coincide - Ocultando fila`);
                     shouldShow = false;
                     break;
