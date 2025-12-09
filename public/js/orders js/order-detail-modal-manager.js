@@ -81,10 +81,217 @@ window.closeModalOverlay = function() {
 };
 
 /**
+ * Estado global para navegación de prendas
+ */
+window.prendasState = {
+    todasLasPrendas: [],
+    currentPage: 0,
+    prendasPorPagina: 2,
+    esCotizacion: false
+};
+
+/**
+ * Renderizar datos de la orden en el modal
+ */
+function renderOrderDetail(orden) {
+    console.log('🎨 [MODAL] Renderizando detalles de orden:', orden.numero_pedido);
+    
+    // Guardar estado de prendas
+    window.prendasState.todasLasPrendas = orden.prendas || [];
+    window.prendasState.currentPage = 0;
+    window.prendasState.esCotizacion = orden.es_cotizacion || false;
+    
+    // Llenar fecha
+    const dayBox = document.querySelector('.day-box');
+    const monthBox = document.querySelector('.month-box');
+    const yearBox = document.querySelector('.year-box');
+    
+    if (dayBox && monthBox && yearBox) {
+        const fecha = new Date(orden.fecha_de_creacion_de_orden);
+        if (!isNaN(fecha.getTime())) {
+            const dia = String(fecha.getDate()).padStart(2, '0');
+            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+            const año = fecha.getFullYear();
+            
+            dayBox.textContent = dia;
+            monthBox.textContent = mes;
+            yearBox.textContent = año;
+        }
+    }
+    
+    // Llenar cliente
+    const clienteValue = document.getElementById('cliente-value');
+    if (clienteValue) clienteValue.textContent = orden.cliente || '-';
+    
+    // Llenar asesora
+    const asesoraValue = document.getElementById('asesora-value');
+    if (asesoraValue) asesoraValue.textContent = orden.asesora || '-';
+    
+    // Llenar forma de pago
+    const formaPagoValue = document.getElementById('forma-pago-value');
+    if (formaPagoValue) formaPagoValue.textContent = orden.forma_de_pago || '-';
+    
+    // Renderizar prendas con paginación
+    renderPrendasPage();
+    
+    // Llenar pedido número
+    const pedidoNumber = document.querySelector('.pedido-number');
+    if (pedidoNumber) {
+        pedidoNumber.textContent = `#${orden.numero_pedido}`;
+    }
+    
+    // Llenar encargado de orden
+    const encargadoValue = document.getElementById('encargado-value');
+    if (encargadoValue) encargadoValue.textContent = orden.encargado_orden || '-';
+    
+    // Llenar prendas entregadas
+    const prendasValue = document.getElementById('prendas-entregadas-value');
+    if (prendasValue) {
+        prendasValue.textContent = `${orden.total_entregado || 0}/${orden.cantidad_total || orden.cantidad || 0}`;
+    }
+    
+    // Actualizar visibilidad de flechas de navegación
+    updateNavigationArrows();
+    
+    console.log('✅ [MODAL] Detalles renderizados');
+}
+
+/**
+ * Renderizar página actual de prendas
+ */
+function renderPrendasPage() {
+    const { todasLasPrendas, currentPage, prendasPorPagina, esCotizacion } = window.prendasState;
+    
+    if (!todasLasPrendas || todasLasPrendas.length === 0) {
+        const descripcionText = document.getElementById('descripcion-text');
+        if (descripcionText) {
+            descripcionText.innerHTML = '-';
+        }
+        return;
+    }
+    
+    // Calcular índices de inicio y fin
+    const startIndex = currentPage * prendasPorPagina;
+    const endIndex = startIndex + prendasPorPagina;
+    const prendasActuales = todasLasPrendas.slice(startIndex, endIndex);
+    
+    let descripcionHTML = '';
+    
+    if (esCotizacion) {
+        // Usar plantilla de cotización
+        prendasActuales.forEach((prenda, index) => {
+            descripcionHTML += `<strong>PRENDA ${prenda.numero}: ${prenda.nombre}</strong><br>
+${prenda.atributos}<br>
+<strong>DESCRIPCION:</strong> ${prenda.descripcion}`;
+            
+            // Agregar detalles si existen
+            if (prenda.detalles && prenda.detalles.length > 0) {
+                prenda.detalles.forEach(detalle => {
+                    descripcionHTML += `<br>&nbsp;&nbsp;&nbsp;. <strong style="color: #666;">${detalle.tipo}:</strong> ${detalle.valor}`;
+                });
+            }
+            
+            descripcionHTML += `<br><strong>Tallas:</strong> <span style="color: red; font-weight: bold;">${prenda.tallas}</span>`;
+            
+            // Agregar línea separadora solo entre prendas mostradas
+            if (index < prendasActuales.length - 1) {
+                descripcionHTML += `<br><hr style="border: none; border-top: 2px solid #ccc; margin: 16px 0;">`;
+            }
+        });
+    } else {
+        // Usar formato simple para pedidos sin cotización
+        prendasActuales.forEach(prenda => {
+            // Parsear y formatear tallas
+            let tallasFormato = '-';
+            try {
+                if (typeof prenda.cantidad_talla === 'string') {
+                    const tallasObj = JSON.parse(prenda.cantidad_talla);
+                    tallasFormato = Object.entries(tallasObj)
+                        .map(([talla, cantidad]) => `${talla}: ${cantidad}`)
+                        .join(', ');
+                } else if (typeof prenda.cantidad_talla === 'object' && prenda.cantidad_talla !== null) {
+                    tallasFormato = Object.entries(prenda.cantidad_talla)
+                        .map(([talla, cantidad]) => `${talla}: ${cantidad}`)
+                        .join(', ');
+                } else {
+                    tallasFormato = prenda.cantidad_talla || '-';
+                }
+            } catch (e) {
+                tallasFormato = prenda.cantidad_talla || '-';
+            }
+            
+            descripcionHTML += `<div class="prenda-item">
+                <strong>PRENDA ${prenda.numero}: ${prenda.nombre}</strong><br>
+                <span>DESCRIPCION: ${prenda.descripcion}</span><br>
+                <span>TALLAS: <span style="color: red; font-weight: bold;">${tallasFormato}</span></span><br>
+                <br>
+            </div>`;
+        });
+    }
+    
+    const descripcionText = document.getElementById('descripcion-text');
+    if (descripcionText) {
+        descripcionText.innerHTML = descripcionHTML;
+    }
+}
+
+/**
+ * Actualizar visibilidad de flechas de navegación
+ */
+function updateNavigationArrows() {
+    const { todasLasPrendas, currentPage, prendasPorPagina } = window.prendasState;
+    const totalPages = Math.ceil(todasLasPrendas.length / prendasPorPagina);
+    
+    const prevArrow = document.getElementById('prev-arrow');
+    const nextArrow = document.getElementById('next-arrow');
+    
+    if (prevArrow) {
+        prevArrow.style.display = currentPage > 0 ? 'block' : 'none';
+    }
+    
+    if (nextArrow) {
+        nextArrow.style.display = currentPage < totalPages - 1 ? 'block' : 'none';
+    }
+}
+
+/**
+ * Navegar a la página anterior
+ */
+window.prevPrendas = function() {
+    if (window.prendasState.currentPage > 0) {
+        window.prendasState.currentPage--;
+        renderPrendasPage();
+        updateNavigationArrows();
+    }
+};
+
+/**
+ * Navegar a la página siguiente
+ */
+window.nextPrendas = function() {
+    const { todasLasPrendas, currentPage, prendasPorPagina } = window.prendasState;
+    const totalPages = Math.ceil(todasLasPrendas.length / prendasPorPagina);
+    
+    if (currentPage < totalPages - 1) {
+        window.prendasState.currentPage++;
+        renderPrendasPage();
+        updateNavigationArrows();
+    }
+};
+
+/**
  * Escuchar el evento de apertura del modal
  */
 document.addEventListener('DOMContentLoaded', function() {
     console.log('%c✅ [MODAL] DOM cargado, registrando listeners', 'color: green; font-weight: bold; font-size: 14px;');
+    
+    // Listener para cargar datos de la orden
+    window.addEventListener('load-order-detail', function(event) {
+        console.log('%c📦 [MODAL] Evento load-order-detail recibido', 'color: orange; font-weight: bold; font-size: 14px;');
+        const orden = event.detail;
+        renderOrderDetail(orden);
+        window.openOrderDetailModal();
+    });
     
     // Listener para abrir el modal
     window.addEventListener('open-modal', function(event) {
@@ -115,6 +322,26 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+    
+    // Listeners para botones de navegación de prendas
+    const prevArrow = document.getElementById('prev-arrow');
+    const nextArrow = document.getElementById('next-arrow');
+    
+    if (prevArrow) {
+        prevArrow.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('⬅️ [MODAL] Flecha anterior presionada');
+            window.prevPrendas();
+        });
+    }
+    
+    if (nextArrow) {
+        nextArrow.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('➡️ [MODAL] Flecha siguiente presionada');
+            window.nextPrendas();
+        });
+    }
     
     console.log('✅ [MODAL] Listeners registrados');
 });

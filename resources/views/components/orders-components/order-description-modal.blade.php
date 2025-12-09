@@ -274,9 +274,34 @@
 </style>
 
 <script>
-function showOrderDescriptionModal(descripcion) {
+function showOrderDescriptionModal(descripcion, esCotizacion = false, prendasData = null) {
     const contentEl = document.getElementById('modalDescripcionContent');
-    if (descripcion && descripcion.trim()) {
+    
+    if (esCotizacion && prendasData && prendasData.length > 0) {
+        // Usar plantilla de cotización
+        let html = '';
+        prendasData.forEach((prenda, index) => {
+            html += `<strong style="font-size: 15px;">PRENDA ${prenda.numero}: ${prenda.nombre}</strong><br>
+${prenda.atributos}<br>
+<strong>DESCRIPCION:</strong> ${prenda.descripcion}<br>
+`;
+            
+            // Agregar detalles si existen
+            if (prenda.detalles && prenda.detalles.length > 0) {
+                prenda.detalles.forEach(detalle => {
+                    html += `<br>. <strong style="color: #666;">${detalle.tipo}:</strong> ${detalle.valor}<br>`;
+                });
+            }
+            
+            html += `<br><strong>Tallas:</strong> <span style="color: red; font-weight: bold;">${prenda.tallas}</span>`;
+            
+            // Agregar salto de línea solo entre prendas (no después de la última)
+            if (index < prendasData.length - 1) {
+                html += `<br><br>`;
+            }
+        });
+        contentEl.innerHTML = html;
+    } else if (descripcion && descripcion.trim()) {
         // Procesar asteriscos para convertir en negrita
         let html = descripcion
             .replace(/\*\*\*(.+?)\*\*\*/g, '<strong>$1</strong>')

@@ -70,6 +70,8 @@ body:has(.table-container) { font-family: -apple-system, BlinkMacSystemFont, 'Se
   width: 100%;
   scrollbar-width: thin; 
   scrollbar-color: var(--primary) var(--surface-gray);
+  position: relative;
+  z-index: 1;
 }
 
 .table-scroll-container::-webkit-scrollbar { 
@@ -170,7 +172,13 @@ body.dark-theme .table-body {
   gap: 24px;
   padding: 0 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
+  overflow: visible;
+  position: relative;
+  z-index: 1;
+}
+
+.table-row:has(.action-menu.active) {
+  z-index: 100;
 }
 
 .table-row:hover { 
@@ -192,7 +200,7 @@ body.dark-theme .table-body {
   display: flex;
   align-items: center;
   min-width: 120px;
-  overflow: hidden;
+  overflow: visible;
   flex: 0 0 auto;
 }
 

@@ -16,6 +16,7 @@ use App\Services\RegistroOrdenEntregasService;
 use App\Services\RegistroOrdenProcessesService;
 use App\Models\News;
 use Illuminate\Support\Facades\DB;
+use App\Services\PrendaCotizacionTemplateService;
 
 class RegistroOrdenController extends Controller
 {
@@ -328,6 +329,111 @@ class RegistroOrdenController extends Controller
      * Se mantiene como referencia pero ya no se utiliza
      */
     // parseDescripcionToPrendas() - Ver RegistroOrdenPrendaService
+
+    /**
+     * Obtener detalles de una orden específica para el modal
+     * GET /orders/{numero_pedido}
+     */
+    public function show($numeroPedido)
+    {
+        try {
+            // Buscar la orden en PedidoProduccion con relaciones
+            $order = PedidoProduccion::with('asesora')->where('numero_pedido', $numeroPedido)->first();
+            
+            if (!$order) {
+                return response()->json(['error' => 'Orden no encontrada'], 404);
+            }
+
+            // Obtener nombre de la asesora
+            $asesoraName = '';
+            if ($order->asesora) {
+                $asesoraName = $order->asesora->name ?? '';
+            }
+
+            // Obtener datos básicos
+            $orderData = [
+                'id' => $order->id,
+                'numero_pedido' => $order->numero_pedido,
+                'cliente' => $order->cliente,
+                'fecha_de_creacion_de_orden' => $order->fecha_de_creacion_de_orden,
+                'descripcion_prendas' => $order->descripcion_prendas ?? '',
+                'estado' => $order->estado,
+                'forma_de_pago' => $order->forma_de_pago ?? '-',
+                'area' => $order->area,
+                'novedades' => $order->novedades,
+                'total_cantidad' => 0,
+                'total_entregado' => 0,
+                'cantidad' => 0,
+                'encargado_orden' => '',
+                'asesora' => $asesoraName,
+            ];
+
+            // Calcular totales si existen prendas
+            try {
+                $totalCantidad = DB::table('prendas')
+                    ->where('numero_pedido', $numeroPedido)
+                    ->sum('cantidad');
+                $orderData['total_cantidad'] = $totalCantidad ?? 0;
+                $orderData['cantidad'] = $totalCantidad ?? 0;
+            } catch (\Exception $e) {
+                \Log::warning('Error calculando cantidad: ' . $e->getMessage());
+            }
+
+            // Calcular entregas
+            try {
+                $totalEntregado = DB::table('entregas')
+                    ->where('numero_pedido', $numeroPedido)
+                    ->sum('cantidad_entregada');
+                $orderData['total_entregado'] = $totalEntregado ?? 0;
+            } catch (\Exception $e) {
+                \Log::warning('Error calculando entregas: ' . $e->getMessage());
+            }
+
+            // Obtener prendas - usar plantilla si está relacionado a cotización
+            try {
+                // Verificar si el pedido está relacionado a una cotización
+                $esCotizacion = DB::table('pedidos_produccion')
+                    ->where('numero_pedido', $numeroPedido)
+                    ->whereNotNull('cotizacion_id')
+                    ->exists();
+
+                if ($esCotizacion) {
+                    // Usar plantilla para cotizaciones
+                    $templateService = new PrendaCotizacionTemplateService();
+                    $orderData['prendas'] = $templateService->generarPlantillaPrendas($numeroPedido);
+                    $orderData['es_cotizacion'] = true;
+                } else {
+                    // Usar formato simple para pedidos sin cotización
+                    $prendas = DB::table('prendas_pedido')
+                        ->where('numero_pedido', $numeroPedido)
+                        ->orderBy('id', 'asc')
+                        ->get(['nombre_prenda', 'descripcion', 'cantidad_talla']);
+
+                    // Formatear prendas con enumeración
+                    $prendasFormato = [];
+                    foreach ($prendas as $index => $prenda) {
+                        $prendasFormato[] = [
+                            'numero' => $index + 1,
+                            'nombre' => $prenda->nombre_prenda ?? '-',
+                            'descripcion' => $prenda->descripcion ?? '-',
+                            'cantidad_talla' => $prenda->cantidad_talla ?? '-'
+                        ];
+                    }
+                    $orderData['prendas'] = $prendasFormato;
+                    $orderData['es_cotizacion'] = false;
+                }
+            } catch (\Exception $e) {
+                \Log::warning('Error obteniendo prendas: ' . $e->getMessage());
+                $orderData['prendas'] = [];
+                $orderData['es_cotizacion'] = false;
+            }
+
+            return response()->json($orderData);
+        } catch (\Exception $e) {
+            \Log::error('Error en show de orden: ' . $e->getMessage() . ' - ' . $e->getFile() . ':' . $e->getLine());
+            return response()->json(['error' => 'Error al obtener datos'], 500);
+        }
+    }
 
     /**
      * Obtener imágenes de una orden (DEPRECATED - Usar RegistroOrdenQueryController)

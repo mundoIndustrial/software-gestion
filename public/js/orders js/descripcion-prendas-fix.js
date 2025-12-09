@@ -77,9 +77,42 @@ document.addEventListener('dblclick', function(e) {
         
         // Guardar el contenido en un lugar donde orders-table-v2.js pueda encontrarlo
         window.lastDescripcionPrendasContent = cellText.dataset.fullDescripcion;
-        console.log('📦 Contenido guardado en window.lastDescripcionPrendasContent');
+        
+        // Obtener el número de pedido de la fila
+        const row = cell.closest('.table-row');
+        if (row) {
+            const numeroPedido = row.getAttribute('data-orden-id');
+            window.lastNumeroPedido = numeroPedido;
+            console.log('📦 Contenido guardado en window.lastDescripcionPrendasContent para pedido:', numeroPedido);
+            
+            // Obtener datos de prendas si es una cotización
+            obtenerDatosPrendasParaModal(numeroPedido);
+        }
     }
 }, true); // Usar captura para que se ejecute ANTES que otros listeners
+
+// Función para obtener datos de prendas del servidor
+function obtenerDatosPrendasParaModal(numeroPedido) {
+    fetch(`/orders/${numeroPedido}`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Error fetching order data');
+        return response.json();
+    })
+    .then(data => {
+        console.log('📊 Datos de orden obtenidos:', data);
+        // Guardar datos para que showOrderDescriptionModal los use
+        window.lastOrderData = data;
+    })
+    .catch(error => {
+        console.error('❌ Error obteniendo datos de orden:', error);
+    });
+}
 
 // Función para inyectar el contenido en el modal
 function inyectarContenidoEnModal() {

@@ -249,8 +249,13 @@ const CellEditModal = {
             title.textContent = `${this._getColumnLabel(column)}`;
         }
 
-        if (contentDiv) {
-            contentDiv.textContent = currentValue || '(vacío)';
+        // Si es descripción, obtener datos de prendas para mostrar plantilla
+        if (column === 'descripcion') {
+            this._loadOrderDataAndRender(orderId, contentDiv, currentValue);
+        } else {
+            if (contentDiv) {
+                contentDiv.textContent = currentValue || '(vacío)';
+            }
         }
 
         if (modal) {
@@ -262,6 +267,182 @@ const CellEditModal = {
         }
 
         this.state.isOpen = true;
+    },
+
+    /**
+     * Cargar datos de orden y renderizar plantilla si es cotización
+     */
+    _loadOrderDataAndRender(orderId, contentDiv, currentValue) {
+        fetch(`/orders/${orderId}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Error fetching order data');
+            return response.json();
+        })
+        .then(data => {
+            console.log('📊 Datos de orden obtenidos:', data);
+            
+            if (data.prendas && data.prendas.length > 0) {
+                // Guardar estado para paginación
+                window.cellModalPrendasState = {
+                    todasLasPrendas: data.prendas,
+                    currentPage: 0,
+                    prendasPorPagina: 2,
+                    esCotizacion: data.es_cotizacion || false,
+                    contentDiv: contentDiv
+                };
+                
+                // Renderizar primera página
+                this._renderCellModalPrendasPage();
+            } else {
+                // Mostrar descripción simple
+                if (contentDiv) {
+                    contentDiv.textContent = currentValue || '(vacío)';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error obteniendo datos de orden:', error);
+            if (contentDiv) {
+                contentDiv.textContent = currentValue || '(vacío)';
+            }
+        });
+    },
+
+    /**
+     * Renderizar página actual de prendas en modal de celda
+     */
+    _renderCellModalPrendasPage() {
+        const state = window.cellModalPrendasState;
+        if (!state) return;
+
+        const { todasLasPrendas, currentPage, prendasPorPagina, esCotizacion, contentDiv } = state;
+        
+        if (!todasLasPrendas || todasLasPrendas.length === 0) {
+            if (contentDiv) {
+                contentDiv.textContent = '-';
+            }
+            return;
+        }
+        
+        // Calcular índices de inicio y fin
+        const startIndex = currentPage * prendasPorPagina;
+        const endIndex = startIndex + prendasPorPagina;
+        const prendasActuales = todasLasPrendas.slice(startIndex, endIndex);
+        
+        let html = '';
+        
+        if (esCotizacion) {
+            // Usar plantilla de cotización
+            prendasActuales.forEach((prenda, index) => {
+                html += `<strong style="font-size: 15px;">PRENDA ${prenda.numero}: ${prenda.nombre}</strong><br>
+${prenda.atributos}<br>
+<strong>DESCRIPCION:</strong> ${prenda.descripcion}`;
+                
+                // Agregar detalles si existen
+                if (prenda.detalles && prenda.detalles.length > 0) {
+                    prenda.detalles.forEach(detalle => {
+                        html += `<br>&nbsp;&nbsp;&nbsp;. <strong style="color: #666;">${detalle.tipo}:</strong> ${detalle.valor}`;
+                    });
+                }
+                
+                html += `<br><strong>Tallas:</strong> <span style="color: red; font-weight: bold;">${prenda.tallas}</span>`;
+                
+                // Agregar línea separadora solo entre prendas mostradas
+                if (index < prendasActuales.length - 1) {
+                    html += `<br><hr style="border: none; border-top: 2px solid #ccc; margin: 16px 0;">`;
+                }
+            });
+        } else {
+            // Usar formato simple para pedidos sin cotización
+            prendasActuales.forEach(prenda => {
+                // Parsear y formatear tallas
+                let tallasFormato = '-';
+                try {
+                    if (typeof prenda.cantidad_talla === 'string') {
+                        const tallasObj = JSON.parse(prenda.cantidad_talla);
+                        tallasFormato = Object.entries(tallasObj)
+                            .map(([talla, cantidad]) => `${talla}: ${cantidad}`)
+                            .join(', ');
+                    } else if (typeof prenda.cantidad_talla === 'object' && prenda.cantidad_talla !== null) {
+                        tallasFormato = Object.entries(prenda.cantidad_talla)
+                            .map(([talla, cantidad]) => `${talla}: ${cantidad}`)
+                            .join(', ');
+                    } else {
+                        tallasFormato = prenda.cantidad_talla || '-';
+                    }
+                } catch (e) {
+                    tallasFormato = prenda.cantidad_talla || '-';
+                }
+                
+                html += `<strong>PRENDA ${prenda.numero}: ${prenda.nombre}</strong><br>
+<span>DESCRIPCION: ${prenda.descripcion}</span><br>
+<span>TALLAS: <span style="color: red; font-weight: bold;">${tallasFormato}</span></span>`;
+                
+                // Agregar línea separadora solo entre prendas mostradas
+                if (prendasActuales.indexOf(prenda) < prendasActuales.length - 1) {
+                    html += `<br><hr style="border: none; border-top: 2px solid #ccc; margin: 16px 0;">`;
+                }
+            });
+        }
+        
+        if (contentDiv) {
+            contentDiv.innerHTML = html;
+        }
+        
+        // Actualizar visibilidad de flechas
+        this._updateCellModalNavigationArrows();
+    },
+
+    /**
+     * Actualizar visibilidad de flechas de navegación en modal de celda
+     */
+    _updateCellModalNavigationArrows() {
+        const state = window.cellModalPrendasState;
+        if (!state) return;
+
+        const { todasLasPrendas, currentPage, prendasPorPagina } = state;
+        const totalPages = Math.ceil(todasLasPrendas.length / prendasPorPagina);
+        
+        // Aquí podrías agregar lógica para mostrar/ocultar botones si los tienes
+        // Por ahora solo registramos el estado
+        console.log(`📄 Página ${currentPage + 1} de ${totalPages}`);
+    },
+
+    /**
+     * Renderizar plantilla de cotización en el modal
+     */
+    _renderPlantillaCotizacion(prendas, contentDiv) {
+        if (!contentDiv) return;
+
+        let html = '';
+        prendas.forEach((prenda, index) => {
+            html += `<strong style="font-size: 15px;">PRENDA ${prenda.numero}: ${prenda.nombre}</strong><br>
+${prenda.atributos}<br>
+<strong>DESCRIPCION:</strong> ${prenda.descripcion}`;
+            
+            // Agregar detalles si existen
+            if (prenda.detalles && prenda.detalles.length > 0) {
+                prenda.detalles.forEach(detalle => {
+                    html += `<br>&nbsp;&nbsp;&nbsp;. <strong style="color: #666;">${detalle.tipo}:</strong> ${detalle.valor}`;
+                });
+            }
+            
+            html += `<br><strong>Tallas:</strong> <span style="color: red; font-weight: bold;">${prenda.tallas}</span>`;
+            
+            // Agregar línea separadora solo entre prendas (no después de la última)
+            if (index < prendas.length - 1) {
+                html += `<br><hr style="border: none; border-top: 2px solid #ccc; margin: 16px 0;">`;
+            }
+        });
+
+        contentDiv.innerHTML = html;
+        console.log('✅ Plantilla de cotización renderizada');
     },
 
     /**

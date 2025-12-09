@@ -9,6 +9,7 @@
         integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="{{ asset('css/orders styles/registros.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/orders styles/action-menu.css') }}">
 @endpush
 
 @section('content')
@@ -68,11 +69,21 @@
                 <div class="modern-table">
                     <div id="tablaOrdenesBody" class="table-body">
                         @forelse($ordenes as $orden)
-                            <div class="table-row" data-orden-id="{{ $orden->id }}">
+                            <div class="table-row" data-orden-id="{{ $orden->numero_pedido }}">
                                 <!-- Acciones -->
-                                <div class="table-cell acciones-column" style="flex: 0 0 100px;">
-                                    <div class="cell-content">
-                                        <i class="fas fa-check-circle" style="color: #10b981; font-size: 20px;"></i>
+                                <div class="table-cell acciones-column" style="flex: 0 0 100px; justify-content: center; position: relative;">
+                                    <button class="action-view-btn" title="Ver detalles" data-orden-id="{{ $orden->numero_pedido }}">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <div class="action-menu" data-orden-id="{{ $orden->numero_pedido }}">
+                                        <a href="#" class="action-menu-item" data-action="detalle">
+                                            <i class="fas fa-eye"></i>
+                                            <span>Detalle</span>
+                                        </a>
+                                        <a href="#" class="action-menu-item" data-action="seguimiento">
+                                            <i class="fas fa-tasks"></i>
+                                            <span>Seguimiento</span>
+                                        </a>
                                     </div>
                                 </div>
                                 
@@ -91,7 +102,7 @@
                                 <!-- Área (Dropdown) -->
                                 <div class="table-cell" style="flex: 0 0 auto;">
                                     <div class="cell-content">
-                                        <select class="area-dropdown" data-orden-id="{{ $orden->id }}" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #e5e7eb; background: #fbbf24; color: #1f2937; font-weight: 600; font-size: 12px; cursor: pointer; width: auto;">
+                                        <select class="area-dropdown" data-orden-id="{{ $orden->id }}" style="padding: 6px 12px; border-radius: 20px; border: none; background: #f8d376ff; color: #1f2937; font-weight: 600; font-size: 12px; cursor: pointer; width: auto; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); transition: all 0.2s ease;">
                                             @foreach($areaOptions as $area)
                                                 <option value="{{ $area }}" {{ $orden->area === $area ? 'selected' : '' }}>{{ $area }}</option>
                                             @endforeach
@@ -102,7 +113,7 @@
                                 <!-- Día de entrega (Dropdown) -->
                                 <div class="table-cell" style="flex: 0 0 auto;">
                                     <div class="cell-content">
-                                        <select class="dia-entrega-dropdown" data-orden-id="{{ $orden->id }}" style="padding: 6px 10px; border-radius: 6px; border: 1px solid #e5e7eb; background: #8b5cf6; color: white; font-weight: 600; font-size: 12px; cursor: pointer; width: auto;">
+                                        <select class="dia-entrega-dropdown" data-orden-id="{{ $orden->id }}" style="padding: 6px 12px; border-radius: 20px; border: none; background: #919191ff; color: white; font-weight: 600; font-size: 12px; cursor: pointer; width: auto; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); transition: all 0.2s ease;">
                                             <option value="">Seleccionar</option>
                                             <option value="15" {{ $orden->dia_de_entrega == 15 ? 'selected' : '' }}>15 días</option>
                                             <option value="20" {{ $orden->dia_de_entrega == 20 ? 'selected' : '' }}>20 días</option>
@@ -190,8 +201,15 @@
                                     <div class="cell-content" style="justify-content: center;">
                                         <span>
                                             @php
-                                                $descripciones = $orden->prendas->pluck('descripcion')->filter()->unique()->toArray();
-                                                echo !empty($descripciones) ? implode(', ', $descripciones) : '-';
+                                                if ($orden->prendas && $orden->prendas->count() > 0) {
+                                                    // Mostrar nombres de prendas con formato
+                                                    $prendasInfo = $orden->prendas->map(function($prenda) {
+                                                        return $prenda->nombre_prenda ?? 'Prenda sin nombre';
+                                                    })->unique()->toArray();
+                                                    echo !empty($prendasInfo) ? implode(', ', $prendasInfo) : '-';
+                                                } else {
+                                                    echo '-';
+                                                }
                                             @endphp
                                         </span>
                                     </div>
@@ -431,4 +449,7 @@
     <script src="{{ asset('js/orders js/historial-procesos.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/realtime-listeners.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders-scripts/image-gallery-zoom.js') }}?v={{ time() }}"></script>
+    
+    <!-- ACTION MENU HANDLER -->
+    <script src="{{ asset('js/orders js/action-menu.js') }}?v={{ time() }}"></script>
 @endpush
