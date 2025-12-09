@@ -12,6 +12,7 @@ use App\Http\Controllers\TablerosController;
 use App\Http\Controllers\VistasController;
 use App\Http\Controllers\BalanceoController;
 use App\Http\Controllers\AsesorController;
+use App\Http\Controllers\ExportarCorteController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -131,6 +132,10 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::delete('/balanceo/operacion/{id}', [BalanceoController::class, 'destroyOperacion'])->name('balanceo.operacion.destroy');
     Route::get('/balanceo/{id}/data', [BalanceoController::class, 'getBalanceoData'])->name('balanceo.data');
     Route::post('/balanceo/{id}/toggle-estado', [BalanceoController::class, 'toggleEstadoCompleto'])->name('balanceo.toggle-estado');
+    
+    // Rutas de Exportar Corte
+    Route::get('/exportar-corte', [ExportarCorteController::class, 'index'])->name('exportar-corte.index');
+    Route::post('/exportar-corte/generate', [ExportarCorteController::class, 'generate'])->name('exportar-corte.generate');
 });
 
 // Rutas de Insumos
