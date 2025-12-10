@@ -30,10 +30,11 @@ final class EloquentCotizacionRepository implements CotizacionRepositoryInterfac
                     'asesor_id' => $datos['usuario_id'],
                     'cliente_id' => $datos['cliente_id'] ?? null,
                     'numero_cotizacion' => $datos['numero_cotizacion'],
-                    'tipo_cotizacion_id' => null, // Será actualizado por el servicio
-                    'tipo_venta' => 'M', // Por defecto
+                    'tipo_cotizacion_id' => $datos['tipo_cotizacion_id'] ?? null,
+                    'tipo_venta' => $datos['tipo_venta'] ?? 'M',
                     'fecha_inicio' => $datos['fecha_inicio'],
                     'fecha_envio' => $datos['fecha_envio'],
+                    'especificaciones' => $datos['especificaciones'] ?? [],
                     'es_borrador' => $datos['es_borrador'],
                     'estado' => $datos['estado'],
                 ]

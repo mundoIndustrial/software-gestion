@@ -100,7 +100,7 @@ class VerificarGuardadoCotizacion extends Command
     {
         $this->line('📷 FOTOS (prenda_fotos_cot):');
         $fotos = DB::table('prenda_fotos_cot')
-            ->whereIn('prenda_id', 
+            ->whereIn('prenda_cot_id',
                 DB::table('prendas_cot')
                     ->where('cotizacion_id', $cotizacionId)
                     ->pluck('id')
@@ -132,7 +132,7 @@ class VerificarGuardadoCotizacion extends Command
     {
         $this->line('🧵 TELAS (prenda_telas_cot):');
         $telas = DB::table('prenda_telas_cot')
-            ->whereIn('prenda_id',
+            ->whereIn('prenda_cot_id',
                 DB::table('prendas_cot')
                     ->where('cotizacion_id', $cotizacionId)
                     ->pluck('id')
@@ -165,7 +165,7 @@ class VerificarGuardadoCotizacion extends Command
     {
         $this->line('📏 TALLAS (prenda_tallas_cot):');
         $tallas = DB::table('prenda_tallas_cot')
-            ->whereIn('prenda_id',
+            ->whereIn('prenda_cot_id',
                 DB::table('prendas_cot')
                     ->where('cotizacion_id', $cotizacionId)
                     ->pluck('id')
@@ -197,7 +197,7 @@ class VerificarGuardadoCotizacion extends Command
     {
         $this->line('🎨 VARIANTES (prenda_variantes_cot):');
         $variantes = DB::table('prenda_variantes_cot')
-            ->whereIn('prenda_id',
+            ->whereIn('prenda_cot_id',
                 DB::table('prendas_cot')
                     ->where('cotizacion_id', $cotizacionId)
                     ->pluck('id')

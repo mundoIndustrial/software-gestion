@@ -120,21 +120,26 @@ final class CotizacionController extends Controller
         try {
             // Obtener o crear cliente si se proporciona nombre
             $clienteId = $request->input('cliente_id');
-            $nombreCliente = $request->input('cliente_nombre');
-            
+            $nombreCliente = $request->input('cliente');
+            $tipoOperacion = $request->input('tipo'); // 'borrador' o 'enviada'
+
             if ($nombreCliente && !$clienteId) {
                 $cliente = $this->obtenerOCrearClienteService->ejecutar($nombreCliente);
                 $clienteId = $cliente->id;
             }
 
+            // Si es 'enviada', es_borrador = false. Si es 'borrador', es_borrador = true
+            $esBorrador = ($tipoOperacion === 'borrador');
+
             $dto = CrearCotizacionDTO::desdeArray([
                 'usuario_id' => Auth::id(),
-                'tipo' => $request->input('tipo', 'P'),
+                'tipo' => $request->input('tipo_cotizacion', 'P'),
                 'cliente_id' => $clienteId,
                 'productos' => $request->input('productos', []),
                 'logo' => $request->input('logo', []),
                 'tipo_venta' => $request->input('tipo_venta', 'M'),
-                'es_borrador' => $request->boolean('es_borrador', true),
+                'especificaciones' => $request->input('especificaciones', []),
+                'es_borrador' => $esBorrador,
             ]);
 
             $comando = CrearCotizacionCommand::crear($dto);

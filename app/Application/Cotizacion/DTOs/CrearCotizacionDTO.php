@@ -12,11 +12,11 @@ final readonly class CrearCotizacionDTO
     public function __construct(
         public int $usuarioId,
         public string $tipo,
-        public string $cliente,
-        public string $asesora,
+        public ?int $clienteId = null,
         public array $productos = [],
         public array $logo = [],
-        public string $tipoVenta = 'M',
+        public ?string $tipoVenta = 'M',
+        public array $especificaciones = [],
         public bool $esBorrador = true,
     ) {
     }
@@ -27,14 +27,14 @@ final readonly class CrearCotizacionDTO
     public static function desdeArray(array $datos): self
     {
         return new self(
-            usuarioId: (int) $datos['usuario_id'] ?? 0,
+            usuarioId: (int) ($datos['usuario_id'] ?? 0),
             tipo: $datos['tipo'] ?? 'P',
-            cliente: $datos['cliente'] ?? '',
-            asesora: $datos['asesora'] ?? '',
+            clienteId: isset($datos['cliente_id']) ? (int) $datos['cliente_id'] : null,
             productos: $datos['productos'] ?? [],
             logo: $datos['logo'] ?? [],
             tipoVenta: $datos['tipo_venta'] ?? 'M',
-            esBorrador: $datos['es_borrador'] ?? true,
+            especificaciones: $datos['especificaciones'] ?? [],
+            esBorrador: (bool) ($datos['es_borrador'] ?? true),
         );
     }
 
@@ -46,11 +46,11 @@ final readonly class CrearCotizacionDTO
         return [
             'usuario_id' => $this->usuarioId,
             'tipo' => $this->tipo,
-            'cliente' => $this->cliente,
-            'asesora' => $this->asesora,
+            'cliente_id' => $this->clienteId,
             'productos' => $this->productos,
             'logo' => $this->logo,
             'tipo_venta' => $this->tipoVenta,
+            'especificaciones' => $this->especificaciones,
             'es_borrador' => $this->esBorrador,
         ];
     }

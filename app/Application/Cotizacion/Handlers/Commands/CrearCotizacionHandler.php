@@ -70,27 +70,40 @@ final class CrearCotizacionHandler
             // Guardar cotización
             $this->repository->save($cotizacion);
 
+            // Obtener la cotización guardada desde BD para tener el ID correcto
+            $usuarioIdValue = $usuarioId->valor();
+            $cotizacionModel = CotizacionModel::where('asesor_id', $usuarioIdValue)
+                ->orderBy('id', 'desc')
+                ->first();
+
+            if (!$cotizacionModel) {
+                throw new \Exception('Error al recuperar la cotización guardada');
+            }
+
             Log::info('CrearCotizacionHandler: Cotización creada exitosamente', [
-                'cotizacion_id' => $cotizacion->id()->valor(),
-                'numero' => $cotizacion->numero()->valor(),
+                'cotizacion_id' => $cotizacionModel->id,
+                'numero' => $cotizacionModel->numero_cotizacion,
             ]);
 
             // Guardar prendas en tablas normalizadas
-            $cotizacionId = $cotizacion->id()->valor();
-            $cotizacionModel = CotizacionModel::findOrFail($cotizacionId);
             $productos = $datos->productos ?? [];
 
             if (!empty($productos)) {
                 Log::info('CrearCotizacionHandler: Guardando prendas en tablas normalizadas', [
-                    'cotizacion_id' => $cotizacionId,
+                    'cotizacion_id' => $cotizacionModel->id,
                     'productos_count' => count($productos),
                 ]);
 
                 $this->prendaService->guardarProductosEnCotizacion($cotizacionModel, $productos);
             }
 
-            // Retornar DTO
-            return CotizacionDTO::desdeArray($cotizacion->toArray());
+            // Retornar DTO con datos de la cotización guardada
+            $cotizacionArray = $cotizacionModel->toArray();
+            $cotizacionArray['cliente_id'] = $datos->clienteId;
+            $cotizacionArray['tipo_venta'] = $datos->tipoVenta;
+            $cotizacionArray['especificaciones'] = $datos->especificaciones;
+
+            return CotizacionDTO::desdeArray($cotizacionArray);
         } catch (\Exception $e) {
             Log::error('CrearCotizacionHandler: Error al crear cotización', [
                 'error' => $e->getMessage(),
