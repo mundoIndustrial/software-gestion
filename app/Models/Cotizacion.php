@@ -22,7 +22,6 @@ class Cotizacion extends Model
         'fecha_inicio',
         'fecha_envio',
         'cliente',
-        'asesora',
         'es_borrador',
         'estado',
         'productos',

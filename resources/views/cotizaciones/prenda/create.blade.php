@@ -98,13 +98,13 @@
                 <div class="header-field">
                     <label class="header-label">Tipo</label>
                     <div>
-                        <select id="header-tipo-cotizacion" name="tipo_cotizacion" class="header-select">
+                        <select id="header-tipo-venta" name="tipo_venta" class="header-select">
                             <option value="">Selecciona</option>
                             <option value="M">M</option>
                             <option value="D">D</option>
                             <option value="X">X</option>
                         </select>
-                        <div id="error-tipo-cotizacion" class="header-error">Campo requerido</div>
+                        <div id="error-tipo-venta" class="header-error">Campo requerido</div>
                     </div>
                 </div>
                 

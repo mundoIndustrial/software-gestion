@@ -6,12 +6,12 @@
             <p style="font-size: 0.45rem !important; margin: 0 !important; color: #666 !important;">AGREGA LAS PRENDAS QUE TU CLIENTE QUIERE</p>
         </div>
         
-        <!-- Selector de tipo de cotización en la esquina derecha -->
+        <!-- Selector de tipo de venta en la esquina derecha -->
         <div style="display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #0066cc, #0052a3); border: 2px solid #0052a3; border-radius: 8px; padding: 0.8rem 1.2rem; box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);">
-            <label for="tipo_cotizacion" style="font-weight: 700; font-size: 0.85rem; color: white; white-space: nowrap; display: flex; align-items: center; gap: 6px; margin: 0;">
+            <label for="tipo_venta" style="font-weight: 700; font-size: 0.85rem; color: white; white-space: nowrap; display: flex; align-items: center; gap: 6px; margin: 0;">
                 <i class="fas fa-tag"></i> Tipo
             </label>
-            <select id="tipo_cotizacion" name="tipo_cotizacion" style="padding: 0.5rem 0.6rem; border: 2px solid white; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; text-align: center; color: #0066cc; font-weight: 600; min-width: 80px;">
+            <select id="tipo_venta" name="tipo_venta" style="padding: 0.5rem 0.6rem; border: 2px solid white; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; text-align: center; color: #0066cc; font-weight: 600; min-width: 80px;">
                 <option value="">Selecciona</option>
                 <option value="M">M</option>
                 <option value="D">D</option>

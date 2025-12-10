@@ -18,7 +18,6 @@ final readonly class CotizacionDTO
         public string $tipo,
         public string $estado,
         public string $cliente,
-        public string $asesora,
         public bool $esBorrador,
         public DateTimeImmutable $fechaInicio,
         public ?DateTimeImmutable $fechaEnvio,
@@ -47,7 +46,6 @@ final readonly class CotizacionDTO
             tipo: $tipo,
             estado: $estado,
             cliente: $datos['cliente'] ?? '',
-            asesora: $datos['asesora'] ?? '',
             esBorrador: (bool) $datos['es_borrador'] ?? true,
             fechaInicio: $datos['fecha_inicio'] instanceof DateTimeImmutable
                 ? $datos['fecha_inicio']
@@ -76,7 +74,6 @@ final readonly class CotizacionDTO
             'tipo' => $this->tipo,
             'estado' => $this->estado,
             'cliente' => $this->cliente,
-            'asesora' => $this->asesora,
             'es_borrador' => $this->esBorrador,
             'fecha_inicio' => $this->fechaInicio->format('Y-m-d H:i:s'),
             'fecha_envio' => $this->fechaEnvio?->format('Y-m-d H:i:s'),

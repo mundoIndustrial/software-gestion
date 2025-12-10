@@ -34,7 +34,6 @@ final class EloquentCotizacionRepository implements CotizacionRepositoryInterfac
                     'fecha_inicio' => $datos['fecha_inicio'],
                     'fecha_envio' => $datos['fecha_envio'],
                     'cliente' => $datos['cliente'],
-                    'asesora' => $datos['asesora'],
                     'es_borrador' => $datos['es_borrador'],
                     'estado' => $datos['estado'],
                 ]

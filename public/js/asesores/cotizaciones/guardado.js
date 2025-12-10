@@ -67,7 +67,7 @@ async function guardarCotizacion() {
     }
     
     // Validar que tipo_venta esté seleccionado
-    const tipoVentaSelect = document.getElementById('tipo_cotizacion');
+    const tipoVentaSelect = document.getElementById('tipo_venta');
     const tipoVenta = tipoVentaSelect ? tipoVentaSelect.value : '';
     
     if (!tipoVenta) {
@@ -403,7 +403,7 @@ async function enviarCotizacion() {
     }
     
     // Validar que el tipo de venta esté seleccionado
-    const tipoVentaSelect = document.getElementById('tipo_cotizacion');
+    const tipoVentaSelect = document.getElementById('tipo_venta');
     const tipoVenta = tipoVentaSelect ? tipoVentaSelect.value : '';
     
     if (!tipoVenta) {
@@ -540,7 +540,7 @@ async function procederEnviarCotizacion(datos) {
     console.log('📁 Enviando archivos directamente como File objects (multipart/form-data)');
     
     // Obtener tipo de venta
-    const tipoVentaSelect = document.getElementById('tipo_cotizacion');
+    const tipoVentaSelect = document.getElementById('tipo_venta');
     const tipoVentaValue = tipoVentaSelect ? tipoVentaSelect.value : '';
     
     // Obtener especificaciones (puede ser objeto o array)
@@ -800,7 +800,7 @@ function toggleAplicaPaso(paso, btn) {
 
 document.addEventListener('DOMContentLoaded', function() {
     // Obtener elementos
-    const tipoVentaSelect = document.getElementById('tipo_cotizacion');
+    const tipoVentaSelect = document.getElementById('tipo_venta');
     const btnGuardar = document.querySelector('button[onclick="guardarCotizacion()"]');
     const btnEnviar = document.querySelector('button[onclick="enviarCotizacion()"]');
     

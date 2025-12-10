@@ -120,7 +120,6 @@ final class CotizacionController extends Controller
                 'usuario_id' => Auth::id(),
                 'tipo' => $request->input('tipo', 'P'),
                 'cliente' => $request->input('cliente'),
-                'asesora' => Auth::user()->name,
                 'productos' => $request->input('productos', []),
                 'logo' => $request->input('logo', []),
                 'tipo_venta' => $request->input('tipo_venta', 'M'),
