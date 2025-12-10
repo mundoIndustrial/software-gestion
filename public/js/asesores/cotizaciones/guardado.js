@@ -115,14 +115,19 @@ async function guardarCotizacion() {
         formData.append('observaciones_tecnicas', datos.observaciones_tecnicas || '');
         formData.append('ubicaciones', JSON.stringify(datos.ubicaciones || []));
         formData.append('observaciones_generales', JSON.stringify(datos.observaciones_generales || []));
-        // Solo enviar observaciones_check y observaciones_valor si hay observaciones generales
-        if (datos.observaciones_generales && datos.observaciones_generales.length > 0) {
-            formData.append('observaciones_check', JSON.stringify(datos.observaciones_check || []));
-            formData.append('observaciones_valor', JSON.stringify(datos.observaciones_valor || []));
-        } else {
-            formData.append('observaciones_check', JSON.stringify([]));
-            formData.append('observaciones_valor', JSON.stringify([]));
-        }
+        
+        // Enviar observaciones_check y observaciones_valor como arrays (no JSON strings)
+        const obsCheck = datos.observaciones_check || [];
+        const obsValor = datos.observaciones_valor || [];
+        
+        // Agregar cada elemento del array por separado
+        obsCheck.forEach((item, idx) => {
+            formData.append(`observaciones_check[${idx}]`, item || '');
+        });
+        obsValor.forEach((item, idx) => {
+            formData.append(`observaciones_valor[${idx}]`, item || '');
+        });
+        
         formData.append('especificaciones', JSON.stringify(datos.especificaciones || {}));
         
         // ✅ PRODUCTOS CON ARCHIVOS File
@@ -133,26 +138,62 @@ async function guardarCotizacion() {
                 formData.append(`productos[${index}][descripcion]`, producto.descripcion || '');
                 formData.append(`productos[${index}][cantidad]`, producto.cantidad || 1);
                 formData.append(`productos[${index}][tallas]`, JSON.stringify(producto.tallas || []));
-                formData.append(`productos[${index}][variantes]`, JSON.stringify(producto.variantes || {}));
                 
-                // ✅ FOTOS (File objects)
+                // Variantes como array (no JSON string)
+                const variantes = producto.variantes || {};
+                Object.keys(variantes).forEach(key => {
+                    const value = variantes[key];
+                    if (Array.isArray(value)) {
+                        // Si es array, agregar cada elemento
+                        value.forEach((item, idx) => {
+                            formData.append(`productos[${index}][variantes][${key}][${idx}]`, item);
+                        });
+                    } else if (typeof value === 'object' && value !== null) {
+                        // Si es objeto, convertir a JSON string
+                        formData.append(`productos[${index}][variantes][${key}]`, JSON.stringify(value));
+                    } else if (typeof value === 'boolean') {
+                        // Convertir booleanos a 1/0 para Laravel
+                        formData.append(`productos[${index}][variantes][${key}]`, value ? '1' : '0');
+                    } else {
+                        // Si es valor simple, agregar directamente
+                        formData.append(`productos[${index}][variantes][${key}]`, value || '');
+                    }
+                });
+                
+                // ✅ FOTOS (File objects o Base64 strings)
                 if (producto.fotos && Array.isArray(producto.fotos)) {
                     producto.fotos.forEach((foto, fotoIndex) => {
                         if (foto instanceof File) {
                             formData.append(`productos[${index}][fotos]`, foto);
-                            console.log(`✅ Foto agregada a FormData [${index}][${fotoIndex}]:`, foto.name);
+                            console.log(`✅ Foto (File) agregada a FormData [${index}][${fotoIndex}]:`, foto.name);
+                        } else if (typeof foto === 'string') {
+                            formData.append(`productos[${index}][fotos_base64]`, foto);
+                            console.log(`✅ Foto (Base64) agregada a FormData [${index}][${fotoIndex}]`);
                         }
                     });
                 }
                 
-                // ✅ TELAS (File objects)
+                // ✅ TELAS (File objects o Base64 strings)
                 if (producto.telas && Array.isArray(producto.telas)) {
                     producto.telas.forEach((tela, telaIndex) => {
                         if (tela instanceof File) {
                             formData.append(`productos[${index}][telas]`, tela);
-                            console.log(`✅ Tela agregada a FormData [${index}][${telaIndex}]:`, tela.name);
+                            console.log(`✅ Tela (File) agregada a FormData [${index}][${telaIndex}]:`, tela.name);
+                        } else if (typeof tela === 'string') {
+                            formData.append(`productos[${index}][telas_base64]`, tela);
+                            console.log(`✅ Tela (Base64) agregada a FormData [${index}][${telaIndex}]`);
                         }
                     });
+                }
+            });
+        }
+        
+        // ✅ LOGO - IMÁGENES (File objects)
+        if (datos.logo && datos.logo.imagenes && Array.isArray(datos.logo.imagenes)) {
+            datos.logo.imagenes.forEach((imagen, imagenIndex) => {
+                if (imagen instanceof File) {
+                    formData.append(`logo[imagenes]`, imagen);
+                    console.log(`✅ Imagen de logo agregada a FormData [${imagenIndex}]:`, imagen.name);
                 }
             });
         }
@@ -494,24 +535,9 @@ async function procederEnviarCotizacion(datos) {
     
     console.log('🔵 procederEnviarCotizacion() llamado');
     
-    // 📸 Procesar imágenes a Base64 ANTES de enviar
-    console.log('🖼️ Procesando imágenes a Base64...');
-    try {
-        const datosConImagenes = await procesarImagenesABase64(datos);
-        console.log('✅ Imágenes procesadas correctamente');
-        Object.assign(datos, datosConImagenes);
-    } catch (error) {
-        console.error('❌ Error al procesar imágenes:', error);
-        Swal.fire({
-            title: 'Error al procesar imágenes',
-            text: 'No se pudieron convertir las imágenes. ' + error.message,
-            icon: 'error',
-            confirmButtonColor: '#10b981'
-        });
-        if (btnGuardar) btnGuardar.disabled = false;
-        if (btnEnviar) btnEnviar.disabled = false;
-        return;
-    }
+    // ✅ NO convertir a Base64 - enviar archivos directamente como File objects
+    // Base64 es ineficiente (aumenta tamaño 33%) y mala práctica
+    console.log('📁 Enviando archivos directamente como File objects (multipart/form-data)');
     
     // Obtener tipo de venta
     const tipoVentaSelect = document.getElementById('tipo_cotizacion');
@@ -549,14 +575,19 @@ async function procederEnviarCotizacion(datos) {
         formData.append('observaciones_tecnicas', datos.observaciones_tecnicas || '');
         formData.append('ubicaciones', JSON.stringify(datos.ubicaciones || []));
         formData.append('observaciones_generales', JSON.stringify(datos.observaciones_generales || []));
-        // Solo enviar observaciones_check y observaciones_valor si hay observaciones generales
-        if (datos.observaciones_generales && datos.observaciones_generales.length > 0) {
-            formData.append('observaciones_check', JSON.stringify(datos.observaciones_check || []));
-            formData.append('observaciones_valor', JSON.stringify(datos.observaciones_valor || []));
-        } else {
-            formData.append('observaciones_check', JSON.stringify([]));
-            formData.append('observaciones_valor', JSON.stringify([]));
-        }
+        
+        // Enviar observaciones_check y observaciones_valor como arrays (no JSON strings)
+        const obsCheck = datos.observaciones_check || [];
+        const obsValor = datos.observaciones_valor || [];
+        
+        // Agregar cada elemento del array por separado
+        obsCheck.forEach((item, idx) => {
+            formData.append(`observaciones_check[${idx}]`, item || '');
+        });
+        obsValor.forEach((item, idx) => {
+            formData.append(`observaciones_valor[${idx}]`, item || '');
+        });
+        
         formData.append('especificaciones', JSON.stringify(especificaciones || {}));
         formData.append('imagenes', JSON.stringify(datos.logo?.imagenes || []));
         
@@ -568,26 +599,62 @@ async function procederEnviarCotizacion(datos) {
                 formData.append(`productos[${index}][descripcion]`, producto.descripcion || '');
                 formData.append(`productos[${index}][cantidad]`, producto.cantidad || 1);
                 formData.append(`productos[${index}][tallas]`, JSON.stringify(producto.tallas || []));
-                formData.append(`productos[${index}][variantes]`, JSON.stringify(producto.variantes));
                 
-                // ✅ FOTOS (File objects)
+                // Variantes como array (no JSON string)
+                const variantes = producto.variantes || {};
+                Object.keys(variantes).forEach(key => {
+                    const value = variantes[key];
+                    if (Array.isArray(value)) {
+                        // Si es array, agregar cada elemento
+                        value.forEach((item, idx) => {
+                            formData.append(`productos[${index}][variantes][${key}][${idx}]`, item);
+                        });
+                    } else if (typeof value === 'object' && value !== null) {
+                        // Si es objeto, convertir a JSON string
+                        formData.append(`productos[${index}][variantes][${key}]`, JSON.stringify(value));
+                    } else if (typeof value === 'boolean') {
+                        // Convertir booleanos a 1/0 para Laravel
+                        formData.append(`productos[${index}][variantes][${key}]`, value ? '1' : '0');
+                    } else {
+                        // Si es valor simple, agregar directamente
+                        formData.append(`productos[${index}][variantes][${key}]`, value || '');
+                    }
+                });
+                
+                // ✅ FOTOS (File objects o Base64 strings)
                 if (producto.fotos && Array.isArray(producto.fotos)) {
                     producto.fotos.forEach((foto, fotoIndex) => {
                         if (foto instanceof File) {
                             formData.append(`productos[${index}][fotos]`, foto);
-                            console.log(`✅ Foto agregada a FormData [${index}][${fotoIndex}]:`, foto.name);
+                            console.log(`✅ Foto (File) agregada a FormData [${index}][${fotoIndex}]:`, foto.name);
+                        } else if (typeof foto === 'string') {
+                            formData.append(`productos[${index}][fotos_base64]`, foto);
+                            console.log(`✅ Foto (Base64) agregada a FormData [${index}][${fotoIndex}]`);
                         }
                     });
                 }
                 
-                // ✅ TELAS (File objects)
+                // ✅ TELAS (File objects o Base64 strings)
                 if (producto.telas && Array.isArray(producto.telas)) {
                     producto.telas.forEach((tela, telaIndex) => {
                         if (tela instanceof File) {
                             formData.append(`productos[${index}][telas]`, tela);
-                            console.log(`✅ Tela agregada a FormData [${index}][${telaIndex}]:`, tela.name);
+                            console.log(`✅ Tela (File) agregada a FormData [${index}][${telaIndex}]:`, tela.name);
+                        } else if (typeof tela === 'string') {
+                            formData.append(`productos[${index}][telas_base64]`, tela);
+                            console.log(`✅ Tela (Base64) agregada a FormData [${index}][${telaIndex}]`);
                         }
                     });
+                }
+            });
+        }
+        
+        // ✅ LOGO - IMÁGENES (File objects)
+        if (datos.logo && datos.logo.imagenes && Array.isArray(datos.logo.imagenes)) {
+            datos.logo.imagenes.forEach((imagen, imagenIndex) => {
+                if (imagen instanceof File) {
+                    formData.append(`logo[imagenes]`, imagen);
+                    console.log(`✅ Imagen de logo agregada a FormData [${imagenIndex}]:`, imagen.name);
                 }
             });
         }

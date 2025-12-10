@@ -16,7 +16,7 @@
             <div>
                 <p style="margin: 0; font-size: 0.9rem; color: #666;">
                     <strong>FECHA:</strong>
-                    <span id="fechaActual"></span>
+                    <input type="date" id="fechaActual" name="fecha_cotizacion" style="border: 1px solid #ccc; padding: 4px 8px; border-radius: 4px; font-size: 0.9rem; cursor: pointer;">
                 </p>
             </div>
         </div>

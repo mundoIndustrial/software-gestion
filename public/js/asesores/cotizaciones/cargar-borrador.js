@@ -11,12 +11,24 @@ function cargarBorrador(cotizacion) {
     // Guardar ID de cotización en variable global para usarlo en funciones de foto
     window.cotizacionIdActual = cotizacion.id;
     
-    // Cargar tipo de cotización
-    if (cotizacion.tipoCotizacion && cotizacion.tipoCotizacion.codigo) {
+    // Cargar cliente
+    if (cotizacion.cliente) {
+        const clienteInput = document.getElementById('cliente');
+        if (clienteInput) {
+            clienteInput.value = cotizacion.cliente;
+            clienteInput.dispatchEvent(new Event('input', { bubbles: true }));
+            clienteInput.dispatchEvent(new Event('change', { bubbles: true }));
+            console.log('✅ Cliente cargado:', cotizacion.cliente);
+        }
+    }
+    
+    // Cargar tipo de cotización (tipo_venta en JSON, tipo_cotizacion en el formulario)
+    if (cotizacion.tipo_venta) {
         const tipoCotizacionSelect = document.getElementById('tipo_cotizacion');
         if (tipoCotizacionSelect) {
-            tipoCotizacionSelect.value = cotizacion.tipoCotizacion.codigo;
-            console.log('✅ Tipo de cotización cargado:', cotizacion.tipoCotizacion.codigo);
+            tipoCotizacionSelect.value = cotizacion.tipo_venta;
+            tipoCotizacionSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            console.log('✅ Tipo de cotización cargado:', cotizacion.tipo_venta);
         }
     }
     
@@ -27,8 +39,10 @@ function cargarBorrador(cotizacion) {
         cotizacion.productos.forEach((producto, index) => {
             console.log(`📦 Producto ${index}:`, producto);
             
-            // Agregar un nuevo producto
-            agregarProductoFriendly();
+            // Agregar un nuevo producto solo si no es el primero (el primero ya existe)
+            if (index > 0) {
+                agregarProductoFriendly();
+            }
             
             // Esperar más tiempo y con reintentos
             const intentarCargar = (intento = 0) => {
@@ -40,10 +54,17 @@ function cargarBorrador(cotizacion) {
                 if (ultimoProducto) {
                     // Nombre del producto
                     const inputNombre = ultimoProducto.querySelector('input[name*="nombre_producto"]');
+                    console.log('🔍 Buscando input nombre:', {
+                        encontrado: !!inputNombre,
+                        selector: 'input[name*="nombre_producto"]',
+                        html: inputNombre?.outerHTML
+                    });
+                    
                     if (inputNombre) {
                         inputNombre.value = producto.nombre_producto || '';
                         inputNombre.dispatchEvent(new Event('input', { bubbles: true }));
-                        console.log('✅ Nombre cargado:', producto.nombre_producto);
+                        inputNombre.dispatchEvent(new Event('change', { bubbles: true }));
+                        console.log('✅ Nombre cargado:', producto.nombre_producto, 'Valor actual:', inputNombre.value);
                     } else if (intento < 5) {
                         console.log('⏳ Input nombre no encontrado, reintentando...');
                         setTimeout(() => intentarCargar(intento + 1), 200);
@@ -52,10 +73,17 @@ function cargarBorrador(cotizacion) {
                     
                     // Descripción
                     const textareaDesc = ultimoProducto.querySelector('textarea[name*="descripcion"]');
+                    console.log('🔍 Buscando textarea descripción:', {
+                        encontrado: !!textareaDesc,
+                        selector: 'textarea[name*="descripcion"]',
+                        html: textareaDesc?.outerHTML
+                    });
+                    
                     if (textareaDesc) {
                         textareaDesc.value = producto.descripcion || '';
                         textareaDesc.dispatchEvent(new Event('input', { bubbles: true }));
-                        console.log('✅ Descripción cargada');
+                        textareaDesc.dispatchEvent(new Event('change', { bubbles: true }));
+                        console.log('✅ Descripción cargada:', producto.descripcion, 'Valor actual:', textareaDesc.value);
                     }
                     
                     // Tallas - buscar en los botones de talla
@@ -68,8 +96,142 @@ function cargarBorrador(cotizacion) {
                             if (tallaBtn) {
                                 tallaBtn.click();
                                 console.log('✅ Talla activada:', talla);
+                            } else {
+                                console.log('⚠️ Botón de talla no encontrado:', talla);
                             }
                         });
+                    }
+                    
+                    // Cargar variantes (color, tela, referencia, etc.)
+                    if (producto.variantes && Array.isArray(producto.variantes) && producto.variantes.length > 0) {
+                        console.log('🎨 Cargando variantes:', producto.variantes);
+                        
+                        // Cargar telas desde la relación variantes[0].telas
+                        const primeraVariante = producto.variantes[0];
+                        let telasMultiples = null;
+                        
+                        if (primeraVariante && primeraVariante.telas && Array.isArray(primeraVariante.telas)) {
+                            telasMultiples = primeraVariante.telas;
+                        }
+                        
+                        // Cargar telas si existen
+                        if (telasMultiples && Array.isArray(telasMultiples) && telasMultiples.length > 0) {
+                            console.log('🧵 Cargando múltiples telas desde relación:', telasMultiples);
+                            
+                            telasMultiples.forEach((telaData, telaIdx) => {
+                                // Agregar fila de tela si no es la primera
+                                if (telaIdx > 0) {
+                                    const btnAgregarTela = ultimoProducto.querySelector('button[onclick*="agregarFilaTela"]');
+                                    if (btnAgregarTela) {
+                                        btnAgregarTela.click();
+                                        console.log('✅ Fila de tela agregada:', telaIdx);
+                                    }
+                                }
+                                
+                                // Esperar a que se cree la fila y cargar datos
+                                setTimeout(() => {
+                                    const filasTela = ultimoProducto.querySelectorAll('tr[data-tela-index]');
+                                    const filaActual = filasTela[telaIdx];
+                                    
+                                    if (filaActual) {
+                                        // Color (desde relación color)
+                                        const colorInput = filaActual.querySelector('input[name*="color"]');
+                                        if (colorInput && telaData.color && telaData.color.nombre) {
+                                            colorInput.value = telaData.color.nombre;
+                                            colorInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                            console.log('✅ Color cargado:', telaData.color.nombre);
+                                        }
+                                        
+                                        // Tela (desde relación tela)
+                                        const telaSelect = filaActual.querySelector('select[name*="tela"]');
+                                        if (telaSelect && telaData.tela && telaData.tela.nombre) {
+                                            telaSelect.value = telaData.tela.nombre;
+                                            telaSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                                            console.log('✅ Tela cargada:', telaData.tela.nombre);
+                                        }
+                                        
+                                        // Referencia (desde relación tela.referencia)
+                                        const refInput = filaActual.querySelector('input[name*="referencia"]');
+                                        if (refInput && telaData.tela && telaData.tela.referencia) {
+                                            refInput.value = telaData.tela.referencia;
+                                            refInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                            console.log('✅ Referencia cargada:', telaData.tela.referencia);
+                                        }
+                                    }
+                                }, 300 + (telaIdx * 100));
+                            });
+                        } else {
+                            // Cargar variante única (compatibilidad con formato antiguo)
+                            // Color
+                            if (producto.variantes.color) {
+                                const colorInput = ultimoProducto.querySelector('input[name*="color"]');
+                                if (colorInput) {
+                                    colorInput.value = producto.variantes.color;
+                                    colorInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                    console.log('✅ Color cargado:', producto.variantes.color);
+                                }
+                            }
+                            
+                            // Tela
+                            if (producto.variantes.tela) {
+                                const telaSelect = ultimoProducto.querySelector('select[name*="tela"]');
+                                if (telaSelect) {
+                                    telaSelect.value = producto.variantes.tela;
+                                    telaSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                                    console.log('✅ Tela cargada:', producto.variantes.tela);
+                                }
+                            }
+                            
+                            // Referencia
+                            if (producto.variantes.referencia) {
+                                const refInput = ultimoProducto.querySelector('input[name*="referencia"]');
+                                if (refInput) {
+                                    refInput.value = producto.variantes.referencia;
+                                    refInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                    console.log('✅ Referencia cargada:', producto.variantes.referencia);
+                                }
+                            }
+                        }
+                        
+                        // Manga
+                        if (producto.variantes.tipo_manga_id) {
+                            const mangaSelect = ultimoProducto.querySelector('select[name*="tipo_manga"]');
+                            if (mangaSelect) {
+                                mangaSelect.value = producto.variantes.tipo_manga_id;
+                                mangaSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                                console.log('✅ Manga cargada:', producto.variantes.tipo_manga_id);
+                            }
+                        }
+                        
+                        // Bolsillos
+                        if (producto.variantes.tiene_bolsillos !== undefined) {
+                            const bolsillosCheckbox = ultimoProducto.querySelector('input[name*="tiene_bolsillos"]');
+                            if (bolsillosCheckbox) {
+                                bolsillosCheckbox.checked = !!producto.variantes.tiene_bolsillos;
+                                bolsillosCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+                                console.log('✅ Bolsillos cargado:', producto.variantes.tiene_bolsillos);
+                            }
+                        }
+                        
+                        // Broche
+                        if (producto.variantes.tipo_broche_id) {
+                            const brocheSelect = ultimoProducto.querySelector('select[name*="tipo_broche"]');
+                            if (brocheSelect) {
+                                brocheSelect.value = producto.variantes.tipo_broche_id;
+                                brocheSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                                console.log('✅ Broche cargado:', producto.variantes.tipo_broche_id);
+                            }
+                        }
+                        
+                        // Reflectivo
+                        if (producto.variantes.tiene_reflectivo !== undefined) {
+                            const reflectivoCheckbox = ultimoProducto.querySelector('input[name*="tiene_reflectivo"]');
+                            if (reflectivoCheckbox) {
+                                reflectivoCheckbox.checked = !!producto.variantes.tiene_reflectivo;
+                                reflectivoCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
+                                console.log('✅ Reflectivo cargado:', producto.variantes.tiene_reflectivo);
+                            }
+                        }
                     }
                 } else if (intento < 5) {
                     console.log('⏳ Producto card no encontrado, reintentando...');

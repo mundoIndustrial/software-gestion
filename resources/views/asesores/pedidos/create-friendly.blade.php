@@ -73,9 +73,17 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const cotizacion = {!! json_encode($cotizacion) !!};
-        if (typeof window.cargarBorradorCompleto === 'function') {
-            window.cargarBorradorCompleto(cotizacion);
-        }
+        console.log('📂 Datos de cotización recibidos:', cotizacion);
+        
+        // Esperar a que los módulos estén cargados
+        setTimeout(() => {
+            if (typeof cargarBorrador === 'function') {
+                console.log('✅ Llamando a cargarBorrador()');
+                cargarBorrador(cotizacion);
+            } else {
+                console.error('❌ Función cargarBorrador no encontrada');
+            }
+        }, 500);
     });
 </script>
 @endif

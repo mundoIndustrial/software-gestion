@@ -181,7 +181,16 @@ function mostrarFechaActual() {
     const el = document.getElementById('fechaActual');
     if (el) {
         const hoy = new Date();
-        el.textContent = hoy.toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' });
+        // Si es un input de tipo date, establecer el value en formato YYYY-MM-DD
+        if (el.type === 'date') {
+            const año = hoy.getFullYear();
+            const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+            const dia = String(hoy.getDate()).padStart(2, '0');
+            el.value = `${año}-${mes}-${dia}`;
+        } else {
+            // Si es un span, mostrar en formato DD/MM/YYYY
+            el.textContent = hoy.toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' });
+        }
     }
 }
 
@@ -194,8 +203,22 @@ function actualizarResumenFriendly() {
         document.getElementById('resumenProductos').textContent = document.querySelectorAll('.producto-card').length;
     }
     if (document.getElementById('resumenFecha')) {
-        const hoy = new Date();
-        document.getElementById('resumenFecha').textContent = hoy.toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' });
+        const fechaInput = document.getElementById('fechaActual');
+        let fechaTexto = '-';
+        
+        if (fechaInput && fechaInput.value) {
+            // Convertir de YYYY-MM-DD a DD/MM/YYYY
+            const partes = fechaInput.value.split('-');
+            if (partes.length === 3) {
+                fechaTexto = `${partes[2]}/${partes[1]}/${partes[0]}`;
+            }
+        } else {
+            // Si no hay fecha seleccionada, usar la de hoy
+            const hoy = new Date();
+            fechaTexto = hoy.toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' });
+        }
+        
+        document.getElementById('resumenFecha').textContent = fechaTexto;
     }
 }
 
@@ -293,22 +316,51 @@ function recopilarDatos() {
             variantes.genero = generoSelect.value;
         }
         
-        // Color
-        const colorInput = item.querySelector('.color-input');
-        if (colorInput && colorInput.value) {
-            variantes.color = colorInput.value;
+        // Capturar MÚLTIPLES TELAS (color, tela, referencia)
+        const telasFila = [];
+        const tbody = item.querySelector('.telas-tbody');
+        if (tbody) {
+            tbody.querySelectorAll('.fila-tela').forEach((fila, telaIndex) => {
+                const colorInput = fila.querySelector('.color-input');
+                const telaInput = fila.querySelector('.tela-input');
+                const referenciaInput = fila.querySelector('.referencia-input');
+                
+                const color = colorInput?.value || '';
+                const tela = telaInput?.value || '';
+                const referencia = referenciaInput?.value || '';
+                
+                // Solo agregar si al menos uno de los campos tiene valor
+                if (color || tela || referencia) {
+                    telasFila.push({
+                        indice: telaIndex,
+                        color: color,
+                        tela: tela,
+                        referencia: referencia
+                    });
+                    console.log(`🧵 Tela ${telaIndex + 1} capturada:`, { color, tela, referencia });
+                }
+            });
         }
         
-        // Tela
-        const telaInput = item.querySelector('.tela-input');
-        if (telaInput && telaInput.value) {
-            variantes.tela = telaInput.value;
-        }
-        
-        // Referencia de tela
-        const referenciaInput = item.querySelector('.referencia-input');
-        if (referenciaInput && referenciaInput.value) {
-            variantes.referencia = referenciaInput.value;
+        // Guardar las telas en variantes
+        if (telasFila.length > 0) {
+            variantes.telas_multiples = telasFila;
+            console.log(`📝 Total de telas capturadas: ${telasFila.length}`);
+        } else {
+            // Si no hay múltiples telas, capturar la primera (compatibilidad)
+            const colorInput = item.querySelector('.color-input');
+            const telaInput = item.querySelector('.tela-input');
+            const referenciaInput = item.querySelector('.referencia-input');
+            
+            if (colorInput && colorInput.value) {
+                variantes.color = colorInput.value;
+            }
+            if (telaInput && telaInput.value) {
+                variantes.tela = telaInput.value;
+            }
+            if (referenciaInput && referenciaInput.value) {
+                variantes.referencia = referenciaInput.value;
+            }
         }
         
         // Manga - SOLO SI ESTÁ CHECKED
@@ -583,8 +635,19 @@ function recopilarDatos() {
     console.log('✓ Observaciones check:', observaciones_check);
     console.log('📝 Observaciones valor:', observaciones_valor);
     
+    // Obtener la fecha seleccionada
+    const fechaInput = document.getElementById('fechaActual');
+    let fechaCotizacion = null;
+    if (fechaInput && fechaInput.value) {
+        fechaCotizacion = fechaInput.value; // Formato YYYY-MM-DD
+    }
+    
+    // Capturar imágenes de logo desde memoria
+    const logoImagenes = window.imagenesEnMemoria?.logo || [];
+    
     return { 
         cliente: clienteValue, 
+        fecha_cotizacion: fechaCotizacion,
         productos, 
         tecnicas, 
         observaciones_tecnicas,
@@ -592,7 +655,10 @@ function recopilarDatos() {
         observaciones_generales,
         observaciones_check,
         observaciones_valor,
-        especificaciones: window.especificacionesSeleccionadas || {}
+        especificaciones: window.especificacionesSeleccionadas || {},
+        logo: {
+            imagenes: logoImagenes
+        }
     };
 }
 
@@ -647,10 +713,29 @@ async function procesarImagenesABase64(datos) {
             delete producto.telas;
         }
         
+        // Procesar imágenes de logo
+        if (datos.logo && datos.logo.imagenes && datos.logo.imagenes.length > 0) {
+            console.log(`📸 Convirtiendo ${datos.logo.imagenes.length} imagen(es) de logo...`);
+            datos.logo.imagenes_base64 = await Promise.all(
+                datos.logo.imagenes.map((imagen, idx) => {
+                    console.log(`    [${idx + 1}/${datos.logo.imagenes.length}] Procesando imagen logo...`);
+                    return convertirArchivoABase64(imagen);
+                })
+            );
+            console.log(`  ✅ ${datos.logo.imagenes_base64.length} imagen(es) de logo procesadas`);
+            // Eliminar los File objects
+            delete datos.logo.imagenes;
+        } else {
+            if (datos.logo) {
+                datos.logo.imagenes_base64 = [];
+            }
+        }
+        
         console.log('✅ TODAS LAS IMÁGENES PROCESADAS', {
             'productos': datos.productos.length,
             'fotos_procesadas': datos.productos.reduce((sum, p) => sum + (p.fotos_base64?.length || 0), 0),
-            'telas_procesadas': datos.productos.reduce((sum, p) => sum + (p.telas_base64?.length || 0), 0)
+            'telas_procesadas': datos.productos.reduce((sum, p) => sum + (p.telas_base64?.length || 0), 0),
+            'logo_procesadas': datos.logo?.imagenes_base64?.length || 0
         });
         
         return datos;

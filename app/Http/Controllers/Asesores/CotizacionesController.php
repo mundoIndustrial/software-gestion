@@ -9,9 +9,9 @@ use App\Models\Cotizacion;
 use App\Services\ImagenCotizacionService;
 use App\Services\ImagenProcesadorService;
 use App\Services\CotizacionService;
-use App\Services\PrendaService;
 use App\Services\PedidoService;
 use App\Services\FormatterService;
+use App\Application\Services\CotizacionPrendaService;
 use App\Exceptions\CotizacionException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use App\Exceptions\ImagenException;
@@ -23,11 +23,11 @@ class CotizacionesController extends Controller
 {
     public function __construct(
         private CotizacionService $cotizacionService,
-        private PrendaService $prendaService,
         private ImagenCotizacionService $imagenService,
         private ImagenProcesadorService $imagenProcesador,
         private PedidoService $pedidoService,
         private FormatterService $formatterService,
+        private CotizacionPrendaService $cotizacionPrendaService,
     ) {}
 
     /**
@@ -240,7 +240,7 @@ class CotizacionesController extends Controller
      * Delega completamente a los servicios:
      * - FormatterService: procesa inputs
      * - CotizacionService: crea/actualiza cotización
-     * - PrendaService: crea prendas
+     * - CrearPrendaAction: crea prendas (nueva arquitectura en app/Application/)
      * - ImagenCotizacionService: procesa imágenes
      * 
      * Las excepciones se manejan centralmente en Handler.php
@@ -272,6 +272,8 @@ class CotizacionesController extends Controller
             
             \Log::info('Datos procesados por FormatterService', [
                 'keys' => array_keys($datosFormulario),
+                'productos_count' => count($datosFormulario['productos'] ?? []),
+                'primer_producto' => isset($datosFormulario['productos'][0]) ? array_keys($datosFormulario['productos'][0]) : 'NO HAY',
                 'especificaciones_presente' => !empty($datosFormulario['especificaciones']),
                 'especificaciones_count' => count($datosFormulario['especificaciones'] ?? []),
                 'especificaciones_keys' => array_keys($datosFormulario['especificaciones'] ?? [])
@@ -303,6 +305,18 @@ class CotizacionesController extends Controller
             ]);
 
             // CREAR: Nueva cotización
+            // Los archivos (fotos y telas) ya están en $validado como File objects
+            // No necesitan conversión a Base64 - se procesan directamente
+            
+            \Log::info('📋 Datos a guardar en cotización:', [
+                'cliente' => $datosFormulario['cliente'] ?? null,
+                'productos_count' => count($datosFormulario['productos'] ?? []),
+                'productos_keys' => isset($datosFormulario['productos'][0]) ? array_keys($datosFormulario['productos'][0]) : [],
+                'fotos_count' => count($datosFormulario['productos'][0]['fotos_base64'] ?? []) ?? 0,
+                'telas_count' => count($datosFormulario['productos'][0]['telas_base64'] ?? []) ?? 0,
+                'tecnicas_count' => count($datosFormulario['tecnicas'] ?? []),
+            ]);
+            
             $cotizacion = $this->cotizacionService->crear(
                 $datosFormulario,
                 $tipo,
@@ -311,10 +325,13 @@ class CotizacionesController extends Controller
             
             \Log::info('Cotización creada', ['id' => $cotizacion->id]);
             
-            // Crear prendas
+            // Guardar productos usando la nueva arquitectura
             if (!empty($datosFormulario['productos'])) {
-                \Log::info('Creando prendas', ['cantidad' => count($datosFormulario['productos'])]);
-                $this->prendaService->crearPrendasCotizacion($cotizacion, $datosFormulario['productos']);
+                \Log::info('Guardando productos en cotización', ['cantidad' => count($datosFormulario['productos'])]);
+                $this->cotizacionPrendaService->guardarProductosEnCotizacion(
+                    $cotizacion,
+                    $datosFormulario['productos']
+                );
             }
             
             \Log::info('Creando logo/LOGO');
@@ -497,7 +514,13 @@ class CotizacionesController extends Controller
     public function editarBorrador(int $id)
     {
         $cotizacion = Cotizacion::with([
-            'logoCotizacion'
+            'logoCotizacion',
+            'prendasCotizaciones.variantes.tipoManga',
+            'prendasCotizaciones.variantes.tipoBroche',
+            'prendasCotizaciones.variantes.telas.color',
+            'prendasCotizaciones.variantes.telas.tela',
+            'tipoCotizacion',
+            'usuario'
         ])->findOrFail($id);
         
         if ($cotizacion->user_id !== Auth::id() || !$cotizacion->es_borrador) {

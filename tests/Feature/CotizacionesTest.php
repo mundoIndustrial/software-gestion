@@ -8,12 +8,11 @@ use App\Models\LogoCotizacion;
 use App\Models\PrendaCotizacion;
 use App\Models\TipoCotizacion;
 use App\Models\Role;
-use Illuminate\Foundation\Testing\WithoutMigrations;
 use Tests\TestCase;
 
 class CotizacionesTest extends TestCase
 {
-    use WithoutMigrations;
+    // Sin RefreshDatabase - No recrear BD durante tests
 
     protected User $asesor;
     protected TipoCotizacion $tipoPrendaLogo;

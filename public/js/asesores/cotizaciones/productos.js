@@ -676,3 +676,102 @@ function previewTelaImagen(input) {
         reader.readAsDataURL(input.files[0]);
     }
 }
+
+// ============ GESTIÓN DE MÚLTIPLES TELAS ============
+
+/**
+ * Agregar una nueva fila de tela (color, tela, referencia, imagen)
+ */
+function agregarFilaTela(btn) {
+    const productoCard = btn.closest('.producto-card');
+    const tbody = productoCard.querySelector('.telas-tbody');
+    
+    if (!tbody) {
+        console.error('❌ No se encontró tbody para telas');
+        return;
+    }
+    
+    // Obtener la primera fila como template
+    const primeraFila = tbody.querySelector('.fila-tela');
+    if (!primeraFila) {
+        console.error('❌ No se encontró fila template');
+        return;
+    }
+    
+    // Clonar la primera fila
+    const nuevaFila = primeraFila.cloneNode(true);
+    
+    // Limpiar los valores de los inputs
+    nuevaFila.querySelectorAll('input[type="text"]').forEach(input => {
+        input.value = '';
+    });
+    nuevaFila.querySelectorAll('input[type="hidden"]').forEach(input => {
+        input.value = '';
+    });
+    
+    // Limpiar las previsualizaciones de fotos
+    nuevaFila.querySelectorAll('.foto-tela-preview').forEach(preview => {
+        preview.innerHTML = '';
+    });
+    
+    // Mostrar el botón de eliminar en la nueva fila
+    const btnEliminar = nuevaFila.querySelector('.btn-eliminar-tela');
+    if (btnEliminar) {
+        btnEliminar.style.display = 'block';
+    }
+    
+    // Agregar la nueva fila a la tabla
+    tbody.appendChild(nuevaFila);
+    
+    console.log('✅ Nueva fila de tela agregada');
+    
+    // Mostrar toast
+    mostrarToast('Nueva tela agregada', 'success');
+}
+
+/**
+ * Eliminar una fila de tela
+ */
+function eliminarFilaTela(btn) {
+    const fila = btn.closest('.fila-tela');
+    const tbody = fila.closest('.telas-tbody');
+    
+    if (!tbody) {
+        console.error('❌ No se encontró tbody');
+        return;
+    }
+    
+    // Contar cuántas filas hay
+    const filas = tbody.querySelectorAll('.fila-tela');
+    
+    // No permitir eliminar si es la única fila
+    if (filas.length <= 1) {
+        Swal.fire({
+            title: 'No se puede eliminar',
+            text: 'Debe haber al menos una fila de tela',
+            icon: 'warning',
+            confirmButtonColor: '#0066cc'
+        });
+        return;
+    }
+    
+    // Confirmar eliminación
+    Swal.fire({
+        title: '¿Eliminar tela?',
+        text: '¿Estás seguro de que deseas eliminar esta fila de tela?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#95a5a6',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fila.remove();
+            console.log('✅ Fila de tela eliminada');
+            
+            // Mostrar toast
+            mostrarToast('Tela eliminada', 'success');
+        }
+    });
+}

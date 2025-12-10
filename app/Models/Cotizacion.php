@@ -73,6 +73,14 @@ class Cotizacion extends Model
     }
 
     /**
+     * Relación con prendas normalizadas (prendas_cot)
+     */
+    public function prendas(): HasMany
+    {
+        return $this->hasMany(PrendaCot::class, 'cotizacion_id');
+    }
+
+    /**
      * Relación con prendas de cotización (friendly)
      */
     public function prendasCotizaciones(): HasMany

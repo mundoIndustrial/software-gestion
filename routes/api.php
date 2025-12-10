@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\OrdenController;
+use App\Http\Controllers\PrendaController;
+use App\Http\Controllers\CotizacionPrendaController;
 
 /**
  * API Routes for DDD-based Orden management (FASE 3 - DDD)
@@ -43,4 +45,20 @@ Route::middleware('api')->prefix('api/v1')->name('api.v1.')->group(function () {
 
     Route::delete('ordenes/{numero}', [OrdenController::class, 'destroy'])
         ->name('ordenes.destroy');
+});
+
+/**
+ * API Routes for Prendas (Nueva Arquitectura)
+ * 
+ * Prefix: /api
+ * Auth: bearer token
+ * Controller: App\Http\Controllers\PrendaController
+ */
+Route::middleware('api')->prefix('api')->name('api.')->group(function () {
+    // Rutas de prendas
+    Route::apiResource('prendas', PrendaController::class);
+    Route::get('prendas/search', [PrendaController::class, 'search'])->name('prendas.search');
+    
+    // Rutas de cotizaciones
+    Route::apiResource('cotizaciones', CotizacionPrendaController::class);
 });

@@ -75,7 +75,7 @@
                                 @elseif($column['key'] === 'accion')
                                     <td style="padding: 12px; text-align: center;">
                                         @if($isBorrador)
-                                            <a href="{{ route('asesores.cotizaciones.show', $cot->id) }}" 
+                                            <a href="{{ route('asesores.cotizaciones.edit-borrador', $cot->id) }}" 
                                                 style="background: {{ $buttonColor }}; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600; margin-right: 5px;">
                                                 Editar
                                             </a>

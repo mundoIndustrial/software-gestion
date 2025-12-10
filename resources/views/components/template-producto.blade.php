@@ -76,7 +76,12 @@
 
             <!-- SECCIÓN DE COLOR, TELA Y REFERENCIA (Tabla con imagen) -->
             <div class="producto-section">
-                <div class="section-title"><i class="fas fa-palette"></i> COLOR, TELA Y REFERENCIA</div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <div class="section-title"><i class="fas fa-palette"></i> COLOR, TELA Y REFERENCIA</div>
+                    <button type="button" class="btn-agregar-tela" onclick="agregarFilaTela(this)" style="padding: 0.5rem 1rem; background: linear-gradient(135deg, #0066cc, #0052a3); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <i class="fas fa-plus"></i> Agregar Tela
+                    </button>
+                </div>
                 <div class="form-row">
                     <div class="form-col full">
                         <table style="width: 100%; border-collapse: collapse; background: white;">
@@ -91,13 +96,16 @@
                                     <th style="padding: 12px; text-align: left; font-weight: 600; color: #0066cc; border-right: 1px solid #ddd;">
                                         <i class="fas fa-barcode"></i> Referencia
                                     </th>
-                                    <th style="padding: 12px; text-align: center; font-weight: 600; color: #0066cc;">
+                                    <th style="padding: 12px; text-align: center; font-weight: 600; color: #0066cc; border-right: 1px solid #ddd;">
                                         <i class="fas fa-image"></i> Imagen Tela
+                                    </th>
+                                    <th style="padding: 12px; text-align: center; font-weight: 600; color: #0066cc; width: 50px;">
+                                        <i class="fas fa-trash"></i>
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr style="border-bottom: 1px solid #ddd;">
+                            <tbody class="telas-tbody">
+                                <tr style="border-bottom: 1px solid #ddd;" class="fila-tela">
                                     <td style="padding: 12px; border-right: 1px solid #ddd;">
                                         <div style="position: relative;">
                                             <input type="text" class="color-input" placeholder="Buscar o crear color..." style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px; font-size: 0.9rem;" onkeyup="buscarColor(this)" onkeypress="if(event.key==='Enter') crearColorDesdeInput(this)">
@@ -115,7 +123,7 @@
                                     <td style="padding: 12px; border-right: 1px solid #ddd;">
                                         <input type="text" name="productos_friendly[][variantes][referencia]" class="referencia-input" placeholder="Ej: REF-NAP-001" style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px; font-size: 0.9rem;">
                                     </td>
-                                    <td style="padding: 12px; text-align: center;">
+                                    <td style="padding: 12px; text-align: center; border-right: 1px solid #ddd;">
                                         <label style="display: block; min-height: 60px; padding: 0.5rem; border: 2px dashed #0066cc; border-radius: 6px; cursor: pointer; text-align: center; background: #f0f7ff;" ondrop="manejarDrop(event)" ondragover="event.preventDefault()" ondragleave="this.classList.remove('drag-over')">
                                             <input type="file" name="productos_friendly[][telas][]" class="input-file-tela" accept="image/*" multiple onchange="agregarFotoTela(this)" style="display: none;">
                                             <div class="drop-zone-content" style="font-size: 0.7rem;">
@@ -125,6 +133,11 @@
                                             </div>
                                         </label>
                                         <div class="foto-tela-preview" style="display: grid; grid-template-columns: repeat(3, 50px); gap: 0.4rem; margin-top: 0.5rem; justify-content: center;"></div>
+                                    </td>
+                                    <td style="padding: 12px; text-align: center;">
+                                        <button type="button" class="btn-eliminar-tela" onclick="eliminarFilaTela(this)" style="padding: 0.5rem 0.75rem; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; display: none;">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
                                     </td>
                                 </tr>
                             </tbody>

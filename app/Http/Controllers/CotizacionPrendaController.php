@@ -36,7 +36,6 @@ class CotizacionPrendaController extends Controller
         // Delegamos al controlador de asesores que maneja todo
         $controller = new \App\Http\Controllers\Asesores\CotizacionesController(
             app(\App\Services\CotizacionService::class),
-            app(\App\Services\PrendaService::class),
             app(\App\Services\ImagenCotizacionService::class),
             app(\App\Services\PedidoService::class),
             app(\App\Services\FormatterService::class)
@@ -76,7 +75,6 @@ class CotizacionPrendaController extends Controller
 
         $controller = new \App\Http\Controllers\Asesores\CotizacionesController(
             app(\App\Services\CotizacionService::class),
-            app(\App\Services\PrendaService::class),
             app(\App\Services\ImagenCotizacionService::class),
             app(\App\Services\PedidoService::class),
             app(\App\Services\FormatterService::class)
@@ -96,7 +94,6 @@ class CotizacionPrendaController extends Controller
         
         $controller = new \App\Http\Controllers\Asesores\CotizacionesController(
             app(\App\Services\CotizacionService::class),
-            app(\App\Services\PrendaService::class),
             app(\App\Services\ImagenCotizacionService::class),
             app(\App\Services\PedidoService::class),
             app(\App\Services\FormatterService::class)
@@ -114,7 +111,6 @@ class CotizacionPrendaController extends Controller
 
         $controller = new \App\Http\Controllers\Asesores\CotizacionesController(
             app(\App\Services\CotizacionService::class),
-            app(\App\Services\PrendaService::class),
             app(\App\Services\ImagenCotizacionService::class),
             app(\App\Services\PedidoService::class),
             app(\App\Services\FormatterService::class)

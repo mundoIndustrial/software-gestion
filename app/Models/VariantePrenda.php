@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Traits\HasLegibleAtributosPrenda;
 
 class VariantePrenda extends Model
@@ -14,11 +15,6 @@ class VariantePrenda extends Model
     protected $fillable = [
         'prenda_cotizacion_id',
         'tipo_prenda_id',
-        'color_id',
-        'color_nombre',
-        'tela_id',
-        'tela_nombre',
-        'referencia',
         'genero_id',
         'tipo_manga_id',
         'tipo_broche_id',
@@ -47,14 +43,12 @@ class VariantePrenda extends Model
         return $this->belongsTo(TipoPrenda::class);
     }
 
-    public function color(): BelongsTo
+    /**
+     * Relación con telas de la variante
+     */
+    public function telas(): HasMany
     {
-        return $this->belongsTo(ColorPrenda::class, 'color_id');
-    }
-
-    public function tela(): BelongsTo
-    {
-        return $this->belongsTo(TelaPrenda::class, 'tela_id');
+        return $this->hasMany(PrendaTela::class, 'variante_prenda_id');
     }
 
     public function genero(): BelongsTo
