@@ -4,21 +4,24 @@ namespace App\Application\Cotizacion\Handlers\Commands;
 
 use App\Application\Cotizacion\Commands\CrearCotizacionCommand;
 use App\Application\Cotizacion\DTOs\CotizacionDTO;
+use App\Application\Services\CotizacionPrendaService;
 use App\Domain\Cotizacion\Entities\Cotizacion;
 use App\Domain\Cotizacion\Repositories\CotizacionRepositoryInterface;
 use App\Domain\Cotizacion\ValueObjects\TipoCotizacion;
 use App\Domain\Shared\ValueObjects\UserId;
+use App\Models\Cotizacion as CotizacionModel;
 use Illuminate\Support\Facades\Log;
 
 /**
  * CrearCotizacionHandler - Handler para crear cotización
  *
- * Orquesta la creación de una nueva cotización
+ * Orquesta la creación de una nueva cotización y guarda prendas en tablas normalizadas
  */
 final class CrearCotizacionHandler
 {
     public function __construct(
-        private readonly CotizacionRepositoryInterface $repository
+        private readonly CotizacionRepositoryInterface $repository,
+        private readonly CotizacionPrendaService $prendaService
     ) {
     }
 
@@ -64,13 +67,27 @@ final class CrearCotizacionHandler
                 );
             }
 
-            // Guardar
+            // Guardar cotización
             $this->repository->save($cotizacion);
 
             Log::info('CrearCotizacionHandler: Cotización creada exitosamente', [
                 'cotizacion_id' => $cotizacion->id()->valor(),
                 'numero' => $cotizacion->numero()->valor(),
             ]);
+
+            // Guardar prendas en tablas normalizadas
+            $cotizacionId = $cotizacion->id()->valor();
+            $cotizacionModel = CotizacionModel::findOrFail($cotizacionId);
+            $productos = $datos->productos ?? [];
+
+            if (!empty($productos)) {
+                Log::info('CrearCotizacionHandler: Guardando prendas en tablas normalizadas', [
+                    'cotizacion_id' => $cotizacionId,
+                    'productos_count' => count($productos),
+                ]);
+
+                $this->prendaService->guardarProductosEnCotizacion($cotizacionModel, $productos);
+            }
 
             // Retornar DTO
             return CotizacionDTO::desdeArray($cotizacion->toArray());
