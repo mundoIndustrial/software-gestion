@@ -17,6 +17,7 @@ use App\Application\Cotizacion\Handlers\Queries\ListarCotizacionesHandler;
 use App\Application\Cotizacion\Handlers\Queries\ObtenerCotizacionHandler;
 use App\Application\Cotizacion\Queries\ListarCotizacionesQuery;
 use App\Application\Cotizacion\Queries\ObtenerCotizacionQuery;
+use App\Application\Cotizacion\Services\ObtenerOCrearClienteService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -39,6 +40,7 @@ final class CotizacionController extends Controller
         private readonly CambiarEstadoCotizacionHandler $cambiarEstadoHandler,
         private readonly AceptarCotizacionHandler $aceptarHandler,
         private readonly SubirImagenCotizacionHandler $subirImagenHandler,
+        private readonly ObtenerOCrearClienteService $obtenerOCrearClienteService,
     ) {
     }
 
@@ -116,10 +118,19 @@ final class CotizacionController extends Controller
     public function store(Request $request): JsonResponse
     {
         try {
+            // Obtener o crear cliente si se proporciona nombre
+            $clienteId = $request->input('cliente_id');
+            $nombreCliente = $request->input('cliente_nombre');
+            
+            if ($nombreCliente && !$clienteId) {
+                $cliente = $this->obtenerOCrearClienteService->ejecutar($nombreCliente);
+                $clienteId = $cliente->id;
+            }
+
             $dto = CrearCotizacionDTO::desdeArray([
                 'usuario_id' => Auth::id(),
                 'tipo' => $request->input('tipo', 'P'),
-                'cliente_id' => $request->input('cliente_id'),
+                'cliente_id' => $clienteId,
                 'productos' => $request->input('productos', []),
                 'logo' => $request->input('logo', []),
                 'tipo_venta' => $request->input('tipo_venta', 'M'),
