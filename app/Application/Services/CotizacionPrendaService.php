@@ -45,27 +45,10 @@ class CotizacionPrendaService
                 $nombre = $productoData['nombre'] ?? $productoData['nombre_producto'] ?? 'Sin nombre';
                 
                 // 1. Guardar prenda principal en prendas_cot
-                $variantes = $productoData['variantes'] ?? [];
                 $prenda = $cotizacion->prendas()->create([
                     'nombre_producto' => $nombre,
                     'descripcion' => $productoData['descripcion'] ?? '',
                     'cantidad' => $productoData['cantidad'] ?? 1,
-                    'tipo_prenda' => $productoData['tipo_prenda'] ?? '',
-                    'es_jean_pantalon' => $variantes['es_jean_pantalon'] ?? false,
-                    'tipo_jean_pantalon' => $variantes['tipo_jean_pantalon'] ?? '',
-                    'genero' => $variantes['genero'] ?? '',
-                    'color' => $variantes['color'] ?? '',
-                    'tiene_bolsillos' => $variantes['tiene_bolsillos'] ?? false,
-                    'obs_bolsillos' => $variantes['obs_bolsillos'] ?? '',
-                    'aplica_manga' => $variantes['aplica_manga'] ?? false,
-                    'tipo_manga' => $variantes['tipo_manga'] ?? '',
-                    'obs_manga' => $variantes['obs_manga'] ?? '',
-                    'aplica_broche' => $variantes['aplica_broche'] ?? false,
-                    'tipo_broche_id' => $variantes['tipo_broche_id'] ?? null,
-                    'obs_broche' => $variantes['obs_broche'] ?? '',
-                    'tiene_reflectivo' => $variantes['tiene_reflectivo'] ?? false,
-                    'obs_reflectivo' => $variantes['obs_reflectivo'] ?? '',
-                    'descripcion_adicional' => $variantes['descripcion_adicional'] ?? '',
                 ]);
                 
                 Log::info("✅ Prenda creada en prendas_cot", [
@@ -115,11 +98,22 @@ class CotizacionPrendaService
                 $variantes = $productoData['variantes'] ?? [];
                 if (!empty($variantes)) {
                     $prenda->variantes()->create([
+                        'tipo_prenda' => $productoData['tipo_prenda'] ?? '',
+                        'es_jean_pantalon' => $variantes['es_jean_pantalon'] ?? false,
+                        'tipo_jean_pantalon' => $variantes['tipo_jean_pantalon'] ?? '',
                         'genero' => $variantes['genero'] ?? '',
-                        'tipo_manga' => $variantes['tipo_manga'] ?? '',
-                        'tipo_broche' => $variantes['tipo_broche'] ?? '',
                         'color' => $variantes['color'] ?? '',
-                        'observaciones' => $variantes['descripcion_adicional'] ?? ''
+                        'tiene_bolsillos' => $variantes['tiene_bolsillos'] ?? false,
+                        'obs_bolsillos' => $variantes['obs_bolsillos'] ?? '',
+                        'aplica_manga' => $variantes['aplica_manga'] ?? false,
+                        'tipo_manga' => $variantes['tipo_manga'] ?? '',
+                        'obs_manga' => $variantes['obs_manga'] ?? '',
+                        'aplica_broche' => $variantes['aplica_broche'] ?? false,
+                        'tipo_broche_id' => $variantes['tipo_broche_id'] ?? null,
+                        'obs_broche' => $variantes['obs_broche'] ?? '',
+                        'tiene_reflectivo' => $variantes['tiene_reflectivo'] ?? false,
+                        'obs_reflectivo' => $variantes['obs_reflectivo'] ?? '',
+                        'descripcion_adicional' => $variantes['descripcion_adicional'] ?? ''
                     ]);
                     Log::info("✅ Variantes guardadas");
                 }

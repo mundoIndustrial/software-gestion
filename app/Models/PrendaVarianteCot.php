@@ -11,11 +11,30 @@ class PrendaVarianteCot extends Model
 
     protected $fillable = [
         'prenda_cot_id',
+        'tipo_prenda',
+        'es_jean_pantalon',
+        'tipo_jean_pantalon',
         'genero',
-        'tipo_manga',
-        'tipo_broche',
         'color',
-        'observaciones',
+        'tiene_bolsillos',
+        'obs_bolsillos',
+        'aplica_manga',
+        'tipo_manga',
+        'obs_manga',
+        'aplica_broche',
+        'tipo_broche_id',
+        'obs_broche',
+        'tiene_reflectivo',
+        'obs_reflectivo',
+        'descripcion_adicional',
+    ];
+
+    protected $casts = [
+        'es_jean_pantalon' => 'boolean',
+        'tiene_bolsillos' => 'boolean',
+        'aplica_manga' => 'boolean',
+        'aplica_broche' => 'boolean',
+        'tiene_reflectivo' => 'boolean',
     ];
 
     /**
