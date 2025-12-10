@@ -12,9 +12,8 @@ use App\Http\Controllers\EntregaController;
 use App\Http\Controllers\TablerosController;
 use App\Http\Controllers\VistasController;
 use App\Http\Controllers\BalanceoController;
-use App\Http\Controllers\CotizacionPrendaController;
-use App\Http\Controllers\CotizacionBordadoController;
-use App\Http\Controllers\CotizacionesViewController;
+use App\Infrastructure\Http\Controllers\CotizacionPrendaController;
+use App\Infrastructure\Http\Controllers\CotizacionBordadoController;
 use App\Http\Controllers\DebugRegistrosController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 
@@ -162,25 +161,39 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
 });
 
 // ========================================
+// RUTAS PARA COTIZACIONES - PRENDA (DDD REFACTORIZADO)
+// ========================================
+Route::middleware(['auth', 'role:asesor'])->group(function () {
+    // Cotizaciones tipo PRENDA
+    Route::get('/cotizaciones-prenda/crear', [CotizacionPrendaController::class, 'create'])->name('cotizaciones-prenda.create');
+    Route::post('/cotizaciones-prenda', [CotizacionPrendaController::class, 'store'])->name('cotizaciones-prenda.store');
+    Route::get('/cotizaciones-prenda', [CotizacionPrendaController::class, 'lista'])->name('cotizaciones-prenda.lista');
+    Route::get('/cotizaciones-prenda/{cotizacion}/editar', [CotizacionPrendaController::class, 'edit'])->name('cotizaciones-prenda.edit');
+    Route::put('/cotizaciones-prenda/{cotizacion}', [CotizacionPrendaController::class, 'update'])->name('cotizaciones-prenda.update');
+    Route::post('/cotizaciones-prenda/{cotizacion}/enviar', [CotizacionPrendaController::class, 'enviar'])->name('cotizaciones-prenda.enviar');
+    Route::delete('/cotizaciones-prenda/{cotizacion}', [CotizacionPrendaController::class, 'destroy'])->name('cotizaciones-prenda.destroy');
+});
+
+// ========================================
+// RUTAS PARA COTIZACIONES - BORDADO (DDD REFACTORIZADO)
+// ========================================
+Route::middleware(['auth', 'role:asesor'])->group(function () {
+    // Cotizaciones tipo BORDADO/LOGO
+    Route::get('/cotizaciones-bordado/crear', [CotizacionBordadoController::class, 'create'])->name('cotizaciones-bordado.create');
+    Route::post('/cotizaciones-bordado', [CotizacionBordadoController::class, 'store'])->name('cotizaciones-bordado.store');
+    Route::get('/cotizaciones-bordado', [CotizacionBordadoController::class, 'lista'])->name('cotizaciones-bordado.lista');
+    Route::get('/cotizaciones-bordado/{cotizacion}/editar', [CotizacionBordadoController::class, 'edit'])->name('cotizaciones-bordado.edit');
+    Route::put('/cotizaciones-bordado/{cotizacion}', [CotizacionBordadoController::class, 'update'])->name('cotizaciones-bordado.update');
+    Route::post('/cotizaciones-bordado/{cotizacion}/enviar', [CotizacionBordadoController::class, 'enviar'])->name('cotizaciones-bordado.enviar');
+    Route::delete('/cotizaciones-bordado/{cotizacion}', [CotizacionBordadoController::class, 'destroy'])->name('cotizaciones-bordado.destroy');
+});
+
+// ========================================
 // RUTAS PARA SUPERVISOR-ADMIN (COTIZACIONES)
 // ========================================
-Route::middleware(['auth', 'role:supervisor-admin'])->group(function () {
-    Route::get('/cotizaciones', [CotizacionesViewController::class, 'index'])->name('cotizaciones.index');
-});
-
-// Ruta compartida para ver detalles de cotización (supervisor-admin y aprobador_cotizaciones)
-Route::middleware(['auth', 'role:supervisor-admin,aprobador_cotizaciones'])->group(function () {
-    Route::get('/cotizaciones/{cotizacion}/detalle', [CotizacionesViewController::class, 'getCotizacionDetail'])->name('cotizaciones.detalle');
-});
-
-// Ruta para obtener datos JSON de cotización (con autenticación solamente)
-Route::middleware(['auth'])->get('/cotizaciones/{cotizacion}/datos', [CotizacionesViewController::class, 'getDatosForModal'])->name('cotizaciones.datos');
-
-// Rutas para acciones de aprobador sobre cotizaciones
-Route::middleware(['auth'])->group(function () {
-    Route::post('/cotizaciones/{cotizacion}/aprobar-aprobador', [CotizacionesViewController::class, 'aprobarAprobador'])->name('cotizaciones.aprobar-aprobador');
-    Route::post('/cotizaciones/{cotizacion}/rechazar', [CotizacionesViewController::class, 'rechazarCotizacion'])->name('cotizaciones.rechazar');
-});
+// NOTA: Funcionalidad migrada a CotizacionPrendaController y CotizacionBordadoController (DDD)
+// Las rutas anteriores de CotizacionesViewController han sido eliminadas
+// Usar: CotizacionPrendaController::lista() o CotizacionBordadoController::lista()
 
 // ========================================
 // RUTAS PARA APROBADOR DE COTIZACIONES
@@ -202,7 +215,7 @@ Route::middleware(['auth'])->group(function () {
     })->name('cotizaciones.pendientes');
 
     // Endpoint para obtener contador de cotizaciones pendientes
-    Route::get('/pendientes-count', [App\Http\Controllers\CotizacionesViewController::class, 'cotizacionesPendientesAprobadorCount'])->name('cotizaciones.pendientes-count');
+    // NOTA: Funcionalidad migrada a Handlers DDD
 });
 
 // ========================================
@@ -215,7 +228,8 @@ Route::middleware(['auth', 'role:contador,admin'])->prefix('contador')->name('co
     Route::get('/por-revisar', [App\Http\Controllers\ContadorController::class, 'porRevisar'])->name('por-revisar');
     Route::get('/cotizacion/{id}', [App\Http\Controllers\ContadorController::class, 'getCotizacionDetail'])->name('cotizacion.detail');
     Route::delete('/cotizacion/{id}', [App\Http\Controllers\ContadorController::class, 'deleteCotizacion'])->name('cotizacion.delete');
-    Route::get('/por-corregir', [App\Http\Controllers\CotizacionesViewController::class, 'porCorregir'])->name('por-corregir');
+    // NOTA: Funcionalidad migrada a Handlers DDD
+    // Route::get('/por-corregir', [App\Http\Controllers\CotizacionesViewController::class, 'porCorregir'])->name('por-corregir');
     
     // Rutas para costos de prendas
     Route::post('/costos/guardar', [App\Http\Controllers\CostoPrendaController::class, 'guardar'])->name('costos.guardar');
@@ -294,21 +308,22 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     Route::post('/notifications/mark-all-read', [App\Http\Controllers\AsesoresController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
     
     // ========================================
-    // COTIZACIONES - Gestión de cotizaciones y borradores
+    // COTIZACIONES - Gestión de cotizaciones y borradores (DDD Refactorizado)
     // ========================================
-    Route::get('/cotizaciones', [App\Http\Controllers\Asesores\CotizacionesController::class, 'index'])->name('cotizaciones.index');
-    Route::get('/cotizaciones/filtros/valores', [App\Http\Controllers\Asesores\CotizacionesController::class, 'obtenerValoresFiltro'])->name('cotizaciones.filtros.valores');
-    Route::post('/cotizaciones/guardar', [App\Http\Controllers\Asesores\CotizacionesController::class, 'guardar'])->name('cotizaciones.guardar');
-    Route::post('/cotizaciones/guardar-test', [App\Http\Controllers\Asesores\CotizacionesController::class, 'guardarTest'])->name('cotizaciones.guardar-test');
-    Route::post('/cotizaciones/{id}/imagenes', [App\Http\Controllers\Asesores\CotizacionesController::class, 'subirImagenes'])->name('cotizaciones.subir-imagenes');
-    Route::delete('/cotizaciones/{id}/imagenes', [App\Http\Controllers\Asesores\CotizacionesController::class, 'eliminarImagen'])->name('cotizaciones.eliminar-imagen');
-    Route::post('/cotizaciones/{id}/precios', [App\Http\Controllers\Asesores\CotizacionesController::class, 'guardarPrecios'])->name('cotizaciones.guardar-precios');
-    Route::get('/cotizaciones/{id}', [App\Http\Controllers\Asesores\CotizacionesController::class, 'show'])->name('cotizaciones.show');
-    Route::get('/cotizaciones/{id}/editar-borrador', [App\Http\Controllers\Asesores\CotizacionesController::class, 'editarBorrador'])->name('cotizaciones.edit-borrador');
-    Route::delete('/cotizaciones/{id}', [App\Http\Controllers\Asesores\CotizacionesController::class, 'destroy'])->name('cotizaciones.destroy');
-    Route::delete('/cotizaciones/{id}/borrador', [App\Http\Controllers\Asesores\CotizacionesController::class, 'destroy'])->name('cotizaciones.destroy-borrador');
-    Route::patch('/cotizaciones/{id}/estado/{estado}', [App\Http\Controllers\Asesores\CotizacionesController::class, 'cambiarEstado'])->name('cotizaciones.cambiar-estado');
-    Route::post('/cotizaciones/{id}/aceptar', [App\Http\Controllers\Asesores\CotizacionesController::class, 'aceptarCotizacion'])->name('cotizaciones.aceptar');
+    // Vista HTML de cotizaciones (usando Infrastructure Controller con Handlers DDD)
+    Route::get('/cotizaciones', [App\Infrastructure\Http\Controllers\Asesores\CotizacionesViewController::class, 'index'])->name('cotizaciones.index');
+    Route::get('/cotizaciones/filtros/valores', [App\Infrastructure\Http\Controllers\Asesores\CotizacionesFiltrosController::class, 'valores'])->name('cotizaciones.filtros.valores');
+    
+    // API endpoints para cotizaciones
+    Route::post('/cotizaciones', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'store'])->name('cotizaciones.store');
+    Route::get('/cotizaciones/{id}/ver', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'showView'])->name('cotizaciones.show');
+    Route::get('/cotizaciones/{id}', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'show'])->name('cotizaciones.api');
+    Route::post('/cotizaciones/{id}/imagenes', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'subirImagen'])->name('cotizaciones.subir-imagen');
+    
+    // Rutas antiguas (compatibilidad con frontend) - Aliases al nuevo controller
+    Route::post('/cotizaciones/guardar', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'store'])->name('cotizaciones.guardar');
+    Route::get('/cotizaciones/{id}/editar-borrador', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'show'])->name('cotizaciones.edit-borrador');
+    Route::delete('/cotizaciones/{id}', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'destroy'])->name('cotizaciones.destroy');
     
     // ========================================
     // PEDIDOS DE PRODUCCIÓN - Gestión de pedidos desde cotizaciones

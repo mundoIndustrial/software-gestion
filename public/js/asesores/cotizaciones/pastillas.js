@@ -12,15 +12,15 @@ let tipoCotzacionSeleccionada = null;
  * Inicializar el sistema de pastillas
  */
 function inicializarPastillas() {
-    console.log('🔵 Inicializando pastillas de cotizaciones');
-    
     // Obtener todos los botones de pastilla
     const tabBtns = document.querySelectorAll('.cotizacion-tab-btn');
     
     if (tabBtns.length === 0) {
-        console.warn('⚠️ No se encontraron pastillas de cotización');
+        // Silenciosamente retornar si no hay pastillas (es normal en algunas vistas)
         return;
     }
+    
+    console.log('🔵 Inicializando pastillas de cotizaciones');
     
     // Agregar event listeners
     tabBtns.forEach(btn => {

@@ -704,8 +704,9 @@ async function procederEnviarCotizacion(datos) {
             return;
         }
         
-        if (data.success && data.cotizacion_id) {
-            console.log('✅ Cotización enviada con ID:', data.cotizacion_id);
+        if (data.success && (data.cotizacion_id !== undefined || (data.data && data.data.id !== undefined))) {
+            const cotizacionId = data.cotizacion_id !== undefined ? data.cotizacion_id : (data.data && data.data.id);
+            console.log('✅ Cotización enviada con ID:', cotizacionId);
             console.log('✅ Imágenes procesadas y guardadas en el servidor');
             
             // ✅ LIMPIAR TODO DESPUÉS DEL ENVÍO EXITOSO
@@ -727,7 +728,8 @@ async function procederEnviarCotizacion(datos) {
             });
             
             setTimeout(() => {
-                window.location.href = window.routes.cotizacionesIndex + '#cotizaciones';
+                // Redirigir a la vista de cotizaciones
+                window.location.href = '/asesores/cotizaciones?tab=cotizaciones';
             }, 2000);
         } else {
             // Construir mensaje de error detallado

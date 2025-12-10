@@ -2,6 +2,7 @@
 
 @section('content')
 <link rel="stylesheet" href="{{ asset('css/cotizaciones/cotizaciones.css') }}">
+<script src="{{ asset('js/asesores/cotizaciones/subir-imagenes.js') }}"></script>
 
 <div class="cotizaciones-container">
     <div class="cotizaciones-wrapper">
@@ -63,9 +64,12 @@
 <!-- Modal de Cotización -->
 @include('cotizaciones.partials.cotizacion-modal')
 
+<!-- Elemento de progreso de subida -->
+<div id="progreso-subida" style="display: none; position: fixed; top: 20px; right: 20px; width: 300px; z-index: 9999;"></div>
+
 <script>
 function openCotizacionModal(cotizacionId) {
-    fetch(`/cotizaciones/${cotizacionId}/detalle`)
+    fetch(`/asesores/cotizaciones/${cotizacionId}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -188,8 +192,8 @@ function openCotizacionModal(cotizacionId) {
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            alert('Error al cargar la cotización');
+            console.error('Error al cargar cotización:', error);
+            alert('Error al cargar la cotización. Por favor, intenta de nuevo.');
         });
 }
 
@@ -209,6 +213,70 @@ document.addEventListener('click', function(event) {
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
         closeCotizacionModal();
+    }
+});
+
+// Callback para procesar resultado de subida de imágenes
+function procesarResultadoSubidaImagenes(resultado) {
+    if (resultado.success) {
+        console.log('✅ Imágenes subidas exitosamente:', resultado.rutas);
+        
+        // Mostrar notificación de éxito
+        Swal.fire({
+            icon: 'success',
+            title: 'Imágenes subidas',
+            text: `${resultado.rutas.length} imagen(es) subida(s) correctamente`,
+            timer: 3000
+        });
+        
+        // Recargar modal para mostrar nuevas imágenes
+        const cotizacionId = document.getElementById('cotizacionModal')?.dataset?.cotizacionId;
+        if (cotizacionId) {
+            openCotizacionModal(cotizacionId);
+        }
+    } else {
+        console.error('❌ Error al subir imágenes:', resultado.errores);
+        
+        // Mostrar errores
+        let mensajeError = 'Errores al subir imágenes:\n';
+        resultado.errores.forEach(error => {
+            mensajeError += `- ${error.archivo}: ${error.error}\n`;
+        });
+        
+        Swal.fire({
+            icon: 'error',
+            title: 'Error al subir imágenes',
+            text: mensajeError,
+            timer: 5000
+        });
+    }
+    
+    // Ocultar progreso
+    ocultarProgresoSubida();
+}
+
+// Guardar ID de cotización en modal para referencia
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('cotizacionModal');
+    if (modal) {
+        const originalShow = modal.style.display;
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'style') {
+                    if (modal.style.display === 'flex') {
+                        // Modal abierto - guardar ID de cotización
+                        const clientName = document.getElementById('modalClienteName');
+                        if (clientName) {
+                            const cotizacionNumber = document.getElementById('modalCotizacionNumber').textContent;
+                            const cotizacionId = cotizacionNumber.replace('COT-', '').replace(/^0+/, '');
+                            modal.dataset.cotizacionId = cotizacionId;
+                        }
+                    }
+                }
+            });
+        });
+        
+        observer.observe(modal, { attributes: true });
     }
 });
 </script>

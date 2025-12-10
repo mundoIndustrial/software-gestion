@@ -101,7 +101,7 @@ class CotizacionPrendaService
                         'tipo_prenda' => $productoData['tipo_prenda'] ?? '',
                         'es_jean_pantalon' => $variantes['es_jean_pantalon'] ?? false,
                         'tipo_jean_pantalon' => $variantes['tipo_jean_pantalon'] ?? '',
-                        'genero' => $variantes['genero'] ?? '',
+                        'genero_id' => $variantes['genero_id'] ?? null,
                         'color' => $variantes['color'] ?? '',
                         'tiene_bolsillos' => $variantes['tiene_bolsillos'] ?? false,
                         'obs_bolsillos' => $variantes['obs_bolsillos'] ?? '',

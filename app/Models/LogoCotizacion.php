@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LogoCotizacion extends Model
 {
@@ -32,5 +33,13 @@ class LogoCotizacion extends Model
     public function cotizacion(): BelongsTo
     {
         return $this->belongsTo(Cotizacion::class);
+    }
+
+    /**
+     * Relación: Un logo puede tener múltiples fotos (máximo 5)
+     */
+    public function fotos(): HasMany
+    {
+        return $this->hasMany(LogoFoto::class, 'logo_cotizacion_id')->orderBy('orden');
     }
 }

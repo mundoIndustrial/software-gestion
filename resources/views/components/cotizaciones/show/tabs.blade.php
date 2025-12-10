@@ -1,8 +1,14 @@
 {{-- Tabs Navigation --}}
 @php
-    $tipoNombre = $cotizacion->tipoCotizacion ? strtolower($cotizacion->tipoCotizacion->nombre) : '';
+    // Mapeo de códigos a nombres
+    $tiposMap = [
+        'P' => 'Prenda',
+        'L' => 'Logo',
+        'PL' => 'Prenda/Logo',
+    ];
+    $tipoNombre = strtolower($tiposMap[$cotizacion->tipo] ?? '');
     $esLogo = strpos($tipoNombre, 'logo') !== false;
-    $tienePrendas = $cotizacion->prendasCotizaciones && count($cotizacion->prendasCotizaciones) > 0;
+    $tienePrendas = $cotizacion->prendas && count($cotizacion->prendas) > 0;
 @endphp
 
 <div style="

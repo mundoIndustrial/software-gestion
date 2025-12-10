@@ -46,6 +46,14 @@ class PrendaCot extends Model
     }
 
     /**
+     * Relación: Una prenda puede tener múltiples fotos de telas
+     */
+    public function telaFotos(): HasMany
+    {
+        return $this->hasMany(PrendaTelaFoto::class, 'prenda_cot_id');
+    }
+
+    /**
      * Relación: Una prenda puede tener múltiples tallas
      */
     public function tallas(): HasMany

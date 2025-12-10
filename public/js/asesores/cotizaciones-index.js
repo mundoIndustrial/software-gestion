@@ -15,37 +15,97 @@ function mostrarTab(tab) {
 
 /**
  * Muestra secciones según el tipo de cotización
- * @param {string} tipo - 'todas', 'P', 'B', 'PB'
+ * @param {string} tipo - 'todas', 'P', 'L', 'PL'
  */
 function mostrarTipo(tipo) {
+    console.log('🎯 mostrarTipo() llamado con tipo:', tipo);
+    
+    // Actualizar estado visual de las pastillas
+    const botones = document.querySelectorAll('.cotizacion-tab-btn');
+    console.log('🔘 Botones encontrados:', botones.length);
+    
+    botones.forEach(btn => {
+        if (btn.getAttribute('data-tipo') === tipo) {
+            // Activar botón
+            btn.classList.add('active');
+            console.log('✅ Botón activado:', tipo);
+        } else {
+            // Desactivar botón
+            btn.classList.remove('active');
+            console.log('⚪ Botón desactivado:', btn.getAttribute('data-tipo'));
+        }
+    });
+    
     // Determina cuál tab está activo
     const tabCotizaciones = document.getElementById('tab-cotizaciones');
     const tabBorradores = document.getElementById('tab-borradores');
     
-    const esCotizacionesActivo = tabCotizaciones.style.display === 'block';
-    const esBorradoresActivo = tabBorradores.style.display === 'block';
+    console.log('📍 Tab Cotizaciones encontrado:', !!tabCotizaciones);
+    console.log('📍 Tab Borradores encontrado:', !!tabBorradores);
+    
+    // Verificar el display actual
+    if (tabCotizaciones) {
+        console.log('📊 Tab Cotizaciones display:', window.getComputedStyle(tabCotizaciones).display);
+    }
+    if (tabBorradores) {
+        console.log('📊 Tab Borradores display:', window.getComputedStyle(tabBorradores).display);
+    }
+    
+    const esCotizacionesActivo = tabCotizaciones && window.getComputedStyle(tabCotizaciones).display === 'block';
+    const esBorradoresActivo = tabBorradores && window.getComputedStyle(tabBorradores).display === 'block';
+    
+    console.log('✅ Cotizaciones activo:', esCotizacionesActivo);
+    console.log('✅ Borradores activo:', esBorradoresActivo);
+    
+    // Si ninguno está activo, mostrar cotizaciones por defecto
+    if (!esCotizacionesActivo && !esBorradoresActivo) {
+        console.warn('⚠️ Ningún tab activo, mostrando cotizaciones por defecto');
+        if (tabCotizaciones) {
+            tabCotizaciones.style.display = 'block';
+        }
+    }
     
     // Oculta todas las secciones
-    document.querySelectorAll('.seccion-tipo').forEach(sec => sec.style.display = 'none');
+    const seccionesTodas = document.querySelectorAll('.seccion-tipo');
+    console.log('🔍 Secciones encontradas:', seccionesTodas.length);
+    seccionesTodas.forEach(sec => sec.style.display = 'none');
     
     // Mapeo de tipos a IDs de secciones
     const secciones = {
         'todas': { cot: 'seccion-todas', bor: 'seccion-bor-todas' },
         'P': { cot: 'seccion-prenda', bor: 'seccion-bor-prenda' },
-        'B': { cot: 'seccion-logo', bor: 'seccion-bor-logo' },
-        'PB': { cot: 'seccion-pb', bor: 'seccion-bor-pb' }
+        'L': { cot: 'seccion-logo', bor: 'seccion-bor-logo' },
+        'PL': { cot: 'seccion-pb', bor: 'seccion-bor-pb' }
     };
     
+    console.log('🗺️ Secciones mapeadas:', secciones);
+    console.log('🔎 Tipo solicitado existe en mapeo:', !!secciones[tipo]);
+    
     if (secciones[tipo]) {
+        console.log('✅ Mostrando sección para tipo:', tipo);
         // Muestra solo la sección correspondiente al tab activo
         if (esCotizacionesActivo) {
             const cotElement = document.getElementById(secciones[tipo].cot);
-            if (cotElement) cotElement.style.display = 'block';
+            console.log('🔍 Elemento cotizaciones encontrado:', !!cotElement, 'ID:', secciones[tipo].cot);
+            if (cotElement) {
+                cotElement.style.display = 'block';
+                console.log('✅ Mostrando cotizaciones:', secciones[tipo].cot);
+            } else {
+                console.error('❌ Elemento cotizaciones NO encontrado:', secciones[tipo].cot);
+            }
         }
         if (esBorradoresActivo) {
             const borElement = document.getElementById(secciones[tipo].bor);
-            if (borElement) borElement.style.display = 'block';
+            console.log('🔍 Elemento borradores encontrado:', !!borElement, 'ID:', secciones[tipo].bor);
+            if (borElement) {
+                borElement.style.display = 'block';
+                console.log('✅ Mostrando borradores:', secciones[tipo].bor);
+            } else {
+                console.error('❌ Elemento borradores NO encontrado:', secciones[tipo].bor);
+            }
         }
+    } else {
+        console.error('❌ Tipo no encontrado en mapeo:', tipo);
     }
 }
 

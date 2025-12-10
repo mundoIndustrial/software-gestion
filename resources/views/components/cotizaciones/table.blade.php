@@ -49,14 +49,14 @@
                                 @elseif($column['key'] === 'tipo')
                                     <td style="padding: 12px;" data-filter-column="tipo">
                                         <span style="background: #e3f2fd; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">
-                                            @if($cot->obtenerTipoCotizacion() === 'P')
+                                            @if($cot->tipo === 'P')
                                                 Prenda
-                                            @elseif($cot->obtenerTipoCotizacion() === 'B')
+                                            @elseif($cot->tipo === 'L')
                                                 Logo
-                                            @elseif($cot->obtenerTipoCotizacion() === 'PB')
-                                                Prenda/Bordado
+                                            @elseif($cot->tipo === 'PL')
+                                                Prenda/Logo
                                             @else
-                                                {{ $cot->tipoCotizacion?->nombre ?? 'Sin tipo' }}
+                                                {{ $cot->tipo ?? 'N/A' }}
                                             @endif
                                         </span>
                                     </td>
@@ -108,3 +108,108 @@
         </div>
     @endif
 </div>
+
+{{-- Modales de Filtro --}}
+<div id="filter-modals-container">
+    @foreach($columns as $column)
+        @if($column['filterable'] ?? false)
+            <div id="filter-modal-{{ $column['key'] }}" class="filter-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center;">
+                <div class="filter-modal-content" style="background: white; border-radius: 12px; padding: 0; width: 90%; max-width: 450px; max-height: 85vh; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); display: flex; flex-direction: column;">
+                    {{-- Header --}}
+                    <div style="background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); padding: 20px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h3 style="margin: 0; font-size: 1.2rem; color: white; font-weight: 600;">Filtrar por {{ $column['label'] }}</h3>
+                            <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: rgba(255,255,255,0.8);">Selecciona uno o más valores</p>
+                        </div>
+                        <button onclick="cerrarFiltro('{{ $column['key'] }}')" style="background: rgba(255,255,255,0.2); border: none; font-size: 1.8rem; cursor: pointer; color: white; width: 40px; height: 40px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: background 0.2s;">×</button>
+                    </div>
+                    
+                    {{-- Content --}}
+                    <div style="flex: 1; overflow-y: auto; padding: 20px;">
+                        {{-- Botones de selección rápida --}}
+                        <div style="display: flex; gap: 8px; margin-bottom: 16px;">
+                            <button onclick="seleccionarTodos('{{ $column['key'] }}')" style="flex: 1; padding: 8px 12px; background: #e0e7ff; color: #1e40af; border: 1px solid #c7d2fe; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 0.85rem; transition: all 0.2s;">
+                                <i class="fas fa-check-double" style="margin-right: 4px;"></i>Todos
+                            </button>
+                            <button onclick="deseleccionarTodos('{{ $column['key'] }}')" style="flex: 1; padding: 8px 12px; background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 0.85rem; transition: all 0.2s;">
+                                <i class="fas fa-times" style="margin-right: 4px;"></i>Ninguno
+                            </button>
+                        </div>
+                        
+                        <div class="filter-checkbox-group"></div>
+                    </div>
+                    
+                    {{-- Footer --}}
+                    <div style="background: #f9fafb; border-top: 1px solid #e5e7eb; padding: 16px 20px; display: flex; gap: 12px; justify-content: flex-end;">
+                        <button onclick="limpiarFiltroColumna('{{ $column['key'] }}')" style="padding: 10px 20px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer; color: #374151; font-weight: 500; transition: all 0.2s; font-size: 0.95rem;">
+                            <i class="fas fa-redo" style="margin-right: 6px;"></i>Limpiar
+                        </button>
+                        <button onclick="aplicarFiltroColumna('{{ $column['key'] }}')" style="padding: 10px 24px; background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 500; transition: all 0.2s; font-size: 0.95rem;">
+                            <i class="fas fa-check" style="margin-right: 6px;"></i>Aplicar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        @endif
+    @endforeach
+</div>
+
+<style>
+    .filter-modal.active {
+        display: flex !important;
+    }
+    
+    .filter-checkbox {
+        display: flex;
+        align-items: center;
+        padding: 12px;
+        gap: 12px;
+        border-radius: 6px;
+        transition: background 0.2s;
+        margin-bottom: 6px;
+    }
+    
+    .filter-checkbox:hover {
+        background: #f3f4f6;
+    }
+    
+    .filter-checkbox input[type="checkbox"] {
+        cursor: pointer;
+        width: 18px;
+        height: 18px;
+        accent-color: #1e40af;
+    }
+    
+    .filter-checkbox label {
+        cursor: pointer;
+        margin: 0;
+        flex: 1;
+        color: #374151;
+        font-weight: 500;
+        user-select: none;
+    }
+    
+    .filter-search-box {
+        margin-bottom: 16px;
+    }
+    
+    .filter-search-input {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        transition: border-color 0.2s;
+    }
+    
+    .filter-search-input:focus {
+        outline: none;
+        border-color: #1e40af;
+        box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+    }
+    
+    .filter-modal-content button:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+</style>

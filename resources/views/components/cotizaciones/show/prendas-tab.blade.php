@@ -1,6 +1,6 @@
 {{-- Prendas Table Tab --}}
 <div id="tab-prendas" class="tab-content {{ (!$esLogo || $tienePrendas) && !$esLogo ? 'active' : '' }}">
-    @if($cotizacion->prendasCotizaciones && count($cotizacion->prendasCotizaciones) > 0)
+    @if($cotizacion->prendas && count($cotizacion->prendas) > 0)
         <table style="
             width: 100%;
             border-collapse: collapse;
@@ -17,7 +17,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($cotizacion->prendasCotizaciones as $index => $prenda)
+                @foreach($cotizacion->prendas as $index => $prenda)
                     @php
                         $variante = $prenda->variantes->first();
                     @endphp

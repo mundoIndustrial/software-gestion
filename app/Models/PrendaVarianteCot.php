@@ -14,7 +14,7 @@ class PrendaVarianteCot extends Model
         'tipo_prenda',
         'es_jean_pantalon',
         'tipo_jean_pantalon',
-        'genero',
+        'genero_id',
         'color',
         'tiene_bolsillos',
         'obs_bolsillos',
@@ -43,5 +43,13 @@ class PrendaVarianteCot extends Model
     public function prenda(): BelongsTo
     {
         return $this->belongsTo(PrendaCot::class, 'prenda_cot_id');
+    }
+
+    /**
+     * Relación: Una variante tiene un género
+     */
+    public function genero(): BelongsTo
+    {
+        return $this->belongsTo(GeneroPrend::class, 'genero_id');
     }
 }

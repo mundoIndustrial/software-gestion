@@ -15,7 +15,7 @@ class Cotizacion extends Model
     protected $table = 'cotizaciones';
 
     protected $fillable = [
-        'user_id',
+        'asesor_id',
         'numero_cotizacion',
         'tipo_cotizacion_id',
         'tipo_venta',
@@ -49,11 +49,19 @@ class Cotizacion extends Model
     ];
 
     /**
-     * Relación: Una cotización pertenece a un usuario
+     * Relación: Una cotización pertenece a un asesor (usuario)
      */
-    public function usuario()
+    public function asesor(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'asesor_id');
+    }
+
+    /**
+     * Alias para compatibilidad hacia atrás
+     */
+    public function usuario(): BelongsTo
+    {
+        return $this->asesor();
     }
 
     /**

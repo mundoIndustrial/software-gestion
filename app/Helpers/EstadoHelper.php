@@ -2,7 +2,7 @@
 
 namespace App\Helpers;
 
-use App\Enums\EstadoCotizacion;
+use App\Domain\Cotizacion\ValueObjects\EstadoCotizacion;
 use App\Enums\EstadoPedido;
 use Illuminate\Support\Str;
 
@@ -42,13 +42,13 @@ class EstadoHelper
     public static function colorCotizacion(string|EstadoCotizacion $estado): string
     {
         if ($estado instanceof EstadoCotizacion) {
-            return $estado->color();
+            return $estado->colorUI();
         }
 
         try {
-            return EstadoCotizacion::from($estado)->color();
+            return EstadoCotizacion::from($estado)->colorUI();
         } catch (\ValueError) {
-            return 'gray';
+            return 'secondary';
         }
     }
 
@@ -60,15 +60,8 @@ class EstadoHelper
      */
     public static function iconoCotizacion(string|EstadoCotizacion $estado): string
     {
-        if ($estado instanceof EstadoCotizacion) {
-            return $estado->icon();
-        }
-
-        try {
-            return EstadoCotizacion::from($estado)->icon();
-        } catch (\ValueError) {
-            return 'question-circle';
-        }
+        // El enum no tiene método icon(), retornar vacío
+        return '';
     }
 
     /**

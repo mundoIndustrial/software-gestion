@@ -17,8 +17,8 @@
         <i class="fas fa-file-invoice"></i> Detalle de Cotización
     </h1>
     <p style="margin: 0; opacity: 0.95; position: relative; z-index: 1; font-size: 0.95rem;">
-        @if($cotizacion->numero_cotizacion)
-            Cotización: {{ $cotizacion->numero_cotizacion }}
+        @if($cotizacion->numeroCotizacion)
+            Cotización: {{ $cotizacion->numeroCotizacion }}
         @else
             Cotización #{{ $cotizacion->id }} (Borrador)
         @endif

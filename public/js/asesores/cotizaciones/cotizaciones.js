@@ -13,6 +13,12 @@ window.imagenesEnMemoria = {
 };
 window.especificacionesSeleccionadas = {};
 
+// Mapeo de géneros a IDs (desde generos_prenda tabla)
+const GENEROS_MAP = {
+    'dama': 2,
+    'caballero': 1
+};
+
 console.log('🔵 Sistema de cotizaciones inicializado');
 console.log('📸 imagenesEnMemoria inicializado:', window.imagenesEnMemoria);
 
@@ -310,10 +316,17 @@ function recopilarDatos() {
         const variantes = {};
         const observacionesVariantes = [];
         
-        // Género
+        // Género - Convertir nombre a ID
         const generoSelect = item.querySelector('.talla-genero-select');
         if (generoSelect && generoSelect.value) {
-            variantes.genero = generoSelect.value;
+            const generoNombre = generoSelect.value.toLowerCase();
+            const generoId = GENEROS_MAP[generoNombre];
+            if (generoId) {
+                variantes.genero_id = generoId;
+                console.log(`✅ Género capturado: ${generoNombre} → ID: ${generoId}`);
+            } else {
+                console.warn(`⚠️ Género no reconocido: ${generoNombre}`);
+            }
         }
         
         // Capturar MÚLTIPLES TELAS (color, tela, referencia)

@@ -26,15 +26,15 @@
             {{-- Prendas Tab --}}
             @include('components.cotizaciones.show.prendas-tab', [
                 'cotizacion' => $cotizacion,
-                'esLogo' => strpos(strtolower($cotizacion->tipoCotizacion ? $cotizacion->tipoCotizacion->nombre : ''), 'logo') !== false,
-                'tienePrendas' => $cotizacion->prendasCotizaciones && count($cotizacion->prendasCotizaciones) > 0
+                'esLogo' => strpos(strtolower($cotizacion->tipo === 'L' ? 'logo' : ''), 'logo') !== false,
+                'tienePrendas' => $cotizacion->prendas && count($cotizacion->prendas) > 0
             ])
 
             {{-- Logo Tab --}}
             @include('components.cotizaciones.show.logo-tab', [
                 'logo' => $logo ?? null,
                 'cotizacion' => $cotizacion,
-                'esLogo' => strpos(strtolower($cotizacion->tipoCotizacion ? $cotizacion->tipoCotizacion->nombre : ''), 'logo') !== false
+                'esLogo' => strpos(strtolower($cotizacion->tipo === 'L' ? 'logo' : ''), 'logo') !== false
             ])
         </div>
     </div>

@@ -25,8 +25,8 @@
         'filters' => [
             ['code' => 'todas', 'label' => 'Todas', 'icon' => 'fas fa-list', 'active' => true],
             ['code' => 'P', 'label' => 'Prenda', 'icon' => 'fas fa-shirt', 'active' => false],
-            ['code' => 'B', 'label' => 'Logo', 'icon' => 'fas fa-palette', 'active' => false],
-            ['code' => 'PB', 'label' => 'Prenda/Logo', 'icon' => 'fas fa-shirt', 'active' => false],
+            ['code' => 'L', 'label' => 'Logo', 'icon' => 'fas fa-palette', 'active' => false],
+            ['code' => 'PL', 'label' => 'Prenda/Logo', 'icon' => 'fas fa-shirt', 'active' => false],
         ]
     ])
 
