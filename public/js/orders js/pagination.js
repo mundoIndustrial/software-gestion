@@ -48,6 +48,11 @@ function _initializeControls() {
     if (typeof actualizarDiasTabla === 'function') {
         actualizarDiasTabla();
     }
+    // Aplicar colores condicionales a las filas
+    if (typeof updateRowConditionalColors === 'function') {
+        updateRowConditionalColors();
+        console.log('🎨 Colores condicionales aplicados después de cambiar página');
+    }
 }
 
 function _restoreTableState(tableBody, page, btn) {

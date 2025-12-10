@@ -576,7 +576,7 @@ class RegistroOrdenController extends Controller
         try {
             $filters = $request->input('filters', []);
             $page = $request->input('page', 1);
-            $perPage = 15;
+            $perPage = 25;  // Sincronizado con la paginación inicial en RegistroOrdenQueryController
 
             $query = PedidoProduccion::query();
 
@@ -622,7 +622,7 @@ class RegistroOrdenController extends Controller
             }
 
             // Obtener resultados paginados
-            $ordenes = $query->orderBy('created_at', 'desc')->paginate($perPage, ['*'], 'page', $page);
+            $ordenes = $query->orderBy('created_at', 'asc')->paginate($perPage, ['*'], 'page', $page);
 
             // Transformar datos para la vista
             $ordenesData = $ordenes->map(function($orden) {

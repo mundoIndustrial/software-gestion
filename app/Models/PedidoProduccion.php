@@ -12,6 +12,8 @@ use App\Models\User;
 use App\Models\Cliente;
 use App\Services\CalculadorDiasService;
 use App\Events\PedidoCreado;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class PedidoProduccion extends Model
 {
@@ -386,6 +388,7 @@ class PedidoProduccion extends Model
 
     /**
      * Calcular días hábiles desde la creación de la orden
+     * Si el estado es "Entregado", calcula hasta la fecha del proceso "Despacho"
      */
     public function calcularDiasHabiles()
     {
@@ -396,6 +399,19 @@ class PedidoProduccion extends Model
         $diasCalculados = 0;
         $fechaInicio = $this->fecha_de_creacion_de_orden;
         $fechaFin = now();
+        
+        // Si el estado es "Entregado", buscar la fecha del proceso "Despacho"
+        if ($this->estado === 'Entregado') {
+            $procesoDespacho = DB::table('procesos_prenda')
+                ->where('numero_pedido', $this->numero_pedido)
+                ->where('proceso', 'Despacho')
+                ->select('fecha_inicio')
+                ->first();
+            
+            if ($procesoDespacho && $procesoDespacho->fecha_inicio) {
+                $fechaFin = Carbon::parse($procesoDespacho->fecha_inicio);
+            }
+        }
         
         // Festivos colombianos fijos
         $anio = $fechaInicio->year;

@@ -130,7 +130,8 @@
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
     max-height: 90vh;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
     animation: slideUp 0.3s ease;
     width: 90%;
     max-width: 450px;
@@ -181,6 +182,10 @@
 
 .filter-modal-body {
     padding: 1.5rem;
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .filter-search {
@@ -203,8 +208,9 @@
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
-    max-height: 400px;
+    flex: 1;
     overflow-y: auto;
+    min-height: 0;
 }
 
 .filter-option {
@@ -303,4 +309,130 @@
 .dia-entrega-dropdown {
     background: #919191ff;
     color: white;
+}
+
+/* ====================== BOTÓN FLOTANTE LIMPIAR FILTROS ====================== */
+.floating-clear-filters {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    transition: all 0.3s ease;
+    font-size: 1.5rem;
+    z-index: 999;
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0) translateY(20px);
+}
+
+.floating-clear-filters.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1) translateY(0);
+}
+
+.floating-clear-filters:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+    transform: scale(1.1) translateY(0);
+}
+
+.floating-clear-filters:active {
+    transform: scale(0.95) translateY(0);
+}
+
+.floating-clear-filters-tooltip {
+    position: absolute;
+    bottom: 70px;
+    right: 0;
+    background: #1f2937;
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.floating-clear-filters:hover .floating-clear-filters-tooltip {
+    opacity: 1;
+}
+
+/* ====================== MODO OSCURO ====================== */
+body.dark-theme .filter-modal {
+    background: #1e293b;
+    color: #f1f5f9;
+    display: flex;
+    flex-direction: column;
+}
+
+body.dark-theme .filter-modal-header {
+    background: #1e293b;
+    border-bottom-color: #334155;
+}
+
+body.dark-theme .filter-modal-header h3 {
+    color: #60a5fa;
+}
+
+body.dark-theme .filter-modal-close {
+    color: #cbd5e1;
+}
+
+body.dark-theme .filter-modal-close:hover {
+    color: #60a5fa;
+}
+
+body.dark-theme .filter-search {
+    background: #0f172a;
+    color: #f1f5f9;
+    border-color: #334155;
+}
+
+body.dark-theme .filter-search::placeholder {
+    color: #94a3b8;
+}
+
+body.dark-theme .filter-search:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+body.dark-theme .filter-option {
+    color: #f1f5f9;
+}
+
+body.dark-theme .filter-option:hover {
+    background: #334155;
+}
+
+body.dark-theme .filter-option label {
+    color: #e2e8f0;
+}
+
+body.dark-theme .filter-modal-footer {
+    background: #1e293b;
+    border-top-color: #334155;
+}
+
+body.dark-theme .btn-filter-apply {
+    background: #3b82f6;
+    color: white;
+}
+
+body.dark-theme .btn-filter-apply:hover {
+    background: #2563eb;
 }

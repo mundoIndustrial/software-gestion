@@ -9,6 +9,32 @@ let currentFilterColumn = null;
 let activeFilters = {};
 
 /**
+ * Opciones de áreas disponibles (sincronizadas con AreaOptions.php)
+ */
+const AREA_OPTIONS = [
+    'Creación de Orden',
+    'Control Calidad',
+    'Entrega',
+    'Despacho',
+    'Insumos y Telas',
+    'Costura',
+    'Corte',
+    'Bordado',
+    'Estampado',
+    'Lavandería',
+    'Arreglos'
+];
+
+/**
+ * Generar HTML de opciones de área
+ */
+function getAreaOptionsHtml(selectedArea) {
+    return AREA_OPTIONS.map(area => 
+        `<option value="${area}" ${selectedArea === area ? 'selected' : ''}>${area}</option>`
+    ).join('');
+}
+
+/**
  * Obtener valores únicos de una columna
  */
 function getColumnValues(columnIndex) {
@@ -368,6 +394,9 @@ async function applyFilters() {
     // Actualizar badge
     updateFilterBadges();
     
+    // Actualizar visibilidad del botón flotante
+    updateClearButtonVisibility();
+    
     // Enviar filtros al backend
     await applyFiltersToBackend();
     
@@ -379,6 +408,12 @@ async function applyFilters() {
  */
 async function applyFiltersToBackend(page = 1) {
     try {
+        console.log('📤 Enviando al backend:', {
+            filters: activeFilters,
+            page: page,
+            filtrosActivos: Object.keys(activeFilters).length > 0
+        });
+        
         const response = await fetch('/registros/filter-orders', {
             method: 'POST',
             headers: {
@@ -398,6 +433,8 @@ async function applyFiltersToBackend(page = 1) {
             renderFilteredTable(result.data);
             
             // Actualizar paginación
+            console.log('📡 Respuesta del backend - Paginación:', result.pagination);
+            console.log('📊 Cálculo de páginas: total=' + result.pagination.total + ', per_page=' + result.pagination.per_page + ', last_page=' + result.pagination.last_page);
             updatePaginationInfo(result.pagination);
             
             // Actualizar URL con filtros
@@ -512,9 +549,7 @@ function renderFilteredTable(ordenes) {
             <div class="table-cell" style="flex: 0 0 auto;">
                 <div class="cell-content">
                     <select class="area-dropdown" data-orden-id="${orden.id}">
-                        <option value="Confección" ${orden.area === 'Confección' ? 'selected' : ''}>Confección</option>
-                        <option value="Bordado" ${orden.area === 'Bordado' ? 'selected' : ''}>Bordado</option>
-                        <option value="Estampado" ${orden.area === 'Estampado' ? 'selected' : ''}>Estampado</option>
+                        ${getAreaOptionsHtml(orden.area)}
                     </select>
                 </div>
             </div>
@@ -615,6 +650,11 @@ function renderFilteredTable(ordenes) {
 
     // Reinicializar event listeners
     initializeTableEventListeners();
+    
+    // Aplicar colores condicionales a las filas
+    if (typeof updateRowConditionalColors === 'function') {
+        updateRowConditionalColors();
+    }
 }
 
 /**
@@ -628,6 +668,15 @@ function updatePaginationInfo(pagination) {
         `;
     }
     
+    // Guardar información de paginación actual para referencia
+    window.currentPagination = pagination;
+    console.log('📄 Información de paginación actualizada:', {
+        current_page: pagination.current_page,
+        last_page: pagination.last_page,
+        total: pagination.total,
+        per_page: pagination.per_page
+    });
+    
     // Actualizar botones de paginación
     updatePaginationButtons(pagination);
 }
@@ -636,12 +685,24 @@ function updatePaginationInfo(pagination) {
  * Actualizar botones de paginación
  */
 function updatePaginationButtons(pagination) {
-    // Buscar contenedor de paginación
-    const paginationContainer = document.querySelector('.pagination');
+    // Buscar contenedor de paginación (usar #paginationControls que es el ID en la vista)
+    const paginationContainer = document.querySelector('#paginationControls');
     if (!paginationContainer) return;
 
     // Limpiar paginación anterior
     paginationContainer.innerHTML = '';
+
+    // Si solo hay 1 página, mostrar solo el número de página sin navegación
+    if (pagination.last_page === 1) {
+        const pageBtn = document.createElement('a');
+        pageBtn.href = '#';
+        pageBtn.className = 'pagination-btn page-number active';
+        pageBtn.textContent = '1';
+        pageBtn.style.pointerEvents = 'none'; // Deshabilitar click
+        pageBtn.style.cursor = 'default';
+        paginationContainer.appendChild(pageBtn);
+        return;
+    }
 
     // Botón Primera página
     if (pagination.current_page > 1) {
@@ -676,7 +737,7 @@ function updatePaginationButtons(pagination) {
     for (let i = startPage; i <= endPage; i++) {
         const pageBtn = document.createElement('a');
         pageBtn.href = '#';
-        pageBtn.className = i === pagination.current_page ? 'pagination-btn active' : 'pagination-btn';
+        pageBtn.className = i === pagination.current_page ? 'pagination-btn page-number active' : 'pagination-btn page-number';
         pageBtn.textContent = i;
         pageBtn.onclick = (e) => {
             e.preventDefault();
@@ -708,9 +769,11 @@ function updatePaginationButtons(pagination) {
         lastBtn.textContent = '>>';
         lastBtn.onclick = (e) => {
             e.preventDefault();
+            console.log(`🔘 Botón >> clickeado - Navegando a página ${pagination.last_page} (última página según filtros)`);
             applyFiltersToBackend(pagination.last_page);
         };
         paginationContainer.appendChild(lastBtn);
+        console.log(`✅ Botón >> agregado - Última página disponible: ${pagination.last_page}`);
     }
 }
 
@@ -737,18 +800,31 @@ function resetFilters() {
  * Actualizar badges
  */
 function updateFilterBadges() {
-    document.querySelectorAll('.btn-filter-column .filter-badge').forEach(badge => {
-        badge.textContent = '0';
+    // Primero, remover todos los badges y la clase has-filter
+    document.querySelectorAll('.btn-filter-column').forEach(btn => {
+        btn.classList.remove('has-filter');
+        const badge = btn.querySelector('.filter-badge');
+        if (badge) {
+            badge.remove();
+        }
     });
     
+    // Luego, agregar badges solo para los filtros activos
     Object.entries(activeFilters).forEach(([column, values]) => {
-        const columnIndex = columnMap[column];
-        const buttons = document.querySelectorAll('.btn-filter-column');
-        if (buttons[columnIndex]) {
-            const badge = buttons[columnIndex].querySelector('.filter-badge');
-            if (badge) {
+        if (values.length > 0) {
+            const columnIndex = columnMap[column];
+            const buttons = document.querySelectorAll('.btn-filter-column');
+            if (buttons[columnIndex]) {
+                const btn = buttons[columnIndex];
+                btn.classList.add('has-filter');
+                
+                // Crear nuevo badge
+                const badge = document.createElement('div');
+                badge.className = 'filter-badge';
                 badge.textContent = values.length;
-                buttons[columnIndex].classList.add('has-filter');
+                btn.appendChild(badge);
+                
+                console.log(`🔴 Badge agregado a "${column}": ${values.length}`);
             }
         }
     });
@@ -835,8 +911,68 @@ function loadFiltersFromUrl() {
     // Si hay filtros en la URL, aplicarlos
     if (Object.keys(filters).length > 0) {
         activeFilters = filters;
+        updateClearButtonVisibility();  // Mostrar botón flotante
         applyFiltersToBackend(page);
     }
+}
+
+/**
+ * Mostrar/ocultar botón flotante de limpiar filtros
+ */
+function updateClearButtonVisibility() {
+    const clearBtn = document.getElementById('clearFiltersBtn');
+    if (!clearBtn) return;
+    
+    const hasFilters = Object.keys(activeFilters).length > 0;
+    
+    if (hasFilters) {
+        clearBtn.classList.add('visible');
+        console.log('✅ Botón flotante mostrado');
+    } else {
+        clearBtn.classList.remove('visible');
+        console.log('❌ Botón flotante ocultado');
+    }
+}
+
+/**
+ * Limpiar todos los filtros
+ */
+async function clearAllFilters() {
+    console.log('🗑️ Limpiando todos los filtros...');
+    console.log('Estado ANTES de limpiar:', {
+        activeFilters: activeFilters,
+        currentPagination: window.currentPagination
+    });
+    
+    // Limpiar objeto de filtros activos
+    activeFilters = {};
+    
+    // Desmarcar todos los checkboxes del modal
+    document.querySelectorAll('#filterOptions input[type="checkbox"]').forEach(cb => {
+        cb.checked = false;
+    });
+    
+    // Actualizar badges
+    updateFilterBadges();
+    
+    // Ocultar botón flotante
+    updateClearButtonVisibility();
+    
+    // Cerrar modal si está abierto
+    closeFilterModal();
+    
+    console.log('🔄 Llamando a applyFiltersToBackend(1) con filtros vacíos...');
+    // Cargar tabla sin filtros (página 1)
+    await applyFiltersToBackend(1);
+    
+    // Forzar actualización de URL para limpiar parámetros de filtro
+    window.history.replaceState({}, '', '/registros');
+    
+    console.log('✅ Todos los filtros han sido limpiados');
+    console.log('Estado DESPUÉS de limpiar:', {
+        activeFilters: activeFilters,
+        currentPagination: window.currentPagination
+    });
 }
 
 /**

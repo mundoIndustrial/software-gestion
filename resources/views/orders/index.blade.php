@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="{{ asset('css/orders styles/registros.css') }}">
     <link rel="stylesheet" href="{{ asset('css/orders styles/action-menu.css') }}">
     <link rel="stylesheet" href="{{ asset('css/orders styles/filter-system.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/orders styles/row-conditional-colors.css') }}">
 @endpush
 
 @section('content')
@@ -44,10 +45,12 @@
                         <div class="table-header-cell{{ $column['key'] === 'acciones' ? ' acciones-column' : '' }}" style="flex: {{ $column['flex'] }}; justify-content: {{ $column['justify'] }};">
                             <div class="th-wrapper">
                                 <span class="header-text">{{ $column['label'] }}</span>
-                                <button type="button" class="btn-filter-column" title="Filtrar {{ $column['label'] }}" onclick="openFilterModal('{{ $column['key'] }}')">
-                                    <span class="material-symbols-rounded">filter_alt</span>
-                                    <span class="filter-badge">0</span>
-                                </button>
+                                @if($column['key'] !== 'acciones')
+                                    <button type="button" class="btn-filter-column" title="Filtrar {{ $column['label'] }}" onclick="openFilterModal('{{ $column['key'] }}')">
+                                        <span class="material-symbols-rounded">filter_alt</span>
+                                        <span class="filter-badge">0</span>
+                                    </button>
+                                @endif
                             </div>
                         </div>
                     @endforeach
@@ -309,6 +312,12 @@
         </div>
     </div>
 
+    <!-- Botón Flotante para Limpiar Filtros -->
+    <button id="clearFiltersBtn" class="floating-clear-filters" onclick="clearAllFilters()" title="Limpiar todos los filtros">
+        <span class="material-symbols-rounded">filter_alt_off</span>
+        <div class="floating-clear-filters-tooltip">Limpiar filtros</div>
+    </button>
+
     <script>
         // Pasar opciones de area a JS
         window.areaOptions = @json($areaOptions);
@@ -366,4 +375,7 @@
 
     <!-- FILTER SYSTEM -->
     <script src="{{ asset('js/orders js/filter-system.js') }}?v={{ time() }}"></script>
+
+    <!-- ROW CONDITIONAL COLORS -->
+    <script src="{{ asset('js/orders js/row-conditional-colors.js') }}?v={{ time() }}"></script>
 @endpush

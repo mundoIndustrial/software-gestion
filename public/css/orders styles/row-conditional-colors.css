@@ -1,0 +1,51 @@
+/* ====================== COLORES CONDICIONALES DE FILAS ====================== */
+
+/* Fila con estado Entregado - Azul claro */
+.table-row.status-entregado {
+    background: #a7cdff;
+    border-left: 4px solid #0284c7;
+}
+
+.table-row.status-entregado:hover {
+    background: #82baff;
+}
+
+/* Fila con estado Anulada - Marrón claro */
+.table-row.status-anulada {
+    background: #d4a574;
+    border-left: 4px solid #92400e;
+}
+
+.table-row.status-anulada:hover {
+    background: #c49060;
+}
+
+/* Fila con días totales entre 5 y 9 - Amarillo claro */
+.table-row.dias-5-9 {
+    background: #fef08a;
+    border-left: 4px solid #ca8a04;
+}
+
+.table-row.dias-5-9:hover {
+    background: #fde047;
+}
+
+/* Fila con días totales entre 10 y 15 - Rojo claro */
+.table-row.dias-10-15 {
+    background: #fecaca;
+    border-left: 4px solid #dc2626;
+}
+
+.table-row.dias-10-15:hover {
+    background: #fca5a5;
+}
+
+/* Fila con días totales mayor a 15 - Gris semi oscuro */
+.table-row.dias-mayor-15 {
+    background: #d4d4d4;
+    border-left: 4px solid #6b7280;
+}
+
+.table-row.dias-mayor-15:hover {
+    background: #c4c7ce;
+}

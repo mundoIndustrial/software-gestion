@@ -38,7 +38,8 @@ class RegistroOrdenExtendedQueryService
             ->with([
                 'asesora:id,name',
                 'prendas:numero_pedido,nombre_prenda,cantidad,descripcion,cantidad_talla'
-            ]);
+            ])
+            ->orderBy('created_at', 'asc');
     }
 
     /**
