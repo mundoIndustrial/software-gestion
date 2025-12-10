@@ -81,7 +81,7 @@
                                 <!-- Estado (Dropdown) -->
                                 <div class="table-cell" style="flex: 0 0 auto;">
                                     <div class="cell-content">
-                                        <select class="estado-dropdown estado-{{ str_replace(' ', '-', strtolower($orden->estado)) }}" data-orden-id="{{ $orden->id }}">
+                                        <select class="estado-dropdown estado-{{ str_replace(' ', '-', strtolower($orden->estado)) }}" data-orden-id="{{ $orden->numero_pedido }}">
                                             @foreach(\App\Models\PedidoProduccion::ESTADOS as $estado)
                                                 <option value="{{ $estado }}" {{ $orden->estado === $estado ? 'selected' : '' }}>{{ $estado }}</option>
                                             @endforeach
@@ -92,7 +92,7 @@
                                 <!-- Área (Dropdown) -->
                                 <div class="table-cell" style="flex: 0 0 auto;">
                                     <div class="cell-content">
-                                        <select class="area-dropdown" data-orden-id="{{ $orden->id }}">
+                                        <select class="area-dropdown" data-orden-id="{{ $orden->numero_pedido }}">
                                             @foreach($areaOptions as $area)
                                                 <option value="{{ $area }}" {{ $orden->area === $area ? 'selected' : '' }}>{{ $area }}</option>
                                             @endforeach
@@ -103,7 +103,7 @@
                                 <!-- Día de entrega (Dropdown) -->
                                 <div class="table-cell" style="flex: 0 0 auto;">
                                     <div class="cell-content">
-                                        <select class="dia-entrega-dropdown" data-orden-id="{{ $orden->id }}">
+                                        <select class="dia-entrega-dropdown" data-orden-id="{{ $orden->numero_pedido }}">
                                             <option value="">Seleccionar</option>
                                             @foreach(\App\Models\PedidoProduccion::DIAS_ENTREGA as $dia)
                                                 <option value="{{ $dia }}" {{ $orden->dia_de_entrega == $dia ? 'selected' : '' }}>{{ $dia }} días</option>
@@ -378,4 +378,7 @@
 
     <!-- ROW CONDITIONAL COLORS -->
     <script src="{{ asset('js/orders js/row-conditional-colors.js') }}?v={{ time() }}"></script>
+    
+    <!-- WEBSOCKET TEST (para desarrollo) -->
+    <script src="{{ asset('js/orders js/websocket-test.js') }}?v={{ time() }}"></script>
 @endpush

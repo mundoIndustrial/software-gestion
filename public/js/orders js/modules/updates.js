@@ -18,6 +18,27 @@ const UpdatesModule = {
         this._sendUpdate(`${this.baseUrl}/${orderId}`, { estado: newStatus }, (data) => {
             if (data.success) {
                 console.log('✅ Estado actualizado correctamente');
+                
+                // Actualizar la fila en la tabla con los colores condicionales
+                const row = document.querySelector(`.table-row[data-orden-id="${orderId}"]`);
+                if (row) {
+                    // Actualizar el dropdown visualmente
+                    const dropdown = row.querySelector('.estado-dropdown');
+                    if (dropdown) {
+                        dropdown.value = newStatus;
+                        dropdown.setAttribute('data-value', newStatus);
+                        
+                        // 🆕 Actualizar clases de color del dropdown
+                        this._updateDropdownColorClass(dropdown, newStatus);
+                    }
+                    
+                    // Aplicar colores condicionales
+                    if (typeof applyRowConditionalColors === 'function') {
+                        applyRowConditionalColors(row);
+                        console.log(`🎨 Colores condicionales aplicados para estado: ${newStatus}`);
+                    }
+                }
+                
                 RowManager.updateRowColor(orderId, newStatus);
                 StorageModule.broadcastUpdate('status_update', orderId, 'estado', newStatus, oldStatus, data);
             } else {
@@ -65,13 +86,24 @@ const UpdatesModule = {
                     console.log(`✅ Evento 'change' disparado en dropdown (marcado como programático)`);
                 }
                 
+                // 🆕 Actualizar clase de color del dropdown de área si existe
+                if (dropdown && typeof this._updateDropdownColorClass === 'function') {
+                    this._updateDropdownColorClass(dropdown, newArea);
+                }
+                
                 // 🔴 COMENTADO: La actualización de estados de procesos está causando problemas
                 // NO vamos a actualizar automáticamente procesos cuando se cambia el área
                 // El usuario es responsable de marcar los procesos como completados cuando corresponda
                 // console.log('📍 Actualizando estados de procesos...');
                 // await this._updateProcessStates(orderId, oldArea, newArea);
                 
-                // 🆕 Actualizar color de fila
+                // 🆕 Actualizar color de fila con colores condicionales
+                const row = document.querySelector(`.table-row[data-orden-id="${orderId}"]`);
+                if (row && typeof applyRowConditionalColors === 'function') {
+                    applyRowConditionalColors(row);
+                    console.log('✅ Colores condicionales aplicados para área');
+                }
+                
                 if (window.RowManager && typeof window.RowManager.updateRowColor === 'function') {
                     window.RowManager.updateRowColor(orderId);
                     console.log('✅ Color de fila actualizado');
@@ -312,6 +344,25 @@ const UpdatesModule = {
             dropdown.dataset.value = oldValue;
         }
         console.error(`Error al actualizar ${field}`);
+    },
+
+    /**
+     * 🆕 Actualizar clases de color del dropdown según el estado
+     */
+    _updateDropdownColorClass(dropdown, newStatus) {
+        // Remover todas las clases de estado
+        dropdown.classList.remove(
+            'estado-entregado',
+            'estado-en-ejecución',
+            'estado-no-iniciado',
+            'estado-anulada'
+        );
+        
+        // Agregar la clase correspondiente al nuevo estado
+        const statusClass = `estado-${newStatus.toLowerCase().replace(/ /g, '-')}`;
+        dropdown.classList.add(statusClass);
+        
+        console.log(`🎨 Clase de dropdown actualizada: ${statusClass}`);
     }
 };
 

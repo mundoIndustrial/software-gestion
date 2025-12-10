@@ -52,7 +52,7 @@ const DiaEntregaModule = {
         console.log('📅 handleDiaEntregaChange llamado');
         console.log('📅 Dataset:', select.dataset);
         
-        const numeroOrden = select.dataset.id || select.dataset.numeroOrden;
+        const numeroOrden = select.dataset.ordenId || select.dataset.id || select.dataset.numeroOrden;
         const value = select.value;
         
         console.log(`📅 numeroOrden: ${numeroOrden}, value: ${value}`);
@@ -128,7 +128,10 @@ const DiaEntregaModule = {
         }
 
         // Obtener el dropdown y el valor anterior
-        const select = document.querySelector(`.dia-entrega-dropdown[data-id="${numeroOrden}"]`);
+        let select = document.querySelector(`.dia-entrega-dropdown[data-orden-id="${numeroOrden}"]`);
+        if (!select) {
+            select = document.querySelector(`.dia-entrega-dropdown[data-id="${numeroOrden}"]`);
+        }
         if (!select) {
             console.error(`❌ Dropdown no encontrado para orden ${numeroOrden}`);
             return;

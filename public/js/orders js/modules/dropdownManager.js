@@ -38,8 +38,14 @@ const OrdersDropdownManager = {
      * Manejador de cambio de estado
      */
     handleStatusChange(e) {
-        e.target.setAttribute('data-value', e.target.value);
-        this.updateWithDebounce('status', e.target.dataset.id, e.target.value, e.target.dataset.value, e.target);
+        const newStatus = e.target.value;
+        e.target.setAttribute('data-value', newStatus);
+        const orderId = e.target.dataset.ordenId || e.target.dataset.id;
+        
+        // 🆕 Actualizar clase de color del dropdown inmediatamente
+        this._updateDropdownColorClass(e.target, newStatus);
+        
+        this.updateWithDebounce('status', orderId, newStatus, e.target.dataset.value, e.target);
     },
 
     /**
@@ -49,7 +55,7 @@ const OrdersDropdownManager = {
         console.log('🎯 handleAreaChange INICIO', e.target);
         
         const dropdown = e.target;
-        const orderId = dropdown.dataset.id;
+        const orderId = dropdown.dataset.ordenId || dropdown.dataset.id;
         const oldValue = dropdown.dataset.value;
         const newValue = dropdown.value;
         
@@ -113,6 +119,27 @@ const OrdersDropdownManager = {
         
         this.debounceMap.set(debounceKey, timeoutId);
         console.log(`⏱️ Timeout programado (${this.debounceDelay}ms) - Key: ${debounceKey}`);
+    },
+
+    /**
+     * 🆕 Actualizar clases de color del dropdown según el estado
+     */
+    _updateDropdownColorClass(dropdown, newStatus) {
+        if (!dropdown || !dropdown.classList.contains('estado-dropdown')) return;
+        
+        // Remover todas las clases de estado
+        dropdown.classList.remove(
+            'estado-entregado',
+            'estado-en-ejecución',
+            'estado-no-iniciado',
+            'estado-anulada'
+        );
+        
+        // Agregar la clase correspondiente al nuevo estado
+        const statusClass = `estado-${newStatus.toLowerCase().replace(/ /g, '-')}`;
+        dropdown.classList.add(statusClass);
+        
+        console.log(`🎨 Clase de dropdown actualizada: ${statusClass}`);
     }
 };
 

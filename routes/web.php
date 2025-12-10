@@ -68,6 +68,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/registros/filter-options', [RegistroOrdenController::class, 'getFilterOptions'])->name('registros.filter-options');
     Route::get('/registros/filter-column-options/{column}', [RegistroOrdenController::class, 'getColumnFilterOptions'])->name('registros.filter-column-options');
     Route::post('/registros/filter-orders', [RegistroOrdenController::class, 'filterOrders'])->name('registros.filter-orders');
+    Route::post('/registros/search', [RegistroOrdenController::class, 'searchOrders'])->name('registros.search');
     
     // Rutas con parámetros {pedido}
     Route::get('/registros/{pedido}', [RegistroOrdenQueryController::class, 'show'])->name('registros.show');

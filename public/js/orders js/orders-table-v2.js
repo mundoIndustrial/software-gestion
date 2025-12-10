@@ -83,7 +83,7 @@ function initializeDiaEntregaDropdowns() {
  * → Ahora: UpdatesModule.updateOrderDiaEntrega()
  */
 function handleDiaEntregaChange() {
-    const orderId = this.dataset.id;
+    const orderId = this.dataset.ordenId || this.dataset.id;
     const newValue = this.value;
     
     if (UpdatesModule && UpdatesModule.updateOrderDiaEntrega) {

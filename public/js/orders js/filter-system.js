@@ -9,6 +9,47 @@ let currentFilterColumn = null;
 let activeFilters = {};
 
 /**
+ * Guardar filtros en localStorage
+ */
+function saveFiltersToStorage() {
+    try {
+        localStorage.setItem('activeFilters', JSON.stringify(activeFilters));
+        console.log('💾 Filtros guardados en localStorage');
+    } catch (error) {
+        console.error('Error al guardar filtros:', error);
+    }
+}
+
+/**
+ * Cargar filtros desde localStorage
+ */
+function loadFiltersFromStorage() {
+    try {
+        const stored = localStorage.getItem('activeFilters');
+        if (stored) {
+            activeFilters = JSON.parse(stored);
+            console.log('📂 Filtros cargados desde localStorage:', activeFilters);
+            return true;
+        }
+    } catch (error) {
+        console.error('Error al cargar filtros:', error);
+    }
+    return false;
+}
+
+/**
+ * Limpiar filtros de localStorage
+ */
+function clearFiltersFromStorage() {
+    try {
+        localStorage.removeItem('activeFilters');
+        console.log('🗑️ Filtros eliminados de localStorage');
+    } catch (error) {
+        console.error('Error al limpiar filtros:', error);
+    }
+}
+
+/**
  * Opciones de áreas disponibles (sincronizadas con AreaOptions.php)
  */
 const AREA_OPTIONS = [
@@ -262,6 +303,9 @@ async function openFilterModal(column) {
     const filterOptions = document.getElementById('filterOptions');
     filterOptions.innerHTML = '<div style="padding: 20px; text-align: center; color: #6b7280;">Cargando opciones...</div>';
     
+    // Obtener búsqueda actual del NavSearch si existe
+    const currentSearch = window.NavSearch?.state?.currentQuery || '';
+    
     // Obtener primeras 25 opciones del servidor
     const result = await getColumnOptionsFromServer(column, 1, 25, '');
     
@@ -283,6 +327,19 @@ async function openFilterModal(column) {
     searchInput.removeEventListener('input', filterSearchOptions);
     searchInput.addEventListener('input', filterSearchOptions);
     
+    // Mostrar búsqueda actual en el input del filtro si existe
+    if (currentSearch) {
+        searchInput.value = currentSearch;
+        searchInput.style.backgroundColor = '#fef3c7';
+        searchInput.style.borderColor = '#f59e0b';
+        
+        // Mostrar indicador de búsqueda activa
+        const indicator = document.createElement('div');
+        indicator.style.cssText = 'padding: 8px 12px; background: #fef3c7; border-left: 4px solid #f59e0b; margin-bottom: 12px; border-radius: 4px; font-size: 13px; color: #92400e;';
+        indicator.textContent = `📌 Búsqueda activa: "${currentSearch}"`;
+        filterOptions.parentElement.insertBefore(indicator, filterOptions);
+    }
+    
     console.log(`🔍 Modal de filtro abierto para: ${column}`);
 }
 
@@ -298,6 +355,54 @@ function renderFilterOptions(options, total) {
         return;
     }
     
+    // Agregar botón "Seleccionar todas"
+    const selectAllContainer = document.createElement('div');
+    selectAllContainer.style.cssText = 'padding: 12px; border-bottom: 1px solid #e5e7eb; margin-bottom: 8px;';
+    
+    const selectAllBtn = document.createElement('button');
+    selectAllBtn.type = 'button';
+    selectAllBtn.className = 'btn-select-all';
+    selectAllBtn.textContent = 'Seleccionar todas';
+    selectAllBtn.style.cssText = `
+        width: 100%;
+        padding: 8px 12px;
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 14px;
+        transition: all 0.2s;
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+    `;
+    
+    selectAllBtn.addEventListener('mouseover', () => {
+        selectAllBtn.style.boxShadow = '0 4px 8px rgba(59, 130, 246, 0.3)';
+        selectAllBtn.style.transform = 'translateY(-1px)';
+    });
+    
+    selectAllBtn.addEventListener('mouseout', () => {
+        selectAllBtn.style.boxShadow = '0 2px 4px rgba(59, 130, 246, 0.2)';
+        selectAllBtn.style.transform = 'translateY(0)';
+    });
+    
+    selectAllBtn.addEventListener('click', () => {
+        const checkboxes = filterOptions.querySelectorAll('.filter-option input[type="checkbox"]');
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        
+        // Toggle: si todas están seleccionadas, deseleccionar; si no, seleccionar todas
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = !allChecked;
+        });
+        
+        // Cambiar texto del botón
+        selectAllBtn.textContent = allChecked ? 'Seleccionar todas' : 'Deseleccionar todas';
+    });
+    
+    selectAllContainer.appendChild(selectAllBtn);
+    filterOptions.appendChild(selectAllContainer);
+    
     options.forEach(item => {
         // Manejar tanto strings como objetos con display/value
         const displayText = typeof item === 'object' ? item.display : item;
@@ -311,6 +416,13 @@ function renderFilterOptions(options, total) {
         checkbox.value = checkboxValue;
         checkbox.checked = activeFilters[currentFilterColumn]?.includes(checkboxValue) || false;
         
+        // Listener para actualizar estado del botón "Seleccionar todas"
+        checkbox.addEventListener('change', () => {
+            const allCheckboxes = filterOptions.querySelectorAll('.filter-option input[type="checkbox"]');
+            const allChecked = Array.from(allCheckboxes).every(cb => cb.checked);
+            selectAllBtn.textContent = allChecked ? 'Deseleccionar todas' : 'Seleccionar todas';
+        });
+        
         const label = document.createElement('label');
         label.htmlFor = `filter-${checkboxValue}`;
         label.textContent = displayText;
@@ -323,7 +435,7 @@ function renderFilterOptions(options, total) {
     // Mostrar información de opciones
     if (total > 25) {
         const infoDiv = document.createElement('div');
-        infoDiv.style.cssText = 'padding: 10px; text-align: center; color: #6b7280; font-size: 0.85rem;';
+        infoDiv.style.cssText = 'padding: 10px; text-align: center; color: #6b7280; font-size: 0.85rem; margin-top: 8px;';
         infoDiv.textContent = `Mostrando 25 de ${total} opciones. Usa la búsqueda para filtrar.`;
         filterOptions.appendChild(infoDiv);
     }
@@ -390,6 +502,9 @@ async function applyFilters() {
     } else {
         delete activeFilters[currentFilterColumn];
     }
+    
+    // Guardar filtros en localStorage
+    saveFiltersToStorage();
     
     // Actualizar badge
     updateFilterBadges();
@@ -664,7 +779,7 @@ function updatePaginationInfo(pagination) {
     const paginationContainer = document.querySelector('.pagination-info');
     if (paginationContainer) {
         paginationContainer.innerHTML = `
-            Mostrando ${pagination.from} a ${pagination.to} de ${pagination.total} registros
+            Mostrando ${pagination.total} de ${pagination.total} registros
         `;
     }
     
@@ -812,11 +927,18 @@ function updateFilterBadges() {
     // Luego, agregar badges solo para los filtros activos
     Object.entries(activeFilters).forEach(([column, values]) => {
         if (values.length > 0) {
-            const columnIndex = columnMap[column];
-            const buttons = document.querySelectorAll('.btn-filter-column');
-            if (buttons[columnIndex]) {
-                const btn = buttons[columnIndex];
+            // Buscar el botón de filtro que corresponde a esta columna
+            // usando el atributo onclick que contiene el nombre de la columna
+            const btn = document.querySelector(`.btn-filter-column[onclick*="'${column}'"]`);
+            
+            if (btn) {
                 btn.classList.add('has-filter');
+                
+                // Remover badge anterior si existe
+                const oldBadge = btn.querySelector('.filter-badge');
+                if (oldBadge) {
+                    oldBadge.remove();
+                }
                 
                 // Crear nuevo badge
                 const badge = document.createElement('div');
@@ -825,6 +947,8 @@ function updateFilterBadges() {
                 btn.appendChild(badge);
                 
                 console.log(`🔴 Badge agregado a "${column}": ${values.length}`);
+            } else {
+                console.warn(`⚠️ No se encontró botón para columna: ${column}`);
             }
         }
     });
@@ -947,6 +1071,9 @@ async function clearAllFilters() {
     // Limpiar objeto de filtros activos
     activeFilters = {};
     
+    // Limpiar filtros de localStorage
+    clearFiltersFromStorage();
+    
     // Desmarcar todos los checkboxes del modal
     document.querySelectorAll('#filterOptions input[type="checkbox"]').forEach(cb => {
         cb.checked = false;
@@ -990,6 +1117,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         console.log('✅ Sistema de filtros inicializado');
+    }
+    
+    // Cargar filtros desde localStorage
+    if (loadFiltersFromStorage()) {
+        console.log('📂 Filtros restaurados desde localStorage');
+        // Actualizar badges con los filtros cargados
+        updateFilterBadges();
+        // Aplicar filtros al backend
+        applyFiltersToBackend(1);
     }
     
     // Cargar filtros desde URL si existen

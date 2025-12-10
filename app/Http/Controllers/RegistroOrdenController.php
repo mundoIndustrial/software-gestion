@@ -667,6 +667,119 @@ class RegistroOrdenController extends Controller
     }
 
     /**
+     * 🆕 Búsqueda simple en tiempo real
+     * POST /registros/search
+     */
+    public function searchOrders(Request $request)
+    {
+        try {
+            $search = $request->input('search', '');
+            $limit = $request->input('limit', 25);
+            $page = $request->input('page', 1);
+            $isTableSearch = $request->input('isTableSearch', false);
+
+            if (strlen($search) < 1) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [],
+                    'ordenes' => []
+                ]);
+            }
+
+            // Buscar por número de pedido o cliente
+            $query = PedidoProduccion::where('numero_pedido', 'LIKE', '%' . $search . '%')
+                ->orWhere('cliente', 'LIKE', '%' . $search . '%');
+
+            // Si es búsqueda de tabla, retornar todos los campos con paginación
+            if ($isTableSearch) {
+                // Usar paginación
+                $ordenesQuery = $query->select(
+                    'id',
+                    'numero_pedido',
+                    'cliente',
+                    'estado',
+                    'area',
+                    'dia_de_entrega',
+                    'fecha_de_creacion_de_orden',
+                    'fecha_estimada_de_entrega',
+                    'novedades',
+                    'forma_de_pago',
+                    'asesor_id',
+                    'created_at',
+                    'updated_at'
+                )->with('prendas', 'asesora');
+
+                // Obtener total antes de paginar
+                $total = $ordenesQuery->count();
+
+                // Paginar
+                $ordenes = $ordenesQuery->paginate($limit, ['*'], 'page', $page);
+
+                // Mapear datos para incluir total_dias calculado y encargado
+                $ordenesMapeadas = $ordenes->getCollection()->map(function($orden) {
+                    // Obtener encargado de la orden (último proceso)
+                    $encargado = DB::table('procesos_prenda')
+                        ->where('numero_pedido', $orden->numero_pedido)
+                        ->orderBy('created_at', 'desc')
+                        ->value('encargado');
+
+                    return [
+                        'id' => $orden->id,
+                        'numero_pedido' => $orden->numero_pedido,
+                        'cliente' => $orden->cliente,
+                        'estado' => $orden->estado,
+                        'area' => $orden->area,
+                        'dia_de_entrega' => $orden->dia_de_entrega,
+                        'fecha_de_creacion_de_orden' => $orden->fecha_de_creacion_de_orden,
+                        'fecha_estimada_de_entrega' => $orden->fecha_estimada_de_entrega,
+                        'novedades' => $orden->novedades,
+                        'forma_de_pago' => $orden->forma_de_pago,
+                        'asesor' => $orden->asesora?->name ?? '-',
+                        'created_at' => $orden->created_at,
+                        'updated_at' => $orden->updated_at,
+                        'prendas' => $orden->prendas,
+                        'total_dias_calculado' => $orden->calcularDiasHabiles(),
+                        'encargado' => $encargado
+                    ];
+                });
+
+                // Reemplazar la colección con los datos mapeados
+                $ordenes->setCollection($ordenesMapeadas);
+
+                return response()->json([
+                    'success' => true,
+                    'ordenes' => $ordenes->items(),
+                    'data' => $ordenes->items(),
+                    'pagination' => [
+                        'current_page' => $ordenes->currentPage(),
+                        'last_page' => $ordenes->lastPage(),
+                        'per_page' => $ordenes->perPage(),
+                        'total' => $ordenes->total(),
+                        'from' => $ordenes->firstItem(),
+                        'to' => $ordenes->lastItem()
+                    ]
+                ]);
+            }
+
+            // Si es búsqueda de dropdown, retornar solo lo necesario
+            $ordenes = $query->select('id', 'numero_pedido', 'cliente', 'estado', 'area')
+                ->limit(10)
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $ordenes
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en búsqueda de órdenes: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error en búsqueda: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Obtener imágenes de una orden (DEPRECATED - Usar RegistroOrdenQueryController)
      */
 }

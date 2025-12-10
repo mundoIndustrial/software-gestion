@@ -16,6 +16,26 @@
                 <div class="breadcrumb-section">
                     <h1 class="page-title">@yield('page-title', 'Dashboard')</h1>
                 </div>
+                
+                <!-- 🆕 Barra de búsqueda (solo en vista de órdenes) -->
+                @if(Route::currentRouteName() === 'registros.index')
+                <div class="nav-search-container">
+                    <div class="nav-search-wrapper">
+                        <span class="material-symbols-rounded search-icon">search</span>
+                        <input 
+                            type="text" 
+                            id="navSearchInput" 
+                            class="nav-search-input" 
+                            placeholder="Buscar por número o cliente..."
+                            autocomplete="off"
+                        >
+                        <button class="nav-search-clear" id="navSearchClear" style="display: none;">
+                            <span class="material-symbols-rounded">close</span>
+                        </button>
+                    </div>
+                    <div class="nav-search-results" id="navSearchResults" style="display: none;"></div>
+                </div>
+                @endif
             </div>
 
             <div class="nav-right">
@@ -100,4 +120,5 @@
 @push('scripts')
     <script src="{{ asset('js/top-nav.js') }}"></script>
     <script src="{{ asset('js/contador/notifications.js') }}"></script>
+    <script src="{{ asset('js/nav-search.js') }}"></script>
 @endpush
