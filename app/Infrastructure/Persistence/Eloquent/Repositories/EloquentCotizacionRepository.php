@@ -28,12 +28,12 @@ final class EloquentCotizacionRepository implements CotizacionRepositoryInterfac
                 ['id' => $datos['id'] ?: null],
                 [
                     'asesor_id' => $datos['usuario_id'],
+                    'cliente_id' => $datos['cliente_id'] ?? null,
                     'numero_cotizacion' => $datos['numero_cotizacion'],
                     'tipo_cotizacion_id' => null, // Será actualizado por el servicio
                     'tipo_venta' => 'M', // Por defecto
                     'fecha_inicio' => $datos['fecha_inicio'],
                     'fecha_envio' => $datos['fecha_envio'],
-                    'cliente' => $datos['cliente'],
                     'es_borrador' => $datos['es_borrador'],
                     'estado' => $datos['estado'],
                 ]

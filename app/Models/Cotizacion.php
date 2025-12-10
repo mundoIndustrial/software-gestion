@@ -16,12 +16,12 @@ class Cotizacion extends Model
 
     protected $fillable = [
         'asesor_id',
+        'cliente_id',
         'numero_cotizacion',
         'tipo_cotizacion_id',
         'tipo_venta',
         'fecha_inicio',
         'fecha_envio',
-        'cliente',
         'es_borrador',
         'estado',
         'productos',
@@ -61,6 +61,14 @@ class Cotizacion extends Model
     public function usuario(): BelongsTo
     {
         return $this->asesor();
+    }
+
+    /**
+     * Relación: Una cotización pertenece a un cliente
+     */
+    public function cliente(): BelongsTo
+    {
+        return $this->belongsTo(Cliente::class, 'cliente_id');
     }
 
     /**

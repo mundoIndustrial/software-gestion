@@ -119,7 +119,7 @@ final class CotizacionController extends Controller
             $dto = CrearCotizacionDTO::desdeArray([
                 'usuario_id' => Auth::id(),
                 'tipo' => $request->input('tipo', 'P'),
-                'cliente' => $request->input('cliente'),
+                'cliente_id' => $request->input('cliente_id'),
                 'productos' => $request->input('productos', []),
                 'logo' => $request->input('logo', []),
                 'tipo_venta' => $request->input('tipo_venta', 'M'),
