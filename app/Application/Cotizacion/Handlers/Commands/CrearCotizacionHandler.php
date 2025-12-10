@@ -6,7 +6,7 @@ use App\Application\Cotizacion\Commands\CrearCotizacionCommand;
 use App\Application\Cotizacion\DTOs\CotizacionDTO;
 use App\Domain\Cotizacion\Entities\Cotizacion;
 use App\Domain\Cotizacion\Repositories\CotizacionRepositoryInterface;
-use App\Domain\Cotizacion\ValueObjects\{Asesora, Cliente, TipoCotizacion};
+use App\Domain\Cotizacion\ValueObjects\TipoCotizacion;
 use App\Domain\Shared\ValueObjects\UserId;
 use Illuminate\Support\Facades\Log;
 
@@ -32,24 +32,36 @@ final class CrearCotizacionHandler
         Log::info('CrearCotizacionHandler: Iniciando creación', [
             'usuario_id' => $datos->usuarioId,
             'tipo' => $datos->tipo,
-            'cliente' => $datos->cliente,
+            'cliente_id' => $datos->clienteId,
+            'tipo_venta' => $datos->tipoVenta,
             'es_borrador' => $datos->esBorrador,
         ]);
 
         try {
             // Crear Value Objects
             $usuarioId = UserId::crear($datos->usuarioId);
-            $cliente = Cliente::crear($datos->cliente);
-            $asesora = Asesora::crear($datos->asesora);
             $tipo = TipoCotizacion::tryFrom($datos->tipo) ?? TipoCotizacion::PRENDA;
 
             // Crear Aggregate Root
             if ($datos->esBorrador) {
-                $cotizacion = Cotizacion::crearBorrador($usuarioId, $tipo, $cliente, $asesora);
+                $cotizacion = Cotizacion::crearBorrador(
+                    $usuarioId,
+                    $tipo,
+                    $datos->clienteId,
+                    $datos->tipoVenta,
+                    $datos->especificaciones ?? []
+                );
             } else {
                 // Para enviadas, necesitamos un secuencial
                 $secuencial = $this->repository->countByUserId($usuarioId) + 1;
-                $cotizacion = Cotizacion::crearEnviada($usuarioId, $tipo, $cliente, $asesora, $secuencial);
+                $cotizacion = Cotizacion::crearEnviada(
+                    $usuarioId,
+                    $tipo,
+                    $secuencial,
+                    $datos->clienteId,
+                    $datos->tipoVenta,
+                    $datos->especificaciones ?? []
+                );
             }
 
             // Guardar

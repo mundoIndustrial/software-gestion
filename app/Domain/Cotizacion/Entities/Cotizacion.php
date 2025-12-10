@@ -3,8 +3,6 @@
 namespace App\Domain\Cotizacion\Entities;
 
 use App\Domain\Cotizacion\ValueObjects\{
-    Asesora,
-    Cliente,
     CotizacionId,
     EstadoCotizacion,
     NumeroCotizacion,
@@ -17,7 +15,7 @@ use DateTimeImmutable;
  * Cotizacion - Aggregate Root
  *
  * Representa una cotización comercial con:
- * - Información básica (cliente, asesora, tipo)
+ * - Información básica (asesor_id, cliente_id, tipo)
  * - Estado y transiciones
  * - Prendas y logo
  * - Historial de cambios
@@ -26,14 +24,15 @@ final class Cotizacion
 {
     private CotizacionId $id;
     private UserId $usuarioId;
+    private ?int $clienteId;
     private NumeroCotizacion $numero;
     private TipoCotizacion $tipo;
     private EstadoCotizacion $estado;
-    private Cliente $cliente;
-    private Asesora $asesora;
     private bool $esBorrador;
     private DateTimeImmutable $fechaInicio;
     private ?DateTimeImmutable $fechaEnvio = null;
+    private ?string $tipoVenta = null;
+    private array $especificaciones = [];
     private array $prendas = [];
     private ?LogoCotizacion $logo = null;
     private array $eventos = [];
@@ -43,15 +42,17 @@ final class Cotizacion
         UserId $usuarioId,
         NumeroCotizacion $numero,
         TipoCotizacion $tipo,
-        Cliente $cliente,
-        Asesora $asesora
+        ?int $clienteId = null,
+        ?string $tipoVenta = null,
+        array $especificaciones = []
     ) {
         $this->id = $id;
         $this->usuarioId = $usuarioId;
         $this->numero = $numero;
         $this->tipo = $tipo;
-        $this->cliente = $cliente;
-        $this->asesora = $asesora;
+        $this->clienteId = $clienteId;
+        $this->tipoVenta = $tipoVenta;
+        $this->especificaciones = $especificaciones;
         $this->esBorrador = $numero->estaVacio();
         $this->estado = $this->esBorrador
             ? EstadoCotizacion::BORRADOR
@@ -65,19 +66,19 @@ final class Cotizacion
     public static function crearBorrador(
         UserId $usuarioId,
         TipoCotizacion $tipo,
-        Cliente $cliente,
-        Asesora $asesora
+        ?int $clienteId = null,
+        ?string $tipoVenta = null,
+        array $especificaciones = []
     ): self {
-        $cotizacion = new self(
+        return new self(
             CotizacionId::crear(0),
             $usuarioId,
             NumeroCotizacion::vacio(),
             $tipo,
-            $cliente,
-            $asesora
+            $clienteId,
+            $tipoVenta,
+            $especificaciones
         );
-
-        return $cotizacion;
     }
 
     /**
@@ -86,17 +87,19 @@ final class Cotizacion
     public static function crearEnviada(
         UserId $usuarioId,
         TipoCotizacion $tipo,
-        Cliente $cliente,
-        Asesora $asesora,
-        int $secuencial
+        int $secuencial,
+        ?int $clienteId = null,
+        ?string $tipoVenta = null,
+        array $especificaciones = []
     ): self {
         $cotizacion = new self(
             CotizacionId::crear(0),
             $usuarioId,
             NumeroCotizacion::generar($secuencial),
             $tipo,
-            $cliente,
-            $asesora
+            $clienteId,
+            $tipoVenta,
+            $especificaciones
         );
 
         $cotizacion->fechaEnvio = new DateTimeImmutable();
@@ -349,15 +352,16 @@ final class Cotizacion
         return [
             'id' => $this->id->valor(),
             'usuario_id' => $this->usuarioId->valor(),
+            'cliente_id' => $this->clienteId,
             'numero_cotizacion' => $this->numero->valor(),
             'tipo' => $this->tipo->value,
             'tipo_cotizacion_id' => $tipoCotizacionId,
+            'tipo_venta' => $this->tipoVenta,
             'estado' => $this->estado->value,
-            'cliente' => $this->cliente->valor(),
-            'asesora' => $this->asesora->valor(),
             'es_borrador' => $this->esBorrador,
             'fecha_inicio' => $this->fechaInicio->format('Y-m-d H:i:s'),
             'fecha_envio' => $this->fechaEnvio?->format('Y-m-d H:i:s'),
+            'especificaciones' => $this->especificaciones,
             'prendas' => array_map(fn($p) => $p->toArray(), $this->prendas),
             'logo' => $this->logo?->toArray(),
         ];
