@@ -375,22 +375,9 @@ async function enviarCotizacion() {
         return;
     }
     
-    // 📸 Procesar imágenes a Base64
-    console.log('🖼️ Procesando imágenes a Base64...');
-    try {
-        const datosConImagenes = await procesarImagenesABase64(datos);
-        console.log('✅ Imágenes procesadas correctamente');
-        Object.assign(datos, datosConImagenes);
-    } catch (error) {
-        console.error('❌ Error al procesar imágenes:', error);
-        Swal.fire({
-            title: 'Error al procesar imágenes',
-            text: 'No se pudieron convertir las imágenes. ' + error.message,
-            icon: 'error',
-            confirmButtonColor: '#1e40af'
-        });
-        return;
-    }
+    // 📸 NO convertir a Base64 - mantener File objects
+    // Las imágenes se enviarán directamente como archivos en FormData
+    console.log('🖼️ Imágenes se enviarán como File objects (sin convertir a Base64)...');
     
     if (!datos.cliente.trim()) {
         Swal.fire({

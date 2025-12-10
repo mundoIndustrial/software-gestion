@@ -21,6 +21,7 @@ final readonly class CotizacionDTO
         public bool $esBorrador,
         public DateTimeImmutable $fechaInicio,
         public ?DateTimeImmutable $fechaEnvio,
+        public ?string $cliente = null,
         public array $prendas = [],
         public ?array $logo = null,
         public ?int $tipoCotizacionId = null,
@@ -55,6 +56,7 @@ final readonly class CotizacionDTO
                     ? $datos['fecha_envio']
                     : new DateTimeImmutable($datos['fecha_envio']))
                 : null,
+            cliente: $datos['cliente'] ?? $datos['nombre_cliente'] ?? null,
             prendas: $datos['prendas'] ?? [],
             logo: $datos['logo'] ?? null,
             tipoCotizacionId: isset($datos['tipo_cotizacion_id']) ? (int) $datos['tipo_cotizacion_id'] : null,
@@ -74,6 +76,7 @@ final readonly class CotizacionDTO
             'tipo' => $this->tipo,
             'estado' => $this->estado,
             'cliente_id' => $this->clienteId,
+            'cliente' => $this->cliente,
             'es_borrador' => $this->esBorrador,
             'fecha_inicio' => $this->fechaInicio->format('Y-m-d H:i:s'),
             'fecha_envio' => $this->fechaEnvio?->format('Y-m-d H:i:s'),

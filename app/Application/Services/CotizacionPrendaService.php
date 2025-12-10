@@ -57,62 +57,57 @@ class CotizacionPrendaService
                 ]);
                 
                 // 2. Guardar fotos en prenda_fotos_cot
-                $fotos = $productoData['fotos'] ?? [];
+                $fotos = $productoData['fotos_desde_prendaConIndice'] ?? $productoData['fotos'] ?? [];
                 if (!empty($fotos)) {
                     foreach ($fotos as $foto) {
-                        $prenda->fotos()->create([
-                            'url' => $foto,
-                            'nombre' => basename($foto)
-                        ]);
+                        // Si es base64, guardar directamente; si es archivo, usar ruta
+                        $ruta = is_array($foto) ? ($foto['ruta_webp'] ?? $foto['url'] ?? '') : $foto;
+                        if (!empty($ruta)) {
+                            $prenda->fotos()->create([
+                                'ruta_original' => $ruta,
+                                'ruta_webp' => $ruta,
+                                'tipo' => 'prenda',
+                                'orden' => 1,
+                            ]);
+                        }
                     }
                     Log::info("✅ Fotos guardadas", ['cantidad' => count($fotos)]);
                 }
-                
+
                 // 3. Guardar telas en prenda_telas_cot
+                // NOTA: Esta tabla usa color_id y tela_id (referencias), no guardamos aquí
+                // Las telas se guardan en prenda_tela_fotos_cot con las imágenes
+                // Por ahora, solo registramos que se procesaron
                 $telas = $productoData['telas'] ?? [];
                 if (!empty($telas)) {
-                    foreach ($telas as $tela) {
-                        $prenda->telas()->create([
-                            'color' => $tela['color'] ?? '',
-                            'nombre_tela' => $tela['tela'] ?? '',
-                            'referencia' => $tela['referencia'] ?? '',
-                            'url_imagen' => $tela['url'] ?? ''
-                        ]);
-                    }
-                    Log::info("✅ Telas guardadas", ['cantidad' => count($telas)]);
+                    Log::info("✅ Telas procesadas (se guardan con imágenes)", ['cantidad' => count($telas)]);
                 }
-                
+
                 // 4. Guardar tallas en prenda_tallas_cot
                 $tallas = $productoData['tallas'] ?? [];
+                // Decodificar si viene como JSON string
+                if (is_string($tallas)) {
+                    $tallas = json_decode($tallas, true) ?? [];
+                }
                 if (!empty($tallas)) {
                     foreach ($tallas as $talla) {
                         $prenda->tallas()->create([
                             'talla' => $talla,
-                            'cantidad' => 0  // Se puede actualizar después
+                            'cantidad' => 1
                         ]);
                     }
                     Log::info("✅ Tallas guardadas", ['cantidad' => count($tallas)]);
                 }
-                
+
                 // 5. Guardar variantes en prenda_variantes_cot
                 $variantes = $productoData['variantes'] ?? [];
                 if (!empty($variantes)) {
                     $prenda->variantes()->create([
-                        'tipo_prenda' => $productoData['tipo_prenda'] ?? '',
-                        'es_jean_pantalon' => $variantes['es_jean_pantalon'] ?? false,
-                        'tipo_jean_pantalon' => $variantes['tipo_jean_pantalon'] ?? '',
                         'genero_id' => $variantes['genero_id'] ?? null,
-                        'color' => $variantes['color'] ?? '',
-                        'tiene_bolsillos' => $variantes['tiene_bolsillos'] ?? false,
-                        'obs_bolsillos' => $variantes['obs_bolsillos'] ?? '',
-                        'aplica_manga' => $variantes['aplica_manga'] ?? false,
-                        'tipo_manga' => $variantes['tipo_manga'] ?? '',
-                        'obs_manga' => $variantes['obs_manga'] ?? '',
-                        'aplica_broche' => $variantes['aplica_broche'] ?? false,
+                        'tipo_manga_id' => $variantes['tipo_manga_id'] ?? null,
                         'tipo_broche_id' => $variantes['tipo_broche_id'] ?? null,
-                        'obs_broche' => $variantes['obs_broche'] ?? '',
+                        'tiene_bolsillos' => $variantes['tiene_bolsillos'] ?? false,
                         'tiene_reflectivo' => $variantes['tiene_reflectivo'] ?? false,
-                        'obs_reflectivo' => $variantes['obs_reflectivo'] ?? '',
                         'descripcion_adicional' => $variantes['descripcion_adicional'] ?? ''
                     ]);
                     Log::info("✅ Variantes guardadas");

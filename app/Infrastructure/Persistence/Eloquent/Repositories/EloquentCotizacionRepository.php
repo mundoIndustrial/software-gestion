@@ -226,8 +226,8 @@ final class EloquentCotizacionRepository implements CotizacionRepositoryInterfac
         $cotizacion = Cotizacion::crearBorrador(
             UserId::crear($modelo->asesor_id),
             $tipo,
-            \App\Domain\Cotizacion\ValueObjects\Cliente::crear($modelo->cliente),
-            \App\Domain\Cotizacion\ValueObjects\Asesora::crear($modelo->asesora)
+            $modelo->cliente_id,
+            $modelo->tipo_venta ?? 'M'
         );
 
         // Si el modelo tiene un estado diferente a BORRADOR, devolverlo como está

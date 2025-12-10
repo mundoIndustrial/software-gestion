@@ -18,6 +18,7 @@ use App\Application\Cotizacion\Handlers\Queries\ObtenerCotizacionHandler;
 use App\Application\Cotizacion\Queries\ListarCotizacionesQuery;
 use App\Application\Cotizacion\Queries\ObtenerCotizacionQuery;
 use App\Application\Cotizacion\Services\ObtenerOCrearClienteService;
+use App\Application\Services\ProcesarImagenesCotizacionService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -41,6 +42,7 @@ final class CotizacionController extends Controller
         private readonly AceptarCotizacionHandler $aceptarHandler,
         private readonly SubirImagenCotizacionHandler $subirImagenHandler,
         private readonly ObtenerOCrearClienteService $obtenerOCrearClienteService,
+        private readonly ProcesarImagenesCotizacionService $procesarImagenesService,
     ) {
     }
 
@@ -118,6 +120,14 @@ final class CotizacionController extends Controller
     public function store(Request $request): JsonResponse
     {
         try {
+            Log::info('CotizacionController@store: Datos recibidos', [
+                'tipo' => $request->input('tipo'),
+                'cliente' => $request->input('cliente'),
+                'tipo_venta' => $request->input('tipo_venta'),
+                'especificaciones' => $request->input('especificaciones'),
+                'productos_count' => count($request->input('productos', [])),
+            ]);
+
             // Obtener o crear cliente si se proporciona nombre
             $clienteId = $request->input('cliente_id');
             $nombreCliente = $request->input('cliente');
@@ -126,10 +136,17 @@ final class CotizacionController extends Controller
             if ($nombreCliente && !$clienteId) {
                 $cliente = $this->obtenerOCrearClienteService->ejecutar($nombreCliente);
                 $clienteId = $cliente->id;
+                Log::info('Cliente creado/obtenido', ['cliente_id' => $clienteId, 'nombre' => $nombreCliente]);
             }
 
             // Si es 'enviada', es_borrador = false. Si es 'borrador', es_borrador = true
             $esBorrador = ($tipoOperacion === 'borrador');
+
+            Log::info('CotizacionController@store: Lógica aplicada', [
+                'tipo_operacion' => $tipoOperacion,
+                'es_borrador' => $esBorrador,
+                'cliente_id' => $clienteId,
+            ]);
 
             $dto = CrearCotizacionDTO::desdeArray([
                 'usuario_id' => Auth::id(),
@@ -143,16 +160,149 @@ final class CotizacionController extends Controller
             ]);
 
             $comando = CrearCotizacionCommand::crear($dto);
-            $cotizacion = $this->crearHandler->handle($comando);
+            $cotizacionDTO = $this->crearHandler->handle($comando);
+
+            // Obtener el ID de la cotización desde el DTO
+            $cotizacionId = $cotizacionDTO->toArray()['id'] ?? null;
+
+            // Procesar imágenes DESPUÉS de crear la cotización (para tener el ID)
+            if (!$esBorrador && $cotizacionId) {
+                $this->procesarImagenesCotizacion($request, $cotizacionId);
+            }
 
             return response()->json([
                 'success' => true,
                 'message' => 'Cotización creada exitosamente',
-                'data' => $cotizacion->toArray(),
+                'data' => $cotizacionDTO->toArray(),
             ], 201);
         } catch (\Exception $e) {
             Log::error('CotizacionController@store: Error', ['error' => $e->getMessage()]);
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Procesar imágenes de la cotización
+     */
+    private function procesarImagenesCotizacion(Request $request, int $cotizacionId): void
+    {
+        try {
+            $productos = $request->input('productos', []);
+            $allFiles = $request->allFiles();
+
+            Log::info('Procesando imágenes de cotización', [
+                'cotizacion_id' => $cotizacionId,
+                'productos_count' => count($productos),
+                'all_files_keys' => array_keys($allFiles),
+                'all_files_structure' => json_encode($allFiles, JSON_UNESCAPED_SLASHES),
+            ]);
+
+            foreach ($productos as $index => $producto) {
+                // Obtener la prenda guardada
+                $prenda = \App\Models\PrendaCot::where('cotizacion_id', $cotizacionId)
+                    ->skip($index)
+                    ->first();
+
+                if (!$prenda) {
+                    Log::warning('Prenda no encontrada', ['cotizacion_id' => $cotizacionId, 'index' => $index]);
+                    continue;
+                }
+
+                Log::info('Procesando prenda', ['prenda_id' => $prenda->id, 'index' => $index]);
+
+                // Procesar imágenes de prenda - buscar archivos por patrón
+                $fotosArchivos = [];
+                $allFiles = $request->allFiles();
+                
+                // Buscar archivos que coincidan con el patrón fotos_producto_{index}*
+                foreach ($allFiles as $key => $file) {
+                    if (strpos($key, "fotos_producto_{$index}") === 0) {
+                        if (is_array($file)) {
+                            $fotosArchivos = array_merge($fotosArchivos, $file);
+                        } else {
+                            $fotosArchivos[] = $file;
+                        }
+                    }
+                }
+                
+                Log::info('Fotos encontradas', [
+                    'index' => $index,
+                    'count' => count($fotosArchivos),
+                    'all_files_keys' => array_keys($allFiles),
+                ]);
+
+                if (!empty($fotosArchivos)) {
+                    foreach ($fotosArchivos as $foto) {
+                        if ($foto instanceof \Illuminate\Http\UploadedFile) {
+                            $ruta = $this->procesarImagenesService->procesarImagenPrenda(
+                                $foto,
+                                $cotizacionId,
+                                $prenda->id
+                            );
+
+                            $prenda->fotos()->create([
+                                'ruta_original' => $ruta,
+                                'ruta_webp' => $ruta,
+                                'tipo' => 'prenda',
+                                'orden' => 1,
+                            ]);
+
+                            Log::info('Foto de prenda guardada', ['prenda_id' => $prenda->id, 'ruta' => $ruta]);
+                        }
+                    }
+                }
+
+                // Procesar imágenes de telas
+                $telasArchivos = $request->file("productos.{$index}.telas") ?? [];
+                
+                // Normalizar a array (puede ser un UploadedFile único o un array)
+                if ($telasArchivos instanceof \Illuminate\Http\UploadedFile) {
+                    $telasArchivos = [$telasArchivos];
+                } elseif (!is_array($telasArchivos)) {
+                    $telasArchivos = [];
+                }
+                
+                Log::info('Telas encontradas', ['key' => "productos.{$index}.telas", 'count' => count($telasArchivos)]);
+
+                if (!empty($telasArchivos)) {
+                    foreach ($telasArchivos as $foto) {
+                        if ($foto instanceof \Illuminate\Http\UploadedFile) {
+                            $ruta = $this->procesarImagenesService->procesarImagenTela(
+                                $foto,
+                                $cotizacionId,
+                                $prenda->id
+                            );
+
+                            $prenda->telaFotos()->create([
+                                'ruta_original' => $ruta,
+                                'ruta_webp' => $ruta,
+                                'orden' => 1,
+                            ]);
+
+                            Log::info('Foto de tela guardada', ['prenda_id' => $prenda->id, 'ruta' => $ruta]);
+                        }
+                    }
+                }
+            }
+
+            // Procesar imágenes de logo
+            $logoArchivos = $request->file('logo') ?? [];
+            if (!empty($logoArchivos) && is_array($logoArchivos)) {
+                foreach ($logoArchivos as $foto) {
+                    if ($foto instanceof \Illuminate\Http\UploadedFile) {
+                        $ruta = $this->procesarImagenesService->procesarImagenLogo($foto, $cotizacionId);
+                        Log::info('Logo procesado', ['cotizacion_id' => $cotizacionId, 'ruta' => $ruta]);
+                    }
+                }
+            }
+
+            Log::info('Imágenes procesadas correctamente', ['cotizacion_id' => $cotizacionId]);
+        } catch (\Exception $e) {
+            Log::error('Error procesando imágenes', [
+                'cotizacion_id' => $cotizacionId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
         }
     }
 

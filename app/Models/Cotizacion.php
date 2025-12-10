@@ -120,6 +120,14 @@ class Cotizacion extends Model
     }
 
     /**
+     * Relación con fotos de logo (logo_fotos_cot)
+     */
+    public function logoFotos(): HasMany
+    {
+        return $this->hasMany(LogoFotoCot::class, 'cotizacion_id');
+    }
+
+    /**
      * Relación con historial de cambios (DEPRECATED)
      */
     public function historial()

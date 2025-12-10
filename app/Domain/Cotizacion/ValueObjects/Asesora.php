@@ -28,8 +28,10 @@ final readonly class Asesora
     /**
      * Factory method para crear una instancia
      */
-    public static function crear(string $valor): self
+    public static function crear(?string $valor): self
     {
+        // Si el valor es null o vacío, usar "Sin asesora"
+        $valor = $valor ?: 'Sin asesora';
         return new self($valor);
     }
 

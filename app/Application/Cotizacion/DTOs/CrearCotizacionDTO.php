@@ -26,6 +26,12 @@ final readonly class CrearCotizacionDTO
      */
     public static function desdeArray(array $datos): self
     {
+        // Convertir especificaciones si viene como JSON string
+        $especificaciones = $datos['especificaciones'] ?? [];
+        if (is_string($especificaciones)) {
+            $especificaciones = json_decode($especificaciones, true) ?? [];
+        }
+
         return new self(
             usuarioId: (int) ($datos['usuario_id'] ?? 0),
             tipo: $datos['tipo'] ?? 'P',
@@ -33,7 +39,7 @@ final readonly class CrearCotizacionDTO
             productos: $datos['productos'] ?? [],
             logo: $datos['logo'] ?? [],
             tipoVenta: $datos['tipo_venta'] ?? 'M',
-            especificaciones: $datos['especificaciones'] ?? [],
+            especificaciones: $especificaciones,
             esBorrador: (bool) ($datos['es_borrador'] ?? true),
         );
     }
