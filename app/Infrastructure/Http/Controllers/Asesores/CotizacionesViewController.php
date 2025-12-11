@@ -26,30 +26,36 @@ final class CotizacionesViewController extends Controller
     public function index()
     {
         try {
-            // Crear query para listar cotizaciones
-            $query = ListarCotizacionesQuery::crear(
-                usuarioId: Auth::id(),
-                soloEnviadas: false,
-                soloBorradores: false,
-                pagina: 1,
-                porPagina: 100,
-            );
+            // Obtener cotizaciones directamente del modelo con relaciones
+            $cotizacionesModelo = \App\Models\Cotizacion::where('asesor_id', Auth::id())
+                ->with([
+                    'cliente',
+                    'prendas.fotos',
+                    'prendas.tallas',
+                    'prendas.variantes',
+                    'prendas.telas',
+                    'logoCotizacion.fotos'
+                ])
+                ->orderBy('created_at', 'desc')
+                ->get();
 
-            // Ejecutar handler
-            $cotizacionesDTO = $this->listarHandler->handle($query);
-
-            // Convertir DTOs a colección de objetos para la vista
-            $cotizaciones = collect(array_map(function($dto) {
-                $data = $dto->toArray();
-                // Convertir fechas string a DateTime
-                if (isset($data['fecha_inicio']) && is_string($data['fecha_inicio'])) {
-                    $data['created_at'] = \Carbon\Carbon::parse($data['fecha_inicio']);
-                }
-                if (isset($data['fecha_envio']) && is_string($data['fecha_envio'])) {
-                    $data['fecha_envio'] = \Carbon\Carbon::parse($data['fecha_envio']);
-                }
-                return (object)$data;
-            }, $cotizacionesDTO));
+            // Convertir modelos a objetos para la vista
+            $cotizaciones = $cotizacionesModelo->map(function($cot) {
+                $obj = (object)[
+                    'id' => $cot->id,
+                    'numero_cotizacion' => $cot->numero_cotizacion,
+                    'tipo' => $cot->tipo_cotizacion_id ? ($cot->tipoCotizacion->codigo ?? 'P') : 'P',
+                    'estado' => $cot->estado,
+                    'es_borrador' => $cot->es_borrador,
+                    'cliente' => $cot->cliente ? $cot->cliente->nombre : 'Sin cliente',
+                    'created_at' => $cot->created_at,
+                    'fecha_inicio' => $cot->fecha_inicio,
+                    'fecha_envio' => $cot->fecha_envio,
+                    'prendas' => $cot->prendas,
+                    'logoCotizacion' => $cot->logoCotizacion,
+                ];
+                return $obj;
+            });
 
             \Log::info('CotizacionesViewController: Cotizaciones obtenidas', [
                 'total' => $cotizaciones->count(),

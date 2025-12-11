@@ -357,7 +357,7 @@ function zoomOut() {
 }
 
 function imagenAnterior() {
-    if (!window.imagenesModal || window.imagenesModal.length <= 1) return;
+    if (!window.imagenesModal || window.imagenesModal.length === 0) return;
     
     window.indiceImagenModal = (window.indiceImagenModal - 1 + window.imagenesModal.length) % window.imagenesModal.length;
     const imagen = window.imagenesModal[window.indiceImagenModal];
@@ -373,7 +373,7 @@ function imagenAnterior() {
 }
 
 function imagenSiguiente() {
-    if (!window.imagenesModal || window.imagenesModal.length <= 1) return;
+    if (!window.imagenesModal || window.imagenesModal.length === 0) return;
     
     window.indiceImagenModal = (window.indiceImagenModal + 1) % window.imagenesModal.length;
     const imagen = window.imagenesModal[window.indiceImagenModal];

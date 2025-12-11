@@ -87,11 +87,14 @@ class FiltroEmbudo {
         // Limpiar checkboxes existentes
         container.innerHTML = '';
 
+        // Filtrar valores null/undefined
+        const valoresValidos = valores.filter(valor => valor !== null && valor !== undefined && valor !== '');
+
         // Agregar checkbox para cada valor
-        valores.forEach(valor => {
+        valoresValidos.forEach(valor => {
             const div = document.createElement('div');
             div.className = 'filter-checkbox';
-            div.setAttribute('data-valor', valor.toLowerCase());
+            div.setAttribute('data-valor', String(valor).toLowerCase());
 
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
@@ -108,7 +111,7 @@ class FiltroEmbudo {
         });
 
         // Agregar buscador si hay más de 5 valores
-        if (valores.length > 5) {
+        if (valoresValidos.length > 5) {
             this.agregarBuscador(columna);
         }
     }

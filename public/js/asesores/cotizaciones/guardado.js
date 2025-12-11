@@ -111,52 +111,49 @@ async function guardarCotizacion() {
         formData.append('tipo_cotizacion', window.tipoCotizacionGlobal || 'P');
         
         // Secciones de texto
+        formData.append('descripcion_logo', datos.descripcion_logo || '');
         formData.append('tecnicas', JSON.stringify(datos.tecnicas || []));
         formData.append('observaciones_tecnicas', datos.observaciones_tecnicas || '');
         formData.append('ubicaciones', JSON.stringify(datos.ubicaciones || []));
         formData.append('observaciones_generales', JSON.stringify(datos.observaciones_generales || []));
         
-        // Enviar observaciones_check y observaciones_valor como arrays (no JSON strings)
-        const obsCheck = datos.observaciones_check || [];
-        const obsValor = datos.observaciones_valor || [];
-        
-        // Agregar cada elemento del array por separado
-        obsCheck.forEach((item, idx) => {
-            formData.append(`observaciones_check[${idx}]`, item || '');
-        });
-        obsValor.forEach((item, idx) => {
-            formData.append(`observaciones_valor[${idx}]`, item || '');
-        });
-        
         formData.append('especificaciones', JSON.stringify(datos.especificaciones || {}));
         
-        // ✅ PRODUCTOS CON ARCHIVOS File
+        // ✅ PRENDAS CON ARCHIVOS File
         if (datos.productos && Array.isArray(datos.productos)) {
             datos.productos.forEach((producto, index) => {
-                // Datos de producto
-                formData.append(`productos[${index}][nombre_producto]`, producto.nombre_producto || '');
-                formData.append(`productos[${index}][descripcion]`, producto.descripcion || '');
-                formData.append(`productos[${index}][cantidad]`, producto.cantidad || 1);
-                formData.append(`productos[${index}][tallas]`, JSON.stringify(producto.tallas || []));
+                // Datos de prenda
+                formData.append(`prendas[${index}][nombre_producto]`, producto.nombre_producto || '');
+                formData.append(`prendas[${index}][descripcion]`, producto.descripcion || '');
+                formData.append(`prendas[${index}][cantidad]`, producto.cantidad || 1);
+                formData.append(`prendas[${index}][tallas]`, JSON.stringify(producto.tallas || []));
                 
                 // Variantes como array (no JSON string)
                 const variantes = producto.variantes || {};
                 Object.keys(variantes).forEach(key => {
                     const value = variantes[key];
-                    if (Array.isArray(value)) {
-                        // Si es array, agregar cada elemento
+                    if (key === 'telas_multiples' && Array.isArray(value)) {
+                        // Caso especial: telas_multiples es un array de objetos
+                        // Enviar como JSON string completo
+                        formData.append(`prendas[${index}][variantes][${key}]`, JSON.stringify(value));
+                    } else if (Array.isArray(value)) {
+                        // Si es array (pero no telas_multiples), agregar cada elemento
                         value.forEach((item, idx) => {
-                            formData.append(`productos[${index}][variantes][${key}][${idx}]`, item);
+                            if (typeof item === 'object' && item !== null) {
+                                formData.append(`prendas[${index}][variantes][${key}][${idx}]`, JSON.stringify(item));
+                            } else {
+                                formData.append(`prendas[${index}][variantes][${key}][${idx}]`, item);
+                            }
                         });
                     } else if (typeof value === 'object' && value !== null) {
                         // Si es objeto, convertir a JSON string
-                        formData.append(`productos[${index}][variantes][${key}]`, JSON.stringify(value));
+                        formData.append(`prendas[${index}][variantes][${key}]`, JSON.stringify(value));
                     } else if (typeof value === 'boolean') {
                         // Convertir booleanos a 1/0 para Laravel
-                        formData.append(`productos[${index}][variantes][${key}]`, value ? '1' : '0');
+                        formData.append(`prendas[${index}][variantes][${key}]`, value ? '1' : '0');
                     } else {
                         // Si es valor simple, agregar directamente
-                        formData.append(`productos[${index}][variantes][${key}]`, value || '');
+                        formData.append(`prendas[${index}][variantes][${key}]`, value || '');
                     }
                 });
                 
@@ -164,10 +161,10 @@ async function guardarCotizacion() {
                 if (producto.fotos && Array.isArray(producto.fotos)) {
                     producto.fotos.forEach((foto, fotoIndex) => {
                         if (foto instanceof File) {
-                            formData.append(`productos[${index}][fotos]`, foto);
+                            formData.append(`prendas[${index}][fotos][]`, foto);
                             console.log(`✅ Foto (File) agregada a FormData [${index}][${fotoIndex}]:`, foto.name);
                         } else if (typeof foto === 'string') {
-                            formData.append(`productos[${index}][fotos_base64]`, foto);
+                            formData.append(`prendas[${index}][fotos_base64]`, foto);
                             console.log(`✅ Foto (Base64) agregada a FormData [${index}][${fotoIndex}]`);
                         }
                     });
@@ -177,10 +174,10 @@ async function guardarCotizacion() {
                 if (producto.telas && Array.isArray(producto.telas)) {
                     producto.telas.forEach((tela, telaIndex) => {
                         if (tela instanceof File) {
-                            formData.append(`productos[${index}][telas]`, tela);
+                            formData.append(`prendas[${index}][telas][]`, tela);
                             console.log(`✅ Tela (File) agregada a FormData [${index}][${telaIndex}]:`, tela.name);
                         } else if (typeof tela === 'string') {
-                            formData.append(`productos[${index}][telas_base64]`, tela);
+                            formData.append(`prendas[${index}][telas_base64]`, tela);
                             console.log(`✅ Tela (Base64) agregada a FormData [${index}][${telaIndex}]`);
                         }
                     });
@@ -192,7 +189,7 @@ async function guardarCotizacion() {
         if (datos.logo && datos.logo.imagenes && Array.isArray(datos.logo.imagenes)) {
             datos.logo.imagenes.forEach((imagen, imagenIndex) => {
                 if (imagen instanceof File) {
-                    formData.append(`logo[imagenes]`, imagen);
+                    formData.append(`logo[imagenes][]`, imagen);
                     console.log(`✅ Imagen de logo agregada a FormData [${imagenIndex}]:`, imagen.name);
                 }
             });
@@ -578,33 +575,41 @@ async function procederEnviarCotizacion(datos) {
         formData.append('especificaciones', JSON.stringify(especificaciones || {}));
         formData.append('imagenes', JSON.stringify(datos.logo?.imagenes || []));
         
-        // ✅ PRODUCTOS CON ARCHIVOS File
+        // ✅ PRENDAS CON ARCHIVOS File
         if (datos.productos && Array.isArray(datos.productos)) {
             datos.productos.forEach((producto, index) => {
-                // Datos de producto
-                formData.append(`productos[${index}][nombre_producto]`, producto.nombre_producto || '');
-                formData.append(`productos[${index}][descripcion]`, producto.descripcion || '');
-                formData.append(`productos[${index}][cantidad]`, producto.cantidad || 1);
-                formData.append(`productos[${index}][tallas]`, JSON.stringify(producto.tallas || []));
+                // Datos de prenda
+                formData.append(`prendas[${index}][nombre_producto]`, producto.nombre_producto || '');
+                formData.append(`prendas[${index}][descripcion]`, producto.descripcion || '');
+                formData.append(`prendas[${index}][cantidad]`, producto.cantidad || 1);
+                formData.append(`prendas[${index}][tallas]`, JSON.stringify(producto.tallas || []));
                 
                 // Variantes como array (no JSON string)
                 const variantes = producto.variantes || {};
                 Object.keys(variantes).forEach(key => {
                     const value = variantes[key];
-                    if (Array.isArray(value)) {
-                        // Si es array, agregar cada elemento
+                    if (key === 'telas_multiples' && Array.isArray(value)) {
+                        // Caso especial: telas_multiples es un array de objetos
+                        // Enviar como JSON string completo
+                        formData.append(`prendas[${index}][variantes][${key}]`, JSON.stringify(value));
+                    } else if (Array.isArray(value)) {
+                        // Si es array (pero no telas_multiples), agregar cada elemento
                         value.forEach((item, idx) => {
-                            formData.append(`productos[${index}][variantes][${key}][${idx}]`, item);
+                            if (typeof item === 'object' && item !== null) {
+                                formData.append(`prendas[${index}][variantes][${key}][${idx}]`, JSON.stringify(item));
+                            } else {
+                                formData.append(`prendas[${index}][variantes][${key}][${idx}]`, item);
+                            }
                         });
                     } else if (typeof value === 'object' && value !== null) {
                         // Si es objeto, convertir a JSON string
-                        formData.append(`productos[${index}][variantes][${key}]`, JSON.stringify(value));
+                        formData.append(`prendas[${index}][variantes][${key}]`, JSON.stringify(value));
                     } else if (typeof value === 'boolean') {
                         // Convertir booleanos a 1/0 para Laravel
-                        formData.append(`productos[${index}][variantes][${key}]`, value ? '1' : '0');
+                        formData.append(`prendas[${index}][variantes][${key}]`, value ? '1' : '0');
                     } else {
                         // Si es valor simple, agregar directamente
-                        formData.append(`productos[${index}][variantes][${key}]`, value || '');
+                        formData.append(`prendas[${index}][variantes][${key}]`, value || '');
                     }
                 });
                 
@@ -612,10 +617,10 @@ async function procederEnviarCotizacion(datos) {
                 if (producto.fotos && Array.isArray(producto.fotos)) {
                     producto.fotos.forEach((foto, fotoIndex) => {
                         if (foto instanceof File) {
-                            formData.append(`productos[${index}][fotos]`, foto);
+                            formData.append(`prendas[${index}][fotos][]`, foto);
                             console.log(`✅ Foto (File) agregada a FormData [${index}][${fotoIndex}]:`, foto.name);
                         } else if (typeof foto === 'string') {
-                            formData.append(`productos[${index}][fotos_base64]`, foto);
+                            formData.append(`prendas[${index}][fotos_base64]`, foto);
                             console.log(`✅ Foto (Base64) agregada a FormData [${index}][${fotoIndex}]`);
                         }
                     });
@@ -625,10 +630,10 @@ async function procederEnviarCotizacion(datos) {
                 if (producto.telas && Array.isArray(producto.telas)) {
                     producto.telas.forEach((tela, telaIndex) => {
                         if (tela instanceof File) {
-                            formData.append(`productos[${index}][telas]`, tela);
+                            formData.append(`prendas[${index}][telas][]`, tela);
                             console.log(`✅ Tela (File) agregada a FormData [${index}][${telaIndex}]:`, tela.name);
                         } else if (typeof tela === 'string') {
-                            formData.append(`productos[${index}][telas_base64]`, tela);
+                            formData.append(`prendas[${index}][telas_base64]`, tela);
                             console.log(`✅ Tela (Base64) agregada a FormData [${index}][${telaIndex}]`);
                         }
                     });
@@ -640,7 +645,7 @@ async function procederEnviarCotizacion(datos) {
         if (datos.logo && datos.logo.imagenes && Array.isArray(datos.logo.imagenes)) {
             datos.logo.imagenes.forEach((imagen, imagenIndex) => {
                 if (imagen instanceof File) {
-                    formData.append(`logo[imagenes]`, imagen);
+                    formData.append(`logo[imagenes][]`, imagen);
                     console.log(`✅ Imagen de logo agregada a FormData [${imagenIndex}]:`, imagen.name);
                 }
             });

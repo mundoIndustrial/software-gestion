@@ -1,5 +1,12 @@
 {{-- Logo Observaciones Generales --}}
-@if($logo && $logo->observaciones_generales && is_array($logo->observaciones_generales) && count($logo->observaciones_generales) > 0)
+@php
+    $observaciones_generales = $logo ? $logo->observaciones_generales : null;
+    if (is_string($observaciones_generales)) {
+        $observaciones_generales = json_decode($observaciones_generales, true) ?? [];
+    }
+    $observaciones_generales = is_array($observaciones_generales) ? $observaciones_generales : [];
+@endphp
+@if(!empty($observaciones_generales) && count($observaciones_generales) > 0)
     <div style="
         font-size: 1.4rem;
         font-weight: 800;
@@ -28,7 +35,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach($logo->observaciones_generales as $obs)
+            @foreach($observaciones_generales as $obs)
                 @php
                     $texto = is_array($obs) ? ($obs['texto'] ?? $obs) : $obs;
                     $tipo = is_array($obs) ? ($obs['tipo'] ?? 'texto') : 'texto';

@@ -16,6 +16,7 @@ class PrendaVarianteCot extends Model
         'tipo_jean_pantalon',
         'genero_id',
         'color',
+        'tipo_manga_id',
         'tiene_bolsillos',
         'obs_bolsillos',
         'aplica_manga',
@@ -27,6 +28,7 @@ class PrendaVarianteCot extends Model
         'tiene_reflectivo',
         'obs_reflectivo',
         'descripcion_adicional',
+        'telas_multiples',
     ];
 
     protected $casts = [
@@ -35,7 +37,31 @@ class PrendaVarianteCot extends Model
         'aplica_manga' => 'boolean',
         'aplica_broche' => 'boolean',
         'tiene_reflectivo' => 'boolean',
+        'telas_multiples' => 'json',
     ];
+
+    /**
+     * Accessor: Decodificar telas_multiples si es string
+     */
+    public function getTelasMultiplesAttribute($value)
+    {
+        if (is_string($value)) {
+            return json_decode($value, true) ?? [];
+        }
+        return $value ?? [];
+    }
+
+    /**
+     * Mutator: Codificar telas_multiples como JSON si es array
+     */
+    public function setTelasMultiplesAttribute($value)
+    {
+        if (is_array($value)) {
+            $this->attributes['telas_multiples'] = json_encode($value);
+        } else {
+            $this->attributes['telas_multiples'] = $value;
+        }
+    }
 
     /**
      * Relación: Una variante pertenece a una prenda
@@ -51,5 +77,21 @@ class PrendaVarianteCot extends Model
     public function genero(): BelongsTo
     {
         return $this->belongsTo(GeneroPrend::class, 'genero_id');
+    }
+
+    /**
+     * Relación: Una variante tiene un tipo de broche
+     */
+    public function broche(): BelongsTo
+    {
+        return $this->belongsTo(TipoBroche::class, 'tipo_broche_id');
+    }
+
+    /**
+     * Relación: Una variante tiene un tipo de manga
+     */
+    public function manga(): BelongsTo
+    {
+        return $this->belongsTo(TipoManga::class, 'tipo_manga_id');
     }
 }

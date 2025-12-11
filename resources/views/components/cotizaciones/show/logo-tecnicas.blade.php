@@ -1,5 +1,12 @@
 {{-- Logo Tecnicas --}}
-@if($logo->tecnicas && is_array($logo->tecnicas) && count($logo->tecnicas) > 0)
+@php
+    $tecnicas = $logo->tecnicas;
+    if (is_string($tecnicas)) {
+        $tecnicas = json_decode($tecnicas, true) ?? [];
+    }
+    $tecnicas = is_array($tecnicas) ? $tecnicas : [];
+@endphp
+@if(!empty($tecnicas) && count($tecnicas) > 0)
     <div style="
         font-size: 1.4rem;
         font-weight: 800;
@@ -28,7 +35,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach($logo->tecnicas as $index => $tecnica)
+            @foreach($tecnicas as $index => $tecnica)
                 <tr style="border-bottom: 1px solid #e2e8f0;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background=''">
                     <td style="padding: 1.2rem; font-size: 1.05rem;">
                         <div style="color: #64748b; font-size: 0.9rem; line-height: 1.6;">

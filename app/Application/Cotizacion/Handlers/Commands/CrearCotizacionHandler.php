@@ -86,15 +86,15 @@ final class CrearCotizacionHandler
             ]);
 
             // Guardar prendas en tablas normalizadas
-            $productos = $datos->productos ?? [];
+            $prendas = $datos->prendas ?? [];
 
-            if (!empty($productos)) {
+            if (!empty($prendas)) {
                 Log::info('CrearCotizacionHandler: Guardando prendas en tablas normalizadas', [
                     'cotizacion_id' => $cotizacionModel->id,
-                    'productos_count' => count($productos),
+                    'prendas_count' => count($prendas),
                 ]);
 
-                $this->prendaService->guardarProductosEnCotizacion($cotizacionModel, $productos);
+                $this->prendaService->guardarProductosEnCotizacion($cotizacionModel, $prendas);
             }
 
             // Retornar DTO con datos de la cotización guardada

@@ -379,19 +379,19 @@ function recopilarDatos() {
         // Manga - SOLO SI ESTÁ CHECKED
         const mangaCheckbox = item.querySelector('input[name*="aplica_manga"]');
         if (mangaCheckbox && mangaCheckbox.checked) {
-            // Buscar el select de manga (contiene el valor tipo_manga)
-            const mangaSelect = item.querySelector('select[name*="tipo_manga"]');
+            // Buscar el input de manga ID (clase .manga-id-input)
+            const mangaIdInput = item.querySelector('.manga-id-input');
             
             console.log('🔍 Buscando manga:', {
                 checkbox_checked: mangaCheckbox.checked,
-                mangaSelect_encontrado: !!mangaSelect,
-                mangaSelect_value: mangaSelect?.value
+                mangaIdInput_encontrado: !!mangaIdInput,
+                mangaIdInput_value: mangaIdInput?.value
             });
             
-            // Guardar el tipo de manga (CORTA, LARGA, 3/4, etc.)
-            if (mangaSelect && mangaSelect.value) {
-                variantes.tipo_manga_id = mangaSelect.value;
-                console.log('✅ tipo_manga_id capturado:', mangaSelect.value);
+            // Guardar el tipo de manga (ID del manga seleccionado)
+            if (mangaIdInput && mangaIdInput.value) {
+                variantes.tipo_manga_id = mangaIdInput.value;
+                console.log('✅ tipo_manga_id capturado:', mangaIdInput.value);
             }
             
             // Capturar observación de manga SOLO SI CHECKBOX ESTÁ CHECKED
@@ -565,88 +565,68 @@ function recopilarDatos() {
     const observaciones_tecnicas = document.getElementById('observaciones_tecnicas')?.value || '';
     console.log('📝 Observaciones técnicas:', observaciones_tecnicas);
     
-    // Recopilar ubicaciones por sección (solo las que estén checked)
+    // Recopilar ubicaciones desde seccionesSeleccionadasFriendly (guardadas en memoria)
     const ubicaciones = [];
-    const seccionesAgregadas = {};
     
-    document.querySelectorAll('#secciones_agregadas > div').forEach(seccionDiv => {
-        const seccionInput = seccionDiv.querySelector('input[name="ubicaciones_seccion[]"]');
-        if (seccionInput) {
-            const seccion = seccionInput.value;
-            
-            if (!seccionesAgregadas[seccion]) {
-                seccionesAgregadas[seccion] = {
-                    ubicaciones: [],
-                    observaciones: ''
-                };
+    // Verificar si existe seccionesSeleccionadasFriendly (variable global de especificaciones.js)
+    if (typeof seccionesSeleccionadasFriendly !== 'undefined' && Array.isArray(seccionesSeleccionadasFriendly)) {
+        seccionesSeleccionadasFriendly.forEach(seccion => {
+            if (seccion.ubicacion && seccion.opciones && seccion.opciones.length > 0) {
+                ubicaciones.push({
+                    seccion: seccion.ubicacion,
+                    ubicaciones_seleccionadas: seccion.opciones,
+                    observaciones: seccion.observaciones || ''
+                });
             }
-            
-            // Obtener todas las ubicaciones checked de esta sección
-            seccionDiv.querySelectorAll('input[name="ubicaciones_check[]"]').forEach((checkbox) => {
-                if (checkbox.checked) {
-                    const ubicacionInput = checkbox.closest('tr').querySelector('input[name="ubicaciones[]"]');
-                    if (ubicacionInput) {
-                        seccionesAgregadas[seccion].ubicaciones.push(ubicacionInput.value.trim());
-                    }
-                }
-            });
-            
-            // Obtener observaciones de esta sección
-            const obsInput = seccionDiv.querySelector('input[name="ubicaciones_observaciones[]"]');
-            if (obsInput) {
-                seccionesAgregadas[seccion].observaciones = obsInput.value.trim();
-            }
-        }
-    });
-    
-    // Convertir a array de objetos
-    Object.keys(seccionesAgregadas).forEach(seccion => {
-        if (seccionesAgregadas[seccion].ubicaciones.length > 0) {
-            ubicaciones.push({
-                seccion: seccion,
-                ubicaciones_seleccionadas: seccionesAgregadas[seccion].ubicaciones,
-                observaciones: seccionesAgregadas[seccion].observaciones
-            });
-        }
-    });
+        });
+    }
     
     console.log('📍 Ubicaciones recopiladas:', ubicaciones);
     
-    // Recopilar observaciones generales CON TIPO Y VALOR
+    // Recopilar observaciones generales CON TIPO Y VALOR como objetos
     const observaciones_generales = [];
-    const observaciones_check = [];
-    const observaciones_valor = [];
     
     document.querySelectorAll('#observaciones_lista > div').forEach(obs => {
         const textoInput = obs.querySelector('input[name="observaciones_generales[]"]');
         const checkboxInput = obs.querySelector('input[name="observaciones_check[]"]');
         const valorInput = obs.querySelector('input[name="observaciones_valor[]"]');
+        const checkboxModeDiv = obs.querySelector('.obs-checkbox-mode');
         const textModeDiv = obs.querySelector('.obs-text-mode');
         
         const texto = textoInput?.value || '';
         
         if (texto.trim()) {
-            observaciones_generales.push(texto);
-            
             // Verificar si está en modo texto (si el div de texto está visible)
             const esModoTexto = textModeDiv && textModeDiv.style.display !== 'none';
+            const esModoCheckbox = checkboxModeDiv && checkboxModeDiv.style.display !== 'none';
             
             if (esModoTexto) {
-                // Modo texto: no hay checkbox, guardar el valor
-                observaciones_check.push(null);
-                observaciones_valor.push(valorInput?.value || '');
+                // Modo texto: guardar objeto con tipo, texto y valor
+                observaciones_generales.push({
+                    tipo: 'texto',
+                    texto: texto,
+                    valor: valorInput?.value || ''
+                });
                 console.log('📝 Modo TEXTO:', texto, '=', valorInput?.value);
-            } else {
-                // Modo checkbox: guardar si está checked
-                observaciones_check.push(checkboxInput?.checked ? 'on' : null);
-                observaciones_valor.push('');
+            } else if (esModoCheckbox) {
+                // Modo checkbox: guardar objeto con tipo, texto y valor
+                observaciones_generales.push({
+                    tipo: 'checkbox',
+                    texto: texto,
+                    valor: checkboxInput?.checked ? 'on' : ''
+                });
                 console.log('✓ Modo CHECK:', texto, '=', checkboxInput?.checked ? 'checked' : 'unchecked');
+            } else {
+                // Por defecto, asumir modo checkbox
+                observaciones_generales.push({
+                    tipo: 'checkbox',
+                    texto: texto,
+                    valor: checkboxInput?.checked ? 'on' : ''
+                });
             }
         }
     });
     console.log('💬 Observaciones generales recopiladas:', observaciones_generales);
-    console.log('✓ Observaciones check:', observaciones_check);
-    console.log('📝 Observaciones valor:', observaciones_valor);
     
     // Obtener la fecha seleccionada
     const fechaInput = document.getElementById('fechaActual');
@@ -658,16 +638,23 @@ function recopilarDatos() {
     // Capturar imágenes de logo desde memoria
     const logoImagenes = window.imagenesEnMemoria?.logo || [];
     
+    // Obtener descripción del logo
+    const descripcionLogo = document.getElementById('descripcion_logo')?.value || '';
+    console.log('📝 Descripción del logo capturada:', {
+        elemento_encontrado: !!document.getElementById('descripcion_logo'),
+        valor: descripcionLogo,
+        longitud: descripcionLogo.length
+    });
+    
     return { 
         cliente: clienteValue, 
         fecha_cotizacion: fechaCotizacion,
-        productos, 
-        tecnicas, 
+        productos: productos,
+        tecnicas: tecnicas,
         observaciones_tecnicas,
         ubicaciones,
         observaciones_generales,
-        observaciones_check,
-        observaciones_valor,
+        descripcion_logo: descripcionLogo,
         especificaciones: window.especificacionesSeleccionadas || {},
         logo: {
             imagenes: logoImagenes

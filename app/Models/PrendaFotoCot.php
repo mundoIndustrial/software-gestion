@@ -11,8 +11,13 @@ class PrendaFotoCot extends Model
 
     protected $fillable = [
         'prenda_cot_id',
-        'url',
-        'nombre',
+        'ruta_original',
+        'ruta_webp',
+        'ruta_miniatura',
+        'orden',
+        'ancho',
+        'alto',
+        'tamaño',
     ];
 
     /**

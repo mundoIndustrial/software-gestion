@@ -344,7 +344,14 @@ class FormModule {
      * Envía el formulario al servidor
      */
     async submitForm(formData) {
-        const url = window.routes?.guardarCotizacion || '/asesores/cotizaciones/guardar';
+        // Determinar la ruta según el tipo de cotización
+        let url = '/asesores/cotizaciones/guardar'; // Por defecto para Prenda/Logo
+        
+        // Si es cotización de Prenda pura, usar ruta específica
+        if (window.tipoCotizacionGlobal === 'P') {
+            url = '/asesores/cotizaciones/prenda';
+        }
+        
         console.log('🚀 Enviando a:', url);
         
         // Verificar que formData es válido

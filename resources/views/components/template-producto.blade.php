@@ -177,7 +177,7 @@
                                     <td style="padding: 14px 12px;">
                                         <div style="display: flex; gap: 8px; align-items: flex-start;">
                                             <div style="position: relative; flex: 1;">
-                                                <input type="text" class="manga-input" placeholder="Buscar tipo..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; transition: border-color 0.2s; opacity: 0.5; pointer-events: none;" onkeyup="buscarManga(this)" onkeypress="if(event.key==='Enter') crearMangaDesdeInput(this)" disabled>
+                                                <input type="text" class="manga-input" placeholder="Buscar tipo..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; transition: border-color 0.2s; opacity: 0.5; pointer-events: none;" onkeyup="buscarManga(this)" onkeypress="if(event.key==='Enter') crearMangaDesdeInput(this)" onblur="if(this.value.trim() && !this.closest('td').querySelector('.manga-id-input').value) crearMangaDesdeInput(this)" disabled>
                                                 <input type="hidden" name="productos_friendly[][variantes][tipo_manga_id]" class="manga-id-input" value="">
                                                 <div class="manga-suggestions" style="position: absolute; background: white; border: 1px solid #ddd; border-radius: 4px; max-height: 150px; overflow-y: auto; z-index: 1000; width: 100%; display: none; margin-top: 2px; top: 100%; left: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
                                             </div>

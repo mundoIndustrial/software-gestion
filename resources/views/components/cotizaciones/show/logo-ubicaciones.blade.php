@@ -1,5 +1,12 @@
 {{-- Logo Ubicaciones --}}
-@if($logo->ubicaciones && is_array($logo->ubicaciones) && count($logo->ubicaciones) > 0)
+@php
+    $ubicaciones = $logo->ubicaciones;
+    if (is_string($ubicaciones)) {
+        $ubicaciones = json_decode($ubicaciones, true) ?? [];
+    }
+    $ubicaciones = is_array($ubicaciones) ? $ubicaciones : [];
+@endphp
+@if(!empty($ubicaciones) && count($ubicaciones) > 0)
     <div style="
         font-size: 1.4rem;
         font-weight: 800;
@@ -29,7 +36,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach($logo->ubicaciones as $item)
+            @foreach($ubicaciones as $item)
                 @php
                     if (is_array($item)) {
                         if (isset($item['ubicacion']) && isset($item['opciones'])) {

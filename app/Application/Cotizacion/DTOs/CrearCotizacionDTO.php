@@ -13,11 +13,12 @@ final readonly class CrearCotizacionDTO
         public int $usuarioId,
         public string $tipo,
         public ?int $clienteId = null,
-        public array $productos = [],
+        public array $prendas = [],
         public array $logo = [],
         public ?string $tipoVenta = 'M',
         public array $especificaciones = [],
         public bool $esBorrador = true,
+        public string $estado = 'BORRADOR',
     ) {
     }
 
@@ -36,11 +37,12 @@ final readonly class CrearCotizacionDTO
             usuarioId: (int) ($datos['usuario_id'] ?? 0),
             tipo: $datos['tipo'] ?? 'P',
             clienteId: isset($datos['cliente_id']) ? (int) $datos['cliente_id'] : null,
-            productos: $datos['productos'] ?? [],
+            prendas: $datos['prendas'] ?? [],
             logo: $datos['logo'] ?? [],
             tipoVenta: $datos['tipo_venta'] ?? 'M',
             especificaciones: $especificaciones,
             esBorrador: (bool) ($datos['es_borrador'] ?? true),
+            estado: $datos['estado'] ?? 'BORRADOR',
         );
     }
 
@@ -53,11 +55,12 @@ final readonly class CrearCotizacionDTO
             'usuario_id' => $this->usuarioId,
             'tipo' => $this->tipo,
             'cliente_id' => $this->clienteId,
-            'productos' => $this->productos,
+            'prendas' => $this->prendas,
             'logo' => $this->logo,
             'tipo_venta' => $this->tipoVenta,
             'especificaciones' => $this->especificaciones,
             'es_borrador' => $this->esBorrador,
+            'estado' => $this->estado,
         ];
     }
 }

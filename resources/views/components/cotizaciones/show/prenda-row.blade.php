@@ -15,8 +15,8 @@
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                 <span style="font-size: 0.85rem; font-weight: 600; color: #64748b;">Tallas:</span>
                 <span style="font-size: 0.9rem; color: #1e293b;">
-                    @if($prenda->tallas && is_array($prenda->tallas) && count($prenda->tallas) > 0)
-                        {{ implode(', ', $prenda->tallas) }}
+                    @if($prenda->tallas && $prenda->tallas->count() > 0)
+                        {{ $prenda->tallas->pluck('talla')->implode(', ') }}
                     @else
                         -
                     @endif
@@ -35,13 +35,17 @@
         <div style="display: flex; gap: 1rem; justify-content: center; align-items: center;">
             {{-- Imagen Prenda --}}
             <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
-                <small style="font-size: 0.75rem; color: #64748b; font-weight: 600;">PRENDA ({{ $prenda->fotos && is_array($prenda->fotos) ? count($prenda->fotos) : 0 }})</small>
-                @if($prenda->fotos && is_array($prenda->fotos) && count($prenda->fotos) > 0)
+                <small style="font-size: 0.75rem; color: #64748b; font-weight: 600;">PRENDA ({{ $prenda->fotos ? $prenda->fotos->count() : 0 }})</small>
+                @if($prenda->fotos && $prenda->fotos->count() > 0)
                     <div style="display: flex; gap: 0.3rem; flex-wrap: wrap; justify-content: center;">
+                        @php
+                            $fotosArray = $prenda->fotos->map(fn($f) => asset($f->ruta_webp))->toArray();
+                            $fotosJson = json_encode($fotosArray);
+                        @endphp
                         @foreach($prenda->fotos as $index => $foto)
-                            <img src="{{ asset($foto) }}" alt="Prenda {{ $index + 1 }}"
+                            <img src="{{ asset($foto->ruta_webp) }}" alt="Prenda {{ $index + 1 }}"
                                  style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid #e2e8f0;"
-                                 onclick="abrirModalImagen('{{ asset($foto) }}', '{{ $prenda->nombre_producto ?? 'Prenda' }} - Foto {{ $index + 1 }}', {{ json_encode($prenda->fotos) }}, {{ $index }})">
+                                 onclick="abrirModalImagen('{{ asset($foto->ruta_webp) }}', '{{ $prenda->nombre_producto ?? 'Prenda' }} - Foto {{ $index + 1 }}', {{ $fotosJson }}, {{ $index }})">
                         @endforeach
                     </div>
                 @else
@@ -53,13 +57,17 @@
 
             {{-- Imagen Tela --}}
             <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
-                <small style="font-size: 0.75rem; color: #64748b; font-weight: 600;">TELA ({{ $prenda->telas && is_array($prenda->telas) ? count($prenda->telas) : 0 }})</small>
-                @if($prenda->telas && is_array($prenda->telas) && count($prenda->telas) > 0)
+                <small style="font-size: 0.75rem; color: #64748b; font-weight: 600;">TELA ({{ $prenda->telaFotos ? $prenda->telaFotos->count() : 0 }})</small>
+                @if($prenda->telaFotos && $prenda->telaFotos->count() > 0)
                     <div style="display: flex; gap: 0.3rem; flex-wrap: wrap; justify-content: center;">
-                        @foreach($prenda->telas as $index => $tela)
-                            <img src="{{ asset($tela) }}" alt="Tela {{ $index + 1 }}"
+                        @php
+                            $telasArray = $prenda->telaFotos->map(fn($t) => asset($t->ruta_webp))->toArray();
+                            $telasJson = json_encode($telasArray);
+                        @endphp
+                        @foreach($prenda->telaFotos as $index => $tela)
+                            <img src="{{ asset($tela->ruta_webp) }}" alt="Tela {{ $index + 1 }}"
                                  style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid #e2e8f0;"
-                                 onclick="abrirModalImagen('{{ asset($tela) }}', '{{ $prenda->nombre_producto ?? 'Tela' }} - Tela {{ $index + 1 }}', {{ json_encode($prenda->telas) }}, {{ $index }})">
+                                 onclick="abrirModalImagen('{{ asset($tela->ruta_webp) }}', '{{ $prenda->nombre_producto ?? 'Tela' }} - Tela {{ $index + 1 }}', {{ $telasJson }}, {{ $index }})">
                         @endforeach
                     </div>
                 @else

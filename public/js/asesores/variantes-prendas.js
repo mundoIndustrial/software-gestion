@@ -558,8 +558,23 @@ function seleccionarManga(id, nombre, element) {
     const input = td.querySelector('.manga-input');
     const idInput = td.querySelector('.manga-id-input');
     
+    console.log(`🔍 DEBUG seleccionarManga:`, {
+        id: id,
+        nombre: nombre,
+        td_encontrado: !!td,
+        input_encontrado: !!input,
+        idInput_encontrado: !!idInput,
+        idInput_antes: idInput?.value
+    });
+    
     input.value = nombre;
     idInput.value = id;
+    
+    console.log(`✅ DEBUG después de asignar:`, {
+        input_value: input.value,
+        idInput_value: idInput.value
+    });
+    
     td.querySelector('.manga-suggestions').style.display = 'none';
     
     console.log(`✅ Manga seleccionada: ${nombre} (ID: ${id})`);

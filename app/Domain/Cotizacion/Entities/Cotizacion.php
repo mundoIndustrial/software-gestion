@@ -102,7 +102,8 @@ final class Cotizacion
             $especificaciones
         );
 
-        $cotizacion->fechaEnvio = new DateTimeImmutable();
+        // Usar zona horaria de Bogotá para fecha_envio
+        $cotizacion->fechaEnvio = new DateTimeImmutable('now', new \DateTimeZone('America/Bogota'));
 
         return $cotizacion;
     }

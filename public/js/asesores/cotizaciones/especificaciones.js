@@ -64,14 +64,21 @@ function guardarEspecificaciones() {
         
         filas.forEach((fila, filaIndex) => {
             const checkbox = fila.querySelector('input[type="checkbox"]');
-            const itemInput = fila.querySelector('input[type="text"]');
+            const itemInput = fila.querySelector('input[type="text"]:first-of-type');
+            const obsInput = fila.querySelector('input[type="text"]:last-of-type');
             const label = fila.querySelector('label');
             
-            console.log(`   Fila ${filaIndex}: checkbox=${checkbox ? checkbox.checked : 'no'}, input=${itemInput ? 'sí' : 'no'}, label=${label ? label.textContent : 'no'}`);
+            console.log(`   Fila ${filaIndex}: checkbox=${checkbox ? checkbox.checked : 'no'}, input=${itemInput ? 'sí' : 'no'}, obs=${obsInput ? obsInput.value : 'no'}, label=${label ? label.textContent : 'no'}`);
             
-            // Si está marcado, guardar el valor
+            // Si está marcado, guardar el valor con observaciones
             if (checkbox && checkbox.checked) {
                 let valor = '';
+                let observacion = '';
+                
+                // Obtener observación si existe
+                if (obsInput && obsInput.value.trim()) {
+                    observacion = obsInput.value.trim();
+                }
                 
                 // Prioridad: label (para items fijos) > input value (para items personalizados) > "✓" (si solo está marcado)
                 if (label) {
@@ -86,8 +93,13 @@ function guardarEspecificaciones() {
                 }
                 
                 if (valor) {
-                    valoresSeleccionados.push(valor);
-                    console.log(`      ✅ Valor guardado: ${valor}`);
+                    // Crear objeto con valor y observación
+                    const item = {
+                        valor: valor,
+                        observacion: observacion || ''
+                    };
+                    valoresSeleccionados.push(item);
+                    console.log(`      ✅ Valor guardado: ${valor} | Obs: ${observacion || '(vacío)'}`);
                 }
             }
         });
@@ -95,7 +107,7 @@ function guardarEspecificaciones() {
         // Solo guardar la categoría si tiene valores seleccionados
         if (valoresSeleccionados.length > 0) {
             especificaciones[categoriaKey] = valoresSeleccionados;
-            console.log(`✅ ${categoriaKey}: ${valoresSeleccionados.join(', ')}`);
+            console.log(`✅ ${categoriaKey}:`, valoresSeleccionados);
         }
     });
     
