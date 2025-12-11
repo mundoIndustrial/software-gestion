@@ -61,4 +61,7 @@ Route::middleware('api')->prefix('api')->name('api.')->group(function () {
     
     // Rutas de cotizaciones
     Route::apiResource('cotizaciones', CotizacionPrendaController::class);
+    
+    // Rutas para configuración de tabla
+    Route::post('save-column-widths', [\App\Http\Controllers\Api\TableConfigController::class, 'saveColumnWidths'])->name('save-column-widths');
 });
