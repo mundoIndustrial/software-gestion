@@ -9,32 +9,51 @@ const ProcessManager = (() => {
      * Abre el modal de edición de un proceso
      */
     function openEditModal(procesoData) {
+        // Remover modal anterior si existe
+        const existingModal = document.getElementById('editProcesoModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
         const modalHTML = `
-            <div id="editProcesoModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9997;">
-                <div style="background: white; border-radius: 8px; padding: 24px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.3); z-index: 9997;">
-                    <h2 style="margin: 0 0 20px 0; font-size: 20px; font-weight: 600; color: #1f2937;">Editar Proceso</h2>
+            <div id="editProcesoModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999; animation: fadeIn 0.3s ease;">
+                <div style="background: white; border-radius: 12px; padding: 28px; max-width: 500px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); z-index: 9999; animation: slideUp 0.3s ease;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                        <h2 style="margin: 0; font-size: 22px; font-weight: 700; color: #1f2937;">Editar Proceso</h2>
+                        <button id="btnCerrarModal" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #6b7280; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                            ×
+                        </button>
+                    </div>
                     
-                    <div style="margin-bottom: 16px;">
-                        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px; color: #374151;">Nombre del Proceso</label>
+                    <div style="margin-bottom: 18px;">
+                        <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #374151;">Nombre del Proceso</label>
                         <input type="text" id="editProceso" value="${procesoData.proceso}" 
-                               style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; box-sizing: border-box; font-size: 14px;">
+                               style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; font-size: 14px; transition: border-color 0.3s ease; color: #1f2937; background: white;"
+                               onFocus="this.style.borderColor='#3b82f6'"
+                               onBlur="this.style.borderColor='#d1d5db'">
                     </div>
                     
-                    <div style="margin-bottom: 16px;">
-                        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px; color: #374151;">Fecha Inicio</label>
+                    <div style="margin-bottom: 18px;">
+                        <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #374151;">Fecha Inicio</label>
                         <input type="date" id="editFecha" value="${convertToDateInput(procesoData.fecha_inicio)}" 
-                               style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; box-sizing: border-box; font-size: 14px;">
+                               style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; font-size: 14px; transition: border-color 0.3s ease; color: #1f2937; background: white;"
+                               onFocus="this.style.borderColor='#3b82f6'"
+                               onBlur="this.style.borderColor='#d1d5db'">
                     </div>
                     
-                    <div style="margin-bottom: 16px;">
-                        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px; color: #374151;">Encargado</label>
+                    <div style="margin-bottom: 18px;">
+                        <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #374151;">Encargado</label>
                         <input type="text" id="editEncargado" value="${procesoData.encargado || ''}" 
-                               style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; box-sizing: border-box; font-size: 14px;">
+                               style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; font-size: 14px; transition: border-color 0.3s ease; color: #1f2937; background: white;"
+                               onFocus="this.style.borderColor='#3b82f6'"
+                               onBlur="this.style.borderColor='#d1d5db'">
                     </div>
                     
-                    <div style="margin-bottom: 20px;">
-                        <label style="display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px; color: #374151;">Estado</label>
-                        <select id="editEstado" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 4px; box-sizing: border-box; font-size: 14px;">
+                    <div style="margin-bottom: 24px;">
+                        <label style="display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; color: #374151;">Estado</label>
+                        <select id="editEstado" style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; font-size: 14px; transition: border-color 0.3s ease; color: #1f2937; background: white;"
+                                onFocus="this.style.borderColor='#3b82f6'"
+                                onBlur="this.style.borderColor='#d1d5db'">
                             <option value="Pendiente" ${procesoData.estado_proceso === 'Pendiente' ? 'selected' : ''}>Pendiente</option>
                             <option value="En Progreso" ${procesoData.estado_proceso === 'En Progreso' ? 'selected' : ''}>En Progreso</option>
                             <option value="Completado" ${procesoData.estado_proceso === 'Completado' ? 'selected' : ''}>Completado</option>
@@ -43,21 +62,68 @@ const ProcessManager = (() => {
                     </div>
                     
                     <div style="display: flex; gap: 12px; justify-content: flex-end;">
-                        <button id="btnCancelarProceso" style="padding: 10px 20px; background: #e5e7eb; color: #374151; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">
+                        <button id="btnCancelarProceso" style="padding: 12px 24px; background: #e5e7eb; color: #374151; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.3s ease;"
+                                onMouseOver="this.style.background='#d1d5db'"
+                                onMouseOut="this.style.background='#e5e7eb'">
                             Cancelar
                         </button>
-                        <button id="btnGuardarProceso" style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">
+                        <button id="btnGuardarProceso" style="padding: 12px 24px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.3s ease;"
+                                onMouseOver="this.style.background='#2563eb'"
+                                onMouseOut="this.style.background='#3b82f6'">
                             Guardar
                         </button>
                     </div>
                 </div>
+                <style>
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    @keyframes slideUp {
+                        from { transform: translateY(20px); opacity: 0; }
+                        to { transform: translateY(0); opacity: 1; }
+                    }
+                </style>
             </div>
         `;
         
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         
-        document.getElementById('btnCancelarProceso').addEventListener('click', closeEditModal);
-        document.getElementById('btnGuardarProceso').addEventListener('click', () => saveProcess(procesoData));
+        // Agregar event listeners con manejo de errores
+        const btnCancelar = document.getElementById('btnCancelarProceso');
+        const btnCerrar = document.getElementById('btnCerrarModal');
+        const btnGuardar = document.getElementById('btnGuardarProceso');
+        const modal = document.getElementById('editProcesoModal');
+        
+        if (btnCancelar) {
+            btnCancelar.addEventListener('click', closeEditModal);
+        }
+        
+        if (btnCerrar) {
+            btnCerrar.addEventListener('click', closeEditModal);
+        }
+        
+        if (btnGuardar) {
+            btnGuardar.addEventListener('click', () => saveProcess(procesoData));
+        }
+        
+        // Cerrar al hacer click en el overlay
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeEditModal();
+                }
+            });
+            
+            // Cerrar con tecla ESC
+            const handleEsc = (e) => {
+                if (e.key === 'Escape') {
+                    closeEditModal();
+                    document.removeEventListener('keydown', handleEsc);
+                }
+            };
+            document.addEventListener('keydown', handleEsc);
+        }
     }
     
     /**

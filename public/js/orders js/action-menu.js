@@ -145,9 +145,14 @@
    */
   function handleSeguimiento(ordenId) {
     console.log('Ver seguimiento de orden:', ordenId);
-    // Aquí puedes agregar la lógica para mostrar el seguimiento
-    // Por ejemplo: redirigir a una página o abrir un modal
-    // window.location.href = `/ordenes/${ordenId}/seguimiento`;
+    
+    // Verificar que la función openOrderTracking esté disponible
+    if (typeof openOrderTracking === 'function') {
+      openOrderTracking(ordenId);
+    } else {
+      console.error('openOrderTracking no está disponible');
+      alert('Error: No se pudo cargar el módulo de seguimiento');
+    }
   }
 
   // Inicializar cuando el DOM esté listo

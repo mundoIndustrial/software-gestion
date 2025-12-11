@@ -99,8 +99,8 @@ const TrackingUI = (() => {
         return `
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
                 <div class="tracking-area-name" style="display: flex; align-items: center; gap: 10px; flex: 1;">
-                    <span style="font-size: 28px; flex-shrink: 0;">${AreaMapper.getProcessIcon(proceso.proceso)}</span>
-                    <span style="font-size: 16px; font-weight: 600; color: #1f2937;">${proceso.proceso}</span>
+                    <span class="material-symbols-rounded" style="font-size: 28px; flex-shrink: 0; color: #3b82f6;">${AreaMapper.getProcessIcon(proceso.proceso)}</span>
+                    <span style="font-size: 16px; font-weight: 600; color: inherit;">${proceso.proceso}</span>
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center;">
                     ${topRightButtons}
@@ -138,12 +138,14 @@ const TrackingUI = (() => {
         return `
             <div style="display: flex; gap: 6px; align-items: center;">
                 <button class="btn-editar-proceso" data-orden="${orderData.numero_pedido}"
-                        style="background: #3b82f6; color: white; border: none; border-radius: 5px; padding: 7px 12px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.3s ease;">
-                    ✏️ Editar
+                        style="background: #3b82f6; color: white; border: none; border-radius: 6px; padding: 8px 10px; cursor: pointer; font-size: 18px; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; hover: background: #2563eb;"
+                        title="Editar proceso">
+                    <span class="material-symbols-rounded" style="font-size: 20px; color: white;">edit</span>
                 </button>
                 <button class="btn-eliminar-proceso" data-orden="${orderData.numero_pedido}"
-                        style="background: #ef4444; color: white; border: none; border-radius: 5px; padding: 7px 12px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.3s ease;">
-                    🗑️ Eliminar
+                        style="background: #ef4444; color: white; border: none; border-radius: 6px; padding: 8px 10px; cursor: pointer; font-size: 18px; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; hover: background: #dc2626;"
+                        title="Eliminar proceso">
+                    <span class="material-symbols-rounded" style="font-size: 20px; color: white;">delete</span>
                 </button>
             </div>
         `;

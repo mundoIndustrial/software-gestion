@@ -335,6 +335,9 @@
         });
     </script>
 
+    <!-- MODAL DE SEGUIMIENTO DEL PEDIDO -->
+    @include('components.orders-components.order-tracking-modal')
+
 @endsection
 
 @push('scripts')
@@ -381,4 +384,20 @@
     
     <!-- WEBSOCKET TEST (para desarrollo) -->
     <script src="{{ asset('js/orders js/websocket-test.js') }}?v={{ time() }}"></script>
+
+    <!-- ORDER TRACKING MODULES (SOLID Architecture) -->
+    <script src="{{ asset('js/order-tracking/modules/dateUtils.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/order-tracking/modules/holidayManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/order-tracking/modules/areaMapper.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/order-tracking/modules/trackingService.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/order-tracking/modules/trackingUI.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/order-tracking/modules/apiClient.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/order-tracking/modules/processManager.js') }}?v={{ time() }}"></script>
+    <!-- TableManager compatible con flexbox (no tabla HTML) -->
+    <script src="{{ asset('js/order-tracking/modules/tableManager-orders-compat.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/order-tracking/modules/dropdownManager.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/order-tracking/orderTracking-v2.js') }}?v={{ time() }}"></script>
+
+    <!-- TRACKING MODAL HANDLER -->
+    <script src="{{ asset('js/orders js/tracking-modal-handler.js') }}?v={{ time() }}"></script>
 @endpush

@@ -169,7 +169,7 @@
     align-items: center;
     gap: 12px;
     padding: 20px;
-    background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     color: white;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -302,7 +302,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     border-radius: 8px;
     flex-shrink: 0;
 }
@@ -353,7 +353,7 @@
     top: 0;
     bottom: 0;
     width: 2px;
-    background: linear-gradient(180deg, #f59e0b 0%, #f97316 100%);
+    background: linear-gradient(180deg, #3b82f6 0%, #2563eb 100%);
 }
 
 .tracking-timeline-item {
@@ -375,14 +375,14 @@
     width: 16px;
     height: 16px;
     background: white;
-    border: 3px solid #f59e0b;
+    border: 3px solid #3b82f6;
     border-radius: 50%;
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .tracking-timeline-item.completed::before {
-    background: #f59e0b;
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+    background: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
 .tracking-timeline-item.pending::before {
@@ -407,7 +407,7 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, #f59e0b 0%, #f97316 100%);
+    background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
     opacity: 1;
     transition: opacity 0.3s ease;
 }
@@ -468,7 +468,7 @@
     padding: 8px;
     background: rgba(255, 255, 255, 0.5);
     border-radius: 8px;
-    border-left: 3px solid #f59e0b;
+    border-left: 3px solid #3b82f6;
 }
 
 .tracking-detail-label {
@@ -487,13 +487,13 @@
 
 .tracking-days-badge {
     display: inline-block;
-    background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     color: white;
     padding: 4px 10px;
     border-radius: 16px;
     font-size: 12px;
     font-weight: 700;
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .tracking-days-badge-zero {
@@ -519,9 +519,9 @@
     align-items: center;
     gap: 12px;
     padding: 12px 20px;
-    background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     border-radius: 10px;
-    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.25);
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.25);
     min-width: auto;
     max-width: 320px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -529,7 +529,7 @@
 
 .tracking-total-days-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(245, 158, 11, 0.35);
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.35);
 }
 
 .tracking-total-days-icon {
@@ -571,6 +571,33 @@
     letter-spacing: -0.3px;
 }
 
+/* Botones de Editar y Eliminar */
+.btn-editar-proceso,
+.btn-eliminar-proceso {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-editar-proceso:hover {
+    background: #2563eb !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4) !important;
+    transform: translateY(-2px);
+}
+
+.btn-editar-proceso:active {
+    transform: translateY(0);
+}
+
+.btn-eliminar-proceso:hover {
+    background: #dc2626 !important;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4) !important;
+    transform: translateY(-2px);
+}
+
+.btn-eliminar-proceso:active {
+    transform: translateY(0);
+}
+
 /* Light mode support - cuando el sidebar está en modo claro */
 html:not([data-theme="dark"]) .tracking-modal-content,
 html[data-theme="light"] .tracking-modal-content {
@@ -598,6 +625,10 @@ html[data-theme="light"] .tracking-area-card {
 html:not([data-theme="dark"]) .tracking-area-name,
 html[data-theme="light"] .tracking-area-name {
     color: #111827 !important;
+}
+
+html[data-theme="dark"] .tracking-area-name {
+    color: #ffffff !important;
 }
 
 html:not([data-theme="dark"]) .tracking-detail-row,
@@ -642,13 +673,13 @@ html[data-theme="light"] .tracking-info-value {
     }
 
     .tracking-info-card {
-        background: linear-gradient(135deg, #78350f 0%, #92400e 100%);
-        border-color: #f59e0b;
+        background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+        border-color: #3b82f6;
     }
 
     .tracking-info-card:hover {
-        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
-        border-color: #fbbf24;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+        border-color: #60a5fa;
     }
 
     .tracking-date-item {
@@ -671,7 +702,7 @@ html[data-theme="light"] .tracking-info-value {
     }
 
     .tracking-info-icon {
-        background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     }
 
     .tracking-modal-close {
@@ -704,12 +735,12 @@ html[data-theme="light"] .tracking-info-value {
     }
 
     .tracking-area-name {
-        color: #f3f4f6;
+        color: #ffffff;
     }
 
     .tracking-detail-row {
         background: rgba(0, 0, 0, 0.3);
-        border-left-color: #f59e0b;
+        border-left-color: #3b82f6;
     }
 
     .tracking-detail-label {
@@ -725,7 +756,7 @@ html[data-theme="light"] .tracking-info-value {
     }
 
     .tracking-total-days-card {
-        background: linear-gradient(135deg, #f59e0b 0%, #f97316 100%);
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     }
 
 }

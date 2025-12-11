@@ -4,9 +4,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
         integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="{{ asset('css/orders styles/modern-table.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/orders styles/dropdown-styles.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/viewButtonDropdown.css') }}">
 
     <!-- Modales de Bodega -->
     @include('components.orders-components.bodega-order-detail-modal')
@@ -137,7 +134,7 @@
                     <tbody id="tablaOrdenesBody" class="table-body">
                         @if($ordenes->isEmpty())
                             <tr class="table-row">
-                                <td colspan="60" class="no-results" style="text-align: center; padding: 20px; color: #6c757d;">
+                                <td colspan="60" class="no-results">
                                     No hay resultados que coincidan con los filtros aplicados.
                                 </td>
                             </tr>
@@ -165,15 +162,15 @@
                                 @endphp
                                 <tr class="table-row {{ $conditionalClass }}" data-order-id="{{ $orden->pedido }}" data-numero-pedido="{{ $orden->pedido }}" data-total-dias="{{ $totalDias }}">
                                     {{-- Columna de Acciones --}}
-                                    <td class="table-cell acciones-column" style="min-width: 130px; padding: 8px 4px;">
-                                        <div class="cell-content" style="display: flex; gap: 4px; flex-wrap: nowrap; align-items: center; justify-content: center; padding: 0;">
-                                            <button class="action-btn edit-btn" onclick="openEditModal({{ $orden->pedido }})" title="Editar orden" style="background-color: #007bff; color: white; border: none; padding: 6px 10px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: 600; flex: 0 0 auto; height: 32px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap;">
+                                    <td class="table-cell acciones-column">
+                                        <div class="cell-content">
+                                            <button class="action-btn edit-btn" onclick="openEditModal({{ $orden->pedido }})" title="Editar orden">
                                                 <i class="fas fa-edit"></i>
                                             </button>
-                                            <button class="action-btn detail-btn" onclick="createViewButtonDropdown({{ $orden->pedido }})" title="Ver opciones" style="background-color: #28a745; color: white; border: none; padding: 6px 10px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: 600; flex: 0 0 auto; height: 32px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap;">
+                                            <button class="action-btn detail-btn" onclick="createViewButtonDropdown({{ $orden->pedido }})" title="Ver opciones">
                                                 <i class="fas fa-eye"></i>
                                             </button>
-                                            <button class="action-btn delete-btn" onclick="deleteOrder({{ $orden->pedido }})" title="Eliminar orden" style="background-color: #dc3545; color: white; border: none; padding: 6px 10px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: 600; flex: 0 0 auto; height: 32px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.1); white-space: nowrap;">
+                                            <button class="action-btn delete-btn" onclick="deleteOrder({{ $orden->pedido }})" title="Eliminar orden">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </div>
