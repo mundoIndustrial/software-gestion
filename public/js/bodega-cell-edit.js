@@ -10,14 +10,14 @@ let currentCellData = {
 /**
  * Abrir modal para editar una celda
  */
-function openCellEditModal(pedido, column, value, element) {
+function openCellEditModal(column, value, pedido) {
     console.log(`✏️ Abriendo edición de celda: ${column} = ${value}`);
     
     currentCellData = {
         pedido: pedido,
         column: column,
         value: value,
-        element: element
+        element: null
     };
 
     // Actualizar título y label del modal

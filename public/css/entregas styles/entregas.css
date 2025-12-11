@@ -1,40 +1,40 @@
-/* Paleta de colores del sistema - Light Mode (Dashboard colors) */
+/* Paleta de colores del sistema - Light Mode (Azul Profesional) */
 :root {
-    --bg1: #f3f4f6;
-    --bg-gradient-start: #f3f4f6;
-    --bg-gradient-mid: #f3f4f6;
-    --bg-gradient-end: #f3f4f6;
-    --accent: #f97316;
-    --accent-light: #ff9d58;
-    --card: #dddddd;
-    --card-hover: #cacaca;
-    --muted: #6b7280;
-    --text-primary: #1f2937;
-    --text-white: #1f2937;
-    --border: #b4b4b4;
-    --glow-orange: rgba(249, 115, 22, 0.3);
-    --table-row-even: rgba(0,0,0,0.02);
+    --bg1: #f8fafc;
+    --bg-gradient-start: #f8fafc;
+    --bg-gradient-mid: #f8fafc;
+    --bg-gradient-end: #f8fafc;
+    --accent: #2563eb;
+    --accent-light: #3b82f6;
+    --card: #f1f5f9;
+    --card-hover: #e2e8f0;
+    --muted: #475569;
+    --text-primary: #0f172a;
+    --text-white: #0f172a;
+    --border: #e2e8f0;
+    --glow-blue: rgba(37, 99, 235, 0.3);
+    --table-row-even: rgba(37, 99, 235, 0.02);
     --table-hover-text: #ffffff;
-    --scrollbar-track: rgba(0,0,0,0.05);
+    --scrollbar-track: rgba(37, 99, 235, 0.05);
     --particle-opacity-start: 0.3;
     --particle-opacity-end: 0.6;
 }
 
-/* Dark Mode (Dashboard colors) */
+/* Dark Mode (Azul Profesional) */
 body.dark-theme {
-    --bg1: #111827;
-    --bg-gradient-start: #111827;
-    --bg-gradient-mid: #111827;
-    --bg-gradient-end: #111827;
-    --card: #1f2937;
-    --card-hover: #252f3f;
-    --muted: #94a3b8;
-    --text-primary: #F1F5F9;
+    --bg1: #0f172a;
+    --bg-gradient-start: #0f172a;
+    --bg-gradient-mid: #0f172a;
+    --bg-gradient-end: #0f172a;
+    --card: #1e293b;
+    --card-hover: #334155;
+    --muted: #cbd5e1;
+    --text-primary: #f1f5f9;
     --text-white: #ffffff;
-    --border: #374151;
-    --table-row-even: rgba(255,255,255,0.03);
+    --border: #334155;
+    --table-row-even: rgba(59, 130, 246, 0.03);
     --table-hover-text: #ffffff;
-    --scrollbar-track: rgba(255,255,255,0.05);
+    --scrollbar-track: rgba(59, 130, 246, 0.05);
     --particle-opacity-start: 0.5;
     --particle-opacity-end: 1;
 }
@@ -53,21 +53,18 @@ body.dark-theme {
     text-align: center;
     margin-bottom: 3rem;
     padding: 2rem;
-    background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(249, 115, 22, 0.02) 100%);
-    border-radius: 20px;
-    border: 1px solid rgba(249, 115, 22, 0.2);
-    backdrop-filter: blur(20px);
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0.02) 100%);
+    border-radius: 16px;
+    border: 1px solid rgba(37, 99, 235, 0.15);
+    backdrop-filter: blur(10px);
 }
 
 .ep-header h1 {
-    font-size: 3rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, var(--text-white) 0%, var(--accent-light) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
     margin-bottom: 0.5rem;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
 }
 
 .ep-header p {
@@ -78,24 +75,24 @@ body.dark-theme {
 
 .ep-badge {
     display: inline-block;
-    padding: 0.4rem 1rem;
-    background: rgba(249, 115, 22, 0.15);
-    border: 1px solid rgba(249, 115, 22, 0.3);
-    border-radius: 20px;
-    color: var(--accent-light);
+    padding: 0.5rem 1.2rem;
+    background: rgba(37, 99, 235, 0.1);
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    border-radius: 8px;
+    color: var(--accent);
     font-size: 0.85rem;
-    font-weight: 600;
+    font-weight: 500;
     margin-top: 1rem;
 }
 
 .ep-card {
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 1.75rem;
-    backdrop-filter: blur(20px);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: all 0.2s ease;
     position: relative;
     overflow: hidden;
 }
@@ -106,17 +103,17 @@ body.dark-theme {
     top: 0;
     left: 0;
     right: 0;
-    height: 3px;
+    height: 2px;
     background: linear-gradient(90deg, var(--accent) 0%, var(--accent-light) 100%);
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.2s ease;
 }
 
 .ep-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 16px 48px rgba(0,0,0,0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
     background: var(--card-hover);
-    border-color: rgba(249, 115, 22, 0.2);
+    border-color: rgba(37, 99, 235, 0.2);
 }
 
 .ep-card:hover::before {
@@ -124,40 +121,32 @@ body.dark-theme {
 }
 
 .filter-input {
-    background: rgba(255,255,255,0.05);
+    background: var(--card);
     border: 1px solid var(--border);
-    padding: 0.85rem 1.2rem;
-    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
     color: var(--text-primary);
-    font-size: 0.95rem;
-    transition: all 0.3s ease;
-}
-
-body:not(.dark-theme) .filter-input {
-    background: rgba(0,0,0,0.05);
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
 }
 
 .filter-input:focus {
     outline: none;
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
-    background: rgba(255,255,255,0.08);
-}
-
-body:not(.dark-theme) .filter-input:focus {
-    background: rgba(0,0,0,0.08);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    background: var(--card-hover);
 }
 
 .btn-primary {
     background: linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%);
     color: white;
-    padding: 0.85rem 1.75rem;
-    border-radius: 12px;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
     border: none;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
     position: relative;
     overflow: hidden;
 }
@@ -170,7 +159,7 @@ body:not(.dark-theme) .filter-input:focus {
     width: 100%;
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transition: left 0.5s ease;
+    transition: left 0.3s ease;
 }
 
 .btn-primary:hover::before {
@@ -178,50 +167,43 @@ body:not(.dark-theme) .filter-input:focus {
 }
 
 .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 25px rgba(249, 115, 22, 0.5);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
 .btn-secondary {
-    background: rgba(255,255,255,0.08);
-    color: var(--text-white);
-    padding: 0.7rem 1.2rem;
-    border-radius: 10px;
+    background: var(--card);
+    color: var(--text-primary);
+    padding: 0.65rem 1.2rem;
+    border-radius: 8px;
     border: 1px solid var(--border);
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     font-size: 0.9rem;
     display: flex;
     align-items: center;
     gap: 0.6rem;
 }
 
-body:not(.dark-theme) .btn-secondary {
-    background: rgba(0,0,0,0.05);
-}
-
 .btn-secondary:hover {
-    background: rgba(255,255,255,0.15);
+    background: var(--card-hover);
     border-color: var(--accent);
-    color: var(--text-white);
+    color: var(--accent);
     transform: translateY(-1px);
-}
-
-body:not(.dark-theme) .btn-secondary:hover {
-    background: rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
 }
 
 .stat-card {
-    background: linear-gradient(135deg, rgba(249, 115, 22, 0.12) 0%, rgba(249, 115, 22, 0.04) 100%);
-    border: 1px solid rgba(249, 115, 22, 0.25);
-    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0.02) 100%);
+    border: 1px solid rgba(37, 99, 235, 0.15);
+    border-radius: 12px;
     padding: 1.5rem;
     text-align: center;
-    color: var(--text-white);
+    color: var(--text-primary);
     position: relative;
     overflow: hidden;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
 }
 
 .stat-card::after {
@@ -231,15 +213,15 @@ body:not(.dark-theme) .btn-secondary:hover {
     right: -50%;
     width: 200%;
     height: 200%;
-    background: radial-gradient(circle, rgba(249, 115, 22, 0.1) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.08) 0%, transparent 70%);
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.2s ease;
 }
 
 .stat-card:hover {
-    transform: scale(1.05);
-    border-color: rgba(249, 115, 22, 0.4);
-    box-shadow: 0 8px 25px rgba(249, 115, 22, 0.2);
+    transform: scale(1.02);
+    border-color: rgba(37, 99, 235, 0.25);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.12);
 }
 
 .stat-card:hover::after {
@@ -259,12 +241,9 @@ body:not(.dark-theme) .btn-secondary:hover {
 }
 
 .stat-number {
-    font-size: 2.5rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--accent);
     position: relative;
     z-index: 1;
 }
@@ -299,13 +278,13 @@ body:not(.dark-theme) .btn-secondary:hover {
 }
 
 .table-scroll-container::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, var(--accent-light), var(--accent));
+    background: var(--accent);
     border-radius: 10px;
-    transition: background 0.3s ease;
+    transition: background 0.2s ease;
 }
 
 .table-scroll-container::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, var(--accent), var(--accent-light));
+    background: var(--accent-light);
 }
 
 .modern-table {
@@ -316,7 +295,7 @@ body:not(.dark-theme) .btn-secondary:hover {
 }
 
 .modern-table thead {
-    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
     position: sticky;
     top: 0;
     z-index: 10;
@@ -326,27 +305,27 @@ body:not(.dark-theme) .btn-secondary:hover {
     padding: 1rem 1.2rem;
     text-align: left;
     color: white;
-    font-weight: 700;
-    font-size: 0.85rem;
+    font-weight: 600;
+    font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    border-bottom: 2px solid rgba(249, 115, 22, 0.3);
+    border-bottom: none;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .modern-table tbody tr {
-    transition: all 0.3s ease;
-    border-bottom: 2px solid rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+    border-bottom: 1px solid var(--border);
     position: relative;
 }
 
 .modern-table tbody tr:hover {
-    background-color: rgba(249, 115, 22, 0.1) !important;
-    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2);
-    border-radius: 8px;
-    transform: translateY(-1px);
+    background-color: rgba(37, 99, 235, 0.05) !important;
+    box-shadow: none;
+    border-radius: 0;
+    transform: none;
     z-index: 1;
 }
 
@@ -375,23 +354,23 @@ body:not(.dark-theme) .btn-secondary:hover {
 /* Badge para valores en tablas */
 .table-badge {
     display: inline-block;
-    padding: 0.3rem 0.8rem;
-    background: linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(249, 115, 22, 0.1));
-    border: 1px solid rgba(249, 115, 22, 0.3);
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--accent-light);
+    padding: 0.35rem 0.8rem;
+    background: rgba(37, 99, 235, 0.1);
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--accent);
 }
 
 .chart-container {
     position: relative;
     height: 400px;
-    background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
-    border-radius: 16px;
+    background: var(--card);
+    border-radius: 12px;
     padding: 2rem;
-    border: 1px solid rgba(249, 115, 22, 0.15);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    box-shadow: none;
     overflow: hidden;
 }
 
@@ -402,8 +381,8 @@ body:not(.dark-theme) .btn-secondary:hover {
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, var(--accent-light), transparent);
-    opacity: 0.5;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.3;
 }
 
 .chart-container::after {
@@ -413,7 +392,7 @@ body:not(.dark-theme) .btn-secondary:hover {
     left: 0;
     right: 0;
     height: 40%;
-    background: radial-gradient(ellipse at center bottom, rgba(249, 115, 22, 0.05), transparent);
+    background: radial-gradient(ellipse at center bottom, rgba(37, 99, 235, 0.03), transparent);
     pointer-events: none;
 }
 
@@ -433,11 +412,11 @@ body:not(.dark-theme) .btn-secondary:hover {
     content: '';
     position: absolute;
     left: 0;
-    width: 5px;
+    width: 4px;
     height: 100%;
-    background: linear-gradient(180deg, var(--accent-light) 0%, var(--accent) 100%);
-    border-radius: 3px;
-    box-shadow: 0 0 10px var(--glow-orange);
+    background: var(--accent);
+    border-radius: 2px;
+    box-shadow: none;
 }
 
 .section-title i {
@@ -457,11 +436,11 @@ body:not(.dark-theme) .btn-secondary:hover {
 
 .card-title::before {
     content: '';
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
     background: var(--accent);
     border-radius: 50%;
-    box-shadow: 0 0 10px var(--glow-orange);
+    box-shadow: none;
 }
 
 /* Animación de entrada para filas */
@@ -477,15 +456,15 @@ body:not(.dark-theme) .btn-secondary:hover {
 }
 
 .modern-table tbody tr {
-    animation: slideInRow 0.2s ease-out forwards;
+    animation: slideInRow 0.15s ease-out forwards;
 }
 
-.modern-table tbody tr:nth-child(1) { animation-delay: 0.03s; }
-.modern-table tbody tr:nth-child(2) { animation-delay: 0.06s; }
-.modern-table tbody tr:nth-child(3) { animation-delay: 0.09s; }
-.modern-table tbody tr:nth-child(4) { animation-delay: 0.12s; }
-.modern-table tbody tr:nth-child(5) { animation-delay: 0.15s; }
-.modern-table tbody tr:nth-child(n+6) { animation-delay: 0.18s; }
+.modern-table tbody tr:nth-child(1) { animation-delay: 0.02s; }
+.modern-table tbody tr:nth-child(2) { animation-delay: 0.04s; }
+.modern-table tbody tr:nth-child(3) { animation-delay: 0.06s; }
+.modern-table tbody tr:nth-child(4) { animation-delay: 0.08s; }
+.modern-table tbody tr:nth-child(5) { animation-delay: 0.1s; }
+.modern-table tbody tr:nth-child(n+6) { animation-delay: 0.1s; }
 
 /* Efecto shimmer en hover de cards */
 @keyframes shimmer {
@@ -500,8 +479,8 @@ body:not(.dark-theme) .btn-secondary:hover {
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
-    transition: left 0.5s ease;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.02), transparent);
+    transition: left 0.3s ease;
 }
 
 .ep-card:hover::after {
@@ -513,15 +492,15 @@ body:not(.dark-theme) .btn-secondary:hover {
     position: fixed;
     top: 20px;
     right: 20px;
-    background: linear-gradient(135deg, #ff9d58 0%, #f97316 100%);
+    background: linear-gradient(135deg, var(--accent-light) 0%, var(--accent) 100%);
     color: white;
     padding: 16px 24px;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(249, 115, 22, 0.4);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
     z-index: 10000;
     transform: translateX(400px);
     opacity: 0;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.2s ease;
 }
 
 .realtime-notification.show {
@@ -546,7 +525,7 @@ body:not(.dark-theme) .btn-secondary:hover {
 /* Notificación de eliminación */
 .realtime-notification.notification-delete {
     background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
 @media (max-width: 768px) {
@@ -573,27 +552,29 @@ body:not(.dark-theme) .btn-secondary:hover {
 
 /* Delete button styles */
 .btn-delete {
-    background: #f5576c;
+    background: #ef4444;
     color: white;
     border: none;
     padding: 6px 8px;
     border-radius: 6px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .btn-delete:hover {
-    background: #e04558;
+    background: #dc2626;
+    transform: scale(1.05);
 }
 
 /* Editable cell styles */
 .editable {
-    transition: background 0.2s;
+    transition: background 0.2s ease;
+    cursor: pointer;
 }
 
 .editable:hover {
-    background: rgba(255, 157, 88, 0.1);
+    background: rgba(37, 99, 235, 0.05);
 }

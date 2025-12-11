@@ -1,0 +1,271 @@
+/* ===== BODEGA TABLE OVERRIDES ===== */
+
+/* Bodega tiene 50 columnas de 220px cada una = 11000px + gaps */
+.modern-table {
+  min-width: 12500px !important;
+}
+
+.table-head {
+  min-width: 12500px !important;
+  gap: 5px !important;
+  padding: 14px 2px !important;
+}
+
+.table-row {
+  min-width: 12300px !important;
+  gap: 5px !important;
+  padding: 0 20px !important;
+}
+
+/* Asegurar que el header se extienda completamente */
+.table-head > div {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* Asegurar que las filas se extiendan completamente */
+.table-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+/* Alineación perfecta de celdas */
+.table-header-cell {
+  flex-shrink: 0 !important;
+  overflow: visible !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 10px !important;
+  position: relative !important;
+}
+
+.table-header-cell:not(:last-child)::after {
+  content: '' !important;
+  position: absolute !important;
+  right: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: 1px !important;
+  background-color: transparent !important;
+}
+
+.table-cell {
+  flex-shrink: 0 !important;
+  overflow: visible !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 10px !important;
+  position: relative !important;
+}
+
+.table-cell:not(:last-child)::after {
+  content: '' !important;
+  position: absolute !important;
+  right: 0 !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: 1px !important;
+  background-color: transparent !important;
+}
+
+/* Limitar contenido a 25 caracteres con ellipsis */
+.cell-content {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.cell-text {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  text-align: center;
+}
+
+.header-text {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  text-align: center;
+}
+
+/* Alineación especial para columnas que requieren left */
+.table-cell[style*="flex-start"],
+.table-header-cell[style*="flex-start"] {
+  justify-content: flex-start !important;
+}
+
+.table-cell[style*="flex-start"] .cell-content,
+.table-cell[style*="flex-start"] .cell-text,
+.table-header-cell[style*="flex-start"] .header-text {
+  justify-content: flex-start !important;
+  text-align: left;
+}
+
+/* Separación entre botones de acciones */
+.acciones-column .action-view-btn {
+  margin: 0 6px !important;
+}
+
+.acciones-column .action-view-btn:first-child {
+  margin-left: 0 !important;
+}
+
+.acciones-column .action-view-btn:last-child {
+  margin-right: 0 !important;
+}
+
+/* ===== VIEW BUTTON DROPDOWN STYLES ===== */
+.view-button-dropdown {
+  background: #ffffff;
+  border: 2px solid #3b82f6;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  min-width: 160px;
+  z-index: 9999;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  color: #1f2937;
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  border-bottom: 1px solid #e5e7eb;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+
+.dropdown-option:last-child {
+  border-bottom: none;
+}
+
+.dropdown-option:hover {
+  background: #dbeafe;
+  color: #3b82f6;
+  padding-left: 20px;
+}
+
+.dropdown-option svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.dropdown-option span {
+  white-space: nowrap;
+}
+
+/* Dark theme support */
+body.dark-theme .view-button-dropdown {
+  background: #1f2937;
+  border-color: #3b82f6;
+}
+
+body.dark-theme .dropdown-option {
+  color: #f9fafb;
+  border-bottom-color: #374151;
+}
+
+body.dark-theme .dropdown-option:hover {
+  background: #374151;
+  color: #3b82f6;
+}
+
+/* ===== ESTADO DROPDOWN STYLES ===== */
+.estado-dropdown {
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: none;
+  background-color: #9ca3af;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-block;
+}
+
+.estado-dropdown:hover {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.estado-dropdown:focus {
+  outline: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Estados específicos */
+.estado-dropdown.estado-entregado {
+  background-color: #06b6d4;
+}
+
+.estado-dropdown.estado-en-ejecución {
+  background-color: #10b981;
+}
+
+.estado-dropdown.estado-no-iniciado {
+  background-color: #9ca3af;
+}
+
+.estado-dropdown.estado-anulada {
+  background-color: #d97706;
+}
+
+/* Estilos para las opciones del dropdown */
+.estado-dropdown option {
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 6px;
+  background: white;
+  color: #1f2937;
+}
+
+.estado-dropdown option[value="Entregado"] {
+  background: #06b6d4;
+  color: white;
+}
+
+.estado-dropdown option[value="En Ejecución"] {
+  background: #10b981;
+  color: white;
+}
+
+.estado-dropdown option[value="No iniciado"] {
+  background: #9ca3af;
+  color: white;
+}
+
+.estado-dropdown option[value="Anulada"] {
+  background: #d97706;
+  color: white;
+}

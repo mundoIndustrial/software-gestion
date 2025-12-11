@@ -326,7 +326,8 @@ function createViewButtonDropdown(pedido) {
     `;
     
     // Posicionar el dropdown cerca del botón Ver
-    const viewButton = document.querySelector(`.detail-btn[onclick*="createViewButtonDropdown(${pedido})"]`);
+    // Buscar el botón por data-orden-id y que contenga "createViewButtonDropdown"
+    const viewButton = document.querySelector(`.action-view-btn[data-orden-id="${pedido}"][onclick*="createViewButtonDropdown"]`);
     if (viewButton) {
         const rect = viewButton.getBoundingClientRect();
         dropdown.style.position = 'fixed';

@@ -254,26 +254,36 @@
 
     <style>
         .entrega-modal-container {
-            background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
             min-height: 750px;
             max-height: 95vh;
             overflow-y: auto;
             border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             margin: 0 auto;
             max-width: 1200px;
             transform: scale(0.75);
             transform-origin: top center;
         }
 
+        body.dark-theme .entrega-modal-container {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
         .entrega-modal-container .modal-header {
-            background: rgba(255, 157, 88, 0.1);
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(37, 99, 235, 0.02) 100%);
             backdrop-filter: blur(10px);
             padding: 24px 32px;
-            border-bottom: 1px solid rgba(255, 157, 88, 0.2);
+            border-bottom: 1px solid rgba(37, 99, 235, 0.15);
             position: sticky;
             top: 0;
             z-index: 10;
+        }
+
+        body.dark-theme .entrega-modal-container .modal-header {
+            background: linear-gradient(135deg, rgba(37, 99, 235, 0.1) 0%, rgba(37, 99, 235, 0.03) 100%);
+            border-bottom: 1px solid rgba(37, 99, 235, 0.2);
         }
 
         .entrega-modal-container .header-content {
@@ -285,12 +295,12 @@
         .entrega-modal-container .icon-wrapper {
             width: 36px;
             height: 36px;
-            background: linear-gradient(135deg, #ff9d58 0%, #ff7b3d 100%);
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 12px rgba(255, 157, 88, 0.3);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
         }
 
         .entrega-modal-container .header-icon {
@@ -302,8 +312,12 @@
         .entrega-modal-container .modal-title {
             font-size: 24px;
             font-weight: 700;
-            color: white;
+            color: #0f172a;
             margin: 0;
+        }
+
+        body.dark-theme .entrega-modal-container .modal-title {
+            color: #f1f5f9;
         }
 
         .entrega-modal-container .form-content {
@@ -311,18 +325,29 @@
         }
 
         .entrega-modal-container .section-card {
-            background: white;
-            border-radius: 16px;
+            background: #ffffff;
+            border-radius: 12px;
             padding: 24px;
             margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e2e8f0;
+        }
+
+        body.dark-theme .entrega-modal-container .section-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
 
         .entrega-modal-container .section-title {
             font-size: 18px;
             font-weight: 600;
-            color: #1a202c;
+            color: #0f172a;
             margin: 0 0 20px 0;
+        }
+
+        body.dark-theme .entrega-modal-container .section-title {
+            color: #f1f5f9;
         }
 
         .entrega-modal-container .tipo-selector {
@@ -331,35 +356,48 @@
         }
 
         .entrega-modal-container .tipo-btn.active {
-            background: linear-gradient(135deg, #ff9d58 0%, #ff7b3d 100%);
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
             color: white;
             border: none;
             padding: 12px 24px;
-            border-radius: 12px;
+            border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 8px;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
         }
 
         .entrega-modal-container .tipo-btn {
-            background: #d1d5db;
-            color: #374151;
-            border: 1px solid #9ca3af;
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
             padding: 12px 24px;
-            border-radius: 12px;
+            border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
             display: flex;
             align-items: center;
             gap: 8px;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+        }
+
+        body.dark-theme .entrega-modal-container .tipo-btn {
+            background: #334155;
+            color: #cbd5e1;
+            border: 1px solid #475569;
         }
 
         .entrega-modal-container .tipo-btn:hover {
-            background: #e5e7eb;
+            background: #e2e8f0;
+            border-color: #2563eb;
+        }
+
+        body.dark-theme .entrega-modal-container .tipo-btn:hover {
+            background: #475569;
+            border-color: #3b82f6;
         }
 
         .entrega-modal-container .form-grid {
@@ -376,11 +414,15 @@
         .entrega-modal-container .form-label {
             font-size: 16px;
             font-weight: 500;
-            color: #1f1f1fff;
+            color: #0f172a;
             margin-bottom: 8px;
             display: flex;
             align-items: center;
             gap: 8px;
+        }
+
+        body.dark-theme .entrega-modal-container .form-label {
+            color: #f1f5f9;
         }
 
         .entrega-modal-container .label-icon {
@@ -392,27 +434,46 @@
         .entrega-modal-container .form-select {
             width: 100%;
             padding: 12px 16px;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
             font-size: 16px;
-            color: #2d3748;
-            background: #f7fafc;
-            transition: all 0.3s ease;
+            color: #0f172a;
+            background: #f8fafc;
+            transition: all 0.2s ease;
+        }
+
+        body.dark-theme .entrega-modal-container .form-input,
+        body.dark-theme .entrega-modal-container .form-select {
+            background: #334155;
+            border-color: #475569;
+            color: #f1f5f9;
         }
 
         .entrega-modal-container .form-input:focus,
         .entrega-modal-container .form-select:focus {
             outline: none;
-            border-color: #ff9d58;
+            border-color: #2563eb;
             background: white;
-            box-shadow: 0 0 0 3px rgba(255, 157, 88, 0.1);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        body.dark-theme .entrega-modal-container .form-input:focus,
+        body.dark-theme .entrega-modal-container .form-select:focus {
+            background: #1e293b;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
         }
 
         .entrega-modal-container .summary-card {
             margin-top: 20px;
             padding: 16px;
-            background: #f7fafc;
+            background: rgba(37, 99, 235, 0.05);
             border-radius: 8px;
+            border: 1px solid rgba(37, 99, 235, 0.1);
+        }
+
+        body.dark-theme .entrega-modal-container .summary-card {
+            background: rgba(37, 99, 235, 0.08);
+            border: 1px solid rgba(37, 99, 235, 0.2);
         }
 
         .entrega-modal-container .summary-card.hidden {
@@ -421,9 +482,13 @@
 
         .entrega-modal-container .summary-card h4 {
             margin: 0 0 12px 0;
-            color: #1a202c;
+            color: #0f172a;
             font-size: 16px;
             font-weight: 600;
+        }
+
+        body.dark-theme .entrega-modal-container .summary-card h4 {
+            color: #f1f5f9;
         }
 
         .entrega-modal-container .summary-grid {
@@ -439,25 +504,30 @@
 
         .entrega-modal-container .summary-label {
             font-size: 12px;
-            color: #4a5568;
+            color: #475569;
             font-weight: 500;
+        }
+
+        body.dark-theme .entrega-modal-container .summary-label {
+            color: #cbd5e1;
         }
 
         .entrega-modal-container .summary-value {
             font-size: 18px;
-            color: #1a202c;
+            color: #2563eb;
             font-weight: 700;
         }
 
         .entrega-modal-container .btn-primary {
-            background: linear-gradient(135deg, #ff9d58 0%, #ff7b3d 100%);
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
             color: white;
             padding: 6px 12px;
             border: none;
             border-radius: 8px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
         }
 
         .entrega-modal-container .btn-add-centered {
@@ -470,8 +540,8 @@
         }
 
         .entrega-modal-container .btn-primary:hover:not(:disabled) {
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(255, 157, 88, 0.4);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
         }
 
         .entrega-modal-container .btn-primary:disabled {
@@ -490,12 +560,18 @@
             justify-content: space-between;
             align-items: center;
             padding: 12px 16px;
-            background: white;
+            background: #f8fafc;
             border-radius: 8px;
-            border: 1px solid #d1d5db;
-            color: black;
+            border: 1px solid #e2e8f0;
+            color: #0f172a;
             font-weight: 600;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        body.dark-theme .entrega-modal-container .entrega-item {
+            background: #334155;
+            border: 1px solid #475569;
+            color: #f1f5f9;
         }
 
         .entrega-modal-container .btn-delete {
@@ -529,30 +605,46 @@
             gap: 8px;
             padding: 12px 24px;
             border: none;
-            border-radius: 10px;
+            border-radius: 8px;
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
 
         .entrega-modal-container .btn-primary {
-            background: linear-gradient(135deg, #ff9d58 0%, #ff7b3d 100%);
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
             color: white;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
         }
 
         .entrega-modal-container .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
         }
 
         .entrega-modal-container .btn-secondary {
             background: #e2e8f0;
-            color: #4a5568;
+            color: #475569;
+            border: 1px solid #cbd5e1;
+        }
+
+        body.dark-theme .entrega-modal-container .btn-secondary {
+            background: #334155;
+            color: #cbd5e1;
+            border: 1px solid #475569;
         }
 
         .entrega-modal-container .btn-secondary:hover {
             background: #cbd5e0;
+            border-color: #2563eb;
+            color: #2563eb;
+        }
+
+        body.dark-theme .entrega-modal-container .btn-secondary:hover {
+            background: #475569;
+            border-color: #3b82f6;
+            color: #3b82f6;
         }
 
         .entrega-modal-container .error-message {

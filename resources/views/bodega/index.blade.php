@@ -1,9 +1,21 @@
 @extends('layouts.app')
 
-@section('content')
+@section('title', 'Bodega - MundoIndustrial')
+@section('page-title', 'Bodega')
+
+@push('styles')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
         integrity="sha512-1ycn6IcaQQ40/MKBW2W4Rhis/DbILU74C1vSrLJxCq57o941Ym01SwNsOMqvEBFlcgUa6xLiPY/NS5R+E6ztJQ=="
         crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet" href="{{ asset('css/orders styles/registros.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/orders styles/action-menu.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/orders styles/filter-system.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/orders styles/row-conditional-colors.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/bodega-table.css') }}">
+@endpush
+
+@section('content')
 
     <!-- Modales de Bodega -->
     @include('components.orders-components.bodega-order-detail-modal')
@@ -12,37 +24,157 @@
     @include('components.orders-components.bodega-tracking-modal')
 
     <div class="table-container">
-        <div class="table-header" id="tableHeader">
-            <h1 class="table-title">
-                <i class="fas {{ $icon }}"></i>
-                {{ $title }}
-            </h1>
-
-            <div class="search-container">
-                <div class="search-input-wrapper">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="text" id="buscarOrden" placeholder="Buscar por pedido o cliente..." class="search-input">
-                </div>
-            </div>
-
-            <div class="table-actions"></div>
-        </div>
-
         <div class="modern-table-wrapper">
             <div class="table-scroll-container">
-                <table id="tablaOrdenes" class="modern-table">
-                    <thead class="table-head">
-                        @if($ordenes->isNotEmpty())
-                            <tr>
-                                <th class="table-header-cell acciones-column">
-                                    <div class="header-content">
-                                        <span class="header-text">Acciones</span>
+                <div class="modern-table">
+                    <div class="table-head">
+                        <div style="display: flex; align-items: center; width: 100%; gap: 15px; padding: 14px 12px;">
+                            @php
+                                $columnWidth = '220px';
+                                $columns = [
+                                    ['key' => 'acciones', 'label' => 'Acciones', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'estado', 'label' => 'Estado', 'width' => '220px', 'justify' => 'center'],
+                                    ['key' => 'area', 'label' => 'Área', 'width' => '220px', 'justify' => 'center'],
+                                    ['key' => 'total_de_dias_', 'label' => 'Total de días', 'width' => '220px', 'justify' => 'center'],
+                                    ['key' => 'pedido', 'label' => 'Pedido', 'width' => '220px', 'justify' => 'center'],
+                                    ['key' => 'cliente', 'label' => 'Cliente', 'width' => '220px', 'justify' => 'center'],
+                                    ['key' => 'descripcion', 'label' => 'Descripción', 'width' => '220px', 'justify' => 'center'],
+                                    ['key' => 'cantidad', 'label' => 'Cantidad', 'width' => '220px', 'justify' => 'start'],
+                                    ['key' => 'novedades', 'label' => 'Novedades', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'asesora', 'label' => 'Asesor', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'forma_de_pago', 'label' => 'Forma de pago', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'fecha_de_creacion_de_orden', 'label' => 'Fecha de creación', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'encargado_orden', 'label' => 'Encargado orden', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'dias_orden', 'label' => 'Días orden', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'inventario', 'label' => 'Inventario', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'encargados_inventario', 'label' => 'Encargados inventario', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'dias_inventario', 'label' => 'Días inventario', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'insumos_y_telas', 'label' => 'Insumos y telas', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'encargados_insumos', 'label' => 'Encargados insumos', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'dias_insumos', 'label' => 'Días insumos', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'corte', 'label' => 'Corte', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'encargados_de_corte', 'label' => 'Encargados corte', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'dias_corte', 'label' => 'Días corte', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'bordado', 'label' => 'Bordado', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'codigo_de_bordado', 'label' => 'Código bordado', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'dias_bordado', 'label' => 'Días bordado', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'estampado', 'label' => 'Estampado', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'encargados_estampado', 'label' => 'Encargados estampado', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'dias_estampado', 'label' => 'Días estampado', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'costura', 'label' => 'Costura', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'modulo', 'label' => 'Módulo', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'dias_costura', 'label' => 'Días costura', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'reflectivo', 'label' => 'Reflectivo', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'encargado_reflectivo', 'label' => 'Encargado reflectivo', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'total_de_dias_reflectivo', 'label' => 'Total días reflectivo', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'lavanderia', 'label' => 'Lavandería', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'encargado_lavanderia', 'label' => 'Encargado lavandería', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'dias_lavanderia', 'label' => 'Días lavandería', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'arreglos', 'label' => 'Arreglos', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'encargado_arreglos', 'label' => 'Encargado arreglos', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'total_de_dias_arreglos', 'label' => 'Total días arreglos', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'marras', 'label' => 'Marras', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'encargados_marras', 'label' => 'Encargados marras', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'total_de_dias_marras', 'label' => 'Total días marras', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'control_de_calidad', 'label' => 'Control calidad', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'encargados_calidad', 'label' => 'Encargados calidad', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'dias_c_c', 'label' => 'Días control', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'entrega', 'label' => 'Entrega', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'encargados_entrega', 'label' => 'Encargados entrega', 'width' => '220px', 'justify' => 'flex-start'],
+                                    ['key' => 'despacho', 'label' => 'Despacho', 'width' => '220px', 'justify' => 'flex-start'],
+                                ];
+                            @endphp
+                            
+                            @foreach($columns as $column)
+                                <div class="table-header-cell{{ $column['key'] === 'acciones' ? ' acciones-column' : '' }}" style="flex: 0 0 {{ $column['width'] }}; width: {{ $column['width'] }}; max-width: {{ $column['width'] }}; justify-content: center;">
+                                    <div class="th-wrapper">
+                                        <span class="header-text">{{ $column['label'] }}</span>
+                                        @if($column['key'] !== 'acciones')
+                                            <button type="button" class="btn-filter-column" title="Filtrar {{ $column['label'] }}" onclick="openFilterModal('{{ $column['key'] }}')">
+                                                <span class="material-symbols-rounded">filter_alt</span>
+                                                <span class="filter-badge">0</span>
+                                            </button>
+                                        @endif
                                     </div>
-                                </th>
-                                @php 
-                                    // TODOS los campos de tabla_original_bodega
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div id="tablaOrdenesBody" class="table-body">
+                        @forelse($ordenes as $orden)
+                            @php
+                                $pedidoId = $orden->pedido;
+                                $totalDias = intval($totalDiasCalculados[$pedidoId] ?? 0);
+                                $estado = $orden->estado ?? '';
+                            @endphp
+                            <div class="table-row" data-order-id="{{ $orden->pedido }}" data-numero-pedido="{{ $orden->pedido }}" data-total-dias="{{ $totalDias }}" data-estado="{{ $estado }}">
+                                <!-- Acciones -->
+                                <div class="table-cell acciones-column" style="flex: 0 0 220px; width: 220px; max-width: 220px; justify-content: flex-start; position: relative;">
+                                    <button class="action-view-btn" title="Ver detalles" data-orden-id="{{ $orden->pedido }}" onclick="openEditModal({{ $orden->pedido }})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="action-view-btn" title="Ver opciones" data-orden-id="{{ $orden->pedido }}" onclick="createViewButtonDropdown({{ $orden->pedido }})">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="action-view-btn" title="Eliminar orden" data-orden-id="{{ $orden->pedido }}" onclick="deleteOrder({{ $orden->pedido }})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                
+                                <!-- Estado (Dropdown) -->
+                                <div class="table-cell" style="flex: 0 0 220px; width: 220px; max-width: 220px; justify-content: center;">
+                                    <div class="cell-content">
+                                        @php
+                                            $estadoClass = 'estado-no-iniciado';
+                                            if ($orden->estado === 'Entregado') {
+                                                $estadoClass = 'estado-entregado';
+                                            } elseif ($orden->estado === 'En Ejecución') {
+                                                $estadoClass = 'estado-en-ejecución';
+                                            } elseif ($orden->estado === 'Anulada') {
+                                                $estadoClass = 'estado-anulada';
+                                            }
+                                        @endphp
+                                        @if(auth()->user()->role && auth()->user()->role->name === 'supervisor')
+                                            <select class="estado-dropdown {{ $estadoClass }}" data-id="{{ $orden->pedido }}" data-value="{{ $orden->estado }}" disabled style="cursor: not-allowed; opacity: 0.8;">
+                                                @foreach(['Entregado', 'En Ejecución', 'No iniciado', 'Anulada'] as $estadoOpt)
+                                                    <option value="{{ $estadoOpt }}" {{ $orden->estado === $estadoOpt ? 'selected' : '' }}>{{ $estadoOpt }}</option>
+                                                @endforeach
+                                            </select>
+                                        @else
+                                            <select class="estado-dropdown {{ $estadoClass }}" data-id="{{ $orden->pedido }}" data-value="{{ $orden->estado }}">
+                                                @foreach(['Entregado', 'En Ejecución', 'No iniciado', 'Anulada'] as $estadoOpt)
+                                                    <option value="{{ $estadoOpt }}" {{ $orden->estado === $estadoOpt ? 'selected' : '' }}>{{ $estadoOpt }}</option>
+                                                @endforeach
+                                            </select>
+                                        @endif
+                                    </div>
+                                </div>
+                                
+                                <!-- Área (Dropdown) -->
+                                <div class="table-cell" style="flex: 0 0 220px; width: 220px; max-width: 220px; justify-content: center;">
+                                    <div class="cell-content">
+                                        @php $areaValue = $orden->area ?? ''; @endphp
+                                        @if(auth()->user()->role && auth()->user()->role->name === 'supervisor')
+                                            <select class="area-dropdown" data-id="{{ $orden->pedido }}" data-value="{{ $areaValue }}" disabled style="cursor: not-allowed; opacity: 0.8;">
+                                                <option value="">Seleccionar área</option>
+                                                @foreach($areaOptions as $areaOption)
+                                                    <option value="{{ $areaOption }}" {{ $areaValue === $areaOption ? 'selected' : '' }}>{{ $areaOption }}</option>
+                                                @endforeach
+                                            </select>
+                                        @else
+                                            <select class="area-dropdown" data-id="{{ $orden->pedido }}" data-value="{{ $areaValue }}">
+                                                <option value="">Seleccionar área</option>
+                                                @foreach($areaOptions as $areaOption)
+                                                    <option value="{{ $areaOption }}" {{ $areaValue === $areaOption ? 'selected' : '' }}>{{ $areaOption }}</option>
+                                                @endforeach
+                                            </select>
+                                        @endif
+                                    </div>
+                                </div>
+                                
+                                @php
                                     $columnasBase = [
-                                        'estado', 'area', 'total_de_dias_', 'pedido', 'cliente', 'descripcion', 
+                                        'total_de_dias_', 'pedido', 'cliente', 'descripcion', 
                                         'cantidad', 'novedades', 'asesora', 'forma_de_pago', 'fecha_de_creacion_de_orden', 
                                         'encargado_orden', 'dias_orden', 'inventario', 'encargados_inventario', 'dias_inventario',
                                         'insumos_y_telas', 'encargados_insumos', 'dias_insumos', 'corte', 'encargados_de_corte',
@@ -53,198 +185,45 @@
                                         'total_de_dias_arreglos', 'marras', 'encargados_marras', 'total_de_dias_marras',
                                         'control_de_calidad', 'encargados_calidad', 'dias_c_c', 'entrega', 'encargados_entrega', 'despacho'
                                     ];
-                                    
-                                    $columnIndex = 0;
                                 @endphp
                                 
-                                {{-- Columnas de tabla_original_bodega --}}
                                 @foreach($columnasBase as $colName)
-                                    @if($colName !== 'acciones')
-                                        @php 
-                                            $columnLabels = [
-                                                'acciones' => 'Acciones',
-                                                'estado' => 'Estado',
-                                                'area' => 'Área',
-                                                'total_de_dias_' => 'Total de días',
-                                                'pedido' => 'Pedido',
-                                                'cliente' => 'Cliente',
-                                                'descripcion' => 'Descripción',
-                                                'cantidad' => 'Cantidad',
-                                                'novedades' => 'Novedades',
-                                                'asesora' => 'Asesor',
-                                                'forma_de_pago' => 'Forma de pago',
-                                                'fecha_de_creacion_de_orden' => 'Fecha de creación',
-                                                'encargado_orden' => 'Encargado orden',
-                                                'dias_orden' => 'Días orden',
-                                                'inventario' => 'Inventario',
-                                                'encargados_inventario' => 'Encargados inventario',
-                                                'dias_inventario' => 'Días inventario',
-                                                'insumos_y_telas' => 'Insumos y telas',
-                                                'encargados_insumos' => 'Encargados insumos',
-                                                'dias_insumos' => 'Días insumos',
-                                                'corte' => 'Corte',
-                                                'encargados_de_corte' => 'Encargados corte',
-                                                'dias_corte' => 'Días corte',
-                                                'bordado' => 'Bordado',
-                                                'codigo_de_bordado' => 'Código bordado',
-                                                'dias_bordado' => 'Días bordado',
-                                                'estampado' => 'Estampado',
-                                                'encargados_estampado' => 'Encargados estampado',
-                                                'dias_estampado' => 'Días estampado',
-                                                'costura' => 'Costura',
-                                                'modulo' => 'Módulo',
-                                                'dias_costura' => 'Días costura',
-                                                'reflectivo' => 'Reflectivo',
-                                                'encargado_reflectivo' => 'Encargado reflectivo',
-                                                'total_de_dias_reflectivo' => 'Total días reflectivo',
-                                                'lavanderia' => 'Lavandería',
-                                                'encargado_lavanderia' => 'Encargado lavandería',
-                                                'dias_lavanderia' => 'Días lavandería',
-                                                'arreglos' => 'Arreglos',
-                                                'encargado_arreglos' => 'Encargado arreglos',
-                                                'total_de_dias_arreglos' => 'Total días arreglos',
-                                                'marras' => 'Marras',
-                                                'encargados_marras' => 'Encargados marras',
-                                                'total_de_dias_marras' => 'Total días marras',
-                                                'control_de_calidad' => 'Control calidad',
-                                                'encargados_calidad' => 'Encargados calidad',
-                                                'dias_c_c' => 'Días control',
-                                                'entrega' => 'Entrega',
-                                                'encargados_entrega' => 'Encargados entrega',
-                                                'despacho' => 'Despacho',
-                                            ];
-                                            $colLabel = $columnLabels[$colName] ?? $colName;
-                                        @endphp
-                                        <th class="table-header-cell" data-column="{{ $colName }}">
-                                            <div class="header-content">
-                                                <span class="header-text">{{ $colLabel }}</span>
-                                                @if($colName !== 'acciones')
-                                                    <button class="filter-btn" data-column="{{ $columnIndex }}" data-column-name="{{ $colName }}">
-                                                        <i class="fas fa-filter"></i>
-                                                    </button>
+                                    @php
+                                        $colIndex = array_search($colName, array_column($columns, 'key'));
+                                        $colConfig = $colIndex !== false ? $columns[$colIndex] : ['width' => '180px', 'justify' => 'flex-start'];
+                                    @endphp
+                                    <div class="table-cell" style="flex: 0 0 {{ $colConfig['width'] }}; width: {{ $colConfig['width'] }}; max-width: {{ $colConfig['width'] }}; justify-content: {{ $colConfig['justify'] }};">
+                                        <div class="cell-content" title="{{ $orden->$colName ?? '' }}" onclick="openCellEditModal('{{ $colName }}', '{{ addslashes($orden->$colName ?? '') }}', {{ $orden->pedido }})" style="cursor: pointer;">
+                                            <span class="cell-text" data-pedido="{{ $orden->pedido }}" style="max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                                @if($colName === 'total_de_dias_')
+                                                    <span class="dias-value" data-dias="{{ $totalDias }}">{{ $totalDias }}</span>
+                                                @elseif(in_array($colName, ['fecha_de_creacion_de_orden', 'insumos_y_telas', 'corte', 'bordado', 'estampado', 'costura', 'reflectivo', 'lavanderia', 'arreglos', 'marras', 'control_de_calidad', 'entrega', 'despacho']))
+                                                    @php
+                                                        echo !empty($orden->$colName) ? \Carbon\Carbon::parse($orden->$colName)->format('d/m/Y') : '';
+                                                    @endphp
+                                                @else
+                                                    {{ $orden->$colName ?? '' }}
                                                 @endif
-                                            </div>
-                                        </th>
-                                        @php $columnIndex++; @endphp
-                                    @endif
-                                @endforeach
-                            </tr>
-                        @endif
-                    </thead>
-                    <tbody id="tablaOrdenesBody" class="table-body">
-                        @if($ordenes->isEmpty())
-                            <tr class="table-row">
-                                <td colspan="60" class="no-results">
-                                    No hay resultados que coincidan con los filtros aplicados.
-                                </td>
-                            </tr>
-                        @else
-                            @foreach($ordenes as $orden)
-                                @php
-                                    $pedidoId = $orden->pedido;
-                                    $totalDias = intval($totalDiasCalculados[$pedidoId] ?? 0);
-                                    $estado = $orden->estado ?? '';
-                                    $conditionalClass = '';
-                                    
-                                    if ($estado === 'Entregado') {
-                                        $conditionalClass = 'row-delivered';
-                                    } elseif ($estado === 'Anulada') {
-                                        $conditionalClass = 'row-anulada';
-                                    } else {
-                                        if ($totalDias > 20) {
-                                            $conditionalClass = 'row-secondary';
-                                        } elseif ($totalDias == 20) {
-                                            $conditionalClass = 'row-danger-light';
-                                        } elseif ($totalDias > 14 && $totalDias < 20) {
-                                            $conditionalClass = 'row-warning';
-                                        }
-                                    }
-                                @endphp
-                                <tr class="table-row {{ $conditionalClass }}" data-order-id="{{ $orden->pedido }}" data-numero-pedido="{{ $orden->pedido }}" data-total-dias="{{ $totalDias }}">
-                                    {{-- Columna de Acciones --}}
-                                    <td class="table-cell acciones-column">
-                                        <div class="cell-content">
-                                            <button class="action-btn edit-btn" onclick="openEditModal({{ $orden->pedido }})" title="Editar orden">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="action-btn detail-btn" onclick="createViewButtonDropdown({{ $orden->pedido }})" title="Ver opciones">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                            <button class="action-btn delete-btn" onclick="deleteOrder({{ $orden->pedido }})" title="Eliminar orden">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
+                                            </span>
                                         </div>
-                                    </td>
-                                    
-                                    @foreach($columnasBase as $colName)
-                                        @if($colName === 'estado')
-                                            <td class="table-cell" data-column="{{ $colName }}">
-                                                <div class="cell-content" title="{{ $orden->estado ?? '' }}">
-                                                    @if(auth()->user()->role && auth()->user()->role->name === 'supervisor')
-                                                        <select class="estado-dropdown" data-id="{{ $orden->pedido }}" data-value="{{ $orden->estado }}" disabled style="cursor: not-allowed; opacity: 0.8;">
-                                                            @foreach(['Entregado', 'En Ejecución', 'No iniciado', 'Anulada'] as $estado)
-                                                                <option value="{{ $estado }}" {{ $orden->estado === $estado ? 'selected' : '' }}>{{ $estado }}</option>
-                                                            @endforeach
-                                                        </select>
-                                                    @else
-                                                        <select class="estado-dropdown" data-id="{{ $orden->pedido }}" data-value="{{ $orden->estado }}">
-                                                            @foreach(['Entregado', 'En Ejecución', 'No iniciado', 'Anulada'] as $estado)
-                                                                <option value="{{ $estado }}" {{ $orden->estado === $estado ? 'selected' : '' }}>{{ $estado }}</option>
-                                                            @endforeach
-                                                        </select>
-                                                    @endif
-                                                </div>
-                                            </td>
-                                        @elseif($colName === 'area')
-                                            <td class="table-cell" data-column="{{ $colName }}">
-                                                <div class="cell-content" title="{{ $orden->area ?? '' }}">
-                                                    @php $areaValue = $orden->area ?? ''; @endphp
-                                                    @if(auth()->user()->role && auth()->user()->role->name === 'supervisor')
-                                                        <select class="area-dropdown" data-id="{{ $orden->pedido }}" data-value="{{ $areaValue }}" disabled style="cursor: not-allowed; opacity: 0.8;">
-                                                            <option value="">Seleccionar área</option>
-                                                            @foreach($areaOptions as $areaOption)
-                                                                <option value="{{ $areaOption }}" {{ $areaValue === $areaOption ? 'selected' : '' }}>{{ $areaOption }}</option>
-                                                            @endforeach
-                                                        </select>
-                                                    @else
-                                                        <select class="area-dropdown" data-id="{{ $orden->pedido }}" data-value="{{ $areaValue }}">
-                                                            <option value="">Seleccionar área</option>
-                                                            @foreach($areaOptions as $areaOption)
-                                                                <option value="{{ $areaOption }}" {{ $areaValue === $areaOption ? 'selected' : '' }}>{{ $areaOption }}</option>
-                                                            @endforeach
-                                                        </select>
-                                                    @endif
-                                                </div>
-                                            </td>
-                                        @else
-                                            <td class="table-cell" data-column="{{ $colName }}">
-                                                <div class="cell-content" title="{{ $orden->$colName ?? '' }}">
-                                                    <span class="cell-text" data-pedido="{{ $orden->pedido }}">
-                                                        @if($colName === 'total_de_dias_')
-                                                            <span class="dias-value" data-dias="{{ $totalDias }}">{{ $totalDias }}</span>
-                                                        @elseif(in_array($colName, ['fecha_de_creacion_de_orden', 'insumos_y_telas', 'corte', 'bordado', 'estampado', 'costura', 'reflectivo', 'lavanderia', 'arreglos', 'marras', 'control_de_calidad', 'entrega', 'despacho']))
-                                                            @php
-                                                                echo !empty($orden->$colName) ? \Carbon\Carbon::parse($orden->$colName)->format('d/m/Y') : '';
-                                                            @endphp
-                                                        @else
-                                                            {{ $orden->$colName ?? '' }}
-                                                        @endif
-                                                    </span>
-                                                </div>
-                                            </td>
-                                        @endif
-                                    @endforeach
-                                </tr>
-                            @endforeach
-                        @endif
-                    </tbody>
-                </table>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @empty
+                            <div class="table-row">
+                                <div class="table-cell" style="flex: 1; justify-content: center;">
+                                    <span class="cell-text">No hay resultados que coincidan con los filtros aplicados.</span>
+                                </div>
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
             </div>
 
             {{-- Paginación --}}
             <div class="table-pagination" id="tablePagination">
                 <div class="pagination-info">
-                    <span id="paginationInfo">Mostrando {{ $ordenes->firstItem() }}-{{ $ordenes->lastItem() }} de {{ $ordenes->total() }} registros</span>
+                    <span id="paginationInfo">Mostrando {{ $ordenes->firstItem() ?? 0 }}-{{ $ordenes->lastItem() ?? 0 }} de {{ $ordenes->total() }} registros</span>
                 </div>
                 <div class="pagination-controls" id="paginationControls">
                     @if($ordenes->hasPages())
@@ -290,30 +269,50 @@
     <script src="{{ asset('js/order-tracking/modules/dropdownManager.js') }}"></script>
     <script src="{{ asset('js/order-tracking/orderTracking-v2.js') }}"></script>
 
+    <!-- Scripts de Órdenes (Estilos y Funcionalidad) -->
+    <script src="{{ asset('js/orders js/row-conditional-colors.js') }}"></script>
+    <script src="{{ asset('js/orders js/filter-system.js') }}"></script>
+
     <!-- Scripts de Bodega -->
     <script src="{{ asset('js/bodega-table.js') }}"></script>
     <script src="{{ asset('js/bodega-detail-modal.js') }}"></script>
     <script src="{{ asset('js/bodega-edit-modal.js') }}"></script>
     <script src="{{ asset('js/bodega-cell-edit.js') }}"></script>
     <script src="{{ asset('js/bodega-tracking-modal.js') }}"></script>
+    <script src="{{ asset('js/bodega-conditional-colors.js') }}"></script>
+    <script src="{{ asset('js/bodega-estado-handler.js') }}"></script>
+
+    <!-- Script de inicialización de colores -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎨 Inicializando colores condicionales en bodega...');
+            
+            // Esperar a que los scripts estén cargados
+            setTimeout(() => {
+                if (typeof window.applyAllRowConditionalColors === 'function') {
+                    console.log('✅ Aplicando colores a todas las filas');
+                    window.applyAllRowConditionalColors();
+                } else {
+                    console.warn('⚠️ applyAllRowConditionalColors no está disponible');
+                }
+            }, 100);
+        });
+    </script>
 
     <!-- Script de debugging -->
     <script>
         // Esperar a que todo esté cargado
         setTimeout(() => {
-            console.log('🔍 DEBUGGING MODAL');
+            console.log('🔍 DEBUGGING BODEGA');
             console.log('✅ openEditModal existe:', typeof openEditModal);
-            console.log('✅ openBodegaEditModal existe:', typeof openBodegaEditModal);
-            console.log('✅ closeBodegaEditModal existe:', typeof closeBodegaEditModal);
-            console.log('✅ showBodegaEditModal existe:', typeof showBodegaEditModal);
+            console.log('✅ applyAllRowConditionalColors existe:', typeof window.applyAllRowConditionalColors);
+            console.log('✅ Filas con clase table-row:', document.querySelectorAll('.table-row').length);
             
-            const modal = document.getElementById('bodegaEditModal');
-            console.log('✅ Modal en DOM:', !!modal);
-            if (modal) {
-                console.log('✅ Modal ID:', modal.id);
-                console.log('✅ Modal display:', window.getComputedStyle(modal).display);
-                console.log('✅ Modal visibility:', window.getComputedStyle(modal).visibility);
-                console.log('✅ Modal z-index:', window.getComputedStyle(modal).zIndex);
+            const rows = document.querySelectorAll('.table-row');
+            if (rows.length > 0) {
+                console.log('✅ Primera fila data-estado:', rows[0].getAttribute('data-estado'));
+                console.log('✅ Primera fila data-total-dias:', rows[0].getAttribute('data-total-dias'));
+                console.log('✅ Clases de primera fila:', rows[0].className);
             }
         }, 500);
     </script>
