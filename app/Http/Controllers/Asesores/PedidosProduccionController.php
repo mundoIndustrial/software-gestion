@@ -21,9 +21,10 @@ class PedidosProduccionController extends Controller
     public function crearForm()
     {
         // Solo permitir crear pedidos de cotizaciones APROBADAS
-        $cotizaciones = Cotizacion::where('user_id', Auth::id())
+        $cotizaciones = Cotizacion::where('asesor_id', Auth::id())
             ->where('estado', 'APROBADA_COTIZACIONES')
             ->with([
+                'asesor',
                 'prendasCotizaciones.variantes.color',
                 'prendasCotizaciones.variantes.tela',
                 'prendasCotizaciones.variantes.tipoManga',
@@ -41,7 +42,7 @@ class PedidosProduccionController extends Controller
     public function index()
     {
         $pedidos = PedidoProduccion::whereHas('cotizacion', function ($query) {
-            $query->where('user_id', Auth::id());
+            $query->where('asesor_id', Auth::id());
         })
         ->orderBy('created_at', 'desc')
         ->paginate(15);
@@ -94,7 +95,7 @@ class PedidosProduccionController extends Controller
     {
         $cotizacion = Cotizacion::findOrFail($cotizacionId);
         
-        if ($cotizacion->user_id !== Auth::id()) {
+        if ($cotizacion->asesor_id !== Auth::id()) {
             abort(403);
         }
 

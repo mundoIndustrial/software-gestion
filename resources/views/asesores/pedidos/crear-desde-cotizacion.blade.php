@@ -108,7 +108,7 @@
                 'id' => $cot->id,
                 'numero' => $cot->numero_cotizacion ?: '#' . $cot->id,
                 'cliente' => is_string($cot->cliente ?? '') ? $cot->cliente : '',
-                'asesora' => is_string($cot->asesora ?? '') ? $cot->asesora : '',
+                'asesora' => $cot->asesor ? $cot->asesor->name : Auth::user()->name,
                 'formaPago' => is_string($cot->forma_pago ?? '') ? $cot->forma_pago : '',
                 'prendasCount' => $cot->prendasCotizaciones->count()
             ];
