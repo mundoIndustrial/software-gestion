@@ -122,34 +122,6 @@
         }
     }
 
-    function abrirModalVisorCostos(cotizacionId, cliente) {
-        window.cotizacionIdActual = cotizacionId;
-        const title = document.getElementById('visorCostosTitle');
-        
-        if (!title) {
-            console.error('Elemento visorCostosTitle no encontrado');
-            alert('Error: No se encontraron los elementos del modal');
-            return;
-        }
-        
-        title.textContent = `Costos - ${cliente}`;
-        document.getElementById('visorCostosModal').style.display = 'flex';
-        
-        // Cargar datos JSON y usar visor-costos.js
-        fetch(`/contador/cotizacion/${cotizacionId}/costos`)
-            .then(response => response.json())
-            .then(data => {
-                if (data && data.prendas) {
-                    window.visorCostosActual = data;
-                    window.visorIndiceActual = 0;
-                    mostrarPrendaVisor(0);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error al cargar los costos: ' + error.message);
-            });
-    }
 
     function cerrarVisorCostos() {
         document.getElementById('visorCostosModal').style.display = 'none';

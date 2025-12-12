@@ -10,7 +10,7 @@ let visorCostosActual = {
  * Abre el modal visor de costos
  */
 function abrirModalVisorCostos(cotizacionId, cliente) {
-    visorCostosActual = { id: cotizacionId, cliente: cliente, prendas: [] };
+    visorCostosActual = { cotizacionId: cotizacionId, cliente: cliente, prendas: [], indiceActual: 0 };
     
     // Fetch de costos
     fetch(`/contador/cotizacion/${cotizacionId}/costos`)
