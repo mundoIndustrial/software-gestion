@@ -177,8 +177,8 @@ class CotizacionEstadoController extends Controller
                 'usuario_id' => auth()->id()
             ]);
 
-            // Validar que la cotización esté en estado APROBADA_CONTADOR
-            if ($cotizacion->estado !== 'APROBADA_CONTADOR') {
+            // Validar que la cotización esté en estado ENVIADO A APROBADOR
+            if ($cotizacion->estado !== 'ENVIADO A APROBADOR') {
                 return response()->json([
                     'success' => false,
                     'message' => 'La cotización no puede ser rechazada desde su estado actual: ' . $cotizacion->estado
