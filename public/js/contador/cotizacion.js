@@ -19,15 +19,28 @@ function openCotizacionModal(cotizacionId) {
                 document.getElementById('modalBody').innerHTML = data.html;
                 document.getElementById('cotizacionModal').style.display = 'flex';
                 
-                // Actualizar encabezado del modal
-                const row = document.querySelector(`tr:has(button[onclick*="${cotizacionId}"])`);
-                if (row) {
-                    const cells = row.querySelectorAll('td');
-                    if (cells.length >= 4) {
-                        document.getElementById('modalHeaderNumber').textContent = cells[0].textContent.trim();
-                        document.getElementById('modalHeaderDate').textContent = cells[1].textContent.trim();
-                        document.getElementById('modalHeaderClient').textContent = cells[2].textContent.trim();
-                        document.getElementById('modalHeaderAdvisor').textContent = cells[3].textContent.trim();
+                // Actualizar encabezado del modal - buscar en la fila flexbox
+                const tableRow = document.querySelector(`.table-row[data-cotizacion-id="${cotizacionId}"]`);
+                if (tableRow) {
+                    const cells = tableRow.querySelectorAll('.table-cell');
+                    if (cells.length >= 5) {
+                        // Índice 1: Número, 2: Fecha, 3: Cliente, 4: Asesora
+                        document.getElementById('modalHeaderNumber').textContent = cells[1].textContent.trim();
+                        document.getElementById('modalHeaderDate').textContent = cells[2].textContent.trim();
+                        document.getElementById('modalHeaderClient').textContent = cells[3].textContent.trim();
+                        document.getElementById('modalHeaderAdvisor').textContent = cells[4].textContent.trim();
+                    }
+                } else {
+                    // Fallback: si no encuentra en flexbox, intenta en tabla tradicional
+                    const row = document.querySelector(`tr:has(button[onclick*="${cotizacionId}"])`);
+                    if (row) {
+                        const cells = row.querySelectorAll('td');
+                        if (cells.length >= 4) {
+                            document.getElementById('modalHeaderNumber').textContent = cells[0].textContent.trim();
+                            document.getElementById('modalHeaderDate').textContent = cells[1].textContent.trim();
+                            document.getElementById('modalHeaderClient').textContent = cells[2].textContent.trim();
+                            document.getElementById('modalHeaderAdvisor').textContent = cells[3].textContent.trim();
+                        }
                     }
                 }
             } else {

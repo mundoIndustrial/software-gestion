@@ -113,30 +113,30 @@ document.addEventListener('click', function(event) {
                             <div class="table-row" data-cotizacion-id="{{ $cotizacion->id }}">
                                 <!-- Acciones -->
                                 <div class="table-cell acciones-column" style="flex: 0 0 120px; justify-content: center; position: relative;">
-                                    <button class="action-view-btn" title="Ver opciones" data-cotizacion-id="{{ $cotizacion->id }}">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <div class="action-menu" data-cotizacion-id="{{ $cotizacion->id }}">
-                                        <a href="#" class="action-menu-item" data-action="cotizacion" onclick="openCotizacionModal({{ $cotizacion->id }}); return false;">
-                                            <i class="fas fa-file-alt"></i>
-                                            <span>Ver Cotización</span>
-                                        </a>
-                                        <a href="#" class="action-menu-item" data-action="costos" onclick="abrirModalVisorCostos({{ $cotizacion->id }}, '{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}'); return false;">
-                                            <i class="fas fa-chart-bar"></i>
-                                            <span>Ver Costos</span>
-                                        </a>
-                                        <a href="#" class="action-menu-item" data-action="pdf" onclick="abrirModalPDF({{ $cotizacion->id }}); return false;">
-                                            <i class="fas fa-file-pdf"></i>
-                                            <span>Ver PDF</span>
-                                        </a>
-                                        <a href="#" class="action-menu-item" data-action="editar" onclick="abrirModalCalculoCostos({{ $cotizacion->id }}, '{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}'); return false;">
+                                    <div class="actions-group">
+                                        <button class="action-view-btn" title="Ver opciones" data-cotizacion-id="{{ $cotizacion->id }}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <div class="action-menu" data-cotizacion-id="{{ $cotizacion->id }}">
+                                            <a href="#" class="action-menu-item" data-action="cotizacion" onclick="openCotizacionModal({{ $cotizacion->id }}); return false;">
+                                                <i class="fas fa-file-alt"></i>
+                                                <span>Ver Cotización</span>
+                                            </a>
+                                            <a href="#" class="action-menu-item" data-action="costos" onclick="abrirModalVisorCostos({{ $cotizacion->id }}, '{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}'); return false;">
+                                                <i class="fas fa-chart-bar"></i>
+                                                <span>Ver Costos</span>
+                                            </a>
+                                            <a href="#" class="action-menu-item" data-action="pdf" onclick="abrirModalPDF({{ $cotizacion->id }}); return false;">
+                                                <i class="fas fa-file-pdf"></i>
+                                                <span>Ver PDF</span>
+                                            </a>
+                                        </div>
+                                        <button class="btn-action btn-edit btn-editar-costos" data-cotizacion-id="{{ $cotizacion->id }}" data-cliente="{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}" title="Editar Costos">
                                             <i class="fas fa-edit"></i>
-                                            <span>Editar Costos</span>
-                                        </a>
-                                        <a href="#" class="action-menu-item" data-action="aprobar" onclick="aprobarCotizacionEnLinea({{ $cotizacion->id }}); return false;">
+                                        </button>
+                                        <button class="btn-action btn-success" onclick="aprobarCotizacionEnLinea({{ $cotizacion->id }})" title="Aprobar Cotización">
                                             <i class="fas fa-check-circle"></i>
-                                            <span>Aprobar</span>
-                                        </a>
+                                        </button>
                                     </div>
                                 </div>
                                 
@@ -273,74 +273,68 @@ document.addEventListener('click', function(event) {
 </div>
 
 <!-- Modal de Cálculo de Costos por Prenda -->
-<div id="calculoCostosModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9998; justify-content: center; align-items: center;">
-    <div class="modal-content" style="width: 90%; max-width: 900px; max-height: 90vh; overflow-y: auto; background: white; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+<div id="calculoCostosModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 9998; justify-content: center; align-items: center; padding: 2rem;">
+    <div class="modal-content" style="width: 100%; max-width: 700px; background: #1a1a2e; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); overflow: hidden; border: 2px solid #3b82f6;">
         <!-- Header del Modal -->
-        <div style="background: linear-gradient(135deg, #1e5ba8 0%, #2b7ec9 100%); color: white; padding: 2rem; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <h2 style="margin: 0; font-size: 1.5rem; font-weight: 700;">💰 CÁLCULO DE PRECIOS POR PRENDA</h2>
-                <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; opacity: 0.9;" id="modalCostosCliente">Cliente: -</p>
+        <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 1.5rem; display: flex; justify-content: space-between; align-items: flex-start;">
+            <div style="flex: 1;">
+                <h2 style="margin: 0; font-size: 1.3rem; font-weight: 700; letter-spacing: 0.5px;">CÁLCULO DE PRECIOS POR PRENDA</h2>
+                <p style="margin: 0.75rem 0 0 0; font-size: 0.95rem; opacity: 0.95;" id="modalCostosCliente">CLIENTE: -</p>
             </div>
-            <button onclick="cerrarModalCalculoCostos()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0.5rem 1rem; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+            <button onclick="cerrarModalCalculoCostos()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.8rem; cursor: pointer; padding: 0; width: 40px; height: 40px; border-radius: 6px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
                 ✕
             </button>
         </div>
 
         <!-- Contenido del Modal -->
-        <div style="padding: 2rem;">
+        <div style="padding: 1.5rem; max-height: calc(90vh - 200px); overflow-y: auto;">
             <!-- Tabs de Prendas -->
-            <div id="prendasTabs" style="display: flex; gap: 0.5rem; margin-bottom: 2rem; border-bottom: 2px solid #e5e7eb; overflow-x: auto;">
+            <div id="prendasTabs" style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem; overflow-x: auto; padding-bottom: 0.5rem;">
                 <!-- Se llena dinámicamente -->
             </div>
 
-            <!-- Contenido de Prendas -->
-            <div id="prendasContent">
+            <!-- Descripción de la Prenda -->
+            <div id="prendasDescripcion" style="background: #2a2a3e; color: #e0e0e0; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.9rem; line-height: 1.5; border-left: 4px solid #3b82f6;">
                 <!-- Se llena dinámicamente -->
             </div>
 
-            <!-- Botones de Acción -->
-            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #e5e7eb;">
-                <button onclick="cerrarModalCalculoCostos()" style="padding: 0.75rem 1.5rem; background: #e5e7eb; color: #374151; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='#d1d5db'" onmouseout="this.style.background='#e5e7eb'">
-                    Cancelar
-                </button>
-                <button onclick="guardarCalculoCostos()" style="padding: 0.75rem 1.5rem; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: all 0.2s;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
-                    ✓ Guardar Costos
-                </button>
+            <!-- Tabla de Costos -->
+            <div style="background: #2a2a3e; border-radius: 8px; overflow: hidden; border: 1px solid #3b82f6;">
+                <!-- Header de la tabla -->
+                <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; display: grid; grid-template-columns: 1fr 120px 60px; gap: 1rem; padding: 1rem; font-weight: 700; font-size: 0.95rem;">
+                    <div>Items a evaluar</div>
+                    <div style="text-align: center;">Precio</div>
+                    <div style="text-align: center;">Acción</div>
+                </div>
+
+                <!-- Filas de costos -->
+                <div id="prendasContent" style="max-height: 300px; overflow-y: auto;">
+                    <!-- Se llena dinámicamente -->
+                </div>
+
+                <!-- Botón Agregar -->
+                <div style="padding: 1rem; border-top: 1px solid #3b82f6; text-align: center;">
+                    <button onclick="agregarFilaCosto()" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(59, 130, 246, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                        <span style="font-size: 1.2rem;">⊕</span> Agregar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Total Costo -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; padding: 1rem; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-radius: 8px; color: white;">
+                <div style="font-size: 1.1rem; font-weight: 700;">TOTAL COSTO:</div>
+                <div id="totalCostoDisplay" style="font-size: 1.3rem; font-weight: 700;">$0.00</div>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- Modal de Cotización -->
-<div id="cotizacionModal" class="modal fullscreen" style="display: none;">
-    <div class="modal-content">
-        <div class="modal-header">
-            <img src="{{ asset('images/logo2.png') }}" alt="Logo Mundo Industrial" class="modal-header-logo">
-            <div style="display: flex; gap: 3rem; align-items: center; flex: 1; margin-left: 2rem; color: white; font-size: 0.85rem;">
-                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                    <span style="font-weight: 600; opacity: 0.9;">COTIZACIÓN #</span>
-                    <span style="font-size: 1rem; font-weight: 700;" id="modalHeaderNumber">-</span>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                    <span style="font-weight: 600; opacity: 0.9;">FECHA</span>
-                    <span style="font-size: 1rem; font-weight: 700;" id="modalHeaderDate">-</span>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                    <span style="font-weight: 600; opacity: 0.9;">CLIENTE</span>
-                    <span style="font-size: 1rem; font-weight: 700;" id="modalHeaderClient">-</span>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                    <span style="font-weight: 600; opacity: 0.9;">ASESORA</span>
-                    <span style="font-size: 1rem; font-weight: 700;" id="modalHeaderAdvisor">-</span>
-                </div>
-            </div>
-            <button class="modal-back-btn" onclick="closeCotizacionModal()">
-                <span class="material-symbols-rounded">arrow_back</span>
-                VOLVER
+        <!-- Botones de Acción -->
+        <div style="padding: 1.5rem; border-top: 1px solid #3b82f6; display: flex; gap: 1rem; justify-content: flex-end; background: #1a1a2e;">
+            <button onclick="cerrarModalCalculoCostos()" style="padding: 0.75rem 1.5rem; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='#4b5563'" onmouseout="this.style.background='#6b7280'">
+                <span style="font-size: 1.1rem;">✕</span> Cancelar
             </button>
-        </div>
-        <div class="modal-body" id="modalBody">
-            <!-- Contenido dinámico -->
+            <button onclick="guardarCalculoCostos()" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(16, 185, 129, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                <span style="font-size: 1.1rem;">✓</span> Guardar
+            </button>
         </div>
     </div>
 </div>

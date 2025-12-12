@@ -195,14 +195,6 @@ class ContadorController extends Controller
             // Construir HTML manualmente para evitar errores de vista
             $html = '<div class="cotizacion-detail" style="padding: 1.5rem; max-height: 80vh; overflow-y: auto;">';
             
-            // Información general
-            $html .= '<div style="margin-bottom: 1.5rem; border-bottom: 2px solid #1e5ba8; padding-bottom: 1rem;">';
-            $html .= '<h2 style="margin: 0 0 0.5rem 0; color: #1e5ba8;">Cotización #' . str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) . '</h2>';
-            $html .= '<p style="margin: 0.25rem 0;"><strong>Cliente:</strong> ' . ($cotizacion->cliente ? htmlspecialchars($cotizacion->cliente->nombre) : 'N/A') . '</p>';
-            $html .= '<p style="margin: 0.25rem 0;"><strong>Fecha:</strong> ' . $cotizacion->created_at->format('d/m/Y H:i') . '</p>';
-            $html .= '<p style="margin: 0.25rem 0;"><strong>Estado:</strong> ' . htmlspecialchars($cotizacion->estado) . '</p>';
-            $html .= '</div>';
-            
             // Prendas (estructura DDD)
             if ($cotizacion->prendas && count($cotizacion->prendas) > 0) {
                 \Log::info('=== getCotizacionDetail - Prendas encontradas: ' . count($cotizacion->prendas));
