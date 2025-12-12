@@ -273,67 +273,53 @@ document.addEventListener('click', function(event) {
 </div>
 
 <!-- Modal de Cálculo de Costos por Prenda -->
-<div id="calculoCostosModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9998; justify-content: center; align-items: center; padding: 2rem;">
-    <div class="modal-content" style="width: 100%; max-width: 700px; background: #1a1f3a; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); overflow: hidden; display: flex; flex-direction: column; max-height: 90vh;">
-        <!-- Header del Modal -->
-        <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; padding: 1.5rem; display: flex; justify-content: space-between; align-items: flex-start;">
-            <div style="flex: 1;">
-                <h2 style="margin: 0 0 0.5rem 0; font-size: 1.1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">CÁLCULO DE PRECIOS POR PRENDA</h2>
-                <p style="margin: 0; font-size: 0.95rem; opacity: 0.95; text-transform: uppercase; letter-spacing: 0.3px;" id="modalCostosCliente">CLIENTE: -</p>
-            </div>
-            <button onclick="cerrarModalCalculoCostos()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0.25rem 0.75rem; border-radius: 4px; transition: all 0.2s; flex-shrink: 0;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-                ✕
-            </button>
-        </div>
-
-        <!-- Tabs de Prendas -->
-        <div id="prendasTabs" style="display: flex; gap: 0.75rem; padding: 1.5rem 1.5rem 0 1.5rem; overflow-x: auto; flex-wrap: wrap;">
+<div id="calculoCostosModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; padding: 2rem;">
+    <div style="background: linear-gradient(135deg, #1a1f3a 0%, #0f1419 100%); border-radius: 12px; width: 100%; max-width: 700px; max-height: 95vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.5); border: 1px solid rgba(59, 130, 246, 0.3);">
+        
+        <!-- Tabs de Prendas con Scroll Horizontal -->
+        <div id="prendasTabs" style="display: flex; gap: 0.75rem; padding: 1.5rem 1.5rem 0 1.5rem; overflow-x: auto; overflow-y: hidden; flex-wrap: nowrap; min-height: 50px; align-items: center; border-bottom: 1px solid rgba(59, 130, 246, 0.3);">
             <!-- Se llenará dinámicamente -->
         </div>
 
         <!-- Descripción de Prenda -->
-        <div id="prendasDescripcion" style="padding: 0 1.5rem; color: #e5e7eb; font-size: 0.85rem; line-height: 1.6; text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 1.5rem;">
+        <div id="prendasDescripcion" style="padding: 1rem 1.5rem; color: #e5e7eb; font-size: 0.85rem; line-height: 1.6; text-transform: uppercase; letter-spacing: 0.3px; border-bottom: 1px solid rgba(59, 130, 246, 0.3); min-height: 80px;">
             <!-- Se llenará dinámicamente -->
         </div>
 
-        <!-- Tabla de Precios -->
-        <div style="padding: 0 1.5rem 1.5rem 1.5rem; flex: 1; overflow-y: auto;">
-            <div style="background: transparent; border-radius: 12px; overflow: hidden;">
-                <!-- Header de tabla -->
-                <div style="display: grid; grid-template-columns: 1fr 150px 80px; gap: 0; padding: 1rem; color: white; font-weight: 700; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.3px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-radius: 12px 12px 0 0; border: 2px solid #3b82f6; border-bottom: none;">
-                    <div style="padding-right: 1rem; border-right: 1px solid rgba(255,255,255,0.3);">Items a evaluar</div>
-                    <div style="text-align: center; padding: 0 1rem; border-right: 1px solid rgba(255,255,255,0.3);">Precio</div>
-                    <div style="text-align: center; padding-left: 1rem;">Acción</div>
-                </div>
+        <!-- Tabla de Precios con Scroll Interno -->
+        <div style="padding: 1.5rem 1.5rem 0 1.5rem; display: flex; flex-direction: column; gap: 0; flex: 1; overflow: hidden;">
+            <!-- Header de tabla -->
+            <div style="display: grid; grid-template-columns: 1fr 150px 80px; gap: 0; padding: 1rem; color: white; font-weight: 700; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.3px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-radius: 12px 12px 0 0; border: 2px solid #3b82f6; border-bottom: none;">
+                <div style="padding-right: 1rem; border-right: 1px solid rgba(255,255,255,0.3);">Items a evaluar</div>
+                <div style="text-align: center; padding: 0 1rem; border-right: 1px solid rgba(255,255,255,0.3);">Precio</div>
+                <div style="text-align: center; padding-left: 1rem;">Acción</div>
+            </div>
 
-                <!-- Filas de tabla -->
-                <div id="tablaPreciosBody" style="display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; background: #1a1f3a; border: 2px solid #3b82f6; border-top: none; border-radius: 0 0 12px 12px;">
-                    <!-- Se llenará dinámicamente -->
-                </div>
+            <!-- Filas de tabla con scroll interno -->
+            <div id="tablaPreciosBody" style="display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; background: #1a1f3a; border: 2px solid #3b82f6; border-top: none; max-height: 310px; overflow-y: auto;">
+                <!-- Se llenará dinámicamente -->
+            </div>
 
-                <!-- Botón Agregar -->
-                <div style="padding: 1rem; text-align: center; background: #1a1f3a; border: 2px solid #3b82f6; border-top: none; border-radius: 0 0 12px 12px;">
-                    <button onclick="agregarFilaItem()" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.3px;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
-                        <span>+</span> Agregar
+            <!-- Botón Agregar -->
+            <div style="padding: 1rem; text-align: center; background: #1a1f3a; border: 2px solid #3b82f6; border-top: none;">
+                <button onclick="agregarFilaItem()" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.3px;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                    <span>+</span> Agregar
+                </button>
+            </div>
+
+            <!-- Total -->
+            <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 1rem; color: white; display: flex; justify-content: space-between; align-items: center; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; border: 2px solid #3b82f6; border-top: none; border-radius: 0 0 12px 12px; gap: 1rem;">
+                <span>Total Costo:</span>
+                <span id="totalCosto" style="font-size: 1.2rem;">$0.00</span>
+                <div style="display: flex; gap: 0.75rem; margin-left: auto;">
+                    <button onclick="cerrarModalCalculoCostos()" style="background: #6b7280; color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.3px;" onmouseover="this.style.background='#4b5563'" onmouseout="this.style.background='#6b7280'">
+                        Cancelar ✕
+                    </button>
+                    <button onclick="guardarCalculoCostos()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.3px;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                        Guardar ✓
                     </button>
                 </div>
-
-                <!-- Total -->
-                <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 1rem; color: white; display: flex; justify-content: space-between; align-items: center; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; border: 2px solid #3b82f6; border-top: none; border-radius: 0 0 12px 12px;">
-                    <span>Total Costo:</span>
-                    <span id="totalCosto" style="font-size: 1.2rem;">$0.00</span>
-                </div>
             </div>
-        </div>
-
-        <!-- Botones de Acción -->
-        <div style="padding: 1.5rem; display: flex; gap: 1rem; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.1);">
-            <button onclick="cerrarModalCalculoCostos()" style="background: #6b7280; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.3px;" onmouseover="this.style.background='#4b5563'" onmouseout="this.style.background='#6b7280'">
-                Cancelar ✕
-            </button>
-            <button onclick="guardarCalculoCostos()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: 600; transition: all 0.2s; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.3px;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
-                Guardar ✓
-            </button>
         </div>
     </div>
 </div>

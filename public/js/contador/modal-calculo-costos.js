@@ -16,9 +16,6 @@ function abrirModalCalculoCostos(cotizacionId, cliente) {
     // Guardar cotización ID para guardar después
     window.cotizacionIdActual = cotizacionId;
     
-    // Actualizar cliente en el header
-    document.getElementById('modalCostosCliente').textContent = `CLIENTE: ${cliente}`;
-    
     // Obtener las prendas de la cotización
     fetch(`/contador/cotizacion/${cotizacionId}`)
         .then(response => response.json())
@@ -160,13 +157,13 @@ function agregarFilaItem() {
     row.innerHTML = `
         <input type="text" 
                placeholder="Ej: Corte, Confección, Bordado..."
-               style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; width: 100%; box-sizing: border-box; outline: none;"
+               style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; width: 100%; box-sizing: border-box; outline: none; color: #000;"
                onchange="actualizarItem(${itemIndex}, this.value, 'item')">
         <input type="number" 
                placeholder="0.00"
                step="0.01"
                min="0"
-               style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; text-align: center; width: 100%; box-sizing: border-box; outline: none;"
+               style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; text-align: center; width: 100%; box-sizing: border-box; outline: none; color: #000;"
                onchange="actualizarItem(${itemIndex}, this.value, 'precio'); actualizarTotal()">
         <button onclick="eliminarFilaItem(this)" 
                 style="background: #ef4444; color: white; border: none; padding: 0.5rem 0.75rem; cursor: pointer; font-weight: 600; transition: all 0.2s; font-size: 1rem; width: 100%; height: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center;"
@@ -178,6 +175,11 @@ function agregarFilaItem() {
     `;
     
     body.appendChild(row);
+    
+    // Auto-scroll hacia abajo si es necesario
+    setTimeout(() => {
+        body.scrollTop = body.scrollHeight;
+    }, 0);
 }
 
 /**
