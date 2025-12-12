@@ -12,6 +12,7 @@ use App\Http\Controllers\EntregaController;
 use App\Http\Controllers\TablerosController;
 use App\Http\Controllers\VistasController;
 use App\Http\Controllers\BalanceoController;
+use App\Infrastructure\Http\Controllers\Asesores\CotizacionesViewController;
 use App\Infrastructure\Http\Controllers\CotizacionPrendaController;
 use App\Infrastructure\Http\Controllers\CotizacionBordadoController;
 use App\Http\Controllers\DebugRegistrosController;
@@ -215,6 +216,14 @@ Route::middleware(['auth'])->group(function () {
         
         return view('cotizaciones.pendientes', compact('cotizaciones'));
     })->name('cotizaciones.pendientes');
+
+    // Obtener datos de cotización para modal (AJAX)
+    Route::get('/cotizaciones/{cotizacion}/datos', [CotizacionesViewController::class, 'getDatosForModal'])
+        ->name('cotizaciones.obtener-datos');
+
+    // Obtener contador de cotizaciones pendientes para aprobador (AJAX)
+    Route::get('/pendientes-count', [CotizacionesViewController::class, 'cotizacionesPendientesAprobadorCount'])
+        ->name('cotizaciones.pendientes-count');
 
     // Endpoint para obtener contador de cotizaciones pendientes
     // NOTA: Funcionalidad migrada a Handlers DDD
@@ -507,6 +516,9 @@ Route::middleware(['auth', 'verified'])->name('cotizaciones.estado.')->group(fun
     
     // Aprobador de Cotizaciones: Aprobar cotización
     Route::post('/cotizaciones/{cotizacion}/aprobar-aprobador', [App\Http\Controllers\CotizacionEstadoController::class, 'aprobarAprobador'])->name('aprobar-aprobador');
+    
+    // Aprobador de Cotizaciones: Rechazar y enviar a corrección
+    Route::post('/cotizaciones/{cotizacion}/rechazar', [App\Http\Controllers\CotizacionEstadoController::class, 'rechazar'])->name('rechazar');
     
     // Ver historial de cambios
     Route::get('/cotizaciones/{cotizacion}/historial', [App\Http\Controllers\CotizacionEstadoController::class, 'historial'])->name('historial');

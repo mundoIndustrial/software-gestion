@@ -89,25 +89,13 @@
                         <!-- Acciones -->
                         <td class="px-6 py-4 whitespace-nowrap text-center">
                             <div class="flex items-center justify-center space-x-2">
-                                <!-- Botón Ver (Primero) -->
-                                <div class="ver-menu-container" style="position: relative;">
-                                    <button class="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors duration-200 text-sm font-medium"
-                                            title="Ver opciones"
-                                            onclick="toggleVerMenu(event, {{ $cotizacion->id }})">
-                                        <span class="material-symbols-rounded text-base mr-1">visibility</span>
-                                        Ver
-                                    </button>
-                                    <div class="ver-submenu" id="ver-menu-{{ $cotizacion->id }}" style="position: absolute; top: 100%; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 10; min-width: 180px; margin-top: 4px; display: none;">
-                                        <button class="submenu-item" onclick="verComparacion({{ $cotizacion->id }})" style="display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px 16px; text-align: left; border: none; background: none; cursor: pointer; color: #374151; font-size: 0.875rem; transition: all 0.2s; border-bottom: 1px solid #e5e7eb;">
-                                            <span class="material-symbols-rounded" style="font-size: 1.2rem;">compare_arrows</span>
-                                            Comparar
-                                        </button>
-                                        <button class="submenu-item" onclick="verDetalles({{ $cotizacion->id }})" style="display: flex; align-items: center; gap: 8px; width: 100%; padding: 12px 16px; text-align: left; border: none; background: none; cursor: pointer; color: #374151; font-size: 0.875rem; transition: all 0.2s;">
-                                            <span class="material-symbols-rounded" style="font-size: 1.2rem;">description</span>
-                                            Detalles
-                                        </button>
-                                    </div>
-                                </div>
+                                <!-- Botón Ver (sin submenu) -->
+                                <button onclick="verComparacion({{ $cotizacion->id }})" 
+                                        class="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors duration-200 text-sm font-medium"
+                                        title="Ver cotización">
+                                    <span class="material-symbols-rounded text-base mr-1">visibility</span>
+                                    Ver
+                                </button>
                                 
                                 <!-- Botón Aprobar -->
                                 <button onclick="aprobarCotizacionAprobador({{ $cotizacion->id }})" 
@@ -159,24 +147,6 @@
 
         <!-- Contenido del Modal -->
         <div id="modal-contenido-comparar" style="padding: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
-            <!-- Se llenará dinámicamente con JavaScript -->
-        </div>
-    </div>
-</div>
-
-<!-- Modal para detalles de cotización -->
-<div id="modal-detalles-cotizacion" class="modal-overlay" onclick="if(event.target === this) cerrarModalCotizacion();">
-    <div class="modal-content">
-        <!-- Header del Modal -->
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 24px; border-bottom: 1px solid #e5e7eb; background: linear-gradient(to right, #f97316, #fb923c);">
-            <h2 style="margin: 0; color: white; font-size: 1.5rem; font-weight: bold;">Detalles de Cotización</h2>
-            <button onclick="cerrarModalCotizacion()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.5rem;">
-                <span class="material-symbols-rounded">close</span>
-            </button>
-        </div>
-
-        <!-- Contenido del Modal -->
-        <div id="modal-contenido-cotizacion" style="padding: 24px; overflow-y: auto; max-height: calc(90vh - 100px);">
             <!-- Se llenará dinámicamente con JavaScript -->
         </div>
     </div>
@@ -245,10 +215,6 @@
         max-width: 1200px;
     }
     
-    #modal-detalles-cotizacion .modal-content {
-        max-width: 900px;
-    }
-    
     #modal-corregir-cotizacion .modal-content {
         max-width: 600px;
     }
@@ -283,25 +249,7 @@ function transformarEstado(estado) {
     return estadosLabel[estado] || estado;
 }
 
-function toggleVerMenu(event, cotizacionId) {
-    event.stopPropagation();
-    const menu = document.getElementById(`ver-menu-${cotizacionId}`);
-    
-    // Cerrar todos los menús abiertos excepto este
-    document.querySelectorAll('.ver-submenu.visible').forEach(m => {
-        if (m.id !== `ver-menu-${cotizacionId}`) {
-            m.classList.remove('visible');
-        }
-    });
-    
-    // Alternar menú actual
-    menu.classList.toggle('visible');
-}
-
 function verComparacion(cotizacionId) {
-    const menuIds = document.querySelectorAll('[id^="ver-menu-"]');
-    menuIds.forEach(m => m.classList.remove('visible'));
-    
     fetch(`/cotizaciones/${cotizacionId}/datos`)
         .then(response => {
             if (!response.ok) throw new Error('Error al cargar los datos');
@@ -320,34 +268,11 @@ function verComparacion(cotizacionId) {
         });
 }
 
-function verDetalles(cotizacionId) {
-    const menuIds = document.querySelectorAll('[id^="ver-menu-"]');
-    menuIds.forEach(m => m.classList.remove('visible'));
-    
-    fetch(`/cotizaciones/${cotizacionId}/datos`)
-        .then(response => {
-            if (!response.ok) throw new Error('Error al cargar los datos');
-            return response.json();
-        })
-        .then(data => {
-            mostrarDetallesCotizacion(data);
-            const modal = document.getElementById('modal-detalles-cotizacion');
-            modal.style.setProperty('display', 'flex', 'important');
-            modal.style.setProperty('visibility', 'visible', 'important');
-            modal.style.setProperty('opacity', '1', 'important');
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            Swal.fire('Error', 'No se pudo cargar los detalles', 'error');
-        });
-}
-
 function mostrarComparacionCotizacion(data) {
     const contenido = document.getElementById('modal-contenido-comparar');
     
     const cotizacion = data.cotizacion;
     const prendas = data.prendas_cotizaciones || [];
-    const ordenesRelacionadas = data.ordenes_relacionadas || [];
     
     let html = `
         <!-- Columna Izquierda: Cotización -->
@@ -383,135 +308,6 @@ function mostrarComparacionCotizacion(data) {
     html += `
             </div>
         </div>
-        
-        <!-- Columna Derecha: Órdenes Relacionadas -->
-        <div style="padding-left: 24px;">
-            <h3 style="color: #059669; font-weight: bold; margin-bottom: 16px;">Órdenes de Producción</h3>
-    `;
-    
-    if (ordenesRelacionadas.length === 0) {
-        html += `<p style="color: #6b7280; background: #f0fdf4; padding: 16px; border-radius: 8px;">No hay órdenes de producción asociadas</p>`;
-    } else {
-        ordenesRelacionadas.forEach(orden => {
-            html += `
-                <div style="background: #f0fdf4; padding: 16px; border-radius: 8px; margin-bottom: 12px; border-left: 4px solid #059669;">
-                    <p><strong>Orden #${orden.numero_orden}</strong></p>
-                    <p style="font-size: 0.875rem; color: #6b7280;">Fecha: ${new Date(orden.created_at).toLocaleDateString()}</p>
-                    <p style="font-size: 0.875rem; color: #6b7280;">Estado: ${transformarEstado(orden.estado)}</p>
-                </div>
-            `;
-        });
-    }
-    
-    html += '</div>';
-    
-    contenido.innerHTML = html;
-}
-
-function mostrarDetallesCotizacion(data) {
-    const contenido = document.getElementById('modal-contenido-cotizacion');
-    const cotizacion = data.cotizacion;
-    const prendas = data.prendas_cotizaciones || [];
-    
-    let estadoBadge = '';
-    const estadoLabel = transformarEstado(cotizacion.estado);
-    estadoBadge = `<span style="background: #dbeafe; color: #1e40af; padding: 6px 12px; border-radius: 6px; font-weight: bold;">${estadoLabel}</span>`;
-    
-    let html = `
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
-            <!-- Información General -->
-            <div>
-                <h3 style="color: #374151; font-weight: bold; margin-bottom: 16px; border-bottom: 2px solid #f97316; padding-bottom: 8px;">Información General</h3>
-                <div style="space-y: 12px;">
-                    <div style="margin-bottom: 12px;">
-                        <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">NÚMERO DE COTIZACIÓN</p>
-                        <p style="color: #1f2937; font-weight: bold; margin: 4px 0;">#${cotizacion.numero_cotizacion}</p>
-                    </div>
-                    <div style="margin-bottom: 12px;">
-                        <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">ASESORA</p>
-                        <p style="color: #1f2937; font-weight: bold; margin: 4px 0;">${cotizacion.asesora_nombre || 'N/A'}</p>
-                    </div>
-                    <div style="margin-bottom: 12px;">
-                        <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">EMPRESA</p>
-                        <p style="color: #1f2937; font-weight: bold; margin: 4px 0;">${cotizacion.empresa || 'N/A'}</p>
-                    </div>
-                    <div style="margin-bottom: 12px;">
-                        <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">CLIENTE</p>
-                        <p style="color: #1f2937; font-weight: bold; margin: 4px 0;">${cotizacion.nombre_cliente || 'N/A'}</p>
-                    </div>
-                    <div style="margin-bottom: 12px;">
-                        <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">FECHA CREACIÓN</p>
-                        <p style="color: #1f2937; font-weight: bold; margin: 4px 0;">${new Date(cotizacion.created_at).toLocaleDateString()}</p>
-                    </div>
-                    <div style="margin-bottom: 12px;">
-                        <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">ESTADO</p>
-                        <p style="margin: 4px 0;">${estadoBadge}</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Información del Cliente -->
-            <div>
-                <h3 style="color: #374151; font-weight: bold; margin-bottom: 16px; border-bottom: 2px solid #f97316; padding-bottom: 8px;">Información del Cliente</h3>
-                <div style="space-y: 12px;">
-                    <div style="margin-bottom: 12px;">
-                        <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">NOMBRE COMPLETO</p>
-                        <p style="color: #1f2937; font-weight: bold; margin: 4px 0;">${cotizacion.nombre_cliente || 'N/A'}</p>
-                    </div>
-                    <div style="margin-bottom: 12px;">
-                        <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">EMAIL</p>
-                        <p style="color: #1f2937; font-weight: bold; margin: 4px 0;">${cotizacion.email_cliente || 'N/A'}</p>
-                    </div>
-                    <div style="margin-bottom: 12px;">
-                        <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">TELÉFONO</p>
-                        <p style="color: #1f2937; font-weight: bold; margin: 4px 0;">${cotizacion.telefono_cliente || 'N/A'}</p>
-                    </div>
-                    <div style="margin-bottom: 12px;">
-                        <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">CIUDAD</p>
-                        <p style="color: #1f2937; font-weight: bold; margin: 4px 0;">${cotizacion.ciudad_cliente || 'N/A'}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Prendas -->
-        <div style="margin-top: 24px; border-top: 2px solid #e5e7eb; padding-top: 24px;">
-            <h3 style="color: #374151; font-weight: bold; margin-bottom: 16px; border-bottom: 2px solid #f97316; padding-bottom: 8px;">Prendas Cotizadas</h3>
-            <div style="overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse;">
-                    <thead>
-                        <tr style="background: #f3f4f6;">
-                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb; color: #374151; font-weight: bold; font-size: 0.875rem;">PRENDA</th>
-                            <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e5e7eb; color: #374151; font-weight: bold; font-size: 0.875rem;">CANTIDAD</th>
-                            <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb; color: #374151; font-weight: bold; font-size: 0.875rem;">PROCESOS</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-    `;
-    
-    if (prendas.length === 0) {
-        html += `
-                        <tr>
-                            <td colspan="3" style="padding: 20px; text-align: center; color: #6b7280;">No hay prendas en esta cotización</td>
-                        </tr>
-        `;
-    } else {
-        prendas.forEach((prenda, index) => {
-            html += `
-                        <tr style="${index % 2 === 0 ? 'background: #ffffff;' : 'background: #f9fafb;'}">
-                            <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; color: #1f2937; font-weight: 500;">${prenda.nombre_prenda}</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; color: #1f2937; text-align: center; font-weight: 500;">${prenda.cantidad}</td>
-                            <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; color: #6b7280; font-size: 0.875rem;">${prenda.detalles_proceso || 'Sin procesos'}</td>
-                        </tr>
-            `;
-        });
-    }
-    
-    html += `
-                    </tbody>
-                </table>
-            </div>
-        </div>
     `;
     
     contenido.innerHTML = html;
@@ -519,13 +315,6 @@ function mostrarDetallesCotizacion(data) {
 
 function cerrarModalComparar() {
     const modal = document.getElementById('modal-comparar-cotizacion');
-    modal.style.setProperty('display', 'none', 'important');
-    modal.style.setProperty('visibility', 'hidden', 'important');
-    modal.style.setProperty('opacity', '0', 'important');
-}
-
-function cerrarModalCotizacion() {
-    const modal = document.getElementById('modal-detalles-cotizacion');
     modal.style.setProperty('display', 'none', 'important');
     modal.style.setProperty('visibility', 'hidden', 'important');
     modal.style.setProperty('opacity', '0', 'important');
@@ -641,15 +430,9 @@ function aprobarCotizacionAprobador(cotizacionId) {
 // Cerrar menú al hacer clic en otro lugar
 document.addEventListener('click', function(event) {
     const comparar = document.getElementById('modal-comparar-cotizacion');
-    const detalles = document.getElementById('modal-detalles-cotizacion');
     
-    if ((comparar && event.target === comparar) || (detalles && event.target === detalles)) {
-        if (event.target === comparar) cerrarModalComparar();
-        if (event.target === detalles) cerrarModalCotizacion();
-    } else if (!event.target.closest('.ver-menu-container')) {
-        document.querySelectorAll('.ver-submenu.visible').forEach(m => {
-            m.classList.remove('visible');
-        });
+    if (comparar && event.target === comparar) {
+        cerrarModalComparar();
     }
 });
 </script>

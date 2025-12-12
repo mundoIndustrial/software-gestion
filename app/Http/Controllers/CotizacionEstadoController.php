@@ -20,8 +20,8 @@ class CotizacionEstadoController extends Controller
                 'usuario_id' => auth()->id()
             ]);
 
-            // Validar que la cotización esté en estado ENVIADA_CONTADOR, ENVIADO A CONTADOR, PENDIENTE, ENVIADA o ENVIADO A APROBADOR
-            $estadosValidos = ['ENVIADA_CONTADOR', 'ENVIADO A CONTADOR', 'PENDIENTE', 'ENVIADA', 'ENVIADO A APROBADOR'];
+            // Validar que la cotización esté en estado válido
+            $estadosValidos = ['ENVIADA_CONTADOR', 'ENVIADO A CONTADOR', 'PENDIENTE', 'ENVIADA', 'ENVIADO A APROBADOR', 'EN_CORRECCION'];
             if (!in_array($cotizacion->estado, $estadosValidos)) {
                 return response()->json([
                     'success' => false,
@@ -46,7 +46,8 @@ class CotizacionEstadoController extends Controller
 
             Log::info('Cotización aprobada y enviada a aprobador', [
                 'cotizacion_id' => $cotizacion->id,
-                'nuevo_estado' => 'ENVIADO A APROBADOR'
+                'nuevo_estado' => 'ENVIADO A APROBADOR',
+                'estado_anterior' => $cotizacion->getOriginal('estado')
             ]);
 
             return response()->json([
@@ -161,6 +162,59 @@ class CotizacionEstadoController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al enviar la cotización: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Rechazar cotización y enviar a corrección
+     */
+    public function rechazar(Cotizacion $cotizacion, Request $request)
+    {
+        try {
+            Log::info('Rechazando cotización y enviando a corrección', [
+                'cotizacion_id' => $cotizacion->id,
+                'usuario_id' => auth()->id()
+            ]);
+
+            // Validar que la cotización esté en estado APROBADA_CONTADOR
+            if ($cotizacion->estado !== 'APROBADA_CONTADOR') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La cotización no puede ser rechazada desde su estado actual: ' . $cotizacion->estado
+                ], 422);
+            }
+
+            // Obtener observaciones
+            $observaciones = $request->input('observaciones', '');
+
+            // Actualizar estado a EN_CORRECCION
+            $cotizacion->update([
+                'estado' => 'EN_CORRECCION'
+            ]);
+
+            Log::info('Cotización enviada a corrección', [
+                'cotizacion_id' => $cotizacion->id,
+                'nuevo_estado' => 'EN_CORRECCION',
+                'observaciones' => $observaciones
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cotización reenviada a la asesora con observaciones',
+                'cotizacion' => $cotizacion
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error al rechazar cotización', [
+                'cotizacion_id' => $cotizacion->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al rechazar la cotización: ' . $e->getMessage()
             ], 500);
         }
     }
