@@ -271,19 +271,26 @@
 
             // Event listener para búsqueda en tiempo real
             let searchTimeout;
+            let lastQuery = '';
+            
             searchInput.addEventListener('input', function() {
                 const query = this.value;
+                clearSearch.style.display = query ? 'block' : 'none';
+                
+                // Solo hacer búsqueda si el query cambió
+                if (query === lastQuery) return;
+                
                 clearTimeout(searchTimeout);
                 searchTimeout = setTimeout(() => {
+                    lastQuery = query;
                     performAjaxSearch(query);
-                }, 300);
-
-                clearSearch.style.display = query ? 'block' : 'none';
+                }, 500);  // Aumentado a 500ms para permitir escritura más fluida
             });
 
             // Event listener para limpiar búsqueda
             clearSearch.addEventListener('click', function() {
                 searchInput.value = '';
+                lastQuery = '';
                 clearSearch.style.display = 'none';
                 performAjaxSearch('');
             });
@@ -293,7 +300,12 @@
                 const resultsContainer = document.getElementById('results-container');
                 const paginationInfo = document.getElementById('paginationInfo');
 
-                resultsContainer.innerHTML = '<div class="no-data"><h3>Buscando...</h3></div>';
+                // No reemplazar el container, solo mostrar loader
+                const loader = '<div class="no-data"><h3>Buscando...</h3></div>';
+                
+                // Si existe un elemento results-content, actualizar solo eso
+                const resultsContent = resultsContainer.querySelector('.results-content') || resultsContainer;
+                resultsContent.innerHTML = loader;
 
                 let url = '/api/vistas/search?q=' + encodeURIComponent(query) + '&tipo=' + encodeURIComponent(tipoVista) + '&origen=' + encodeURIComponent(origenVista);
 
@@ -307,7 +319,7 @@
                 })
                 .then(response => response.json())
                 .then(data => {
-                    resultsContainer.innerHTML = data.html;
+                    resultsContent.innerHTML = data.html;
 
                     if (paginationInfo) {
                         paginationInfo.textContent = data.info;
@@ -320,7 +332,7 @@
                 })
                 .catch(error => {
                     console.error('Error en búsqueda:', error);
-                    resultsContainer.innerHTML = '<div class="no-data"><h3>Error en la búsqueda</h3><p>Por favor, intenta de nuevo.</p></div>';
+                    resultsContent.innerHTML = '<div class="no-data"><h3>Error en la búsqueda</h3><p>Por favor, intenta de nuevo.</p></div>';
                 });
             }
         });

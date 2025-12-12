@@ -5,7 +5,7 @@
 
 const NavSearch = {
     config: {
-        debounceDelay: 300,
+        debounceDelay: 500,
         minChars: 1,
         maxResults: 10,
         apiEndpoint: '/registros/search'
@@ -36,8 +36,25 @@ const NavSearch = {
             return;
         }
 
+        // Detectar si hay búsqueda en la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const searchParam = urlParams.get('search');
+        
+        if (searchParam) {
+            console.log('🔎 Búsqueda encontrada en URL:', searchParam);
+            searchInput.value = searchParam;
+            this.state.isSearchActive = true;
+            this.state.currentQuery = searchParam;
+            
+            // Mostrar botón de limpiar
+            if (searchClear) {
+                searchClear.style.display = 'flex';
+            }
+        }
+
         // Event listeners
         searchInput.addEventListener('input', (e) => this.handleInput(e));
+        searchInput.addEventListener('keypress', (e) => this.handleKeyPress(e));
         searchInput.addEventListener('focus', () => this.showResults());
         searchInput.addEventListener('blur', () => {
             // Delay para permitir clicks en resultados
@@ -59,39 +76,46 @@ const NavSearch = {
     },
 
     /**
-     * Manejar input de búsqueda
+     * Manejar input de búsqueda (solo mostrar/ocultar botón limpiar)
      */
     handleInput(e) {
         const query = e.target.value.trim();
-        this.currentQuery = query;
 
         // Mostrar/ocultar botón de limpiar
         const clearBtn = document.getElementById('navSearchClear');
         if (clearBtn) {
             clearBtn.style.display = query ? 'flex' : 'none';
         }
+    },
 
-        // Si está vacío, limpiar búsqueda
+    /**
+     * Manejar presión de tecla (Enter para buscar)
+     */
+    handleKeyPress(e) {
+        if (e.key !== 'Enter') {
+            return;
+        }
+
+        e.preventDefault();
+        
+        const query = e.target.value.trim();
+
+        // Si está vacío, restaurar tabla original
         if (!query) {
-            this.hideResults();
-            // Si hay búsqueda activa, limpiarla
             if (this.state.isSearchActive) {
-                this.clearSearch();
+                this.restoreOriginalTable();
             }
             return;
         }
 
         // Si es muy corto, no buscar
         if (query.length < this.config.minChars) {
-            this.hideResults();
             return;
         }
 
-        // Ocultar dropdown de resultados (no mostrar sugerencias)
-        this.hideResults();
-
-        // Debounce la búsqueda
-        this.debounceSearch(query);
+        // Ejecutar búsqueda inmediatamente (sin debounce)
+        console.log(`🔍 Búsqueda iniciada por Enter: ${query}`);
+        this.performSearch(query);
     },
 
     /**
@@ -112,11 +136,16 @@ const NavSearch = {
         console.log(`🔍 Buscando: ${query} (página ${page})`);
 
         this.state.isLoading = true;
-        this.showLoading();
 
         try {
+            // Detectar si está en bodega o registros
+            const isBodega = window.location.pathname.startsWith('/bodega');
+            const searchEndpoint = isBodega ? '/bodega/search' : '/registros/search';
+            
+            console.log(`📍 Usando endpoint: ${searchEndpoint}`);
+
             // Hacer búsqueda con paginación
-            const searchResponse = await fetch('/registros/search', {
+            const searchResponse = await fetch(searchEndpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -149,7 +178,7 @@ const NavSearch = {
                     searchInput.value = query;
                 }
 
-                // Actualizar tabla dinámicamente
+                // Actualizar tabla dinámicamente (sin mostrar loading)
                 this.updateTableDynamically(ordenes, searchData.pagination);
 
                 // Actualizar URL sin recargar
@@ -593,7 +622,6 @@ const NavSearch = {
         if (resultsContainer) {
             resultsContainer.innerHTML = `
                 <div class="nav-search-loading">
-                    Buscando...
                 </div>
             `;
             this.showResults();
@@ -620,6 +648,8 @@ const NavSearch = {
      * Limpiar búsqueda
      */
     clearSearch() {
+        console.log('🗑️ Limpiando búsqueda y filtros');
+        
         const searchInput = document.getElementById('navSearchInput');
         const clearBtn = document.getElementById('navSearchClear');
 
@@ -639,6 +669,13 @@ const NavSearch = {
         this.state.pagination = null;
         this.state.totalPages = 1;
 
+        // Limpiar filtros de la tabla si existen
+        const filterOptions = document.getElementById('filterOptions');
+        if (filterOptions) {
+            filterOptions.innerHTML = '';
+            filterOptions.style.display = 'none';
+        }
+
         // Restaurar tabla original sin recargar
         this.restoreOriginalTable();
     },
@@ -655,19 +692,23 @@ const NavSearch = {
         // Limpiar tabla
         tableBody.innerHTML = '';
 
+        // Detectar si está en bodega o registros
+        const isBodega = window.location.pathname.startsWith('/bodega');
+        const baseUrl = isBodega ? '/bodega' : '/registros';
+        
         // Actualizar URL sin recargar
-        window.history.replaceState({}, '', '/registros');
+        window.history.replaceState({}, '', baseUrl);
 
         // Recargar tabla original desde el servidor
-        this.loadOriginalTable();
+        this.loadOriginalTable(baseUrl);
     },
 
     /**
      * Cargar tabla original
      */
-    async loadOriginalTable() {
+    async loadOriginalTable(baseUrl = '/registros') {
         try {
-            const response = await fetch('/registros', {
+            const response = await fetch(baseUrl, {
                 method: 'GET',
                 headers: {
                     'Accept': 'text/html',

@@ -17,8 +17,8 @@
                     <h1 class="page-title">@yield('page-title', 'Dashboard')</h1>
                 </div>
                 
-                <!-- 🆕 Barra de búsqueda (solo en vista de órdenes) -->
-                @if(Route::currentRouteName() === 'registros.index')
+                <!-- 🆕 Barra de búsqueda (solo en vista de órdenes y bodega) -->
+                @if(Route::currentRouteName() === 'registros.index' || Route::currentRouteName() === 'bodega.index')
                 <div class="nav-search-container">
                     <div class="nav-search-wrapper">
                         <span class="material-symbols-rounded search-icon">search</span>

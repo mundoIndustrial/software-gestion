@@ -58,10 +58,12 @@ const TrackingUI = (() => {
                     diasEnArea = DateUtils.calculateBusinessDays(fecha1, fecha2, festivos);
                 }
             } else {
-                // Si es Despachos y no hay próximo proceso, congelar días (usar fecha_inicio como fecha final)
-                if (proceso.proceso === 'Despachos' || proceso.proceso === 'Despacho') {
+                // Si es el último proceso (sin próximo)
+                // Si es Despachos/Despacho/Entrega, no contar más días (orden entregada)
+                if (proceso.proceso === 'Despachos' || proceso.proceso === 'Despacho' || proceso.proceso === 'Entrega') {
                     diasEnArea = 0;
                 } else if (!isNaN(fecha1.getTime())) {
+                    // Para otros últimos procesos, contar hasta hoy
                     diasEnArea = DateUtils.calculateBusinessDays(fecha1, today, festivos);
                 }
             }

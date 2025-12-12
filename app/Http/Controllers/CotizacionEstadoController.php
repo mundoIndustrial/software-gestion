@@ -40,7 +40,8 @@ class CotizacionEstadoController extends Controller
 
             // Actualizar estado a ENVIADO A APROBADOR
             $cotizacion->update([
-                'estado' => 'ENVIADO A APROBADOR'
+                'estado' => 'ENVIADO A APROBADOR',
+                'fecha_enviado_a_aprobador' => now()
             ]);
 
             Log::info('Cotización aprobada y enviada a aprobador', [

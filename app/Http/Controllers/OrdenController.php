@@ -456,28 +456,26 @@ class OrdenController extends Controller
      */
     private function calcularDiasHabilesBatch(\Carbon\Carbon $inicio, \Carbon\Carbon $fin, array $festivos): int
     {
-        // El contador inicia desde el PRIMER DÍA HÁBIL DESPUÉS de la fecha de inicio
-        $current = $inicio->copy()->addDay();
+        // Contar todos los días hábiles desde la fecha de inicio hasta la fecha final
+        $diasCalculados = 0;
+        $actual = $inicio->copy();
         
-        $totalDays = 0;
-        $weekends = 0;
-        $holidaysCount = 0;
-        
-        while ($current <= $fin) {
-            $dateString = $current->format('Y-m-d');
-            $isWeekend = $current->dayOfWeek === 0 || $current->dayOfWeek === 6;
-            $isFestivo = in_array($dateString, array_map(fn($f) => \Carbon\Carbon::parse($f)->format('Y-m-d'), $festivos));
-            
-            $totalDays++;
-            if ($isWeekend) $weekends++;
-            if ($isFestivo) $holidaysCount++;
-            
-            $current->addDay();
+        while ($actual <= $fin) {
+            // Verificar si no es sábado (6) ni domingo (0)
+            if ($actual->dayOfWeek !== 0 && $actual->dayOfWeek !== 6) {
+                // Verificar si no es festivo
+                $dateString = $actual->format('Y-m-d');
+                $isFestivo = in_array($dateString, array_map(fn($f) => \Carbon\Carbon::parse($f)->format('Y-m-d'), $festivos));
+                
+                if (!$isFestivo) {
+                    $diasCalculados++;
+                }
+            }
+            $actual->addDay();
         }
-
-        $businessDays = $totalDays - $weekends - $holidaysCount;
-
-        return max(0, $businessDays);
+        
+        // Restar 1 porque no se cuenta el día de inicio
+        return max(0, $diasCalculados - 1);
     }
 
     /**

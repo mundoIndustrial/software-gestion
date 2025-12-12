@@ -42,49 +42,32 @@ class TablaOriginalBodega extends Model
             $fechaDespacho = $this->despacho ? Carbon::parse($this->despacho) : null;
             if ($fechaDespacho) {
                 $dias = $this->calcularDiasHabiles($fechaCreacion, $fechaDespacho, $festivos);
-                return $dias > 0 ? $dias - 1 : 0;
+                return $dias > 0 ? $dias : 0;
             }
-            return 0; // Si no hay fecha de despacho, no se cuentan días
+            return 0;
         }
 
         $dias = $this->calcularDiasHabiles($fechaCreacion, Carbon::now(), $festivos);
-        return $dias > 0 ? $dias - 1 : 0;
+        return $dias > 0 ? $dias : 0;
     }
 
     private function calcularDiasHabiles(Carbon $inicio, Carbon $fin, array $festivos): int
     {
-        $totalDays = $inicio->diffInDays($fin) + 1;
-        $weekends = $this->countWeekends($inicio, $fin);
-        $holidaysInRange = count(array_filter($festivos, function ($festivo) use ($inicio, $fin) {
-            return Carbon::parse($festivo)->between($inicio, $fin);
-        }));
+        $diasCalculados = 0;
+        $actual = $inicio->copy();
         
-        $businessDays = $totalDays - $weekends - $holidaysInRange;
-        
-        // Adjust if start or end is weekend/holiday (but since we count inclusive, fine-tune)
-        if ($inicio->isWeekend() || in_array($inicio->toDateString(), $festivos)) $businessDays--;
-        if ($fin->isWeekend() || in_array($fin->toDateString(), $festivos)) $businessDays--;
-        
-        return max(0, $businessDays);
-    }
-
-    private function countWeekends(Carbon $start, Carbon $end): int
-    {
-        $totalDays = $start->diffInDays($end) + 1;
-        $startDay = $start->dayOfWeek; // 0=Sun, 6=Sat
-        $endDay = $end->dayOfWeek;
-        
-        $fullWeeks = floor($totalDays / 7);
-        $extraDays = $totalDays % 7;
-        
-        $weekends = $fullWeeks * 2; // 2 weekends per week
-        
-        // Count weekends in extra days
-        for ($i = 0; $i < $extraDays; $i++) {
-            $day = ($startDay + $i) % 7;
-            if ($day === 0 || $day === 6) $weekends++;
+        while ($actual <= $fin) {
+            // Verificar si no es sábado (6) ni domingo (0)
+            if ($actual->dayOfWeek !== 0 && $actual->dayOfWeek !== 6) {
+                // Verificar si no es festivo
+                if (!in_array($actual->toDateString(), $festivos)) {
+                    $diasCalculados++;
+                }
+            }
+            $actual->addDay();
         }
         
-        return $weekends;
+        // Restar 1 porque no se cuenta el día de inicio
+        return max(0, $diasCalculados - 1);
     }
 }

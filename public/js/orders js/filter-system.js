@@ -454,9 +454,6 @@ async function filterSearchOptions(e) {
         window.currentFilterState.currentPage = 1;
     }
     
-    // Mostrar loading
-    filterOptions.innerHTML = '<div style="padding: 20px; text-align: center; color: #6b7280;">Buscando...</div>';
-    
     // Si no hay término de búsqueda, mostrar 25 opciones iniciales
     if (!searchTerm) {
         const result = await getColumnOptionsFromServer(currentFilterColumn, 1, 25, '');

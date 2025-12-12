@@ -93,7 +93,15 @@ function _handlePaginationError(error, tableBody, btn, timeoutId) {
     tableBody.style.pointerEvents = 'auto';
     btn.disabled = false;
     paginationState.isLoading = false;
-    alert(`Error al cargar la página: ${error.message}`);
+    
+    // No mostrar alerta si fue un AbortSignal (timeout)
+    if (error.name === 'AbortError') {
+        console.warn('⏱️ Timeout en carga de página');
+        return;
+    }
+    
+    const errorMessage = error.message || 'Error desconocido al cargar la página';
+    alert(`Error al cargar la página: ${errorMessage}`);
 }
 
 function _loadPaginationPage(page, url, tableBody, paginationControls, btn) {

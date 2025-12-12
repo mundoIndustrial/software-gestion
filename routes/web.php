@@ -96,6 +96,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::post('/api/procesos/buscar', [App\Http\Controllers\OrdenController::class, 'buscarProceso'])->name('api.procesos.buscar');
     Route::get('/api/tabla-original-bodega/{numeroPedido}/procesos', [RegistroBodegaController::class, 'getProcesosTablaOriginal'])->name('api.tabla-original-bodega.procesos');
     Route::get('/bodega', [RegistroBodegaController::class, 'index'])->name('bodega.index');
+    Route::post('/bodega/search', [RegistroBodegaController::class, 'searchOrders'])->name('bodega.search');
     Route::get('/bodega/next-pedido', [RegistroBodegaController::class, 'getNextPedido'])->name('bodega.next-pedido');
     Route::get('/bodega/{pedido}', [RegistroBodegaController::class, 'show'])->name('bodega.show');
     Route::get('/bodega/{pedido}/prendas', [RegistroBodegaController::class, 'getPrendas'])->name('bodega.prendas');
@@ -207,8 +208,8 @@ Route::middleware(['auth'])->group(function () {
             abort(403, 'No tienes permiso para acceder a esta sección.');
         }
         
-        // Obtener cotizaciones pendientes de aprobación (estado APROBADA_CONTADOR)
-        $cotizaciones = \App\Models\Cotizacion::where('estado', 'APROBADA_CONTADOR')
+        // Obtener cotizaciones pendientes de aprobación (estado ENVIADO A APROBADOR)
+        $cotizaciones = \App\Models\Cotizacion::where('estado', 'ENVIADO A APROBADOR')
             ->orderBy('created_at', 'desc')
             ->get();
         

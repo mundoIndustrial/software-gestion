@@ -1147,4 +1147,91 @@ class RegistroBodegaController extends Controller
             return response()->json(['error' => 'Error al calcular días'], 500);
         }
     }
+
+    /**
+     * Buscar órdenes de bodega por número de pedido o cliente
+     */
+    public function searchOrders(Request $request)
+    {
+        try {
+            $search = $request->input('search', '');
+            $limit = $request->input('limit', 25);
+            $page = $request->input('page', 1);
+            $isTableSearch = $request->input('isTableSearch', false);
+
+            if (strlen($search) < 1) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [],
+                    'ordenes' => []
+                ]);
+            }
+
+            // Buscar por número de pedido o cliente en tabla_original_bodega
+            $query = TablaOriginalBodega::where('pedido', 'LIKE', '%' . $search . '%')
+                ->orWhere('cliente', 'LIKE', '%' . $search . '%');
+
+            // Si es búsqueda de tabla, retornar todos los campos con paginación
+            if ($isTableSearch) {
+                // Obtener total antes de paginar
+                $total = $query->count();
+
+                // Paginar
+                $ordenes = $query->paginate($limit, ['*'], 'page', $page);
+
+                // Mapear datos para incluir total_dias calculado
+                $ordenesMapeadas = $ordenes->getCollection()->map(function($orden) {
+                    // Calcular días hábiles usando el método del modelo
+                    $diasCalculados = 0;
+                    if ($orden->fecha_de_creacion_de_orden) {
+                        $diasCalculados = $orden->getTotalDeDiasAttribute();
+                    }
+                    
+                    return [
+                        'numero_pedido' => $orden->pedido,
+                        'pedido' => $orden->pedido,
+                        'cliente' => $orden->cliente,
+                        'estado' => $orden->estado,
+                        'area' => $orden->area,
+                        'dia_de_entrega' => $orden->dia_de_entrega,
+                        'fecha_de_creacion_de_orden' => $orden->fecha_de_creacion_de_orden,
+                        'control_de_calidad' => $orden->control_de_calidad,
+                        'novedades' => $orden->novedades,
+                        'total_dias_calculado' => $diasCalculados
+                    ];
+                });
+
+                // Reemplazar la colección con los datos mapeados
+                $ordenes->setCollection($ordenesMapeadas);
+
+                return response()->json([
+                    'success' => true,
+                    'ordenes' => $ordenes->items(),
+                    'data' => $ordenes->items(),
+                    'pagination' => [
+                        'current_page' => $ordenes->currentPage(),
+                        'last_page' => $ordenes->lastPage(),
+                        'per_page' => $ordenes->perPage(),
+                        'total' => $ordenes->total(),
+                        'from' => $ordenes->firstItem(),
+                        'to' => $ordenes->lastItem()
+                    ]
+                ]);
+            }
+
+            // Si es búsqueda de dropdown, retornar solo lo necesario
+            $ordenes = $query->select('pedido', 'cliente', 'estado', 'area')
+                ->limit(10)
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'ordenes' => $ordenes,
+                'data' => $ordenes
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en searchOrders Bodega: ' . $e->getMessage());
+            return response()->json(['error' => 'Error al buscar'], 500);
+        }
+    }
 }

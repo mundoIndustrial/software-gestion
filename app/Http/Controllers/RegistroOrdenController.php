@@ -484,16 +484,27 @@ class RegistroOrdenController extends Controller
                     $options = PedidoProduccion::ESTADOS;
                     break;
                 case 'area':
-                    $options = PedidoProduccion::distinct()->pluck('area')->filter()->sort()->values()->toArray();
+                    $query = PedidoProduccion::distinct()->pluck('area')->filter()->sort()->values()->toArray();
+                    $options = $query;
                     break;
                 case 'dia_entrega':
                     $options = PedidoProduccion::DIAS_ENTREGA;
                     break;
                 case 'pedido':
-                    $options = PedidoProduccion::distinct()->pluck('numero_pedido')->filter()->sort()->values()->toArray();
+                    // Aplicar búsqueda si existe
+                    $query = PedidoProduccion::distinct();
+                    if (!empty($search)) {
+                        $query->where('numero_pedido', 'LIKE', "%{$search}%");
+                    }
+                    $options = $query->pluck('numero_pedido')->filter()->sort()->values()->toArray();
                     break;
                 case 'cliente':
-                    $options = PedidoProduccion::distinct()->pluck('cliente')->filter()->sort()->values()->toArray();
+                    // Aplicar búsqueda si existe
+                    $query = PedidoProduccion::distinct();
+                    if (!empty($search)) {
+                        $query->where('cliente', 'LIKE', "%{$search}%");
+                    }
+                    $options = $query->pluck('cliente')->filter()->sort()->values()->toArray();
                     break;
                 case 'descripcion':
                     // Para descripción, agrupar por descripción única

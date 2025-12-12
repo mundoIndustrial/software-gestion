@@ -23,7 +23,8 @@
                 <thead>
                     <tr class="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
                         <th class="px-6 py-4 text-left text-sm font-semibold">Cotización</th>
-                        <th class="px-6 py-4 text-left text-sm font-semibold">Fecha</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold">Fecha Creación</th>
+                        <th class="px-6 py-4 text-left text-sm font-semibold">Fecha Envío a Aprobador</th>
                         <th class="px-6 py-4 text-left text-sm font-semibold">Cliente</th>
                         <th class="px-6 py-4 text-left text-sm font-semibold">Asesora</th>
                         <th class="px-6 py-4 text-left text-sm font-semibold">Estado</th>
@@ -43,7 +44,7 @@
                             </div>
                         </td>
 
-                        <!-- Fecha -->
+                        <!-- Fecha Creación -->
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm text-gray-600">
                                 {{ $cotizacion->created_at->format('d/m/Y') }}
@@ -53,9 +54,23 @@
                             </div>
                         </td>
 
+                        <!-- Fecha Envío a Aprobador -->
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            @if($cotizacion->fecha_enviado_a_aprobador)
+                                <div class="text-sm text-gray-600">
+                                    {{ $cotizacion->fecha_enviado_a_aprobador->format('d/m/Y') }}
+                                </div>
+                                <div class="text-xs text-gray-400">
+                                    {{ $cotizacion->fecha_enviado_a_aprobador->format('h:i A') }}
+                                </div>
+                            @else
+                                <span class="text-xs text-gray-400">Pendiente</span>
+                            @endif
+                        </td>
+
                         <!-- Cliente -->
                         <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm font-medium text-gray-900">{{ $cotizacion->cliente ?? 'N/A' }}</span>
+                            <span class="text-sm font-medium text-gray-900">{{ $cotizacion->cliente?->nombre ?? 'N/A' }}</span>
                         </td>
 
                         <!-- Asesora -->
