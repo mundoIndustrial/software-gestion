@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="{{ asset('css/orders styles/action-menu.css') }}">
     <link rel="stylesheet" href="{{ asset('css/orders styles/filter-system.css') }}">
     <link rel="stylesheet" href="{{ asset('css/orders styles/row-conditional-colors.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/bodega-column-widths.css') }}">
     <link rel="stylesheet" href="{{ asset('css/bodega-table.css') }}">
 @endpush
 

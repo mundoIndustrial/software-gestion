@@ -1,0 +1,570 @@
+/* ===== BODEGA COLUMN WIDTHS CONFIGURATION ===== */
+/* Este archivo contiene los anchos de columnas para la tabla de bodega */
+
+/* ===== HEADER COLUMN WIDTHS ===== */
+.table-head .table-header-cell {
+  flex: 0 0 140px !important;
+}
+
+/* Columnas específicas del header */
+.table-head .table-header-cell:nth-child(1) {
+  flex: 0 0 120px !important;
+}
+
+.table-head .table-header-cell:nth-child(2) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(3) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(4) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(5) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(6) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(7) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(8) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(9) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(10) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(11) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(12) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(13) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(14) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(15) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(16) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(17) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(18) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(19) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(20) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(21) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(22) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(23) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(24) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(25) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(26) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(27) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(28) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(29) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(30) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(31) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(32) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(33) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(34) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(35) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(36) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(37) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(38) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(39) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(40) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(41) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(42) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(43) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(44) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(45) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(46) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(47) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(48) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(49) {
+  flex: 0 0 140px !important;
+}
+
+.table-head .table-header-cell:nth-child(50) {
+  flex: 0 0 140px !important;
+}
+
+/* ===== ROW COLUMN WIDTHS ===== */
+.table-row .table-cell {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+/* Valores específicos para cada columna de fila */
+.table-row .table-cell:nth-child(1) {
+  min-width: 130px !important;
+  max-width: 130px !important;
+  width: 130px !important;
+  flex: 0 0 130px !important;
+}
+
+.table-row .table-cell:nth-child(2) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(3) {
+  min-width: 160px !important;
+  max-width: 160px !important;
+  width: 160px !important;
+  flex: 0 0 160px !important;
+}
+
+.table-row .table-cell:nth-child(4) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(5) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(6) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(7) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(8) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(9) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(10) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(11) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(12) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(13) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(14) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(15) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(16) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(17) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(18) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(19) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(20) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(21) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(22) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(23) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(24) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(25) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(26) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(27) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(28) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(29) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(30) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(31) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(32) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(33) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(34) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(35) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(36) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(37) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(38) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(39) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(40) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(41) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(42) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(43) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(44) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(45) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(46) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(47) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(48) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(49) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(50) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+/* ===== DYNAMIC COLUMN WIDTHS (Modificados por el usuario) ===== */
+/* Los cambios se guardarán aquí automáticamente */

@@ -1,19 +1,19 @@
 /* ===== BODEGA TABLE OVERRIDES ===== */
 
-/* Bodega tiene 50 columnas de 220px cada una = 11000px + gaps */
+/* Bodega tiene 50 columnas de 140px cada una = 7000px + gaps (49 * 15px = 735px) = 7735px */
 .modern-table {
-  min-width: 12500px !important;
+  min-width: 7735px !important;
 }
 
 .table-head {
-  min-width: 12500px !important;
-  gap: 5px !important;
-  padding: 14px 2px !important;
+  min-width: 9150px !important;
+  gap: 15px !important;
+  padding: 14px 12px !important;
 }
 
 .table-row {
-  min-width: 12300px !important;
-  gap: 5px !important;
+  min-width: 9120px !important;
+  gap: 15px !important;
   padding: 0 20px !important;
 }
 

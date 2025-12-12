@@ -408,10 +408,6 @@ Route::middleware('auth')->prefix('api')->name('api.')->group(function () {
     Route::get('/tipos-prenda', [App\Http\Controllers\API\PrendaController::class, 'tiposPrenda'])->name('tipos-prenda');
     Route::post('/prenda/reconocer', [App\Http\Controllers\API\PrendaController::class, 'reconocer'])->name('prenda.reconocer');
     Route::get('/prenda-variaciones/{tipoPrendaId}', [App\Http\Controllers\API\PrendaController::class, 'variaciones'])->name('prenda.variaciones');
-    
-    // Rutas para configuración de tabla
-    Route::post('save-column-widths', [App\Http\Controllers\Api\TableConfigController::class, 'saveColumnWidths'])->name('save-column-widths');
-    Route::get('get-column-widths', [App\Http\Controllers\Api\TableConfigController::class, 'getColumnWidths'])->name('get-column-widths');
 });
 
 // Rutas de Insumos

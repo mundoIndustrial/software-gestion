@@ -10,10 +10,10 @@
         crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <link rel="stylesheet" href="{{ asset('css/orders styles/registros.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/orders styles/column-widths.css') }}?v={{ time() }}">
     <link rel="stylesheet" href="{{ asset('css/orders styles/action-menu.css') }}">
     <link rel="stylesheet" href="{{ asset('css/orders styles/filter-system.css') }}">
     <link rel="stylesheet" href="{{ asset('css/orders styles/row-conditional-colors.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/orders styles/table-config-modal.css') }}">
 @endpush
 
 @section('content')
@@ -319,44 +319,6 @@
         <div class="floating-clear-filters-tooltip">Limpiar filtros</div>
     </button>
 
-    <!-- Modal de Configuración de Tabla -->
-    <div id="tableConfigModal" class="table-config-modal" style="display: none;">
-        <div class="table-config-overlay" onclick="closeTableConfigModal()"></div>
-        <div class="table-config-content">
-            <div class="table-config-header">
-                <h3>Configurar Tabla</h3>
-                <button class="table-config-close" onclick="closeTableConfigModal()">×</button>
-            </div>
-            <div class="table-config-body">
-                <!-- Opción de líneas separadoras -->
-                <div class="config-section">
-                    <div class="config-option">
-                        <label class="config-label">
-                            <input type="checkbox" id="headerSeparatorsToggle" class="config-checkbox">
-                            <span>Mostrar líneas separadoras entre encabezados</span>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Ajuste de ancho de encabezados -->
-                <div class="config-section">
-                    <h4 class="config-section-title">Ancho de Encabezados</h4>
-                    <div class="config-option">
-                        <label class="config-label">Ancho predeterminado:</label>
-                        <input type="range" id="headerWidthSlider" class="config-slider" min="80" max="150" value="100" step="5">
-                        <span class="config-value" id="headerWidthValue">100%</span>
-                    </div>
-                </div>
-
-                <!-- Botones de acción -->
-                <div class="config-footer">
-                    <button class="config-btn config-btn-reset" onclick="resetTableConfig()">Restablecer</button>
-                    <button class="config-btn config-btn-apply" onclick="applyTableConfig()">Aplicar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script>
         // Pasar opciones de area a JS
         window.areaOptions = @json($areaOptions);
@@ -439,16 +401,4 @@
 
     <!-- TRACKING MODAL HANDLER -->
     <script src="{{ asset('js/orders js/tracking-modal-handler.js') }}?v={{ time() }}"></script>
-
-    <!-- TABLE CONFIG MANAGER -->
-    <script src="{{ asset('js/orders js/table-config-manager.js') }}?v={{ time() }}"></script>
-
-    <!-- COLUMN RESIZER (Google Sheets style) -->
-    <script src="{{ asset('js/orders js/column-resizer.js') }}?v={{ time() }}"></script>
-
-    <!-- HEADER SEPARATORS SYNC -->
-    <script src="{{ asset('js/orders js/header-separators-sync.js') }}?v={{ time() }}"></script>
-
-    <!-- ROW COLUMN RESIZER (Independent row column widths) -->
-    <script src="{{ asset('js/orders js/row-column-resizer.js') }}?v={{ time() }}"></script>
 @endpush

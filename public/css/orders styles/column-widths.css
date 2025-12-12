@@ -1,0 +1,184 @@
+/* ===== COLUMN WIDTHS CONFIGURATION ===== */
+/* Este archivo contiene los anchos de columnas para headers y filas */
+
+/* ===== HEADER COLUMN WIDTHS ===== */
+.table-header-cell {
+  flex: 0 0 120px !important;
+}
+
+.table-header-cell:nth-child(1) {
+  flex: 0 0 105px !important;
+}
+
+.table-header-cell:nth-child(2) {
+  flex: 0 0 150px !important;
+}
+
+.table-header-cell:nth-child(3) {
+  flex: 0 0 180px !important;
+}
+
+.table-header-cell:nth-child(4) {
+  flex: 0 0 150px !important;
+}
+
+.table-header-cell:nth-child(5) {
+  flex: 0 0 120px !important;
+}
+
+.table-header-cell:nth-child(6) {
+  flex: 0 0 130px !important;
+}
+
+.table-header-cell:nth-child(7) {
+  flex: 0 0 160px !important;
+}
+
+.table-header-cell:nth-child(8) {
+  flex: 0 0 150px !important;
+}
+
+.table-header-cell:nth-child(9) {
+  flex: 0 0 130px !important;
+}
+
+.table-header-cell:nth-child(10) {
+  flex: 0 0 120px !important;
+}
+
+.table-header-cell:nth-child(11) {
+  flex: 0 0 130px !important;
+}
+
+.table-header-cell:nth-child(12) {
+  flex: 0 0 150px !important;
+}
+
+.table-header-cell:nth-child(13) {
+  flex: 0 0 150px !important;
+}
+
+.table-header-cell:nth-child(14) {
+  flex: 0 0 180px !important;
+}
+
+.table-header-cell:nth-child(15) {
+  flex: 0 0 150px !important;
+}
+
+/* ===== ROW COLUMN WIDTHS ===== */
+.table-row .table-cell {
+  min-width: 120px !important;
+  max-width: 120px !important;
+  width: 120px !important;
+  flex: 0 0 120px !important;
+}
+
+/* Valores por defecto para cada columna de fila */
+.table-row .table-cell:nth-child(1) {
+  min-width: 100px !important;
+  max-width: 100px !important;
+  width: 100px !important;
+  flex: 0 0 100px !important;
+}
+
+.table-row .table-cell:nth-child(2) {
+  min-width: 140px !important;
+  max-width: 140px !important;
+  width: 140px !important;
+  flex: 0 0 140px !important;
+}
+
+.table-row .table-cell:nth-child(3) {
+  min-width: 165px !important;
+  max-width: 165px !important;
+  width: 165px !important;
+  flex: 0 0 165px !important;
+}
+
+.table-row .table-cell:nth-child(4) {
+  min-width: 160px !important;
+  max-width: 160px !important;
+  width: 160px !important;
+  flex: 0 0 160px !important;
+}
+
+.table-row .table-cell:nth-child(5) {
+  min-width: 145px !important;
+  max-width: 145px !important;
+  width: 145px !important;
+  flex: 0 0 145px !important;
+}
+
+.table-row .table-cell:nth-child(6) {
+  min-width: 120px !important;
+  max-width: 120px !important;
+  width: 120px !important;
+  flex: 0 0 120px !important;
+}
+
+.table-row .table-cell:nth-child(7) {
+  min-width: 150px !important;
+  max-width: 150px !important;
+  width: 150px !important;
+  flex: 0 0 150px !important;
+}
+
+.table-row .table-cell:nth-child(8) {
+  min-width: 190px !important;
+  max-width: 190px !important;
+  width: 190px !important;
+  flex: 0 0 190px !important;
+}
+
+.table-row .table-cell:nth-child(9) {
+  min-width: 125px !important;
+  max-width: 125px !important;
+  width: 125px !important;
+  flex: 0 0 125px !important;
+}
+
+.table-row .table-cell:nth-child(10) {
+  min-width: 127px !important;
+  max-width: 127px !important;
+  width: 127px !important;
+  flex: 0 0 127px !important;
+}
+
+.table-row .table-cell:nth-child(11) {
+  min-width: 120px !important;
+  max-width: 120px !important;
+  width: 120px !important;
+  flex: 0 0 120px !important;
+}
+
+.table-row .table-cell:nth-child(12) {
+  min-width: 160px !important;
+  max-width: 160px !important;
+  width: 160px !important;
+  flex: 0 0 160px !important;
+}
+
+.table-row .table-cell:nth-child(13) {
+  min-width: 190px !important;
+  max-width: 190px !important;
+  width: 190px !important;
+  flex: 0 0 190px !important;
+}
+
+.table-row .table-cell:nth-child(14) {
+  min-width: 230px !important;
+  max-width: 230px !important;
+  width: 230px !important;
+  flex: 0 0 230px !important;
+}
+
+.table-row .table-cell:nth-child(15) {
+  min-width: 150px !important;
+  max-width: 150px !important;
+  width: 150px !important;
+  flex: 0 0 150px !important;
+}
+
+/* ===== DYNAMIC COLUMN WIDTHS (Modificados por el usuario) ===== */
+/* Los cambios se guardarán aquí automáticamente */

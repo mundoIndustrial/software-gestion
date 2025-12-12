@@ -35,10 +35,6 @@
                     </div>
                     <div class="nav-search-results" id="navSearchResults" style="display: none;"></div>
                 </div>
-                <!-- Botón de configuración de tabla -->
-                <button class="table-config-btn" id="tableConfigBtn" title="Configurar tabla">
-                    <span class="material-symbols-rounded">settings</span>
-                </button>
                 @endif
             </div>
 

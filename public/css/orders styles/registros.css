@@ -114,7 +114,7 @@ body:has(.table-container) { font-family: -apple-system, BlinkMacSystemFont, 'Se
   padding: 0 20px;
   height: 70px;
   width: 100%;
-  min-width: 3300px;
+  min-width: 2670px;
   flex-shrink: 0;
   will-change: transform;
 }
@@ -156,7 +156,7 @@ body:has(.table-container) { font-family: -apple-system, BlinkMacSystemFont, 'Se
   flex-direction: column;
   gap: 12px;
   padding: 12px;
-  min-width: 3300px;
+  min-width: 2670px;
   width: 100%;
 }
 
@@ -178,7 +178,7 @@ body.dark-theme .table-body {
   overflow: visible;
   position: relative;
   z-index: 1;
-  min-width: 3275px;
+  min-width: 2650px;
   width: 100%;
   flex-shrink: 0;
 }
@@ -394,74 +394,3 @@ body.dark-theme .pagination-info {
   .table-cell { padding: 8px 6px; font-size: 12px; }
   .pagination-btn { width: 32px; height: 32px; font-size: 12px; }
 }
-
-/* ===== TABLE SEPARATORS ===== */
-.table-head.separators-enabled .table-header-cell {
-  border-right: 1px solid var(--border-light);
-}
-
-.table-head.separators-enabled .table-header-cell:last-child {
-  border-right: none;
-}
-
-.table-body.separators-enabled .table-cell {
-  border-right: 1px solid var(--border-light);
-}
-
-.table-body.separators-enabled .table-cell:last-child {
-  border-right: none;
-}
-
-/* ===== COLUMN RESIZE HANDLES (HEADER) ===== */
-.column-resize-handle {
-  position: absolute !important;
-  right: 0 !important;
-  top: 0 !important;
-  bottom: 0 !important;
-  width: 4px !important;
-  cursor: col-resize !important;
-  background: transparent !important;
-  user-select: none !important;
-  z-index: 10 !important;
-  transition: background 0.2s ease !important;
-}
-
-.column-resize-handle:hover {
-  background: rgba(255, 255, 255, 0.6) !important;
-}
-
-.column-resize-handle:active {
-  background: rgba(255, 255, 255, 0.8) !important;
-}
-
-/* ===== COLUMN RESIZE HANDLES (ROWS) ===== */
-.row-column-resize-handle {
-  position: absolute !important;
-  right: 0 !important;
-  top: 0 !important;
-  bottom: 0 !important;
-  width: 4px !important;
-  cursor: col-resize !important;
-  background: transparent !important;
-  user-select: none !important;
-  z-index: 10 !important;
-  transition: background 0.2s ease !important;
-}
-
-.row-column-resize-handle:hover {
-  background: rgba(37, 99, 235, 0.4) !important;
-}
-
-.row-column-resize-handle:active {
-  background: rgba(37, 99, 235, 0.8) !important;
-}
-
-/* ===== DYNAMIC COLUMN WIDTHS ===== */
-.table-row .table-cell:nth-child(4) {
-    min-width: 158px !important;
-    max-width: 158px !important;
-    width: 158px !important;
-    flex: 0 0 158px !important;
-}
-
-/* ===== END DYNAMIC COLUMN WIDTHS ===== */
