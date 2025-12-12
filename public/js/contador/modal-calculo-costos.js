@@ -16,177 +16,208 @@ function abrirModalCalculoCostos(cotizacionId, cliente) {
     // Guardar cotización ID para guardar después
     window.cotizacionIdActual = cotizacionId;
     
+    // Actualizar cliente en el header
+    document.getElementById('modalCostosCliente').textContent = `CLIENTE: ${cliente}`;
+    
     // Obtener las prendas de la cotización
     fetch(`/contador/cotizacion/${cotizacionId}`)
         .then(response => response.json())
         .then(data => {
-            // El endpoint devuelve JSON con el HTML dentro
-            const html = data.html || data;
-            
-            console.log('HTML recibido contiene "Detalles de la Prenda":', html.includes('Detalles de la Prenda'));
-            
-            // Parsear el HTML para extraer las prendas
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            
-            // Buscar todos los títulos de prendas (h5 con nombre de prenda en estructura DDD)
-            const prendasElements = doc.querySelectorAll('h5');
-            const prendas = [];
-            
-            prendasElements.forEach((el, index) => {
-                const nombrePrenda = el.textContent.trim();
-                if (nombrePrenda && nombrePrenda !== 'ESPECIFICACIONES DE LA ORDEN' && 
-                    nombrePrenda !== 'TÉCNICAS' && nombrePrenda !== 'OBSERVACIONES TÉCNICAS' &&
-                    nombrePrenda !== 'OBSERVACIONES GENERALES' && nombrePrenda !== 'PRENDAS DETALLADAS' &&
-                    nombrePrenda !== 'Prenda sin nombre') {
-                    
-                    // Obtener la descripción (párrafo siguiente al h3)
-                    let descripcion = '';
-                    let imagenes = [];
-                    let detalles = {};
-                    
-                    let elemento = el.nextElementSibling;
-                    
-                    // Obtener descripción del párrafo (ya incluye especificaciones unidas)
-                    if (elemento && elemento.tagName === 'P') {
-                        descripcion = elemento.textContent.trim();
-                        elemento = elemento.nextElementSibling;
-                    }
-                    
-                    // Obtener detalles de la prenda (Color, Tela, Manga, Especificaciones)
-                    // Buscar el div con clase o estilo que contenga los detalles
-                    let elementoBusquedaDetalles = el.nextElementSibling;
-                    while (elementoBusquedaDetalles) {
-                        if (elementoBusquedaDetalles.tagName === 'H5' || elementoBusquedaDetalles.tagName === 'H3') {
-                            break; // Encontramos otra prenda
+            if (data.success && data.html) {
+                // Parsear el HTML para extraer las prendas
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data.html, 'text/html');
+                
+                // Buscar todos los títulos de prendas (h5)
+                const prendasElements = doc.querySelectorAll('h5');
+                const prendas = [];
+                
+                prendasElements.forEach((el, index) => {
+                    const nombrePrenda = el.textContent.trim();
+                    if (nombrePrenda && nombrePrenda !== 'ESPECIFICACIONES DE LA ORDEN' && 
+                        nombrePrenda !== 'TÉCNICAS' && nombrePrenda !== 'OBSERVACIONES TÉCNICAS' &&
+                        nombrePrenda !== 'OBSERVACIONES GENERALES' && nombrePrenda !== 'PRENDAS DETALLADAS' &&
+                        nombrePrenda !== 'Prenda sin nombre') {
+                        
+                        // Obtener descripción
+                        let descripcion = '';
+                        let elemento = el.nextElementSibling;
+                        if (elemento && elemento.tagName === 'P') {
+                            descripcion = elemento.textContent.trim();
                         }
                         
-                        // Buscar div con "Detalles de la Prenda"
-                        if (elementoBusquedaDetalles.textContent.includes('Detalles de la Prenda')) {
-                            // Extraer todos los detalles (Color, Tela, Manga, Especificaciones)
-                            // Buscar divs que tengan estructura: div > (label div + valor div)
-                            const detallesContainer = elementoBusquedaDetalles.querySelector('div[style*="grid"]') || elementoBusquedaDetalles;
-                            const detallesDivs = detallesContainer.querySelectorAll(':scope > div');
-                            
-                            detallesDivs.forEach(detDiv => {
-                                const children = detDiv.children;
-                                if (children.length >= 2) {
-                                    const label = children[0];
-                                    const valor = children[1];
-                                    if (label && valor) {
-                                        const labelText = label.textContent.replace(':', '').trim();
-                                        const valorText = valor.textContent.trim();
-                                        if (labelText && valorText) {
-                                            detalles[labelText] = valorText;
-                                        }
-                                    }
-                                }
-                            });
-                            console.log('Detalles extraídos:', detalles);
-                            break;
-                        }
-                        
-                        elementoBusquedaDetalles = elementoBusquedaDetalles.nextElementSibling;
-                    }
-                    
-                    // Obtener imágenes - buscar todas las imágenes (prenda y tela) después del h5
-                    // Pueden estar en un div con data-producto-index o en cualquier contenedor
-                    let elementoBusqueda = el.nextElementSibling;
-                    while (elementoBusqueda) {
-                        // Si encontramos otro h5, detenemos la búsqueda
-                        if (elementoBusqueda.tagName === 'H5' || elementoBusqueda.tagName === 'H3') {
-                            break;
-                        }
-                        
-                        // Buscar si tiene atributo data-todas-imagenes (JSON)
-                        if (elementoBusqueda.hasAttribute('data-todas-imagenes')) {
-                            try {
-                                const imagenesJSON = JSON.parse(elementoBusqueda.getAttribute('data-todas-imagenes'));
-                                if (Array.isArray(imagenesJSON)) {
-                                    imagenes = imagenesJSON;
-                                }
-                            } catch (e) {
-                                console.error('Error al parsear data-todas-imagenes:', e);
-                            }
-                        }
-                        
-                        // Buscar imágenes en este elemento (incluyendo imágenes de tela)
-                        const imgs = elementoBusqueda.querySelectorAll('img');
-                        imgs.forEach(img => {
-                            const src = img.getAttribute('src');
-                            if (src && !imagenes.includes(src)) {
-                                imagenes.push(src);
-                            }
+                        prendas.push({
+                            id: index,
+                            nombre: nombrePrenda,
+                            descripcion: descripcion
                         });
-                        
-                        elementoBusqueda = elementoBusqueda.nextElementSibling;
                     }
-                    
-                    console.log(`Prenda: ${nombrePrenda}, Imágenes encontradas: ${imagenes.length}`, imagenes);
-                    console.log(`Detalles de prenda: ${nombrePrenda}`, detalles);
-                    
-                    prendas.push({
-                        id: index,
-                        nombre: nombrePrenda,
-                        descripcion: descripcion,
-                        imagenes: imagenes,
-                        detalles: detalles
-                    });
+                });
+                
+                if (prendas.length === 0) {
+                    alert('No se encontraron prendas en esta cotización');
+                    return;
                 }
-            });
-            
-            if (prendas.length === 0) {
-                alert('No se encontraron prendas en esta cotización');
-                return;
+                
+                // Llenar tabs de prendas
+                const tabsContainer = document.getElementById('prendasTabs');
+                tabsContainer.innerHTML = '';
+                
+                prendas.forEach((prenda, index) => {
+                    const tab = document.createElement('button');
+                    tab.style.cssText = `
+                        padding: 0.75rem 1.25rem;
+                        background: ${index === 0 ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : '#374151'};
+                        color: white;
+                        border: none;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        font-weight: 600;
+                        transition: all 0.2s;
+                        white-space: nowrap;
+                        text-transform: uppercase;
+                        font-size: 0.8rem;
+                        letter-spacing: 0.3px;
+                    `;
+                    tab.textContent = prenda.nombre;
+                    tab.onclick = () => cambiarPrendaTab(prenda.id, prendas);
+                    tabsContainer.appendChild(tab);
+                });
+                
+                // Mostrar primera prenda
+                cambiarPrendaTab(0, prendas);
+                
+                // Inicializar tabla vacía
+                limpiarTablaPrecios();
+                
+                // Mostrar modal
+                document.getElementById('calculoCostosModal').style.display = 'flex';
             }
-            
-            // Llenar el modal
-            document.getElementById('modalCostosCliente').textContent = `Cliente: ${cliente}`;
-            
-            // Crear tabs de prendas
-            const tabsContainer = document.getElementById('prendasTabs');
-            tabsContainer.innerHTML = '';
-            
-            prendas.forEach((prenda, index) => {
-                const tab = document.createElement('button');
-                tab.style.cssText = `
-                    padding: 0.75rem 1.5rem;
-                    background: ${index === 0 ? '#1e5ba8' : '#f3f4f6'};
-                    color: ${index === 0 ? 'white' : '#374151'};
-                    border: none;
-                    border-radius: 4px 4px 0 0;
-                    cursor: pointer;
-                    font-weight: 600;
-                    transition: all 0.2s;
-                    white-space: nowrap;
-                `;
-                tab.textContent = `📦 ${prenda.nombre}`;
-                tab.onclick = () => cambiarPrendaTab(prenda.id, prendas);
-                tabsContainer.appendChild(tab);
-            });
-            
-            // Crear contenido de prendas
-            const contentContainer = document.getElementById('prendasContent');
-            contentContainer.innerHTML = '';
-            
-            prendas.forEach((prenda, index) => {
-                const div = document.createElement('div');
-                div.id = `prenda-content-${prenda.id}`;
-                div.style.display = index === 0 ? 'block' : 'none';
-                div.innerHTML = crearTablaPrecios(prenda.id, prenda.nombre, prenda.descripcion, prenda.imagenes, prenda.detalles || {});
-                contentContainer.appendChild(div);
-            });
-            
-            // Cargar costos guardados desde la BD
-            cargarCostosGuardados(cotizacionId, prendas);
-            
-            // Mostrar modal
-            document.getElementById('calculoCostosModal').style.display = 'flex';
         })
         .catch(error => {
             console.error('Error:', error);
             alert('Error al cargar las prendas');
         });
+}
+
+/**
+ * Cambia entre tabs de prendas
+ * @param {number} prendaId - ID de la prenda
+ * @param {array} prendas - Array de prendas
+ */
+function cambiarPrendaTab(prendaId, prendas) {
+    // Actualizar descripción
+    const prenda = prendas.find(p => p.id === prendaId);
+    if (prenda) {
+        document.getElementById('prendasDescripcion').textContent = prenda.descripcion || '';
+    }
+    
+    // Actualizar estilos de tabs
+    const tabs = document.querySelectorAll('#prendasTabs button');
+    tabs.forEach((tab, index) => {
+        if (prendas[index] && prendas[index].id === prendaId) {
+            tab.style.background = 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)';
+        } else if (tab) {
+            tab.style.background = '#374151';
+        }
+    });
+    
+    // Limpiar tabla
+    limpiarTablaPrecios();
+}
+
+/**
+ * Limpia la tabla de precios
+ */
+function limpiarTablaPrecios() {
+    const body = document.getElementById('tablaPreciosBody');
+    body.innerHTML = '';
+    
+    // Agregar una fila vacía
+    agregarFilaItem();
+}
+
+/**
+ * Agrega una nueva fila de item a la tabla
+ */
+function agregarFilaItem() {
+    const body = document.getElementById('tablaPreciosBody');
+    
+    const row = document.createElement('div');
+    row.style.cssText = `
+        display: grid;
+        grid-template-columns: 1fr 150px 80px;
+        gap: 0;
+        background: #f5f5f5;
+        border-radius: 8px;
+        align-items: center;
+        overflow: hidden;
+        border: 1px solid #e5e7eb;
+    `;
+    
+    const itemIndex = body.children.length;
+    
+    row.innerHTML = `
+        <input type="text" 
+               placeholder="Ej: Corte, Confección, Bordado..."
+               style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; width: 100%; box-sizing: border-box; outline: none;"
+               onchange="actualizarItem(${itemIndex}, this.value, 'item')">
+        <input type="number" 
+               placeholder="0.00"
+               step="0.01"
+               min="0"
+               style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; text-align: center; width: 100%; box-sizing: border-box; outline: none;"
+               onchange="actualizarItem(${itemIndex}, this.value, 'precio'); actualizarTotal()">
+        <button onclick="eliminarFilaItem(this)" 
+                style="background: #ef4444; color: white; border: none; padding: 0.5rem 0.75rem; cursor: pointer; font-weight: 600; transition: all 0.2s; font-size: 1rem; width: 100%; height: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center;"
+                onmouseover="this.style.background='#dc2626'"
+                onmouseout="this.style.background='#ef4444'"
+                title="Eliminar fila">
+            🗑️
+        </button>
+    `;
+    
+    body.appendChild(row);
+}
+
+/**
+ * Actualiza un item de la tabla
+ */
+function actualizarItem(itemIndex, valor, tipo) {
+    if (!window.costosPorPrenda) {
+        window.costosPorPrenda = {};
+    }
+    
+    if (!window.costosPorPrenda[itemIndex]) {
+        window.costosPorPrenda[itemIndex] = { item: '', precio: '' };
+    }
+    
+    if (tipo === 'item') {
+        window.costosPorPrenda[itemIndex].item = valor;
+    } else if (tipo === 'precio') {
+        window.costosPorPrenda[itemIndex].precio = parseFloat(valor) || 0;
+    }
+}
+
+/**
+ * Actualiza el total
+ */
+function actualizarTotal() {
+    let total = 0;
+    if (window.costosPorPrenda) {
+        for (let key in window.costosPorPrenda) {
+            total += window.costosPorPrenda[key].precio || 0;
+        }
+    }
+    document.getElementById('totalCosto').textContent = `$${total.toFixed(2)}`;
+}
+
+/**
+ * Elimina una fila de item
+ */
+function eliminarFilaItem(button) {
+    button.closest('div').remove();
+    actualizarTotal();
 }
 
 /**
@@ -239,263 +270,44 @@ function cargarCostosGuardados(cotizacionId, prendas) {
  * @param {array} prendas - Array de prendas
  */
 function cambiarPrendaTab(prendaId, prendas) {
-    // Ocultar todos los contenidos
-    prendas.forEach(p => {
-        document.getElementById(`prenda-content-${p.id}`).style.display = 'none';
-    });
-    
-    // Mostrar el contenido seleccionado
-    document.getElementById(`prenda-content-${prendaId}`).style.display = 'block';
+    // Actualizar descripción
+    const prenda = prendas.find(p => p.id === prendaId);
+    if (prenda) {
+        document.getElementById('prendasDescripcion').textContent = prenda.descripcion || '';
+    }
     
     // Actualizar estilos de tabs
     const tabs = document.querySelectorAll('#prendasTabs button');
     tabs.forEach((tab, index) => {
-        if (prendas[index].id === prendaId) {
-            tab.style.background = '#1e5ba8';
-            tab.style.color = 'white';
-        } else {
-            tab.style.background = '#f3f4f6';
-            tab.style.color = '#374151';
+        if (prendas[index] && prendas[index].id === prendaId) {
+            tab.style.background = 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)';
+        } else if (tab) {
+            tab.style.background = '#374151';
         }
     });
+    
+    // Limpiar tabla
+    limpiarTablaPrecios();
 }
 
-/**
- * Crea la tabla de precios para una prenda
- * @param {number} prendaId - ID de la prenda
- * @param {string} nombrePrenda - Nombre de la prenda
- * @param {string} descripcion - Descripción de la prenda
- * @param {array} imagenes - Array de URLs de imágenes
- * @returns {string} HTML de la tabla
- */
-function crearTablaPrecios(prendaId, nombrePrenda, descripcion = '', imagenes = [], detalles = {}) {
-    // Inicializar costos para esta prenda si no existen
-    if (!window.costosPorPrenda[prendaId]) {
-        window.costosPorPrenda[prendaId] = {
-            nombre: nombrePrenda,
-            descripcion: descripcion,
-            imagenes: imagenes,
-            detalles: detalles,
-            items: [{ item: '', precio: '' }]
-        };
-    }
-    
-    const costos = window.costosPorPrenda[prendaId];
-    
-    // Crear HTML de detalles de la prenda (Color, Tela, Manga, Especificaciones)
-    let detallesHTML = '';
-    if (Object.keys(detalles).length > 0) {
-        detallesHTML = `
-            <div style="background-color: #f8f9fa; padding: 1rem; border-radius: 4px; margin-bottom: 1rem; border-left: 4px solid #2b7ec9;">
-                <div style="font-weight: 700; color: #1e5ba8; margin-bottom: 0.75rem; font-size: 0.9rem;">📋 Detalles de la Prenda:</div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-        `;
-        
-        Object.entries(detalles).forEach(([label, valor]) => {
-            detallesHTML += `
-                <div>
-                    <div style="font-weight: 600; color: #333; font-size: 0.85rem; margin-bottom: 0.25rem;">${label}:</div>
-                    <div style="color: #666; font-size: 0.9rem; word-wrap: break-word;">${valor}</div>
-                </div>
-            `;
-        });
-        
-        detallesHTML += `
-                </div>
-            </div>
-        `;
-    }
-    
-    // Crear HTML de imágenes
-    let imagenesHTML = '';
-    if (imagenes && imagenes.length > 0) {
-        imagenesHTML = `
-            <div style="margin-bottom: 1.5rem;">
-                <div style="font-size: 0.85rem; font-weight: 600; color: #333; margin-bottom: 0.75rem;">📸 Imágenes:</div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.75rem;">
-        `;
-        
-        imagenes.forEach((imagen, idx) => {
-            imagenesHTML += `
-                <div style="position: relative; cursor: pointer; border-radius: 4px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    <img src="${imagen}" 
-                         alt="Imagen ${idx + 1}" 
-                         style="width: 100%; height: 120px; object-fit: cover; transition: all 0.2s;"
-                         onmouseover="this.style.opacity='0.8'; this.style.transform='scale(1.05)'"
-                         onmouseout="this.style.opacity='1'; this.style.transform='scale(1)'"
-                         ondblclick="abrirImagenFullscreenModal('${imagen}')">
-                </div>
-            `;
-        });
-        
-        imagenesHTML += `
-                </div>
-            </div>
-        `;
-    }
-    
-    // Hacer negrilla los títulos "Bolsillos:" y "Reflectivo:" en la descripción
-    let descripcionFormato = descripcion;
-    if (descripcionFormato) {
-        descripcionFormato = descripcionFormato.replace(/Bolsillos:/g, '<strong>Bolsillos:</strong>');
-        descripcionFormato = descripcionFormato.replace(/Reflectivo:/g, '<strong>Reflectivo:</strong>');
-    }
-    
-    let html = `
-        <div style="margin-bottom: 2rem;">
-            <h3 style="color: #1e5ba8; margin-bottom: 0.5rem; font-size: 1.1rem;">📋 ${nombrePrenda}</h3>
-            ${descripcionFormato ? `<p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem; line-height: 1.5; font-style: italic;">${descripcionFormato}</p>` : ''}
-            ${detallesHTML}
-            ${imagenesHTML}
-            
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem;">
-                <thead>
-                    <tr style="background: linear-gradient(135deg, #1e5ba8 0%, #2b7ec9 100%); color: white;">
-                        <th style="padding: 1rem; text-align: left; border: 1px solid #e5e7eb; font-weight: 600;">Items a Evaluar</th>
-                        <th style="padding: 1rem; text-align: right; border: 1px solid #e5e7eb; font-weight: 600; width: 150px;">Precio ($)</th>
-                        <th style="padding: 1rem; text-align: center; border: 1px solid #e5e7eb; font-weight: 600; width: 50px;">Acción</th>
-                    </tr>
-                </thead>
-                <tbody id="tbody-prenda-${prendaId}">
-    `;
-    
-    // Agregar filas de items
-    costos.items.forEach((item, index) => {
-        html += `
-            <tr style="border-bottom: 1px solid #e5e7eb;">
-                <td style="padding: 1rem; border: 1px solid #e5e7eb;">
-                    <input type="text" 
-                           value="${item.item}" 
-                           placeholder="Ej: Corte, Confección, Bordado..."
-                           style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.95rem;"
-                           onchange="actualizarItem(${prendaId}, ${index}, this.value, 'item')">
-                </td>
-                <td style="padding: 1rem; border: 1px solid #e5e7eb; text-align: right;">
-                    <input type="number" 
-                           value="${item.precio}" 
-                           placeholder="0.00"
-                           step="0.01"
-                           min="0"
-                           style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.95rem; text-align: right;"
-                           onchange="actualizarItem(${prendaId}, ${index}, this.value, 'precio')">
-                </td>
-                <td style="padding: 1rem; border: 1px solid #e5e7eb; text-align: center;">
-                    <button onclick="eliminarFilaItem(${prendaId}, ${index})" 
-                            style="background: #ef4444; color: white; border: none; padding: 0.5rem 0.75rem; border-radius: 4px; cursor: pointer; font-weight: 600; transition: all 0.2s; font-size: 0.85rem;"
-                            onmouseover="this.style.background='#dc2626'"
-                            onmouseout="this.style.background='#ef4444'"
-                            title="Eliminar fila">
-                        🗑️ Eliminar
-                    </button>
-                </td>
-            </tr>
-        `;
-    });
-    
-    // Fila para agregar nuevo item
-    html += `
-        <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
-            <td colspan="3" style="padding: 1rem; border: 1px solid #e5e7eb; text-align: center;">
-                <button onclick="agregarFilaItem(${prendaId})" 
-                        style="background: #10b981; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer; font-weight: 600; transition: all 0.2s;"
-                        onmouseover="this.style.background='#059669'"
-                        onmouseout="this.style.background='#10b981'">
-                    + Agregar Item
-                </button>
-            </td>
-        </tr>
-    `;
-    
-    // Fila de total
-    const total = costos.items.reduce((sum, item) => sum + (parseFloat(item.precio) || 0), 0);
-    html += `
-        <tr style="background: linear-gradient(135deg, #1e5ba8 0%, #2b7ec9 100%); color: white; font-weight: 700;">
-            <td style="padding: 1rem; border: 1px solid #1e5ba8; text-align: right;">
-                TOTAL COSTO:
-            </td>
-            <td style="padding: 1rem; border: 1px solid #1e5ba8; text-align: right; font-size: 1.1rem; width: 150px;">
-                $${total.toFixed(2)}
-            </td>
-            <td style="padding: 1rem; border: 1px solid #1e5ba8; width: 50px;"></td>
-        </tr>
-    `;
-    
-    html += `
-            </tbody>
-            </table>
-        </div>
-    `;
-    
-    return html;
-}
 
 /**
  * Actualiza un item de la tabla
- * @param {number} prendaId - ID de la prenda
- * @param {number} itemIndex - Índice del item
- * @param {string} valor - Nuevo valor
- * @param {string} tipo - Tipo de campo ('item' o 'precio')
  */
-function actualizarItem(prendaId, itemIndex, valor, tipo) {
-    if (!window.costosPorPrenda[prendaId]) {
-        window.costosPorPrenda[prendaId] = { items: [] };
+function actualizarItem(itemIndex, valor, tipo) {
+    if (!window.costosPorPrenda) {
+        window.costosPorPrenda = {};
     }
     
-    if (!window.costosPorPrenda[prendaId].items[itemIndex]) {
-        window.costosPorPrenda[prendaId].items[itemIndex] = { item: '', precio: '' };
+    if (!window.costosPorPrenda[itemIndex]) {
+        window.costosPorPrenda[itemIndex] = { item: '', precio: '' };
     }
     
     if (tipo === 'item') {
-        window.costosPorPrenda[prendaId].items[itemIndex].item = valor;
+        window.costosPorPrenda[itemIndex].item = valor;
     } else if (tipo === 'precio') {
-        window.costosPorPrenda[prendaId].items[itemIndex].precio = valor;
+        window.costosPorPrenda[itemIndex].precio = parseFloat(valor) || 0;
     }
-    
-    // Actualizar el total en tiempo real
-    const total = window.costosPorPrenda[prendaId].items.reduce((sum, item) => sum + (parseFloat(item.precio) || 0), 0);
-    const totalCell = document.querySelector(`#tbody-prenda-${prendaId}`).parentElement.querySelector('tr:last-child td:last-child');
-    if (totalCell) {
-        totalCell.textContent = `$${total.toFixed(2)}`;
-    }
-}
-
-/**
- * Agrega una nueva fila de item a la tabla
- * @param {number} prendaId - ID de la prenda
- */
-function agregarFilaItem(prendaId) {
-    if (!window.costosPorPrenda[prendaId]) {
-        window.costosPorPrenda[prendaId] = { items: [], descripcion: '', imagenes: [] };
-    }
-    
-    window.costosPorPrenda[prendaId].items.push({ item: '', precio: '' });
-    
-    // Recrear la tabla
-    const contentDiv = document.getElementById(`prenda-content-${prendaId}`);
-    contentDiv.innerHTML = crearTablaPrecios(prendaId, window.costosPorPrenda[prendaId].nombre, window.costosPorPrenda[prendaId].descripcion, window.costosPorPrenda[prendaId].imagenes);
-}
-
-/**
- * Elimina una fila de item de la tabla
- * @param {number} prendaId - ID de la prenda
- * @param {number} itemIndex - Índice del item a eliminar
- */
-function eliminarFilaItem(prendaId, itemIndex) {
-    if (!window.costosPorPrenda[prendaId]) {
-        return;
-    }
-    
-    // Eliminar el item del array
-    window.costosPorPrenda[prendaId].items.splice(itemIndex, 1);
-    
-    // Si no quedan items, agregar uno vacío
-    if (window.costosPorPrenda[prendaId].items.length === 0) {
-        window.costosPorPrenda[prendaId].items.push({ item: '', precio: '' });
-    }
-    
-    // Recrear la tabla
-    const contentDiv = document.getElementById(`prenda-content-${prendaId}`);
-    contentDiv.innerHTML = crearTablaPrecios(prendaId, window.costosPorPrenda[prendaId].nombre, window.costosPorPrenda[prendaId].descripcion, window.costosPorPrenda[prendaId].imagenes);
 }
 
 /**
