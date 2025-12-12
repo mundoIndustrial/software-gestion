@@ -43,6 +43,7 @@ final class CotizacionController extends Controller
         private readonly SubirImagenCotizacionHandler $subirImagenHandler,
         private readonly ObtenerOCrearClienteService $obtenerOCrearClienteService,
         private readonly ProcesarImagenesCotizacionService $procesarImagenesService,
+        private readonly \App\Application\Services\EliminarImagenesCotizacionService $eliminarImagenesService,
     ) {
     }
 
@@ -90,6 +91,45 @@ final class CotizacionController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
         } catch (\Exception $e) {
             Log::error('CotizacionController@show: Error', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Obtener cotización para editar (JSON API)
+     * Devuelve todos los datos incluyendo imágenes
+     */
+    public function getForEdit(int $id): JsonResponse
+    {
+        try {
+            // Obtener cotización con todas sus relaciones
+            $cotizacion = \App\Models\Cotizacion::with([
+                'cliente',
+                'prendas.fotos',
+                'prendas.telaFotos',
+                'prendas.tallas',
+                'prendas.variantes.manga',
+                'prendas.variantes.broche',
+                'logoCotizacion.fotos'
+            ])->findOrFail($id);
+
+            // Verificar que el usuario es propietario
+            if ($cotizacion->asesor_id !== Auth::id()) {
+                return response()->json(['success' => false, 'message' => 'No tienes permiso'], 403);
+            }
+
+            Log::info('CotizacionController@getForEdit: Cotización cargada para editar', [
+                'cotizacion_id' => $cotizacion->id,
+                'prendas_count' => $cotizacion->prendas ? count($cotizacion->prendas) : 0,
+                'es_borrador' => $cotizacion->es_borrador,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $cotizacion->toArray(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('CotizacionController@getForEdit: Error', ['error' => $e->getMessage()]);
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
@@ -160,6 +200,13 @@ final class CotizacionController extends Controller
             
             $prendasRecibidas = $request->input('prendas', []);
             $especificacionesRecibidas = $request->input('especificaciones', []);
+            
+            // Las especificaciones ya vienen con estructura {valor, observacion} desde el frontend
+            // No necesitamos procesar observaciones_check y observaciones_valor
+            if (!is_array($especificacionesRecibidas)) {
+                $especificacionesRecibidas = [];
+            }
+            
             Log::info('CotizacionController@store: Datos recibidos', [
                 'tipo' => $request->input('tipo'),
                 'cliente' => $request->input('cliente'),
@@ -238,6 +285,99 @@ final class CotizacionController extends Controller
             ], 201);
         } catch (\Exception $e) {
             Log::error('CotizacionController@store: Error', ['error' => $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Actualizar cotización existente (edición)
+     */
+    public function update(Request $request, int $id): JsonResponse
+    {
+        try {
+            $cotizacion = \App\Models\Cotizacion::findOrFail($id);
+
+            // Verificar que el usuario es propietario
+            if ($cotizacion->asesor_id !== Auth::id()) {
+                return response()->json(['success' => false, 'message' => 'No tienes permiso'], 403);
+            }
+
+            // Actualizar datos básicos
+            $cotizacion->update([
+                'cliente' => $request->input('cliente'),
+                'tipo_venta' => $request->input('tipo_venta'),
+                'especificaciones' => json_encode($request->input('especificaciones', [])),
+            ]);
+
+            // Procesar prendas y eliminar imágenes no incluidas
+            $prendasRecibidas = $request->input('prendas', []);
+            foreach ($prendasRecibidas as $index => $prendaData) {
+                $prendaModel = \App\Models\PrendaCot::where('cotizacion_id', $id)
+                    ->skip($index)
+                    ->first();
+
+                if ($prendaModel) {
+                    // Eliminar fotos de prenda que no están en la lista actual
+                    $fotosActuales = $prendaData['fotos'] ?? [];
+                    $this->eliminarImagenesService->eliminarImagenesPrendaNoIncluidas(
+                        $prendaModel->id,
+                        $fotosActuales
+                    );
+
+                    // Eliminar fotos de tela que no están en la lista actual
+                    $telasActuales = $prendaData['telas'] ?? [];
+                    $this->eliminarImagenesService->eliminarImagenesTelaNoIncluidas(
+                        $prendaModel->id,
+                        $telasActuales
+                    );
+                }
+            }
+
+            // Procesar nuevas imágenes
+            $this->procesarImagenesCotizacion($request, $id);
+
+            // Procesar logo
+            $logoCotizacion = $cotizacion->logoCotizacion;
+            if ($logoCotizacion) {
+                // Eliminar fotos de logo que no están en la lista actual
+                $fotosLogoActuales = $request->input('logo.imagenes', []);
+                $this->eliminarImagenesService->eliminarImagenesLogoNoIncluidas(
+                    $logoCotizacion->id,
+                    $fotosLogoActuales
+                );
+
+                // Actualizar datos del logo
+                $logoCotizacion->update([
+                    'descripcion' => $request->input('descripcion_logo', ''),
+                    'tecnicas' => json_encode($request->input('tecnicas', [])),
+                    'observaciones_tecnicas' => $request->input('observaciones_tecnicas', ''),
+                    'ubicaciones' => json_encode($request->input('ubicaciones', [])),
+                    'observaciones_generales' => json_encode($request->input('observaciones_generales', [])),
+                ]);
+            }
+
+            // Recargar la cotización con todas sus relaciones
+            $cotizacionCompleta = \App\Models\Cotizacion::with([
+                'cliente',
+                'prendas.fotos',
+                'prendas.telaFotos',
+                'prendas.tallas',
+                'prendas.variantes',
+                'logoCotizacion.fotos'
+            ])->findOrFail($id);
+
+            Log::info('CotizacionController@update: Cotización actualizada', [
+                'cotizacion_id' => $id,
+                'asesor_id' => Auth::id(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cotización actualizada exitosamente',
+                'data' => $cotizacionCompleta->toArray(),
+            ]);
+        } catch (\Exception $e) {
+            Log::error('CotizacionController@update: Error', ['error' => $e->getMessage()]);
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }

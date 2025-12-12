@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cotizacion;
-use Barryvdh\DomPDF\Facade\Pdf;
+use Mpdf\Mpdf;
 use Illuminate\Http\Request;
 
 class PDFCotizacionController extends Controller
@@ -14,26 +14,38 @@ class PDFCotizacionController extends Controller
     public function generarPDF($cotizacionId)
     {
         try {
-            $cotizacion = Cotizacion::with(['prendasCotizaciones', 'usuario'])->findOrFail($cotizacionId);
+            $cotizacion = Cotizacion::with([
+                'prendasCotizaciones',
+                'usuario',
+                'cliente',
+                'prendas.fotos',
+                'prendas.telaFotos',
+                'prendas.tallas',
+                'prendas.variantes'
+            ])->findOrFail($cotizacionId);
             
             // Generar HTML del PDF
             $html = $this->generarHTML($cotizacion);
             
-            // Crear PDF con DomPDF
-            // Altura estándar para múltiples páginas
-            $altura = 1190;
+            // Crear PDF con mPDF
+            $mpdf = new Mpdf([
+                'mode' => 'utf-8',
+                'format' => 'A4',
+                'orientation' => 'P',
+                'margin_left' => 0,
+                'margin_right' => 0,
+                'margin_top' => 0,
+                'margin_bottom' => 10,
+                'margin_header' => 0,
+                'margin_footer' => 0,
+            ]);
             
-            $pdf = Pdf::loadHTML($html)
-                ->setPaper([0, 0, 595, $altura], 'portrait')  // Ancho A4 (595pt) x Altura variable
-                ->setOption('margin-top', 8)
-                ->setOption('margin-bottom', 8)
-                ->setOption('margin-left', 8)
-                ->setOption('margin-right', 8)
-                ->setOption('isHtml5ParserEnabled', true)
-                ->setOption('isRemoteEnabled', true)
-                ->setOption('enable_php', true)
-                ->setOption('dpi', 96)
-                ->setOption('font_subsetting', false);
+            // Configurar propiedades del documento
+            $mpdf->SetTitle('Cotización #' . $cotizacion->id);
+            $mpdf->SetAuthor('Mundo Industrial');
+            
+            // Escribir HTML
+            $mpdf->WriteHTML($html);
             
             // Nombre del archivo
             $filename = 'Cotizacion_' . $cotizacion->id . '_' . date('Y-m-d') . '.pdf';
@@ -42,14 +54,31 @@ class PDFCotizacionController extends Controller
             $descargar = request()->query('descargar', false);
             
             if ($descargar) {
-                // Descargar el PDF
-                return $pdf->download($filename);
+                return response()->streamDownload(
+                    function () use ($mpdf) {
+                        echo $mpdf->Output('', 'S');
+                    },
+                    $filename,
+                    ['Content-Type' => 'application/pdf']
+                );
             } else {
-                // Mostrar el PDF en el navegador
-                return $pdf->stream($filename);
+                return response()->make(
+                    $mpdf->Output('', 'S'),
+                    200,
+                    [
+                        'Content-Type' => 'application/pdf',
+                        'Content-Disposition' => 'inline; filename="' . $filename . '"'
+                    ]
+                );
             }
             
         } catch (\Exception $e) {
+            \Log::error('Error en generarPDF', [
+                'cotizacion_id' => $cotizacionId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Error al generar PDF: ' . $e->getMessage()
@@ -68,31 +97,34 @@ class PDFCotizacionController extends Controller
     <meta charset="UTF-8">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { width: 100%; margin: 0; padding: 0; height: auto; min-height: 100%; }
-        body { font-family: Arial, sans-serif; font-size: 10px; line-height: 1.4; overflow-x: hidden; margin: 0; padding: 0; height: auto; }
-        .container { width: 100%; max-width: 100%; padding: 8mm 12mm; box-sizing: border-box; margin: 0; }
-        .header { text-align: center; margin-bottom: 8px; border-bottom: 2px solid #000; padding-bottom: 6px; }
-        .header-logo { width: 50px; height: auto; margin-bottom: 3px; }
-        .header-title { font-size: 14px; font-weight: bold; margin: 2px 0; }
-        .header-subtitle { font-size: 10px; color: #666; margin: 1px 0; }
-        .info-table { width: 100%; margin-bottom: 8px; border-collapse: collapse; table-layout: fixed; }
-        .info-table td { padding: 5px; border: 1px solid #000; word-wrap: break-word; overflow-wrap: break-word; }
-        .info-table .label { background: #f0f0f0; font-weight: bold; width: 15%; }
-        table { width: 100%; }
-        .prenda { margin-bottom: 10px; page-break-inside: avoid; margin-left: -25; margin-right: 0; padding-left: -25; padding-right: 0; }
+        html, body { width: 100%; margin: 0; padding: 0; height: auto; }
+        body { font-family: Arial, sans-serif; font-size: 10px; line-height: 1.4; margin: 0; padding: 0; }
+        .container { width: 100%; margin: 0; padding: 0; }
+        .header-wrapper { width: 100%; margin: 0; padding: 0; margin-bottom: 0; }
+        .header { text-align: center; border-bottom: 2px solid #000; padding: 15px 12mm; background: #000; color: #fff; display: flex; align-items: flex-start; gap: 15px; }
+        .header-logo { width: 120px; height: auto; flex-shrink: 0; }
+        .header-content { flex: 1; text-align: center; }
+        .header-title { font-size: 14px; font-weight: bold; margin: 0; }
+        .header-subtitle { font-size: 10px; margin: 2px 0; }
+        .info-wrapper { width: 100%; margin: 0; padding: 0; margin-bottom: 8px; }
+        .info-table { width: 100%; border-collapse: collapse; table-layout: fixed; padding: 0 12mm; }
+        .info-table td { padding: 5px; border: 1px solid #000; word-wrap: break-word; }
+        .info-table .label { background: #f0f0f0; font-weight: bold; }
+        .content-wrapper { padding: 0 12mm; }
+        .prenda { margin-bottom: 10px; page-break-inside: avoid; }
         .prenda-nombre { font-size: 11px; font-weight: bold; margin-bottom: 3px; }
-        .prenda-descripcion { font-size: 8px; margin-bottom: 3px; color: #333; line-height: 1.3; word-wrap: break-word; overflow-wrap: break-word; max-width: 90%; white-space: normal; }
+        .prenda-descripcion { font-size: 8px; margin-bottom: 3px; color: #333; line-height: 1.3; word-wrap: break-word; max-width: 90%; }
         .prenda-tallas { font-size: 11px; font-weight: bold; margin-bottom: 3px; color: #e74c3c; }
-        .prenda-imagenes { display: flex; gap: 20px; margin-bottom: 8px; flex-wrap: wrap; max-width: 100%; }
-        .prenda-imagen { width: 160px; height: 160px; border: 1px solid #ddd; flex-shrink: 0; object-fit: cover; }
-        .spec-table { width: 95%; border-collapse: collapse; margin-top: 4px; table-layout: fixed; margin-left: -25; margin-right: 0; padding-left: -25; padding-right: 0; page-break-inside: avoid; }
-        .spec-table th { background: #FFC107; padding: 4px 3px; border: 1px solid #000; font-weight: bold; text-align: left; font-size: 8px; word-wrap: break-word; overflow-wrap: break-word; }
-        .spec-table td { padding: 3px; border: 1px solid #000; font-size: 7px; word-wrap: break-word; overflow-wrap: break-word; }
+        .prenda-imagenes { display: flex; gap: 15px; margin-bottom: 8px; flex-wrap: wrap; justify-content: center; }
+        .prenda-imagen { width: 140px; height: 140px; border: 1px solid #ddd; object-fit: cover; }
+        .spec-wrapper { width: 100%; margin: 0; padding: 0 12mm; margin-top: 4px; }
+        .spec-table { width: 100%; border-collapse: collapse; table-layout: fixed; page-break-inside: avoid; }
+        .spec-table th { background: #FFC107; padding: 4px 3px; border: 1px solid #000; font-weight: bold; text-align: left; font-size: 8px; }
+        .spec-table td { padding: 3px; border: 1px solid #000; font-size: 7px; word-wrap: break-word; }
         .spec-table .label { background: #f9f9f9; font-weight: bold; width: 22%; }
     </style>
 </head>
-<body>
-<div class="container">';
+<body>';
         
         // Encabezado
         $html .= $this->generarEncabezadoHTML($cotizacion);
@@ -101,7 +133,9 @@ class PDFCotizacionController extends Controller
         $html .= $this->generarInfoClienteHTML($cotizacion);
         
         // Prendas
+        $html .= '<div class="content-wrapper">';
         $html .= $this->generarPrendasHTML($cotizacion);
+        $html .= '</div>';
         
         // Tabla de especificaciones
         $html .= $this->generarTablaEspecificacionesHTML($cotizacion);
@@ -118,19 +152,17 @@ class PDFCotizacionController extends Controller
      */
     private function generarEncabezadoHTML($cotizacion)
     {
+        $logoPath = public_path('images/logo3.png');
         return '
-        <div style="width: 100%; background: #000; color: #fff; padding: 15px 12px; margin: -10mm -12mm 0 -12mm; display: flex; align-items: flex-start; gap: 15px;">
-            <!-- Logo a la izquierda -->
-            <div style="flex-shrink: 0;">
-                <img src="' . public_path('images/logo3.png') . '" style="width: 120px; height: auto;" alt="Logo">
-            </div>
-            
-            <!-- Texto a la derecha -->
-            <div style="flex: 1; text-align: center; padding-top: 0; margin-top: -45px;">
-                <div style="font-size: 14px; font-weight: bold; margin: 0;">Uniformes Mundo Industrial</div>
-                <div style="font-size: 10px; margin: 2px 0;">Leonis Ruth Mahecha Acosta</div>
-                <div style="font-size: 10px; margin: 2px 0;">NIT: 1.093.738.433-3 Régimen Común</div>
-                <div style="font-size: 12px; font-weight: bold; margin-top: 4px;">COTIZACIÓN</div>
+        <div class="header-wrapper">
+            <div class="header">
+                <img src="' . $logoPath . '" class="header-logo" alt="Logo">
+                <div class="header-content">
+                    <div class="header-title">Uniformes Mundo Industrial</div>
+                    <div class="header-subtitle">Leonis Ruth Mahecha Acosta</div>
+                    <div class="header-subtitle">NIT: 1.093.738.433-3 Régimen Común</div>
+                    <div style="font-size: 12px; font-weight: bold; margin-top: 4px;">COTIZACIÓN</div>
+                </div>
             </div>
         </div>';
     }
@@ -140,15 +172,27 @@ class PDFCotizacionController extends Controller
      */
     private function generarInfoClienteHTML($cotizacion)
     {
+        $nombreCliente = 'N/A';
+        if ($cotizacion->cliente) {
+            $nombreCliente = $cotizacion->cliente->nombre ?? 'N/A';
+        }
+        
+        $fecha = 'N/A';
+        if ($cotizacion->created_at) {
+            $fecha = $cotizacion->created_at->format('d/m/Y');
+        }
+        
         return '
-        <table class="info-table" style="margin-top: 0; margin-bottom: 12px; margin-left: -12mm; margin-right: -12mm; width: calc(100% + 24mm); padding: 0;">
-            <tr>
-                <td class="label" style="background: #333; color: #fff; font-weight: bold; width: 20%; padding: 6px;">CLIENTE</td>
-                <td style="border: 1px solid #000; padding: 6px; color: #e74c3c; font-weight: bold; width: 30%;">' . ($cotizacion->cliente ?? 'N/A') . '</td>
-                <td class="label" style="background: #333; color: #fff; font-weight: bold; width: 20%; padding: 6px;">Fecha</td>
-                <td style="border: 1px solid #000; padding: 6px; color: #e74c3c; font-weight: bold; width: 30%;">' . ($cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y') : 'N/A') . '</td>
-            </tr>
-        </table>';
+        <div class="info-wrapper">
+            <table class="info-table">
+                <tr>
+                    <td class="label" style="width: 20%;">CLIENTE</td>
+                    <td style="color: #e74c3c; font-weight: bold; width: 30%;">' . htmlspecialchars($nombreCliente) . '</td>
+                    <td class="label" style="width: 20%;">Fecha</td>
+                    <td style="color: #e74c3c; font-weight: bold; width: 30%;">' . htmlspecialchars($fecha) . '</td>
+                </tr>
+            </table>
+        </div>';
     }
     
     /**
@@ -158,78 +202,22 @@ class PDFCotizacionController extends Controller
     {
         $html = '';
         
-        // Obtener productos de la cotización para información de variantes
-        $cotizacionProductos = [];
-        if ($cotizacion->productos) {
-            $cotizacionProductos = is_string($cotizacion->productos) 
-                ? json_decode($cotizacion->productos, true) 
-                : $cotizacion->productos;
+        // Usar la estructura DDD: prendas_cot en lugar de prendas_cotizaciones
+        $prendas = $cotizacion->prendas ?? [];
+        
+        if (empty($prendas)) {
+            return '';
         }
         
-        foreach ($cotizacion->prendasCotizaciones as $productoIndex => $prenda) {
+        foreach ($prendas as $prenda) {
             $html .= '<div class="prenda">';
             
             // Nombre
             $html .= '<div class="prenda-nombre">' . strtoupper($prenda->nombre_producto ?? 'N/A') . '</div>';
             
-            // Descripción + Especificaciones (unidas como en modal de orden)
-            $descripcionCompleta = $prenda->descripcion ?? '';
-            $especificaciones = '';
-            
-            if (!empty($cotizacionProductos) && isset($cotizacionProductos[$productoIndex])) {
-                $producto = $cotizacionProductos[$productoIndex];
-                $variantes = $producto['variantes'] ?? [];
-                
-                if (!empty($variantes['descripcion_adicional'])) {
-                    $especificaciones = $variantes['descripcion_adicional'];
-                }
-            }
-            
-            // Construir línea final: Descripción | Especificaciones
-            $lineaCompleta = $descripcionCompleta;
-            if ($especificaciones) {
-                // Hacer negrilla los títulos "Bolsillos:" y "Reflectivo:"
-                $especificacionesFormato = $especificaciones;
-                $especificacionesFormato = str_replace('Bolsillos:', '<strong>Bolsillos:</strong>', $especificacionesFormato);
-                $especificacionesFormato = str_replace('Reflectivo:', '<strong>Reflectivo:</strong>', $especificacionesFormato);
-                $lineaCompleta .= ' | ' . $especificacionesFormato;
-            }
-            
-            if ($lineaCompleta) {
-                $html .= '<div class="prenda-descripcion">' . $lineaCompleta . '</div>';
-            }
-            
-            // DETALLES COMPLETOS DE LA PRENDA (Color, Tela, Manga)
-            $detallesPrenda = [];
-            if (!empty($cotizacionProductos) && isset($cotizacionProductos[$productoIndex])) {
-                $producto = $cotizacionProductos[$productoIndex];
-                $variantes = $producto['variantes'] ?? [];
-                
-                if (!empty($variantes['color'])) {
-                    $detallesPrenda['Color'] = $variantes['color'];
-                }
-                
-                if (!empty($variantes['tela'])) {
-                    $tela = $variantes['tela'];
-                    if (!empty($variantes['tela_referencia'])) {
-                        $tela .= " (Ref: {$variantes['tela_referencia']})";
-                    }
-                    $detallesPrenda['Tela'] = $tela;
-                }
-                
-                if (!empty($variantes['manga_nombre'])) {
-                    $detallesPrenda['Manga'] = $variantes['manga_nombre'];
-                }
-            }
-            
-            // Mostrar detalles si existen
-            if (count($detallesPrenda) > 0) {
-                $html .= '<div style="background-color: #f8f9fa; padding: 8px; margin: 8px 0; border-left: 3px solid #2b7ec9; font-size: 8px; line-height: 1.3;">';
-                $html .= '<strong style="color: #1e5ba8;">Detalles:</strong><br>';
-                foreach ($detallesPrenda as $label => $valor) {
-                    $html .= '<strong>' . $label . ':</strong> ' . htmlspecialchars($valor) . '<br>';
-                }
-                $html .= '</div>';
+            // Descripción
+            if ($prenda->descripcion) {
+                $html .= '<div class="prenda-descripcion">' . htmlspecialchars($prenda->descripcion) . '</div>';
             }
             
             // Tallas
@@ -248,20 +236,17 @@ class PDFCotizacionController extends Controller
             // Obtener notas de tallas si existen
             $notasTallas = $prenda->notas_tallas ?? null;
             
-            // Imágenes
+            // Imágenes - Mantener como colecciones de Eloquent
             $imagenes = $prenda->fotos ?? [];
-            $imagenesTela = $prenda->telas ?? [];
+            $imagenesTela = $prenda->telaFotos ?? [];
             
             $todasLasImagenes = [];
-            if (is_array($imagenes) && count($imagenes) > 0) {
-                foreach ($imagenes as $img) {
-                    $todasLasImagenes[] = $img;
-                }
+            // Iterar directamente sobre las colecciones de Eloquent
+            foreach ($imagenes as $img) {
+                $todasLasImagenes[] = $img;
             }
-            if (is_array($imagenesTela) && count($imagenesTela) > 0) {
-                foreach ($imagenesTela as $img) {
-                    $todasLasImagenes[] = $img;
-                }
+            foreach ($imagenesTela as $img) {
+                $todasLasImagenes[] = $img;
             }
             
             // Tallas (arriba) - Mostrar notas si existen, sino mostrar tallas base
@@ -275,15 +260,27 @@ class PDFCotizacionController extends Controller
             if (count($todasLasImagenes) > 0) {
                 $html .= '<div class="prenda-imagenes" style="margin-top: 40px;">';
                 foreach ($todasLasImagenes as $imagen) {
+                    // Extraer ruta según el tipo de objeto/dato
                     $rutaImagen = $imagen;
-                    if (strpos($imagen, '/') === 0 && strpos($imagen, 'http') !== 0) {
-                        $rutaImagen = public_path($imagen);
+                    
+                    // Si es un objeto, obtener la propiedad ruta_webp o ruta_original
+                    if (is_object($imagen)) {
+                        $rutaImagen = $imagen->ruta_webp ?? $imagen->ruta_original ?? null;
+                    }
+                    
+                    // Si no hay ruta, saltar
+                    if (!$rutaImagen) {
+                        continue;
+                    }
+                    
+                    // Convertir ruta relativa a absoluta
+                    if (strpos($rutaImagen, '/') === 0 && strpos($rutaImagen, 'http') !== 0) {
+                        $rutaImagen = public_path($rutaImagen);
                     }
                     
                     if (file_exists($rutaImagen)) {
-                        // Convertir WebP a JPG en memoria para mejor rendimiento en PDF
-                        $rutaFinal = $this->convertirWebPaJPGParaPDF($rutaImagen);
-                        $html .= '<img src="' . $rutaFinal . '" class="prenda-imagen" alt="Imagen">';
+                        // mPDF soporta WebP nativamente
+                        $html .= '<img src="' . $rutaImagen . '" class="prenda-imagen" alt="Imagen">';
                     }
                 }
                 $html .= '</div>';
@@ -296,70 +293,15 @@ class PDFCotizacionController extends Controller
     }
     
     /**
-     * Convierte WebP a JPG en memoria (base64) para optimizar el PDF
-     * Si no es WebP, retorna la ruta original
+     * mPDF maneja WebP nativamente, así que solo retornamos la ruta
      * 
      * @param string $rutaImagen Ruta de la imagen
-     * @return string Ruta de la imagen o data URI base64 si era WebP
+     * @return string Ruta de la imagen
      */
     private function convertirWebPaJPGParaPDF($rutaImagen)
     {
-        // Si no es WebP, retornar la ruta original
-        if (!str_ends_with(strtolower($rutaImagen), '.webp')) {
-            return $rutaImagen;
-        }
-        
-        // Verificar que GD está disponible
-        if (!extension_loaded('gd')) {
-            \Log::warning('Extensión GD no disponible, usando WebP original', ['ruta' => $rutaImagen]);
-            return $rutaImagen;
-        }
-        
-        try {
-            // Verificar que el archivo existe
-            if (!file_exists($rutaImagen)) {
-                \Log::warning('Archivo WebP no existe', ['ruta' => $rutaImagen]);
-                return $rutaImagen;
-            }
-            
-            // Cargar imagen WebP
-            $imagenWebP = @imagecreatefromwebp($rutaImagen);
-            
-            if ($imagenWebP === false) {
-                \Log::warning('No se pudo cargar imagen WebP', ['ruta' => $rutaImagen]);
-                return $rutaImagen;
-            }
-            
-            // Convertir a JPG en memoria (buffer)
-            ob_start();
-            @imagejpeg($imagenWebP, null, 85);
-            $jpgData = ob_get_clean();
-            @imagedestroy($imagenWebP);
-            
-            if (!$jpgData) {
-                \Log::warning('Error al convertir WebP a JPG en memoria', ['ruta' => $rutaImagen]);
-                return $rutaImagen;
-            }
-            
-            // Crear data URI base64
-            $base64 = base64_encode($jpgData);
-            $dataUri = 'data:image/jpeg;base64,' . $base64;
-            
-            \Log::info('WebP convertido a JPG en memoria para PDF', [
-                'original' => $rutaImagen,
-                'tamaño_original_kb' => round(filesize($rutaImagen) / 1024, 2),
-                'tamaño_jpg_kb' => round(strlen($jpgData) / 1024, 2)
-            ]);
-            
-            return $dataUri;
-            
-        } catch (\Exception $e) {
-            \Log::error('Excepción al convertir WebP a JPG en memoria', [
-                'ruta' => $rutaImagen,
-                'error' => $e->getMessage()
-            ]);
-            return $rutaImagen;
-        }
+        // mPDF soporta WebP nativamente, retornar la ruta tal cual
+        return $rutaImagen;
     }
     
     /**
@@ -386,14 +328,15 @@ class PDFCotizacionController extends Controller
         }
         
         $html = '
-        <table class="spec-table">
-            <thead>
-                <tr>
-                    <th>Especificación</th>
-                    <th>Opciones Seleccionadas</th>
-                </tr>
-            </thead>
-            <tbody>';
+        <div class="spec-wrapper">
+            <table class="spec-table">
+                <thead>
+                    <tr>
+                        <th>Especificación</th>
+                        <th>Opciones Seleccionadas</th>
+                    </tr>
+                </thead>
+                <tbody>';
         
         foreach ($especificacionesMap as $clave => $nombreCategoria) {
             $valores = $especificacionesData[$clave] ?? [];
@@ -403,19 +346,29 @@ class PDFCotizacionController extends Controller
                 $valores = (array) $valores;
             }
             
-            // Convertir valores a string
-            $valoresText = count($valores) > 0 ? implode(', ', $valores) : '-';
+            // Convertir valores a string de forma segura
+            $valoresLimpios = [];
+            foreach ($valores as $v) {
+                if (is_array($v)) {
+                    // Si es un array, convertirlo a string
+                    $valoresLimpios[] = implode(', ', array_map('strval', $v));
+                } elseif (!empty($v)) {
+                    $valoresLimpios[] = (string)$v;
+                }
+            }
+            $valoresText = count($valoresLimpios) > 0 ? implode(', ', $valoresLimpios) : '-';
             
             $html .= '
-                <tr>
-                    <td class="label">' . $nombreCategoria . '</td>
-                    <td>' . $valoresText . '</td>
-                </tr>';
+                    <tr>
+                        <td class="label">' . $nombreCategoria . '</td>
+                        <td>' . $valoresText . '</td>
+                    </tr>';
         }
         
         $html .= '
-            </tbody>
-        </table>';
+                </tbody>
+            </table>
+        </div>';
         
         return $html;
     }

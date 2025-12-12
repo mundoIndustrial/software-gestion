@@ -16,6 +16,7 @@ use App\Infrastructure\Http\Controllers\CotizacionPrendaController;
 use App\Infrastructure\Http\Controllers\CotizacionBordadoController;
 use App\Http\Controllers\DebugRegistrosController;
 use App\Http\Controllers\Auth\GoogleAuthController;
+use App\Http\Controllers\StorageController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -316,7 +317,9 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     
     // API endpoints para cotizaciones
     Route::post('/cotizaciones', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'store'])->name('cotizaciones.store');
+    Route::put('/cotizaciones/{id}', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'update'])->name('cotizaciones.update');
     Route::get('/cotizaciones/{id}/ver', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'showView'])->name('cotizaciones.show');
+    Route::get('/cotizaciones/{id}/editar', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'getForEdit'])->name('cotizaciones.get-for-edit');
     Route::get('/cotizaciones/{id}', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'show'])->name('cotizaciones.api');
     Route::post('/cotizaciones/{id}/imagenes', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'subirImagen'])->name('cotizaciones.subir-imagen');
     
@@ -514,5 +517,13 @@ Route::middleware(['auth', 'verified'])->name('pedidos.estado.')->group(function
     // Ver seguimiento de pedido
     Route::get('/pedidos/{pedido}/seguimiento', [App\Http\Controllers\PedidoEstadoController::class, 'seguimiento'])->name('seguimiento');
 });
+
+// ========================================
+// RUTA PARA SERVIR IMÁGENES DE STORAGE
+// ========================================
+// Sirve archivos desde storage/app/public cuando el enlace simbólico no funciona
+Route::get('/storage-serve/{path}', [StorageController::class, 'serve'])
+    ->where('path', '.*')
+    ->name('storage.serve');
 
 require __DIR__.'/auth.php';

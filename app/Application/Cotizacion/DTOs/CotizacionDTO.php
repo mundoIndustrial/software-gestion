@@ -56,12 +56,36 @@ final readonly class CotizacionDTO
                     ? $datos['fecha_envio']
                     : new DateTimeImmutable($datos['fecha_envio']))
                 : null,
-            cliente: $datos['cliente'] ?? $datos['nombre_cliente'] ?? null,
+            cliente: self::extractClienteName($datos['cliente'] ?? $datos['nombre_cliente'] ?? null),
             prendas: $datos['prendas'] ?? [],
             logo: $datos['logo'] ?? null,
             tipoCotizacionId: isset($datos['tipo_cotizacion_id']) ? (int) $datos['tipo_cotizacion_id'] : null,
             tipoVenta: $datos['tipo_venta'] ?? null,
         );
+    }
+
+    /**
+     * Extraer solo el nombre del cliente si viene como objeto/array
+     */
+    private static function extractClienteName($cliente): ?string
+    {
+        if ($cliente === null) {
+            return null;
+        }
+
+        if (is_string($cliente)) {
+            return $cliente;
+        }
+
+        if (is_array($cliente)) {
+            return $cliente['nombre'] ?? null;
+        }
+
+        if (is_object($cliente)) {
+            return $cliente->nombre ?? null;
+        }
+
+        return null;
     }
 
     /**

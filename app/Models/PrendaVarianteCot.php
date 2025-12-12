@@ -76,7 +76,7 @@ class PrendaVarianteCot extends Model
      */
     public function genero(): BelongsTo
     {
-        return $this->belongsTo(GeneroPrend::class, 'genero_id');
+        return $this->belongsTo(GeneroPrenda::class, 'genero_id');
     }
 
     /**

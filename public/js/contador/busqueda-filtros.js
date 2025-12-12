@@ -43,33 +43,6 @@ function guardarDatosOriginales() {
     if (tablaCotizaciones) {
         const filas = tablaCotizaciones.querySelectorAll('tbody tr:not([data-empty])');
         datosOriginales.cotizaciones = Array.from(filas).map(fila => {
-            // Obtener el estado de la celda 4
-            let estado = '';
-            const celdaEstado = fila.cells[4];
-            if (celdaEstado) {
-                // Buscar si hay un select en la celda
-                const select = celdaEstado.querySelector('select');
-                if (select) {
-                    // Obtener el valor del select
-                    const valorSelect = select.value;
-                    // Mapear valores a nombres legibles
-                    const mapeoEstados = {
-                        'ENVIADA_CONTADOR': 'Enviada',
-                        'APROBADA_COTIZACIONES': 'Entregar',
-                        'FINALIZADA': 'Anular'
-                    };
-                    estado = mapeoEstados[valorSelect] || valorSelect;
-                } else {
-                    // Fallback: obtener del texto
-                    const textoCompleto = celdaEstado.textContent.trim();
-                    const palabras = textoCompleto
-                        .split(/[\s✓✕🟠×]+/)
-                        .map(p => p.trim())
-                        .filter(p => p && p.length > 0 && /^[a-záéíóúñA-ZÁÉÍÓÚÑ]/.test(p));
-                    estado = palabras[0] || '';
-                }
-            }
-            
             // Extraer solo la fecha sin la hora (formato: dd/mm/yyyy)
             let fechaSinHora = '';
             const fechaCompleta = fila.cells[1]?.textContent.trim() || '';
@@ -83,7 +56,7 @@ function guardarDatosOriginales() {
                 fecha: fechaSinHora,
                 cliente: fila.cells[2]?.textContent.trim() || '',
                 asesora: fila.cells[3]?.textContent.trim() || '',
-                estado: estado,
+                estado: '',
                 elemento: fila
             };
         });

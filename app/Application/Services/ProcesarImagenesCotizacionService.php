@@ -150,13 +150,21 @@ class ProcesarImagenesCotizacionService
         $nombreWebP = "{$nombreArchivo}.webp";
         $rutaCompleta = "{$rutaCarpeta}/{$nombreWebP}";
 
-        // Guardar en storage
-        Storage::disk('public')->put(
-            $rutaCompleta,
-            $imagen->toWebp(self::CALIDAD_WEBP)
-        );
+        // Guardar en storage/app/public
+        $contenidoWebP = $imagen->toWebp(self::CALIDAD_WEBP);
+        Storage::disk('public')->put($rutaCompleta, $contenidoWebP);
+        
+        // También guardar en public/storage para acceso directo
+        $rutaPublica = public_path("storage/{$rutaCompleta}");
+        $directorioPublico = dirname($rutaPublica);
+        
+        if (!is_dir($directorioPublico)) {
+            @mkdir($directorioPublico, 0755, true);
+        }
+        
+        @file_put_contents($rutaPublica, $contenidoWebP);
 
-        // Retornar ruta relativa para guardar en BD
+        // Retornar ruta relativa para que Laravel la resuelva correctamente
         return "/storage/{$rutaCompleta}";
     }
 

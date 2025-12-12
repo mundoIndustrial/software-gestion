@@ -25,10 +25,13 @@
             width: 95%;
             max-width: 1400px;
             background: white;
-            border-radius: var(--radius);
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
+            overflow: visible;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             margin: 0 auto 1.5rem auto;
+            padding: 1.5rem;
+            box-sizing: border-box;
+            border: 1px solid #e0e6ed;
         }
 
         .table-header {
@@ -47,15 +50,18 @@
             display: flex;
             gap: 1rem;
             align-items: flex-end;
+            flex-wrap: wrap;
         }
 
         .search-input {
             flex: 1;
+            min-width: 200px;
             padding: 0.75rem 1rem;
             border: 2px solid var(--border-color);
             border-radius: 6px;
             font-size: 0.95rem;
             transition: var(--transition);
+            box-sizing: border-box;
         }
 
         .search-input:focus {
@@ -119,6 +125,23 @@
             color: var(--text-primary);
         }
 
+        table td:last-child {
+            padding-right: 1.5rem;
+        }
+
+        /* Ajustar ancho de columnas específicas */
+        table th:nth-child(5),
+        table td:nth-child(5) {
+            width: 140px;
+            white-space: nowrap;
+        }
+
+        table th:nth-child(6),
+        table td:nth-child(6) {
+            width: 80px;
+            text-align: center;
+        }
+
         /* ====================== ACCIONES ====================== */
         .actions-group {
             display: flex;
@@ -153,16 +176,13 @@
 
         /* ====================== DROPDOWN MENU ====================== */
         .view-dropdown {
-            position: absolute;
-            top: 100%;
-            left: 0;
+            position: fixed;
             background: white;
             border: 1px solid var(--border-color);
             border-radius: 6px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            z-index: 1000;
+            z-index: 10000;
             min-width: 180px;
-            margin-top: 4px;
             animation: slideDown 0.2s ease;
         }
 
@@ -321,62 +341,167 @@
         }
 
         /* ====================== RESPONSIVE ====================== */
-        @media (max-width: 768px) {
-            .search-bar {
-                flex-direction: column;
-            }
-
-            table {
-                font-size: 0.8rem;
+        @media (max-width: 1024px) {
+            .table-container {
+                padding: 0 0.5rem;
             }
 
             table th,
             table td {
-                padding: 0.75rem 0.5rem;
-            }
-
-            .actions-group {
-                flex-wrap: wrap;
-            }
-
-            .paginacion {
-                padding: 1.5rem 1rem;
-            }
-
-            .pagination {
-                gap: 0.25rem;
-            }
-
-            .pagination .page-link {
-                min-width: 36px;
-                height: 36px;
-                padding: 0.4rem 0.6rem;
+                padding: 0.6rem 0.5rem;
                 font-size: 0.8rem;
-            }
-
-            .pagination .page-link .material-symbols-rounded {
-                font-size: 1rem;
-            }
-        }
-
-        @media (max-width: 480px) {
-            table th,
-            table td {
-                padding: 0.5rem 0.25rem;
-                font-size: 0.7rem;
             }
 
             .btn-action {
                 width: 32px;
                 height: 32px;
-                font-size: 1rem;
+                font-size: 0.9rem;
+            }
+
+            .actions-group {
+                gap: 0.25rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .table-container {
+                padding: 0;
+                margin: 0 0 1.5rem 0;
+                border-radius: 0;
+            }
+
+            .table-header {
+                padding: 1rem;
+            }
+
+            .table-header h2 {
+                font-size: 1.1rem;
+                margin-bottom: 0.75rem;
+            }
+
+            .search-bar {
+                flex-direction: column;
+            }
+
+            .search-input {
+                width: 100%;
+                min-width: unset;
+            }
+
+            .btn-secondary-clear {
+                width: 100%;
+            }
+
+            table {
+                font-size: 0.75rem;
+            }
+
+            table th,
+            table td {
+                padding: 0.5rem 0.4rem;
+            }
+
+            table th {
+                font-size: 0.7rem;
+            }
+
+            .actions-group {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .btn-action {
+                width: 30px;
+                height: 30px;
+                font-size: 0.85rem;
+            }
+
+            .paginacion {
+                padding: 1rem;
+            }
+
+            .pagination {
+                gap: 0.2rem;
             }
 
             .pagination .page-link {
                 min-width: 32px;
                 height: 32px;
                 padding: 0.3rem 0.5rem;
+                font-size: 0.75rem;
+            }
+
+            .pagination .page-link .material-symbols-rounded {
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .table-container {
+                padding: 0;
+                margin: 0 0 1.5rem 0;
+            }
+
+            .table-header {
+                padding: 0.75rem;
+            }
+
+            .table-header h2 {
+                font-size: 1rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .search-input {
+                font-size: 0.85rem;
+                padding: 0.6rem 0.75rem;
+            }
+
+            .btn-secondary-clear {
+                padding: 0.6rem 1rem;
+                font-size: 0.8rem;
+            }
+
+            table {
                 font-size: 0.7rem;
+            }
+
+            table th,
+            table td {
+                padding: 0.4rem 0.25rem;
+            }
+
+            table th {
+                font-size: 0.65rem;
+                padding: 0.5rem 0.2rem;
+            }
+
+            .actions-group {
+                gap: 0.15rem;
+            }
+
+            .btn-action {
+                width: 28px;
+                height: 28px;
+                font-size: 0.8rem;
+            }
+
+            .paginacion {
+                padding: 0.75rem;
+            }
+
+            .pagination {
+                gap: 0.15rem;
+            }
+
+            .pagination .page-link {
+                min-width: 28px;
+                height: 28px;
+                padding: 0.2rem 0.4rem;
+                font-size: 0.7rem;
+            }
+
+            .pagination .page-link .material-symbols-rounded {
+                font-size: 0.8rem;
             }
         }
     </style>
@@ -394,7 +519,15 @@ window.toggleViewDropdown = function(button) {
         }
     });
     
-    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+    if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+        // Calcular posición del botón
+        const rect = button.getBoundingClientRect();
+        dropdown.style.display = 'block';
+        dropdown.style.top = (rect.bottom + 4) + 'px';
+        dropdown.style.left = rect.left + 'px';
+    } else {
+        dropdown.style.display = 'none';
+    }
 };
 
 // Cerrar dropdowns al hacer clic afuera
@@ -427,7 +560,6 @@ document.addEventListener('click', function(event) {
                     <th>Fecha</th>
                     <th>Cliente</th>
                     <th>Asesora</th>
-                    <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -446,28 +578,11 @@ document.addEventListener('click', function(event) {
                     <tr>
                         <td><strong>COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}</strong></td>
                         <td>{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y h:i A') : 'N/A' }}</td>
-                        <td>{{ $cotizacion->cliente ?? 'N/A' }}</td>
+                        <td>{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? 'N/A') }}</td>
                         <td>{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? 'N/A') }}</td>
                         <td>
-                            <span style="padding: 0.35rem 0.75rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; display: inline-block;
-                            @if($cotizacion->estado === 'ENVIADA_CONTADOR')
-                                background: #FEF3C7; color: #92400E;
-                            @elseif($cotizacion->estado === 'APROBADA_CONTADOR')
-                                background: #DBEAFE; color: #1E40AF;
-                            @elseif($cotizacion->estado === 'EN_CORRECCION')
-                                background: #FCA5A5; color: #7F1D1D;
-                            @elseif($cotizacion->estado === 'APROBADA_COTIZACIONES')
-                                background: #BBFBEE; color: #134E4A;
-                            @else
-                                background: #E5E7EB; color: #374151;
-                            @endif
-                            ">
-                                @estadoLabelCotizacion($cotizacion->estado)
-                            </span>
-                        </td>
-                        <td>
                             <div class="actions-group">
-                                <!-- Dropdown de Ver -->
+                                <!-- Dropdown de Ver (Primero) -->
                                 <div style="position: relative; display: inline-block;">
                                     <button class="btn-action btn-view" onclick="toggleViewDropdown(this)" title="Ver Opciones">
                                         <span class="material-symbols-rounded">visibility</span>
@@ -477,7 +592,7 @@ document.addEventListener('click', function(event) {
                                             <span class="material-symbols-rounded">description</span>
                                             Ver Cotización
                                         </button>
-                                        <button onclick="abrirModalVisorCostos({{ $cotizacion->id }}, '{{ $cotizacion->cliente }}'); this.closest('.view-dropdown').style.display='none';">
+                                        <button onclick="abrirModalVisorCostos({{ $cotizacion->id }}, '{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}'); this.closest('.view-dropdown').style.display='none';">
                                             <span class="material-symbols-rounded">assessment</span>
                                             Ver Costos
                                         </button>
@@ -492,7 +607,7 @@ document.addEventListener('click', function(event) {
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" style="text-align: center; padding: 2rem;">
+                        <td colspan="5" style="text-align: center; padding: 2rem;">
                             <div class="empty-state">
                                 <span class="material-symbols-rounded">inbox</span>
                                 <p>No hay cotizaciones disponibles</p>
@@ -613,146 +728,6 @@ document.addEventListener('click', function(event) {
         @endif
     </div>
 </section>
-
-<!-- Modal de Cotización -->
-<div id="cotizacionModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; overflow-y: auto;">
-    <div class="modal-content" style="background: white; border-radius: 12px; margin: 2rem auto; max-width: 1000px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-        <button onclick="cerrarModalCotizacion()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; z-index: 10001;">
-            <span class="material-symbols-rounded">close</span>
-        </button>
-        <div id="cotizacionContent" style="padding: 2rem;"></div>
-    </div>
-</div>
-
-<!-- Modal de Visor de Costos -->
-<div id="visorCostosModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9998; justify-content: center; align-items: center; padding: 2rem; overflow: hidden;">
-    <div class="modal-content" id="visorCostosModalContent" style="width: 90%; max-width: 800px; height: auto; overflow: visible; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); display: flex; flex-direction: column;">
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid #e0e6ed;">
-            <h2 id="visorCostosTitle" style="margin: 0; font-size: 1.3rem; color: #2c3e50;"></h2>
-            <button onclick="cerrarVisorCostos()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #7f8c8d;">
-                <span class="material-symbols-rounded">close</span>
-            </button>
-        </div>
-        <div id="visorCostosContent" style="overflow-y: auto; flex: 1; padding: 1.5rem;"></div>
-    </div>
-</div>
-
-<!-- Modal PDF -->
-<div id="modalPDF" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center; padding: 2rem;">
-    <div style="width: 95%; height: 90vh; background: white; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid #e0e6ed;">
-            <h2 style="margin: 0; color: #2c3e50;">Vista Previa de PDF</h2>
-            <div style="display: flex; gap: 1rem;">
-                <button onclick="descargarPDF()" style="padding: 0.75rem 1.5rem; background: #1e5ba8; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
-                    <span class="material-symbols-rounded" style="vertical-align: middle; margin-right: 0.5rem;">download</span>
-                    Descargar
-                </button>
-                <button onclick="cerrarModalPDF()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">
-                    <span class="material-symbols-rounded">close</span>
-                </button>
-            </div>
-        </div>
-        <iframe id="pdfViewer" style="flex: 1; border: none;"></iframe>
-    </div>
-</div>
-
-<script>
-// Funciones para modales
-function openCotizacionModal(cotizacionId) {
-    const modal = document.getElementById('cotizacionModal');
-    const content = document.getElementById('cotizacionContent');
-    
-    fetch(`/contador/cotizacion/${cotizacionId}`)
-        .then(response => response.text())
-        .then(html => {
-            content.innerHTML = html;
-            modal.style.display = 'flex';
-            modal.style.justifyContent = 'center';
-            modal.style.alignItems = 'flex-start';
-            modal.style.paddingTop = '2rem';
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error al cargar la cotización');
-        });
-}
-
-function cerrarModalCotizacion() {
-    document.getElementById('cotizacionModal').style.display = 'none';
-}
-
-function abrirModalVisorCostos(cotizacionId, cliente) {
-    window.cotizacionIdActual = cotizacionId;
-    document.getElementById('visorCostosTitle').textContent = `Costos - ${cliente}`;
-    
-    fetch(`/contador/cotizacion/${cotizacionId}/costos`)
-        .then(response => response.text())
-        .then(html => {
-            document.getElementById('visorCostosContent').innerHTML = html;
-            document.getElementById('visorCostosModal').style.display = 'flex';
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error al cargar los costos');
-        });
-}
-
-function cerrarVisorCostos() {
-    document.getElementById('visorCostosModal').style.display = 'none';
-}
-
-function abrirModalPDF(cotizacionId) {
-    window.cotizacionIdActualPDF = cotizacionId;
-    const modalPDF = document.getElementById('modalPDF');
-    const pdfViewer = document.getElementById('pdfViewer');
-    
-    modalPDF.style.display = 'flex';
-    pdfViewer.src = `/contador/cotizacion/${cotizacionId}/pdf#zoom=125`;
-}
-
-function cerrarModalPDF() {
-    const modalPDF = document.getElementById('modalPDF');
-    const pdfViewer = document.getElementById('pdfViewer');
-    
-    modalPDF.style.display = 'none';
-    pdfViewer.src = '';
-    window.cotizacionIdActualPDF = null;
-}
-
-function descargarPDF() {
-    if (window.cotizacionIdActualPDF) {
-        const link = document.createElement('a');
-        const url = `/contador/cotizacion/${window.cotizacionIdActualPDF}/pdf?descargar=1`;
-        link.href = url;
-        link.download = `Cotizacion_${window.cotizacionIdActualPDF}_${new Date().toISOString().split('T')[0]}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-}
-
-// Cerrar modal al presionar ESC
-document.addEventListener('keydown', function(event) {
-    if (event.key === 'Escape') {
-        cerrarModalPDF();
-    }
-});
-
-// Cerrar modal al hacer clic en el fondo
-document.getElementById('modalPDF').addEventListener('click', function(event) {
-    if (event.target === this) {
-        cerrarModalPDF();
-    }
-});
-
-// Función para limpiar filtros
-function limpiarFiltros() {
-    document.getElementById('inputBusqueda').value = '';
-    document.querySelectorAll('table tbody tr').forEach(row => {
-        row.style.display = '';
-    });
-}
-</script>
 
 <!-- Script de Búsqueda y Filtros -->
 <script src="{{ asset('js/contador/busqueda-filtros.js') }}"></script>

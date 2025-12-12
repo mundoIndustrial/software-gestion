@@ -18,21 +18,27 @@ function abrirModalCalculoCostos(cotizacionId, cliente) {
     
     // Obtener las prendas de la cotización
     fetch(`/contador/cotizacion/${cotizacionId}`)
-        .then(response => response.text())
-        .then(html => {
+        .then(response => response.json())
+        .then(data => {
+            // El endpoint devuelve JSON con el HTML dentro
+            const html = data.html || data;
+            
+            console.log('HTML recibido contiene "Detalles de la Prenda":', html.includes('Detalles de la Prenda'));
+            
             // Parsear el HTML para extraer las prendas
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
             
-            // Buscar todos los títulos de prendas (h3 con nombre de prenda)
-            const prendasElements = doc.querySelectorAll('h3');
+            // Buscar todos los títulos de prendas (h5 con nombre de prenda en estructura DDD)
+            const prendasElements = doc.querySelectorAll('h5');
             const prendas = [];
             
             prendasElements.forEach((el, index) => {
                 const nombrePrenda = el.textContent.trim();
                 if (nombrePrenda && nombrePrenda !== 'ESPECIFICACIONES DE LA ORDEN' && 
                     nombrePrenda !== 'TÉCNICAS' && nombrePrenda !== 'OBSERVACIONES TÉCNICAS' &&
-                    nombrePrenda !== 'OBSERVACIONES GENERALES' && nombrePrenda !== 'PRENDAS DETALLADAS') {
+                    nombrePrenda !== 'OBSERVACIONES GENERALES' && nombrePrenda !== 'PRENDAS DETALLADAS' &&
+                    nombrePrenda !== 'Prenda sin nombre') {
                     
                     // Obtener la descripción (párrafo siguiente al h3)
                     let descripcion = '';
@@ -51,37 +57,44 @@ function abrirModalCalculoCostos(cotizacionId, cliente) {
                     // Buscar el div con clase o estilo que contenga los detalles
                     let elementoBusquedaDetalles = el.nextElementSibling;
                     while (elementoBusquedaDetalles) {
-                        if (elementoBusquedaDetalles.tagName === 'H3') {
+                        if (elementoBusquedaDetalles.tagName === 'H5' || elementoBusquedaDetalles.tagName === 'H3') {
                             break; // Encontramos otra prenda
                         }
                         
                         // Buscar div con "Detalles de la Prenda"
                         if (elementoBusquedaDetalles.textContent.includes('Detalles de la Prenda')) {
                             // Extraer todos los detalles (Color, Tela, Manga, Especificaciones)
-                            const detallesDivs = elementoBusquedaDetalles.querySelectorAll('div > div');
+                            // Buscar divs que tengan estructura: div > (label div + valor div)
+                            const detallesContainer = elementoBusquedaDetalles.querySelector('div[style*="grid"]') || elementoBusquedaDetalles;
+                            const detallesDivs = detallesContainer.querySelectorAll(':scope > div');
+                            
                             detallesDivs.forEach(detDiv => {
-                                const label = detDiv.querySelector('div:first-child');
-                                const valor = detDiv.querySelector('div:last-child');
-                                if (label && valor) {
-                                    const labelText = label.textContent.replace(':', '').trim();
-                                    const valorText = valor.textContent.trim();
-                                    if (labelText && valorText) {
-                                        detalles[labelText] = valorText;
+                                const children = detDiv.children;
+                                if (children.length >= 2) {
+                                    const label = children[0];
+                                    const valor = children[1];
+                                    if (label && valor) {
+                                        const labelText = label.textContent.replace(':', '').trim();
+                                        const valorText = valor.textContent.trim();
+                                        if (labelText && valorText) {
+                                            detalles[labelText] = valorText;
+                                        }
                                     }
                                 }
                             });
+                            console.log('Detalles extraídos:', detalles);
                             break;
                         }
                         
                         elementoBusquedaDetalles = elementoBusquedaDetalles.nextElementSibling;
                     }
                     
-                    // Obtener imágenes - buscar todas las imágenes después del h3
+                    // Obtener imágenes - buscar todas las imágenes (prenda y tela) después del h5
                     // Pueden estar en un div con data-producto-index o en cualquier contenedor
                     let elementoBusqueda = el.nextElementSibling;
                     while (elementoBusqueda) {
-                        // Si encontramos otro h3, detenemos la búsqueda
-                        if (elementoBusqueda.tagName === 'H3') {
+                        // Si encontramos otro h5, detenemos la búsqueda
+                        if (elementoBusqueda.tagName === 'H5' || elementoBusqueda.tagName === 'H3') {
                             break;
                         }
                         
@@ -95,10 +108,9 @@ function abrirModalCalculoCostos(cotizacionId, cliente) {
                             } catch (e) {
                                 console.error('Error al parsear data-todas-imagenes:', e);
                             }
-                            break;
                         }
                         
-                        // Buscar imágenes en este elemento
+                        // Buscar imágenes en este elemento (incluyendo imágenes de tela)
                         const imgs = elementoBusqueda.querySelectorAll('img');
                         imgs.forEach(img => {
                             const src = img.getAttribute('src');
@@ -106,11 +118,6 @@ function abrirModalCalculoCostos(cotizacionId, cliente) {
                                 imagenes.push(src);
                             }
                         });
-                        
-                        // Si este elemento tiene imágenes, probablemente sea el contenedor de imágenes
-                        if (imgs.length > 0) {
-                            break;
-                        }
                         
                         elementoBusqueda = elementoBusqueda.nextElementSibling;
                     }
@@ -406,9 +413,10 @@ function crearTablaPrecios(prendaId, nombrePrenda, descripcion = '', imagenes = 
             <td style="padding: 1rem; border: 1px solid #1e5ba8; text-align: right;">
                 TOTAL COSTO:
             </td>
-            <td style="padding: 1rem; border: 1px solid #1e5ba8; text-align: right; font-size: 1.1rem;">
+            <td style="padding: 1rem; border: 1px solid #1e5ba8; text-align: right; font-size: 1.1rem; width: 150px;">
                 $${total.toFixed(2)}
             </td>
+            <td style="padding: 1rem; border: 1px solid #1e5ba8; width: 50px;"></td>
         </tr>
     `;
     
@@ -528,16 +536,62 @@ function guardarCalculoCostos() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert(data.message);
-            cerrarModalCalculoCostos();
             console.log('Costos guardados en BD:', costosFiltrados);
+            
+            // Mostrar modal de éxito
+            Swal.fire({
+                title: '✓ Costos Guardados',
+                html: `
+                    <div style="text-align: left; color: #4b5563;">
+                        <p style="margin: 0 0 0.75rem 0; font-size: 0.95rem;">
+                            ✅ ${data.message}
+                        </p>
+                        <div style="background: #d1fae5; border-left: 4px solid #10b981; padding: 0.75rem; border-radius: 4px; margin: 0.75rem 0;">
+                            <p style="margin: 0; font-size: 0.85rem; color: #065f46; font-weight: 600;">
+                                📊 Los costos han sido registrados correctamente en la base de datos
+                            </p>
+                        </div>
+                    </div>
+                `,
+                icon: 'success',
+                confirmButtonColor: '#10b981',
+                confirmButtonText: 'Entendido',
+                didClose: () => {
+                    cerrarModalCalculoCostos();
+                }
+            });
         } else {
-            alert('Error: ' + (data.message || 'No se pudieron guardar los costos'));
+            Swal.fire({
+                title: '❌ Error',
+                html: `
+                    <div style="text-align: left; color: #4b5563;">
+                        <p style="margin: 0; font-size: 0.95rem;">
+                            ${data.message || 'No se pudieron guardar los costos'}
+                        </p>
+                    </div>
+                `,
+                icon: 'error',
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'Entendido'
+            });
         }
     })
     .catch(error => {
         console.error('Error al guardar costos:', error);
-        alert('Error al guardar los costos: ' + error.message);
+        
+        Swal.fire({
+            title: '❌ Error de Conexión',
+            html: `
+                <div style="text-align: left; color: #4b5563;">
+                    <p style="margin: 0; font-size: 0.95rem;">
+                        Error al guardar los costos: ${error.message}
+                    </p>
+                </div>
+            `,
+            icon: 'error',
+            confirmButtonColor: '#ef4444',
+            confirmButtonText: 'Entendido'
+        });
     });
 }
 

@@ -89,7 +89,8 @@ class ContadorController extends Controller
             
             return response()->json([
                 'success' => true,
-                'message' => 'Perfil actualizado correctamente'
+                'message' => 'Perfil actualizado correctamente',
+                'avatar_url' => $user->avatar ? route('storage.serve', ['path' => 'avatars/' . $user->avatar]) : null
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
@@ -107,21 +108,29 @@ class ContadorController extends Controller
     /**
      * Mostrar el dashboard del contador
      * Solo muestra cotizaciones PENDIENTES (estado ENVIADA_CONTADOR)
+     * Excluye borradores
      */
     public function index(): View
     {
         // Obtener SOLO cotizaciones pendientes por aprobar (ENVIADA_CONTADOR)
-        $cotizaciones = Cotizacion::where('estado', 'ENVIADA_CONTADOR')
+        // Excluir borradores (es_borrador = 0 o false)
+        $cotizaciones = Cotizacion::with('cliente', 'usuario')
+            ->where('estado', 'ENVIADA_CONTADOR')
+            ->where('es_borrador', 0)
             ->orderBy('created_at', 'desc')
             ->get();
         
         // Obtener cotizaciones en corrección (Cotizaciones por Corregir y a Revisar)
-        $cotizacionesPorCorregir = Cotizacion::where('estado', 'EN_CORRECCION')
+        $cotizacionesPorCorregir = Cotizacion::with('cliente', 'usuario')
+            ->where('estado', 'EN_CORRECCION')
+            ->where('es_borrador', 0)
             ->orderBy('created_at', 'desc')
             ->get();
         
         // Obtener cotizaciones rechazadas (mismo que por corregir para la sección a revisar)
-        $cotizacionesRechazadas = Cotizacion::where('estado', 'EN_CORRECCION')
+        $cotizacionesRechazadas = Cotizacion::with('cliente', 'usuario')
+            ->where('estado', 'EN_CORRECCION')
+            ->where('es_borrador', 0)
             ->orderBy('created_at', 'desc')
             ->get();
         
@@ -129,12 +138,17 @@ class ContadorController extends Controller
     }
 
     /**
-     * Mostrar todas las cotizaciones (con solo botón Ver)
+     * Mostrar todas las cotizaciones EXCEPTO las pendientes (ENVIADA_CONTADOR) y borradores
      */
     public function todas(): View
     {
-        // Obtener todas las cotizaciones ordenadas por fecha descendente
-        $todasLasCotizaciones = Cotizacion::orderBy('created_at', 'desc')->get();
+        // Obtener todas las cotizaciones EXCEPTO las que están en estado ENVIADA_CONTADOR
+        // También excluir borradores (es_borrador = 0)
+        $todasLasCotizaciones = Cotizacion::with('cliente', 'usuario')
+            ->where('estado', '!=', 'ENVIADA_CONTADOR')
+            ->where('es_borrador', 0)
+            ->orderBy('created_at', 'desc')
+            ->get();
         
         return view('contador.todas', compact('todasLasCotizaciones'));
     }
@@ -145,7 +159,8 @@ class ContadorController extends Controller
     public function porRevisar(): View
     {
         // Obtener cotizaciones en corrección
-        $cotizacionesParaRevisar = Cotizacion::where('estado', 'EN_CORRECCION')
+        $cotizacionesParaRevisar = Cotizacion::with('cliente', 'usuario')
+            ->where('estado', 'EN_CORRECCION')
             ->orderBy('created_at', 'desc')
             ->get();
         
@@ -157,12 +172,243 @@ class ContadorController extends Controller
      */
     public function getCotizacionDetail($id)
     {
-        $cotizacion = Cotizacion::with([
-            'prendasCotizaciones',
-            'logoCotizacion'
-        ])->findOrFail($id);
-        
-        return view('contador.partials.cotizacion-modal', compact('cotizacion'));
+        try {
+            $cotizacion = Cotizacion::with([
+                'prendasCotizaciones',
+                'logoCotizacion',
+                'cliente',
+                'prendas' => function($query) {
+                    $query->with([
+                        'fotos',
+                        'telas' => function($q) {
+                            $q->with(['tela', 'color']);
+                        },
+                        'telaFotos',
+                        'tallas',
+                        'variantes' => function($v) {
+                            $v->with(['genero', 'manga', 'broche']);
+                        }
+                    ]);
+                }
+            ])->findOrFail($id);
+            
+            // Construir HTML manualmente para evitar errores de vista
+            $html = '<div class="cotizacion-detail" style="padding: 1.5rem; max-height: 80vh; overflow-y: auto;">';
+            
+            // Información general
+            $html .= '<div style="margin-bottom: 1.5rem; border-bottom: 2px solid #1e5ba8; padding-bottom: 1rem;">';
+            $html .= '<h2 style="margin: 0 0 0.5rem 0; color: #1e5ba8;">Cotización #' . str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) . '</h2>';
+            $html .= '<p style="margin: 0.25rem 0;"><strong>Cliente:</strong> ' . ($cotizacion->cliente ? htmlspecialchars($cotizacion->cliente->nombre) : 'N/A') . '</p>';
+            $html .= '<p style="margin: 0.25rem 0;"><strong>Fecha:</strong> ' . $cotizacion->created_at->format('d/m/Y H:i') . '</p>';
+            $html .= '<p style="margin: 0.25rem 0;"><strong>Estado:</strong> ' . htmlspecialchars($cotizacion->estado) . '</p>';
+            $html .= '</div>';
+            
+            // Prendas (estructura DDD)
+            if ($cotizacion->prendas && count($cotizacion->prendas) > 0) {
+                \Log::info('=== getCotizacionDetail - Prendas encontradas: ' . count($cotizacion->prendas));
+                $html .= '<h4 style="color: #1e5ba8; margin-top: 1.5rem; margin-bottom: 1rem;">📦 Prendas</h4>';
+                
+                foreach ($cotizacion->prendas as $index => $prenda) {
+                    \Log::info('Prenda ' . $index . ': ' . ($prenda->nombre_producto ?? 'N/A'));
+                    \Log::info('  - ID Prenda: ' . $prenda->id);
+                    \Log::info('  - Telas cargadas: ' . count($prenda->telas ?? []));
+                    if ($prenda->telas && count($prenda->telas) > 0) {
+                        foreach ($prenda->telas as $t) {
+                            \Log::info('    - Tela ID: ' . $t->id . ', telaPrenda: ' . ($t->telaPrenda ? 'Sí' : 'No'));
+                        }
+                    }
+                    \Log::info('  - Tela Fotos: ' . count($prenda->telaFotos ?? []));
+                    \Log::info('  - Fotos: ' . count($prenda->fotos ?? []));
+                    
+                    $html .= '<div style="background: #f8f9fa; padding: 1rem; border-radius: 4px; margin-bottom: 1rem; border-left: 4px solid #2b7ec9;">';
+                    
+                    // Nombre
+                    $html .= '<h5 style="margin: 0 0 0.5rem 0; color: #1e40af;">' . htmlspecialchars($prenda->nombre_producto ?? 'Prenda sin nombre') . '</h5>';
+                    
+                    // Descripción
+                    if ($prenda->descripcion) {
+                        $html .= '<p style="margin: 0.25rem 0; color: #333; font-size: 0.9rem;">' . htmlspecialchars($prenda->descripcion) . '</p>';
+                    }
+                    
+                    // Cantidad
+                    if ($prenda->cantidad) {
+                        $html .= '<p style="margin: 0.25rem 0; color: #666; font-size: 0.9rem;"><strong>Cantidad:</strong> ' . htmlspecialchars($prenda->cantidad) . '</p>';
+                    }
+                    
+                    // Fotos de prenda
+                    if ($prenda->fotos && count($prenda->fotos) > 0) {
+                        $html .= '<div style="margin-top: 0.75rem;">';
+                        $html .= '<p style="margin: 0 0 0.5rem 0; font-size: 0.85rem; font-weight: 600;">Imágenes de Prenda:</p>';
+                        $html .= '<div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">';
+                        foreach ($prenda->fotos as $foto) {
+                            if ($foto && $foto->ruta_webp) {
+                                $html .= '<img src="' . htmlspecialchars($foto->ruta_webp) . '" alt="Prenda" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">';
+                            }
+                        }
+                        $html .= '</div>';
+                        $html .= '</div>';
+                    }
+                    
+                    // Detalles de la Prenda - Extraer telas y variaciones de variantes
+                    $detallesMostrados = false;
+                    if ($prenda->variantes && count($prenda->variantes) > 0) {
+                        foreach ($prenda->variantes as $variante) {
+                            // Inicializar sección de detalles si no está abierta
+                            if (!$detallesMostrados) {
+                                $html .= '<div style="background-color: #f8f9fa; padding: 1rem; border-radius: 4px; margin-bottom: 1rem; border-left: 4px solid #2b7ec9;">';
+                                $html .= '<div style="font-weight: 700; color: #1e5ba8; margin-bottom: 0.75rem; font-size: 0.9rem;">📋 Detalles de la Prenda:</div>';
+                                $html .= '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">';
+                                $detallesMostrados = true;
+                            }
+                            
+                            // Género - Mostrar nombre
+                            if ($variante->genero && $variante->genero->nombre) {
+                                $html .= '<div>';
+                                $html .= '<div style="font-weight: 600; color: #333; font-size: 0.85rem; margin-bottom: 0.25rem;">Género:</div>';
+                                $html .= '<div style="color: #666; font-size: 0.9rem; word-wrap: break-word;">' . htmlspecialchars($variante->genero->nombre) . '</div>';
+                                $html .= '</div>';
+                            }
+                            
+                            // Manga - Mostrar nombre y observación
+                            if ($variante->manga && $variante->manga->nombre) {
+                                $html .= '<div>';
+                                $html .= '<div style="font-weight: 600; color: #333; font-size: 0.85rem; margin-bottom: 0.25rem;">Manga:</div>';
+                                $html .= '<div style="color: #666; font-size: 0.9rem; word-wrap: break-word;">' . htmlspecialchars($variante->manga->nombre);
+                                if (!empty($variante->obs_manga)) {
+                                    $html .= ' - ' . htmlspecialchars($variante->obs_manga);
+                                }
+                                $html .= '</div>';
+                                $html .= '</div>';
+                            }
+                            
+                            // Broche/Botón - Dinámico según tipo elegido
+                            if ($variante->broche && $variante->broche->nombre) {
+                                $html .= '<div>';
+                                $html .= '<div style="font-weight: 600; color: #333; font-size: 0.85rem; margin-bottom: 0.25rem;">' . htmlspecialchars($variante->broche->nombre) . ':</div>';
+                                $html .= '<div style="color: #666; font-size: 0.9rem; word-wrap: break-word;">';
+                                if (!empty($variante->obs_broche)) {
+                                    $html .= htmlspecialchars($variante->obs_broche);
+                                } else {
+                                    $html .= 'Sí';
+                                }
+                                $html .= '</div>';
+                                $html .= '</div>';
+                            }
+                            
+                            // Observación Bolsillos
+                            if (!empty($variante->obs_bolsillos)) {
+                                $html .= '<div>';
+                                $html .= '<div style="font-weight: 600; color: #333; font-size: 0.85rem; margin-bottom: 0.25rem;">Bolsillos:</div>';
+                                $html .= '<div style="color: #666; font-size: 0.9rem; word-wrap: break-word;">' . htmlspecialchars($variante->obs_bolsillos) . '</div>';
+                                $html .= '</div>';
+                            }
+                            
+                            // Observación Reflectivo
+                            if (!empty($variante->obs_reflectivo)) {
+                                $html .= '<div>';
+                                $html .= '<div style="font-weight: 600; color: #333; font-size: 0.85rem; margin-bottom: 0.25rem;">Reflectivo:</div>';
+                                $html .= '<div style="color: #666; font-size: 0.9rem; word-wrap: break-word;">' . htmlspecialchars($variante->obs_reflectivo) . '</div>';
+                                $html .= '</div>';
+                            }
+                            
+                            // Telas Múltiples
+                            $telasMultiples = $variante->telas_multiples ?? null;
+                            
+                            // Decodificar JSON si es string
+                            if (is_string($telasMultiples)) {
+                                $telasMultiples = json_decode($telasMultiples, true) ?? [];
+                            }
+                            
+                            if (!empty($telasMultiples) && is_array($telasMultiples)) {
+                                foreach ($telasMultiples as $telaIndex => $telaData) {
+                                    \Log::info('    Tela ' . $telaIndex . ':');
+                                    \Log::info('      - tela: ' . ($telaData['tela'] ?? 'N/A'));
+                                    \Log::info('      - color: ' . ($telaData['color'] ?? 'N/A'));
+                                    \Log::info('      - referencia: ' . ($telaData['referencia'] ?? 'N/A'));
+                                    
+                                    // Nombre de la tela
+                                    if (!empty($telaData['tela'])) {
+                                        $html .= '<div>';
+                                        $html .= '<div style="font-weight: 600; color: #333; font-size: 0.85rem; margin-bottom: 0.25rem;">Tela:</div>';
+                                        $html .= '<div style="color: #666; font-size: 0.9rem; word-wrap: break-word;">' . htmlspecialchars($telaData['tela']) . '</div>';
+                                        $html .= '</div>';
+                                    }
+                                    
+                                    // Color
+                                    if (!empty($telaData['color'])) {
+                                        $html .= '<div>';
+                                        $html .= '<div style="font-weight: 600; color: #333; font-size: 0.85rem; margin-bottom: 0.25rem;">Color:</div>';
+                                        $html .= '<div style="color: #666; font-size: 0.9rem; word-wrap: break-word;">' . htmlspecialchars($telaData['color']) . '</div>';
+                                        $html .= '</div>';
+                                    }
+                                    
+                                    // Referencia
+                                    if (!empty($telaData['referencia'])) {
+                                        $html .= '<div>';
+                                        $html .= '<div style="font-weight: 600; color: #333; font-size: 0.85rem; margin-bottom: 0.25rem;">Referencia:</div>';
+                                        $html .= '<div style="color: #666; font-size: 0.9rem; word-wrap: break-word;">' . htmlspecialchars($telaData['referencia']) . '</div>';
+                                        $html .= '</div>';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    if ($detallesMostrados) {
+                        $html .= '</div>';
+                        $html .= '</div>';
+                    }
+                    
+                    // Fotos de tela
+                    \Log::info('  Tela Fotos: ' . count($prenda->telaFotos ?? []));
+                    if ($prenda->telaFotos && count($prenda->telaFotos) > 0) {
+                        $html .= '<div style="margin-top: 0.75rem;">';
+                        $html .= '<p style="margin: 0 0 0.5rem 0; font-size: 0.85rem; font-weight: 600;">📸 Imágenes de Tela:</p>';
+                        $html .= '<div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">';
+                        foreach ($prenda->telaFotos as $index => $telaFoto) {
+                            \Log::info('    Tela Foto ' . $index . ': ' . ($telaFoto->ruta_webp ?? 'sin ruta'));
+                            if ($telaFoto && $telaFoto->ruta_webp) {
+                                $html .= '<img src="' . htmlspecialchars($telaFoto->ruta_webp) . '" alt="Tela" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">';
+                            }
+                        }
+                        $html .= '</div>';
+                        $html .= '</div>';
+                    }
+                    
+                    // Tallas
+                    if ($prenda->tallas && count($prenda->tallas) > 0) {
+                        $html .= '<div style="margin-top: 0.75rem;">';
+                        $html .= '<p style="margin: 0 0 0.5rem 0; font-size: 0.85rem; font-weight: 600;">Tallas:</p>';
+                        $tallasArray = [];
+                        foreach ($prenda->tallas as $talla) {
+                            $tallasArray[] = htmlspecialchars($talla->talla);
+                        }
+                        $html .= '<p style="margin: 0; color: #e74c3c; font-weight: bold; font-size: 0.9rem;">👕 ' . implode(', ', $tallasArray) . '</p>';
+                        $html .= '</div>';
+                    }
+                    
+                    $html .= '</div>';
+                }
+            }
+            
+            $html .= '</div>';
+            
+            return response()->json([
+                'success' => true,
+                'html' => $html
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en getCotizacionDetail', [
+                'id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener la cotización: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -439,24 +685,43 @@ class ContadorController extends Controller
     {
         try {
             // Cotizaciones enviadas a revisar (estado ENVIADA_CONTADOR)
-            $cotizacionesParaRevisar = Cotizacion::where('estado', 'ENVIADA_CONTADOR')
+            $cotizacionesParaRevisar = Cotizacion::with('cliente')
+                ->where('estado', 'ENVIADA_CONTADOR')
                 ->orderBy('created_at', 'desc')
                 ->limit(5)
-                ->get(['id', 'cliente', 'created_at']);
+                ->get();
             
             // Nuevas cotizaciones creadas (últimas 5 de las últimas 24 horas)
-            $nuevasCotizaciones = Cotizacion::where('created_at', '>=', now()->subHours(24))
+            $nuevasCotizaciones = Cotizacion::with('cliente')
+                ->where('created_at', '>=', now()->subHours(24))
                 ->whereNotIn('estado', ['ENVIADA_CONTADOR'])
                 ->orderBy('created_at', 'desc')
                 ->limit(5)
-                ->get(['id', 'cliente', 'created_at']);
+                ->get();
             
             // Contar total de notificaciones
             $totalNotificaciones = $cotizacionesParaRevisar->count() + $nuevasCotizaciones->count();
             
+            // Transformar respuesta para retornar solo nombre del cliente
+            $paraRevisarTransformada = $cotizacionesParaRevisar->map(function($cot) {
+                return [
+                    'id' => $cot->id,
+                    'cliente' => $cot->cliente ? $cot->cliente->nombre : 'Sin cliente',
+                    'created_at' => $cot->created_at
+                ];
+            });
+            
+            $nuevasTransformada = $nuevasCotizaciones->map(function($cot) {
+                return [
+                    'id' => $cot->id,
+                    'cliente' => $cot->cliente ? $cot->cliente->nombre : 'Sin cliente',
+                    'created_at' => $cot->created_at
+                ];
+            });
+            
             return response()->json([
-                'cotizaciones_para_revisar' => $cotizacionesParaRevisar,
-                'nuevas_cotizaciones' => $nuevasCotizaciones,
+                'cotizaciones_para_revisar' => $paraRevisarTransformada,
+                'nuevas_cotizaciones' => $nuevasTransformada,
                 'total_notificaciones' => $totalNotificaciones
             ]);
         } catch (\Exception $e) {

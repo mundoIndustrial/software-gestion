@@ -2,21 +2,7 @@
 // NOTIFICATIONS SYSTEM - CONTADOR
 // ========================================
 document.addEventListener('DOMContentLoaded', function() {
-    // Esperar a que fetchAPI esté disponible
-    let attempts = 0;
-    const maxAttempts = 50; // 5 segundos máximo
-    
-    const checkFetchAPI = setInterval(() => {
-        attempts++;
-        if (typeof window.fetchAPI === 'function') {
-            clearInterval(checkFetchAPI);
-            initializeNotifications();
-        } else if (attempts >= maxAttempts) {
-            clearInterval(checkFetchAPI);
-            console.warn('fetchAPI no disponible, usando fetch nativo');
-            initializeNotifications();
-        }
-    }, 100);
+    initializeNotifications();
 });
 
 function initializeNotifications() {

@@ -449,7 +449,7 @@ document.addEventListener('click', function(event) {
                     <tr>
                         <td><strong>COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}</strong></td>
                         <td>{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y h:i A') : 'N/A' }}</td>
-                        <td>{{ $cotizacion->cliente ?? 'N/A' }}</td>
+                        <td>{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? 'N/A') }}</td>
                         <td>{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? 'N/A') }}</td>
                         <td>
                             <div class="actions-group">
@@ -463,7 +463,7 @@ document.addEventListener('click', function(event) {
                                             <span class="material-symbols-rounded">description</span>
                                             Ver Cotización
                                         </button>
-                                        <button onclick="abrirModalVisorCostos({{ $cotizacion->id }}, '{{ $cotizacion->cliente }}'); this.closest('.view-dropdown').style.display='none';">
+                                        <button onclick="abrirModalVisorCostos({{ $cotizacion->id }}, '{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}'); this.closest('.view-dropdown').style.display='none';">
                                             <span class="material-symbols-rounded">assessment</span>
                                             Ver Costos
                                         </button>

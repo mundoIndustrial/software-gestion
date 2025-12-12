@@ -39,6 +39,7 @@ class Cotizacion extends Model
         'especificaciones' => 'array',
         'imagenes' => 'array',
         'tecnicas' => 'array',
+        'observaciones_tecnicas' => 'string',
         'ubicaciones' => 'array',
         'observaciones_generales' => 'array',
         'estado' => 'string',
@@ -165,5 +166,22 @@ class Cotizacion extends Model
         }
 
         return null; // Por defecto
+    }
+
+    /**
+     * Convertir a array - Retorna solo el nombre del cliente, no el objeto completo
+     */
+    public function toArray(): array
+    {
+        $array = parent::toArray();
+
+        // Si existe la relación cliente cargada, reemplazarla solo con el nombre
+        if (isset($array['cliente']) && is_array($array['cliente'])) {
+            $array['cliente'] = $array['cliente']['nombre'] ?? null;
+        } elseif ($this->relationLoaded('cliente') && $this->cliente) {
+            $array['cliente'] = $this->cliente->nombre;
+        }
+
+        return $array;
     }
 }

@@ -30,13 +30,122 @@ function abrirModalVisorCostos(cotizacionId, cliente) {
                 
                 mostrarPrendaVisor(0);
             } else {
-                alert('No hay prendas con costos calculados');
+                // Mostrar modal de "sin costos" en lugar de alerta
+                mostrarModalSinCostos(cliente);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error al cargar los costos');
+            mostrarModalErrorCostos(error.message);
         });
+}
+
+/**
+ * Muestra un modal cuando no hay costos calculados
+ */
+function mostrarModalSinCostos(cliente) {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 5000;
+    `;
+    
+    modal.innerHTML = `
+        <div style="
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        ">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">📋</div>
+            <h2 style="color: #1e5ba8; margin: 0 0 1rem 0; font-size: 1.5rem;">Sin Costos Calculados</h2>
+            <p style="color: #666; margin: 0 0 1.5rem 0; line-height: 1.6;">
+                No hay costos calculados para la cotización del cliente <strong>${cliente}</strong>.
+            </p>
+            <p style="color: #999; margin: 0 0 2rem 0; font-size: 0.9rem;">
+                Por favor, calcula los costos de las prendas primero usando la opción "Calcular Costos".
+            </p>
+            <button onclick="this.closest('div').parentElement.remove()" style="
+                background: #1e5ba8;
+                color: white;
+                border: none;
+                padding: 0.75rem 2rem;
+                border-radius: 4px;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 1rem;
+            ">
+                Entendido
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+/**
+ * Muestra un modal cuando hay error al cargar costos
+ */
+function mostrarModalErrorCostos(mensaje) {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 5000;
+    `;
+    
+    modal.innerHTML = `
+        <div style="
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        ">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+            <h2 style="color: #ef4444; margin: 0 0 1rem 0; font-size: 1.5rem;">Error al Cargar Costos</h2>
+            <p style="color: #666; margin: 0 0 1.5rem 0; line-height: 1.6;">
+                Ocurrió un error al intentar cargar los costos de la cotización.
+            </p>
+            <p style="color: #999; margin: 0 0 2rem 0; font-size: 0.9rem;">
+                ${mensaje || 'Por favor, intenta de nuevo más tarde.'}
+            </p>
+            <button onclick="this.closest('div').parentElement.remove()" style="
+                background: #ef4444;
+                color: white;
+                border: none;
+                padding: 0.75rem 2rem;
+                border-radius: 4px;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 1rem;
+            ">
+                Cerrar
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
 }
 
 /**

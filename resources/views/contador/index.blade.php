@@ -1,6 +1,40 @@
 @extends('layouts.contador')
 
 @section('content')
+
+<!-- Event listener para botones "Editar Costos" - DEBE ESTAR AL INICIO -->
+<script>
+    // Función para registrar event listeners
+    function registrarEventListeners() {
+        // Event delegation para botones "Editar Costos"
+        document.addEventListener('click', function(event) {
+            if (event.target.closest('.btn-editar-costos')) {
+                const boton = event.target.closest('.btn-editar-costos');
+                const cotizacionId = boton.getAttribute('data-cotizacion-id');
+                const cliente = boton.getAttribute('data-cliente');
+                
+                console.log('Botón Editar Costos clickeado:', { cotizacionId, cliente });
+                
+                if (typeof abrirModalCalculoCostos === 'function') {
+                    abrirModalCalculoCostos(cotizacionId, cliente);
+                } else {
+                    console.error('Función abrirModalCalculoCostos no disponible');
+                    alert('Función abrirModalCalculoCostos no disponible');
+                }
+            }
+        });
+    }
+    
+    // Registrar listeners al cargar
+    registrarEventListeners();
+    
+    // Re-registrar cuando se recargue la tabla
+    document.addEventListener('tablaPendientesRecargada', function() {
+        console.log('Tabla recargada, re-registrando event listeners');
+        registrarEventListeners();
+    });
+</script>
+
 @push('styles')
     <style>
         /* ====================== ESTILOS GENERALES ====================== */
@@ -25,10 +59,13 @@
             width: 95%;
             max-width: 1400px;
             background: white;
-            border-radius: var(--radius);
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
+            overflow: visible;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             margin: 0 auto 1.5rem auto;
+            padding: 1.5rem;
+            box-sizing: border-box;
+            border: 1px solid #e0e6ed;
         }
 
         .table-header {
@@ -47,15 +84,18 @@
             display: flex;
             gap: 1rem;
             align-items: flex-end;
+            flex-wrap: wrap;
         }
 
         .search-input {
             flex: 1;
+            min-width: 200px;
             padding: 0.75rem 1rem;
             border: 2px solid var(--border-color);
             border-radius: 6px;
             font-size: 0.95rem;
             transition: var(--transition);
+            box-sizing: border-box;
         }
 
         .search-input:focus {
@@ -134,6 +174,23 @@
             color: var(--text-primary);
         }
 
+        table td:last-child {
+            padding-right: 1.5rem;
+        }
+
+        /* Ajustar ancho de columnas específicas */
+        table th:nth-child(5),
+        table td:nth-child(5) {
+            width: 140px;
+            white-space: nowrap;
+        }
+
+        table th:nth-child(6),
+        table td:nth-child(6) {
+            width: 80px;
+            text-align: center;
+        }
+
         /* ====================== ACCIONES ====================== */
         .actions-group {
             display: flex;
@@ -201,16 +258,13 @@
 
         /* ====================== DROPDOWN MENU ====================== */
         .view-dropdown {
-            position: absolute;
-            top: 100%;
-            left: 0;
+            position: fixed;
             background: white;
             border: 1px solid var(--border-color);
             border-radius: 6px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            z-index: 1000;
+            z-index: 10000;
             min-width: 180px;
-            margin-top: 4px;
             animation: slideDown 0.2s ease;
         }
 
@@ -420,9 +474,56 @@
         }
 
         /* ====================== RESPONSIVE ====================== */
+        @media (max-width: 1024px) {
+            .table-container {
+                padding: 0 0.5rem;
+            }
+
+            table th,
+            table td {
+                padding: 0.6rem 0.5rem;
+                font-size: 0.8rem;
+            }
+
+            .btn-action {
+                width: 32px;
+                height: 32px;
+                font-size: 0.9rem;
+            }
+
+            .actions-group {
+                gap: 0.25rem;
+            }
+        }
+
         @media (max-width: 768px) {
+            .table-container {
+                padding: 0;
+                margin: 0 0 1.5rem 0;
+                border-radius: 0;
+            }
+
+            .table-header {
+                padding: 1rem;
+            }
+
+            .table-header h2 {
+                font-size: 1.1rem;
+                margin-bottom: 0.75rem;
+            }
+
             .search-bar {
                 flex-direction: column;
+            }
+
+            .search-input {
+                width: 100%;
+                min-width: unset;
+            }
+
+            .btn-primary,
+            .btn-secondary-clear {
+                width: 100%;
             }
 
             .alert-content {
@@ -431,44 +532,118 @@
             }
 
             table {
-                font-size: 0.8rem;
+                font-size: 0.75rem;
             }
 
             table th,
             table td {
-                padding: 0.75rem 0.5rem;
+                padding: 0.5rem 0.4rem;
+            }
+
+            table th {
+                font-size: 0.7rem;
             }
 
             .actions-group {
                 flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .btn-action {
+                width: 30px;
+                height: 30px;
+                font-size: 0.85rem;
             }
 
             .paginacion {
-                padding: 1.5rem 1rem;
+                padding: 1rem;
             }
 
             .pagination {
-                gap: 0.25rem;
+                gap: 0.2rem;
             }
 
             .pagination .page-link {
-                min-width: 36px;
-                height: 36px;
-                padding: 0.4rem 0.6rem;
-                font-size: 0.8rem;
+                min-width: 32px;
+                height: 32px;
+                padding: 0.3rem 0.5rem;
+                font-size: 0.75rem;
             }
 
             .pagination .page-link .material-symbols-rounded {
-                font-size: 1rem;
+                font-size: 0.9rem;
             }
         }
 
         @media (max-width: 480px) {
-            table th,
-            table td {
-                padding: 0.5rem 0.25rem;
+            .table-container {
+                padding: 0;
+                margin: 0 0 1.5rem 0;
+            }
+
+            .table-header {
+                padding: 0.75rem;
+            }
+
+            .table-header h2 {
+                font-size: 1rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .search-input {
+                font-size: 0.85rem;
+                padding: 0.6rem 0.75rem;
+            }
+
+            .btn-primary,
+            .btn-secondary-clear {
+                padding: 0.6rem 1rem;
+                font-size: 0.8rem;
+            }
+
+            table {
                 font-size: 0.7rem;
             }
+
+            table th,
+            table td {
+                padding: 0.4rem 0.25rem;
+            }
+
+            table th {
+                font-size: 0.65rem;
+                padding: 0.5rem 0.2rem;
+            }
+
+            .actions-group {
+                gap: 0.15rem;
+            }
+
+            .btn-action {
+                width: 28px;
+                height: 28px;
+                font-size: 0.8rem;
+            }
+
+            .paginacion {
+                padding: 0.75rem;
+            }
+
+            .pagination {
+                gap: 0.15rem;
+            }
+
+            .pagination .page-link {
+                min-width: 28px;
+                height: 28px;
+                padding: 0.2rem 0.4rem;
+                font-size: 0.7rem;
+            }
+
+            .pagination .page-link .material-symbols-rounded {
+                font-size: 0.8rem;
+            }
+        }
 
             .btn-action {
                 width: 32px;
@@ -498,7 +673,15 @@ window.toggleViewDropdown = function(button) {
         }
     });
     
-    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+    if (dropdown.style.display === 'none' || dropdown.style.display === '') {
+        // Calcular posición del botón
+        const rect = button.getBoundingClientRect();
+        dropdown.style.display = 'block';
+        dropdown.style.top = (rect.bottom + 4) + 'px';
+        dropdown.style.left = rect.left + 'px';
+    } else {
+        dropdown.style.display = 'none';
+    }
 };
 
 // Cerrar dropdowns al hacer clic afuera
@@ -550,17 +733,11 @@ document.addEventListener('click', function(event) {
                     <tr>
                         <td><strong>COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}</strong></td>
                         <td>{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y h:i A') : 'N/A' }}</td>
-                        <td>{{ $cotizacion->cliente ?? 'N/A' }}</td>
+                        <td>{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? 'N/A') }}</td>
                         <td>{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? 'N/A') }}</td>
                         <td>
                             <div class="actions-group">
-                                <button class="btn-action btn-success" onclick="aprobarCotizacionEnLinea({{ $cotizacion->id }})" title="Aprobar Cotización">
-                                    <span class="material-symbols-rounded">check_circle</span>
-                                </button>
-                                <button class="btn-action btn-edit" onclick="abrirModalCalculoCostos({{ $cotizacion->id }}, '{{ $cotizacion->cliente }}')" title="Editar Costos">
-                                    <span class="material-symbols-rounded">edit</span>
-                                </button>
-                                <!-- Dropdown de Ver -->
+                                <!-- Dropdown de Ver (Primero) -->
                                 <div style="position: relative; display: inline-block;">
                                     <button class="btn-action btn-view" onclick="toggleViewDropdown(this)" title="Ver Opciones">
                                         <span class="material-symbols-rounded">visibility</span>
@@ -570,7 +747,7 @@ document.addEventListener('click', function(event) {
                                             <span class="material-symbols-rounded">description</span>
                                             Ver Cotización
                                         </button>
-                                        <button onclick="abrirModalVisorCostos({{ $cotizacion->id }}, '{{ $cotizacion->cliente }}'); this.closest('.view-dropdown').style.display='none';">
+                                        <button onclick="abrirModalVisorCostos({{ $cotizacion->id }}, '{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}'); this.closest('.view-dropdown').style.display='none';">
                                             <span class="material-symbols-rounded">assessment</span>
                                             Ver Costos
                                         </button>
@@ -580,8 +757,11 @@ document.addEventListener('click', function(event) {
                                         </button>
                                     </div>
                                 </div>
-                                <button class="btn-action btn-danger" onclick="eliminarCotizacion({{ $cotizacion->id }}, '{{ $cotizacion->cliente }}')" title="Eliminar">
-                                    <span class="material-symbols-rounded">delete</span>
+                                <button class="btn-action btn-edit btn-editar-costos" data-cotizacion-id="{{ $cotizacion->id }}" data-cliente="{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}" title="Editar Costos">
+                                    <span class="material-symbols-rounded">edit</span>
+                                </button>
+                                <button class="btn-action btn-success" onclick="aprobarCotizacionEnLinea({{ $cotizacion->id }})" title="Aprobar Cotización">
+                                    <span class="material-symbols-rounded">check_circle</span>
                                 </button>
                             </div>
                         </td>
@@ -835,12 +1015,6 @@ document.addEventListener('click', function(event) {
     <iframe id="pdfViewer" style="position: absolute; top: 60px; left: 0; right: 0; bottom: 0; width: 100%; height: calc(100% - 60px); border: none; background: white;"></iframe>
 </div>
 
-<!-- Script para Modal de Cálculo de Costos -->
-<script src="{{ asset('js/contador/modal-calculo-costos.js') }}"></script>
-
-<!-- Script para Visor de Costos -->
-<script src="{{ asset('js/contador/visor-costos.js') }}"></script>
-
 <!-- Script para Modal PDF -->
 <script>
     // Variable global para acceder desde otros scripts
@@ -892,7 +1066,11 @@ document.addEventListener('click', function(event) {
             cerrarModalPDF();
         }
     });
+
 </script>
+
+<!-- Script de Cotizaciones -->
+<script src="{{ asset('js/contador/cotizacion.js') }}"></script>
 
 <!-- Script de Búsqueda y Filtros -->
 <script src="{{ asset('js/contador/busqueda-filtros.js') }}"></script>

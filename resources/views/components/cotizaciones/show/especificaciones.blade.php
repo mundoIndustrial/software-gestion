@@ -58,14 +58,22 @@
                             @foreach($especificacionesData[$categoriaKey] as $valor)
                                 <tr style="border-bottom: 1px solid #e2e8f0;">
                                     <td style="padding: 12px; color: #333; font-weight: 500; border-right: 1px solid #e2e8f0;">
-                                        @if(is_array($valor))
+                                        @if(is_array($valor) && isset($valor['valor']))
+                                            {{ $valor['valor'] ?? '-' }}
+                                        @elseif(is_array($valor))
                                             {{ implode(', ', $valor) ?? '-' }}
                                         @else
                                             {{ $valor ?? '-' }}
                                         @endif
                                     </td>
                                     <td style="padding: 12px; text-align: center; color: #1e40af; font-weight: 700; font-size: 1.2rem; border-right: 1px solid #e2e8f0;">✕</td>
-                                    <td style="padding: 12px; color: #64748b; font-size: 0.9rem;">Sin observaciones</td>
+                                    <td style="padding: 12px; color: #64748b; font-size: 0.9rem;">
+                                        @if(is_array($valor) && isset($valor['observacion']) && !empty($valor['observacion']))
+                                            {{ $valor['observacion'] }}
+                                        @else
+                                            Sin observaciones
+                                        @endif
+                                    </td>
                                 </tr>
                             @endforeach
                         @endif

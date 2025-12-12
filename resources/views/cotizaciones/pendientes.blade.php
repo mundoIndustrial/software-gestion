@@ -17,8 +17,8 @@
 
     <!-- Tabla -->
     @if(count($cotizaciones) > 0)
-    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div class="overflow-x-auto">
+    <div class="bg-white rounded-lg shadow-lg" style="overflow: visible;">
+        <div class="overflow-x-auto" style="overflow-y: visible;">
             <table class="w-full">
                 <thead>
                     <tr class="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
@@ -74,6 +74,7 @@
                         <!-- Acciones -->
                         <td class="px-6 py-4 whitespace-nowrap text-center">
                             <div class="flex items-center justify-center space-x-2">
+                                <!-- Botón Ver (Primero) -->
                                 <div class="ver-menu-container" style="position: relative;">
                                     <button class="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors duration-200 text-sm font-medium"
                                             title="Ver opciones"

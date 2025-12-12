@@ -179,7 +179,7 @@
                     <button class="user-btn" id="userBtn">
                         <div class="user-avatar">
                             @if(Auth::user()->avatar)
-                                <img src="{{ asset('storage/avatars/' . Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}">
+                                <img src="{{ route('storage.serve', ['path' => 'avatars/' . Auth::user()->avatar]) }}" alt="{{ Auth::user()->name }}">
                             @else
                                 <div class="avatar-placeholder">
                                     {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}

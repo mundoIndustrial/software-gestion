@@ -64,11 +64,23 @@ function guardarEspecificaciones() {
         
         filas.forEach((fila, filaIndex) => {
             const checkbox = fila.querySelector('input[type="checkbox"]');
-            const itemInput = fila.querySelector('input[type="text"]:first-of-type');
-            const obsInput = fila.querySelector('input[type="text"]:last-of-type');
             const label = fila.querySelector('label');
             
-            console.log(`   Fila ${filaIndex}: checkbox=${checkbox ? checkbox.checked : 'no'}, input=${itemInput ? 'sí' : 'no'}, obs=${obsInput ? obsInput.value : 'no'}, label=${label ? label.textContent : 'no'}`);
+            // Obtener todos los inputs de texto
+            const allTextInputs = fila.querySelectorAll('input[type="text"]');
+            let itemInput = null;
+            let obsInput = null;
+            
+            if (allTextInputs.length === 1) {
+                // Solo hay un input: es para observaciones (categorías con label fijo)
+                obsInput = allTextInputs[0];
+            } else if (allTextInputs.length >= 2) {
+                // Hay dos o más inputs: primero es el valor, último es observaciones
+                itemInput = allTextInputs[0];
+                obsInput = allTextInputs[allTextInputs.length - 1];
+            }
+            
+            console.log(`   Fila ${filaIndex}: checkbox=${checkbox ? checkbox.checked : 'no'}, itemInput=${itemInput ? itemInput.value : 'no'}, obsInput=${obsInput ? obsInput.value : 'no'}, label=${label ? label.textContent : 'no'}`);
             
             // Si está marcado, guardar el valor con observaciones
             if (checkbox && checkbox.checked) {

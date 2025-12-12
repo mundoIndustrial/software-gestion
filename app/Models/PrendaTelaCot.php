@@ -11,10 +11,9 @@ class PrendaTelaCot extends Model
 
     protected $fillable = [
         'prenda_cot_id',
-        'color',
-        'nombre_tela',
-        'referencia',
-        'url_imagen',
+        'variante_prenda_cot_id',
+        'color_id',
+        'tela_id',
     ];
 
     /**
@@ -23,5 +22,29 @@ class PrendaTelaCot extends Model
     public function prenda(): BelongsTo
     {
         return $this->belongsTo(PrendaCot::class, 'prenda_cot_id');
+    }
+
+    /**
+     * Relación: Una tela pertenece a una variante
+     */
+    public function variante(): BelongsTo
+    {
+        return $this->belongsTo(PrendaVarianteCot::class, 'variante_prenda_cot_id');
+    }
+
+    /**
+     * Relación: Una tela tiene un color
+     */
+    public function color(): BelongsTo
+    {
+        return $this->belongsTo(ColorPrenda::class, 'color_id');
+    }
+
+    /**
+     * Relación: Una tela tiene un tipo de tela
+     */
+    public function tela(): BelongsTo
+    {
+        return $this->belongsTo(TelaPrenda::class, 'tela_id');
     }
 }

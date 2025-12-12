@@ -555,6 +555,7 @@ async function procederEnviarCotizacion(datos) {
         formData.append('tipo_cotizacion', window.tipoCotizacionGlobal || 'P');
         
         // Secciones de texto
+        formData.append('descripcion_logo', datos.descripcion_logo || '');
         formData.append('tecnicas', JSON.stringify(datos.tecnicas || []));
         formData.append('observaciones_tecnicas', datos.observaciones_tecnicas || '');
         formData.append('ubicaciones', JSON.stringify(datos.ubicaciones || []));
