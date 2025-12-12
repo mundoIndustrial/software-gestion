@@ -275,34 +275,69 @@ function mostrarComparacionCotizacion(data) {
     const prendas = data.prendas_cotizaciones || [];
     
     let html = `
-        <!-- Columna Izquierda: Cotización -->
-        <div style="border-right: 2px solid #e5e7eb; padding-right: 24px;">
-            <h3 style="color: #f97316; font-weight: bold; margin-bottom: 16px;">Cotización #${cotizacion.numero_cotizacion}</h3>
+        <!-- Información de la Cotización -->
+        <div style="margin-bottom: 24px; padding: 16px; background: #f9fafb; border-radius: 8px; border-left: 4px solid #f97316;">
+            <h3 style="color: #f97316; font-weight: bold; margin: 0 0 16px 0;">Cotización #${cotizacion.numero_cotizacion}</h3>
             
-            <div style="background: #f9fafb; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
-                <p><strong>Asesora:</strong> ${cotizacion.asesora_nombre || 'N/A'}</p>
-                <p><strong>Empresa:</strong> ${cotizacion.empresa || 'N/A'}</p>
-                <p><strong>Cliente:</strong> ${cotizacion.nombre_cliente || 'N/A'}</p>
-                <p><strong>Fecha:</strong> ${new Date(cotizacion.created_at).toLocaleDateString()}</p>
-                <p><strong>Estado:</strong> <span style="background: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 4px; font-size: 0.875rem;">${transformarEstado(cotizacion.estado)}</span></p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div>
+                    <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">ASESORA</p>
+                    <p style="color: #1f2937; font-weight: bold; margin: 4px 0 0 0;">${cotizacion.asesora_nombre || 'N/A'}</p>
+                </div>
+                <div>
+                    <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">EMPRESA</p>
+                    <p style="color: #1f2937; font-weight: bold; margin: 4px 0 0 0;">${cotizacion.empresa || 'N/A'}</p>
+                </div>
+                <div>
+                    <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">CLIENTE</p>
+                    <p style="color: #1f2937; font-weight: bold; margin: 4px 0 0 0;">${cotizacion.nombre_cliente || 'N/A'}</p>
+                </div>
+                <div>
+                    <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">FECHA</p>
+                    <p style="color: #1f2937; font-weight: bold; margin: 4px 0 0 0;">${new Date(cotizacion.created_at).toLocaleDateString()}</p>
+                </div>
+                <div>
+                    <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">ESTADO</p>
+                    <p style="margin: 4px 0 0 0;"><span style="background: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 4px; font-size: 0.875rem; font-weight: bold;">${transformarEstado(cotizacion.estado)}</span></p>
+                </div>
             </div>
+        </div>
 
-            <h4 style="font-weight: bold; margin-bottom: 12px; color: #374151;">Prendas:</h4>
-            <div style="background: #f9fafb; padding: 12px; border-radius: 8px; max-height: 400px; overflow-y: auto;">
+        <!-- Prendas de la Cotización -->
+        <div style="margin-top: 24px;">
+            <h4 style="font-weight: bold; margin: 0 0 12px 0; color: #374151;">Prendas Cotizadas</h4>
+            <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
     `;
     
     if (prendas.length === 0) {
-        html += '<p style="color: #6b7280;">No hay prendas en esta cotización</p>';
+        html += '<div style="padding: 16px; color: #6b7280; text-align: center;">No hay prendas en esta cotización</div>';
     } else {
+        html += '<table style="width: 100%; border-collapse: collapse;">';
+        html += `
+            <thead>
+                <tr style="background: #f3f4f6; border-bottom: 1px solid #e5e7eb;">
+                    <th style="padding: 12px; text-align: left; color: #374151; font-weight: bold; font-size: 0.875rem;">PRENDA</th>
+                    <th style="padding: 12px; text-align: center; color: #374151; font-weight: bold; font-size: 0.875rem;">CANTIDAD</th>
+                    <th style="padding: 12px; text-align: left; color: #374151; font-weight: bold; font-size: 0.875rem;">DESCRIPCIÓN</th>
+                </tr>
+            </thead>
+            <tbody>
+        `;
+        
         prendas.forEach((prenda, index) => {
             html += `
-                <div style="padding: 8px; border-bottom: 1px solid #e5e7eb; ${index === 0 ? '' : 'margin-top: 8px;'}">
-                    <p style="margin: 4px 0; font-size: 0.875rem;"><strong>${prenda.nombre_prenda}</strong></p>
-                    <p style="margin: 4px 0; font-size: 0.875rem; color: #6b7280;">Cantidad: ${prenda.cantidad}</p>
-                    ${prenda.detalles_proceso ? `<p style="margin: 4px 0; font-size: 0.75rem; color: #6b7280;">${prenda.detalles_proceso}</p>` : ''}
-                </div>
+                <tr style="border-bottom: 1px solid #e5e7eb; ${index % 2 === 0 ? 'background: #ffffff;' : 'background: #f9fafb;'}">
+                    <td style="padding: 12px; color: #1f2937; font-weight: 500;">${prenda.nombre_prenda}</td>
+                    <td style="padding: 12px; text-align: center; color: #1f2937; font-weight: 500;">${prenda.cantidad}</td>
+                    <td style="padding: 12px; color: #6b7280; font-size: 0.875rem;">${prenda.descripcion || prenda.detalles_proceso || 'Sin descripción'}</td>
+                </tr>
             `;
         });
+        
+        html += `
+            </tbody>
+        </table>
+        `;
     }
     
     html += `
