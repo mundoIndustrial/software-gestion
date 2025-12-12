@@ -4,8 +4,8 @@
             <div class="prenda-header-top">
                 <a href="{{ route('balanceo.index') }}" 
                    class="prenda-header-back-btn"
-                   onmouseover="this.style.background='rgba(255, 157, 88, 0.2)'; this.style.transform='translateX(-5px)'" 
-                   onmouseout="this.style.background='rgba(255, 157, 88, 0.1)'; this.style.transform='translateX(0)'">
+                   onmouseover="this.style.background='rgba(59, 130, 246, 0.2)'; this.style.transform='translateX(-5px)'" 
+                   onmouseout="this.style.background='rgba(59, 130, 246, 0.1)'; this.style.transform='translateX(0)'">
                     <span class="material-symbols-rounded" style="font-size: 24px;">arrow_back</span>
                 </a>
                 <h1 class="prenda-header-title">{{ $prenda->nombre }}</h1>
@@ -29,8 +29,8 @@
                     <a href="{{ route('balanceo.prenda.edit', $prenda->id) }}" 
                        title="Editar Prenda"
                        class="prenda-action-btn"
-                       onmouseover="this.style.background='rgba(255, 157, 88, 0.2)'; this.style.transform='scale(1.1)'" 
-                       onmouseout="this.style.background='rgba(255, 157, 88, 0.1)'; this.style.transform='scale(1)'">
+                       onmouseover="this.style.background='rgba(59, 130, 246, 0.2)'; this.style.transform='scale(1.1)'" 
+                       onmouseout="this.style.background='rgba(59, 130, 246, 0.1)'; this.style.transform='scale(1)'">
                         <span class="material-symbols-rounded" style="font-size: 20px;">edit</span>
                     </a>
                     <button onclick="deletePrenda({{ $prenda->id }})" 
@@ -44,7 +44,7 @@
             </div>
             
             @if($prenda->referencia)
-            <p class="prenda-header-info" style="margin-bottom: 8px;"><strong style="color: #ff9d58;">Referencia:</strong> {{ $prenda->referencia }}</p>
+            <p class="prenda-header-info" style="margin-bottom: 8px;"><strong style="color: #3B82F6;">Referencia:</strong> {{ $prenda->referencia }}</p>
             @endif
             
             @if($prenda->descripcion)

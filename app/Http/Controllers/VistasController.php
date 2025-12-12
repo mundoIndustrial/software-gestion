@@ -8,6 +8,7 @@ use App\Models\RegistrosPorOrdenBodega;
 use App\Models\TablaOriginalBodega;
 use App\Models\EntregaPedidoCorte;
 use App\Models\EntregaBodegaCorte;
+use App\Models\PedidoProduccion;
 
 class VistasController extends Controller
 {
@@ -324,52 +325,84 @@ class VistasController extends Controller
     {
         $query = $request->input('search');
 
-        // Obtener órdenes de ambas tablas donde area = 'Control-Calidad'
-        $ordenesPedido = TablaOriginal::where('area', 'Control-Calidad');
-        $ordenesBodega = TablaOriginalBodega::where('area', 'Control-Calidad');
+        // Obtener órdenes de pedidos de la tabla PedidoProduccion donde area = 'Control Calidad'
+        // con JOIN a procesos_prenda para obtener la fecha de ingreso a control calidad
+        $ordenesPedidosQuery = PedidoProduccion::where('area', 'Control Calidad')
+            ->leftJoinSub(
+                \DB::table('procesos_prenda')
+                    ->where('proceso', 'Control Calidad')
+                    ->select('numero_pedido', 'fecha_inicio as fecha_ingreso_control_calidad'),
+                'procesos',
+                'pedidos_produccion.numero_pedido',
+                '=',
+                'procesos.numero_pedido'
+            );
 
         // Aplicar búsqueda si existe
         if ($query) {
-            $ordenesPedido->where(function($q) use ($query) {
-                $q->where('pedido', 'like', "%{$query}%")
+            $ordenesPedidosQuery->where(function($q) use ($query) {
+                $q->where('numero_pedido', 'like', "%{$query}%")
                   ->orWhere('cliente', 'like', "%{$query}%");
             });
-            $ordenesBodega->where(function($q) use ($query) {
+        }
+
+        $ordenesPedidos = $ordenesPedidosQuery->get();
+
+        // Obtener órdenes de bodega de tabla_original_bodega donde area = 'Control-Calidad'
+        $ordenesBodegaQuery = TablaOriginalBodega::where('area', 'Control-Calidad');
+        
+        if ($query) {
+            $ordenesBodegaQuery->where(function($q) use ($query) {
                 $q->where('pedido', 'like', "%{$query}%")
                   ->orWhere('cliente', 'like', "%{$query}%");
             });
         }
 
-        // Obtener resultados y combinarlos
-        $ordenes = $ordenesPedido->get()->merge($ordenesBodega->get());
+        $ordenesBodega = $ordenesBodegaQuery->get();
 
-        return view('vistas.control-calidad', compact('ordenes', 'query'));
+        return view('vistas.control-calidad', compact('ordenesPedidos', 'ordenesBodega', 'query'));
     }
 
     public function controlCalidadFullscreen(Request $request)
     {
         $query = $request->input('search');
 
-        // Obtener órdenes de ambas tablas donde area = 'Control-Calidad'
-        $ordenesPedido = TablaOriginal::where('area', 'Control-Calidad');
-        $ordenesBodega = TablaOriginalBodega::where('area', 'Control-Calidad');
+        // Obtener órdenes de pedidos de la tabla PedidoProduccion donde area = 'Control Calidad'
+        // con JOIN a procesos_prenda para obtener la fecha de ingreso a control calidad
+        $ordenesPedidosQuery = PedidoProduccion::where('area', 'Control Calidad')
+            ->leftJoinSub(
+                \DB::table('procesos_prenda')
+                    ->where('proceso', 'Control Calidad')
+                    ->select('numero_pedido', 'fecha_inicio as fecha_ingreso_control_calidad'),
+                'procesos',
+                'pedidos_produccion.numero_pedido',
+                '=',
+                'procesos.numero_pedido'
+            );
 
         // Aplicar búsqueda si existe
         if ($query) {
-            $ordenesPedido->where(function($q) use ($query) {
-                $q->where('pedido', 'like', "%{$query}%")
+            $ordenesPedidosQuery->where(function($q) use ($query) {
+                $q->where('numero_pedido', 'like', "%{$query}%")
                   ->orWhere('cliente', 'like', "%{$query}%");
             });
-            $ordenesBodega->where(function($q) use ($query) {
+        }
+
+        $ordenesPedidos = $ordenesPedidosQuery->get();
+
+        // Obtener órdenes de bodega de tabla_original_bodega donde area = 'Control-Calidad'
+        $ordenesBodegaQuery = TablaOriginalBodega::where('area', 'Control-Calidad');
+        
+        if ($query) {
+            $ordenesBodegaQuery->where(function($q) use ($query) {
                 $q->where('pedido', 'like', "%{$query}%")
                   ->orWhere('cliente', 'like', "%{$query}%");
             });
         }
 
-        // Obtener resultados y combinarlos
-        $ordenes = $ordenesPedido->get()->merge($ordenesBodega->get());
+        $ordenesBodega = $ordenesBodegaQuery->get();
 
-        return view('vistas.control-calidad-fullscreen', compact('ordenes', 'query'));
+        return view('vistas.control-calidad-fullscreen', compact('ordenesPedidos', 'ordenesBodega', 'query'));
     }
 
     public function updateCell(Request $request)

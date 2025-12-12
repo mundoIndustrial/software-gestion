@@ -17,10 +17,10 @@
             <button @click="redondearValores = !redondearValores" 
                     class="metricas-toggle-btn"
                     :title="redondearValores ? 'Mostrar valores exactos' : 'Redondear valores'"
-                    :style="'background: ' + (redondearValores ? 'rgba(67, 233, 123, 0.15)' : 'rgba(255, 157, 88, 0.1)') + '; border: 1px solid ' + (redondearValores ? 'rgba(67, 233, 123, 0.4)' : 'rgba(255, 157, 88, 0.3)')'"
+                    :style="'background: ' + (redondearValores ? 'rgba(67, 233, 123, 0.15)' : 'rgba(59, 130, 246, 0.1)') + '; border: 1px solid ' + (redondearValores ? 'rgba(67, 233, 123, 0.4)' : 'rgba(59, 130, 246, 0.3)')'"
                     onmouseover="this.style.transform='scale(1.05)'"
                     onmouseout="this.style.transform='scale(1)'">
-                <span class="material-symbols-rounded" :style="'font-size: 20px; color: ' + (redondearValores ? '#43e97b' : '#ff9d58')">calculate</span>
+                <span class="material-symbols-rounded" :style="'font-size: 20px; color: ' + (redondearValores ? '#43e97b' : '#3B82F6')">calculate</span>
                 <span x-text="redondearValores ? 'Redondeado' : 'Exacto'" style="font-size: 13px; font-weight: 600;"></span>
             </button>
             
@@ -28,9 +28,9 @@
             <button @click="mostrarCuelloBotella = !mostrarCuelloBotella" 
                     class="metricas-toggle-btn"
                     :title="mostrarCuelloBotella ? 'Ocultar análisis de cuello de botella' : 'Mostrar análisis de cuello de botella'"
-                    onmouseover="this.style.background='rgba(255, 157, 88, 0.2)'; this.style.borderColor='rgba(255, 157, 88, 0.5)'"
-                    onmouseout="this.style.background='rgba(255, 157, 88, 0.1)'; this.style.borderColor='rgba(255, 157, 88, 0.3)'">
-                <span class="material-symbols-rounded" style="font-size: 20px; color: #ff9d58;">analytics</span>
+                    onmouseover="this.style.background='rgba(59, 130, 246, 0.2)'; this.style.borderColor='rgba(59, 130, 246, 0.5)'"
+                    onmouseout="this.style.background='rgba(59, 130, 246, 0.1)'; this.style.borderColor='rgba(59, 130, 246, 0.3)'">
+                <span class="material-symbols-rounded" style="font-size: 20px; color: #3B82F6;">analytics</span>
                 <span x-text="mostrarCuelloBotella ? 'Vista Simple' : 'Cuello de Botella'" style="font-size: 13px; font-weight: 600;"></span>
             </button>
         </div>
@@ -138,7 +138,7 @@
 
     <div class="metricas-note">
         <p style="margin: 0; color: var(--color-text-placeholder); font-size: 12px; line-height: 1.6;">
-            <strong style="color: #ff9d58;">Nota:</strong> Los campos editables actualizan automáticamente todas las métricas calculadas. 
+            <strong style="color: #3B82F6;">Nota:</strong> Los campos editables actualizan automáticamente todas las métricas calculadas. 
             <span x-show="redondearValores" style="color: #43e97b; font-weight: 600;">• Valores redondeados activos</span>
         </p>
     </div>

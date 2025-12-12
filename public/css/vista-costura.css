@@ -87,7 +87,7 @@ body.dark-theme {
 }
 
 .search-bar:focus-within {
-    border-color: #ff6b35;
+    border-color: #3B82F6;
     box-shadow: 0 4px 15px rgba(255, 107, 53, 0.2);
 }
 
@@ -142,7 +142,7 @@ body.dark-theme {
 
 .clear-search-btn:hover {
     background: rgba(255, 107, 53, 0.15);
-    color: #ff6b35;
+    color: #3B82F6;
     transform: translateY(-50%) scale(1.15);
 }
 
@@ -181,13 +181,13 @@ body.dark-theme {
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, #FF6B35, #ff8555, #ffa075);
+    background: linear-gradient(90deg, #3B82F6, #5B9FFF, #7DB3FF);
     z-index: 1;
 }
 
 .pedido-card:hover {
     transform: translateY(-2px);
-    border-color: #FF6B35;
+    border-color: #3B82F6;
     box-shadow: 0 10px 30px rgba(255, 107, 53, 0.3);
 }
 
@@ -209,7 +209,7 @@ body.dark-theme {
 }
 
 body.dark-theme .card-header h3 {
-    color: #ffcc80;
+    color: #93C5FD;
 }
 
 /* Encargado de corte */
@@ -410,8 +410,8 @@ body:not(.dark-theme) .fecha_completado-cell {
 }
 
 .pagination-btn.active {
-    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
-    border-color: #ff6b35;
+    background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+    border-color: #3B82F6;
     color: white;
     font-weight: 600;
     box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);

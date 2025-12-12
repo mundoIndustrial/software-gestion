@@ -7,13 +7,13 @@
     <div style="max-width: 900px; width: 70%; margin: 0 auto;">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
             <a href="{{ route('balanceo.index') }}"
-               style="color: #ff9d58; text-decoration: none; display: flex; align-items: center; transition: all 0.2s; padding: 8px; border-radius: 8px; background: rgba(255, 157, 88, 0.1);"
-               onmouseover="this.style.background='rgba(255, 157, 88, 0.2)'; this.style.transform='translateX(-5px)'"
-               onmouseout="this.style.background='rgba(255, 157, 88, 0.1)'; this.style.transform='translateX(0)'">
+               style="color: #3B82F6; text-decoration: none; display: flex; align-items: center; transition: all 0.2s; padding: 8px; border-radius: 8px; background: rgba(59, 130, 246, 0.1);"
+               onmouseover="this.style.background='rgba(59, 130, 246, 0.2)'; this.style.transform='translateX(-5px)'"
+               onmouseout="this.style.background='rgba(59, 130, 246, 0.1)'; this.style.transform='translateX(0)'">
                 <span class="material-symbols-rounded">arrow_back</span>
             </a>
             <h1 style="margin: 0; font-size: 28px; color: white; display: flex; align-items: center; gap: 10px;">
-                <span class="material-symbols-rounded" style="color: #ff9d58;">add_circle</span>
+                <span class="material-symbols-rounded" style="color: #3B82F6;">add_circle</span>
                 Nueva Prenda
             </h1>
         </div>
@@ -98,7 +98,7 @@
                                    onchange="previewImage(event)">
                             <label for="imagen" style="cursor: pointer;">
                                 <div id="preview-container">
-                                    <span class="material-symbols-rounded" style="font-size: 48px; color: #ff9d58; display: block; margin-bottom: 8px;">add_photo_alternate</span>
+                                    <span class="material-symbols-rounded" style="font-size: 48px; color: #3B82F6; display: block; margin-bottom: 8px;">add_photo_alternate</span>
                                     <p style="color: #4a5568; margin: 0; font-weight: 500;">Seleccionar imagen</p>
                                     <p style="color: #94a3b8; font-size: 13px; margin-top: 4px;">JPG, PNG, GIF, WEBP (máx. 5MB)</p>
                                 </div>
@@ -181,7 +181,7 @@
 .label-icon {
     width: 18px;
     height: 18px;
-    color: #ff9d58;
+    color: #3B82F6;
     stroke-width: 2;
 }
 
@@ -200,9 +200,9 @@
 .form-input:focus,
 .form-select:focus {
     outline: none;
-    border-color: #ff9d58;
+    border-color: #3B82F6;
     background: white;
-    box-shadow: 0 0 0 3px rgba(255, 157, 88, 0.1);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .form-actions {
@@ -232,13 +232,13 @@
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #ff9d58 0%, #ff7b3d 100%);
+    background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
     color: white;
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(255, 157, 88, 0.4);
+    box-shadow: 0 8px 16px rgba(59, 130, 246, 0.4);
 }
 
 .btn-secondary {

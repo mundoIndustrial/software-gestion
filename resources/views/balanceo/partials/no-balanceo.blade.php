@@ -4,7 +4,7 @@
     <p style="color: var(--color-text-placeholder); margin-bottom: 24px;">Crea un nuevo balanceo para esta prenda</p>
     <form action="{{ route('balanceo.create', $prenda->id) }}" method="POST" style="display: inline;">
         @csrf
-        <button type="submit" style="background: linear-gradient(135deg, #ff9d58 0%, #ff7b3d 100%); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; box-shadow: 0 4px 6px rgba(255, 157, 88, 0.3); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 16px rgba(255, 157, 88, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(255, 157, 88, 0.3)'">
+        <button type="submit" style="background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 16px rgba(59, 130, 246, 0.4)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(59, 130, 246, 0.3)'">
             <span class="material-symbols-rounded">add</span>
             Crear Balanceo
         </button>

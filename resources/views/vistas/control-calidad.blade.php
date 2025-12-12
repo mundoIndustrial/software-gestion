@@ -47,13 +47,8 @@
                             </tr>
                         </thead>
                         <tbody>
-                        @php
-                            $ordenesPedido = $ordenes->filter(function($orden) {
-                                return $orden->getTable() === 'tabla_original';
-                            });
-                        @endphp
-                        @forelse($ordenesPedido as $orden)
-                            <tr data-pedido="{{ $orden->pedido }}">
+                        @forelse($ordenesPedidos as $orden)
+                            <tr data-pedido="{{ $orden->numero_pedido }}">
                                 <td>
                                     <span class="badge badge-{{ strtolower(str_replace(' ', '-', $orden->estado ?? 'default')) }}">
                                         {{ $orden->estado ?? '-' }}
@@ -66,12 +61,12 @@
                                         -
                                     @endif
                                 </td>
-                                <td>{{ $orden->pedido ?? '-' }}</td>
+                                <td>{{ $orden->numero_pedido ?? '-' }}</td>
                                 <td>{{ $orden->cliente ?? '-' }}</td>
                                 <td>{{ $orden->novedades ?? '-' }}</td>
                                 <td>
-                                    @if($orden->control_de_calidad)
-                                        {{ \Carbon\Carbon::parse($orden->control_de_calidad)->format('d/m/Y h:i A') }}
+                                    @if($orden->fecha_ingreso_control_calidad)
+                                        {{ \Carbon\Carbon::parse($orden->fecha_ingreso_control_calidad)->format('d/m/Y') }}
                                     @else
                                         -
                                     @endif
@@ -79,16 +74,16 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="empty-state">
+                                <td colspan="6" class="empty-state">
                                     <i class="fas fa-clipboard-check"></i>
-                                    <p>No hay órdenes de pedidos en Control de Calidad</p>
+                                    <p>No hay órdenes en Control de Calidad</p>
                                 </td>
                             </tr>
                         @endforelse
                         </tbody>
                         <tfoot>
                             <tr>
-                                <td colspan="6">Total de órdenes: {{ $ordenesPedido->count() }}</td>
+                                <td colspan="6">Total de órdenes: {{ $ordenesPedidos->count() }}</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -109,17 +104,12 @@
                                 <th>Pedido</th>
                                 <th>Cliente</th>
                                 <th>Novedad</th>
-                                <th>Fecha Ingreso a Control de Calidad</th>
+                                <th>Observaciones</th>
                             </tr>
                         </thead>
                         <tbody>
-                        @php
-                            $ordenesBodega = $ordenes->filter(function($orden) {
-                                return $orden->getTable() === 'tabla_original_bodega';
-                            });
-                        @endphp
                         @forelse($ordenesBodega as $orden)
-                            <tr data-pedido="{{ $orden->pedido }}">
+                            <tr data-pedido="{{ $orden->pedido ?? '' }}">
                                 <td>
                                     <span class="badge badge-{{ strtolower(str_replace(' ', '-', $orden->estado ?? 'default')) }}">
                                         {{ $orden->estado ?? '-' }}
@@ -137,7 +127,7 @@
                                 <td>{{ $orden->novedades ?? '-' }}</td>
                                 <td>
                                     @if($orden->control_de_calidad)
-                                        {{ \Carbon\Carbon::parse($orden->control_de_calidad)->format('d/m/Y h:i A') }}
+                                        {{ \Carbon\Carbon::parse($orden->control_de_calidad)->format('d/m/Y') }}
                                     @else
                                         -
                                     @endif

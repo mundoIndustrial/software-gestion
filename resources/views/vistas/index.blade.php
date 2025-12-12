@@ -547,7 +547,7 @@
         const style = document.createElement('style');
         style.textContent = `
             .btn-toggle-edit {
-                background: #ff9800;
+                background: #3B82F6;
                 color: white;
                 border: none;
                 padding: 6px 12px;
@@ -572,7 +572,7 @@
                 background: #45a049;
             }
             .pedido-card.edit-mode {
-                box-shadow: 0 0 0 2px #ff9800;
+                box-shadow: 0 0 0 2px #3B82F6;
             }
             .pedido-card:not(.edit-mode) td.editable {
                 cursor: default;
@@ -584,7 +584,7 @@
             }
             .pedido-card.edit-mode td.editable:hover {
                 background-color: rgba(255, 152, 0, 0.15) !important;
-                outline: 1px dashed #ff9800;
+                outline: 1px dashed #3B82F6;
             }
             .pedido-card.edit-mode td.editable:hover::after {
                 content: '✎';
@@ -592,7 +592,7 @@
                 right: 4px;
                 top: 50%;
                 transform: translateY(-50%);
-                color: #ff9800;
+                color: #3B82F6;
                 font-size: 12px;
                 opacity: 0.9;
             }

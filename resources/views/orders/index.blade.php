@@ -401,4 +401,7 @@
 
     <!-- TRACKING MODAL HANDLER -->
     <script src="{{ asset('js/orders js/tracking-modal-handler.js') }}?v={{ time() }}"></script>
+
+    <!-- DEBUG SIDEBAR WIDTHS -->
+    <script src="{{ asset('js/debug-sidebar.js') }}?v={{ time() }}"></script>
 @endpush

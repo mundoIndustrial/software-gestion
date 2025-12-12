@@ -163,7 +163,7 @@
                 <span>Agregar Prenda</span>
             </button>
             <button type="button" onclick="abrirModalEspecificaciones(); document.getElementById('menuFlotante').style.display='none'; document.getElementById('btnFlotante').style.transform='scale(1) rotate(0deg)'" style="width: 100%; padding: 12px 16px; border: none; background: white; cursor: pointer; text-align: left; font-size: 0.9rem; color: #333; display: flex; align-items: center; gap: 12px; transition: all 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='white'">
-                <i class="fas fa-sliders-h" style="color: #ff9800; font-size: 1.1rem;"></i>
+                <i class="fas fa-sliders-h" style="color: #3B82F6; font-size: 1.1rem;"></i>
                 <span>Especificaciones</span>
             </button>
         </div>

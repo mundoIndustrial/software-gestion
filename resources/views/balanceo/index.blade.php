@@ -1,4 +1,4 @@
-@extends('produccion.layout')
+@extends('layouts.app')
 
 @push('styles')
 <!-- Optimizaciones SOLO para módulo balanceo -->
@@ -39,8 +39,8 @@
                 </p>
             </div>
             <a href="{{ route('balanceo.prenda.create') }}" 
-               style="background: #ff9d58; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; font-weight: 500; box-shadow: 0 2px 4px rgba(255, 157, 88, 0.3); transition: background 0.2s;"
-               onmouseover="this.style.background='#e88a47'" onmouseout="this.style.background='#ff9d58'">
+               style="background: #3B82F6; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; text-decoration: none; font-weight: 500; box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3); transition: background 0.2s;"
+               onmouseover="this.style.background='#1D4ED8'" onmouseout="this.style.background='#3B82F6'">
                 <span class="material-symbols-rounded">add</span>
                 Nueva Prenda
             </a>
@@ -56,7 +56,7 @@
                        value="{{ request('search') }}"
                        placeholder="Buscar por nombre, referencia o tipo de prenda..."
                        style="width: 100%; padding: 12px 16px 12px 48px; border: 1px solid var(--color-border-hr); border-radius: 8px; font-size: 15px; transition: all 0.3s ease; background: var(--color-bg-sidebar); color: var(--color-text-primary);"
-                       onfocus="this.style.borderColor='rgba(255, 157, 88, 0.4)'; this.style.boxShadow='0 0 0 3px rgba(255, 157, 88, 0.1)'"
+                       onfocus="this.style.borderColor='rgba(59, 130, 246, 0.4)'; this.style.boxShadow='0 0 0 3px rgba(59, 130, 246, 0.1)'"
                        onblur="this.style.borderColor='var(--color-border-hr)'; this.style.boxShadow='none'">
                 @if(request('search'))
                 <button type="button" 
@@ -100,8 +100,8 @@
 <style>
 .prenda-card:hover {
     transform: translateY(-5px);
-    border-color: #ff9d58 !important;
-    box-shadow: 0 8px 16px rgba(255, 157, 88, 0.25) !important;
+    border-color: #3B82F6 !important;
+    box-shadow: 0 8px 16px rgba(59, 130, 246, 0.25) !important;
 }
 
 /* Tarjeta con balanceo incompleto */

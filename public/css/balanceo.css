@@ -30,8 +30,8 @@
 
 .search-input:focus {
     outline: none;
-    border-color: rgba(255, 157, 88, 0.4);
-    box-shadow: 0 0 0 3px rgba(255, 157, 88, 0.1);
+    border-color: rgba(59, 130, 246, 0.4);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .search-clear {
@@ -66,7 +66,7 @@
 
 .prenda-card:hover {
     transform: translateY(-4px);
-    border-color: rgba(255, 157, 88, 0.4);
+    border-color: rgba(59, 130, 246, 0.4);
     box-shadow: 0 8px 16px var(--color-shadow);
 }
 
@@ -109,7 +109,7 @@ html[data-theme="dark"] .prenda-card__image {
     position: absolute;
     top: 12px;
     right: 12px;
-    background: #ff9d58;
+    background: #3B82F6;
     color: white;
     padding: 6px 12px;
     border-radius: 20px;
@@ -172,7 +172,7 @@ html[data-theme="dark"] .prenda-card__image {
 .metric-value {
     margin: 4px 0 0 0;
     font-weight: 700;
-    color: #ff9d58;
+    color: #3B82F6;
     font-size: 18px;
 }
 
@@ -194,7 +194,7 @@ html[data-theme="dark"] .prenda-card__image {
 .prenda-card__button {
     width: 100%;
     margin-top: 16px;
-    background: #ff9d58;
+    background: #3B82F6;
     color: white;
     border: none;
     padding: 10px;
@@ -209,7 +209,7 @@ html[data-theme="dark"] .prenda-card__image {
 }
 
 .prenda-card__button:hover {
-    background: #e88a47;
+    background: #1D4ED8;
 }
 
 .prenda-card__button .material-symbols-rounded {
@@ -247,7 +247,7 @@ html[data-theme="dark"] .prenda-card__image {
 }
 
 .empty-state__button {
-    background: #ff9d58;
+    background: #3B82F6;
     color: white;
     border: none;
     padding: 12px 24px;
@@ -258,7 +258,7 @@ html[data-theme="dark"] .prenda-card__image {
     gap: 8px;
     text-decoration: none;
     font-weight: 500;
-    box-shadow: 0 2px 4px rgba(255, 157, 88, 0.3);
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
 
 /* Success Message */
@@ -296,7 +296,7 @@ html[data-theme="dark"] .prenda-card__image {
 }
 
 .btn-primary {
-    background: #ff9d58;
+    background: #3B82F6;
     color: white;
     border: none;
     padding: 12px 24px;
@@ -307,12 +307,12 @@ html[data-theme="dark"] .prenda-card__image {
     gap: 8px;
     text-decoration: none;
     font-weight: 500;
-    box-shadow: 0 2px 4px rgba(255, 157, 88, 0.3);
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
     transition: background 0.2s;
 }
 
 .btn-primary:hover {
-    background: #e88a47;
+    background: #1D4ED8;
 }
 
 /* Responsive Design */

@@ -46,7 +46,7 @@
         }
 
         .header h1 i {
-            color: #ff6b35;
+            color: #3B82F6;
         }
 
         .header-actions {
@@ -71,7 +71,7 @@
 
         .search-box input:focus {
             outline: none;
-            border-color: #ff6b35;
+            border-color: #3B82F6;
         }
 
         .search-box i.fa-search {
@@ -83,7 +83,7 @@
         }
 
         .close-fullscreen-btn {
-            background: #ff6b35;
+            background: #3B82F6;
             color: white;
             border: none;
             padding: 10px 20px;
@@ -121,7 +121,7 @@
             padding: 12px 20px;
             font-size: 17px;
             font-weight: 600;
-            border-bottom: 3px solid #ff6b35;
+            border-bottom: 3px solid #3B82F6;
         }
 
         .table-scroll {
@@ -149,7 +149,7 @@
             left: 0;
             right: 0;
             height: 3px;
-            background: #ff6b35;
+            background: #3B82F6;
             z-index: 11;
         }
 
@@ -214,7 +214,7 @@
             left: 0;
             right: 0;
             height: 3px;
-            background: #ff6b35;
+            background: #3B82F6;
             z-index: 11;
         }
 
@@ -391,13 +391,8 @@
                             </tr>
                         </thead>
                         <tbody>
-                        @php
-                            $ordenesPedido = $ordenes->filter(function($orden) {
-                                return $orden->getTable() === 'tabla_original';
-                            });
-                        @endphp
-                        @forelse($ordenesPedido as $orden)
-                            <tr data-pedido="{{ $orden->pedido }}">
+                        @forelse($ordenesPedidos as $orden)
+                            <tr data-pedido="{{ $orden->numero_pedido }}">
                                 <td>
                                     <span class="badge badge-{{ strtolower(str_replace(' ', '-', $orden->estado ?? 'default')) }}">
                                         {{ $orden->estado ?? '-' }}
@@ -409,13 +404,13 @@
                                     @else
                                         -
                                     @endif
-                            <tr>
-                                <td title="{{ $orden->numero_orden ?? '-' }}">{{ $orden->numero_orden ?? '-' }}</td>
+                                </td>
+                                <td title="{{ $orden->numero_pedido ?? '-' }}">{{ $orden->numero_pedido ?? '-' }}</td>
                                 <td title="{{ $orden->cliente ?? '-' }}">{{ $orden->cliente ?? '-' }}</td>
                                 <td title="{{ $orden->novedades ?? '-' }}">{{ $orden->novedades ?? '-' }}</td>
                                 <td>
-                                    @if($orden->control_de_calidad)
-                                        {{ \Carbon\Carbon::parse($orden->control_de_calidad)->format('d/m/Y h:i A') }}
+                                    @if($orden->fecha_ingreso_control_calidad)
+                                        {{ \Carbon\Carbon::parse($orden->fecha_ingreso_control_calidad)->format('d/m/Y h:i A') }}
                                     @else
                                         -
                                     @endif
@@ -432,7 +427,7 @@
                         </tbody>
                         <tfoot>
                             <tr>
-                                <td colspan="6">Total de órdenes: {{ $ordenesPedido->count() }}</td>
+                                <td colspan="6">Total de órdenes: {{ $ordenesPedidos->count() }}</td>
                             </tr>
                         </tfoot>
                     </table>
@@ -457,13 +452,8 @@
                             </tr>
                         </thead>
                         <tbody>
-                        @php
-                            $ordenesBodega = $ordenes->filter(function($orden) {
-                                return $orden->getTable() === 'tabla_original_bodega';
-                            });
-                        @endphp
                         @forelse($ordenesBodega as $orden)
-                            <tr data-pedido="{{ $orden->pedido }}">
+                            <tr data-pedido="{{ $orden->pedido ?? '' }}">
                                 <td>
                                     <span class="badge badge-{{ strtolower(str_replace(' ', '-', $orden->estado ?? 'default')) }}">
                                         {{ $orden->estado ?? '-' }}

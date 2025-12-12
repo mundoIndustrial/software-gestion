@@ -156,10 +156,10 @@
 }
 
 .modal-header {
-    background: rgba(255, 157, 88, 0.1);
+    background: rgba(59, 130, 246, 0.1);
     backdrop-filter: blur(10px);
     padding: 24px 32px;
-    border-bottom: 1px solid rgba(255, 157, 88, 0.2);
+    border-bottom: 1px solid rgba(59, 130, 246, 0.2);
 }
 
 .header-content {
@@ -171,12 +171,12 @@
 .icon-wrapper {
     width: 48px;
     height: 48px;
-    background: linear-gradient(135deg, #ff9d58 0%, #ff7b3d 100%);
+    background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4px 12px rgba(255, 157, 88, 0.3);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .header-icon {
@@ -235,7 +235,7 @@
 .label-icon {
     width: 18px;
     height: 18px;
-    color: #ff9d58;
+    color: #3B82F6;
     stroke-width: 2;
 }
 
@@ -254,9 +254,9 @@
 .form-input:focus,
 .form-select:focus {
     outline: none;
-    border-color: #ff9d58;
+    border-color: #3B82F6;
     background: white;
-    box-shadow: 0 0 0 3px rgba(255, 157, 88, 0.1);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .form-actions {
@@ -285,13 +285,13 @@
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, #ff9d58 0%, #ff7b3d 100%);
+    background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
     color: white;
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 16px rgba(255, 157, 88, 0.4);
+    box-shadow: 0 8px 16px rgba(59, 130, 246, 0.4);
 }
 
 .btn-secondary {
@@ -304,13 +304,13 @@
 }
 
 .btn-secondary-alt {
-    background: rgba(255, 157, 88, 0.1);
-    color: #ff9d58;
-    border: 1px solid rgba(255, 157, 88, 0.3);
+    background: rgba(59, 130, 246, 0.1);
+    color: #3B82F6;
+    border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .btn-secondary-alt:hover {
-    background: rgba(255, 157, 88, 0.2);
+    background: rgba(59, 130, 246, 0.2);
 }
 
 @media (max-width: 768px) {

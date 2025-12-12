@@ -30,7 +30,7 @@
 }
 
 .page-title i {
-    color: #ff6b35;
+    color: #3B82F6;
 }
 
 .header-actions {
@@ -67,7 +67,7 @@
 
 .search-box input:focus {
     outline: none;
-    border-color: #ff6b35;
+    border-color: #3B82F6;
     box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
 }
 
@@ -94,7 +94,7 @@
 
 /* ===== BOTÓN FULLSCREEN ===== */
 .fullscreen-btn {
-    background: #ff6b35;
+    background: #3B82F6;
     border: none;
     border-radius: 8px;
     padding: 10px 12px;
@@ -171,7 +171,7 @@
     left: 0;
     right: 0;
     height: 3px;
-    background: #ff6b35;
+    background: #3B82F6;
     z-index: 11;
 }
 
@@ -213,7 +213,7 @@
     left: 0;
     right: 0;
     height: 3px;
-    background: #ff6b35;
+    background: #3B82F6;
     z-index: 11;
 }
 
@@ -303,7 +303,7 @@
 }
 
 [data-theme="dark"] .data-table thead::after {
-    background: #ff6b35;
+    background: #3B82F6;
 }
 
 [data-theme="dark"] .data-table th {
@@ -328,7 +328,7 @@
 }
 
 [data-theme="dark"] .data-table tfoot::before {
-    background: #ff6b35;
+    background: #3B82F6;
 }
 
 [data-theme="dark"] .data-table tfoot td {

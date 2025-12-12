@@ -42,7 +42,7 @@
     }
     
     body:not(.dark-theme) .modern-table .filter-icon:hover {
-        color: #FF6B35 !important;
+        color: #3B82F6 !important;
         background: rgba(255, 107, 53, 0.2) !important;
     }
     
@@ -490,7 +490,7 @@
 <!-- Loading Overlay -->
 <div id="loadingOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); z-index: 9999; justify-content: center; align-items: center;">
     <div style="text-align: center; color: white;">
-        <div class="spinner" style="border: 4px solid rgba(255, 255, 255, 0.3); border-top: 4px solid #FF6B35; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
+        <div class="spinner" style="border: 4px solid rgba(255, 255, 255, 0.3); border-top: 4px solid #3B82F6; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
         <p id="loadingText" style="font-size: 16px; font-weight: 600;">Procesando...</p>
     </div>
 </div>
