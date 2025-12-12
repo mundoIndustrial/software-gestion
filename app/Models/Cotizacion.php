@@ -119,6 +119,14 @@ class Cotizacion extends Model
     }
 
     /**
+     * Relación con reflectivo de cotización
+     */
+    public function reflectivo()
+    {
+        return $this->hasOne(ReflectivoCotizacion::class, 'cotizacion_id');
+    }
+
+    /**
      * Relación con fotos de logo (logo_fotos_cot)
      */
     public function logoFotos(): HasMany

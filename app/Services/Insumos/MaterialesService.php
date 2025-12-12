@@ -173,4 +173,37 @@ class MaterialesService
         // Validar que el usuario tenga acceso (rol insumos)
         return $user && $user->role && $user->role->name === 'insumos';
     }
+
+    /**
+     * Cambiar el estado de un pedido
+     */
+    public function cambiarEstadoPedido($numeroPedido, $nuevoEstado)
+    {
+        try {
+            $orden = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+
+            if (!$orden) {
+                return [
+                    'success' => false,
+                    'message' => 'Pedido no encontrado'
+                ];
+            }
+
+            // Actualizar el estado
+            $orden->update(['estado' => $nuevoEstado]);
+
+            return [
+                'success' => true,
+                'message' => 'Estado actualizado correctamente',
+                'estado' => $nuevoEstado
+            ];
+        } catch (\Exception $e) {
+            \Log::error('Error al cambiar estado del pedido: ' . $e->getMessage());
+            
+            return [
+                'success' => false,
+                'message' => 'Error al cambiar el estado'
+            ];
+        }
+    }
 }

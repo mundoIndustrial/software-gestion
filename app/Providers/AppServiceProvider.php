@@ -7,6 +7,8 @@ use App\Models\TablaOriginalBodega;
 use App\Models\ProcesoPrenda;
 use App\Observers\TablaOriginalBodegaObserver;
 use App\Observers\ProcesoPrendaObserver;
+use App\Domain\Operario\Repositories\OperarioRepository;
+use App\Infrastructure\Persistence\Eloquent\OperarioRepositoryImpl;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -15,7 +17,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Registrar implementación de OperarioRepository
+        $this->app->bind(
+            OperarioRepository::class,
+            OperarioRepositoryImpl::class
+        );
     }
 
     /**

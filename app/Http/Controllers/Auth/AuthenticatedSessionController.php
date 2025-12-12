@@ -68,6 +68,16 @@ class AuthenticatedSessionController extends Controller
             if ($roleName === 'supervisor_pedidos') {
                 return redirect(route('supervisor-pedidos.index', absolute: false));
             }
+
+            // Cortador - Dashboard de operario
+            if ($roleName === 'cortador') {
+                return redirect(route('operario.dashboard', absolute: false));
+            }
+
+            // Costurero - Dashboard de operario
+            if ($roleName === 'costurero') {
+                return redirect(route('operario.dashboard', absolute: false));
+            }
         }
 
         // Admin y otros - Dashboard principal

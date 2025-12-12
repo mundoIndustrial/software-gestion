@@ -17,6 +17,11 @@
         <div class="step-line"></div>
         <div class="step" data-step="4" onclick="irAlPaso(4)" style="cursor: pointer;">
             <div class="step-number">4</div>
+            <div class="step-label">REFLECTIVO</div>
+        </div>
+        <div class="step-line"></div>
+        <div class="step" data-step="5" onclick="irAlPaso(5)" style="cursor: pointer;">
+            <div class="step-number">5</div>
             <div class="step-label">REVISAR</div>
         </div>
     </div>

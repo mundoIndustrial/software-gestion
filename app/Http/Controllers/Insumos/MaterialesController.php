@@ -200,4 +200,35 @@ class MaterialesController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Cambiar el estado de un pedido
+     */
+    public function cambiarEstado($numeroPedido, Request $request)
+    {
+        try {
+            $nuevoEstado = $request->input('estado');
+
+            if (!$nuevoEstado) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Estado requerido'
+                ], 400);
+            }
+
+            $resultado = $this->materialesService->cambiarEstadoPedido(
+                $numeroPedido,
+                $nuevoEstado
+            );
+
+            return response()->json($resultado);
+        } catch (\Exception $e) {
+            \Log::error('Error al cambiar estado: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cambiar estado'
+            ], 500);
+        }
+    }
 }

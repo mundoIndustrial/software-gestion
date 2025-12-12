@@ -34,7 +34,8 @@ final class CotizacionesViewController extends Controller
                     'prendas.tallas',
                     'prendas.variantes',
                     'prendas.telas',
-                    'logoCotizacion.fotos'
+                    'logoCotizacion.fotos',
+                    'reflectivo.fotos'
                 ])
                 ->orderBy('created_at', 'desc')
                 ->get();
@@ -70,6 +71,7 @@ final class CotizacionesViewController extends Controller
             $cotizacionesPrenda = $this->paginate($cotizaciones->filter(fn($c) => ($c->tipo === 'P' || $c->tipo === null)), 15);
             $cotizacionesLogo = $this->paginate($cotizaciones->filter(fn($c) => $c->tipo === 'L'), 15);
             $cotizacionesPrendaBordado = $this->paginate($cotizaciones->filter(fn($c) => $c->tipo === 'PL'), 15);
+            $cotizacionesReflectivo = $this->paginate($cotizaciones->filter(fn($c) => $c->tipo === 'RF'), 15);
 
             // Separar borradores por tipo (solo las que tienen es_borrador = 1)
             $borradoresCollection = $cotizaciones->filter(fn($c) => $c->es_borrador === true || $c->es_borrador === 1);
@@ -77,16 +79,19 @@ final class CotizacionesViewController extends Controller
             $borradorespPrenda = $this->paginate($borradoresCollection->filter(fn($c) => ($c->tipo === 'P' || $c->tipo === null)), 15);
             $borradoresLogo = $this->paginate($borradoresCollection->filter(fn($c) => $c->tipo === 'L'), 15);
             $borradorespPrendaBordado = $this->paginate($borradoresCollection->filter(fn($c) => $c->tipo === 'PL'), 15);
+            $borradoresReflectivo = $this->paginate($borradoresCollection->filter(fn($c) => $c->tipo === 'RF'), 15);
 
             return view('asesores.cotizaciones.index', compact(
                 'cotizacionesTodas',
                 'cotizacionesPrenda',
                 'cotizacionesLogo',
                 'cotizacionesPrendaBordado',
+                'cotizacionesReflectivo',
                 'borradoresTodas',
                 'borradorespPrenda',
                 'borradoresLogo',
-                'borradorespPrendaBordado'
+                'borradorespPrendaBordado',
+                'borradoresReflectivo'
             ));
         } catch (\Exception $e) {
             \Log::error('CotizacionesViewController@index: Error', [
@@ -99,10 +104,12 @@ final class CotizacionesViewController extends Controller
                 'cotizacionesPrenda' => collect([]),
                 'cotizacionesLogo' => collect([]),
                 'cotizacionesPrendaBordado' => collect([]),
+                'cotizacionesReflectivo' => collect([]),
                 'borradoresTodas' => collect([]),
                 'borradorespPrenda' => collect([]),
                 'borradoresLogo' => collect([]),
                 'borradorespPrendaBordado' => collect([]),
+                'borradoresReflectivo' => collect([]),
             ]);
         }
     }

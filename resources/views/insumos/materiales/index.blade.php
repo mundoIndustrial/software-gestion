@@ -18,6 +18,14 @@
         margin: 0 !important;
     }
     
+    /* FIX: Remover max-width del container para insumos */
+    .container {
+        max-width: none !important;
+        width: 100% !important;
+        margin-left: 0 !important;
+        padding: 1.5rem !important;
+    }
+    
     /* Hacer el thead sticky */
     table thead {
         position: sticky;
@@ -36,6 +44,44 @@
         position: sticky;
         top: 0;
         z-index: 10;
+    }
+    
+    /* Tooltips mejorados */
+    .btn-tooltip {
+        position: relative;
+    }
+    
+    .btn-tooltip:hover::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #1f2937;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.65rem;
+        white-space: nowrap;
+        z-index: 50000;
+        margin-bottom: 0.25rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-tooltip:hover::before {
+        content: '';
+        position: absolute;
+        bottom: calc(100% - 0.15rem);
+        left: 50%;
+        transform: translateX(-50%);
+        border: 0.25rem solid transparent;
+        border-top-color: #1f2937;
+        z-index: 50000;
+    }
+    
+    /* Permitir que los tooltips se muestren sin ser cortados */
+    td {
+        overflow: visible !important;
     }
     
     /* Indicador de carga */
@@ -83,6 +129,41 @@
             background-color: #f9fafb !important;
         }
     }
+
+    /* Responsive Design para Tabla */
+    @media (max-width: 1024px) {
+        table {
+            font-size: 0.7em !important;
+        }
+        
+        th, td {
+            padding: 0.5rem !important;
+        }
+    }
+
+    @media (max-width: 768px) {
+        table {
+            font-size: 0.65em !important;
+        }
+        
+        th, td {
+            padding: 0.35rem !important;
+        }
+        
+        .overflow-x-auto {
+            -webkit-overflow-scrolling: touch;
+        }
+    }
+
+    @media (max-width: 480px) {
+        table {
+            font-size: 0.6em !important;
+        }
+        
+        th, td {
+            padding: 0.25rem !important;
+        }
+    }
 </style>
 
 @if(app()->isLocal())
@@ -91,8 +172,6 @@
     console.time('RENDER_TOTAL');
 </script>
 @endif
-
-<!-- Lazy Loading Script -->
 <script>
     // Lazy load images cuando estén visibles
     if ('IntersectionObserver' in window) {
@@ -174,17 +253,17 @@
 {{-- Toast Container --}}
 <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 10000; display: flex; flex-direction: column; gap: 10px;"></div>
 
-{{-- Loading Overlay --}}
-<div id="loadingOverlay" class="loading-overlay">
+{{-- Loading Overlay - DESHABILITADO TEMPORALMENTE --}}
+{{-- <div id="loadingOverlay" class="loading-overlay">
     <div class="loading-spinner"></div>
-</div>
+</div> --}}
 
-<div class="min-h-screen bg-gray-50 m-0 p-0">
+<div style="min-height: 100vh; background: #f9fafb; margin: 0; padding: 1.5rem; box-sizing: border-box;">
     {{-- Header Principal Blanco --}}
-    <div class="bg-white border-b border-gray-200 shadow-sm w-full m-0">
-        <div class="px-6 py-6">
+    <div style="background: white; border-bottom: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05); width: 100%; margin: 0; box-sizing: border-box;">
+        <div style="padding: 1rem 0; width: 100%;">
             {{-- Título y Descripción --}}
-            <div class="mb-6">
+            <div style="margin-bottom: 1rem; padding: 0 0.5rem;">
                 <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-3">
                     <span class="material-symbols-rounded text-4xl text-blue-600">inventory_2</span>
                     Control de Insumos del Pedido
@@ -193,7 +272,7 @@
             </div>
 
             {{-- Buscador Mejorado --}}
-            <form action="{{ route('insumos.materiales.index') }}" method="GET" class="flex gap-3 items-end">
+            <form action="{{ route('insumos.materiales.index') }}" method="GET" class="flex gap-3 items-end" style="padding: 0 0.5rem;">
                 <div class="flex-1 relative">
                     <div class="relative">
                         <input 
@@ -212,12 +291,12 @@
                     Buscar
                 </button>
                 @if((request('filter_column') && request('filter_values')) || (request('filter_columns') && request('filter_values')))
-                    <button type="button" onclick="clearAllTableFilters()" class="px-6 py-3 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition shadow-sm flex items-center gap-2 whitespace-nowrap" title="Limpiar todos los filtros">
+                    <a href="{{ route('insumos.materiales.index') }}" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition shadow-sm flex items-center gap-2 whitespace-nowrap border border-gray-300">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
                         </svg>
                         Limpiar Filtros
-                    </button>
+                    </a>
                 @endif
                 @if(request('search'))
                     <a href="{{ route('insumos.materiales.index') }}" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition shadow-sm flex items-center gap-2 whitespace-nowrap border border-gray-300">
@@ -243,11 +322,11 @@
         </div>
     </div>
 
-    <div class="px-6 py-8 w-full">
+    <div style="margin: 0; width: 100%; overflow: hidden;">
         {{-- Tabla Principal de Órdenes --}}
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            <div>
-                <table class="w-full" style="font-size: 0.75em;">
+        <div class="bg-white" style="margin: 0; border-radius: 0; box-shadow: none; width: 100%; overflow-x: auto; padding: 0 0.5rem;">
+            <div style="width: 100%; margin: 0; padding: 0;">
+                <table class="w-full" style="font-size: 0.75em; width: 100%; margin: 0; padding: 0;">
                     <thead>
                         <tr class="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
                             <th class="text-left py-4 px-6 font-bold">
@@ -332,9 +411,11 @@
                                         $estadoClass = '';
                                         $estadoColor = '';
                                         if ($orden->estado === 'No iniciado') {
-                                            $estadoClass = 'bg-gray-100 text-gray-800';
+                                            $estadoClass = 'bg-gray-400 text-white';
                                         } elseif ($orden->estado === 'En Ejecución') {
                                             $estadoClass = 'bg-blue-100 text-blue-800';
+                                        } elseif ($orden->estado === 'Anulada') {
+                                            $estadoClass = 'bg-amber-100 text-amber-800';
                                         }
                                     @endphp
                                     <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold {{ $estadoClass }}">
@@ -344,14 +425,16 @@
                                 <td class="py-4 px-6 text-center">
                                     @php
                                         $areaClass = '';
+                                        $areaText = $orden->area ?? 'N/A';
                                         if ($orden->area === 'Corte') {
                                             $areaClass = 'bg-purple-100 text-purple-800';
-                                        } elseif ($orden->area === 'Creación de orden') {
+                                        } elseif ($orden->area === 'Creación de Orden' || $orden->area === 'Creación de orden') {
                                             $areaClass = 'bg-green-100 text-green-800';
+                                            $areaText = 'Creación de Orden';
                                         }
                                     @endphp
                                     <span class="inline-block px-3 py-1 rounded-full text-sm font-semibold {{ $areaClass }}">
-                                        {{ $orden->area ?? 'N/A' }}
+                                        {{ $areaText }}
                                     </span>
                                 </td>
                                 <td class="py-4 px-6 text-center">
@@ -360,20 +443,27 @@
                                     </span>
                                 </td>
                                 <td class="py-4 px-6 text-center">
-                                    <div class="flex items-center justify-center gap-2">
+                                    <div class="flex items-center justify-center gap-3">
                                         <button 
-                                            class="btn-ver-orden px-3 py-1 bg-blue-100 text-blue-600 font-medium rounded hover:bg-blue-200 transition text-sm flex items-center gap-1"
-                                            data-orden="{{ json_encode(array_merge($orden->toArray(), ['descripcion' => $orden->descripcion_prendas])) }}"
-                                            title="Ver orden"
+                                            class="btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
+                                            onclick="verFactura('{{ $orden->numero_pedido }}')"
+                                            data-tooltip="Ver orden"
                                         >
-                                            <i class="fas fa-eye"></i> Ver
+                                            <i class="fas fa-eye text-lg"></i>
                                         </button>
                                         <button 
-                                            class="btn-ver-insumos px-3 py-1 bg-green-100 text-green-600 font-medium rounded hover:bg-green-200 transition text-sm flex items-center gap-1"
+                                            class="btn-tooltip btn-ver-insumos p-2 text-green-600 hover:bg-green-50 rounded transition"
                                             onclick="abrirModalInsumos('{{ $orden->numero_pedido }}')"
-                                            title="Ver insumos"
+                                            data-tooltip="Ver insumos"
                                         >
-                                            <i class="fas fa-box"></i> Insumos
+                                            <i class="fas fa-box text-lg"></i>
+                                        </button>
+                                        <button 
+                                            class="btn-tooltip p-2 text-gray-600 hover:bg-gray-100 rounded transition"
+                                            onclick="cambiarEstadoPedido('{{ $orden->numero_pedido }}', '{{ $orden->estado }}')"
+                                            data-tooltip="Enviar a producción"
+                                        >
+                                            <i class="fas fa-paper-plane text-lg"></i>
                                         </button>
                                     </div>
                                 </td>
@@ -903,7 +993,10 @@
 </style>
 
 {{-- Modal para ver orden --}}
-<div class="order-detail-modal">
+<!-- Modal de Detalle de Orden -->
+<div id="modal-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); z-index: 9997; display: none; pointer-events: auto;" onclick="closeModalOverlay()"></div>
+
+<div id="order-detail-modal-wrapper" style="width: 90%; max-width: 672px; position: fixed; top: 60%; left: 50%; transform: translate(-50%, -50%); z-index: 9998; pointer-events: auto; display: none;">
     <x-orders-components.order-detail-modal />
 </div>
 
@@ -933,8 +1026,8 @@
                             <th class="text-center py-3 px-3 font-bold text-gray-800">Fecha Orden</th>
                             <th class="text-center py-3 px-3 font-bold text-gray-800">Fecha Pedido</th>
                             <th class="text-center py-3 px-3 font-bold text-gray-800">Fecha Pago</th>
-                            <th class="text-center py-3 px-3 font-bold text-gray-800">Fecha Llegada</th>
                             <th class="text-center py-3 px-3 font-bold text-gray-800">Fecha Despacho</th>
+                            <th class="text-center py-3 px-3 font-bold text-gray-800">Fecha Llegada</th>
                             <th class="text-center py-3 px-3 font-bold text-gray-800">Días Demora</th>
                             <th class="text-center py-3 px-3 font-bold text-gray-800">Observaciones</th>
                             <th class="text-center py-3 px-3 font-bold text-gray-800">Acciones</th>
@@ -990,7 +1083,7 @@
             </div>
             <div class="mb-4">
                 <label class="block text-sm font-semibold text-gray-700 mb-2">Descripción:</label>
-                <pre id="descripcionTexto" class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-sm font-mono overflow-auto max-h-96" style="white-space: pre-wrap; word-wrap: break-word;"></pre>
+                <div id="descripcionTexto" class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-sm overflow-auto max-h-96" style="white-space: pre-wrap; word-wrap: break-word; line-height: 1.6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;"></div>
             </div>
             <div class="flex gap-3 justify-end">
                 <button onclick="cerrarModalDescripcion()" class="px-6 py-2 bg-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-400 transition">
@@ -1044,36 +1137,44 @@
     </div>
 </div>
 
+{{-- Modal de Confirmación para Enviar a Producción --}}
+<div id="modalConfirmarProduccion" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center" style="display: none; z-index: 10001; top: 0; left: 0; right: 0; bottom: 0;">
+    <div class="bg-white rounded-lg shadow-2xl" style="width: 380px; z-index: 10002;">
+        <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-4 rounded-t-lg flex items-center gap-3">
+            <i class="fas fa-industry text-2xl"></i>
+            <h2 class="text-base font-bold">Enviar a Producción</h2>
+        </div>
+
+        <div class="p-5">
+            <p class="text-gray-700 mb-2 text-sm font-semibold">Pedido:</p>
+            <p class="text-2xl font-bold text-blue-600 mb-4" id="numeroPedidoConfirm"></p>
+            
+            <p class="text-gray-600 text-sm leading-relaxed mb-6">
+                ¿Enviar a producción? Esta acción es definitiva.
+            </p>
+            
+            <div class="flex gap-3 justify-end">
+                <button 
+                    onclick="cerrarModalConfirmarProduccion()"
+                    class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded hover:bg-gray-300 transition text-sm"
+                >
+                    Cancelar
+                </button>
+                <button 
+                    onclick="confirmarEnvioProduccion()"
+                    class="flex-1 px-4 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition text-sm flex items-center justify-center gap-2"
+                >
+                    <i class="fas fa-paper-plane"></i> Enviar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     /**
-     * Abre el modal con los detalles de la orden
+     * Alias para cerrar el modal - compatible con asesores
      */
-    function abrirModalOrden(orden) {
-        // Actualizar datos del modal
-        document.querySelector('.day-box').textContent = '';
-        document.querySelector('.month-box').textContent = '';
-        document.querySelector('.year-box').textContent = '';
-        document.getElementById('order-pedido').textContent = orden.pedido || 'N/A';
-        document.getElementById('asesora-value').textContent = orden.asesora || 'N/A';
-        document.getElementById('forma-pago-value').textContent = orden.forma_pago || 'N/A';
-        document.getElementById('cliente-value').textContent = orden.cliente || 'N/A';
-        document.getElementById('descripcion-text').textContent = orden.descripcion || 'N/A';
-        document.getElementById('encargado-value').textContent = orden.encargado || 'N/A';
-        document.getElementById('prendas-entregadas-value').textContent = orden.prendas_entregadas || 'N/A';
-
-        // Llenar fecha
-        if (orden.fecha_de_creacion_de_orden) {
-            const fecha = new Date(orden.fecha_de_creacion_de_orden);
-            document.querySelector('.day-box').textContent = String(fecha.getDate()).padStart(2, '0');
-            document.querySelector('.month-box').textContent = String(fecha.getMonth() + 1).padStart(2, '0');
-            document.querySelector('.year-box').textContent = fecha.getFullYear();
-        }
-
-        // Abrir modal usando el evento de Alpine
-        window.dispatchEvent(new CustomEvent('open-modal', {
-            detail: 'order-detail'
-        }));
-    }
 
     /**
      * Abre el modal de insumos para una orden
@@ -1193,19 +1294,19 @@
             <td class="py-3 px-3 text-center">
                 <input 
                     type="date" 
-                    id="fecha_llegada_${materialId}"
-                    class="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 w-full"
-                    value="${materialData.fecha_llegada ? materialData.fecha_llegada : ''}"
-                    data-original="${materialData.fecha_llegada ? materialData.fecha_llegada : ''}"
+                    id="fecha_despacho_${materialId}"
+                    class="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 w-full"
+                    value="${materialData.fecha_despacho ? materialData.fecha_despacho : ''}"
+                    data-original="${materialData.fecha_despacho ? materialData.fecha_despacho : ''}"
                 >
             </td>
             <td class="py-3 px-3 text-center">
                 <input 
                     type="date" 
-                    id="fecha_despacho_${materialId}"
-                    class="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 w-full"
-                    value="${materialData.fecha_despacho ? materialData.fecha_despacho : ''}"
-                    data-original="${materialData.fecha_despacho ? materialData.fecha_despacho : ''}"
+                    id="fecha_llegada_${materialId}"
+                    class="px-2 py-1 border border-gray-300 rounded text-xs font-medium text-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 w-full"
+                    value="${materialData.fecha_llegada ? materialData.fecha_llegada : ''}"
+                    data-original="${materialData.fecha_llegada ? materialData.fecha_llegada : ''}"
                 >
             </td>
             <td class="py-3 px-3 text-center">
@@ -1525,6 +1626,28 @@
         // Guardar el materialId en un atributo data para usarlo al guardar
         modal.setAttribute('data-material-id', materialId);
         
+        // Extraer el pedido del materialId
+        // Formato: material_modal_${pedido}_${index}_${sanitizedMaterial}
+        // O: material_${PEDIDO}_INDEX_NOMBRE
+        let pedido = '';
+        
+        if (materialId.includes('material_modal_')) {
+            // Nuevo formato: material_modal_45454_0_Tela
+            const partes = materialId.split('_');
+            if (partes.length >= 3) {
+                pedido = partes[2]; // Índice 2 es el número de pedido
+            }
+        } else if (materialId.includes('material_')) {
+            // Antiguo formato
+            const partes = materialId.split('_');
+            if (partes.length >= 2) {
+                pedido = partes[1];
+            }
+        }
+        
+        // Guardar el pedido en un atributo data
+        modal.setAttribute('data-pedido', pedido);
+        
         // Obtener observaciones del input hidden
         const inputObservaciones = document.getElementById(`observaciones_${materialId}`);
         if (inputObservaciones) {
@@ -1553,10 +1676,16 @@
     function guardarObservaciones() {
         const modal = document.getElementById('observacionesModal');
         const materialId = modal.getAttribute('data-material-id');
+        const pedido = modal.getAttribute('data-pedido');
         const observaciones = document.getElementById('observacionesTexto').value;
         
         if (!materialId) {
             showToast('Error: No se pudo identificar el material', 'error');
+            return;
+        }
+        
+        if (!pedido) {
+            showToast('Error: No se pudo identificar el pedido', 'error');
             return;
         }
         
@@ -1566,17 +1695,22 @@
             inputObservaciones.value = observaciones;
         }
         
-        // Obtener el nombre del material y el pedido
+        // Obtener el nombre del material
         const fila = document.getElementById(`row_${materialId}`);
-        const nombreMaterial = fila.querySelector('td:first-child span').textContent.trim();
-        const pedido = document.getElementById('modalPedido').textContent;
+        let nombreMaterial = '';
+        if (fila) {
+            const primeraColumna = fila.querySelector('td:first-child span');
+            if (primeraColumna) {
+                nombreMaterial = primeraColumna.textContent.trim();
+            }
+        }
         
         // Obtener el estado actual del checkbox
-        const checkbox = fila.querySelector('input[type="checkbox"]');
+        const checkbox = fila ? fila.querySelector('input[type="checkbox"]') : null;
         const recibido = checkbox ? checkbox.checked : false;
         
         // Obtener todas las fechas
-        const todosInputsFecha = fila.querySelectorAll('input[type="date"]');
+        const todosInputsFecha = fila ? fila.querySelectorAll('input[type="date"]') : [];
         const fechaOrden = todosInputsFecha[0]?.value || null;
         const fechaPedido = todosInputsFecha[1]?.value || null;
         const fechaPago = todosInputsFecha[2]?.value || null;
@@ -1592,7 +1726,7 @@
             },
             body: JSON.stringify({ 
                 materiales: [{
-                    nombre: nombreMaterial,
+                    nombre: nombreMaterial || `Material ${materialId}`,
                     fecha_orden: fechaOrden,
                     fecha_pedido: fechaPedido,
                     fecha_pago: fechaPago,
@@ -1608,13 +1742,13 @@
             if (data.success) {
                 showToast('Observaciones guardadas correctamente', 'success');
             } else {
-                showToast('Error al guardar observaciones', 'error');
+                showToast('Error al guardar observaciones: ' + (data.message || ''), 'error');
             }
             cerrarModalObservaciones();
         })
         .catch(error => {
             console.error('Error:', error);
-            showToast('Error al guardar observaciones', 'error');
+            showToast('Error al guardar observaciones: ' + error.message, 'error');
         });
     }
 
@@ -1700,26 +1834,6 @@
             showToast('Error al guardar los materiales', 'error');
         });
     }
-
-    /**
-     * Event delegation para los botones "Ver Orden"
-     */
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('.btn-ver-orden')) {
-            e.stopPropagation();
-            const btn = e.target.closest('.btn-ver-orden');
-            const ordenJSON = btn.getAttribute('data-orden');
-            if (ordenJSON) {
-                try {
-                    const orden = JSON.parse(ordenJSON);
-                    abrirModalOrden(orden);
-                } catch (error) {
-                    console.error('Error al parsear orden:', error);
-                }
-            }
-        }
-    });
-
     /**
      * Cierra el modal al hacer clic fuera de él
      */
@@ -1859,7 +1973,7 @@
 
         // Valores predefinidos para ciertos filtros
         const predefinedValues = {
-            'area': ['Corte', 'Creación de orden'],
+            'area': ['Corte', 'Creación de Orden'],
             'estado': ['En Ejecución', 'No iniciado', 'Entregado', 'Anulada']
         };
 
@@ -2105,7 +2219,29 @@
      */
     function abrirModalDescripcion(pedido, descripcion) {
         document.getElementById('descripcionPedido').textContent = pedido;
-        document.getElementById('descripcionTexto').textContent = descripcion;
+        
+        // Procesar la descripción para convertir *** a negrita
+        let textoFormateado = descripcion;
+        
+        // Reemplazar *** PALABRA *** por <strong>PALABRA</strong>
+        textoFormateado = textoFormateado.replace(/\*\*\*\s*([^*]+?)\s*:\s*\*\*\*/g, '<strong>$1:</strong>');
+        
+        // Reemplazar *** PALABRA *** sin dos puntos
+        textoFormateado = textoFormateado.replace(/\*\*\*\s*([^*]+?)\s*\*\*\*/g, '<strong>$1</strong>');
+        
+        // Dividir por líneas y procesar
+        const lineas = textoFormateado.split('\n');
+        let htmlFormateado = '';
+        
+        lineas.forEach(linea => {
+            if (linea.trim()) {
+                htmlFormateado += '<div>' + linea + '</div>';
+            } else {
+                htmlFormateado += '<div style="height: 0.5em;"></div>'; // Espacio entre párrafos
+            }
+        });
+        
+        document.getElementById('descripcionTexto').innerHTML = htmlFormateado;
         document.getElementById('descripcionModal').style.display = 'flex';
     }
     
@@ -2114,6 +2250,70 @@
      */
     function cerrarModalDescripcion() {
         document.getElementById('descripcionModal').style.display = 'none';
+    }
+
+    /**
+     * Envía el pedido a producción
+     */
+    function cambiarEstadoPedido(numeroPedido, estadoActual) {
+        // Si el estado es "No iniciado", enviar a producción (En Ejecución)
+        if (estadoActual.toLowerCase() === 'no iniciado') {
+            // Guardar el número de pedido en una variable global
+            window.pedidoParaProduccion = numeroPedido;
+            
+            // Mostrar el modal
+            document.getElementById('numeroPedidoConfirm').textContent = numeroPedido;
+            document.getElementById('modalConfirmarProduccion').style.display = 'flex';
+        } else {
+            showToast('Este pedido ya ha sido enviado a producción', 'info');
+        }
+    }
+    
+    /**
+     * Cierra el modal de confirmación
+     */
+    function cerrarModalConfirmarProduccion() {
+        document.getElementById('modalConfirmarProduccion').style.display = 'none';
+        window.pedidoParaProduccion = null;
+    }
+    
+    /**
+     * Confirma el envío a producción
+     */
+    function confirmarEnvioProduccion() {
+        const numeroPedido = window.pedidoParaProduccion;
+        if (!numeroPedido) return;
+        
+        const proximoEstado = 'En Ejecución';
+        
+        // Enviar petición al servidor
+        fetch(`/insumos/materiales/${numeroPedido}/cambiar-estado`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            },
+            body: JSON.stringify({ 
+                estado: proximoEstado
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                cerrarModalConfirmarProduccion();
+                showToast(`Pedido enviado a producción correctamente`, 'success');
+                // Recargar la página después de 1 segundo
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                showToast('Error al cambiar el estado: ' + (data.message || ''), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error al cambiar el estado', 'error');
+        });
     }
     
     console.timeEnd('RENDER_TOTAL');
@@ -2130,5 +2330,8 @@
     });
 </script>
 
+<!-- Scripts para el modal de órdenes -->
+<script src="{{ asset('js/orders js/order-detail-modal-manager.js') }}"></script>
+<script src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
 <script src="{{ asset('js/insumos/pagination.js') }}"></script>
 @endsection

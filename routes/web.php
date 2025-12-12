@@ -261,6 +261,19 @@ Route::middleware(['auth', 'role:contador,admin'])->prefix('contador')->name('co
 });
 
 // ========================================
+// RUTAS PARA OPERARIOS (CORTADOR Y COSTURERO)
+// ========================================
+Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operario.')->group(function () {
+    Route::get('/dashboard', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'dashboard'])->name('dashboard');
+    Route::get('/mis-pedidos', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'misPedidos'])->name('mis-pedidos');
+    Route::get('/pedido/{numeroPedido}', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'verPedido'])->name('ver-pedido');
+    Route::get('/api/pedidos', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'obtenerPedidosJson'])->name('api.pedidos');
+    Route::post('/buscar', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'buscarPedido'])->name('buscar');
+    Route::post('/reportar-pendiente', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'reportarPendiente'])->name('reportar-pendiente');
+    Route::get('/debug', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'debug'])->name('debug');
+});
+
+// ========================================
 // RUTAS PARA ASESORES (MÓDULO INDEPENDIENTE)
 // ========================================
 // Admin puede acceder a asesores además del rol asesor
@@ -418,6 +431,7 @@ Route::middleware(['auth', 'insumos-access'])->prefix('insumos')->name('insumos.
     Route::post('/materiales/{pedido}/eliminar', [\App\Http\Controllers\Insumos\InsumosController::class, 'eliminarMaterial'])->name('materiales.eliminar');
     Route::get('/api/materiales/{pedido}', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerMateriales'])->name('api.materiales');
     Route::get('/api/filtros/{column}', [\App\Http\Controllers\Insumos\InsumosController::class, 'obtenerValoresFiltro'])->name('api.filtros');
+    Route::post('/materiales/{numeroPedido}/cambiar-estado', [\App\Http\Controllers\Insumos\MaterialesController::class, 'cambiarEstado'])->name('materiales.cambiar-estado');
     Route::get('/test', function () {
         return view('insumos.test');
     })->name('test');

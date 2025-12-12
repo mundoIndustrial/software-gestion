@@ -90,6 +90,14 @@
                                 <span class="menu-label">Prenda/Logo</span>
                             </a>
                         </li>
+                        <li class="submenu-item">
+                            <a href="{{ route('asesores.pedidos.create', ['tipo' => 'RF']) }}"
+                               class="menu-link {{ request()->routeIs('asesores.pedidos.create') && request()->query('tipo') === 'RF' ? 'active' : '' }}"
+                               aria-label="Crear cotización Reflectivo">
+                                <span class="material-symbols-rounded">light_mode</span>
+                                <span class="menu-label">Reflectivo</span>
+                            </a>
+                        </li>
                     </ul>
                 </li>
             </ul>

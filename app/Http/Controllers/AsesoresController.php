@@ -199,6 +199,11 @@ class AsesoresController extends Controller
             return redirect()->route('asesores.cotizaciones-prenda.create');
         }
         
+        // Si es tipo Reflectivo (RF), mostrar vista de reflectivo
+        if ($tipo === 'RF') {
+            return view('asesores.pedidos.create-reflectivo', compact('tipo'));
+        }
+        
         return view('asesores.pedidos.create-friendly', compact('tipo'));
     }
 
@@ -335,7 +340,7 @@ class AsesoresController extends Controller
 
         $estados = ['No iniciado', 'En Ejecución', 'Entregado', 'Anulada'];
         $areas = [
-            'Creación Orden', 'Corte', 'Costura', 'Bordado', 'Estampado',
+            'Creación de Orden', 'Corte', 'Costura', 'Bordado', 'Estampado',
             'Control-Calidad', 'Entrega', 'Polos', 'Taller', 'Insumos',
             'Lavandería', 'Arreglos', 'Despachos'
         ];

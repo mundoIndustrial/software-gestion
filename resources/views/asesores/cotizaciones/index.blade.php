@@ -27,6 +27,7 @@
             ['code' => 'P', 'label' => 'Prenda', 'icon' => 'fas fa-shirt', 'active' => false],
             ['code' => 'L', 'label' => 'Logo', 'icon' => 'fas fa-palette', 'active' => false],
             ['code' => 'PL', 'label' => 'Prenda/Logo', 'icon' => 'fas fa-shirt', 'active' => false],
+            ['code' => 'RF', 'label' => 'Reflectivo', 'icon' => 'fas fa-lightbulb', 'active' => false],
         ]
     ])
 
@@ -103,6 +104,24 @@
                 ]
             ])
         </div>
+
+        <div id="seccion-rf" class="seccion-tipo" style="display: none;">
+            @include('components.cotizaciones.table', [
+                'sectionId' => 'rf',
+                'title' => 'Reflectivo',
+                'cotizaciones' => $cotizacionesReflectivo,
+                'pageParameterName' => $pageNameCotRF ?? 'page',
+                'emptyMessage' => 'No hay cotizaciones de reflectivo',
+                'columns' => [
+                    ['key' => 'fecha', 'label' => 'Fecha', 'align' => 'left'],
+                    ['key' => 'codigo', 'label' => 'Código', 'align' => 'left'],
+                    ['key' => 'cliente', 'label' => 'Cliente', 'align' => 'left'],
+                    ['key' => 'tipo', 'label' => 'Tipo', 'align' => 'left'],
+                    ['key' => 'estado', 'label' => 'Estado', 'align' => 'left'],
+                    ['key' => 'accion', 'label' => 'Acción', 'align' => 'center'],
+                ]
+            ])
+        </div>
     </div>
 
     {{-- Borradores --}}
@@ -165,6 +184,23 @@
                 'cotizaciones' => $borradorespPrendaBordado,
                 'pageParameterName' => $pageNameBorPB ?? 'page',
                 'emptyMessage' => 'No hay borradores de prenda/bordado',
+                'columns' => [
+                    ['key' => 'fecha', 'label' => 'Fecha', 'align' => 'left'],
+                    ['key' => 'cliente', 'label' => 'Cliente', 'align' => 'left'],
+                    ['key' => 'tipo', 'label' => 'Tipo', 'align' => 'left'],
+                    ['key' => 'estado', 'label' => 'Estado', 'align' => 'left'],
+                    ['key' => 'accion', 'label' => 'Acciones', 'align' => 'center'],
+                ]
+            ])
+        </div>
+
+        <div id="seccion-bor-rf" class="seccion-tipo" style="display: none;">
+            @include('components.cotizaciones.table', [
+                'sectionId' => 'bor-rf',
+                'title' => 'Reflectivo',
+                'cotizaciones' => $borradoresReflectivo,
+                'pageParameterName' => $pageNameBorRF ?? 'page',
+                'emptyMessage' => 'No hay borradores de reflectivo',
                 'columns' => [
                     ['key' => 'fecha', 'label' => 'Fecha', 'align' => 'left'],
                     ['key' => 'cliente', 'label' => 'Cliente', 'align' => 'left'],

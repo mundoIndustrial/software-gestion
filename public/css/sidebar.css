@@ -643,14 +643,13 @@ body.dark-theme .sidebar-header .header-logo {
   flex: 1;
   color: var(--color-text-primary);
   width: 100%;
-  max-width: calc(100vw - var(--sidebar-width-desktop));
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
 }
 
 .container.sidebar-collapsed .main-content {
-  max-width: calc(100vw - var(--sidebar-width-collapsed));
+  width: 100%;
 }
 
 .main-content .page-content {

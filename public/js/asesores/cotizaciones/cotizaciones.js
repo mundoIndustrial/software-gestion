@@ -645,6 +645,32 @@ function recopilarDatos() {
         valor: descripcionLogo,
         longitud: descripcionLogo.length
     });
+
+    // ========== PASO 4: REFLECTIVO ==========
+
+    // Recopilar datos del reflectivo
+    const descripcionReflectivo = document.getElementById('descripcion_reflectivo')?.value || '';
+    const ubicacionReflectivo = document.getElementById('ubicacion_reflectivo')?.value || '';
+    
+    console.log('✨ Datos del reflectivo capturados:', {
+        descripcion: descripcionReflectivo,
+        ubicacion: ubicacionReflectivo
+    });
+
+    // Recopilar observaciones generales del reflectivo
+    const observacionesReflectivo = [];
+    if (typeof observacionesReflectivo !== 'undefined' && Array.isArray(observacionesReflectivo)) {
+        observacionesReflectivo.forEach(obs => {
+            observacionesReflectivo.push({
+                tipo: obs.tipo || 'texto',
+                valor: obs.valor || '',
+                texto: obs.texto || ''
+            });
+        });
+    }
+
+    // Capturar imágenes del reflectivo desde memoria
+    const reflectivoImagenes = window.imagenesEnMemoria?.reflectivo || [];
     
     return { 
         cliente: clienteValue, 
@@ -658,6 +684,12 @@ function recopilarDatos() {
         especificaciones: window.especificacionesSeleccionadas || {},
         logo: {
             imagenes: logoImagenes
+        },
+        reflectivo: {
+            descripcion: descripcionReflectivo,
+            ubicacion: ubicacionReflectivo,
+            observaciones_generales: observacionesReflectivo,
+            imagenes: reflectivoImagenes
         }
     };
 }
@@ -730,12 +762,31 @@ async function procesarImagenesABase64(datos) {
                 datos.logo.imagenes_base64 = [];
             }
         }
+
+        // Procesar imágenes de reflectivo
+        if (datos.reflectivo && datos.reflectivo.imagenes && datos.reflectivo.imagenes.length > 0) {
+            console.log(`📸 Convirtiendo ${datos.reflectivo.imagenes.length} imagen(es) de reflectivo...`);
+            datos.reflectivo.imagenes_base64 = await Promise.all(
+                datos.reflectivo.imagenes.map((imagen, idx) => {
+                    console.log(`    [${idx + 1}/${datos.reflectivo.imagenes.length}] Procesando imagen reflectivo...`);
+                    return convertirArchivoABase64(imagen);
+                })
+            );
+            console.log(`  ✅ ${datos.reflectivo.imagenes_base64.length} imagen(es) de reflectivo procesadas`);
+            // Eliminar los File objects
+            delete datos.reflectivo.imagenes;
+        } else {
+            if (datos.reflectivo) {
+                datos.reflectivo.imagenes_base64 = [];
+            }
+        }
         
         console.log('✅ TODAS LAS IMÁGENES PROCESADAS', {
             'productos': datos.productos.length,
             'fotos_procesadas': datos.productos.reduce((sum, p) => sum + (p.fotos_base64?.length || 0), 0),
             'telas_procesadas': datos.productos.reduce((sum, p) => sum + (p.telas_base64?.length || 0), 0),
-            'logo_procesadas': datos.logo?.imagenes_base64?.length || 0
+            'logo_procesadas': datos.logo?.imagenes_base64?.length || 0,
+            'reflectivo_procesadas': datos.reflectivo?.imagenes_base64?.length || 0
         });
         
         return datos;

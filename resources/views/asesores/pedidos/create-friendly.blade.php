@@ -32,6 +32,7 @@
         <x-paso-uno />
         <x-paso-dos />
         <x-paso-tres />
+        <x-paso-cuatro-reflectivo />
         <x-paso-cuatro />
     </form>
 </div>
@@ -52,6 +53,8 @@
 <script src="{{ asset('js/asesores/cotizaciones/productos.js') }}"></script>
 <script src="{{ asset('js/asesores/cotizaciones/imagenes.js') }}"></script>
 <script src="{{ asset('js/asesores/cotizaciones/especificaciones.js') }}"></script>
+<script src="{{ asset('js/asesores/cotizaciones/reflectivo.js') }}"></script>
+<script src="{{ asset('js/asesores/cotizaciones/resumen-reflectivo.js') }}"></script>
 <script src="{{ asset('js/asesores/cotizaciones/guardado.js') }}"></script>
 <script src="{{ asset('js/asesores/cotizaciones/cargar-borrador.js') }}"></script>
 

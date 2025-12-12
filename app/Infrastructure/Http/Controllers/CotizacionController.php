@@ -5,12 +5,14 @@ namespace App\Infrastructure\Http\Controllers;
 use App\Application\Cotizacion\Commands\AceptarCotizacionCommand;
 use App\Application\Cotizacion\Commands\CambiarEstadoCotizacionCommand;
 use App\Application\Cotizacion\Commands\CrearCotizacionCommand;
+use App\Application\Cotizacion\Commands\CrearReflectivoCotizacionCommand;
 use App\Application\Cotizacion\Commands\EliminarCotizacionCommand;
 use App\Application\Cotizacion\Commands\SubirImagenCotizacionCommand;
 use App\Application\Cotizacion\DTOs\CrearCotizacionDTO;
 use App\Application\Cotizacion\Handlers\Commands\AceptarCotizacionHandler;
 use App\Application\Cotizacion\Handlers\Commands\CambiarEstadoCotizacionHandler;
 use App\Application\Cotizacion\Handlers\Commands\CrearCotizacionHandler;
+use App\Application\Cotizacion\Handlers\CrearReflectivoCotizacionHandler;
 use App\Application\Cotizacion\Handlers\Commands\EliminarCotizacionHandler;
 use App\Application\Cotizacion\Handlers\Commands\SubirImagenCotizacionHandler;
 use App\Application\Cotizacion\Handlers\Queries\ListarCotizacionesHandler;
@@ -590,6 +592,94 @@ final class CotizacionController extends Controller
                         
                         Log::info('Logo foto guardada', ['cotizacion_id' => $cotizacionId, 'ruta' => $ruta, 'orden' => $orden - 1]);
                     }
+                }
+            }
+
+            // Procesar PASO 4: REFLECTIVO
+            $reflectivoDescripcion = $request->input('reflectivo.descripcion', '');
+            $reflectivoUbicacion = $request->input('reflectivo.ubicacion', '');
+            $reflectivoObservacionesGenerales = $request->input('reflectivo.observaciones_generales', []);
+            if (is_string($reflectivoObservacionesGenerales)) {
+                $reflectivoObservacionesGenerales = json_decode($reflectivoObservacionesGenerales, true) ?? [];
+            }
+            
+            // Procesar imágenes de reflectivo
+            $reflectivoArchivos = $request->file('reflectivo.imagenes') ?? [];
+            if (empty($reflectivoArchivos)) {
+                $reflectivoArchivos = $request->file('reflectivo.imagenes.0') ?? [];
+            }
+            if (empty($reflectivoArchivos)) {
+                $allFiles = $request->allFiles();
+                $reflectivoArchivos = $allFiles['reflectivo.imagenes'] ?? [];
+            }
+            if ($reflectivoArchivos instanceof \Illuminate\Http\UploadedFile) {
+                $reflectivoArchivos = [$reflectivoArchivos];
+            } elseif (!is_array($reflectivoArchivos)) {
+                $reflectivoArchivos = [];
+            }
+            
+            // Guardar reflectivo si tiene descripción
+            if (!empty($reflectivoDescripcion)) {
+                try {
+                    // Crear o actualizar reflectivo_cotizaciones
+                    $reflectivoCotizacion = \App\Models\ReflectivoCotizacion::updateOrCreate(
+                        ['cotizacion_id' => $cotizacionId],
+                        [
+                            'descripcion' => $reflectivoDescripcion,
+                            'ubicacion' => $reflectivoUbicacion,
+                            'observaciones_generales' => is_array($reflectivoObservacionesGenerales) ? json_encode($reflectivoObservacionesGenerales) : $reflectivoObservacionesGenerales,
+                        ]
+                    );
+                    
+                    Log::info('✨ Reflectivo guardado correctamente', [
+                        'cotizacion_id' => $cotizacionId,
+                        'reflectivo_id' => $reflectivoCotizacion->id,
+                        'descripcion' => $reflectivoDescripcion,
+                        'ubicacion' => $reflectivoUbicacion,
+                        'imagenes_count' => count($reflectivoArchivos),
+                        'observaciones_count' => count($reflectivoObservacionesGenerales),
+                    ]);
+                    
+                    // Guardar imágenes del reflectivo (máximo 3)
+                    if (!empty($reflectivoArchivos)) {
+                        $orden = 1;
+                        $maxImagenes = 3;
+                        
+                        foreach ($reflectivoArchivos as $foto) {
+                            if ($orden > $maxImagenes) {
+                                Log::warning('⚠️ Se alcanzó el límite de 3 imágenes para reflectivo', [
+                                    'cotizacion_id' => $cotizacionId,
+                                    'reflectivo_id' => $reflectivoCotizacion->id,
+                                ]);
+                                break;
+                            }
+                            
+                            if ($foto instanceof \Illuminate\Http\UploadedFile) {
+                                $ruta = $this->procesarImagenesService->procesarImagenLogo($foto, $cotizacionId);
+                                
+                                // Guardar en reflectivo_fotos_cotizacion (máximo 3 fotos con orden incremental)
+                                $reflectivoCotizacion->fotos()->create([
+                                    'ruta_original' => $ruta,
+                                    'ruta_webp' => $ruta,
+                                    'orden' => $orden,
+                                ]);
+                                $orden++;
+                                
+                                Log::info('📸 Reflectivo foto guardada', [
+                                    'cotizacion_id' => $cotizacionId,
+                                    'reflectivo_id' => $reflectivoCotizacion->id,
+                                    'ruta' => $ruta,
+                                    'orden' => $orden - 1
+                                ]);
+                            }
+                        }
+                    }
+                } catch (\Exception $e) {
+                    Log::error('❌ Error al guardar reflectivo', [
+                        'cotizacion_id' => $cotizacionId,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                    ]);
                 }
             }
 
