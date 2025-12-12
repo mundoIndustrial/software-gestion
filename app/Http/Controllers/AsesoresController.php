@@ -464,16 +464,21 @@ class AsesoresController extends Controller
     {
         $userId = Auth::id();
         
+        // Obtener IDs de pedidos ya vistos por el usuario
+        $viewedPedidoIds = session('viewed_pedidos_' . $userId, []);
+        
         // Pedidos próximos a entregar (próximos 7 días)
         $pedidosProximosEntregar = PedidoProduccion::where('asesor_id', $userId)
             ->whereIn('estado', ['No iniciado', 'En Ejecución'])
             ->where('created_at', '<=', now()->addDays(7))
+            ->whereNotIn('id', $viewedPedidoIds)
             ->orderBy('created_at')
             ->get();
 
         // Pedidos en ejecución
         $pedidosEnEjecucion = PedidoProduccion::where('asesor_id', $userId)
             ->where('estado', 'En Ejecución')
+            ->whereNotIn('id', $viewedPedidoIds)
             ->count();
 
         return response()->json([
@@ -488,10 +493,37 @@ class AsesoresController extends Controller
      */
     public function markAllAsRead()
     {
-        return response()->json([
-            'success' => true,
-            'message' => 'Notificaciones marcadas como leídas'
-        ]);
+        try {
+            $userId = Auth::id();
+            
+            // Obtener todos los pedidos que generan notificaciones
+            $pedidosProximos = PedidoProduccion::where('asesor_id', $userId)
+                ->whereIn('estado', ['No iniciado', 'En Ejecución'])
+                ->where('created_at', '<=', now()->addDays(7))
+                ->pluck('id')
+                ->toArray();
+            
+            $pedidosEnEjecucion = PedidoProduccion::where('asesor_id', $userId)
+                ->where('estado', 'En Ejecución')
+                ->pluck('id')
+                ->toArray();
+            
+            // Combinar todos los IDs de pedidos a marcar como vistos
+            $allPedidoIds = array_merge($pedidosProximos, $pedidosEnEjecucion);
+            
+            // Guardar en sesión del usuario
+            session(['viewed_pedidos_' . $userId => $allPedidoIds]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Notificaciones marcadas como leídas'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error al marcar notificaciones',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

@@ -1,4 +1,4 @@
-// ========================================
+﻿// ========================================
 // SIDEBAR TOGGLE
 // ========================================
 document.addEventListener('DOMContentLoaded', function() {
@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ========================================
-// NOTIFICATION DROPDOWN
+// NOTIFICATION DROPDOWN - SUPERVISORPLANTA
 // ========================================
 document.addEventListener('DOMContentLoaded', function() {
     const notificationBtn = document.getElementById('notificationBtn');

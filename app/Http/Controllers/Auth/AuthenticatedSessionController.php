@@ -31,8 +31,17 @@ class AuthenticatedSessionController extends Controller
         // Redirigir según el rol del usuario (SIN permitir rutas no autorizadas)
         $user = Auth::user();
         
+        \Log::info('Login usuario', [
+            'user_id' => $user->id,
+            'roles_ids' => $user->roles_ids,
+            'role' => $user->role,
+            'role_name' => $user->role ? ($user->role->name ?? 'sin nombre') : 'null',
+        ]);
+        
         if ($user && $user->role) {
             $roleName = is_object($user->role) ? $user->role->name : $user->role;
+            
+            \Log::info('Rol detectado', ['roleName' => $roleName]);
             
             // Asesor - Dashboard de asesores
             if ($roleName === 'asesor') {
@@ -56,6 +65,11 @@ class AuthenticatedSessionController extends Controller
             
             // Insumos - Control de insumos
             if ($roleName === 'insumos') {
+                return redirect(route('insumos.materiales.index', absolute: false));
+            }
+
+            // Patronista - Control de insumos (solo lectura)
+            if ($roleName === 'patronista') {
                 return redirect(route('insumos.materiales.index', absolute: false));
             }
 

@@ -1,6 +1,8 @@
 // ========================================
 // NOTIFICATIONS SYSTEM
 // ========================================
+let lastMarkAllReadTime = 0; // Timestamp de última vez que se marcaron todas como leídas
+
 document.addEventListener('DOMContentLoaded', function() {
     // Verificar que fetchAPI esté disponible
     if (typeof window.fetchAPI !== 'function') {
@@ -15,7 +17,16 @@ function initializeNotifications() {
     loadNotifications();
     
     // Actualizar notificaciones cada 30 segundos
-    setInterval(loadNotifications, 30000);
+    // PERO: Si hace poco marcamos todas como leídas, esperar más tiempo
+    setInterval(() => {
+        const timeSinceMarkAllRead = Date.now() - lastMarkAllReadTime;
+        // Si pasaron menos de 2 minutos desde que marcamos todas, esperar 60 segundos más
+        if (timeSinceMarkAllRead < 120000) {
+            console.debug('Esperando antes de recargar notificaciones...');
+            return;
+        }
+        loadNotifications();
+    }, 30000);
     
     // Marcar todas como leídas
     const markAllReadBtn = document.querySelector('.mark-all-read');
@@ -164,7 +175,28 @@ async function markAllAsRead() {
             method: 'POST'
         });
         
+        // Registrar el tiempo de marca como leídas
+        lastMarkAllReadTime = Date.now();
+        
         updateNotificationBadge(0);
+        
+        // Limpiar la lista de notificaciones
+        const notificationList = document.getElementById('notificationList');
+        if (notificationList) {
+            notificationList.innerHTML = `
+                <div class="notification-empty">
+                    <i class="fas fa-bell-slash"></i>
+                    <p>No tienes notificaciones</p>
+                </div>
+            `;
+        }
+        
+        // Cerrar el dropdown después de marcar como leídas
+        const notificationMenu = document.getElementById('notificationMenu');
+        if (notificationMenu) {
+            notificationMenu.classList.remove('show');
+        }
+        
         showToast('Notificaciones marcadas como leídas', 'success');
     } catch (error) {
         console.error('Error marcando notificaciones:', error);

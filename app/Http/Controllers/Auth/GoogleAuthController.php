@@ -78,6 +78,10 @@ class GoogleAuthController extends Controller
                 return redirect()->intended(route('insumos.materiales.index'));
             }
             
+            if ($roleName === 'patronista') {
+                return redirect()->intended(route('insumos.materiales.index'));
+            }
+            
             if ($roleName === 'aprobador_cotizaciones') {
                 return redirect()->intended(route('cotizaciones.pendientes'));
             }

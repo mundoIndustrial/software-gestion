@@ -34,6 +34,23 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    
+    // ========================================
+    // RUTAS DE NOTIFICACIONES (Accesibles para todos los roles autenticados)
+    // ========================================
+    // Contador
+    Route::post('/contador/notifications/marcar-leidas', [App\Http\Controllers\ContadorController::class, 'markAllNotificationsAsRead'])->name('contador.notifications.mark-all-read');
+    Route::get('/contador/notifications', [App\Http\Controllers\ContadorController::class, 'getNotifications'])->name('contador.notifications');
+    
+    // Asesores
+    Route::post('/asesores/notifications/mark-all-read', [App\Http\Controllers\AsesoresController::class, 'markAllAsRead'])->name('asesores.notifications.mark-all-read');
+    Route::get('/asesores/notifications', [App\Http\Controllers\AsesoresController::class, 'getNotifications'])->name('asesores.notifications');
+    
+    // Supervisor Pedidos
+    Route::post('/supervisor-pedidos/notifications/mark-all-read', [App\Http\Controllers\SupervisorPedidosController::class, 'markAllNotificationsAsRead'])->name('supervisor-pedidos.notifications.mark-all-read');
+    
+    // Insumos / Supervisor Planta
+    Route::post('/insumos/notifications/marcar-leidas', [App\Http\Controllers\Insumos\InsumosController::class, 'markAllNotificationsAsRead'])->name('insumos.notifications.mark-all-read');
 });
 
 Route::middleware(['auth', 'supervisor-access'])->group(function () {
@@ -258,10 +275,6 @@ Route::middleware(['auth', 'role:contador,admin'])->prefix('contador')->name('co
     // Ruta para obtener costos de prendas
     Route::get('/cotizacion/{id}/costos', [App\Http\Controllers\ContadorController::class, 'obtenerCostos'])->name('cotizacion.costos');
     
-    // Rutas para notificaciones
-    Route::get('/notifications', [App\Http\Controllers\ContadorController::class, 'getNotifications'])->name('notifications');
-    Route::post('/notifications/marcar-leidas', [App\Http\Controllers\ContadorController::class, 'markAllNotificationsAsRead'])->name('notifications.mark-all-read');
-    
     // Ruta para obtener contador de cotizaciones pendientes
     Route::get('/cotizaciones-pendientes-count', [App\Http\Controllers\ContadorController::class, 'cotizacionesPendientesCount'])->name('cotizaciones-pendientes-count');
     
@@ -327,10 +340,7 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     // Estadísticas de órdenes
     Route::get('/ordenes/stats', [App\Http\Controllers\OrdenController::class, 'stats'])->name('ordenes.stats');
     
-    // Notificaciones
-    Route::get('/notifications', [App\Http\Controllers\AsesoresController::class, 'getNotifications'])->name('notifications');
-    Route::post('/notifications/mark-all-read', [App\Http\Controllers\AsesoresController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
-    
+
     // ========================================
     // COTIZACIONES - Gestión de cotizaciones y borradores (DDD Refactorizado)
     // ========================================

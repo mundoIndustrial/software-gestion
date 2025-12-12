@@ -12,40 +12,49 @@ class RolesSeeder extends Seeder
      */
     public function run(): void
     {
-        \App\Models\Role::create([
-            'name' => 'asesor',
-            'description' => 'Asesor de ventas - Gestión de órdenes',
-            'requires_credentials' => true,
-        ]);
+        $roles = [
+            [
+                'name' => 'asesor',
+                'description' => 'Asesor de ventas - Gestión de órdenes',
+                'requires_credentials' => true,
+            ],
+            [
+                'name' => 'contador',
+                'description' => 'Contador - Gestión de cotizaciones',
+                'requires_credentials' => true,
+            ],
+            [
+                'name' => 'cortador',
+                'description' => 'Operario de piso de corte',
+                'requires_credentials' => false,
+            ],
+            [
+                'name' => 'supervisor',
+                'description' => 'Supervisor de gestión de órdenes (solo lectura)',
+                'requires_credentials' => true,
+            ],
+            [
+                'name' => 'supervisor-admin',
+                'description' => 'Supervisor Administrador - Gestión de cotizaciones y reportes',
+                'requires_credentials' => true,
+            ],
+            [
+                'name' => 'admin',
+                'description' => 'Administrador del sistema',
+                'requires_credentials' => true,
+            ],
+            [
+                'name' => 'patronista',
+                'description' => 'Patronista - Visualización de insumos (solo lectura)',
+                'requires_credentials' => true,
+            ],
+        ];
 
-        \App\Models\Role::create([
-            'name' => 'contador',
-            'description' => 'Contador - Gestión de cotizaciones',
-            'requires_credentials' => true,
-        ]);
-
-        \App\Models\Role::create([
-            'name' => 'cortador',
-            'description' => 'Operario de piso de corte',
-            'requires_credentials' => false,
-        ]);
-
-        \App\Models\Role::create([
-            'name' => 'supervisor',
-            'description' => 'Supervisor de gestión de órdenes (solo lectura)',
-            'requires_credentials' => true,
-        ]);
-
-        \App\Models\Role::create([
-            'name' => 'supervisor-admin',
-            'description' => 'Supervisor Administrador - Gestión de cotizaciones y reportes',
-            'requires_credentials' => true,
-        ]);
-
-        \App\Models\Role::create([
-            'name' => 'admin',
-            'description' => 'Administrador del sistema',
-            'requires_credentials' => true,
-        ]);
+        foreach ($roles as $role) {
+            \App\Models\Role::firstOrCreate(
+                ['name' => $role['name']],
+                $role
+            );
+        }
     }
 }

@@ -444,6 +444,7 @@
                                 </td>
                                 <td class="py-4 px-6 text-center">
                                     <div class="flex items-center justify-center gap-3">
+                                        {{-- Botón Ver (disponible para todos) --}}
                                         <button 
                                             class="btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
                                             onclick="verFactura('{{ $orden->numero_pedido }}')"
@@ -451,20 +452,29 @@
                                         >
                                             <i class="fas fa-eye text-lg"></i>
                                         </button>
-                                        <button 
-                                            class="btn-tooltip btn-ver-insumos p-2 text-green-600 hover:bg-green-50 rounded transition"
-                                            onclick="abrirModalInsumos('{{ $orden->numero_pedido }}')"
-                                            data-tooltip="Ver insumos"
-                                        >
-                                            <i class="fas fa-box text-lg"></i>
-                                        </button>
-                                        <button 
-                                            class="btn-tooltip p-2 text-gray-600 hover:bg-gray-100 rounded transition"
-                                            onclick="cambiarEstadoPedido('{{ $orden->numero_pedido }}', '{{ $orden->estado }}')"
-                                            data-tooltip="Enviar a producción"
-                                        >
-                                            <i class="fas fa-paper-plane text-lg"></i>
-                                        </button>
+
+                                        {{-- Botones adicionales (solo para no-patronistas) --}}
+                                        @php
+                                            $userRole = auth()->user()->role;
+                                            $roleName = is_object($userRole) ? $userRole->name : $userRole;
+                                            $isPatronista = $roleName === 'patronista';
+                                        @endphp
+                                        @if(!$isPatronista)
+                                            <button 
+                                                class="btn-tooltip btn-ver-insumos p-2 text-green-600 hover:bg-green-50 rounded transition"
+                                                onclick="abrirModalInsumos('{{ $orden->numero_pedido }}')"
+                                                data-tooltip="Ver insumos"
+                                            >
+                                                <i class="fas fa-box text-lg"></i>
+                                            </button>
+                                            <button 
+                                                class="btn-tooltip p-2 text-gray-600 hover:bg-gray-100 rounded transition"
+                                                onclick="cambiarEstadoPedido('{{ $orden->numero_pedido }}', '{{ $orden->estado }}')"
+                                                data-tooltip="Enviar a producción"
+                                            >
+                                                <i class="fas fa-paper-plane text-lg"></i>
+                                            </button>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>

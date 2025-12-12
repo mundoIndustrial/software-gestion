@@ -473,11 +473,15 @@ class SupervisorPedidosController extends Controller
                 ], 401);
             }
 
+            // Obtener IDs de órdenes ya vistas por el usuario
+            $viewedOrdenIds = session('viewed_ordenes_' . $user->id, []);
+
             // Obtener todas las órdenes PENDIENTES DE APROBACIÓN
             // (sin aprobado_por_supervisor_en) QUE TENGAN COTIZACIÓN ASOCIADA Y NO ANULADAS
             $ordenesPendientes = PedidoProduccion::whereNull('aprobado_por_supervisor_en')
                 ->whereNotNull('cotizacion_id')
                 ->where('estado', '!=', 'Anulada')
+                ->whereNotIn('id', $viewedOrdenIds)
                 ->with(['asesora:id,name'])
                 ->select([
                     'id', 'numero_pedido', 'cliente', 'asesor_id', 
@@ -535,7 +539,17 @@ class SupervisorPedidosController extends Controller
                 ], 401);
             }
 
+            // Marcar notificaciones del modelo de Laravel como leídas
             $user->unreadNotifications()->update(['read_at' => now()]);
+
+            // También guardar en sesión los IDs de órdenes pendientes
+            $viewedOrdenIds = PedidoProduccion::whereNull('aprobado_por_supervisor_en')
+                ->whereNotNull('cotizacion_id')
+                ->where('estado', '!=', 'Anulada')
+                ->pluck('id')
+                ->toArray();
+            
+            session(['viewed_ordenes_' . $user->id => $viewedOrdenIds]);
 
             return response()->json([
                 'success' => true,

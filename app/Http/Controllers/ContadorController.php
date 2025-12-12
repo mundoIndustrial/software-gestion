@@ -676,9 +676,15 @@ class ContadorController extends Controller
     public function getNotifications()
     {
         try {
+            $user = Auth::user();
+            
+            // Obtener IDs de cotizaciones ya vistas por el usuario
+            $viewedCotizationIds = session('viewed_cotizations_' . $user->id, []);
+            
             // Cotizaciones enviadas a revisar (estado ENVIADA_CONTADOR)
             $cotizacionesParaRevisar = Cotizacion::with('cliente')
                 ->where('estado', 'ENVIADA_CONTADOR')
+                ->whereNotIn('id', $viewedCotizationIds)
                 ->orderBy('created_at', 'desc')
                 ->limit(5)
                 ->get();
@@ -687,6 +693,7 @@ class ContadorController extends Controller
             $nuevasCotizaciones = Cotizacion::with('cliente')
                 ->where('created_at', '>=', now()->subHours(24))
                 ->whereNotIn('estado', ['ENVIADA_CONTADOR'])
+                ->whereNotIn('id', $viewedCotizationIds)
                 ->orderBy('created_at', 'desc')
                 ->limit(5)
                 ->get();
@@ -730,8 +737,24 @@ class ContadorController extends Controller
     public function markAllNotificationsAsRead()
     {
         try {
-            // En esta implementación simple, solo retornamos éxito
-            // En una implementación más completa, guardarías este estado en BD
+            $user = Auth::user();
+            
+            // Obtener todas las cotizaciones que generan notificaciones
+            $cotizacionesParaRevisar = Cotizacion::where('estado', 'ENVIADA_CONTADOR')
+                ->pluck('id')
+                ->toArray();
+            
+            $nuevasCotizaciones = Cotizacion::where('created_at', '>=', now()->subHours(24))
+                ->whereNotIn('estado', ['ENVIADA_CONTADOR'])
+                ->pluck('id')
+                ->toArray();
+            
+            // Combinar todos los IDs de cotizaciones a marcar como vistas
+            $allCotizationIds = array_merge($cotizacionesParaRevisar, $nuevasCotizaciones);
+            
+            // Guardar en sesión del usuario
+            session(['viewed_cotizations_' . $user->id => $allCotizationIds]);
+            
             return response()->json([
                 'success' => true,
                 'message' => 'Notificaciones marcadas como leídas'

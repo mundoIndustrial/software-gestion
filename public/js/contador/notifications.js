@@ -1,6 +1,8 @@
 // ========================================
 // NOTIFICATIONS SYSTEM - CONTADOR
 // ========================================
+let lastMarkAllReadTime = 0; // Timestamp de última vez que se marcaron todas como leídas
+
 document.addEventListener('DOMContentLoaded', function() {
     initializeNotifications();
 });
@@ -10,7 +12,17 @@ function initializeNotifications() {
     loadNotifications();
     
     // Actualizar notificaciones cada 30 segundos
-    setInterval(loadNotifications, 30000);
+    // PERO: Si hace poco marcamos todas como leídas, esperar más tiempo
+    setInterval(() => {
+        const timeSinceMarkAllRead = Date.now() - lastMarkAllReadTime;
+        // Si pasaron menos de 2 minutos desde que marcamos todas, esperar 60 segundos más
+        // Si no, cargar normalmente
+        if (timeSinceMarkAllRead < 120000) {
+            console.debug('Esperando antes de recargar notificaciones...');
+            return;
+        }
+        loadNotifications();
+    }, 30000);
     
     // Toggle del dropdown de notificaciones
     const notificationBtn = document.getElementById('notificationBtn');
@@ -373,30 +385,64 @@ function formatTime(date) {
 
 async function markAllAsRead() {
     try {
-        let response = null;
+        let success = false;
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
         
+        // Intentar con fetchAPI primero
         if (typeof window.fetchAPI === 'function') {
             try {
-                await window.fetchAPI('/contador/notifications/marcar-leidas', {
+                const result = await window.fetchAPI('/contador/notifications/marcar-leidas', {
                     method: 'POST'
                 });
+                success = result?.success || true;
             } catch (e) {
-                console.debug('Error con fetchAPI:', e.message);
+                console.debug('Error con fetchAPI, intentando fetch normal:', e.message);
+                success = false;
             }
         }
         
-        if (!response) {
-            response = await fetch('/contador/notifications/marcar-leidas', {
+        // Si fetchAPI falló, intentar fetch normal
+        if (!success) {
+            const response = await fetch('/contador/notifications/marcar-leidas', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                    'X-CSRF-TOKEN': csrfToken
                 }
             });
+            
+            if (!response.ok) {
+                console.error('Error en marcar-leidas:', response.status, response.statusText);
+                throw new Error(`HTTP Error ${response.status}`);
+            }
+            
+            const data = await response.json();
+            success = data?.success || true;
         }
         
-        loadNotifications();
+        // Solo limpiar la UI si la solicitud fue exitosa
+        if (success) {
+            // Registrar el tiempo de marca como leídas
+            lastMarkAllReadTime = Date.now();
+            
+            updateNotificationBadge(0);
+            const notificationList = document.getElementById('notificationList');
+            if (notificationList) {
+                notificationList.innerHTML = `
+                    <div class="notification-empty">
+                        <span class="material-symbols-rounded">notifications_off</span>
+                        <p>Sin notificaciones</p>
+                    </div>
+                `;
+            }
+            
+            // Cerrar el dropdown después de marcar como leídas
+            const notificationMenu = document.getElementById('notificationMenu');
+            if (notificationMenu) {
+                notificationMenu.classList.remove('show');
+            }
+        }
     } catch (error) {
         console.error('Error al marcar notificaciones como leídas:', error);
     }

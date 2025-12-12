@@ -317,23 +317,25 @@ class InsumosController extends Controller
     }
 
     /**
-     * Verificar que el usuario tenga rol insumos, admin o supervisor_planta
+     * Verificar que el usuario tenga rol insumos, admin, supervisor_planta o patronista
      */
     private function verificarRolInsumos($user)
     {
-        // Permitir admin y supervisor_planta
+        // Permitir admin, supervisor_planta y patronista
         if ($user->role && is_object($user->role)) {
             $roleName = $user->role->name;
-            if (in_array($roleName, ['admin', 'supervisor_planta'])) {
+            if (in_array($roleName, ['admin', 'supervisor_planta', 'patronista'])) {
                 return;
             }
         }
 
-        // Verificar rol insumos
+        // Verificar rol insumos o patronista
         $isInsumos = $user->role === 'insumos' || 
                     (is_object($user->role) && $user->role->name === 'insumos');
+        $isPatronista = $user->role === 'patronista' || 
+                       (is_object($user->role) && $user->role->name === 'patronista');
         
-        if (!$isInsumos) {
+        if (!$isInsumos && !$isPatronista) {
             abort(403, 'No autorizado para acceder a este módulo.');
         }
     }
@@ -542,4 +544,35 @@ class InsumosController extends Controller
         }
     }
 
+    /**
+     * Marcar todas las notificaciones como leídas (para supervisor_planta)
+     */
+    public function markAllNotificationsAsRead()
+    {
+        try {
+            $user = Auth::user();
+            
+            // Verificar que sea usuario de insumos
+            $this->verificarRolInsumos($user);
+            
+            // Guardar en sesión los IDs de órdenes pendientes de revisión
+            $ordenesPendientes = PedidoProduccion::whereNull('aprobado_por_supervisor_en')
+                ->whereNotNull('cotizacion_id')
+                ->where('estado', '!=', 'Anulada')
+                ->pluck('id')
+                ->toArray();
+            
+            session(['viewed_ordenes_' . $user->id => $ordenesPendientes]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Notificaciones marcadas como leídas'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error al marcar notificaciones como leídas',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
