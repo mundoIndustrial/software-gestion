@@ -36,629 +36,7 @@
 </script>
 
 @push('styles')
-    <style>
-        /* ====================== ESTILOS GENERALES ====================== */
-        :root {
-            --primary-color: #1e5ba8;
-            --primary-hover: #1e40af;
-            --secondary-color: #ecf0f1;
-            --danger-color: #ef4444;
-            --success-color: #10b981;
-            --warning-color: #f39c12;
-            --light-bg: #f5f7fa;
-            --light-gray: #f8f9fa;
-            --border-color: #e0e6ed;
-            --text-primary: #2c3e50;
-            --text-secondary: #7f8c8d;
-            --radius: 8px;
-            --transition: all 0.3s ease;
-        }
-
-        /* ====================== TABLA ====================== */
-        .table-container {
-            width: 95%;
-            max-width: 1400px;
-            background: white;
-            border-radius: 12px;
-            overflow: visible;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            margin: 0 auto 1.5rem auto;
-            padding: 1.5rem;
-            box-sizing: border-box;
-            border: 1px solid #e0e6ed;
-        }
-
-        .table-header {
-            padding: 1.25rem 1.25rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .table-header h2 {
-            margin: 0 0 1rem 0;
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-
-        .search-bar {
-            display: flex;
-            gap: 1rem;
-            align-items: flex-end;
-            flex-wrap: wrap;
-        }
-
-        .search-input {
-            flex: 1;
-            min-width: 200px;
-            padding: 0.75rem 1rem;
-            border: 2px solid var(--border-color);
-            border-radius: 6px;
-            font-size: 0.95rem;
-            transition: var(--transition);
-            box-sizing: border-box;
-        }
-
-        .search-input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(30, 91, 168, 0.1);
-        }
-
-        .btn-primary,
-        .btn-secondary-clear {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            font-size: 0.875rem;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .btn-primary {
-            background: var(--primary-color);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(30, 91, 168, 0.3);
-        }
-
-        .btn-secondary-clear {
-            background: #6b7280;
-            color: white;
-        }
-
-        .btn-secondary-clear:hover {
-            background: #4b5563;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        table thead {
-            background: var(--light-gray);
-            border-bottom: 2px solid var(--border-color);
-        }
-
-        table th {
-            padding: 0.75rem 0.875rem;
-            text-align: left;
-            font-weight: 700;
-            font-size: 0.75rem;
-            color: var(--text-primary);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        table tbody tr {
-            border-bottom: 1px solid var(--border-color);
-            transition: background 0.3s ease;
-        }
-
-        table tbody tr:hover {
-            background: var(--light-gray);
-        }
-
-        table td {
-            padding: 0.75rem 0.875rem;
-            font-size: 0.875rem;
-            color: var(--text-primary);
-        }
-
-        table td:last-child {
-            padding-right: 1.5rem;
-        }
-
-        /* Ajustar ancho de columnas específicas */
-        table th:nth-child(5),
-        table td:nth-child(5) {
-            width: 140px;
-            white-space: nowrap;
-        }
-
-        table th:nth-child(6),
-        table td:nth-child(6) {
-            width: 80px;
-            text-align: center;
-        }
-
-        /* ====================== ACCIONES ====================== */
-        .actions-group {
-            display: flex;
-            gap: 0.5rem;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .btn-action {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;
-            height: 36px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: var(--transition);
-            font-size: 1.2rem;
-        }
-
-        .btn-success {
-            background: #d4edda;
-            color: var(--success-color);
-        }
-
-        .btn-success:hover {
-            background: var(--success-color);
-            color: white;
-            transform: scale(0.9);
-        }
-
-        .btn-view {
-            background: #e8f4f8;
-            color: var(--primary-color);
-        }
-
-        .btn-view:hover {
-            background: var(--primary-color);
-            color: white;
-            transform: scale(0.9);
-        }
-
-        .btn-edit {
-            background: #fef3c7;
-            color: #f59e0b;
-        }
-
-        .btn-edit:hover {
-            background: #f59e0b;
-            color: white;
-            transform: scale(0.9);
-        }
-
-        .btn-danger {
-            background: #fadbd8;
-            color: #c0392b;
-        }
-
-        .btn-danger:hover {
-            background: #c0392b;
-            color: white;
-            transform: scale(1.1);
-        }
-
-        /* ====================== DROPDOWN MENU ====================== */
-        .view-dropdown {
-            position: fixed;
-            background: white;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            z-index: 10000;
-            min-width: 180px;
-            animation: slideDown 0.2s ease;
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-5px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .view-dropdown button {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            text-align: left;
-            border: none;
-            background: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.2s;
-            font-size: 0.9rem;
-            color: var(--text-primary);
-        }
-
-        .view-dropdown button:hover {
-            background: var(--light-gray);
-            color: var(--primary-color);
-        }
-
-        .view-dropdown button:not(:last-child) {
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .view-dropdown button:first-child {
-            border-radius: 6px 6px 0 0;
-        }
-
-        .view-dropdown button:last-child {
-            border-radius: 0 0 6px 6px;
-        }
-
-        /* ====================== PAGINACIÓN ====================== */
-        .paginacion {
-            padding: 2rem 1.5rem;
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .pagination-wrapper {
-            display: flex;
-            justify-content: center;
-            width: 100%;
-        }
-
-        /* Estilos para el componente de paginación personalizado */
-        .pagination {
-            display: flex;
-            gap: 0.5rem;
-            align-items: center;
-            margin: 0;
-            padding: 0;
-            list-style: none;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .pagination .page-item {
-            display: inline-block;
-        }
-
-        .pagination .page-link {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 40px;
-            height: 40px;
-            padding: 0.5rem 0.75rem;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            text-decoration: none;
-            color: var(--text-primary);
-            font-size: 0.875rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            background: white;
-        }
-
-        .pagination .page-link .material-symbols-rounded {
-            font-size: 1.2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .pagination .page-item:not(.disabled) .page-link:hover {
-            background: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-            transform: translateY(-2px);
-            box-shadow: 0 2px 8px rgba(30, 91, 168, 0.2);
-        }
-
-        /* Botones especiales (primero y último) */
-        .pagination .page-item:first-child .page-link,
-        .pagination .page-item:last-child .page-link {
-            font-weight: 600;
-        }
-
-        .pagination .page-item.active .page-link {
-            background: var(--primary-color);
-            color: white;
-            border-color: var(--primary-color);
-            font-weight: 600;
-            cursor: default;
-        }
-
-        .pagination .page-item.disabled .page-link {
-            color: #bdc3c7;
-            cursor: not-allowed;
-            opacity: 0.5;
-            background: #f8f9fa;
-        }
-
-        .pagination .page-item.disabled .page-link:hover {
-            background: #f8f9fa;
-            border-color: var(--border-color);
-            transform: none;
-            box-shadow: none;
-        }
-
-        .pagination-info {
-            text-align: center;
-            margin-top: 1rem;
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        /* ====================== ALERT SECTION ====================== */
-        .alert-section {
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-            border-radius: var(--radius);
-            padding: 1rem 1.25rem;
-            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2);
-            border-left: 5px solid #d97706;
-            margin-bottom: 1.5rem;
-        }
-
-        .alert-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .alert-text h3 {
-            margin: 0 0 0.5rem 0;
-            color: #92400e;
-            font-size: 1.3rem;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .alert-text p {
-            margin: 0;
-            color: #b45309;
-            font-size: 0.95rem;
-        }
-
-        .alert-action {
-            padding: 0.75rem 1.5rem;
-            background: #dc2626;
-            color: white;
-            border-radius: 6px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: var(--transition);
-            border: none;
-            cursor: pointer;
-        }
-
-        .alert-action:hover {
-            background: #b91c1c;
-        }
-
-        /* ====================== EMPTY STATE ====================== */
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: var(--text-secondary);
-        }
-
-        .empty-state .material-symbols-rounded {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
-        }
-
-        /* ====================== RESPONSIVE ====================== */
-        @media (max-width: 1024px) {
-            .table-container {
-                padding: 0 0.5rem;
-            }
-
-            table th,
-            table td {
-                padding: 0.6rem 0.5rem;
-                font-size: 0.8rem;
-            }
-
-            .btn-action {
-                width: 32px;
-                height: 32px;
-                font-size: 0.9rem;
-            }
-
-            .actions-group {
-                gap: 0.25rem;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .table-container {
-                padding: 0;
-                margin: 0 0 1.5rem 0;
-                border-radius: 0;
-            }
-
-            .table-header {
-                padding: 1rem;
-            }
-
-            .table-header h2 {
-                font-size: 1.1rem;
-                margin-bottom: 0.75rem;
-            }
-
-            .search-bar {
-                flex-direction: column;
-            }
-
-            .search-input {
-                width: 100%;
-                min-width: unset;
-            }
-
-            .btn-primary,
-            .btn-secondary-clear {
-                width: 100%;
-            }
-
-            .alert-content {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            table {
-                font-size: 0.75rem;
-            }
-
-            table th,
-            table td {
-                padding: 0.5rem 0.4rem;
-            }
-
-            table th {
-                font-size: 0.7rem;
-            }
-
-            .actions-group {
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-
-            .btn-action {
-                width: 30px;
-                height: 30px;
-                font-size: 0.85rem;
-            }
-
-            .paginacion {
-                padding: 1rem;
-            }
-
-            .pagination {
-                gap: 0.2rem;
-            }
-
-            .pagination .page-link {
-                min-width: 32px;
-                height: 32px;
-                padding: 0.3rem 0.5rem;
-                font-size: 0.75rem;
-            }
-
-            .pagination .page-link .material-symbols-rounded {
-                font-size: 0.9rem;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .table-container {
-                padding: 0;
-                margin: 0 0 1.5rem 0;
-            }
-
-            .table-header {
-                padding: 0.75rem;
-            }
-
-            .table-header h2 {
-                font-size: 1rem;
-                margin-bottom: 0.5rem;
-            }
-
-            .search-input {
-                font-size: 0.85rem;
-                padding: 0.6rem 0.75rem;
-            }
-
-            .btn-primary,
-            .btn-secondary-clear {
-                padding: 0.6rem 1rem;
-                font-size: 0.8rem;
-            }
-
-            table {
-                font-size: 0.7rem;
-            }
-
-            table th,
-            table td {
-                padding: 0.4rem 0.25rem;
-            }
-
-            table th {
-                font-size: 0.65rem;
-                padding: 0.5rem 0.2rem;
-            }
-
-            .actions-group {
-                gap: 0.15rem;
-            }
-
-            .btn-action {
-                width: 28px;
-                height: 28px;
-                font-size: 0.8rem;
-            }
-
-            .paginacion {
-                padding: 0.75rem;
-            }
-
-            .pagination {
-                gap: 0.15rem;
-            }
-
-            .pagination .page-link {
-                min-width: 28px;
-                height: 28px;
-                padding: 0.2rem 0.4rem;
-                font-size: 0.7rem;
-            }
-
-            .pagination .page-link .material-symbols-rounded {
-                font-size: 0.8rem;
-            }
-        }
-
-            .btn-action {
-                width: 32px;
-                height: 32px;
-                font-size: 1rem;
-            }
-
-            .pagination .page-link {
-                min-width: 32px;
-                height: 32px;
-                padding: 0.3rem 0.5rem;
-                font-size: 0.7rem;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="{{ asset('css/contador/tabla-index.css') }}?v={{ time() }}">
 @endpush
 
 <script>
@@ -697,172 +75,142 @@ document.addEventListener('click', function(event) {
 <!-- Sección de Pendientes -->
 <section id="pedidos-section" class="section-content active" style="display: block;">
     <div class="table-container">
-        <div class="table-header">
-            <h2>⏳ Pendientes</h2>
-            <div class="search-bar">
-                <input type="text" id="inputBusqueda" placeholder="🔍 Buscar por número de cotización o cliente..." class="search-input" onfocus="this.style.borderColor='var(--primary-color)'" onblur="this.style.borderColor='var(--border-color)'">
-                <button onclick="limpiarFiltros()" class="btn-secondary-clear">
-                    <span class="material-symbols-rounded">clear</span>
-                    Limpiar
-                </button>
+        <div class="modern-table-wrapper">
+            <div class="table-head" id="tableHead">
+                <div style="display: flex; align-items: center; width: 100%; gap: 12px; padding: 14px 12px;">
+                    @php
+                        $columns = [
+                            ['key' => 'acciones', 'label' => 'Acciones', 'flex' => '0 0 120px', 'justify' => 'flex-start'],
+                            ['key' => 'numero', 'label' => 'Número', 'flex' => '0 0 140px', 'justify' => 'center'],
+                            ['key' => 'fecha', 'label' => 'Fecha', 'flex' => '0 0 180px', 'justify' => 'center'],
+                            ['key' => 'cliente', 'label' => 'Cliente', 'flex' => '0 0 200px', 'justify' => 'center'],
+                            ['key' => 'asesora', 'label' => 'Asesora', 'flex' => '0 0 150px', 'justify' => 'center'],
+                        ];
+                    @endphp
+                    
+                    @foreach($columns as $column)
+                        <div class="table-header-cell{{ $column['key'] === 'acciones' ? ' acciones-column' : '' }}" style="flex: {{ $column['flex'] }}; justify-content: {{ $column['justify'] }};">
+                            <div class="th-wrapper">
+                                <span class="header-text">{{ $column['label'] }}</span>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
             </div>
-        </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Número</th>
-                    <th>Fecha</th>
-                    <th>Cliente</th>
-                    <th>Asesora</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                @php
-                    // Paginar manualmente: 25 por página
-                    // (El filtrado ya se hace en el controlador)
-                    $perPage = 25;
-                    $currentPage = request()->get('page', 1);
-                    $total = $cotizaciones->count();
-                    $totalPages = ceil($total / $perPage);
-                    $offset = ($currentPage - 1) * $perPage;
-                    $cotizacionesPaginadas = $cotizaciones->slice($offset, $perPage);
-                @endphp
-                
-                @forelse($cotizacionesPaginadas as $cotizacion)
-                    <tr>
-                        <td><strong>COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}</strong></td>
-                        <td>{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y h:i A') : 'N/A' }}</td>
-                        <td>{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? 'N/A') }}</td>
-                        <td>{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? 'N/A') }}</td>
-                        <td>
-                            <div class="actions-group">
-                                <!-- Dropdown de Ver (Primero) -->
-                                <div style="position: relative; display: inline-block;">
-                                    <button class="btn-action btn-view" onclick="toggleViewDropdown(this)" title="Ver Opciones">
-                                        <span class="material-symbols-rounded">visibility</span>
+            <div class="table-scroll-container">
+                <div class="modern-table">
+                    <div id="tablaCotizacionesBody" class="table-body">
+                        @php
+                            $perPage = 25;
+                            $currentPage = request()->get('page', 1);
+                            $total = $cotizaciones->count();
+                            $totalPages = ceil($total / $perPage);
+                            $offset = ($currentPage - 1) * $perPage;
+                            $cotizacionesPaginadas = $cotizaciones->slice($offset, $perPage);
+                        @endphp
+                        
+                        @forelse($cotizacionesPaginadas as $cotizacion)
+                            <div class="table-row" data-cotizacion-id="{{ $cotizacion->id }}">
+                                <!-- Acciones -->
+                                <div class="table-cell acciones-column" style="flex: 0 0 120px; justify-content: center; position: relative;">
+                                    <button class="action-view-btn" title="Ver opciones" data-cotizacion-id="{{ $cotizacion->id }}">
+                                        <i class="fas fa-eye"></i>
                                     </button>
-                                    <div class="view-dropdown" style="display: none;">
-                                        <button onclick="openCotizacionModal({{ $cotizacion->id }}); this.closest('.view-dropdown').style.display='none';">
-                                            <span class="material-symbols-rounded">description</span>
-                                            Ver Cotización
-                                        </button>
-                                        <button onclick="abrirModalVisorCostos({{ $cotizacion->id }}, '{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}'); this.closest('.view-dropdown').style.display='none';">
-                                            <span class="material-symbols-rounded">assessment</span>
-                                            Ver Costos
-                                        </button>
-                                        <button onclick="abrirModalPDF({{ $cotizacion->id }}); this.closest('.view-dropdown').style.display='none';">
-                                            <span class="material-symbols-rounded">picture_as_pdf</span>
-                                            Ver PDF
-                                        </button>
+                                    <div class="action-menu" data-cotizacion-id="{{ $cotizacion->id }}">
+                                        <a href="#" class="action-menu-item" data-action="cotizacion" onclick="openCotizacionModal({{ $cotizacion->id }}); return false;">
+                                            <i class="fas fa-file-alt"></i>
+                                            <span>Ver Cotización</span>
+                                        </a>
+                                        <a href="#" class="action-menu-item" data-action="costos" onclick="abrirModalVisorCostos({{ $cotizacion->id }}, '{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}'); return false;">
+                                            <i class="fas fa-chart-bar"></i>
+                                            <span>Ver Costos</span>
+                                        </a>
+                                        <a href="#" class="action-menu-item" data-action="pdf" onclick="abrirModalPDF({{ $cotizacion->id }}); return false;">
+                                            <i class="fas fa-file-pdf"></i>
+                                            <span>Ver PDF</span>
+                                        </a>
+                                        <a href="#" class="action-menu-item" data-action="editar" onclick="abrirModalCalculoCostos({{ $cotizacion->id }}, '{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}'); return false;">
+                                            <i class="fas fa-edit"></i>
+                                            <span>Editar Costos</span>
+                                        </a>
+                                        <a href="#" class="action-menu-item" data-action="aprobar" onclick="aprobarCotizacionEnLinea({{ $cotizacion->id }}); return false;">
+                                            <i class="fas fa-check-circle"></i>
+                                            <span>Aprobar</span>
+                                        </a>
                                     </div>
                                 </div>
-                                <button class="btn-action btn-edit btn-editar-costos" data-cotizacion-id="{{ $cotizacion->id }}" data-cliente="{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}" title="Editar Costos">
-                                    <span class="material-symbols-rounded">edit</span>
-                                </button>
-                                <button class="btn-action btn-success" onclick="aprobarCotizacionEnLinea({{ $cotizacion->id }})" title="Aprobar Cotización">
-                                    <span class="material-symbols-rounded">check_circle</span>
-                                </button>
+                                
+                                <!-- Número -->
+                                <div class="table-cell" style="flex: 0 0 140px;">
+                                    <div class="cell-content" style="justify-content: center;">
+                                        <span style="font-weight: 600;">COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Fecha -->
+                                <div class="table-cell" style="flex: 0 0 180px;">
+                                    <div class="cell-content" style="justify-content: center;">
+                                        <span>{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y H:i') : '-' }}</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Cliente -->
+                                <div class="table-cell" style="flex: 0 0 200px;">
+                                    <div class="cell-content" style="justify-content: center;">
+                                        <span>{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '-') }}</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Asesora -->
+                                <div class="table-cell" style="flex: 0 0 150px;">
+                                    <div class="cell-content" style="justify-content: center;">
+                                        <span>{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? '-') }}</span>
+                                    </div>
+                                </div>
                             </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="5" style="text-align: center; padding: 2rem;">
-                            <div class="empty-state">
-                                <span class="material-symbols-rounded">inbox</span>
+                        @empty
+                            <div style="padding: 40px; text-align: center; color: #9ca3af;">
                                 <p>No hay cotizaciones disponibles</p>
                             </div>
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-        
-        <!-- Paginación -->
-        @if($totalPages > 1)
-        <div class="paginacion">
-            <nav role="navigation" aria-label="Pagination Navigation" class="pagination-wrapper">
-                <ul class="pagination">
-                    {{-- Primera Página --}}
-                    @if($currentPage > 1)
-                        <li class="page-item">
-                            <a class="page-link" href="?page=1" title="Primera página">
-                                <span class="material-symbols-rounded">first_page</span>
-                            </a>
-                        </li>
-                    @else
-                        <li class="page-item disabled">
-                            <span class="page-link" aria-hidden="true">
-                                <span class="material-symbols-rounded">first_page</span>
-                            </span>
-                        </li>
-                    @endif
+                        @endforelse
+                    </div>
+                </div>
+            </div>
 
-                    {{-- Página Anterior --}}
-                    @if($currentPage > 1)
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ $currentPage - 1 }}" rel="prev" title="Página anterior">
-                                <span class="material-symbols-rounded">chevron_left</span>
-                            </a>
-                        </li>
-                    @else
-                        <li class="page-item disabled">
-                            <span class="page-link" aria-hidden="true">
-                                <span class="material-symbols-rounded">chevron_left</span>
-                            </span>
-                        </li>
+            <div class="table-pagination" id="tablePagination">
+                <div class="pagination-info">
+                    <span id="paginationInfo">Mostrando 1-25 de {{ $total }} registros</span>
+                </div>
+                <div class="pagination-controls" id="paginationControls">
+                    @if($totalPages > 1)
+                        <button class="pagination-btn" data-page="1" {{ $currentPage == 1 ? 'disabled' : '' }}>
+                            <i class="fas fa-angle-double-left"></i>
+                        </button>
+                        <button class="pagination-btn" data-page="{{ $currentPage - 1 }}" {{ $currentPage == 1 ? 'disabled' : '' }}>
+                            <i class="fas fa-angle-left"></i>
+                        </button>
+                        
+                        @php
+                            $start = max(1, $currentPage - 2);
+                            $end = min($totalPages, $currentPage + 2);
+                        @endphp
+                        
+                        @for($i = $start; $i <= $end; $i++)
+                            <button class="pagination-btn page-number {{ $i == $currentPage ? 'active' : '' }}" data-page="{{ $i }}">
+                                {{ $i }}
+                            </button>
+                        @endfor
+                        
+                        <button class="pagination-btn" data-page="{{ $currentPage + 1 }}" {{ $currentPage == $totalPages ? 'disabled' : '' }}>
+                            <i class="fas fa-angle-right"></i>
+                        </button>
+                        <button class="pagination-btn" data-page="{{ $totalPages }}" {{ $currentPage == $totalPages ? 'disabled' : '' }}>
+                            <i class="fas fa-angle-double-right"></i>
+                        </button>
                     @endif
-
-                    {{-- Números de Página --}}
-                    @for($i = max(1, $currentPage - 2); $i <= min($totalPages, $currentPage + 2); $i++)
-                        @if($i == $currentPage)
-                            <li class="page-item active" aria-current="page">
-                                <span class="page-link">{{ $i }}</span>
-                            </li>
-                        @else
-                            <li class="page-item">
-                                <a class="page-link" href="?page={{ $i }}">{{ $i }}</a>
-                            </li>
-                        @endif
-                    @endfor
-
-                    {{-- Página Siguiente --}}
-                    @if($currentPage < $totalPages)
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ $currentPage + 1 }}" rel="next" title="Página siguiente">
-                                <span class="material-symbols-rounded">chevron_right</span>
-                            </a>
-                        </li>
-                    @else
-                        <li class="page-item disabled">
-                            <span class="page-link" aria-hidden="true">
-                                <span class="material-symbols-rounded">chevron_right</span>
-                            </span>
-                        </li>
-                    @endif
-
-                    {{-- Última Página --}}
-                    @if($currentPage < $totalPages)
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ $totalPages }}" title="Última página">
-                                <span class="material-symbols-rounded">last_page</span>
-                            </a>
-                        </li>
-                    @else
-                        <li class="page-item disabled">
-                            <span class="page-link" aria-hidden="true">
-                                <span class="material-symbols-rounded">last_page</span>
-                            </span>
-                        </li>
-                    @endif
-                </ul>
-            </nav>
+                </div>
+            </div>
         </div>
-        <div class="pagination-info">
-            Mostrando {{ ($offset + 1) }} a {{ min($offset + $perPage, $total) }} de {{ $total }} cotizaciones
-        </div>
-        @endif
     </div>
 </section>
 
@@ -1068,6 +416,9 @@ document.addEventListener('click', function(event) {
     });
 
 </script>
+
+<!-- Script de Tabla de Cotizaciones -->
+<script src="{{ asset('js/contador/tabla-cotizaciones.js') }}"></script>
 
 <!-- Script de Cotizaciones -->
 <script src="{{ asset('js/contador/cotizacion.js') }}"></script>
