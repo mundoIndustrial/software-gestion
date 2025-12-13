@@ -9,6 +9,7 @@ namespace App\Domain\Cotizacion\ValueObjects;
  * - PRENDA (P): Solo prendas
  * - LOGO (L): Solo logo/bordado
  * - PRENDA_LOGO (PL): Prendas con logo/bordado
+ * - PRENDA_BORDADO (PB): Alias para Prendas con bordado (mapea a PL)
  * - REFLECTIVO (RF): Solo reflectivo
  */
 enum TipoCotizacion: string
@@ -16,6 +17,7 @@ enum TipoCotizacion: string
     case PRENDA = 'P';
     case LOGO = 'L';
     case PRENDA_LOGO = 'PL';
+    case PRENDA_BORDADO = 'PB';
     case REFLECTIVO = 'RF';
 
     /**
@@ -27,6 +29,7 @@ enum TipoCotizacion: string
             self::PRENDA => 'Prenda',
             self::LOGO => 'Logo/Bordado',
             self::PRENDA_LOGO => 'Prenda + Logo/Bordado',
+            self::PRENDA_BORDADO => 'Prenda + Bordado',
             self::REFLECTIVO => 'Reflectivo',
         };
     }
@@ -59,6 +62,7 @@ enum TipoCotizacion: string
     {
         return in_array($this, [
             self::PRENDA,
+            self::PRENDA_LOGO,
             self::PRENDA_BORDADO,
         ]);
     }
@@ -71,6 +75,7 @@ enum TipoCotizacion: string
         return in_array($this, [
             self::LOGO,
             self::PRENDA_LOGO,
+            self::PRENDA_BORDADO,
         ]);
     }
 
@@ -91,6 +96,7 @@ enum TipoCotizacion: string
             self::PRENDA => 'Cotización de prendas (camisas, pantalones, etc.)',
             self::LOGO => 'Cotización de logo, bordado o diseño',
             self::PRENDA_LOGO => 'Cotización de prendas con logo o bordado',
+            self::PRENDA_BORDADO => 'Cotización de prendas con bordado',
             self::REFLECTIVO => 'Cotización de reflectivo',
         };
     }

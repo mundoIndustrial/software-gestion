@@ -22,9 +22,10 @@ class PedidosProduccionController extends Controller
     {
         // Solo permitir crear pedidos de cotizaciones APROBADAS
         $cotizaciones = Cotizacion::where('asesor_id', Auth::id())
-            ->where('estado', 'APROBADA_COTIZACIONES')
+            ->whereIn('estado', ['APROBADA_COTIZACIONES', 'APROBADO_PARA_PEDIDO'])
             ->with([
                 'asesor',
+                'cliente',
                 'prendasCotizaciones.variantes.color',
                 'prendasCotizaciones.variantes.tela',
                 'prendasCotizaciones.variantes.tipoManga',
@@ -100,7 +101,8 @@ class PedidosProduccionController extends Controller
         }
 
         // Validar que la cotización esté aprobada
-        if ($cotizacion->estado !== 'APROBADA_COTIZACIONES') {
+        $estadosValidos = ['APROBADA_COTIZACIONES', 'APROBADO_PARA_PEDIDO'];
+        if (!in_array($cotizacion->estado, $estadosValidos)) {
             return response()->json([
                 'success' => false,
                 'message' => 'La cotización debe estar aprobada para crear un pedido. Estado actual: ' . $cotizacion->estado

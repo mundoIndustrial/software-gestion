@@ -4,10 +4,15 @@
 @section('page-title', 'Cotizaciones')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/asesores/create-friendly-refactored.css') }}">
-<link rel="stylesheet" href="{{ asset('css/asesores/create-friendly.css') }}">
-<link rel="stylesheet" href="{{ asset('css/asesores/cotizaciones-tabs.css') }}">
-<link rel="stylesheet" href="{{ asset('css/asesores/cotizaciones-utilities.css') }}">
+{{-- CSS específicos de crear cotización - lazy loaded por ruta --}}
+<link rel="stylesheet" href="{{ asset('css/asesores/create-friendly.css') }}?v={{ time() }}" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="{{ asset('css/asesores/cotizaciones-tabs.css') }}?v={{ time() }}" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="{{ asset('css/asesores/cotizaciones-utilities.css') }}?v={{ time() }}" media="print" onload="this.media='all'">
+<noscript>
+    <link rel="stylesheet" href="{{ asset('css/asesores/create-friendly.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/asesores/cotizaciones-tabs.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/asesores/cotizaciones-utilities.css') }}?v={{ time() }}">
+</noscript>
 @endpush
 
 @section('content')
@@ -31,7 +36,7 @@
 
         <x-paso-uno />
         <x-paso-dos />
-        <x-paso-cuatro-reflectivo />
+        {{-- <x-paso-cuatro-reflectivo /> --}}
         <x-paso-tres />
         <x-paso-cuatro />
     </form>

@@ -14,9 +14,10 @@
                 </p>
             </div>
             <div>
-                <p style="margin: 0; font-size: 0.9rem; color: #666;">
+                <p style="margin: 0; font-size: 0.9rem; color: #374151;">
                     <strong>FECHA:</strong>
-                    <input type="date" id="fechaActual" name="fecha_cotizacion" style="border: 1px solid #ccc; padding: 4px 8px; border-radius: 4px; font-size: 0.9rem; cursor: pointer;">
+                    <label for="fechaActual" style="display: inline-block; font-weight: 600; margin: 0 4px;"></label>
+                    <input type="date" id="fechaActual" name="fecha_cotizacion" style="border: 1px solid #ccc; padding: 4px 8px; border-radius: 4px; font-size: 0.9rem; cursor: pointer;" aria-label="Fecha de cotización">
                 </p>
             </div>
         </div>
@@ -25,7 +26,7 @@
     <div class="form-section">
         <div class="form-group-large">
             <label for="cliente"><i class="fas fa-user"></i> NOMBRE DEL CLIENTE *</label>
-            <input type="text" id="cliente" name="cliente" class="input-large" placeholder="EJ: JUAN GARCÍA, EMPRESA ABC..." value="{{ isset($esEdicion) && $esEdicion && isset($cotizacion) ? $cotizacion->cliente : '' }}" required>
+            <input type="text" id="cliente" name="cliente" class="input-large" placeholder="EJ: JUAN GARCÍA, EMPRESA ABC..." value="{{ isset($esEdicion) && $esEdicion && isset($cotizacion) ? $cotizacion->cliente : '' }}" required aria-label="Nombre del cliente o empresa">
             <small class="help-text">EL NOMBRE DE TU CLIENTE O EMPRESA</small>
         </div>
     </div>

@@ -27,7 +27,7 @@
             <!-- Logo de la empresa -->
             <div class="mb-6">
                 <a href="/">
-                    <img src="{{ asset('logo.png') }}" alt="Mundo Industrial" class="h-24 w-auto">
+                    <img src="{{ asset('logo.png') }}" alt="Mundo Industrial" class="h-24 w-auto" width="200" height="100">
                 </a>
             </div>
 

@@ -5,7 +5,7 @@
         <!-- Header -->
         <div class="cotizacion-modal-header">
             <div class="cotizacion-modal-header-left">
-                <img src="{{ asset('images/logo2.png') }}" alt="Logo" class="cotizacion-modal-logo">
+                <img src="{{ asset('images/logo2.png') }}" alt="Logo" class="cotizacion-modal-logo" width="150" height="60">
                 <div>
                     <h2 id="modalClienteName">Cliente</h2>
                     <p id="modalCotizacionNumber">COT-00000</p>

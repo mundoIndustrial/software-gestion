@@ -48,7 +48,7 @@
     left: 12px;
     top: 50%;
     transform: translateY(-50%);
-    color: #9ca3af;
+    color: #6b7280;  /* Improved contrast - 4.7:1 ratio ✅ */
     font-size: 14px;
 }
 
@@ -156,7 +156,7 @@
 .no-results {
     text-align: center;
     padding: 60px 20px !important;
-    color: #9ca3af;
+    color: #6b7280;  /* Improved contrast - 4.7:1 ratio ✅ */
 }
 
 .no-results i {

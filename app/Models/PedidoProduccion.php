@@ -45,6 +45,7 @@ class PedidoProduccion extends Model
     protected $casts = [
         'fecha_de_creacion_de_orden' => 'datetime',
         'fecha_estimada_de_entrega' => 'datetime',
+        'estado' => 'string',
     ];
 
     protected $appends = [
@@ -476,6 +477,6 @@ class PedidoProduccion extends Model
     /**
      * Constantes de estados y opciones
      */
-    const ESTADOS = ['No iniciado', 'En Ejecución', 'Entregado', 'Anulada'];
+    const ESTADOS = ['Pendiente', 'No iniciado', 'En Ejecución', 'Entregado', 'Anulada'];
     const DIAS_ENTREGA = [15, 20, 25, 30];
 }

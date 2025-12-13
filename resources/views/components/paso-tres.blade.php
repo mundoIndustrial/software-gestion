@@ -1,5 +1,5 @@
-<!-- PASO 4: LOGO -->
-<div class="form-step" data-step="4">
+<!-- PASO 3: LOGO -->
+<div class="form-step" data-step="3">
     <div class="step-header">
         <h2 style="font-size: 1rem !important; margin: 0 0 0.2rem 0 !important;">PASO 4: LOGO</h2>
         <p style="font-size: 0.45rem !important; margin: 0 !important; color: #666 !important;">ESPECIFICA LOS DETALLES DE BORDADO Y ESTAMPADO</p>

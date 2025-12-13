@@ -68,7 +68,7 @@
 
                 <div class="form-group">
                     <label for="numero_pedido">Número de Pedido</label>
-                    <input type="text" id="numero_pedido" name="numero_pedido" readonly>
+                    <input type="text" id="numero_pedido" name="numero_pedido" readonly placeholder="Se asignará automáticamente" style="background-color: #f3f4f6; cursor: not-allowed;">
                 </div>
             </div>
         </div>
@@ -104,12 +104,22 @@
         // Pasar datos de PHP a JavaScript
         window.asesorActualNombre = '{{ Auth::user()->name ?? '' }}';
         window.cotizacionesData = {!! json_encode($cotizaciones->map(function($cot) {
+            // Extraer forma_pago de especificaciones
+            $formaPago = '';
+            if (is_array($cot->especificaciones) && isset($cot->especificaciones['forma_pago'])) {
+                $formaPagoArray = $cot->especificaciones['forma_pago'];
+                if (is_array($formaPagoArray) && count($formaPagoArray) > 0) {
+                    $formaPago = $formaPagoArray[0]['valor'] ?? '';
+                }
+            }
+            
             return [
                 'id' => $cot->id,
-                'numero' => $cot->numero_cotizacion ?: '#' . $cot->id,
-                'cliente' => is_string($cot->cliente ?? '') ? $cot->cliente : '',
+                'numero_cotizacion' => $cot->numero_cotizacion,
+                'numero' => $cot->numero_cotizacion ?: 'COT-' . $cot->id,
+                'cliente' => $cot->cliente ? $cot->cliente->nombre : '',
                 'asesora' => $cot->asesor ? $cot->asesor->name : Auth::user()->name,
-                'formaPago' => is_string($cot->forma_pago ?? '') ? $cot->forma_pago : '',
+                'formaPago' => $formaPago,
                 'prendasCount' => $cot->prendasCotizaciones->count()
             ];
         })->toArray()) !!};

@@ -5,6 +5,7 @@ namespace App\Infrastructure\Http\Controllers\Asesores;
 use App\Application\Cotizacion\Handlers\Queries\ListarCotizacionesHandler;
 use App\Application\Cotizacion\Queries\ListarCotizacionesQuery;
 use App\Http\Controllers\Controller;
+use App\Helpers\DescripcionPrendaHelper;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -139,12 +140,40 @@ final class CotizacionesViewController extends Controller
                     $query->with([
                         'fotos',
                         'telas',
+                        'telas.color',
+                        'telas.tela',
                         'telaFotos',
                         'tallas',
-                        'variantes'
+                        'variantes' => function($q) {
+                            $q->with(['manga', 'broche']);
+                        }
                     ]);
                 }
             ])->findOrFail($cotizacion);
+
+            \Log::info('=== COTIZACION CARGADA ===', [
+                'cotizacion_id' => $cotizacion,
+                'prendas_count' => $cotizacionModelo->prendas->count(),
+            ]);
+            
+            foreach ($cotizacionModelo->prendas as $idx => $prenda) {
+                \Log::info("Prenda {$idx}", [
+                    'prenda_id' => $prenda->id,
+                    'nombre' => $prenda->nombre_producto,
+                    'telas_cargadas' => $prenda->telas->count(),
+                    'variantes_cargadas' => $prenda->variantes->count(),
+                ]);
+                
+                if ($prenda->telas->count() > 0) {
+                    foreach ($prenda->telas as $tidx => $tela) {
+                        \Log::info("  Tela {$tidx}", [
+                            'tela_id' => $tela->id,
+                            'tela_relation_loaded' => $tela->relationLoaded('tela'),
+                            'color_relation_loaded' => $tela->relationLoaded('color'),
+                        ]);
+                    }
+                }
+            }
 
             // Preparar datos de la cotización
             $datos = [
@@ -157,38 +186,34 @@ final class CotizacionesViewController extends Controller
                     'created_at' => $cotizacionModelo->created_at,
                     'estado' => $cotizacionModelo->estado,
                 ],
-                'prendas_cotizaciones' => $cotizacionModelo->prendas->map(function($prenda) {
+                'prendas_cotizaciones' => $cotizacionModelo->prendas->map(function($prenda, $index) {
+                    // Generar descripción formateada usando el método del modelo
+                    $descripcionFormateada = $prenda->generarDescripcionDetallada($index + 1);
+                    
                     return [
                         'id' => $prenda->id,
                         'nombre_prenda' => $prenda->nombre_producto ?? 'Prenda sin nombre',
                         'cantidad' => $prenda->cantidad ?? 0,
                         'descripcion' => $prenda->descripcion ?? null,
+                        'descripcion_formateada' => $descripcionFormateada,
                         'detalles_proceso' => $prenda->descripcion ?? null,
-                        // Fotos de la prenda
+                        // Fotos de la prenda - URLs completas (asset)
                         'fotos' => $prenda->fotos ? $prenda->fotos->map(function($foto) {
-                            return [
-                                'id' => $foto->id,
-                                'url' => $foto->url,
-                                'nombre' => $foto->nombre,
-                            ];
+                            return asset($foto->ruta_webp ?? $foto->url);
                         })->toArray() : [],
-                        // Telas asociadas
+                        // Telas asociadas - URLs de imagen
                         'telas' => $prenda->telas ? $prenda->telas->map(function($tela) {
                             return [
                                 'id' => $tela->id,
                                 'color' => $tela->color ?? null,
-                                'nombre_tela' => $tela->nombre_tela ?? null,
-                                'referencia' => $tela->referencia ?? null,
-                                'url_imagen' => $tela->url_imagen ?? null,
+                                'nombre_tela' => $tela->tela->nombre ?? null,
+                                'referencia' => $tela->tela->referencia ?? null,
+                                'url_imagen' => asset($tela->ruta_webp ?? $tela->url_imagen),
                             ];
                         })->toArray() : [],
-                        // Fotos de telas
+                        // Fotos de telas - URLs completas (asset)
                         'tela_fotos' => $prenda->telaFotos ? $prenda->telaFotos->map(function($foto) {
-                            return [
-                                'id' => $foto->id,
-                                'url' => $foto->url ?? null,
-                                'nombre' => $foto->nombre ?? null,
-                            ];
+                            return asset($foto->ruta_webp ?? $foto->url ?? null);
                         })->toArray() : [],
                         // Tallas
                         'tallas' => $prenda->tallas ? $prenda->tallas->map(function($talla) {

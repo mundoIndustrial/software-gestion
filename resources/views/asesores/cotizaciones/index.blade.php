@@ -4,9 +4,15 @@
 @section('page-title', 'Cotizaciones y Borradores')
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/cotizaciones/filtros-embudo.css') }}">
-<link rel="stylesheet" href="{{ asset('css/asesores/cotizaciones-tabs.css') }}">
-<link rel="stylesheet" href="{{ asset('css/asesores/cotizaciones-index.css') }}">
+{{-- CSS específicos del listado de cotizaciones - lazy loaded --}}
+<link rel="stylesheet" href="{{ asset('css/cotizaciones/filtros-embudo.css') }}?v={{ time() }}" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="{{ asset('css/asesores/cotizaciones-tabs.css') }}?v={{ time() }}" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="{{ asset('css/asesores/cotizaciones-index.css') }}?v={{ time() }}" media="print" onload="this.media='all'">
+<noscript>
+    <link rel="stylesheet" href="{{ asset('css/cotizaciones/filtros-embudo.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/asesores/cotizaciones-tabs.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/asesores/cotizaciones-index.css') }}?v={{ time() }}">
+</noscript>
 @endpush
 
 @section('content')

@@ -19,8 +19,10 @@
     <p style="margin: 0; opacity: 0.95; position: relative; z-index: 1; font-size: 0.95rem;">
         @if($cotizacion->numeroCotizacion)
             Cotización: {{ $cotizacion->numeroCotizacion }}
+        @elseif($cotizacion->numero_cotizacion)
+            Cotización #{{ $cotizacion->numero_cotizacion }}
         @else
-            Cotización #{{ $cotizacion->id }} (Borrador)
+            Cotización #{{ $cotizacion->id }}
         @endif
     </p>
 </div>

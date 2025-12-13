@@ -3,7 +3,7 @@
 <div class="order-detail-modal-container" style="max-width: 100%; padding: 0.5rem;">
     <div class="order-detail-card" style="position: relative;">
         <!-- Logo -->
-        <img src="{{ asset('images/logo.png') }}" alt="Mundo Industrial Logo" class="order-logo">
+        <img src="{{ asset('images/logo.png') }}" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
         
         <!-- Botón de navegación (esquina superior derecha) - FUERA de la descripción -->
         <div id="arrow-container-mobile" style="position: absolute; top: 15px; right: 15px; display: none; z-index: 100;"></div>

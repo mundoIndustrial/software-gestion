@@ -13,39 +13,58 @@ document.addEventListener('DOMContentLoaded', function() {
     const numeroPedidoInput = document.getElementById('numero_pedido');
     const formCrearPedido = document.getElementById('formCrearPedido');
 
-    // Cargar próximo número de pedido
-    fetch('/asesores/pedidos/next-pedido')
-        .then(response => response.json())
-        .then(data => {
-            numeroPedidoInput.value = data.siguiente_pedido;
-        });
+    // El número de pedido se asignará automáticamente en el servidor
+    // No cargar desde /next-pedido ya que la cola lo genera atomicamente
 
-    // Obtener cotizaciones filtradas por asesor
-    const misCotizaciones = window.cotizacionesData.filter(cot => cot.asesora === window.asesorActualNombre);
+
+    // Debug: Mostrar datos disponibles
+    console.log('📊 Datos de cotizaciones recibidos:', window.cotizacionesData);
+    console.log('👤 Asesor actual:', window.asesorActualNombre);
+
+    // Obtener cotizaciones (ya están filtradas por asesor en el servidor)
+    const misCotizaciones = window.cotizacionesData || [];
+    
+    console.log('📋 Mis cotizaciones (después de filtrar):', misCotizaciones.length);
+    console.log('📋 Datos completos:', misCotizaciones);
 
     // Función para mostrar las opciones filtradas
     function mostrarOpciones(filtro = '') {
         const filtroLower = filtro.toLowerCase();
         const opciones = misCotizaciones.filter(cot => {
             return cot.numero.toLowerCase().includes(filtroLower) ||
+                   (cot.numero_cotizacion && cot.numero_cotizacion.toLowerCase().includes(filtroLower)) ||
                    cot.cliente.toLowerCase().includes(filtroLower);
         });
 
-        if (opciones.length === 0) {
-            dropdown.innerHTML = '<div style="padding: 1rem; color: #9ca3af; text-align: center;">No se encontraron cotizaciones</div>';
+        console.log(`🔍 Filtro: "${filtro}", Resultados: ${opciones.length}`);
+
+        if (misCotizaciones.length === 0) {
+            dropdown.innerHTML = '<div style="padding: 1rem; color: #ef4444; text-align: center;"><strong>⚠️ No hay cotizaciones aprobadas</strong><br><small>No tienes cotizaciones en estado APROBADA_COTIZACIONES o APROBADO_PARA_PEDIDO</small></div>';
+        } else if (opciones.length === 0) {
+            dropdown.innerHTML = `<div style="padding: 1rem; color: #9ca3af; text-align: center;">No se encontraron cotizaciones<br><small>Total disponibles: ${misCotizaciones.length}</small></div>`;
         } else {
-            dropdown.innerHTML = opciones.map(cot => `
-                <div onclick="seleccionarCotizacion(${cot.id}, '${cot.numero.replace(/'/g, "\\'")}', '${cot.cliente.replace(/'/g, "\\'")}', '${cot.asesora.replace(/'/g, "\\'")}', '${cot.formaPago.replace(/'/g, "\\'")}', ${cot.prendasCount})" 
+            dropdown.innerHTML = opciones.map(cot => {
+                // Función para escapar valores null y strings
+                const escape = (val) => {
+                    if (!val) return '';
+                    return String(val).replace(/'/g, "\\'");
+                };
+                
+                return `
+                <div onclick="seleccionarCotizacion(${cot.id}, '${escape(cot.numero)}', '${escape(cot.cliente)}', '${escape(cot.asesora)}', '${escape(cot.formaPago)}', ${cot.prendasCount})" 
                      style="padding: 0.75rem 1rem; cursor: pointer; border-bottom: 1px solid #f3f4f6; transition: background 0.2s;" 
                      onmouseover="this.style.background = '#f0f9ff'" 
                      onmouseout="this.style.background = 'white'">
-                    <div style="font-weight: 600; color: #1f2937;">${cot.numero}</div>
+                    <div style="font-weight: 600; color: #1f2937;">
+                        ${cot.numero}${cot.numero_cotizacion ? ` <span style="color: #0066cc; font-size: 0.875rem;">(${cot.numero_cotizacion})</span>` : ''}
+                    </div>
                     <div style="font-size: 0.875rem; color: #6b7280;">
                         Cliente: <strong>${cot.cliente}</strong> | ${cot.prendasCount} prendas
                     </div>
                     ${cot.formaPago ? `<div style="font-size: 0.75rem; color: #9ca3af;">Forma de pago: ${cot.formaPago}</div>` : ''}
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         dropdown.style.display = 'block';
@@ -56,8 +75,15 @@ document.addEventListener('DOMContentLoaded', function() {
         mostrarOpciones(this.value);
     });
 
-    // Mostrar dropdown al hacer click
+    // Mostrar dropdown al hacer click (sin filtro)
+    searchInput.addEventListener('click', function() {
+        console.log('✅ Click en input. Total cotizaciones disponibles:', misCotizaciones.length);
+        mostrarOpciones();
+    });
+
+    // Mostrar dropdown al hacer focus
     searchInput.addEventListener('focus', function() {
+        console.log('✅ Focus en input. Total cotizaciones disponibles:', misCotizaciones.length);
         if (this.value === '') {
             mostrarOpciones();
         }
@@ -99,16 +125,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 return response.json();
             })
-            .then(data => {
-                console.log('📥 Datos de cotización recibidos:', data);
+            .then(response => {
+                console.log('📥 Datos de cotización recibidos:', response);
                 
-                if (data.forma_pago) {
-                    console.log('✅ Forma de pago desde servidor:', data.forma_pago);
-                    formaPagoInput.value = data.forma_pago;
+                // La respuesta tiene estructura {success: true, data: {...}}
+                const data = response.data || response;
+                
+                console.log('📊 Datos extraídos:', data);
+                
+                // Extraer forma_pago si existe
+                let formaPago = '';
+                if (data.especificaciones && Array.isArray(data.especificaciones.forma_pago)) {
+                    if (data.especificaciones.forma_pago.length > 0) {
+                        formaPago = data.especificaciones.forma_pago[0].valor || '';
+                    }
+                }
+                
+                if (formaPago) {
+                    console.log('✅ Forma de pago desde servidor:', formaPago);
+                    formaPagoInput.value = formaPago;
                 } else {
                     console.log('⚠️ No hay forma de pago en los datos');
                 }
                 
+                console.log('📋 Prendas a cargar:', data.prendas);
                 cargarPrendas(data.prendas);
             })
             .catch(error => {
@@ -145,14 +185,28 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             let linea2 = prenda.descripcion || '';
-            const detalles = [];
-            if (variantes.manga) detalles.push(`MANGA ${variantes.manga.toUpperCase()}`);
-            if (variantes.tiene_bolsillos) detalles.push('CON BOLSILLO');
-            if (variantes.broche) detalles.push(`BROCHE ${variantes.broche.toUpperCase()}`);
-            if (variantes.tiene_reflectivo) detalles.push('CON REFLECTIVO');
             
-            if (detalles.length > 0) {
-                linea2 = linea2 ? linea2 + ' ' + detalles.join(' ') : detalles.join(' ');
+            // Eliminar las tallas que vienen en la descripción original (para evitar duplicación)
+            linea2 = linea2.replace(/\s*Tallas:\s*[XS\-:,0-9\s]*(?=\n|$)/gi, '').trim();
+            
+            // Normalizar espacios múltiples y espacios alrededor de viñetas
+            linea2 = linea2.replace(/\s+/g, ' ').replace(/\s*•\s*/g, ' • ');
+            
+            // Formatear descripción: 
+            // 1. Convertir • en saltos de línea
+            // 2. Aplicar negrita a palabras después de viñetas y dos puntos
+            let descripcionFormateada = linea2
+                // Primero, agregar negrita a palabras después de viñetas (incluir caracteres acentuados)
+                .replace(/\s•\s+([A-Za-záéíóúñÁÉÍÓÚÑ]+):\s*/g, '<br>• <strong>$1</strong>: ')
+                // Aplicar negrita a las palabras clave en el resto del texto
+                .replace(/(\s|^)MANGA(\s)/g, '$1<strong>MANGA</strong>$2')
+                .replace(/(\s|^)REFLECTIVO(\s)/g, '$1<strong>REFLECTIVO</strong>$2')
+                .replace(/(\s|^)BOLSILLO(\s)/g, '$1<strong>BOLSILLO</strong>$2')
+                .replace(/(\s|^)BROCHE(\s)/g, '$1<strong>BROCHE</strong>$2');
+            
+            // Agregar espacio inicial si no comienza con <br>
+            if (!descripcionFormateada.startsWith('<br>')) {
+                descripcionFormateada = descripcionFormateada.trim();
             }
             
             let linea3 = 'TALLAS: ';
@@ -163,14 +217,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             let descripcionCompleta = `
-                <div style="font-size: 0.9rem; line-height: 1.6; color: #1f2937;">
-                    <div style="font-weight: 600; margin-bottom: 0.5rem;">
+                <div style="font-size: 0.9rem; line-height: 1.6; color: #1f2937; text-align: left;">
+                    <div style="font-weight: 600; margin-bottom: 0.5rem; text-align: left;">
                         Prenda ${index + 1}: ${linea1}
                     </div>
-                    <div style="margin-bottom: 0.5rem; color: #4b5563;">
-                        <strong>Descripción:</strong> ${linea2}
+                    <div style="margin-bottom: 0.5rem; color: #4b5563; white-space: pre-wrap; text-align: left;">
+                        <strong>Descripción:</strong><br>${descripcionFormateada}
                     </div>
-                    <div style="color: #374151;">
+                    <div style="color: #374151; margin-top: 0.5rem; font-size: 0.85rem; text-align: left;">
                         ${linea3}
                     </div>
                 </div>
@@ -340,11 +394,29 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.success) {
                 Swal.fire({
                     icon: 'success',
-                    title: 'Creado exitosamente',
-                    text: 'El pedido ha sido creado correctamente',
-                    timer: 1500,
-                    timerProgressBar: true,
-                    showConfirmButton: false
+                    title: '✓ Pedido Creado Exitosamente',
+                    html: `
+                        <div style="text-align: left; padding: 1rem;">
+                            <div style="margin-bottom: 1rem; padding: 1rem; background: #f0fdf4; border-left: 4px solid #10b981; border-radius: 4px;">
+                                <p style="margin: 0.5rem 0; font-size: 0.95rem;">
+                                    <strong>Número de Pedido:</strong> <span style="color: #059669;">${data.pedido_numero || 'N/A'}</span>
+                                </p>
+                                <p style="margin: 0.5rem 0; font-size: 0.95rem;">
+                                    <strong>Estado:</strong> <span style="color: #059669;">Creado</span>
+                                </p>
+                                <p style="margin: 0.5rem 0; font-size: 0.95rem;">
+                                    <strong>Fecha:</strong> <span style="color: #059669;">${new Date().toLocaleDateString('es-CO')}</span>
+                                </p>
+                            </div>
+                            <p style="color: #4b5563; font-size: 0.9rem;">
+                                El pedido ha sido creado correctamente y está listo para procesamiento.
+                            </p>
+                        </div>
+                    `,
+                    confirmButtonText: 'Ver Pedidos',
+                    confirmButtonColor: '#059669',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
                 }).then(() => {
                     window.location.href = '/asesores/pedidos-produccion';
                 });
@@ -373,21 +445,47 @@ function eliminarTalla(btn) {
     const tallaGroup = btn.closest('.talla-group');
     const talla = tallaGroup.getAttribute('data-talla');
     
-    if (confirm(`¿Eliminar la talla ${talla}?`)) {
-        tallaGroup.style.opacity = '0.5';
-        tallaGroup.style.pointerEvents = 'none';
-        
-        const input = tallaGroup.querySelector('.talla-input');
-        input.disabled = true;
-        input.value = '';
-        
-        tallaGroup.classList.add('talla-eliminada');
-        
-        btn.textContent = '✓';
-        btn.style.background = '#10b981';
-        btn.disabled = true;
-    }
+    Swal.fire({
+        title: '¿Eliminar talla?',
+        text: `¿Estás seguro de que deseas eliminar la talla ${talla}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Animar la desaparición
+            tallaGroup.style.transition = 'all 0.3s ease-out';
+            tallaGroup.style.opacity = '0';
+            tallaGroup.style.transform = 'translateX(-100%)';
+            
+            // Eliminar del DOM después de la animación
+            setTimeout(() => {
+                tallaGroup.remove();
+                
+                // Mostrar toast de éxito
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000,
+                    timerProgressBar: true
+                });
+                
+                Toast.fire({
+                    icon: 'success',
+                    title: `Talla ${talla} eliminada`
+                });
+            }, 300);
+            
+            console.log(`🗑️ Talla eliminada: ${talla}`);
+        }
+    });
 }
+
 
 function agregarTalla(btn) {
     const input = btn.previousElementSibling;

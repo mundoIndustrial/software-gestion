@@ -5,6 +5,7 @@ namespace App\Application\Handlers;
 use App\Application\Commands\EnviarCotizacionCommand;
 use App\Domain\Cotizacion\Services\GeneradorNumeroCotizacionService;
 use App\Models\Cotizacion;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -63,7 +64,7 @@ class EnviarCotizacionHandler
                 'numero_cotizacion' => $numeroCotizacion,
                 'es_borrador' => false,
                 'estado' => 'ENVIADA',
-                'fecha_envio' => now()
+                'fecha_envio' => Carbon::now('America/Bogota')
             ]);
 
             Log::info('✅ Cotización enviada exitosamente', [

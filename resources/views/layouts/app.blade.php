@@ -21,19 +21,20 @@
                 @if(Route::currentRouteName() === 'registros.index' || Route::currentRouteName() === 'bodega.index')
                 <div class="nav-search-container">
                     <div class="nav-search-wrapper">
-                        <span class="material-symbols-rounded search-icon">search</span>
+                        <span class="material-symbols-rounded search-icon" aria-hidden="true">search</span>
                         <input 
                             type="text" 
                             id="navSearchInput" 
                             class="nav-search-input" 
                             placeholder="Buscar por número o cliente..."
                             autocomplete="off"
+                            aria-label="Búsqueda de órdenes"
                         >
-                        <button class="nav-search-clear" id="navSearchClear" style="display: none;">
-                            <span class="material-symbols-rounded">close</span>
+                        <button class="nav-search-clear" id="navSearchClear" style="display: none;" aria-label="Limpiar búsqueda">
+                            <span class="material-symbols-rounded" aria-hidden="true">close</span>
                         </button>
                     </div>
-                    <div class="nav-search-results" id="navSearchResults" style="display: none;"></div>
+                    <div class="nav-search-results" id="navSearchResults" style="display: none;" role="region" aria-live="polite" aria-label="Resultados de búsqueda"></div>
                 </div>
                 @endif
             </div>
@@ -41,18 +42,18 @@
             <div class="nav-right">
                 <!-- Notificaciones -->
                 <div class="notification-dropdown">
-                    <button class="notification-btn" id="notificationBtn" aria-label="Notificaciones">
-                        <span class="material-symbols-rounded">notifications</span>
-                        <span class="notification-badge" id="notificationBadge">0</span>
+                    <button class="notification-btn" id="notificationBtn" aria-label="Notificaciones" aria-expanded="false" aria-controls="notificationMenu">
+                        <span class="material-symbols-rounded" aria-hidden="true">notifications</span>
+                        <span class="notification-badge" id="notificationBadge" aria-label="0 notificaciones nuevas">0</span>
                     </button>
-                    <div class="notification-menu" id="notificationMenu">
+                    <div class="notification-menu" id="notificationMenu" role="region" aria-label="Menú de notificaciones">
                         <div class="notification-header">
                             <h3>Notificaciones</h3>
-                            <button class="mark-all-read">Marcar todas</button>
+                            <button class="mark-all-read" aria-label="Marcar todas las notificaciones como leídas">Marcar todas</button>
                         </div>
-                        <div class="notification-list" id="notificationList">
+                        <div class="notification-list" id="notificationList" role="list">
                             <div class="notification-empty">
-                                <span class="material-symbols-rounded">notifications_off</span>
+                                <span class="material-symbols-rounded" aria-hidden="true">notifications_off</span>
                                 <p>Sin notificaciones</p>
                             </div>
                         </div>
@@ -61,12 +62,12 @@
 
                 <!-- Perfil de Usuario -->
                 <div class="user-dropdown">
-                    <button class="user-btn" id="userBtn">
+                    <button class="user-btn" id="userBtn" aria-label="Menú de usuario" aria-expanded="false" aria-controls="userMenu">
                         <div class="user-avatar">
                             @if(Auth::user()->avatar)
-                                <img src="{{ route('storage.serve', ['path' => 'avatars/' . Auth::user()->avatar]) }}" alt="{{ Auth::user()->name }}">
+                                <img src="{{ route('storage.serve', ['path' => 'avatars/' . Auth::user()->avatar]) }}" alt="Avatar de {{ Auth::user()->name }}">
                             @else
-                                <div class="avatar-placeholder">
+                                <div class="avatar-placeholder" aria-label="Avatar">
                                     {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
                                 </div>
                             @endif
@@ -76,7 +77,7 @@
                             <span class="user-role">{{ Auth::user()->role->name ?? 'Usuario' }}</span>
                         </div>
                     </button>
-                    <div class="user-menu" id="userMenu">
+                    <div class="user-menu" id="userMenu" role="region" aria-label="Menú de usuario">
                         <div class="user-menu-header">
                             <div class="user-avatar-large">
                                 @if(Auth::user()->avatar)

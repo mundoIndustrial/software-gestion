@@ -44,6 +44,7 @@
                         @endphp
                         @foreach($prenda->fotos as $index => $foto)
                             <img src="{{ asset($foto->ruta_webp) }}" alt="Prenda {{ $index + 1 }}"
+                                 width="50" height="50"
                                  style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid #e2e8f0;"
                                  onclick="abrirModalImagen('{{ asset($foto->ruta_webp) }}', '{{ $prenda->nombre_producto ?? 'Prenda' }} - Foto {{ $index + 1 }}', {{ $fotosJson }}, {{ $index }})">
                         @endforeach
@@ -66,6 +67,7 @@
                         @endphp
                         @foreach($prenda->telaFotos as $index => $tela)
                             <img src="{{ asset($tela->ruta_webp) }}" alt="Tela {{ $index + 1 }}"
+                                 width="50" height="50"
                                  style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid #e2e8f0;"
                                  onclick="abrirModalImagen('{{ asset($tela->ruta_webp) }}', '{{ $prenda->nombre_producto ?? 'Tela' }} - Tela {{ $index + 1 }}', {{ $telasJson }}, {{ $index }})">
                         @endforeach

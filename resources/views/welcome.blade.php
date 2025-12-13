@@ -44,7 +44,7 @@
             
             <!-- Logo separado con más margen -->
             <div class="mb-8 sm:mb-10 md:mb-12 animate-fadeIn">
-                <img src="{{ asset('logo.png') }}" alt="Mundo Industrial" class="h-16 sm:h-20 md:h-24 lg:h-28 w-auto drop-shadow-2xl">
+                <img src="{{ asset('logo.png') }}" alt="Mundo Industrial" class="h-16 sm:h-20 md:h-24 lg:h-28 w-auto drop-shadow-2xl" width="200" height="112">
             </div>
 
             <!-- Contenido de texto -->

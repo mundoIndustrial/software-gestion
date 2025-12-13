@@ -1,5 +1,14 @@
 @extends('layouts.app')
 
+@section('title', 'Panel de Control - Mundo Industrial')
+
+@section('meta')
+    <meta name="description" content="Panel de control de costura y producción de Mundo Industrial. Gestiona órdenes, seguimiento de prendas y control de calidad en tiempo real.">
+    <meta name="keywords" content="costura, producción, órdenes, prendas, gestión">
+    <meta property="og:title" content="Panel de Control - Mundo Industrial">
+    <meta property="og:description" content="Plataforma de gestión de producción textil con seguimiento en tiempo real">
+@endsection
+
 @section('content')
     <!-- Font Awesome para iconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"

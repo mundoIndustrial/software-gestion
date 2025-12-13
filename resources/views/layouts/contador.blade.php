@@ -24,7 +24,7 @@
 <div id="cotizacionModal" class="modal fullscreen" style="display: none;">
     <div class="modal-content">
         <div class="modal-header">
-            <img src="{{ asset('images/logo2.png') }}" alt="Logo Mundo Industrial" class="modal-header-logo">
+            <img src="{{ asset('images/logo2.png') }}" alt="Logo Mundo Industrial" class="modal-header-logo" width="150" height="60">
             <div style="display: flex; gap: 3rem; align-items: center; flex: 1; margin-left: 2rem; color: white; font-size: 0.85rem;">
                 <div>
                     <p style="margin: 0; opacity: 0.8;">Cotización #</p>

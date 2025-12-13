@@ -6,7 +6,11 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="google" content="notranslate">
     <meta http-equiv="Content-Language" content="es">
+    <meta name="description" content="Plataforma integral de gestión de producción textil con seguimiento en tiempo real y análisis de datos.">
+    <meta name="theme-color" content="#0066cc">
     <title>@yield('title', config('app.name', 'Mundo Industrial'))</title>
+
+    @yield('meta')
 
     <!-- Favicon -->
     <link rel="icon" href="{{ asset('mundo_icon.ico') }}" type="image/x-icon">
@@ -38,19 +42,25 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- CSS Global -->
+    <!-- CSS Global (crítico) -->
     <link rel="stylesheet" href="{{ asset('css/sidebar.css') }}">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    
+    <!-- CSS no-crítico (diferido) -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <noscript>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    </noscript>
 
-    <!-- SweetAlert2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <!-- Toast Notifications Global -->
-    <script src="{{ asset('js/toast-notifications.js') }}"></script>
-
-    <!-- Vite -->
+    <!-- Vite (contiene app.css y app.js críticos) -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    
+    <!-- SweetAlert2 JS (diferido) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Toast Notifications Global (diferido) -->
+    <script defer src="{{ asset('js/toast-notifications.js') }}"></script>
 
     <!-- Page-specific styles -->
     @stack('styles')
@@ -87,13 +97,12 @@
 
     @yield('body')
 
-    <!-- Librerías externas JS (cargadas por Vite, no duplicar aquí) -->
-
-    <!-- Core JS -->
+    <!-- Core JS - Crítico para funcionalidad (sin defer) -->
     <script src="{{ asset('js/sidebar.js') }}"></script>
     
-    <!-- Notificaciones del Sidebar -->
-    <script src="{{ asset('js/sidebar-notifications.js') }}"></script>
+    <!-- Non-critical JS (diferido) -->
+    <script defer src="{{ asset('js/sidebar-notifications.js') }}"></script>
+    <script defer src="{{ asset('js/top-nav.js') }}"></script>
 
     <!-- Page-specific scripts -->
     @stack('scripts')

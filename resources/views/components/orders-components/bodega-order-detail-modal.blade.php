@@ -1,7 +1,7 @@
 <x-modal name="bodega-order-detail" :show="false" maxWidth="2xl">
     <div class="order-detail-modal-container">
         <div class="order-detail-card">
-            <img src="{{ asset('images/logo.png') }}" alt="Mundo Industrial Logo" class="order-logo">
+            <img src="{{ asset('images/logo.png') }}" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
             <div id="order-date" class="order-date">
                 <div class="fec-label">FECHA</div>
                 <div class="date-boxes">

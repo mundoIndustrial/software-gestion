@@ -21,6 +21,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'redirect-to-login' => \App\Http\Middleware\RedirectToLoginIfUnauthenticated::class,
             'operario-access' => \App\Http\Middleware\OperarioAccess::class,
         ]);
+        
+        // Add security headers middleware globally
+        $middleware->append(\App\Http\Middleware\SetSecurityHeaders::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

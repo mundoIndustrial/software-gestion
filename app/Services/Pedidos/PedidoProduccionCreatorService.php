@@ -4,7 +4,10 @@ namespace App\Services\Pedidos;
 
 use App\Models\PedidoProduccion;
 use App\DTOs\CrearPedidoProduccionDTO;
+use App\DTOs\PrendaCreacionDTO;
+use App\Jobs\CrearPedidoProduccionJob;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Bus;
 
 /**
  * Service para creación de pedidos de producción
@@ -18,6 +21,7 @@ class PedidoProduccionCreatorService
 
     /**
      * Crea un nuevo pedido de producción
+     * Ejecuta sincronamente pero con protección de transacción y lock para números secuenciales
      */
     public function crear(CrearPedidoProduccionDTO $dto, int $asesorId): ?PedidoProduccion
     {
@@ -32,28 +36,9 @@ class PedidoProduccionCreatorService
             throw new \InvalidArgumentException('No hay prendas con cantidades válidas');
         }
 
-        // Procesar prendas
-        $prendasProcesadas = array_map(
-            fn(PrendaCreacionDTO $prenda) => $this->prendaProcessor->procesar($prenda),
-            $prendas
-        );
-
-        // Crear pedido
-        return PedidoProduccion::create([
-            'cotizacion_id' => $dto->cotizacionId,
-            'asesor_id' => $asesorId,
-            'prendas' => $prendasProcesadas,
-            'estado' => 'pendiente',
-        ]);
+        // Ejecutar el Job de forma sincrónica para garantizar número secuencial
+        // y retornar el pedido creado inmediatamente
+        return Bus::dispatchSync(new CrearPedidoProduccionJob($dto, $asesorId, $prendas));
     }
 
-    /**
-     * Obtiene el próximo número de pedido
-     * SRP: responsabilidad única = generar número
-     */
-    public function obtenerProximoNumero(): int
-    {
-        $ultimoPedido = PedidoProduccion::max('numero_pedido') ?? 0;
-        return $ultimoPedido + 1;
-    }
 }

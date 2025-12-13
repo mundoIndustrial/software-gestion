@@ -62,6 +62,66 @@
         .variaciones-cards-mobile {
             display: block !important;
         }
+        
+        /* Mejorar responsive para dispositivos pequeños */
+        .form-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .form-col {
+            width: 100% !important;
+        }
+        
+        /* Tallas - Responsive mejorado */
+        .talla-tipo-select,
+        .talla-genero-select,
+        .talla-modo-select,
+        .talla-desde,
+        .talla-hasta {
+            max-width: 100% !important;
+            width: 100% !important;
+            font-size: 0.9rem !important;
+        }
+        
+        .talla-rango-selectors {
+            flex-direction: column !important;
+        }
+        
+        .talla-rango-selectors select,
+        .btn-agregar-rango {
+            width: 100% !important;
+        }
+        
+        .talla-botones-container {
+            width: 100% !important;
+            justify-content: flex-start;
+        }
+        
+        .btn-agregar-tallas-seleccionadas {
+            width: 100% !important;
+            margin-top: 0.5rem;
+        }
+        
+        /* Selectores en una línea scrolleable en móvil */
+        div[style*="display: flex"][style*="gap: 0.75rem"] {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+        }
+    }
+    
+    /* Breakpoint para tablets y dispositivos medianos */
+    @media (max-width: 1024px) {
+        /* Mejorar espaciado en tablets */
+        .producto-section {
+            padding: 1rem;
+        }
+        
+        .section-title {
+            font-size: 0.95rem;
+        }
     }
 </style>
 
@@ -551,29 +611,29 @@
 
                         <!-- Vista Mobile (cards) -->
                         <div style="display: none;" class="color-tela-cards-mobile">
-                            <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
-                                <label style="font-size: 0.75rem; font-weight: 600; color: #0066cc; display: block; margin-bottom: 6px;"><i class="fas fa-palette"></i> Color</label>
-                                <input type="text" name="productos_prenda[][variantes][color]" class="color-input" placeholder="Buscar o crear color..." required style="width: 100%; padding: 0.4rem; border: 1px solid #0066cc; border-radius: 4px; font-size: 0.75rem; box-sizing: border-box;">
+                            <div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 14px;">
+                                <label style="font-size: 0.95rem; font-weight: 700; color: #0066cc; display: block; margin-bottom: 10px;"><i class="fas fa-palette"></i> COLOR</label>
+                                <input type="text" name="productos_prenda[][variantes][color]" class="color-input" placeholder="Buscar o crear color..." required style="width: 100%; padding: 14px 12px; border: 2px solid #0066cc; border-radius: 6px; font-size: 1rem; box-sizing: border-box; min-height: 48px; transition: all 0.2s ease;">
                             </div>
-                            <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
-                                <label style="font-size: 0.75rem; font-weight: 600; color: #0066cc; display: block; margin-bottom: 6px;"><i class="fas fa-cloth"></i> Tela</label>
-                                <input type="text" name="productos_prenda[][variantes][tela]" class="tela-input" placeholder="Buscar o crear tela..." required style="width: 100%; padding: 0.4rem; border: 1px solid #0066cc; border-radius: 4px; font-size: 0.75rem; box-sizing: border-box;">
+                            <div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 14px;">
+                                <label style="font-size: 0.95rem; font-weight: 700; color: #0066cc; display: block; margin-bottom: 10px;"><i class="fas fa-cloth"></i> TELA</label>
+                                <input type="text" name="productos_prenda[][variantes][tela]" class="tela-input" placeholder="Buscar o crear tela..." required style="width: 100%; padding: 14px 12px; border: 2px solid #0066cc; border-radius: 6px; font-size: 1rem; box-sizing: border-box; min-height: 48px; transition: all 0.2s ease;">
                             </div>
-                            <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
-                                <label style="font-size: 0.75rem; font-weight: 600; color: #0066cc; display: block; margin-bottom: 6px;"><i class="fas fa-barcode"></i> Referencia</label>
-                                <input type="text" name="productos_prenda[][variantes][referencia]" class="referencia-input" placeholder="Ej: REF-NAP-001" required style="width: 100%; padding: 0.4rem; border: 1px solid #0066cc; border-radius: 4px; font-size: 0.75rem; box-sizing: border-box;">
+                            <div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 14px;">
+                                <label style="font-size: 0.95rem; font-weight: 700; color: #0066cc; display: block; margin-bottom: 10px;"><i class="fas fa-barcode"></i> REFERENCIA</label>
+                                <input type="text" name="productos_prenda[][variantes][referencia]" class="referencia-input" placeholder="Ej: REF-NAP-001" required style="width: 100%; padding: 14px 12px; border: 2px solid #0066cc; border-radius: 6px; font-size: 1rem; box-sizing: border-box; min-height: 48px; transition: all 0.2s ease;">
                             </div>
-                            <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px;">
-                                <label style="font-size: 0.75rem; font-weight: 600; color: #0066cc; display: block; margin-bottom: 6px;"><i class="fas fa-image"></i> Imagen Tela</label>
-                                <label style="display: block; min-height: 60px; padding: 0.5rem; border: 2px dashed #0066cc; border-radius: 6px; cursor: pointer; text-align: center; background: #f0f7ff;" ondrop="event.preventDefault(); if(event.dataTransfer.files) this.querySelector('input').files = event.dataTransfer.files; this.querySelector('input').onchange && this.querySelector('input').onchange();" ondragover="event.preventDefault(); this.style.background='#e8f4f8';" ondragleave="this.style.background='#f0f7ff';">
+                            <div style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 16px;">
+                                <label style="font-size: 0.95rem; font-weight: 700; color: #0066cc; display: block; margin-bottom: 12px;"><i class="fas fa-image"></i> IMAGEN TELA</label>
+                                <label style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 120px; padding: 16px; border: 3px dashed #0066cc; border-radius: 8px; cursor: pointer; text-align: center; background: #f0f7ff; transition: all 0.2s ease;" ondrop="event.preventDefault(); if(event.dataTransfer.files) this.querySelector('input').files = event.dataTransfer.files; this.querySelector('input').onchange && this.querySelector('input').onchange();" ondragover="event.preventDefault(); this.style.background='#e8f4f8'; this.style.borderColor='#0052a3';" ondragleave="this.style.background='#f0f7ff'; this.style.borderColor='#0066cc';">
                                     <input type="file" name="productos_prenda[][telas][]" class="input-file-tela" accept="image/*" multiple onchange="agregarFotosAlProducto(this)" style="display: none;">
-                                    <div class="drop-zone-content" style="font-size: 0.6rem;">
-                                        <i class="fas fa-cloud-upload-alt" style="font-size: 0.7rem; color: #0066cc;"></i>
-                                        <p style="margin: 0.1rem 0; color: #0066cc; font-weight: 500; font-size: 0.65rem;">ARRASTRA O CLIC</p>
-                                        <small style="color: #666; font-size: 0.6rem;">(Máx. 3)</small>
+                                    <div class="drop-zone-content" style="font-size: 1rem;">
+                                        <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: #0066cc; margin-bottom: 8px; display: block;"></i>
+                                        <p style="margin: 6px 0; color: #0066cc; font-weight: 600; font-size: 0.95rem;">ARRASTRA O CLIC</p>
+                                        <small style="color: #666; font-size: 0.85rem;">(Máx. 3 imágenes)</small>
                                     </div>
                                 </label>
-                                <div class="foto-tela-preview" style="display: grid; grid-template-columns: repeat(3, 40px); gap: 0.3rem; margin-top: 0.5rem; justify-content: center;"></div>
+                                <div class="foto-tela-preview" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px;"></div>
                             </div>
                         </div>
                     </div>

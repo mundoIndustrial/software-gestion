@@ -17,6 +17,7 @@ class DescripcionPrendaHelper
      *      'tela' => string,
      *      'ref' => string (referencia tela),
      *      'manga' => string,
+     *      'obs_manga' => string (observación de manga),
      *      'logo' => string,
      *      'bolsillos' => array de strings,
      *      'broche' => string,
@@ -35,6 +36,7 @@ class DescripcionPrendaHelper
         $tela = $prenda['tela'] ?? '';
         $ref = $prenda['ref'] ?? '';
         $manga = $prenda['manga'] ?? '';
+        $obsManga = $prenda['obs_manga'] ?? '';
         $logo = $prenda['logo'] ?? '';
         
         // Procesar listas
@@ -98,7 +100,13 @@ class DescripcionPrendaHelper
             $atributos = [];
             if ($color) $atributos[] = "Color: {$color}";
             if ($telaRef) $atributos[] = "Tela: {$telaRef}";
-            if ($manga) $atributos[] = "Manga: {$manga}";
+            if ($manga) {
+                $mangaConObs = "Manga: {$manga}";
+                if ($obsManga) {
+                    $mangaConObs .= " ({$obsManga})";
+                }
+                $atributos[] = $mangaConObs;
+            }
             $descripcion .= "\n" . implode(" | ", $atributos);
         }
 
@@ -150,6 +158,7 @@ class DescripcionPrendaHelper
             'tela' => '',
             'ref' => '',
             'manga' => '',
+            'obs_manga' => '',
             'logo' => '',
             'bolsillos' => [],
             'broche' => '',
@@ -185,6 +194,10 @@ class DescripcionPrendaHelper
             if (preg_match('/Manga:\s*([^|]+?)(?:\||$)/i', $prenda->descripcion_variaciones, $matches)) {
                 $datos['manga'] = trim($matches[1]);
             }
+            // Extraer obs_manga
+            if (preg_match('/obs_manga["\']?\s*[:=]\s*["\']?([^"\'|]+)["\']?/i', $prenda->descripcion_variaciones, $matches)) {
+                $datos['obs_manga'] = trim($matches[1]);
+            }
         }
         if (!$datos['manga'] && $prenda->relationLoaded('tipoManga') && $prenda->tipoManga) {
             $datos['manga'] = $prenda->tipoManga->nombre;
@@ -215,7 +228,7 @@ class DescripcionPrendaHelper
             $varDesc = $prenda->descripcion_variaciones;
             
             // Buscar Bolsillos
-            if (preg_match('/Bolsillos?:\s*(.+?)(?:Reflectivo?s?:|Otros:|Manga:|Broche:|$)/is', $varDesc, $matches)) {
+            if (preg_match('/Bolsillos?:\s*(.+?)(?:Reflectivo?s?:|Otros:|Broche:|$)/is', $varDesc, $matches)) {
                 $bolsillosText = trim($matches[1]);
                 $bolsilloParsed = self::parsearListaItems($bolsillosText);
                 if (!empty($bolsilloParsed)) {
@@ -224,7 +237,7 @@ class DescripcionPrendaHelper
             }
 
             // Buscar Broche
-            if (preg_match('/Broche:\s*(.+?)(?:Reflectivo?s?:|Otros:|Bolsillos?:|Manga:|$)/is', $varDesc, $matches)) {
+            if (preg_match('/Broche:\s*(.+?)(?:Reflectivo?s?:|Otros:|Bolsillos?:|$)/is', $varDesc, $matches)) {
                 $brocheText = trim($matches[1]);
                 // Limpiar pipes y caracteres especiales
                 $brocheText = str_replace('|', '', $brocheText);
@@ -233,7 +246,7 @@ class DescripcionPrendaHelper
             }
 
             // Buscar Reflectivos
-            if (preg_match('/Reflectivo?s?:\s*(.+?)(?:Otros:|Bolsillos?:|Broche:|Manga:|$)/is', $varDesc, $matches)) {
+            if (preg_match('/Reflectivo?s?:\s*(.+?)(?:Otros:|Bolsillos?:|Broche:|$)/is', $varDesc, $matches)) {
                 $reflectivosText = trim($matches[1]);
                 $reflectivoParsed = self::parsearListaItems($reflectivosText);
                 if (!empty($reflectivoParsed)) {
@@ -242,7 +255,7 @@ class DescripcionPrendaHelper
             }
 
             // Buscar Otros detalles
-            if (preg_match('/Otros\s+detalles?:\s*(.+?)(?:Bolsillos?:|Reflectivo?s?:|Broche:|Manga:|$)/is', $varDesc, $matches)) {
+            if (preg_match('/Otros\s+detalles?:\s*(.+?)(?:Bolsillos?:|Reflectivo?s?:|Broche:|$)/is', $varDesc, $matches)) {
                 $otrosText = trim($matches[1]);
                 $otrosParsed = self::parsearListaItems($otrosText);
                 if (!empty($otrosParsed)) {

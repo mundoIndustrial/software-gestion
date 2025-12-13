@@ -145,8 +145,8 @@
             </button>
         </div>
 
-        <!-- Contenido del Modal -->
-        <div id="modal-contenido-comparar" style="padding: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+        <!-- Contenido del Modal - Con scroll vertical -->
+        <div id="modal-contenido-comparar" style="padding: 24px; display: flex; flex-direction: column; max-height: 70vh; overflow-y: auto;">
             <!-- Se llenará dinámicamente con JavaScript -->
         </div>
     </div>
@@ -185,10 +185,10 @@
 </div>
 
 <!-- Modal para ver imágenes -->
-<div id="modal-imagenes" class="modal-overlay" onclick="if(event.target === this) cerrarModalImagenes();" style="z-index: 10000; background: rgba(0, 0, 0, 0.9);">
-    <div class="modal-content" style="max-width: 800px; background: #1f2937;">
+<div id="modal-imagenes" class="modal-overlay" onclick="if(event.target === this) cerrarModalImagenes();" style="z-index: 10000; background: rgba(0, 0, 0, 0.95); display: none; align-items: center; justify-content: center;">
+    <div class="modal-content" style="max-width: 90vw; max-height: 90vh; background: #1f2937; display: flex; flex-direction: column;">
         <!-- Header del Modal -->
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 24px; border-bottom: 1px solid #374151;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 24px; border-bottom: 1px solid #374151; flex-shrink: 0;">
             <h2 id="modal-imagenes-titulo" style="margin: 0; color: white; font-size: 1.5rem; font-weight: bold;"></h2>
             <button onclick="cerrarModalImagenes()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.5rem;">
                 <span class="material-symbols-rounded">close</span>
@@ -196,12 +196,12 @@
         </div>
 
         <!-- Contenido del Modal -->
-        <div style="padding: 24px; text-align: center;">
-            <img id="modal-imagenes-img" src="" alt="Imagen" style="max-width: 100%; max-height: 500px; border-radius: 8px; margin-bottom: 20px;">
+        <div style="padding: 24px; text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: auto;">
+            <img id="modal-imagenes-img" src="" alt="Imagen" style="max-width: 100%; max-height: 70vh; object-fit: contain; border-radius: 8px; margin-bottom: 20px;">
             
             <!-- Navegación -->
-            <div id="modal-imagenes-nav" style="display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap;">
-                <button onclick="imagenAnterior()" style="background: #3b82f6; color: white; padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+            <div id="modal-imagenes-nav" style="display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap; flex-shrink: 0;">
+                <button onclick="imagenAnterior()" style="background: #3b82f6; color: white; padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; hover: #2563eb;">
                     <span class="material-symbols-rounded" style="vertical-align: middle;">chevron_left</span>
                 </button>
                 <span id="modal-imagenes-contador" style="color: white; font-weight: bold; min-width: 100px;"></span>
@@ -268,6 +268,7 @@ const estadosLabel = {
     'ENVIADA_CONTADOR': 'Enviada a Contador',
     'APROBADA_CONTADOR': 'Aprobada por Contador',
     'APROBADA_COTIZACIONES': 'Aprobada por Aprobador',
+    'APROBADO_PARA_PEDIDO': 'Aprobada para Pedido',
     'EN_CORRECCION': 'En Corrección',
     'CONVERTIDA_PEDIDO': 'Convertida a Pedido',
     'FINALIZADA': 'Finalizada',
@@ -300,6 +301,44 @@ function verComparacion(cotizacionId) {
 function mostrarComparacionCotizacion(data) {
     const contenido = document.getElementById('modal-contenido-comparar');
     
+    // Función para convertir markdown bold
+    const convertMarkdownBold = (texto) => {
+        return texto.replace(/\*\*\*(.*?)\*\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    };
+    
+    // Función para procesar la descripción con formato
+    const procesarDescripcion = (descripcion) => {
+        if (!descripcion || descripcion === 'N/A') {
+            return '<em style="color: #999; font-size: 0.75rem;">Sin descripción</em>';
+        }
+        
+        const lineas = descripcion.split('\n');
+        let htmlResultado = '';
+        
+        lineas.forEach((linea) => {
+            const lineaTrimmed = linea.trim();
+            
+            if (lineaTrimmed === '') {
+                htmlResultado += '<br>';
+            } else if (lineaTrimmed.startsWith('PRENDA')) {
+                htmlResultado += '<strong style="font-size: 11px; display: block; margin-top: 8px;">' + convertMarkdownBold(lineaTrimmed) + '</strong>';
+            } else if (lineaTrimmed.includes(':') && (lineaTrimmed.includes('DESCRIPCION') || lineaTrimmed.includes('Tallas') || lineaTrimmed.includes('Reflectivo') || lineaTrimmed.includes('Bolsillos') || lineaTrimmed.includes('Botón') || lineaTrimmed.includes('Broche') || lineaTrimmed.includes('Manga'))) {
+                htmlResultado += '<strong style="font-size: 10px; display: block; margin-top: 6px;">' + convertMarkdownBold(lineaTrimmed) + '</strong>';
+            } else if (lineaTrimmed.startsWith('•') || lineaTrimmed.startsWith('.')) {
+                htmlResultado += '<div style="margin-left: 12px; font-size: 10px;">' + convertMarkdownBold(lineaTrimmed) + '</div>';
+            } else if (lineaTrimmed.startsWith('-') && lineaTrimmed.length === 1) {
+                htmlResultado += '<br>';
+            } else if (lineaTrimmed.includes(':') && lineaTrimmed.includes('|')) {
+                htmlResultado += '<div style="font-size: 10px; margin: 2px 0;">' + convertMarkdownBold(lineaTrimmed) + '</div>';
+            } else {
+                htmlResultado += '<div style="font-size: 10px; margin: 2px 0;">' + convertMarkdownBold(lineaTrimmed) + '</div>';
+            }
+        });
+        
+        return htmlResultado;
+    };
+    
     const cotizacion = data.cotizacion;
     const prendas = data.prendas_cotizaciones || [];
     
@@ -312,10 +351,6 @@ function mostrarComparacionCotizacion(data) {
                 <div>
                     <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">ASESORA</p>
                     <p style="color: #1f2937; font-weight: bold; margin: 4px 0 0 0;">${cotizacion.asesora_nombre || 'N/A'}</p>
-                </div>
-                <div>
-                    <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">EMPRESA</p>
-                    <p style="color: #1f2937; font-weight: bold; margin: 4px 0 0 0;">${cotizacion.empresa || 'N/A'}</p>
                 </div>
                 <div>
                     <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">CLIENTE</p>
@@ -354,37 +389,49 @@ function mostrarComparacionCotizacion(data) {
             <tbody>
         `;
         
-        prendas.forEach((prenda, index) => {
-            const fotosCount = prenda.fotos ? prenda.fotos.length : 0;
-            const telasCount = prenda.telas ? prenda.telas.length : 0;
-            const fotosJson = prenda.fotos ? JSON.stringify(prenda.fotos) : '[]';
-            const telasJson = prenda.telas ? JSON.stringify(prenda.telas) : '[]';
+        prendas.forEach((prenda, indiceFor) => {
+            const fotosArray = Array.isArray(prenda.fotos) ? prenda.fotos : [];
+            const telasArray = Array.isArray(prenda.tela_fotos) ? prenda.tela_fotos : [];
+            const fotosCount = fotosArray.length;
+            const telasCount = telasArray.length;
+            
+            // Guardar los arrays en variables globales para acceso desde event listeners
+            window[`fotos_${indiceFor}`] = fotosArray;
+            window[`telas_${indiceFor}`] = telasArray;
             
             html += `
-                <tr style="border-bottom: 1px solid #e5e7eb; ${index % 2 === 0 ? 'background: #ffffff;' : 'background: #f9fafb;'}">
+                <tr style="border-bottom: 1px solid #e5e7eb; ${indiceFor % 2 === 0 ? 'background: #ffffff;' : 'background: #f9fafb;'}">
                     <td style="padding: 12px; color: #1f2937; font-weight: 500;">
                         <div style="display: flex; align-items: center; gap: 12px;">
-                            ${prenda.fotos && prenda.fotos.length > 0 ? `
-                                <div style="position: relative; cursor: pointer;" onclick="abrirModalImagenes(${fotosJson}, '${prenda.nombre_prenda}', 0)">
-                                    <img src="${prenda.fotos[0]}" alt="${prenda.nombre_prenda}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 2px solid #3b82f6;">
+                            ${fotosCount > 0 ? `
+                                <div class="foto-prenda-container" data-fotos-key="fotos_${indiceFor}" data-title="${(prenda.nombre_prenda || 'Prenda').replace(/"/g, '&quot;')}" style="position: relative; cursor: pointer;">
+                                    <img src="${fotosArray[0]}" alt="${prenda.nombre_prenda || 'Prenda'}" 
+                                         width="60" height="60"
+                                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 2px solid #3b82f6;">
                                     ${fotosCount > 1 ? `<div style="position: absolute; top: -8px; right: -8px; background: #3b82f6; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">+${fotosCount - 1}</div>` : ''}
                                 </div>
                             ` : '<div style="width: 60px; height: 60px; background: #e5e7eb; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 0.75rem;">Sin foto</div>'}
-                            <span>${prenda.nombre_prenda}</span>
+                            <span>${prenda.nombre_prenda || 'Prenda'}</span>
                         </div>
                     </td>
                     <td style="padding: 12px; color: #1f2937; font-weight: 500;">
                         <div style="display: flex; align-items: center; gap: 12px;">
-                            ${prenda.telas && prenda.telas.length > 0 ? `
-                                <div style="position: relative; cursor: pointer;" onclick="abrirModalImagenes(${telasJson}, '${prenda.nombre_prenda} - Tela', 0)">
-                                    <img src="${prenda.telas[0]}" alt="Tela" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 2px solid #8B4513;">
+                            ${telasCount > 0 ? `
+                                <div class="foto-tela-container" data-fotos-key="telas_${indiceFor}" data-title="${(prenda.nombre_prenda || 'Prenda').replace(/"/g, '&quot;')} - Tela" style="position: relative; cursor: pointer;">
+                                    <img src="${telasArray[0]}" alt="Tela" 
+                                         width="60" height="60"
+                                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 2px solid #8B4513;">
                                     ${telasCount > 1 ? `<div style="position: absolute; top: -8px; right: -8px; background: #3b82f6; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">+${telasCount - 1}</div>` : ''}
                                 </div>
                             ` : '<div style="width: 60px; height: 60px; background: #e5e7eb; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 0.75rem;">Sin tela</div>'}
                         </div>
                     </td>
                     <td style="padding: 12px; text-align: center; color: #1f2937; font-weight: 500;">${prenda.cantidad}</td>
-                    <td style="padding: 12px; color: #6b7280; font-size: 0.875rem;">${prenda.descripcion || prenda.detalles_proceso || 'Sin descripción'}</td>
+                    <td style="padding: 12px; color: #6b7280; font-size: 0.875rem;">
+                        <div style="max-height: 200px; overflow-y: auto;">
+                            ${procesarDescripcion(prenda.descripcion_formateada || prenda.descripcion || prenda.detalles_proceso)}
+                        </div>
+                    </td>
                 </tr>
             `;
         });
@@ -401,6 +448,26 @@ function mostrarComparacionCotizacion(data) {
     `;
     
     contenido.innerHTML = html;
+    
+    // Agregar event listeners para fotos de prendas
+    document.querySelectorAll('.foto-prenda-container').forEach(el => {
+        el.addEventListener('click', function() {
+            const fotosKey = this.getAttribute('data-fotos-key');
+            const title = this.getAttribute('data-title');
+            const fotos = window[fotosKey] || [];
+            abrirModalImagenesArray(fotos, title, 0);
+        });
+    });
+    
+    // Agregar event listeners para fotos de telas
+    document.querySelectorAll('.foto-tela-container').forEach(el => {
+        el.addEventListener('click', function() {
+            const fotosKey = this.getAttribute('data-fotos-key');
+            const title = this.getAttribute('data-title');
+            const fotos = window[fotosKey] || [];
+            abrirModalImagenesArray(fotos, title, 0);
+        });
+    });
 }
 
 function cerrarModalComparar() {
@@ -542,6 +609,22 @@ function abrirModalImagenes(imagenes, titulo, indiceInicial = 0) {
     modal.style.setProperty('display', 'flex', 'important');
     modal.style.setProperty('visibility', 'visible', 'important');
     modal.style.setProperty('opacity', '1', 'important');
+}
+
+// Función alias para manejar arrays simples de URLs
+function abrirModalImagenesArray(imagenes, titulo, indiceInicial = 0) {
+    // Si recibe array de strings (URLs), usa directamente
+    // Si recibe array de objetos, extrae las URLs
+    const urlsArray = Array.isArray(imagenes) ? imagenes.map(img => {
+        if (typeof img === 'string') {
+            return img;
+        } else if (img && typeof img === 'object') {
+            return img.url || img.ruta_webp || '';
+        }
+        return '';
+    }).filter(url => url) : [];
+    
+    abrirModalImagenes(urlsArray, titulo, indiceInicial);
 }
 
 function cerrarModalImagenes() {

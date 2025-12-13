@@ -54,6 +54,43 @@ class PrendaCotizacion extends Model
     }
 
     /**
+     * Relación con fotos de prenda
+     */
+    public function fotos(): HasMany
+    {
+        return $this->hasMany(PrendaFotoCot::class, 'prenda_cotizacion_id', 'id');
+    }
+
+    /**
+     * Relación con telas
+     */
+    public function telas(): HasMany
+    {
+        return $this->hasMany(PrendaTelaCot::class, 'prenda_cotizacion_id', 'id');
+    }
+
+    /**
+     * Relación con fotos de telas
+     */
+    public function telaFotos(): HasMany
+    {
+        return $this->hasMany(PrendaTelaFotoCot::class, 'prenda_cotizacion_id', 'id');
+    }
+
+    /**
+     * Relaciones para variantes y tallas
+     */
+    public function variantes(): HasMany
+    {
+        return $this->hasMany(VariantePrendaCotizacion::class, 'prenda_cotizacion_id', 'id');
+    }
+
+    public function tallas(): HasMany
+    {
+        return $this->hasMany(TallaPrendaCotizacion::class, 'prenda_cotizacion_id', 'id');
+    }
+
+    /**
      * Obtener total de costos de la prenda
      */
     public function getTotalCosto()

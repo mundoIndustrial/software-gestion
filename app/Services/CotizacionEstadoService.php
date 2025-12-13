@@ -7,6 +7,7 @@ use App\Models\Cotizacion;
 use App\Models\HistorialCambiosCotizacion;
 use App\Jobs\AsignarNumeroCotizacionJob;
 use App\Jobs\EnviarCotizacionAAprobadorJob;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
 use Illuminate\Database\Eloquent\Collection;
@@ -36,7 +37,7 @@ class CotizacionEstadoService extends BaseService
             // Cambiar estado
             $cotizacion->update([
                 'estado' => EstadoCotizacion::ENVIADA_CONTADOR->value,
-                'fecha_envio' => now(),
+                'fecha_envio' => Carbon::now('America/Bogota'),
             ]);
 
             // Registrar en historial

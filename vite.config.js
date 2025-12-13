@@ -5,7 +5,7 @@ const isProduction = process.env.VITE_ENV === 'production' || process.env.NODE_E
 
 export default defineConfig({
     server: {
-        host: '0.0.0.0', // Permite conexiones desde cualquier IP de la red
+        host: '0.0.0.0',
         port: 5173,
         strictPort: false,
         hmr: isProduction ? false : {
@@ -23,32 +23,38 @@ export default defineConfig({
             input: [
                 'resources/css/app.css',
                 'resources/js/app.js',
-                'resources/css/tableros.css',
-                'resources/js/tableros.js'
             ],
             refresh: true,
         }),
     ],
     build: {
-        // Optimize bundle size
+        target: 'esnext',
         minify: 'terser',
         terserOptions: {
             compress: {
-                drop_console: true, // Remove console.logs in production
-                drop_debugger: true
+                drop_console: isProduction,
+                drop_debugger: isProduction,
+                passes: 2,
+            },
+            format: {
+                comments: false,
             }
         },
-        // Code splitting
+        // Aggressive code splitting
         rollupOptions: {
             output: {
-                manualChunks: {
-                    'vendor': ['alpinejs'],
+                manualChunks: (id) => {
+                    // Vendor chunks
+                    if (id.includes('node_modules')) {
+                        if (id.includes('alpinejs')) return 'vendor-alpine';
+                        if (id.includes('sweetalert')) return 'vendor-alert';
+                        return 'vendor-common';
+                    }
                 },
-                // Optimize chunk size
                 chunkFileNames: 'js/[name]-[hash].js',
                 entryFileNames: 'js/[name]-[hash].js',
                 assetFileNames: ({name}) => {
-                    if (/\.(gif|jpe?g|png|svg|webp)$/.test(name ?? '')) {
+                    if (/\.(gif|jpe?g|png|svg|webp|webm|mp4)$/.test(name ?? '')) {
                         return 'images/[name]-[hash][extname]';
                     }
                     if (/\.css$/.test(name ?? '')) {
@@ -58,13 +64,14 @@ export default defineConfig({
                 }
             }
         },
-        // Increase chunk size warning limit
-        chunkSizeWarningLimit: 600,
-        // CSS code splitting
+        chunkSizeWarningLimit: 1000,
         cssCodeSplit: true,
+        sourcemap: !isProduction, // Only in dev
+        reportCompressedSize: true,
     },
-    // Optimize dependencies
+    // Optimize dependencies pre-bundling
     optimizeDeps: {
-        include: ['alpinejs']
+        include: ['alpinejs'],
+        exclude: ['laravel-echo']
     }
 });

@@ -78,29 +78,31 @@ class CotizacionEstadoController extends Controller
         try {
             Log::info('Aprobando cotización desde aprobador', [
                 'cotizacion_id' => $cotizacion->id,
+                'estado_actual' => $cotizacion->estado,
                 'usuario_id' => auth()->id()
             ]);
 
-            // Validar que la cotización esté en estado APROBADA
-            if ($cotizacion->estado !== 'APROBADA') {
+            // Validar que la cotización esté en estados válidos para aprobar
+            $estadosValidos = ['APROBADA', 'APROBADA_CONTADOR', 'ENVIADO A APROBADOR', 'ENVIADA A APROBADOR'];
+            if (!in_array($cotizacion->estado, $estadosValidos)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'La cotización no está en estado aprobada'
+                    'message' => 'La cotización no está en estado válido para aprobar. Estado actual: ' . $cotizacion->estado
                 ], 422);
             }
 
-            // Actualizar estado a CONFIRMADA
+            // Actualizar estado a APROBADO_PARA_PEDIDO
             $cotizacion->update([
-                'estado' => 'CONFIRMADA'
+                'estado' => 'APROBADO_PARA_PEDIDO'
             ]);
 
-            Log::info('Cotización confirmada exitosamente', [
+            Log::info('Cotización aprobada para pedido', [
                 'cotizacion_id' => $cotizacion->id
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Cotización confirmada exitosamente',
+                'message' => 'Cotización aprobada para pedido exitosamente',
                 'cotizacion' => $cotizacion
             ]);
 

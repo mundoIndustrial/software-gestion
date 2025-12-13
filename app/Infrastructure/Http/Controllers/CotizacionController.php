@@ -82,12 +82,48 @@ final class CotizacionController extends Controller
     public function show(int $id): JsonResponse
     {
         try {
-            $query = ObtenerCotizacionQuery::crear($id, Auth::id());
-            $cotizacion = $this->obtenerHandler->handle($query);
+            // Cargar cotización con prendas desde la BD directamente
+            $cotizacion = \App\Models\Cotizacion::with([
+                'prendas.fotos',
+                'prendas.telas',
+                'prendas.tallas',
+                'prendas.variantes.genero',
+                'prendas.variantes.manga',
+                'prendas.variantes.broche',
+                'cliente'
+            ])->findOrFail($id);
+
+            // Verificar propiedad
+            if ($cotizacion->asesor_id !== Auth::id()) {
+                return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
+            }
+
+            $data = $cotizacion->toArray();
+
+            // Agregar prendas con sus tallas formateadas
+            $data['prendas'] = $cotizacion->prendas->map(function ($prenda) {
+                // Obtener la variante (debería haber una por prenda)
+                $variante = $prenda->variantes->first();
+                
+                return [
+                    'id' => $prenda->id,
+                    'nombre_producto' => $prenda->nombre_producto,
+                    'descripcion' => $prenda->generarDescripcionDetallada(),
+                    'tallas' => $prenda->tallas->pluck('talla')->toArray(),
+                    'fotos' => $prenda->fotos->pluck('url')->toArray(),
+                    'variantes' => $variante ? [
+                        'color' => $variante->color ?? null,
+                        'tela' => $prenda->telas->first()?->nombre_tela ?? null,
+                        'manga' => $variante->manga?->nombre ?? null,
+                        'broche' => $variante->broche?->nombre ?? null,
+                        'tiene_bolsillos' => $variante->tiene_bolsillos ?? false,
+                    ] : []
+                ];
+            })->toArray();
 
             return response()->json([
                 'success' => true,
-                'data' => $cotizacion->toArray(),
+                'data' => $data,
             ]);
         } catch (\DomainException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 403);
