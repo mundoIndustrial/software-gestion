@@ -6,7 +6,7 @@
  */
 function openCotizacionModal(cotizacionId) {
     console.log('🔄 Cargando cotización:', cotizacionId);
-    
+
     fetch(`/contador/cotizacion/${cotizacionId}`)
         .then(response => {
             if (!response.ok) {
@@ -15,10 +15,55 @@ function openCotizacionModal(cotizacionId) {
             return response.json();
         })
         .then(data => {
-            if (data.success && data.html) {
-                document.getElementById('modalBody').innerHTML = data.html;
+            if (data.success) {
+                console.log('Datos recibidos:', data);
+                console.log('Prendas:', data.prendas);
+                console.log('Cantidad de prendas:', data.prendas ? data.prendas.length : 0);
+
+                // Construir HTML de cards de prendas
+                let html = '<div class="prendas-container" style="display: flex; flex-direction: column; gap: 1.5rem;">';
+
+                if (data.prendas && data.prendas.length > 0) {
+                    data.prendas.forEach((prenda, index) => {
+                        console.log('Renderizando prenda:', prenda);
+
+                        // Construir línea de atributos: Color | Tela | Manga
+                        let atributosLinea = [];
+                        if (prenda.color) atributosLinea.push(`Color: ${prenda.color}`);
+                        if (prenda.tela) {
+                            let telaText = prenda.tela;
+                            if (prenda.tela_referencia) telaText += ` REF:${prenda.tela_referencia}`;
+                            atributosLinea.push(`Tela: ${telaText}`);
+                        }
+                        if (prenda.manga_nombre) atributosLinea.push(`Manga: ${prenda.manga_nombre}`);
+
+                        html += `
+                            <div class="prenda-card" style="background: }#dadadaff; border-left: 5px solid #1e5ba8; padding: 0.5rem 1.5rem 1.5rem 1.5rem; border-radius: 4px;">
+                                <h3 style="margin: 0 0 0.5rem 0; color: #1e5ba8; font-size: 1.1rem; font-weight: 700; text-transform: uppercase;">
+                                    ${prenda.nombre_producto || 'Sin nombre'}
+                                </h3>
+                                <p style="margin: 0 0 0.75rem 0; color: #333; font-size: 0.9rem; font-weight: 500;">
+                                    ${atributosLinea.join(' | ') || ''}
+                                </p>
+                                <p style="margin: 0 0 0.5rem 0; color: #1e5ba8; font-size: 0.9rem; font-weight: 700;">
+                                    DESCRIPCION:
+                                </p>
+                                <p style="margin: 0; color: #333; font-size: 0.85rem; line-height: 1.5;">
+                                    ${prenda.descripcion || '-'}
+                                </p>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html += '<p style="color: #999; text-align: center; padding: 2rem;">No hay prendas para mostrar</p>';
+                }
+
+                html += '</div>';
+
+                // Insertar contenido en el modal
+                document.getElementById('modalBody').innerHTML = html;
                 document.getElementById('cotizacionModal').style.display = 'flex';
-                
+
                 // Actualizar encabezado del modal - buscar en la fila flexbox
                 const tableRow = document.querySelector(`.table-row[data-cotizacion-id="${cotizacionId}"]`);
                 if (tableRow) {
@@ -43,8 +88,11 @@ function openCotizacionModal(cotizacionId) {
                         }
                     }
                 }
+
+                console.log('✅ Modal abierto correctamente con', data.prendas.length, 'prendas');
             } else {
                 console.error('Error:', data.message || 'No se pudo cargar la cotización');
+                alert('Error: ' + (data.message || 'No se pudo cargar la cotización'));
             }
         })
         .catch(error => {
@@ -63,7 +111,7 @@ function closeCotizacionModal() {
 /**
  * Cierra el modal al hacer clic fuera del contenido
  */
-document.addEventListener('click', function(event) {
+document.addEventListener('click', function (event) {
     const modal = document.getElementById('cotizacionModal');
     if (event.target === modal) {
         closeCotizacionModal();
@@ -73,7 +121,7 @@ document.addEventListener('click', function(event) {
 /**
  * Cierra el modal al presionar ESC
  */
-document.addEventListener('keydown', function(event) {
+document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {
         const modal = document.getElementById('cotizacionModal');
         if (modal && modal.style.display === 'flex') {
@@ -163,12 +211,12 @@ function eliminarCotizacion(cotizacionId, cliente) {
                     'Content-Type': 'application/json'
                 }
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    Swal.fire({
-                        title: '✓ Eliminado Completamente',
-                        html: `
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        Swal.fire({
+                            title: '✓ Eliminado Completamente',
+                            html: `
                             <div style="text-align: left; color: #4b5563;">
                                 <p style="margin: 0 0 0.75rem 0; font-weight: 600;">✅ Se eliminaron:</p>
                                 <ul style="margin: 0; padding-left: 1.5rem; font-size: 0.9rem;">
@@ -182,30 +230,30 @@ function eliminarCotizacion(cotizacionId, cliente) {
                                 </ul>
                             </div>
                         `,
-                        icon: 'success',
-                        confirmButtonColor: '#1e5ba8'
-                    }).then(() => {
-                        // Recargar la página
-                        location.reload();
-                    });
-                } else {
+                            icon: 'success',
+                            confirmButtonColor: '#1e5ba8'
+                        }).then(() => {
+                            // Recargar la página
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: data.message || 'No se pudo eliminar la cotización',
+                            icon: 'error',
+                            confirmButtonColor: '#ef4444'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
                     Swal.fire({
                         title: 'Error',
-                        text: data.message || 'No se pudo eliminar la cotización',
+                        text: 'Error al eliminar la cotización. Por favor intenta de nuevo.',
                         icon: 'error',
                         confirmButtonColor: '#ef4444'
                     });
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                Swal.fire({
-                    title: 'Error',
-                    text: 'Error al eliminar la cotización. Por favor intenta de nuevo.',
-                    icon: 'error',
-                    confirmButtonColor: '#ef4444'
                 });
-            });
         }
     });
 }
@@ -261,45 +309,45 @@ function aprobarCotizacionEnLinea(cotizacionId) {
                 },
                 body: JSON.stringify({})
             })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(data => {
-                        throw new Error(data.message || `HTTP error! status: ${response.status}`);
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    // Encontrar todas las filas en la tabla de Pendientes
-                    const filas = document.querySelectorAll('#pedidos-section tbody tr');
-                    
-                    filas.forEach(fila => {
-                        // Buscar si esta fila contiene el botón de aprobar para esta cotización
-                        const boton = fila.querySelector(`button[onclick*="aprobarCotizacionEnLinea(${cotizacionId})"]`);
-                        
-                        if (boton) {
-                            // Animar la desaparición de la fila
-                            fila.style.transition = 'all 0.3s ease-out';
-                            fila.style.opacity = '0';
-                            fila.style.transform = 'translateX(-20px)';
-                            
-                            setTimeout(() => {
-                                fila.remove();
-                                
-                                // Verificar si la tabla está vacía
-                                const tbody = document.querySelector('#pedidos-section tbody');
-                                if (tbody && tbody.children.length === 0) {
-                                    // Si está vacía, mostrar mensaje
-                                    tbody.innerHTML = '<tr><td colspan="100%" style="text-align: center; padding: 2rem; color: #999;">No hay cotizaciones pendientes</td></tr>';
-                                }
-                            }, 300);
-                        }
-                    });
-                    
-                    Swal.fire({
-                        title: '✓ Cotización Aprobada',
-                        html: `
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Encontrar todas las filas en la tabla de Pendientes
+                        const filas = document.querySelectorAll('#pedidos-section tbody tr');
+
+                        filas.forEach(fila => {
+                            // Buscar si esta fila contiene el botón de aprobar para esta cotización
+                            const boton = fila.querySelector(`button[onclick*="aprobarCotizacionEnLinea(${cotizacionId})"]`);
+
+                            if (boton) {
+                                // Animar la desaparición de la fila
+                                fila.style.transition = 'all 0.3s ease-out';
+                                fila.style.opacity = '0';
+                                fila.style.transform = 'translateX(-20px)';
+
+                                setTimeout(() => {
+                                    fila.remove();
+
+                                    // Verificar si la tabla está vacía
+                                    const tbody = document.querySelector('#pedidos-section tbody');
+                                    if (tbody && tbody.children.length === 0) {
+                                        // Si está vacía, mostrar mensaje
+                                        tbody.innerHTML = '<tr><td colspan="100%" style="text-align: center; padding: 2rem; color: #999;">No hay cotizaciones pendientes</td></tr>';
+                                    }
+                                }, 300);
+                            }
+                        });
+
+                        Swal.fire({
+                            title: '✓ Cotización Aprobada',
+                            html: `
                             <div style="text-align: left; color: #4b5563;">
                                 <p style="margin: 0 0 0.75rem 0; font-size: 0.95rem;">
                                     ✅ La cotización ha sido aprobada correctamente.
@@ -314,28 +362,28 @@ function aprobarCotizacionEnLinea(cotizacionId) {
                                 </p>
                             </div>
                         `,
-                        icon: 'success',
-                        confirmButtonColor: '#1e5ba8',
-                        confirmButtonText: 'Entendido'
-                    });
-                } else {
+                            icon: 'success',
+                            confirmButtonColor: '#1e5ba8',
+                            confirmButtonText: 'Entendido'
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: data.message || 'No se pudo aprobar la cotización',
+                            icon: 'error',
+                            confirmButtonColor: '#ef4444'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
                     Swal.fire({
                         title: 'Error',
-                        text: data.message || 'No se pudo aprobar la cotización',
+                        text: error.message || 'Error al aprobar la cotización. Por favor intenta de nuevo.',
                         icon: 'error',
                         confirmButtonColor: '#ef4444'
                     });
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                Swal.fire({
-                    title: 'Error',
-                    text: error.message || 'Error al aprobar la cotización. Por favor intenta de nuevo.',
-                    icon: 'error',
-                    confirmButtonColor: '#ef4444'
                 });
-            });
         }
     });
 }

@@ -22,7 +22,7 @@
 <!-- Modales Compartidos para Contador -->
 <!-- Modal de Cotización -->
 <div id="cotizacionModal" class="modal fullscreen" style="display: none;">
-    <div class="modal-content">
+    <div class="modal-content" style="background: white;">
         <div class="modal-header">
             <img src="{{ asset('images/logo2.png') }}" alt="Logo Mundo Industrial" class="modal-header-logo" width="150" height="60">
             <div style="display: flex; gap: 3rem; align-items: center; flex: 1; margin-left: 2rem; color: white; font-size: 0.85rem;">
@@ -47,7 +47,7 @@
                 ✕
             </button>
         </div>
-        <div id="modalBody" style="padding: 2rem; overflow-y: auto;"></div>
+        <div id="modalBody" style="padding: 2rem; overflow-y: auto; background: white;"></div>
     </div>
 </div>
 

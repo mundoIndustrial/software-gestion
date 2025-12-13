@@ -4,9 +4,6 @@
  * Descripción: Gestiona el modal para calcular costos por prenda en cotizaciones
  */
 
-// Variable global para almacenar los costos por prenda
-window.costosPorPrenda = {};
-
 /**
  * Abre el modal de cálculo de costos
  * @param {number} cotizacionId - ID de la cotización
@@ -87,6 +84,9 @@ function abrirModalCalculoCostos(cotizacionId, cliente) {
                 // Inicializar tabla vacía
                 limpiarTablaPrecios();
                 
+                // Cargar items guardados si existen
+                cargarItemsGuardados(cotizacionId);
+                
                 // Mostrar modal
                 document.getElementById('calculoCostosModal').style.display = 'flex';
             }
@@ -130,7 +130,7 @@ function limpiarTablaPrecios() {
     const body = document.getElementById('tablaPreciosBody');
     body.innerHTML = '';
     
-    // Agregar una fila vacía
+    // Agregar una fila inicial
     agregarFilaItem();
 }
 
@@ -150,6 +150,8 @@ function agregarFilaItem() {
         align-items: center;
         overflow: hidden;
         border: 1px solid #e5e7eb;
+        flex-shrink: 0;
+        min-height: 50px;
     `;
     
     const itemIndex = body.children.length;
@@ -158,13 +160,13 @@ function agregarFilaItem() {
         <input type="text" 
                placeholder="Ej: Corte, Confección, Bordado..."
                style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; width: 100%; box-sizing: border-box; outline: none; color: #000;"
-               onchange="actualizarItem(${itemIndex}, this.value, 'item')">
+               onchange="actualizarTotal()">
         <input type="number" 
                placeholder="0.00"
                step="0.01"
                min="0"
                style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; text-align: center; width: 100%; box-sizing: border-box; outline: none; color: #000;"
-               onchange="actualizarItem(${itemIndex}, this.value, 'precio'); actualizarTotal()">
+               onchange="actualizarTotal()">
         <button onclick="eliminarFilaItem(this)" 
                 style="background: #ef4444; color: white; border: none; padding: 0.5rem 0.75rem; cursor: pointer; font-weight: 600; transition: all 0.2s; font-size: 1rem; width: 100%; height: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center;"
                 onmouseover="this.style.background='#dc2626'"
@@ -179,38 +181,25 @@ function agregarFilaItem() {
     // Auto-scroll hacia abajo si es necesario
     setTimeout(() => {
         body.scrollTop = body.scrollHeight;
-    }, 0);
+    }, 50);
 }
 
 /**
- * Actualiza un item de la tabla
- */
-function actualizarItem(itemIndex, valor, tipo) {
-    if (!window.costosPorPrenda) {
-        window.costosPorPrenda = {};
-    }
-    
-    if (!window.costosPorPrenda[itemIndex]) {
-        window.costosPorPrenda[itemIndex] = { item: '', precio: '' };
-    }
-    
-    if (tipo === 'item') {
-        window.costosPorPrenda[itemIndex].item = valor;
-    } else if (tipo === 'precio') {
-        window.costosPorPrenda[itemIndex].precio = parseFloat(valor) || 0;
-    }
-}
-
-/**
- * Actualiza el total
+ * Actualiza el total de costos
  */
 function actualizarTotal() {
+    const tablaPreciosBody = document.getElementById('tablaPreciosBody');
+    const filas = tablaPreciosBody.querySelectorAll('div[style*="grid-template-columns"]');
+    
     let total = 0;
-    if (window.costosPorPrenda) {
-        for (let key in window.costosPorPrenda) {
-            total += window.costosPorPrenda[key].precio || 0;
+    filas.forEach((fila) => {
+        const inputs = fila.querySelectorAll('input');
+        if (inputs.length >= 2) {
+            const precio = parseFloat(inputs[1].value) || 0;
+            total += precio;
         }
-    }
+    });
+    
     document.getElementById('totalCosto').textContent = `$${total.toFixed(2)}`;
 }
 
@@ -223,94 +212,94 @@ function eliminarFilaItem(button) {
 }
 
 /**
- * Carga los costos guardados desde la base de datos
+ * Carga los items guardados desde la base de datos
  * @param {number} cotizacionId - ID de la cotización
- * @param {array} prendas - Array de prendas
  */
-function cargarCostosGuardados(cotizacionId, prendas) {
+function cargarItemsGuardados(cotizacionId) {
     fetch(`/contador/costos/obtener/${cotizacionId}`)
         .then(response => response.json())
         .then(data => {
             if (data.success && data.costos && data.costos.length > 0) {
                 console.log('Costos cargados desde BD:', data.costos);
                 
-                // Limpiar costos previos
-                window.costosPorPrenda = {};
+                // Obtener la prenda actual (tab activo)
+                const prendasTabs = document.querySelectorAll('#prendasTabs button');
+                let prendaActualNombre = '';
                 
-                // Cargar costos en la estructura global
-                data.costos.forEach(costo => {
-                    // Encontrar el índice de la prenda por nombre
-                    const prendaIndex = prendas.findIndex(p => p.nombre === costo.nombre_prenda);
-                    
-                    if (prendaIndex !== -1) {
-                        window.costosPorPrenda[prendaIndex] = {
-                            nombre: costo.nombre_prenda,
-                            descripcion: costo.descripcion,
-                            imagenes: prendas[prendaIndex].imagenes,
-                            items: costo.items || []
-                        };
-                        
-                        // Recrear la tabla con los datos cargados
-                        const contentDiv = document.getElementById(`prenda-content-${prendaIndex}`);
-                        if (contentDiv) {
-                            contentDiv.innerHTML = crearTablaPrecios(prendaIndex, costo.nombre_prenda, costo.descripcion, prendas[prendaIndex].imagenes);
-                        }
+                prendasTabs.forEach((tab) => {
+                    if (tab.style.background.includes('3b82f6')) {
+                        prendaActualNombre = tab.textContent.trim();
                     }
                 });
                 
-                console.log('Costos cargados en memoria:', window.costosPorPrenda);
+                // Buscar los costos de la prenda actual
+                const costosPrenda = data.costos.find(costo => 
+                    costo.nombre_prenda === prendaActualNombre || 
+                    costo.nombre_prenda.includes(prendaActualNombre)
+                );
+                
+                if (costosPrenda && costosPrenda.items) {
+                    // Limpiar tabla
+                    const tablaPreciosBody = document.getElementById('tablaPreciosBody');
+                    tablaPreciosBody.innerHTML = '';
+                    
+                    // Parsear items si es string
+                    let items = costosPrenda.items;
+                    if (typeof items === 'string') {
+                        items = JSON.parse(items);
+                    }
+                    
+                    // Agregar cada item guardado
+                    items.forEach(item => {
+                        const row = document.createElement('div');
+                        row.style.cssText = `
+                            display: grid;
+                            grid-template-columns: 1fr 150px 80px;
+                            gap: 0;
+                            background: #f5f5f5;
+                            border-radius: 8px;
+                            align-items: center;
+                            overflow: hidden;
+                            border: 1px solid #e5e7eb;
+                            flex-shrink: 0;
+                            min-height: 50px;
+                        `;
+                        
+                        row.innerHTML = `
+                            <input type="text" 
+                                   placeholder="Ej: Corte, Confección, Bordado..."
+                                   value="${item.item || ''}"
+                                   style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; width: 100%; box-sizing: border-box; outline: none; color: #000;"
+                                   onchange="actualizarTotal()">
+                            <input type="number" 
+                                   placeholder="0.00"
+                                   value="${parseFloat(item.precio) || 0}"
+                                   step="0.01"
+                                   min="0"
+                                   style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; text-align: center; width: 100%; box-sizing: border-box; outline: none; color: #000;"
+                                   onchange="actualizarTotal()">
+                            <button onclick="eliminarFilaItem(this)" 
+                                    style="background: #ef4444; color: white; border: none; padding: 0.5rem 0.75rem; cursor: pointer; font-weight: 600; transition: all 0.2s; font-size: 1rem; width: 100%; height: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center;"
+                                    onmouseover="this.style.background='#dc2626'"
+                                    onmouseout="this.style.background='#ef4444'"
+                                    title="Eliminar fila">
+                                🗑️
+                            </button>
+                        `;
+                        
+                        tablaPreciosBody.appendChild(row);
+                    });
+                    
+                    // Actualizar total
+                    actualizarTotal();
+                }
             }
         })
         .catch(error => {
-            console.error('Error al cargar costos guardados:', error);
+            console.error('Error al cargar items guardados:', error);
         });
 }
 
-/**
- * Cambia entre tabs de prendas
- * @param {number} prendaId - ID de la prenda
- * @param {array} prendas - Array de prendas
- */
-function cambiarPrendaTab(prendaId, prendas) {
-    // Actualizar descripción
-    const prenda = prendas.find(p => p.id === prendaId);
-    if (prenda) {
-        document.getElementById('prendasDescripcion').textContent = prenda.descripcion || '';
-    }
-    
-    // Actualizar estilos de tabs
-    const tabs = document.querySelectorAll('#prendasTabs button');
-    tabs.forEach((tab, index) => {
-        if (prendas[index] && prendas[index].id === prendaId) {
-            tab.style.background = 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)';
-        } else if (tab) {
-            tab.style.background = '#374151';
-        }
-    });
-    
-    // Limpiar tabla
-    limpiarTablaPrecios();
-}
-
-
-/**
- * Actualiza un item de la tabla
- */
-function actualizarItem(itemIndex, valor, tipo) {
-    if (!window.costosPorPrenda) {
-        window.costosPorPrenda = {};
-    }
-    
-    if (!window.costosPorPrenda[itemIndex]) {
-        window.costosPorPrenda[itemIndex] = { item: '', precio: '' };
-    }
-    
-    if (tipo === 'item') {
-        window.costosPorPrenda[itemIndex].item = valor;
-    } else if (tipo === 'precio') {
-        window.costosPorPrenda[itemIndex].precio = parseFloat(valor) || 0;
-    }
-}
 
 /**
  * Cierra el modal de cálculo de costos
@@ -324,16 +313,69 @@ function cerrarModalCalculoCostos() {
  * Guarda los costos calculados en la base de datos
  */
 function guardarCalculoCostos() {
-    // Filtrar items vacíos
-    const costosFiltrados = {};
-    for (let prendaId in window.costosPorPrenda) {
-        costosFiltrados[prendaId] = {
-            nombre: window.costosPorPrenda[prendaId].nombre,
-            descripcion: window.costosPorPrenda[prendaId].descripcion,
-            imagenes: window.costosPorPrenda[prendaId].imagenes,
-            items: window.costosPorPrenda[prendaId].items.filter(item => item.item.trim() !== '')
-        };
+    // Recopilar datos de las filas de la tabla
+    const tablaPreciosBody = document.getElementById('tablaPreciosBody');
+    const filas = tablaPreciosBody.querySelectorAll('div[style*="grid-template-columns"]');
+    
+    const items = [];
+    filas.forEach((fila, index) => {
+        const inputs = fila.querySelectorAll('input');
+        if (inputs.length >= 2) {
+            const itemNombre = inputs[0].value.trim();
+            const itemPrecio = parseFloat(inputs[1].value) || 0;
+            
+            // Solo agregar si tiene nombre
+            if (itemNombre) {
+                items.push({
+                    item: itemNombre,
+                    precio: itemPrecio
+                });
+            }
+        }
+    });
+    
+    // Validar que haya al menos un item
+    if (items.length === 0) {
+        Swal.fire({
+            title: '⚠️ Campos Vacíos',
+            html: `
+                <div style="text-align: left; color: #4b5563;">
+                    <p style="margin: 0; font-size: 0.95rem;">
+                        Por favor, agrega al menos un item con nombre antes de guardar.
+                    </p>
+                </div>
+            `,
+            icon: 'warning',
+            confirmButtonColor: '#f59e0b',
+            confirmButtonText: 'Entendido'
+        });
+        return;
     }
+    
+    // Obtener información de la prenda actual
+    const prendasDescripcion = document.getElementById('prendasDescripcion');
+    const prendasTabs = document.querySelectorAll('#prendasTabs button');
+    
+    let prendaNombre = 'Prenda sin nombre';
+    let prendaDescripcion = '';
+    
+    // Encontrar el tab activo (con el color azul)
+    prendasTabs.forEach((tab) => {
+        if (tab.style.background.includes('3b82f6')) {
+            prendaNombre = tab.textContent.trim();
+        }
+    });
+    
+    prendaDescripcion = prendasDescripcion.textContent.trim();
+    
+    // Preparar datos para enviar en la estructura esperada por el controlador
+    const costos = {
+        0: {
+            nombre: prendaNombre,
+            descripcion: prendaDescripcion,
+            items: items
+        }
+    };
     
     // Enviar al servidor
     fetch('/contador/costos/guardar', {
@@ -344,13 +386,13 @@ function guardarCalculoCostos() {
         },
         body: JSON.stringify({
             cotizacion_id: window.cotizacionIdActual,
-            costos: costosFiltrados
+            costos: costos
         })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            console.log('Costos guardados en BD:', costosFiltrados);
+            console.log('Costos guardados en BD:', costos);
             
             // Mostrar modal de éxito
             Swal.fire({
@@ -409,57 +451,6 @@ function guardarCalculoCostos() {
     });
 }
 
-/**
- * Abre una imagen en fullscreen
- * @param {string} src - URL de la imagen
- */
-function abrirImagenFullscreenModal(src) {
-    // Crear modal fullscreen si no existe
-    let modal = document.getElementById('imagenFullscreenModal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'imagenFullscreenModal';
-        modal.style.cssText = `
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 10000;
-            justify-content: center;
-            align-items: center;
-            padding: 2rem;
-        `;
-        
-        modal.innerHTML = `
-            <div style="position: relative; max-width: 90vw; max-height: 90vh;">
-                <button onclick="cerrarImagenFullscreenModal()" style="position: absolute; top: -40px; right: 0; background: white; border: none; color: #333; font-size: 2rem; cursor: pointer; padding: 0; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background='#f0f0f0'" onmouseout="this.style.background='white'">
-                    ✕
-                </button>
-                <img id="imagenFullscreen" src="" alt="Imagen" style="max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px;">
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-    }
-    
-    document.getElementById('imagenFullscreen').src = src;
-    modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-}
-
-/**
- * Cierra la imagen en fullscreen
- */
-function cerrarImagenFullscreenModal() {
-    const modal = document.getElementById('imagenFullscreenModal');
-    if (modal) {
-        modal.style.display = 'none';
-        document.body.style.overflow = 'auto';
-    }
-}
 
 // ===== EVENT LISTENERS =====
 
@@ -469,19 +460,12 @@ document.addEventListener('click', function(event) {
     if (modal && event.target === modal) {
         cerrarModalCalculoCostos();
     }
-    
-    // Cerrar fullscreen al hacer clic fuera
-    const fullscreenModal = document.getElementById('imagenFullscreenModal');
-    if (fullscreenModal && event.target === fullscreenModal) {
-        cerrarImagenFullscreenModal();
-    }
 });
 
 // Cerrar modal con ESC
 document.addEventListener('keydown', function(event) {
     if (event.key === 'Escape') {
         cerrarModalCalculoCostos();
-        cerrarImagenFullscreenModal();
     }
 });
 

@@ -296,9 +296,26 @@ document.addEventListener('click', function(event) {
             </div>
 
             <!-- Filas de tabla con scroll interno -->
-            <div id="tablaPreciosBody" style="display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; background: #1a1f3a; border: 2px solid #3b82f6; border-top: none; max-height: 310px; overflow-y: auto;">
+            <div id="tablaPreciosBody" style="display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; background: #1a1f3a; border: 2px solid #3b82f6; border-top: none; height: 310px; overflow-y: scroll; scrollbar-width: thin; scrollbar-color: #3b82f6 #1a1f3a;">
                 <!-- Se llenará dinámicamente -->
             </div>
+            <style>
+                #tablaPreciosBody::-webkit-scrollbar {
+                    width: 10px;
+                }
+                #tablaPreciosBody::-webkit-scrollbar-track {
+                    background: #1a1f3a;
+                    border-radius: 4px;
+                }
+                #tablaPreciosBody::-webkit-scrollbar-thumb {
+                    background: #3b82f6;
+                    border-radius: 4px;
+                    border: 2px solid #1a1f3a;
+                }
+                #tablaPreciosBody::-webkit-scrollbar-thumb:hover {
+                    background: #2563eb;
+                }
+            </style>
 
             <!-- Botón Agregar -->
             <div style="padding: 1rem; text-align: center; background: #1a1f3a; border: 2px solid #3b82f6; border-top: none;">
