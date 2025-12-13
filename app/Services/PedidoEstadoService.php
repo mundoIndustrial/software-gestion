@@ -75,6 +75,9 @@ class PedidoEstadoService extends BaseService
                 'estado' => EstadoPedido::EN_PRODUCCION->value,
             ]);
 
+            // Crear automáticamente el primer proceso (Corte) en procesos_prenda
+            $this->crearProcesoInicial($pedido);
+
             // Registrar en historial
             $this->registrarCambioEstado(
                 $pedido,
@@ -238,6 +241,45 @@ class PedidoEstadoService extends BaseService
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $numero
             ]);
+        }
+    }
+
+    /**
+     * Crear el primer proceso (Corte) cuando se envía a producción
+     */
+    private function crearProcesoInicial(PedidoProduccion $pedido): void
+    {
+        try {
+            // Verificar si ya existe un proceso para este pedido
+            $procesoExistente = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
+                ->first();
+
+            if ($procesoExistente) {
+                \Log::info("Proceso ya existe para el pedido", [
+                    'numero_pedido' => $pedido->numero_pedido
+                ]);
+                return;
+            }
+
+            // Crear el primer proceso (Corte)
+            \App\Models\ProcesoPrenda::create([
+                'numero_pedido' => $pedido->numero_pedido,
+                'proceso' => 'Corte',
+                'fecha_inicio' => now(),
+                'estado_proceso' => 'En Proceso',
+                'observaciones' => 'Proceso iniciado automáticamente al enviar a producción',
+                'encargado' => null, // Sin asignar hasta que un cortador lo tome
+            ]);
+
+            \Log::info("Primer proceso (Corte) creado automáticamente", [
+                'numero_pedido' => $pedido->numero_pedido
+            ]);
+        } catch (Exception $e) {
+            \Log::error("Error al crear proceso inicial: " . $e->getMessage(), [
+                'numero_pedido' => $pedido->numero_pedido,
+                'exception' => $e
+            ]);
+            // No lanzar excepción para no bloquear el envío a producción
         }
     }
 }

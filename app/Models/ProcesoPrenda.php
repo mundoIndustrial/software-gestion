@@ -22,6 +22,7 @@ class ProcesoPrenda extends Model
         'encargado',
         'estado_proceso',
         'observaciones',
+        'novedades',
         'codigo_referencia',
     ];
 

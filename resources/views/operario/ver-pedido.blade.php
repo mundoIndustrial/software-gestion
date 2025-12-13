@@ -192,9 +192,15 @@
             <span class="material-symbols-rounded">schedule</span>
             Marcar en Proceso
         </button>
+        @if(!(strtolower($pedido['estado']) === 'completada' || strtolower($pedido['estado']) === 'completado'))
         <button class="btn-accion secondary" onclick="marcarCompletado()">
             <span class="material-symbols-rounded">check_circle</span>
             Marcar Completado
+        </button>
+        @endif
+        <button class="btn-accion warning" onclick="abrirModalReportarNovedad()">
+            <span class="material-symbols-rounded">error_outline</span>
+            Reportar Novedad
         </button>
     </div>
 </div>
@@ -1272,7 +1278,32 @@
     }
 
     function marcarCompletado() {
-        alert('Funcionalidad de marcar completado será implementada');
+        const numeroPedido = '{{ $pedido['numero_pedido'] }}';
+        
+        if (!confirm('¿Marcar este proceso como completado?')) {
+            return;
+        }
+
+        fetch(`/api/operario/completar-proceso/${numeroPedido}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Proceso marcado como completado');
+                window.location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'No se pudo completar el proceso'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al completar el proceso');
+        });
     }
 
     // ========================================
@@ -1352,6 +1383,566 @@
         }
     })();
 
+    // ========================================
+    // SISTEMA DE REPORTAR NOVEDAD
+    // ========================================
+    function abrirModalReportarNovedad() {
+        const modalReportar = document.getElementById('modal-reportar-novedad');
+        if (modalReportar) {
+            modalReportar.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function cerrarModalReportarNovedad() {
+        const modalReportar = document.getElementById('modal-reportar-novedad');
+        if (modalReportar) {
+            modalReportar.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            // Limpiar el formulario
+            document.getElementById('form-reportar-novedad').reset();
+        }
+    }
+
+    function enviarNovedad() {
+        const numeroPedido = document.getElementById('numero-pedido-novedad').value;
+        const novedadTexto = document.getElementById('textarea-novedad').value.trim();
+
+        if (!novedadTexto) {
+            mostrarModalRespuesta('Error', 'Por favor escribe la novedad', 'error');
+            return;
+        }
+
+        // Mostrar loading
+        mostrarModalRespuesta('Enviando...', 'Por favor espera mientras se guarda la novedad', 'loading');
+
+        fetch('/reportar-pendiente', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                numero_pedido: numeroPedido,
+                novedad: novedadTexto
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Actualizar estado en la UI
+                actualizarEstadoEnUI(data.estado_nuevo);
+                
+                mostrarModalRespuesta('✅ Éxito', data.message, 'success');
+                
+                // Limpiar formulario
+                document.getElementById('form-reportar-novedad').reset();
+                
+                // Recargar después de 2 segundos para mostrar novedades actualizadas
+                setTimeout(() => {
+                    cerrarModalReportarNovedad();
+                    location.reload();
+                }, 2000);
+            } else {
+                mostrarModalRespuesta('❌ Error', data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            mostrarModalRespuesta('❌ Error', 'Error al enviar la novedad', 'error');
+        });
+    }
+
+    function actualizarEstadoEnUI(estadoNuevo) {
+        // Buscar el badge de estado en la ficha
+        const estadoBadges = document.querySelectorAll('.estado-badge, .info-val');
+        
+        estadoBadges.forEach(badge => {
+            // Actualizar si contiene un estado
+            if (badge.textContent === 'Pendiente' || badge.textContent === 'En Ejecución' || 
+                badge.textContent === 'Completado' || badge.textContent === 'Pausado') {
+                badge.textContent = estadoNuevo;
+                badge.className = 'info-val'; // o el class que use
+            }
+        });
+
+        // También actualizar el badge de estado principal si existe
+        const estadoPrincipal = document.querySelector('.estado-badge');
+        if (estadoPrincipal) {
+            const claseAntigua = estadoPrincipal.className;
+            estadoPrincipal.className = 'estado-badge pendiente';
+            estadoPrincipal.textContent = estadoNuevo;
+        }
+    }
+
+    function mostrarModalRespuesta(titulo, mensaje, tipo) {
+        const modal = document.getElementById('modal-respuesta-novedad');
+        const tituloEl = document.getElementById('respuesta-titulo');
+        const mensajeEl = document.getElementById('respuesta-mensaje');
+        const iconoEl = document.getElementById('respuesta-icono');
+
+        tituloEl.textContent = titulo;
+        mensajeEl.textContent = mensaje;
+
+        // Cambiar icono según tipo
+        if (tipo === 'success') {
+            iconoEl.textContent = 'check_circle';
+            iconoEl.style.color = '#4caf50';
+        } else if (tipo === 'error') {
+            iconoEl.textContent = 'error';
+            iconoEl.style.color = '#f44336';
+        } else if (tipo === 'loading') {
+            iconoEl.textContent = 'hourglass_empty';
+            iconoEl.style.color = '#2196f3';
+            iconoEl.classList.add('spinner');
+        }
+
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function cerrarModalRespuesta() {
+        const modal = document.getElementById('modal-respuesta-novedad');
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+
+    // Cerrar modal al hacer click fuera
+    document.addEventListener('click', function(e) {
+        const modalReportar = document.getElementById('modal-reportar-novedad');
+        if (modalReportar && e.target === modalReportar) {
+            cerrarModalReportarNovedad();
+        }
+    });
 
 </script>
+
+<!-- ===== MODAL REPORTAR NOVEDAD ===== -->
+<div id="modal-reportar-novedad" class="modal-reportar-novedad" style="display: none;">
+    <div class="modal-reportar-contenido">
+        <div class="modal-reportar-header">
+            <h2>Reportar Novedad</h2>
+            <button class="btn-cerrar-modal" onclick="cerrarModalReportarNovedad()">
+                <span class="material-symbols-rounded">close</span>
+            </button>
+        </div>
+
+        <div class="modal-reportar-body">
+            <form id="form-reportar-novedad" onsubmit="event.preventDefault(); enviarNovedad();">
+                <!-- Input oculto con número de pedido -->
+                <input type="hidden" id="numero-pedido-novedad" value="{{ $pedido['numero_pedido'] }}">
+
+                <!-- Novedades Anteriores -->
+                <div class="novedades-previas">
+                    <label>Novedades Anteriores</label>
+                    <div class="novedades-previas-contenido">
+                        @if($pedido['novedades'])
+                            <pre>{{ $pedido['novedades'] }}</pre>
+                        @else
+                            <p class="sin-novedades">Sin novedades registradas</p>
+                        @endif
+                    </div>
+                </div>
+
+                <!-- Área de texto para nueva novedad -->
+                <div class="formulario-novedad">
+                    <label for="textarea-novedad">Nueva Novedad</label>
+                    <textarea 
+                        id="textarea-novedad" 
+                        placeholder="Describe la novedad..." 
+                        minlength="5"
+                        maxlength="500"
+                        rows="6"
+                        required
+                    ></textarea>
+                    <small>Mínimo 5 caracteres, máximo 500</small>
+                </div>
+
+                <!-- Botones -->
+                <div class="modal-reportar-footer">
+                    <button type="button" class="btn-cancelar" onclick="cerrarModalReportarNovedad()">
+                        <span class="material-symbols-rounded">cancel</span>
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn-enviar">
+                        <span class="material-symbols-rounded">send</span>
+                        Enviar Novedad
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* ===== ESTILOS MODAL REPORTAR NOVEDAD ===== */
+    .modal-reportar-novedad {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 10001;
+    }
+
+    .modal-reportar-contenido {
+        background: white;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateY(-50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .modal-reportar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem;
+        border-bottom: 1px solid #eee;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .modal-reportar-header h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+
+    .btn-cerrar-modal {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+    }
+
+    .btn-cerrar-modal:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: scale(1.1);
+    }
+
+    .modal-reportar-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.5rem;
+    }
+
+    .novedades-previas {
+        margin-bottom: 2rem;
+    }
+
+    .novedades-previas label {
+        display: block;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        color: #333;
+        font-size: 0.95rem;
+    }
+
+    .novedades-previas-contenido {
+        background: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 1rem;
+        max-height: 200px;
+        overflow-y: auto;
+        border-left: 4px solid #667eea;
+    }
+
+    .novedades-previas-contenido pre {
+        margin: 0;
+        font-family: 'Courier New', monospace;
+        font-size: 0.85rem;
+        color: #555;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        line-height: 1.6;
+    }
+
+    .novedades-previas-contenido .sin-novedades {
+        margin: 0;
+        color: #999;
+        font-style: italic;
+    }
+
+    .formulario-novedad {
+        margin-bottom: 1.5rem;
+    }
+
+    .formulario-novedad label {
+        display: block;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        color: #333;
+        font-size: 0.95rem;
+    }
+
+    .formulario-novedad textarea {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-size: 0.95rem;
+        resize: vertical;
+        transition: all 0.3s ease;
+    }
+
+    .formulario-novedad textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .formulario-novedad small {
+        display: block;
+        margin-top: 0.5rem;
+        color: #999;
+        font-size: 0.8rem;
+    }
+
+    .modal-reportar-footer {
+        display: flex;
+        gap: 1rem;
+        padding: 1.5rem;
+        border-top: 1px solid #eee;
+        background: #f9f9f9;
+        border-radius: 0 0 12px 12px;
+    }
+
+    .btn-cancelar,
+    .btn-enviar {
+        flex: 1;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .btn-cancelar {
+        background: #f0f0f0;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+
+    .btn-cancelar:hover {
+        background: #e0e0e0;
+        transform: translateY(-2px);
+    }
+
+    .btn-enviar {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-enviar:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-enviar:active {
+        transform: translateY(0);
+    }
+
+    .btn-accion.warning {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+    }
+
+    .btn-accion.warning:hover {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .modal-reportar-contenido {
+            width: 95%;
+            max-height: 85vh;
+        }
+
+        .modal-reportar-header {
+            padding: 1rem;
+        }
+
+        .modal-reportar-header h2 {
+            font-size: 1.25rem;
+        }
+
+        .modal-reportar-body {
+            padding: 1rem;
+        }
+
+        .modal-reportar-footer {
+            flex-direction: column;
+        }
+
+        .btn-cancelar,
+        .btn-enviar {
+            width: 100%;
+        }
+    }
+</style>
 @endsection
+
+<!-- ===== MODAL RESPUESTA NOVEDAD ===== -->
+<div id="modal-respuesta-novedad" class="modal-respuesta-novedad" style="display: none;">
+    <div class="modal-respuesta-contenido">
+        <div class="respuesta-icon-container">
+            <span id="respuesta-icono" class="material-symbols-rounded respuesta-icono">info</span>
+        </div>
+        <h2 id="respuesta-titulo">Título</h2>
+        <p id="respuesta-mensaje">Mensaje</p>
+        <button class="btn-respuesta-ok" onclick="cerrarModalRespuesta()">
+            <span class="material-symbols-rounded">check</span>
+            Aceptar
+        </button>
+    </div>
+</div>
+
+<style>
+    /* ===== ESTILOS MODAL RESPUESTA ===== */
+    .modal-respuesta-novedad {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 10002;
+    }
+
+    .modal-respuesta-contenido {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        max-width: 400px;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        animation: scaleIn 0.3s ease;
+    }
+
+    @keyframes scaleIn {
+        from {
+            transform: scale(0.9);
+            opacity: 0;
+        }
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
+
+    .respuesta-icon-container {
+        margin-bottom: 1.5rem;
+    }
+
+    .respuesta-icono {
+        font-size: 3rem;
+        display: block;
+    }
+
+    .respuesta-icono.spinner {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .modal-respuesta-contenido h2 {
+        margin: 1rem 0 0.5rem 0;
+        font-size: 1.5rem;
+        color: #333;
+    }
+
+    .modal-respuesta-contenido p {
+        margin: 0 0 2rem 0;
+        color: #666;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    .btn-respuesta-ok {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-respuesta-ok:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-respuesta-ok:active {
+        transform: translateY(0);
+    }
+
+    @media (max-width: 768px) {
+        .modal-respuesta-contenido {
+            max-width: 90%;
+            padding: 1.5rem;
+        }
+
+        .respuesta-icono {
+            font-size: 2.5rem;
+        }
+
+        .modal-respuesta-contenido h2 {
+            font-size: 1.25rem;
+        }
+    }
+</style>

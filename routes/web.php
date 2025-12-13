@@ -293,6 +293,7 @@ Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operar
     Route::get('/api/pedidos', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'obtenerPedidosJson'])->name('api.pedidos');
     Route::post('/buscar', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'buscarPedido'])->name('buscar');
     Route::post('/reportar-pendiente', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'reportarPendiente'])->name('reportar-pendiente');
+    Route::post('/api/completar-proceso/{numeroPedido}', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'completarProceso'])->name('api.completar-proceso');
     Route::get('/debug', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'debug'])->name('debug');
 });
 

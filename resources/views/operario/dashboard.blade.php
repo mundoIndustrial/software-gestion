@@ -49,7 +49,7 @@
                                 <div class="orden-top">
                                     <div class="orden-numero-section">
                                         <h4 class="orden-numero">#{{ $pedido['numero_pedido'] }}</h4>
-                                        <span class="estado-badge {{ $estadoClass }}">
+                                        <span class="estado-badge {{ $estadoClass }}" data-estado="{{ $pedido['estado'] }}">
                                             {{ strtoupper($pedido['estado']) }}
                                         </span>
                                     </div>
@@ -64,11 +64,22 @@
                                     <p class="prendas-label">{{ $pedido['cantidad'] }} prenda(s): {{ $pedido['descripcion'] }}</p>
                                 </div>
 
-                                <!-- Botón Reportar Pendiente -->
-                                <button class="btn-reportar-pendiente" onclick="abrirModalReportar('{{ $pedido['numero_pedido'] }}', '{{ $pedido['cliente'] }}')">
-                                    <span class="material-symbols-rounded">warning</span>
-                                    REPORTAR PENDIENTE
-                                </button>
+                                <!-- Contenedor de Botones -->
+                                <div class="orden-buttons">
+                                    <!-- Botón Reportar Pendiente -->
+                                    <button class="btn-reportar-pendiente" onclick="abrirModalReportar('{{ $pedido['numero_pedido'] }}', '{{ $pedido['cliente'] }}')">
+                                        <span class="material-symbols-rounded">warning</span>
+                                        REPORTAR PENDIENTE
+                                    </button>
+                                    
+                                    @if(!(strtolower($pedido['estado']) === 'completada' || strtolower($pedido['estado']) === 'completado'))
+                                    <!-- Botón Completar Proceso -->
+                                    <button class="btn-completar-proceso" onclick="marcarProcesoCompletado('{{ $pedido['numero_pedido'] }}')">
+                                        <span class="material-symbols-rounded">check_circle</span>
+                                        COMPLETAR PROCESO
+                                    </button>
+                                    @endif
+                                </div>
                             </div>
 
                             <!-- Contenido Derecho -->
@@ -351,6 +362,13 @@
         background: #fafafa;
     }
 
+    .orden-buttons {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.6rem;
+        flex-wrap: wrap;
+    }
+
     .btn-reportar-pendiente {
         display: flex;
         align-items: center;
@@ -378,6 +396,35 @@
     }
 
     .btn-reportar-pendiente .material-symbols-rounded {
+        font-size: 14px;
+    }
+
+    .btn-completar-proceso {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.5rem 0.8rem;
+        background: #E8F5E9;
+        color: #388E3C;
+        border: 1px solid #388E3C;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: fit-content;
+        box-shadow: 0 2px 4px rgba(56, 142, 60, 0.15);
+    }
+
+    .btn-completar-proceso:hover {
+        background: #C8E6C9;
+        box-shadow: 0 4px 8px rgba(56, 142, 60, 0.25);
+        transform: translateY(-1px);
+    }
+
+    .btn-completar-proceso .material-symbols-rounded {
         font-size: 14px;
     }
 
@@ -515,6 +562,35 @@
             cerrarModalReportar();
         }
     }
+
+    // Función para marcar proceso como completado
+    window.marcarProcesoCompletado = async function(numeroPedido) {
+        if (!confirm('¿Marcar este proceso como completado?')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/operario/completar-proceso/${numeroPedido}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert('Proceso marcado como completado');
+                location.reload();
+            } else {
+                alert('Error: ' + (data.message || 'No se pudo completar el proceso'));
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al completar el proceso');
+        }
+    };
 </script>
 
 <!-- Modal Reportar Pendiente -->

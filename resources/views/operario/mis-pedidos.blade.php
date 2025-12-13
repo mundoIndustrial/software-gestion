@@ -60,6 +60,11 @@
                             <a href="{{ route('operario.ver-pedido', $pedido['numero_pedido']) }}" class="btn-accion ver">
                                 <span class="material-symbols-rounded">visibility</span>
                             </a>
+                            @if(!(strtolower($pedido['estado']) === 'completada' || strtolower($pedido['estado']) === 'completado'))
+                                <button type="button" class="btn-accion completar" onclick="marcarProcesoCompletado('{{ $pedido['numero_pedido'] }}')" title="Marcar proceso como completado">
+                                    <span class="material-symbols-rounded">check_circle</span>
+                                </button>
+                            @endif
                         </td>
                     </tr>
                 @empty
@@ -222,6 +227,17 @@
         transform: scale(1.1);
     }
 
+    .btn-accion.completar {
+        background: #e8f5e9;
+        color: #388e3c;
+        margin-left: 0.5rem;
+    }
+
+    .btn-accion.completar:hover {
+        background: #388e3c;
+        color: white;
+    }
+
     .btn-accion .material-symbols-rounded {
         font-size: 20px;
     }
@@ -327,6 +343,35 @@
             tableBody.innerHTML = '';
             filas.forEach(fila => tableBody.appendChild(fila));
         }
+
+        // Función para marcar proceso como completado
+        window.marcarProcesoCompletado = async function(numeroPedido) {
+            if (!confirm('¿Marcar este proceso como completado?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/operario/completar-proceso/${numeroPedido}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert('Proceso marcado como completado');
+                    location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'No se pudo completar el proceso'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al completar el proceso');
+            }
+        };
     });
 </script>
 @endsection

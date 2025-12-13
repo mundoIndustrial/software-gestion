@@ -153,7 +153,7 @@ class ObtenerPedidosOperarioService
                 'descripcion' => $descripcionPrendas ?: 'Sin descripción',
                 'descripcion_prendas' => $pedido->descripcion_prendas ?? $descripcionPrendas ?: 'Sin descripción',
                 'cantidad' => $totalPrendas,
-                'estado' => $pedido->estado,
+                'estado' => $this->obtenerEstadoActual($pedido->numero_pedido),
                 'area' => $this->obtenerAreaActual($pedido->numero_pedido),
                 'fecha_creacion' => $pedido->fecha_de_creacion_de_orden?->format('d/m/Y') ?? $pedido->created_at?->format('d/m/Y'),
                 'dia_entrega' => $pedido->dia_de_entrega ?? '-',
@@ -163,6 +163,34 @@ class ObtenerPedidosOperarioService
                 'novedades' => $pedido->novedades ?? '-',
             ];
         })->toArray();
+    }
+
+    /**
+     * Obtener estado actual del proceso del pedido
+     */
+    private function obtenerEstadoActual(string $numeroPedido): string
+    {
+        // Primero buscar procesos activos (no completados)
+        $procesoActivo = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)
+            ->where('estado_proceso', '!=', 'Completado')
+            ->orderBy('created_at', 'asc')
+            ->first();
+
+        if ($procesoActivo) {
+            return $procesoActivo->estado_proceso;
+        }
+
+        // Si todos los procesos están completados, buscar el último completado
+        $procesoCompletado = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)
+            ->where('estado_proceso', 'Completado')
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if ($procesoCompletado) {
+            return 'Completado';
+        }
+
+        return 'Desconocida';
     }
 
     /**

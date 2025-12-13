@@ -260,7 +260,8 @@ class OperarioController extends Controller
     }
 
     /**
-     * Reportar pendiente - Cambiar estado del proceso a Pendiente
+     * Reportar pendiente - Cambiar estado del proceso a Pendiente y guardar novedad
+     * OPTIMIZADO: Guarda novedad en procesos_prenda, pedidos_produccion y tabla_original_bodega
      */
     public function reportarPendiente(Request $request)
     {
@@ -290,15 +291,46 @@ class OperarioController extends Controller
                 ], 404);
             }
 
-            // Cambiar estado a Pendiente
+            // Formato de novedad con timestamp y usuario
+            $novedadFormato = "[{$usuario->name} - " . now()->format('Y-m-d H:i:s') . "] {$area}: {$novedad}";
+
+            // Cambiar estado a Pendiente y guardar novedad en proceso
             $proceso->update([
                 'estado_proceso' => 'Pendiente',
-                'observaciones' => $novedad
+                'observaciones' => $novedad,
+                'novedades' => $novedadFormato
             ]);
+
+            // ===== GUARDAR EN pedidos_produccion =====
+            $pedido = \App\Models\PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
+            if ($pedido) {
+                // Concatenar con las novedades existentes
+                $novedadesActuales = $pedido->novedades ?? '';
+                $novedadesActualizadas = $novedadesActuales . ($novedadesActuales ? "\n\n" : "") . $novedadFormato;
+                $pedido->update(['novedades' => $novedadesActualizadas]);
+            }
+
+            // ===== GUARDAR EN tabla_original_bodega =====
+            $bodega = \DB::table('tabla_original_bodega')
+                ->where('pedido', $numeroPedido)
+                ->first();
+            if ($bodega) {
+                // Concatenar con las novedades existentes
+                $novedadesActuales = $bodega->novedades ?? '';
+                $novedadesActualizadas = $novedadesActuales . ($novedadesActuales ? "\n\n" : "") . $novedadFormato;
+                \DB::table('tabla_original_bodega')
+                    ->where('pedido', $numeroPedido)
+                    ->update(['novedades' => $novedadesActualizadas]);
+            }
+
+            // ===== LIMPIAR CACHÉ =====
+            \Cache::forget("pedido_data_{$numeroPedido}");
+            \Cache::forget("fotos_pedido_{$numeroPedido}");
 
             return response()->json([
                 'success' => true,
-                'message' => 'Novedad reportada correctamente. El estado ha sido cambiado a Pendiente.'
+                'message' => 'Novedad reportada correctamente. El estado ha sido cambiado a Pendiente.',
+                'estado_nuevo' => 'Pendiente'
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -345,6 +377,61 @@ class OperarioController extends Controller
                 })
             ];
         });
+    }
+
+    /**
+     * Marcar proceso como completado
+     */
+    public function completarProceso(Request $request, $numeroPedido)
+    {
+        try {
+            $usuario = Auth::user();
+            $area = $usuario->roles()->first()?->name === 'cortador' ? 'Corte' : 'Costura';
+
+            // Buscar el proceso actual del pedido
+            $proceso = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)
+                ->where('proceso', $area)
+                ->where('estado_proceso', '!=', 'Completado')
+                ->first();
+
+            if (!$proceso) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Proceso no encontrado'
+                ], 404);
+            }
+
+            // Actualizar el proceso a completado
+            $proceso->update([
+                'estado_proceso' => 'Completado',
+                'fecha_fin' => now(),
+            ]);
+
+            // Limpiar cache
+            \Illuminate\Support\Facades\Cache::forget("pedido_data_{$numeroPedido}");
+            \Illuminate\Support\Facades\Cache::forget("fotos_pedido_{$numeroPedido}");
+
+            \Log::info("Proceso marcado como completado", [
+                'numero_pedido' => $numeroPedido,
+                'area' => $area,
+                'usuario' => $usuario->name
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Proceso marcado como completado'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error("Error al completar proceso: " . $e->getMessage(), [
+                'numero_pedido' => $numeroPedido,
+                'exception' => $e
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al completar el proceso'
+            ], 500);
+        }
     }
 
 }
