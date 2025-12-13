@@ -540,7 +540,7 @@ function recopilarDatos() {
         'logo': window.imagenesEnMemoria?.logo?.length || 0
     });
     
-    // ========== PASO 3: LOGO ==========
+    // ========== PASO 4: LOGO ==========
     
     // Recopilar técnicas
     const contenedorTecnicas = document.getElementById('tecnicas_seleccionadas');

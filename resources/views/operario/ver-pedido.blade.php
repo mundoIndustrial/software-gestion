@@ -27,32 +27,64 @@
 
     <!-- Contenido Principal (Cambia entre Factura y Fotos) -->
     <div class="pedido-content">
-        <!-- Vista: LA ORDEN - Factura como Imagen -->
+        <!-- Vista: LA ORDEN - Recibo unificado para móvil y desktop -->
         <div id="tab-orden" class="tab-content active">
             <div class="pedido-modal-section">
-                <div id="factura-html" class="pedido-modal-html" style="position: absolute; left: -9999px; top: -9999px; width: 764px;">
-                    @include('components.orders-components.order-detail-modal')
+                <!-- Recibo Unificado -->
+                <div id="factura-container-mobile" 
+                     style="display: none; width: 100%; display: flex; justify-content: center;"
+                     data-numero-pedido="{{ $pedido['numero_pedido'] }}">
+                    @include('components.orders-components.order-detail-modal-mobile')
                 </div>
-                <img id="factura-imagen" src="" alt="Factura" class="factura-img">
             </div>
         </div>
 
         <!-- Vista: FOTOS - Galería de Fotos -->
         <div id="tab-fotos" class="tab-content">
-            <div class="fotos-grid">
-                @if(count($fotos) > 0)
-                    @foreach($fotos as $foto)
-                        <div class="foto-card">
-                            <img src="{{ $foto }}" alt="Foto del pedido" class="foto-imagen">
-                        </div>
-                    @endforeach
-                @else
-                    <div class="empty-fotos">
-                        <span class="material-symbols-rounded">image_not_supported</span>
-                        <p>No hay fotos disponibles para este pedido</p>
-                    </div>
-                @endif
+            <div class="fotos-grid" id="fotos-grid">
+                <!-- Las fotos se cargarán dinámicamente desde la API -->
+                <div class="empty-fotos">
+                    <span class="material-symbols-rounded">hourglass_empty</span>
+                    <p>Cargando fotos...</p>
+                </div>
             </div>
+        </div>
+    </div>
+    
+    <!-- ===== MODAL DE GALERÍA FULLSCREEN ===== -->
+    <div id="modal-galeria" class="modal-galeria" style="display: none;">
+        <!-- Fondo oscuro clickeable -->
+        <div class="galeria-overlay" onclick="cerrarGaleria()"></div>
+        
+        <!-- Contenedor de la galería -->
+        <div class="galeria-container">
+            <!-- Botón cerrar -->
+            <button class="btn-cerrar-galeria" onclick="cerrarGaleria()">
+                <span class="material-symbols-rounded">close</span>
+            </button>
+            
+            <!-- Flecha anterior -->
+            <button class="btn-nav btn-anterior" onclick="fotoAnterior()" id="btn-anterior">
+                <span class="material-symbols-rounded">chevron_left</span>
+            </button>
+            
+            <!-- Imagen principal -->
+            <div class="galeria-imagen-container">
+                <img id="galeria-imagen-principal" src="" alt="Foto" class="galeria-imagen" />
+                <div class="galeria-info">
+                    <span id="galeria-contador">1/3</span>
+                </div>
+            </div>
+            
+            <!-- Flecha siguiente -->
+            <button class="btn-nav btn-siguiente" onclick="fotoSiguiente()" id="btn-siguiente">
+                <span class="material-symbols-rounded">chevron_right</span>
+            </button>
+        </div>
+        
+        <!-- Miniaturas (thumbnails) en la parte inferior -->
+        <div class="galeria-thumbnails" id="galeria-thumbnails">
+            <!-- Se llena dinámicamente -->
         </div>
     </div>
 </div>
@@ -103,7 +135,7 @@
                 Descripción
             </h2>
             <div class="description-box">
-                <p>{{ $pedido['descripcion'] }}</p>
+                <p>{{ $pedido['descripcion_prendas'] ?? $pedido['descripcion'] ?? 'N/A' }}</p>
             </div>
         </div>
 
@@ -269,24 +301,38 @@
         flex-shrink: 0;
         overflow-y: auto;
         overflow-x: auto;
-        max-height: 50%;
+        max-height: 60vh;
         border-bottom: 1px solid #eee;
         margin: 0 auto;
         width: 100%;
         display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-content: center;
+        justify-content: flex-start;
         padding: 1rem;
     }
 
-    /* Factura como Imagen */
+    /* Contenedor de Factura */
+    .factura-container {
+        width: 100%;
+        max-width: 800px;
+        max-height: 600px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: auto;
+        touch-action: none;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
     .factura-img {
-        width: 764px;
+        display: block;
+        max-width: 100%;
         height: auto;
+        width: 764px;
         border-radius: 4px;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        display: block;
-        margin: 0 auto;
     }
 
     .pedido-modal-html {
@@ -341,6 +387,213 @@
         text-align: center;
         padding: 3rem 1rem;
         color: #999;
+    }
+
+    /* ===== ESTILOS MODAL GALERÍA ===== */
+    .modal-galeria {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.98);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+    }
+
+    .galeria-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+    }
+
+    .galeria-container {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 90%;
+        max-width: 800px;
+        height: 70%;
+        z-index: 10001;
+    }
+
+    .btn-cerrar-galeria {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        font-size: 1.5rem;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: all 0.3s ease;
+        z-index: 10002;
+    }
+
+    .btn-cerrar-galeria:hover {
+        background: rgba(255, 255, 255, 0.4);
+        transform: scale(1.1);
+    }
+
+    .galeria-imagen-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        user-select: none;
+    }
+
+    .galeria-imagen {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        cursor: grab;
+    }
+
+    .galeria-imagen:active {
+        cursor: grabbing;
+    }
+
+    .galeria-info {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.5);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .btn-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        font-size: 1.5rem;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: all 0.3s ease;
+        z-index: 10001;
+    }
+
+    .btn-nav:hover {
+        background: rgba(255, 255, 255, 0.4);
+        transform: translateY(-50%) scale(1.1);
+    }
+
+    .btn-nav:active {
+        transform: translateY(-50%) scale(0.95);
+    }
+
+    .btn-anterior {
+        left: 10px;
+    }
+
+    .btn-siguiente {
+        right: 10px;
+    }
+
+    .galeria-thumbnails {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 1rem;
+        background: rgba(0, 0, 0, 0.5);
+        overflow-x: auto;
+        z-index: 10001;
+    }
+
+    .thumbnail {
+        width: 60px;
+        height: 60px;
+        border-radius: 4px;
+        overflow: hidden;
+        cursor: pointer;
+        opacity: 0.6;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+
+    .thumbnail.activo {
+        opacity: 1;
+        border-color: #0066cc;
+    }
+
+    .thumbnail:hover {
+        opacity: 0.8;
+    }
+
+    .thumbnail img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .galeria-container {
+            width: 95%;
+            height: 60%;
+        }
+
+        .btn-cerrar-galeria,
+        .btn-nav {
+            width: 40px;
+            height: 40px;
+            font-size: 1.2rem;
+        }
+
+        .btn-anterior {
+            left: 5px;
+        }
+
+        .btn-siguiente {
+            right: 5px;
+        }
+
+        .galeria-info {
+            font-size: 0.8rem;
+            padding: 6px 12px;
+        }
+
+        .galeria-thumbnails {
+            height: auto;
+            max-height: 100px;
+        }
+
+        .thumbnail {
+            width: 50px;
+            height: 50px;
+        }
     }
 
     .empty-fotos .material-symbols-rounded {
@@ -693,180 +946,326 @@
         event.target.closest('.tab-btn').classList.add('active');
     }
 
-    // Convertir factura a imagen al cargar (optimizado con logs)
-    function generarImagenFactura() {
-        const inicioTotal = performance.now();
-        const numeroPedido = document.querySelector('.pedido-numero-header').textContent.replace('#', '');
-        const cacheKey = `factura_${numeroPedido}`;
+    function llenarDatosModal() {
+        // Esta función ahora solo es usada por el API
+        // Los datos se llenan a través de llenarReciboCosturaMobile()
+        console.log('✅ llenarDatosModal: datos ya se llenan desde el API');
+    }
+
+    // Detectar si es móvil
+    function esMobile() {
+        return window.innerWidth < 768;
+    }
+
+    // Generar imagen al cargar la página - Ejecutar inmediatamente
+    console.log('✅ Script cargado - verificando elementos del DOM');
+    
+    /**
+     * Función: llenarFotos
+     * Carga las fotos en la galería desde la API
+     */
+    let fotosGlobales = []; // Variable global para guardar las fotos
+    let indiceActualGaleria = 0; // Índice de la foto actual en la galería
+    
+    function llenarFotos(fotos) {
+        console.log('🖼️ Función llenarFotos llamada con', fotos.length, 'fotos');
         
-        console.log(`⏱️ [FACTURA #${numeroPedido}] Iniciando generación de imagen...`);
+        fotosGlobales = fotos; // Guardar fotos globalmente
         
-        // Limpiar caché antiguo (blob URLs no válidos)
-        sessionStorage.removeItem(cacheKey);
-        
-        // Verificar si ya existe en caché (solo Data URLs válidos)
-        const cachedImage = sessionStorage.getItem(cacheKey);
-        if (cachedImage && cachedImage.startsWith('data:')) {
-            const imgElement = document.getElementById('factura-imagen');
-            imgElement.src = cachedImage;
-            imgElement.style.display = 'block';
-            document.getElementById('factura-html').style.display = 'none';
-            const tiempoTotal = performance.now() - inicioTotal;
-            console.log(`✅ [FACTURA #${numeroPedido}] Cargada desde CACHÉ en ${tiempoTotal.toFixed(2)}ms`);
+        const fotosGrid = document.getElementById('fotos-grid');
+        if (!fotosGrid) {
+            console.error('❌ No se encontró elemento #fotos-grid');
             return;
         }
-
-        // Si no está en caché, generar con optimizaciones
-        const htmlElement = document.querySelector('.pedido-modal-html');
-        const inicioConversion = performance.now();
         
-        // Mostrar indicador de carga
-        const imgElement = document.getElementById('factura-imagen');
-        imgElement.style.opacity = '0.5';
+        // Limpiar contenido actual
+        fotosGrid.innerHTML = '';
         
-        console.log(`⏳ [FACTURA #${numeroPedido}] Convirtiendo HTML a imagen...`);
+        if (!fotos || fotos.length === 0) {
+            console.log('⚠️ No hay fotos disponibles');
+            fotosGrid.innerHTML = `
+                <div class="empty-fotos">
+                    <span class="material-symbols-rounded">image_not_supported</span>
+                    <p>No hay fotos disponibles para este pedido</p>
+                </div>
+            `;
+            return;
+        }
         
-        // Clonar el elemento para no afectar el original
-        const clonedElement = htmlElement.cloneNode(true);
-        clonedElement.style.display = 'block';
-        clonedElement.style.position = 'fixed';
-        clonedElement.style.width = '764px';
-        clonedElement.style.height = 'auto';
-        clonedElement.style.zIndex = '-9999';
-        clonedElement.style.left = '0';
-        clonedElement.style.top = '0';
-        clonedElement.style.visibility = 'visible';
-        clonedElement.style.opacity = '1';
-        
-        // Agregar el clon al DOM
-        document.body.appendChild(clonedElement);
-        
-        console.log(`📐 [FACTURA #${numeroPedido}] Clon creado: offsetWidth=${clonedElement.offsetWidth}px, offsetHeight=${clonedElement.offsetHeight}px`);
-        
-        // Esperar a que el DOM se actualice
-        setTimeout(() => {
-            console.log(`📐 [FACTURA #${numeroPedido}] Después de setTimeout: offsetWidth=${clonedElement.offsetWidth}px, offsetHeight=${clonedElement.offsetHeight}px`);
+        // Generar HTML para cada foto
+        fotos.forEach((foto, index) => {
+            console.log(`📷 Foto ${index + 1}:`, foto);
             
-            html2canvas(clonedElement, {
-                scale: 1,
-                width: 764,
-                height: clonedElement.offsetHeight,
-                backgroundColor: '#ffffff',
-                allowTaint: true,
-                useCORS: true,
-                logging: false,
-                proxy: null,
-                imageTimeout: 0,
-                ignoreElements: function(element) {
-                    return element.id === 'factura-imagen';
-                }
-            }).then(canvas => {
-                console.log(`📐 [FACTURA #${numeroPedido}] Canvas generado: width=${canvas.width}px, height=${canvas.height}px`);
-                
-                // Remover el clon del DOM
-                document.body.removeChild(clonedElement);
-            const tiempoHtml2Canvas = performance.now() - inicioConversion;
-            console.log(`📊 [FACTURA #${numeroPedido}] html2canvas completado en ${tiempoHtml2Canvas.toFixed(2)}ms`);
+            const fotoCard = document.createElement('div');
+            fotoCard.className = 'foto-card';
+            fotoCard.style.cursor = 'pointer';
+            fotoCard.onclick = function() {
+                abrirGaleria(index);
+            };
             
-            const inicioDataUrl = performance.now();
-            
-            // Convertir a Data URL (más persistente que blob URL)
-            const dataUrl = canvas.toDataURL('image/png');
-            const tiempoDataUrl = performance.now() - inicioDataUrl;
-            
-            imgElement.src = dataUrl;
-            imgElement.style.display = 'block';
-            imgElement.style.opacity = '1';
-
-            // Ocultar HTML
-            document.getElementById('factura-html').style.display = 'none';
-
-            // Guardar en caché de sesión (Data URL persiste)
-            sessionStorage.setItem(cacheKey, dataUrl);
-
-            // Guardar URL para descarga
-            imgElement.dataset.downloadUrl = dataUrl;
-            
-            const tiempoTotal = performance.now() - inicioTotal;
-            console.log(`📦 [FACTURA #${numeroPedido}] Data URL creado en ${tiempoDataUrl.toFixed(2)}ms`);
-            console.log(`✅ [FACTURA #${numeroPedido}] Imagen generada y guardada en caché en ${tiempoTotal.toFixed(2)}ms`);
-            console.log(`📈 [FACTURA #${numeroPedido}] Desglose: html2canvas=${tiempoHtml2Canvas.toFixed(2)}ms + dataUrl=${tiempoDataUrl.toFixed(2)}ms`);
-            }).catch(error => {
-                console.error(`❌ [FACTURA #${numeroPedido}] Error al generar imagen:`, error);
-                imgElement.style.opacity = '1';
-                // Si falla, mostrar HTML como fallback
-                document.getElementById('factura-html').style.display = 'block';
-                imgElement.style.display = 'none';
-            });
-        }, 100); // Esperar 100ms para que el DOM se actualice
+            // Usar lazy loading nativo del navegador para optimizar carga
+            fotoCard.innerHTML = `
+                <img 
+                    src="${foto}" 
+                    alt="Foto del pedido ${index + 1}" 
+                    class="foto-imagen"
+                    loading="lazy"
+                    decoding="async"
+                />
+            `;
+            fotosGrid.appendChild(fotoCard);
+        });
+        
+        console.log('✅ Galería de fotos cargada con', fotos.length, 'imagen(es) - Lazy loading activado');
     }
-
-    // Convertir factura a imagen y descargar
-    function convertirFacturaAImagen() {
-        const imgElement = document.getElementById('factura-imagen');
-        const numeroPedido = document.querySelector('.pedido-numero-header').textContent.replace('#', '');
-
-        // Mostrar mensaje de carga
-        const btn = event.target.closest('.tab-btn');
-        const textOriginal = btn.innerHTML;
-        btn.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> DESCARGANDO...';
-        btn.disabled = true;
-
-        // Descargar imagen WebP
-        const link = document.createElement('a');
-        link.href = imgElement.dataset.downloadUrl;
-        link.download = `Factura_${numeroPedido}.webp`;
-        link.click();
-
-        // Restaurar botón
-        btn.innerHTML = textOriginal;
-        btn.disabled = false;
+    
+    /**
+     * Función: abrirGaleria
+     * Abre el modal de galería en el índice especificado
+     */
+    function abrirGaleria(indice = 0) {
+        indiceActualGaleria = indice;
+        const modal = document.getElementById('modal-galeria');
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden'; // Evitar scroll
+        actualizarGaleria();
+        inicializarSwipe();
     }
-
-    // Llenar datos del modal
-    function llenarDatosModal() {
-        const pedido = {
-            numero_pedido: '{{ $pedido['numero_pedido'] }}',
-            cliente: '{{ $pedido['cliente'] }}',
-            asesora: '{{ $pedido['asesora'] ?? 'N/A' }}',
-            forma_pago: '{{ $pedido['forma_pago'] ?? 'N/A' }}',
-            descripcion: '{{ $pedido['descripcion'] ?? 'N/A' }}',
-            fecha_creacion: '{{ $pedido['fecha_creacion'] ?? now()->format('d/m/Y') }}'
-        };
-
-        // Llenar cliente
-        document.getElementById('cliente-value').textContent = pedido.cliente;
-
-        // Llenar asesora
-        document.getElementById('asesora-value').textContent = pedido.asesora;
-
-        // Llenar forma de pago
-        document.getElementById('forma-pago-value').textContent = pedido.forma_pago;
-
-        // Llenar descripción
-        document.getElementById('descripcion-text').textContent = pedido.descripcion;
-
-        // Llenar número de pedido
-        document.getElementById('order-pedido').textContent = '#' + pedido.numero_pedido;
-
-        // Llenar fecha
-        const fecha = new Date(pedido.fecha_creacion);
-        document.querySelector('.day-box').textContent = fecha.getDate();
-        document.querySelector('.month-box').textContent = fecha.getMonth() + 1;
-        document.querySelector('.year-box').textContent = fecha.getFullYear();
-
-        // Llenar encargado (usuario actual)
-        document.getElementById('encargado-value').textContent = '{{ auth()->user()->name ?? 'N/A' }}';
-
-        // Llenar prendas entregadas
-        document.getElementById('prendas-entregadas-value').textContent = '{{ $pedido['cantidad'] ?? 0 }}';
+    
+    /**
+     * Función: cerrarGaleria
+     * Cierra el modal de galería
+     */
+    function cerrarGaleria() {
+        const modal = document.getElementById('modal-galeria');
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto'; // Restaurar scroll
     }
-
-    // Generar imagen al cargar la página
-    document.addEventListener('DOMContentLoaded', function() {
-        llenarDatosModal();
-        setTimeout(generarImagenFactura, 500);
+    
+    /**
+     * Función: fotoAnterior
+     * Navega a la foto anterior
+     */
+    function fotoAnterior() {
+        if (indiceActualGaleria > 0) {
+            indiceActualGaleria--;
+            actualizarGaleria();
+        }
+    }
+    
+    /**
+     * Función: fotoSiguiente
+     * Navega a la foto siguiente
+     */
+    function fotoSiguiente() {
+        if (indiceActualGaleria < fotosGlobales.length - 1) {
+            indiceActualGaleria++;
+            actualizarGaleria();
+        }
+    }
+    
+    /**
+     * Función: actualizarGaleria
+     * Actualiza la visualización de la galería con preloading de siguiente/anterior
+     */
+    let imagenesPreCargadas = {}; // Cache de imágenes precargadas
+    
+    function actualizarGaleria() {
+        const imagen = document.getElementById('galeria-imagen-principal');
+        const contador = document.getElementById('galeria-contador');
+        const btnAnterior = document.getElementById('btn-anterior');
+        const btnSiguiente = document.getElementById('btn-siguiente');
+        
+        if (!imagen) return;
+        
+        // Actualizar imagen principal
+        imagen.src = fotosGlobales[indiceActualGaleria];
+        
+        // Actualizar contador
+        contador.textContent = `${indiceActualGaleria + 1}/${fotosGlobales.length}`;
+        
+        // Mostrar/ocultar botones de navegación
+        btnAnterior.style.opacity = indiceActualGaleria === 0 ? '0.3' : '1';
+        btnAnterior.style.pointerEvents = indiceActualGaleria === 0 ? 'none' : 'auto';
+        
+        btnSiguiente.style.opacity = indiceActualGaleria === fotosGlobales.length - 1 ? '0.3' : '1';
+        btnSiguiente.style.pointerEvents = indiceActualGaleria === fotosGlobales.length - 1 ? 'none' : 'auto';
+        
+        // ===== PRECARGAR SIGUIENTE Y ANTERIOR (Optimización) =====
+        precargarImagenes(indiceActualGaleria);
+    }
+    
+    /**
+     * Función: precargarImagenes
+     * Precarga la imagen siguiente y anterior en memoria del navegador
+     * Esto hace que la navegación sea mucho más rápida
+     */
+    function precargarImagenes(indiceActual) {
+        // Precargar imagen anterior
+        if (indiceActual > 0) {
+            const urlAnterior = fotosGlobales[indiceActual - 1];
+            if (urlAnterior && !imagenesPreCargadas[urlAnterior]) {
+                const imgAnterior = new Image();
+                imgAnterior.src = urlAnterior;
+                imagenesPreCargadas[urlAnterior] = true;
+            }
+        }
+        
+        // Precargar imagen siguiente
+        if (indiceActual < fotosGlobales.length - 1) {
+            const urlSiguiente = fotosGlobales[indiceActual + 1];
+            if (urlSiguiente && !imagenesPreCargadas[urlSiguiente]) {
+                const imgSiguiente = new Image();
+                imgSiguiente.src = urlSiguiente;
+                imagenesPreCargadas[urlSiguiente] = true;
+            }
+        }
+    }
+    
+    /**
+     * Función: inicializarSwipe
+     * Inicializa el sistema de swipe/deslizar
+     */
+    let xInicio = 0;
+    let yInicio = 0;
+    
+    function inicializarSwipe() {
+        const galeria = document.getElementById('modal-galeria');
+        const container = document.querySelector('.galeria-imagen-container');
+        
+        if (!container) return;
+        
+        // Eventos de mouse
+        container.addEventListener('mousedown', function(e) {
+            xInicio = e.clientX;
+            yInicio = e.clientY;
+        });
+        
+        container.addEventListener('mouseup', function(e) {
+            handleSwipe(e.clientX, e.clientY);
+        });
+        
+        // Eventos de touch
+        container.addEventListener('touchstart', function(e) {
+            xInicio = e.touches[0].clientX;
+            yInicio = e.touches[0].clientY;
+        });
+        
+        container.addEventListener('touchend', function(e) {
+            handleSwipe(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+        });
+    }
+    
+    /**
+     * Función: handleSwipe
+     * Maneja el evento de swipe
+     */
+    function handleSwipe(xFinal, yFinal) {
+        const diferenciax = xInicio - xFinal;
+        const diferenciay = yInicio - yFinal;
+        
+        // Si el movimiento vertical es mayor, ignorar (scroll vertical)
+        if (Math.abs(diferenciay) > Math.abs(diferenciax)) {
+            return;
+        }
+        
+        // Umbral mínimo de deslizamiento
+        const umbral = 50;
+        
+        if (Math.abs(diferenciax) > umbral) {
+            if (diferenciax > 0) {
+                // Deslizó a la izquierda -> siguiente foto
+                fotoSiguiente();
+            } else {
+                // Deslizó a la derecha -> anterior foto
+                fotoAnterior();
+            }
+        }
+    }
+    
+    // Cerrar galería con tecla ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            cerrarGaleria();
+        }
     });
+    
+    // Generar imagen al cargar la página - Ejecutar inmediatamente
+    console.log('✅ Script cargado - verificando elementos del DOM');
+    
+    // Esperar un poco para asegurar que el DOM esté listo
+    setTimeout(function() {
+        console.log('✅ Iniciando verificación de móvil');
+        llenarDatosModal();
+        
+        console.log('📱 Verificando elementos del DOM...');
+        
+        const containerMobile = document.getElementById('factura-container-mobile');
+        console.log('📱 Container mobile encontrado?', !!containerMobile);
+        
+        if (!containerMobile) {
+            console.error('❌ ERROR: No se encontró #factura-container-mobile en el DOM');
+            console.log('📋 IDs en el documento:', document.querySelectorAll('[id]').length);
+            return;
+        }
+        
+        // Mostrar el contenedor
+        containerMobile.style.display = 'block';
+        
+        const numeroPedido = containerMobile.dataset.numeroPedido;
+        console.log('📱 Número de pedido del data-attribute:', numeroPedido);
+        
+        if (!numeroPedido) {
+            console.error('❌ ERROR: No hay data-numero-pedido en el contenedor');
+            return;
+        }
+        
+        const apiUrl = '/api/operario/pedido/' + numeroPedido;
+        console.log('📝 URL API:', apiUrl);
+        
+        fetch(apiUrl)
+            .then(function(response) {
+                console.log('📡 Respuesta del API - Status:', response.status);
+                if (!response.ok) {
+                    throw new Error('API error: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(function(data) {
+                console.log('✅ Datos del API recibidos:', data);
+                
+                const pedidoData = {
+                    fecha: data.fecha_creacion || new Date().toISOString().split('T')[0],
+                    asesora: data.asesora || 'N/A',
+                    formaPago: data.forma_pago || 'N/A',
+                    prenda: data.descripcion_prendas || 'N/A',
+                    cliente: data.cliente || 'N/A',
+                    numeroPedido: data.numero_pedido || numeroPedido,
+                    encargado: data.encargado || 'N/A',
+                    prendasEntregadas: (data.cantidad || 0) + '/' + (data.cantidad || 0),
+                    descripcion: data.descripcion_prendas || 'N/A',
+                    prendas: data.prendas || []
+                };
+                
+                console.log('📦 Datos reformateados:', pedidoData);
+                
+                if (window.llenarReciboCosturaMobile) {
+                    console.log('🎨 Llamando a llenarReciboCosturaMobile...');
+                    window.llenarReciboCosturaMobile(pedidoData);
+                    console.log('🎨 llenarReciboCosturaMobile completado');
+                } else {
+                    console.error('❌ Función llenarReciboCosturaMobile NO encontrada');
+                }
+                
+                // ===== CARGAR FOTOS =====
+                console.log('📸 Fotos disponibles en API:', data.fotos);
+                llenarFotos(data.fotos || []);
+            })
+            .catch(function(error) {
+                console.error('❌ Error en fetch:', error);
+                console.error('❌ Stack:', error.stack);
+            });
+    }, 500);
 
     function marcarEnProceso() {
         alert('Funcionalidad de marcar en proceso será implementada');
@@ -875,5 +1274,84 @@
     function marcarCompletado() {
         alert('Funcionalidad de marcar completado será implementada');
     }
+
+    // ========================================
+    // SISTEMA DE ZOOM Y PAN PARA FACTURA
+    // ========================================
+    (function() {
+        let currentZoom = 1;
+        const MIN_ZOOM = 0.5;
+        const MAX_ZOOM = 2;
+        const ZOOM_STEP = 0.1;
+        
+        const facturaImg = document.getElementById('factura-imagen');
+        const facturaContainer = document.getElementById('factura-container');
+        
+        let lastDistance = 0;
+        
+        function updateZoom() {
+            // Aplicar zoom solo con scale
+            facturaImg.style.transform = `scale(${currentZoom})`;
+            facturaImg.style.transformOrigin = 'center';
+            facturaImg.style.cursor = currentZoom > 1 ? 'grab' : 'default';
+        }
+        
+        // Función para calcular distancia entre dos puntos táctiles
+        function getDistance(touches) {
+            if (touches.length < 2) return 0;
+            const dx = touches[0].clientX - touches[1].clientX;
+            const dy = touches[0].clientY - touches[1].clientY;
+            return Math.sqrt(dx * dx + dy * dy);
+        }
+        
+        // ========== PINCH ZOOM (dos dedos) ==========
+        if (facturaContainer) {
+            facturaContainer.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 2) {
+                    lastDistance = getDistance(e.touches);
+                }
+            }, { passive: true });
+            
+            facturaContainer.addEventListener('touchmove', (e) => {
+                if (e.touches.length === 2) {
+                    const currentDistance = getDistance(e.touches);
+                    
+                    if (lastDistance > 0) {
+                        const ratio = currentDistance / lastDistance;
+                        let newZoom = currentZoom * ratio;
+                        
+                        if (newZoom >= MIN_ZOOM && newZoom <= MAX_ZOOM) {
+                            currentZoom = newZoom;
+                            updateZoom();
+                        }
+                    }
+                    
+                    lastDistance = currentDistance;
+                }
+            }, { passive: true });
+            
+            facturaContainer.addEventListener('touchend', (e) => {
+                lastDistance = 0;
+            }, { passive: true });
+        }
+        
+        // ========== ZOOM CON RUEDA (Ctrl+Scroll) ==========
+        if (facturaContainer) {
+            facturaContainer.addEventListener('wheel', (e) => {
+                if (e.ctrlKey) {
+                    e.preventDefault();
+                    const direction = e.deltaY > 0 ? -1 : 1;
+                    const newZoom = currentZoom + (direction * ZOOM_STEP);
+                    
+                    if (newZoom >= MIN_ZOOM && newZoom <= MAX_ZOOM) {
+                        currentZoom = newZoom;
+                        updateZoom();
+                    }
+                }
+            }, { passive: false });
+        }
+    })();
+
+
 </script>
 @endsection

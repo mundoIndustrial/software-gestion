@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\V1\OrdenController;
 use App\Http\Controllers\PrendaController;
-use App\Http\Controllers\CotizacionPrendaController;
+use App\Infrastructure\Http\Controllers\CotizacionPrendaController;
 
 /**
  * API Routes for DDD-based Orden management (FASE 3 - DDD)
@@ -61,4 +61,12 @@ Route::middleware('api')->prefix('api')->name('api.')->group(function () {
     
     // Rutas de cotizaciones
     Route::apiResource('cotizaciones', CotizacionPrendaController::class);
+});
+
+/**
+ * API Routes for Operario (PUBLIC - Sin autenticación)
+ */
+Route::prefix('operario')->name('operario.')->middleware([])->group(function () {
+    Route::get('pedido/{numeroPedido}', [\App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'getPedidoData'])
+        ->name('pedido-data');
 });

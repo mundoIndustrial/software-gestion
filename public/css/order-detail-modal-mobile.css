@@ -1,0 +1,406 @@
+/* Estilos específicos para versión móvil del recibo */
+
+.order-detail-modal-container {
+    background: white;
+    min-height: auto;
+    max-height: none;
+    max-width: 100%;
+    width: 100%;
+    overflow: visible;
+    border-radius: 12px;
+    box-shadow: none;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 9999;
+    transform: none;
+}
+
+.order-detail-card {
+    width: 100%;
+    height: auto;
+    min-height: auto;
+    border: 2px solid #000;
+    border-radius: 8px;
+    padding: 15px;
+    padding-top: 150px;
+    background: white;
+    position: relative;
+}
+
+.order-logo {
+    display: block;
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: auto;
+    margin: 0;
+    z-index: 10;
+}
+
+.order-date {
+    position: absolute;
+    top: 80px;
+    left: 12px;
+    right: auto;
+    width: auto;
+    margin: 0;
+    padding: 6px;
+    background: #000;
+    border-radius: 6px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2px;
+    color: white;
+    text-align: center;
+}
+
+.fec-label {
+    font-size: 8px;
+    color: white;
+    margin-right: 4px;
+    flex-shrink: 0;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.date-boxes {
+    display: flex;
+    gap: 2px;
+    justify-content: space-between;
+}
+
+.date-box {
+    background: white;
+    color: black;
+    border-radius: 3px;
+    width: 25px;
+    height: 20px;
+    line-height: 18px;
+    font-weight: bold;
+    font-size: 9px;
+    text-align: center;
+}
+
+.receipt-title {
+    position: absolute;
+    top: 80px;
+    right: 12px;
+    left: auto;
+    font-weight: bold;
+    font-size: 11px;
+    text-transform: uppercase;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    color: #000;
+    text-align: center;
+    max-width: 120px;
+}
+
+.pedido-number {
+    position: absolute;
+    top: 102px;
+    right: 12px;
+    left: auto;
+    font-weight: bold;
+    font-size: 12px;
+    text-transform: uppercase;
+    font-family: Arial, sans-serif;
+    margin: 0;
+    color: #ff0000;
+    text-align: center;
+}
+
+.order-asesora {
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
+    font-weight: bold;
+    font-size: 10px;
+    color: #000;
+    max-width: 48%;
+    word-wrap: break-word;
+    white-space: normal;
+    line-height: 1.3;
+    margin: 4px 0;
+    float: left;
+}
+
+.order-forma-pago {
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
+    font-weight: bold;
+    font-size: 10px;
+    color: #000;
+    max-width: 48%;
+    word-wrap: break-word;
+    white-space: normal;
+    line-height: 1.3;
+    margin: 4px 0;
+    float: left;
+    clear: left;
+}
+
+.order-cliente {
+    position: relative;
+    top: auto;
+    right: auto;
+    font-weight: bold;
+    font-size: 10px;
+    color: #000;
+    max-width: 48%;
+    word-wrap: break-word;
+    white-space: normal;
+    line-height: 1.3;
+    text-align: right;
+    margin: 4px 0;
+    float: right;
+}
+
+.order-asesora span,
+.order-forma-pago span,
+.order-cliente span {
+    font-weight: bold;
+    margin-top: 2px;
+}
+
+.order-descripcion {
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
+    text-align: left;
+    font-size: 10px;
+    color: #000;
+    width: auto;
+    line-height: 1.5;
+    max-height: none;
+    overflow: visible;
+    margin: 12px 0;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 4px;
+    clear: both;
+    min-height: 80px;
+    display: block;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.order-descripcion strong {
+    font-weight: bold;
+    color: #333;
+}
+
+.arrow-container {
+    position: relative;
+    top: auto;
+    right: auto;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.separator-line {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    right: 0;
+    height: 2px;
+    background-color: #000000;
+    margin: 6px 0;
+    clear: both;
+}
+
+.signature-section {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    right: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-direction: row;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.signature-field {
+    font-weight: bold;
+    font-size: 10px;
+    color: #000;
+    text-align: center;
+    width: 48%;
+    line-height: 1.3;
+    border: 1px solid #000;
+    padding: 6px;
+    border-radius: 4px;
+}
+
+.signature-field span:first-child {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.prenda-line {
+    margin-bottom: 6px;
+    line-height: 1.4;
+    font-size: 11px;
+    word-wrap: break-word;
+    white-space: normal;
+}
+
+.prenda-name {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.prenda-description-label {
+    font-weight: bold;
+}
+
+.prenda-tallas-label {
+    font-weight: bold;
+    color: #ff0000;
+}
+
+.prenda-tallas-value {
+    color: #ff0000;
+}
+
+#descripcion-text {
+    width: 100%;
+    text-align: left;
+}
+
+.order-content {
+    width: 100%;
+    height: 100%;
+}
+
+.order-content h2 {
+    margin: 0 0 20px 0;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.arrow-btn {
+    background: none;
+    border: none;
+    color: red;
+    cursor: pointer;
+    padding: 5px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.arrow-btn:hover {
+    transform: scale(1.15);
+    background-color: rgba(255, 0, 0, 0.1);
+}
+
+.arrow-btn svg {
+    width: 24px;
+    height: 24px;
+}
+
+/* Media query para desktop - adaptar estilos */
+@media (min-width: 768px) {
+    .order-detail-modal-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 1rem;
+    }
+
+    .order-detail-card {
+        width: 100%;
+        max-width: 764px;
+        padding: 20px;
+        padding-top: 160px;
+    }
+
+    .order-logo {
+        width: 100px;
+        top: 10px;
+    }
+
+    .order-date {
+        top: 90px;
+        left: 15px;
+    }
+
+    .order-asesora,
+    .order-forma-pago,
+    .order-cliente {
+        font-size: 13px;
+        margin: 6px 0;
+        position: static;
+        float: none;
+        max-width: 100%;
+        width: 100%;
+        clear: both;
+    }
+
+    .order-descripcion {
+        min-height: 120px;
+        font-size: 11px;
+        margin: 15px 0;
+        padding: 12px;
+    }
+
+    .receipt-title {
+        font-size: 16px;
+        margin: 0;
+        position: absolute;
+        top: 95px;
+        right: 80px;
+        width: auto;
+        white-space: nowrap;
+        text-align: right;
+    }
+
+    .pedido-number {
+        font-size: 14px;
+        margin: 0;
+        position: absolute;
+        top: 130px;
+        right: 80px;
+        width: auto;
+        text-align: right;
+    }
+
+    .separator-line {
+        bottom: 60px;
+        height: 3px;
+    }
+
+    .signature-section {
+        bottom: 0;
+        left: 20px;
+        right: 20px;
+    }
+
+    .signature-field {
+        font-size: 12px;
+    }
+
+    #arrow-container-mobile {
+        top: 20px !important;
+        right: 20px !important;
+    }
+}
+

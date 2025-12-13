@@ -144,36 +144,78 @@ class OperarioController extends Controller
      */
     private function obtenerFotosPedido($numeroPedido)
     {
-        $fotos = [];
-
-        try {
-            // Obtener fotos de prendas
-            $fotosPrendas = \App\Models\PrendaFotoCot::whereHas('prenda', function ($query) use ($numeroPedido) {
-                $query->where('numero_pedido', $numeroPedido);
-            })->get();
-
-            // Obtener fotos de telas
-            $fotosTelas = \App\Models\PrendaTelaFoto::whereHas('prenda', function ($query) use ($numeroPedido) {
-                $query->where('numero_pedido', $numeroPedido);
-            })->get();
-
-            // Obtener fotos de logo
-            $fotosLogo = \App\Models\LogoFoto::whereHas('prenda', function ($query) use ($numeroPedido) {
-                $query->where('numero_pedido', $numeroPedido);
-            })->get();
-
-            // Combinar todas las fotos
-            $fotos = array_merge(
-                $fotosPrendas->pluck('foto_url')->toArray(),
-                $fotosTelas->pluck('foto_url')->toArray(),
-                $fotosLogo->pluck('foto_url')->toArray()
-            );
-        } catch (\Exception $e) {
-            // Si hay error, retornar array vacío
+        // Usar caché por 10 minutos para las fotos
+        $cacheKey = "fotos_pedido_{$numeroPedido}";
+        
+        return \Cache::remember($cacheKey, 600, function() use ($numeroPedido) {
             $fotos = [];
-        }
 
-        return array_filter($fotos); // Eliminar valores nulos
+            try {
+                // Obtener solo las columnas necesarias de la cotización
+                $pedido = \App\Models\PedidoProduccion::select('id', 'cotizacion_id')
+                    ->where('numero_pedido', $numeroPedido)
+                    ->first();
+                
+                if (!$pedido || !$pedido->cotizacion_id) {
+                    return [];
+                }
+
+                // Obtener IDs de prendas de una sola query
+                $prendasCotIds = \App\Models\PrendaCot::where('cotizacion_id', $pedido->cotizacion_id)
+                    ->pluck('id')
+                    ->toArray();
+
+                if (empty($prendasCotIds)) {
+                    return [];
+                }
+
+                // ===== 1. FOTOS DE PRENDAS =====
+                $fotosPrendas = \App\Models\PrendaFotoCot::select('ruta_webp', 'ruta_original')
+                    ->whereIn('prenda_cot_id', $prendasCotIds)
+                    ->orderBy('orden')
+                    ->get();
+                
+                foreach($fotosPrendas as $foto) {
+                    $ruta = $foto->ruta_webp ?: $foto->ruta_original;
+                    if($ruta) $fotos[] = $ruta;
+                }
+
+                // ===== 2. FOTOS DE TELAS =====
+                $fotosTelas = \App\Models\PrendaTelaFotoCot::select('ruta_webp', 'ruta_original')
+                    ->whereIn('prenda_cot_id', $prendasCotIds)
+                    ->orderBy('orden')
+                    ->get();
+                
+                foreach($fotosTelas as $foto) {
+                    $ruta = $foto->ruta_webp ?: $foto->ruta_original;
+                    if($ruta) $fotos[] = $ruta;
+                }
+
+                // ===== 3. FOTOS DE LOGOS =====
+                $logoCotIds = \App\Models\LogoCotizacion::select('id')
+                    ->where('cotizacion_id', $pedido->cotizacion_id)
+                    ->pluck('id')
+                    ->toArray();
+                
+                if (!empty($logoCotIds)) {
+                    $fotosLogos = \App\Models\LogoFotoCot::select('ruta_webp', 'ruta_original')
+                        ->whereIn('logo_cotizacion_id', $logoCotIds)
+                        ->orderBy('orden')
+                        ->get();
+                    
+                    foreach($fotosLogos as $foto) {
+                        $ruta = $foto->ruta_webp ?: $foto->ruta_original;
+                        if($ruta) $fotos[] = $ruta;
+                    }
+                }
+                
+            } catch (\Exception $e) {
+                \Log::error('Error en obtenerFotosPedido: ' . $e->getMessage());
+                return [];
+            }
+
+            return $fotos;
+        });
     }
 
     /**
@@ -265,4 +307,44 @@ class OperarioController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * API: Obtener datos del pedido para vista móvil
+     * OPTIMIZADO: Con caché y eager loading
+     */
+    public function getPedidoData($numeroPedido)
+    {
+        // Usar caché por 10 minutos para evitar consultas repetidas
+        $cacheKey = "pedido_data_{$numeroPedido}";
+        
+        return \Cache::remember($cacheKey, 600, function() use ($numeroPedido) {
+            $pedido = \App\Models\PedidoProduccion::with(['asesora', 'prendas'])->where('numero_pedido', $numeroPedido)->first();
+            
+            if (!$pedido) {
+                return response()->json(['error' => 'not found'], 404);
+            }
+
+            // Devolver también las prendas para que el JS construya la descripción
+            return [
+                'numero_pedido' => $pedido->numero_pedido,
+                'cliente' => $pedido->cliente ?? 'N/A',
+                'asesora' => $pedido->asesora?->name ?? 'N/A',
+                'forma_pago' => $pedido->forma_de_pago ?? 'N/A',
+                'descripcion_prendas' => $pedido->descripcion_prendas ?? 'N/A',
+                'fecha_creacion' => $pedido->fecha_creacion ?? '',
+                'cantidad' => $pedido->cantidad ?? 0,
+                'encargado' => \Illuminate\Support\Facades\Auth::user()?->name ?? 'Operario',
+                'fotos' => $this->obtenerFotosPedido($pedido->numero_pedido),
+                'prendas' => $pedido->prendas->map(function($prenda) {
+                    return [
+                        'nombre' => $prenda->nombre_prenda ?? '',
+                        'talla' => $prenda->talla ?? '',
+                        'cantidad' => $prenda->cantidad ?? 0,
+                        'descripcion' => $prenda->descripcion ?? ''
+                    ];
+                })
+            ];
+        });
+    }
+
 }

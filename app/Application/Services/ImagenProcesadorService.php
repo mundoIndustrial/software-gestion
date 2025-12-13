@@ -5,12 +5,12 @@ namespace App\Application\Services;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManager;
-use Intervention\Image\Drivers\GdDriver;
+use Intervention\Image\ImageManagerStatic as Image;
 use Exception;
 
 class ImagenProcesadorService
 {
-    private ImageManager $imageManager;
+    private ?ImageManager $imageManager = null;
     private const RUTA_BASE = 'public/prendas';
     private const CALIDAD_WEBP = 80;
     private const ANCHO_MINIATURA = 200;
@@ -18,7 +18,15 @@ class ImagenProcesadorService
 
     public function __construct()
     {
-        $this->imageManager = new ImageManager(new GdDriver());
+        // Inicializar lazy - se cargará cuando se necesite
+    }
+    
+    private function getImageManager(): ImageManager
+    {
+        if ($this->imageManager === null) {
+            $this->imageManager = app(ImageManager::class);
+        }
+        return $this->imageManager;
     }
 
     /**
@@ -101,7 +109,7 @@ class ImagenProcesadorService
     public function convertirAWebP(UploadedFile $archivo): string
     {
         try {
-            $imagen = $this->imageManager->read($archivo->getStream());
+            $imagen = $this->getImageManager()->read($archivo->getStream());
 
             // Redimensionar si es muy grande
             if ($imagen->width() > 2000 || $imagen->height() > 2000) {
@@ -128,7 +136,7 @@ class ImagenProcesadorService
     {
         try {
             $contenido = Storage::get($rutaWebP);
-            $imagen = $this->imageManager->read($contenido);
+            $imagen = $this->getImageManager()->read($contenido);
 
             // Redimensionar a miniatura
             $imagen->cover(self::ANCHO_MINIATURA, self::ALTO_MINIATURA);
@@ -191,7 +199,7 @@ class ImagenProcesadorService
     {
         try {
             $contenido = Storage::get($ruta);
-            $imagen = $this->imageManager->read($contenido);
+            $imagen = $this->getImageManager()->read($contenido);
 
             return [
                 'ancho' => $imagen->width(),

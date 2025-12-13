@@ -1,7 +1,7 @@
-<!-- PASO 4: REFLECTIVO -->
-<div class="form-step" data-step="4">
+<!-- PASO 3: REFLECTIVO -->
+<div class="form-step" data-step="3">
     <div class="step-header">
-        <h2 style="font-size: 1rem !important; margin: 0 0 0.2rem 0 !important;">PASO 4: REFLECTIVO</h2>
+        <h2 style="font-size: 1rem !important; margin: 0 0 0.2rem 0 !important;">PASO 3: REFLECTIVO</h2>
         <p style="font-size: 0.45rem !important; margin: 0 !important; color: #666 !important;">ESPECIFICA LOS DETALLES DEL REFLECTIVO</p>
     </div>
 
@@ -58,10 +58,10 @@
     </div>
 
     <div class="form-actions">
-        <button type="button" class="btn-prev" onclick="irAlPaso(3)">
+        <button type="button" class="btn-prev" onclick="irAlPaso(2)">
             <i class="fas fa-arrow-left"></i> ANTERIOR
         </button>
-        <button type="button" class="btn-next" onclick="irAlPaso(5)">
+        <button type="button" class="btn-next" onclick="irAlPaso(4)">
             REVISAR <i class="fas fa-arrow-right"></i>
         </button>
     </div>

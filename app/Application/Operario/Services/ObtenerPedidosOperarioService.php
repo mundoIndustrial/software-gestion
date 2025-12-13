@@ -151,6 +151,7 @@ class ObtenerPedidosOperarioService
                 'numero_pedido' => $pedido->numero_pedido,
                 'cliente' => $pedido->cliente,
                 'descripcion' => $descripcionPrendas ?: 'Sin descripción',
+                'descripcion_prendas' => $pedido->descripcion_prendas ?? $descripcionPrendas ?: 'Sin descripción',
                 'cantidad' => $totalPrendas,
                 'estado' => $pedido->estado,
                 'area' => $this->obtenerAreaActual($pedido->numero_pedido),

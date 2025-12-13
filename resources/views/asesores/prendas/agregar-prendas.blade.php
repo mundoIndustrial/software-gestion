@@ -202,19 +202,6 @@
                                         <input type="text" class="proceso-input" placeholder="Ej: lavado especial..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-700 dark:text-white">
                                     </td>
                                 </tr>
-
-                                <!-- REFLECTIVO -->
-                                <tr style="border-bottom: 1px solid #eee; background-color: white;">
-                                    <td style="padding: 14px 12px; text-align: center; border-right: 1px solid #eee;">
-                                        <input type="checkbox" class="aplica-reflectivo" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
-                                    </td>
-                                    <td style="padding: 14px 12px; border-right: 1px solid #eee; font-weight: 600; color: #0066cc; white-space: nowrap;">
-                                        <i class="fas fa-lightbulb"></i> Reflectivo
-                                    </td>
-                                    <td style="padding: 14px 12px;">
-                                        <input type="text" class="reflectivo-input" placeholder="Ej: reflectivo en espalda..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-700 dark:text-white">
-                                    </td>
-                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -391,7 +378,6 @@ function agregarPrenda() {
             broche: document.querySelector('.aplica-broche').checked ? document.querySelector('.broche-input').value : null,
             puno: document.querySelector('.aplica-puno').checked ? document.querySelector('.puno-input').value : null,
             proceso: document.querySelector('.aplica-proceso').checked ? document.querySelector('.proceso-input').value : null,
-            reflectivo: document.querySelector('.aplica-reflectivo').checked ? document.querySelector('.reflectivo-input').value : null,
         }
     };
 
@@ -462,7 +448,7 @@ function limpiarFormulario() {
     document.getElementById('talla-l').value = '0';
     document.getElementById('talla-xl').value = '0';
     document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-    document.querySelectorAll('.manga-input, .bolsillos-input, .broche-input, .puno-input, .proceso-input, .reflectivo-input').forEach(input => input.value = '');
+    document.querySelectorAll('.manga-input, .bolsillos-input, .broche-input, .puno-input, .proceso-input').forEach(input => input.value = '');
     document.getElementById('nombre-prenda').focus();
 }
 </script>

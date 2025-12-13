@@ -12,12 +12,12 @@
         <div class="step-line"></div>
         <div class="step" data-step="3" onclick="irAlPaso(3)" style="cursor: pointer;">
             <div class="step-number">3</div>
-            <div class="step-label">LOGO</div>
+            <div class="step-label">REFLECTIVO</div>
         </div>
         <div class="step-line"></div>
         <div class="step" data-step="4" onclick="irAlPaso(4)" style="cursor: pointer;">
             <div class="step-number">4</div>
-            <div class="step-label">REFLECTIVO</div>
+            <div class="step-label">LOGO</div>
         </div>
         <div class="step-line"></div>
         <div class="step" data-step="5" onclick="irAlPaso(5)" style="cursor: pointer;">

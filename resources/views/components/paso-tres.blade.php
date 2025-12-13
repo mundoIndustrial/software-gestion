@@ -1,7 +1,7 @@
-<!-- PASO 3: LOGO -->
-<div class="form-step" data-step="3">
+<!-- PASO 4: LOGO -->
+<div class="form-step" data-step="4">
     <div class="step-header">
-        <h2 style="font-size: 1rem !important; margin: 0 0 0.2rem 0 !important;">PASO 3: LOGO</h2>
+        <h2 style="font-size: 1rem !important; margin: 0 0 0.2rem 0 !important;">PASO 4: LOGO</h2>
         <p style="font-size: 0.45rem !important; margin: 0 !important; color: #666 !important;">ESPECIFICA LOS DETALLES DE BORDADO Y ESTAMPADO</p>
     </div>
 
@@ -76,10 +76,10 @@
     </div>
 
     <div class="form-actions">
-        <button type="button" class="btn-prev" onclick="irAlPaso(2)">
+        <button type="button" class="btn-prev" onclick="irAlPaso(3)">
             <i class="fas fa-arrow-left"></i> ANTERIOR
         </button>
-        <button type="button" class="btn-next" onclick="irAlPaso(4)">
+        <button type="button" class="btn-next" onclick="irAlPaso(5)">
             REVISAR <i class="fas fa-arrow-right"></i>
         </button>
     </div>

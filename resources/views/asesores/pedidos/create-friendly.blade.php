@@ -31,8 +31,8 @@
 
         <x-paso-uno />
         <x-paso-dos />
-        <x-paso-tres />
         <x-paso-cuatro-reflectivo />
+        <x-paso-tres />
         <x-paso-cuatro />
     </form>
 </div>

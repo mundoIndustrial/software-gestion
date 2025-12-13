@@ -559,4 +559,12 @@ Route::get('/storage-serve/{path}', [StorageController::class, 'serve'])
     ->where('path', '.*')
     ->name('storage.serve');
 
+// ========================================
+// API PÚBLICA - DATOS DE PEDIDOS (SIN AUTH)
+// ========================================
+Route::prefix('api')->group(function () {
+    Route::get('operario/pedido/{numeroPedido}', [\App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'getPedidoData'])
+        ->name('api.operario.pedido-data');
+});
+
 require __DIR__.'/auth.php';

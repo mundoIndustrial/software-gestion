@@ -178,7 +178,8 @@ body {
     overflow: hidden;
 }
 
-.user-menu.active {
+.user-menu.active,
+.user-menu.show {
     display: block;
 }
 

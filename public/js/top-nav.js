@@ -10,15 +10,89 @@
     // Nota: El toggle del menú de notificaciones se maneja en notifications.js
     // para asegurar que cargue las notificaciones correctamente
 
+    // Función para posicionar el menú del usuario correctamente usando position: fixed
+    function positionUserMenu() {
+        if (userBtn && userMenu) {
+            const rect = userBtn.getBoundingClientRect();
+            const menuWidth = 280;
+            const padding = 20; // padding desde el borde derecho
+            
+            // Calcular posición: intentar alinear a la derecha del botón
+            let leftPos = rect.right - menuWidth;
+            
+            // Si se sale del lado izquierdo, ajustar
+            if (leftPos < padding) {
+                leftPos = padding;
+            }
+            
+            // Si se sale del lado derecho, restar del lado derecho
+            if (leftPos + menuWidth + padding > window.innerWidth) {
+                leftPos = window.innerWidth - menuWidth - padding;
+            }
+            
+            userMenu.style.position = 'fixed';
+            userMenu.style.top = (rect.bottom + 8) + 'px';
+            userMenu.style.left = leftPos + 'px';
+            userMenu.style.right = 'auto';
+            
+            // Debugging info
+            const menuRect = userMenu.getBoundingClientRect();
+            console.log('Posicionando menú en:', { 
+                top: rect.bottom + 8, 
+                left: leftPos,
+                menuWidth: userMenu.offsetWidth,
+                menuHeight: userMenu.offsetHeight,
+                menuVisibility: window.getComputedStyle(userMenu).visibility,
+                menuOpacity: window.getComputedStyle(userMenu).opacity,
+                menuRect: {
+                    top: menuRect.top,
+                    bottom: menuRect.bottom,
+                    left: menuRect.left,
+                    right: menuRect.right,
+                    width: menuRect.width,
+                    height: menuRect.height
+                }
+            });
+        }
+    }
+
     // Toggle user menu
     if (userBtn && userMenu) {
         userBtn.addEventListener('click', (e) => {
             e.stopPropagation();
+            e.preventDefault();
+            console.log('User button clicked, current show state BEFORE:', userMenu.classList.contains('show'));
+            
+            const isShowing = userMenu.classList.contains('show');
+            
+            if (!isShowing) {
+                positionUserMenu();
+                // Establecer estilos directamente para asegurar que sea visible
+                userMenu.style.visibility = 'visible';
+                userMenu.style.opacity = '1';
+            } else {
+                userMenu.style.visibility = 'hidden';
+                userMenu.style.opacity = '0';
+            }
+            
+            // Toggle both 'show' y 'active' para compatibilidad
             userMenu.classList.toggle('show');
+            userMenu.classList.toggle('active');
+            
+            console.log('User button clicked, current show state AFTER:', userMenu.classList.contains('show'));
+            console.log('User button clicked, current active state AFTER:', userMenu.classList.contains('active'));
+            console.log('Menu display:', window.getComputedStyle(userMenu).display);
+            console.log('Menu position:', userMenu.style.position, userMenu.style.top, userMenu.style.right);
+            console.log('Menu visibility FINAL:', window.getComputedStyle(userMenu).visibility);
+            console.log('Menu opacity FINAL:', window.getComputedStyle(userMenu).opacity);
+            
             if (notificationMenu) {
                 notificationMenu.classList.remove('show');
+                notificationMenu.classList.remove('active');
             }
         });
+    } else {
+        console.warn('User button or menu not found', { userBtn: !!userBtn, userMenu: !!userMenu });
     }
 
     // Close menus when clicking outside

@@ -60,8 +60,9 @@
 .nav-right {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1.25rem;
     flex-shrink: 0;
+    overflow: visible;
 }
 
 /* ========================================
@@ -205,6 +206,7 @@
 /* Dropdown de Usuario */
 .user-dropdown {
     position: relative;
+    z-index: 1000;
 }
 
 .user-btn {
@@ -276,19 +278,23 @@
 }
 
 .user-menu {
-    position: fixed;
-    top: calc(72px + 0.75rem);
-    right: 1.5rem;
+    position: fixed !important;
+    top: auto !important;
+    right: auto !important;
     width: 280px;
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border-hr);
     border-radius: 14px;
     box-shadow: 0 10px 24px 0 rgba(0, 0, 0, 0.12);
-    display: none;
+    display: flex !important;
     flex-direction: column;
     overflow: hidden;
     animation: slideDown 0.2s ease-out;
-    z-index: 1001;
+    z-index: 10001 !important;
+    pointer-events: auto !important;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.2s ease-out, visibility 0.2s ease-out;
 }
 
 @keyframes slideDown {
@@ -303,7 +309,8 @@
 }
 
 .user-menu.show {
-    display: flex;
+    visibility: visible;
+    opacity: 1;
 }
 
 .user-menu-header {

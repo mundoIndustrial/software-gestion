@@ -186,16 +186,24 @@ function recopilarObservaciones() {
 }
 
 /**
- * Actualizar resumen (Paso 4)
+ * Actualizar resumen (Paso 5: REVISAR COTIZACIÓN)
  */
 function actualizarResumen() {
+    console.log('🔄 Actualizando resumen en PASO 5...');
+    
     const cliente = document.getElementById('cliente')?.value || '-';
     const fecha = document.getElementById('fechaActual')?.value || '-';
-    const tipo = document.getElementById('tipo_cotizacion')?.value || '-';
+    const tipo = document.getElementById('tipo_cotizacion')?.value || document.getElementById('tipo_venta')?.value || '-';
 
-    document.getElementById('resumen_cliente').textContent = cliente;
-    document.getElementById('resumen_fecha').textContent = fecha;
-    document.getElementById('resumen_tipo').textContent = tipo;
+    const clienteEl = document.getElementById('resumen_cliente');
+    const fechaEl = document.getElementById('resumen_fecha');
+    const tipoEl = document.getElementById('resumen_tipo');
+    
+    if (clienteEl) clienteEl.textContent = cliente;
+    if (fechaEl) fechaEl.textContent = fecha;
+    if (tipoEl) tipoEl.textContent = tipo;
+
+    console.log('✅ Cliente, fecha y tipo actualizados:', { cliente, fecha, tipo });
 
     // Resumen de prendas
     const resumenPrendas = document.getElementById('resumen_prendas');
@@ -208,13 +216,14 @@ function actualizarResumen() {
         } else {
             productos.forEach((prod, idx) => {
                 const div = document.createElement('div');
-                div.style.cssText = 'background: white; padding: 10px; border-radius: 4px; border-left: 4px solid #3498db;';
+                div.style.cssText = 'background: white; padding: 10px; border-radius: 4px; border-left: 4px solid #3498db; margin-bottom: 8px;';
                 div.innerHTML = `
                     <strong>${idx + 1}. ${prod.nombre_producto}</strong><br>
                     <small>Tallas: ${prod.tallas.join(', ') || 'Sin tallas'}</small>
                 `;
                 resumenPrendas.appendChild(div);
             });
+            console.log('✅ Prendas actualizadas:', productos.length);
         }
     }
 
@@ -229,14 +238,21 @@ function actualizarResumen() {
         } else {
             tecnicas.forEach(tec => {
                 const span = document.createElement('span');
-                span.style.cssText = 'background: #3498db; color: white; padding: 5px 10px; border-radius: 20px; font-size: 0.85rem;';
+                span.style.cssText = 'background: #3498db; color: white; padding: 5px 10px; border-radius: 20px; font-size: 0.85rem; display: inline-block;';
                 span.textContent = tec;
                 resumenTecnicas.appendChild(span);
             });
+            console.log('✅ Técnicas actualizadas:', tecnicas.length);
         }
     }
 
-    document.getElementById('resumen_logo_desc').textContent = document.getElementById('descripcion_logo')?.value || '-';
+    // Resumen de logo/descripción
+    const logoDescEl = document.getElementById('resumen_logo_desc');
+    if (logoDescEl) {
+        const logoDesc = document.getElementById('descripcion_logo')?.value || '-';
+        logoDescEl.textContent = logoDesc;
+        console.log('✅ Logo/descripción actualizado');
+    }
 }
 
 /**
@@ -367,8 +383,22 @@ const irAlPasoOriginal = window.irAlPaso;
 window.irAlPaso = function(paso) {
     irAlPasoOriginal(paso);
     
-    // Actualizar resumen si vamos al paso 4
-    if (paso === 4) {
-        actualizarResumen();
+    // Actualizar resumen si vamos al paso 5 (REVISAR COTIZACIÓN)
+    if (paso === 5) {
+        // Primero intentar con la función completa si está disponible
+        if (typeof actualizarResumenCompleto === 'function') {
+            console.log('✅ Llamando a actualizarResumenCompleto()');
+            actualizarResumenCompleto();
+        } else {
+            // Si no está disponible, usar la función local
+            console.log('✅ Llamando a actualizarResumen()');
+            actualizarResumen();
+        }
+        
+        // Además, actualizar reflectivo si está disponible
+        if (typeof actualizarResumenReflectivo === 'function') {
+            console.log('✅ Llamando a actualizarResumenReflectivo()');
+            actualizarResumenReflectivo();
+        }
     }
 };
