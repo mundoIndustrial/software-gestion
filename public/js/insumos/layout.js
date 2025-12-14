@@ -102,6 +102,8 @@ document.addEventListener('DOMContentLoaded', function() {
 // ========================================
 // USER DROPDOWN
 // ========================================
+// COMENTADO: El manejo del dropdown de usuario se hace en top-nav.js para evitar conflictos
+/*
 document.addEventListener('DOMContentLoaded', function() {
     const userBtn = document.getElementById('userBtn');
     const userMenu = document.getElementById('userMenu');
@@ -126,6 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+*/
 
 // ========================================
 // NOTIFICATION DROPDOWN - SUPERVISORPLANTA

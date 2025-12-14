@@ -54,6 +54,8 @@ function initializeNotifications() {
     }
     
     // Toggle del dropdown de usuario
+    // COMENTADO: El manejo del dropdown de usuario se hace en top-nav.js para evitar conflictos
+    /*
     const userBtn = document.getElementById('userBtn');
     const userMenu = document.getElementById('userMenu');
     
@@ -66,6 +68,7 @@ function initializeNotifications() {
             }
         });
     }
+    */
     
     // Cerrar dropdowns al hacer clic afuera
     document.addEventListener('click', function() {

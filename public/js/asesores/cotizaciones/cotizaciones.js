@@ -201,14 +201,19 @@ function mostrarFechaActual() {
 }
 
 function actualizarResumenFriendly() {
+    console.log('🔄 Actualizando resumen del paso 4...');
+    
+    // 1. INFORMACIÓN DEL CLIENTE
     const cliente = document.getElementById('cliente');
-    if (document.getElementById('resumenCliente')) {
-        document.getElementById('resumenCliente').textContent = cliente ? cliente.value || '-' : '-';
+    const resumenCliente = document.getElementById('resumen_cliente');
+    if (resumenCliente && cliente) {
+        resumenCliente.textContent = cliente.value || '-';
+        console.log('✅ Cliente actualizado:', cliente.value);
     }
-    if (document.getElementById('resumenProductos')) {
-        document.getElementById('resumenProductos').textContent = document.querySelectorAll('.producto-card').length;
-    }
-    if (document.getElementById('resumenFecha')) {
+    
+    // 2. FECHA
+    const resumenFecha = document.getElementById('resumen_fecha');
+    if (resumenFecha) {
         const fechaInput = document.getElementById('fechaActual');
         let fechaTexto = '-';
         
@@ -224,8 +229,75 @@ function actualizarResumenFriendly() {
             fechaTexto = hoy.toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit' });
         }
         
-        document.getElementById('resumenFecha').textContent = fechaTexto;
+        resumenFecha.textContent = fechaTexto;
+        console.log('✅ Fecha actualizada:', fechaTexto);
     }
+    
+    // 3. TIPO DE COTIZACIÓN
+    const resumenTipo = document.getElementById('resumen_tipo');
+    if (resumenTipo) {
+        const tipoMap = {
+            'PL': 'Prenda - Logo',
+            'PB': 'Prenda - Bordado',
+            'P': 'Solo Prendas',
+            'L': 'Solo Logo'
+        };
+        const tipo = window.tipoCotizacionGlobal || 'PL';
+        resumenTipo.textContent = tipoMap[tipo] || tipo;
+        console.log('✅ Tipo actualizado:', tipo);
+    }
+    
+    // 4. RESUMEN DE PRENDAS
+    const resumenPrendas = document.getElementById('resumen_prendas');
+    if (resumenPrendas) {
+        const prendas = document.querySelectorAll('.producto-card');
+        console.log('📦 Prendas encontradas:', prendas.length);
+        
+        if (prendas.length === 0) {
+            resumenPrendas.innerHTML = '<p style="color: #666;">No hay prendas agregadas</p>';
+        } else {
+            resumenPrendas.innerHTML = '';
+            prendas.forEach((prenda, index) => {
+                const nombre = prenda.querySelector('input[name*="nombre_producto"]')?.value || 'Sin nombre';
+                
+                const div = document.createElement('div');
+                div.style.cssText = 'padding: 10px; background: #fff; border-left: 4px solid #3498db; border-radius: 4px;';
+                div.innerHTML = `<strong>${nombre}</strong>`;
+                resumenPrendas.appendChild(div);
+            });
+            console.log('✅ Prendas mostradas en resumen');
+        }
+    }
+    
+    // 5. DESCRIPCIÓN DEL LOGO
+    const resumenLogDesc = document.getElementById('resumen_logo_desc');
+    if (resumenLogDesc) {
+        const descLogo = document.getElementById('descripcion_logo');
+        const texto = descLogo?.value || '-';
+        resumenLogDesc.textContent = texto;
+        console.log('✅ Descripción logo actualizada');
+    }
+    
+    // 6. TÉCNICAS
+    const resumenTecnicas = document.getElementById('resumen_tecnicas');
+    if (resumenTecnicas) {
+        const tecnicas = document.querySelectorAll('#tecnicas_seleccionadas .tecnica-badge');
+        resumenTecnicas.innerHTML = '';
+        
+        if (tecnicas.length === 0) {
+            resumenTecnicas.innerHTML = '<span style="color: #666;">Ninguna</span>';
+        } else {
+            tecnicas.forEach(tecnica => {
+                const badge = document.createElement('span');
+                badge.style.cssText = 'background: #3498db; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.85rem;';
+                badge.textContent = tecnica.textContent || tecnica.innerText;
+                resumenTecnicas.appendChild(badge);
+            });
+        }
+        console.log('✅ Técnicas actualizado');
+    }
+    
+    console.log('✅ Resumen del paso 4 completamente actualizado');
 }
 
 function cargarDatosDelBorrador() {

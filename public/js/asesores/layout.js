@@ -84,6 +84,9 @@ document.addEventListener('DOMContentLoaded', function() {
 // ========================================
 // USER DROPDOWN
 // ========================================
+// COMENTADO: El manejo del dropdown de usuario se hace en top-nav.js para evitar conflictos
+// que causaban que el menú se cerrara inmediatamente después de abrirse
+/*
 document.addEventListener('DOMContentLoaded', function() {
     const userBtn = document.getElementById('userBtn');
     const userMenu = document.getElementById('userMenu');
@@ -91,7 +94,15 @@ document.addEventListener('DOMContentLoaded', function() {
     if (userBtn && userMenu) {
         userBtn.addEventListener('click', function(e) {
             e.stopPropagation();
+            e.preventDefault();
+            
+            console.log('User button clicked');
+            console.log('Current show state BEFORE:', userMenu.classList.contains('show'));
+            
             userMenu.classList.toggle('show');
+            
+            console.log('Current show state AFTER:', userMenu.classList.contains('show'));
+            console.log('Menu display:', window.getComputedStyle(userMenu).display);
             
             // Cerrar notificaciones si están abiertas
             const notificationMenu = document.getElementById('notificationMenu');
@@ -106,8 +117,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 userMenu.classList.remove('show');
             }
         });
+    } else {
+        console.warn('User button or menu not found in asesores layout');
     }
 });
+*/
 
 // ========================================
 // NOTIFICATION DROPDOWN

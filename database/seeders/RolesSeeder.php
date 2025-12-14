@@ -48,6 +48,16 @@ class RolesSeeder extends Seeder
                 'description' => 'Patronista - Visualización de insumos (solo lectura)',
                 'requires_credentials' => true,
             ],
+            [
+                'name' => 'supervisor_asesores',
+                'description' => 'Supervisor de Asesores - Gestión de cotizaciones y pedidos de todos los asesores',
+                'requires_credentials' => true,
+            ],
+            [
+                'name' => 'costurero',
+                'description' => 'Operario de costura',
+                'requires_credentials' => false,
+            ],
         ];
 
         foreach ($roles as $role) {

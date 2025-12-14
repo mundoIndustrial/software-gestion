@@ -70,7 +70,7 @@
 
 <!-- 4. Configuración global -->
 <script>
-    window.tipoCotizacionGlobal = 'PB'; // Prenda-Bordado
+    window.tipoCotizacionGlobal = 'PL'; // Prenda-Logo
     window.routes = window.routes || {};
     window.routes.guardarCotizacion = '{{ route("asesores.cotizaciones.guardar") }}';
     window.routes.cotizacionesIndex = '{{ route("asesores.cotizaciones.index") }}';

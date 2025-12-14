@@ -793,4 +793,72 @@ class RegistroOrdenController extends Controller
     /**
      * Obtener imágenes de una orden (DEPRECATED - Usar RegistroOrdenQueryController)
      */
+
+    /**
+     * Actualizar novedades de una orden
+     * POST /api/ordenes/{numero_pedido}/novedades
+     */
+    public function updateNovedades(Request $request, $numeroPedido)
+    {
+        try {
+            \Log::info('📝 updateNovedades iniciado', ['numeroPedido' => $numeroPedido]);
+            
+            // Validar entrada
+            $request->validate([
+                'novedades' => 'nullable|string|max:1000'
+            ]);
+
+            \Log::info('✅ Validación exitosa');
+
+            // Buscar la orden
+            $orden = PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
+            
+            \Log::info('✅ Orden encontrada', ['orden_id' => $orden->id]);
+
+            // Actualizar novedades
+            $orden->update([
+                'novedades' => $request->input('novedades', '')
+            ]);
+            
+            \Log::info('✅ Novedades actualizadas', ['novedades' => $request->input('novedades', '')]);
+
+            // Registrar en auditoría si existe
+            if (class_exists('App\Models\AuditLog')) {
+                \App\Models\AuditLog::create([
+                    'user_id' => auth()->id(),
+                    'action' => 'update_novedades',
+                    'auditable_type' => PedidoProduccion::class,
+                    'auditable_id' => $orden->id,
+                    'changes' => [
+                        'novedades' => $request->input('novedades', '')
+                    ]
+                ]);
+            }
+
+            // Broadcast actualización en tiempo real
+            broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', ['novedades']));
+            \Log::info('📡 Evento de broadcast enviado para novedades');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Novedades actualizadas correctamente',
+                'data' => [
+                    'numero_pedido' => $orden->numero_pedido,
+                    'novedades' => $orden->novedades
+                ]
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            \Log::error('❌ Orden no encontrada', ['numeroPedido' => $numeroPedido]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Orden no encontrada'
+            ], 404);
+        } catch (\Exception $e) {
+            \Log::error('❌ Error al actualizar novedades: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar las novedades: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

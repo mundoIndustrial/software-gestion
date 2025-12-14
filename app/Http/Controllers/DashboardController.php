@@ -188,6 +188,138 @@ class DashboardController extends Controller
     }
 
     /**
+     * Obtener notificaciones de entregas y registros en tableros para el admin
+     */
+    public function getAdminNotifications(Request $request)
+    {
+        $limit = $request->input('limit', 20);
+        $days = $request->input('days', 1); // Últimos N días
+        
+        $startDate = now()->subDays($days)->startOfDay();
+        
+        // Notificaciones de entregas y registros en tableros
+        $notificationTypes = [
+            'entrega_pedido_costura',
+            'entrega_pedido_corte',
+            'entrega_bodega_costura',
+            'entrega_bodega_corte',
+            'registro_piso_produccion',
+            'registro_piso_corte',
+            'registro_piso_polo',
+        ];
+        
+        $notifications = News::whereIn('table_name', $notificationTypes)
+            ->where('created_at', '>=', $startDate)
+            ->with('user')
+            ->orderBy('created_at', 'desc')
+            ->limit($limit)
+            ->get()
+            ->map(function ($item) {
+                $icon = $this->getNotificationIcon($item->table_name);
+                $color = $this->getNotificationColor($item->table_name);
+                
+                return [
+                    'id' => $item->id,
+                    'title' => $this->getNotificationTitle($item->table_name),
+                    'description' => $item->description,
+                    'icon' => $icon,
+                    'color' => $color,
+                    'created_at' => $item->created_at->format('d/m/Y H:i:s'),
+                    'time_ago' => $this->getTimeAgo($item->created_at),
+                    'user' => $item->user ? $item->user->name : 'Sistema',
+                    'pedido' => $item->pedido,
+                    'is_read' => $item->read_at !== null,
+                    'table_name' => $item->table_name
+                ];
+            });
+        
+        return response()->json([
+            'notifications' => $notifications,
+            'unread_count' => News::whereIn('table_name', $notificationTypes)
+                ->where('created_at', '>=', $startDate)
+                ->whereNull('read_at')
+                ->count(),
+            'total_count' => $notifications->count()
+        ]);
+    }
+    
+    /**
+     * Obtener icono según el tipo de notificación
+     */
+    private function getNotificationIcon($tableName)
+    {
+        $icons = [
+            'entrega_pedido_costura' => 'local_shipping',
+            'entrega_pedido_corte' => 'local_shipping',
+            'entrega_bodega_costura' => 'warehouse',
+            'entrega_bodega_corte' => 'warehouse',
+            'registro_piso_produccion' => 'manufacturing',
+            'registro_piso_corte' => 'content_cut',
+            'registro_piso_polo' => 'checkroom',
+        ];
+        
+        return $icons[$tableName] ?? 'notifications';
+    }
+    
+    /**
+     * Obtener color según el tipo de notificación
+     */
+    private function getNotificationColor($tableName)
+    {
+        $colors = [
+            'entrega_pedido_costura' => '#10b981',
+            'entrega_pedido_corte' => '#06b6d4',
+            'entrega_bodega_costura' => '#f59e0b',
+            'entrega_bodega_corte' => '#f59e0b',
+            'registro_piso_produccion' => '#667eea',
+            'registro_piso_corte' => '#8b5cf6',
+            'registro_piso_polo' => '#ec4899',
+        ];
+        
+        return $colors[$tableName] ?? '#6b7280';
+    }
+    
+    /**
+     * Obtener título legible según el tipo de notificación
+     */
+    private function getNotificationTitle($tableName)
+    {
+        $titles = [
+            'entrega_pedido_costura' => '📦 Entrega Costura - Pedido',
+            'entrega_pedido_corte' => '✂️ Entrega Corte - Pedido',
+            'entrega_bodega_costura' => '🏭 Entrega Costura - Bodega',
+            'entrega_bodega_corte' => '🏭 Entrega Corte - Bodega',
+            'registro_piso_produccion' => '⚙️ Registro - Producción',
+            'registro_piso_corte' => '✂️ Registro - Corte',
+            'registro_piso_polo' => '👕 Registro - Polos',
+        ];
+        
+        return $titles[$tableName] ?? 'Notificación del Sistema';
+    }
+    
+    /**
+     * Calcular tiempo transcurrido
+     */
+    private function getTimeAgo($date)
+    {
+        $now = now();
+        $diff = $now->diffInSeconds($date);
+        
+        if ($diff < 60) {
+            return 'hace unos segundos';
+        } elseif ($diff < 3600) {
+            $minutes = floor($diff / 60);
+            return "hace $minutes " . ($minutes === 1 ? 'minuto' : 'minutos');
+        } elseif ($diff < 86400) {
+            $hours = floor($diff / 3600);
+            return "hace $hours " . ($hours === 1 ? 'hora' : 'horas');
+        } else {
+            $days = floor($diff / 86400);
+            return "hace $days " . ($days === 1 ? 'día' : 'días');
+        }
+    }
+
+    /**
      * Get aggregated delivery data for entregas_pedido_costura or entregas_bodega_costura grouped by costurero.
      * Supports filtering by year, month, and week.
      */

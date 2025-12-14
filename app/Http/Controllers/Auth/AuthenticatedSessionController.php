@@ -83,6 +83,11 @@ class AuthenticatedSessionController extends Controller
                 return redirect(route('supervisor-pedidos.index', absolute: false));
             }
 
+            // Supervisor de Asesores - Supervisión de asesores, cotizaciones y pedidos
+            if ($roleName === 'supervisor_asesores') {
+                return redirect(route('supervisor-asesores.dashboard', absolute: false));
+            }
+
             // Cortador - Dashboard de operario
             if ($roleName === 'cortador') {
                 return redirect(route('operario.dashboard', absolute: false));

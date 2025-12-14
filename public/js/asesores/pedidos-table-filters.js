@@ -240,9 +240,18 @@ function applyFilters() {
     console.log('Filtros aplicados:', selectedFilters);
     saveFiltersToLocalStorage();  // 💾 Guardar en localStorage
     closeFilterModal();
-    applyTableFilters();
-    updateFilterBadges();  // 🔴 Actualizar badges
-    updateClearButtonVisibility();  // 🔴 Mostrar/ocultar botón flotante
+    
+    // Redirigir con parámetros de filtro en la URL para mantener con paginación
+    const filterParams = new URLSearchParams();
+    Object.entries(selectedFilters).forEach(([column, values]) => {
+        values.forEach(value => {
+            filterParams.append(`filter[${column}][]`, value);
+        });
+    });
+    
+    const newUrl = `${window.location.pathname}?${filterParams.toString()}`;
+    console.log('🔗 Redirigiendo a:', newUrl);
+    window.location.href = newUrl;
 }
 
 /**
@@ -254,10 +263,11 @@ function resetFilters() {
     document.querySelectorAll('.filter-options input[type="checkbox"]').forEach(cb => {
         cb.checked = false;
     });
-    applyTableFilters();
-    updateFilterBadges();  // 🔴 Actualizar badges
-    updateClearButtonVisibility();  // 🔴 Mostrar/ocultar botón flotante
     closeFilterModal();
+    
+    // Redirigir sin filtros
+    console.log('🔄 Limpiando filtros...');
+    window.location.href = window.location.pathname;
 }
 
 /**
@@ -337,11 +347,41 @@ function applyTableFilters() {
 }
 
 /**
+ * Cargar filtros desde URL (query parameters)
+ */
+function loadFiltersFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const urlFilters = {};
+    
+    // Procesar parámetros filter[columna][]
+    params.forEach((value, key) => {
+        const match = key.match(/filter\[(.+?)\]/);
+        if (match) {
+            const columnName = match[1];
+            if (!urlFilters[columnName]) {
+                urlFilters[columnName] = [];
+            }
+            urlFilters[columnName].push(value);
+        }
+    });
+    
+    if (Object.keys(urlFilters).length > 0) {
+        selectedFilters = urlFilters;
+        console.log('📋 Filtros cargados desde URL:', selectedFilters);
+        return true;
+    }
+    return false;
+}
+
+/**
  * Inicializar los botones de filtro
  */
 document.addEventListener('DOMContentLoaded', function() {
-    // 📂 Cargar filtros guardados desde localStorage
-    loadFiltersFromLocalStorage();
+    // 📂 Cargar filtros: primero desde URL, luego desde localStorage
+    const hasURLFilters = loadFiltersFromURL();
+    if (!hasURLFilters) {
+        loadFiltersFromLocalStorage();
+    }
     
     // Obtener el header de la tabla para mapear correctamente
     const tableContainer = document.querySelector('.table-scroll-container');
@@ -375,13 +415,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // ✅ Aplicar filtros guardados a la tabla
+    // ✅ Aplicar filtros a la tabla
     if (Object.keys(selectedFilters).length > 0) {
-        console.log('✅ Aplicando filtros guardados:', selectedFilters);
+        console.log('✅ Aplicando filtros:', selectedFilters);
         applyTableFilters();
-        updateFilterBadges();  // 🔴 Actualizar badges
-        updateClearButtonVisibility();  // 🔴 Mostrar botón flotante
+        updateFilterBadges();
+        updateClearButtonVisibility();
     }
+    
+    // Actualizar links de paginación para mantener filtros
+    updatePaginationLinks();
     
     // Cerrar modal al hacer clic fuera
     const filterModal = document.getElementById('filterModal');
@@ -396,6 +439,46 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+/**
+ * Actualizar links de paginación para mantener parámetros de filtro
+ */
+function updatePaginationLinks() {
+    const filterParams = new URLSearchParams();
+    Object.entries(selectedFilters).forEach(([column, values]) => {
+        values.forEach(value => {
+            filterParams.append(`filter[${column}][]`, value);
+        });
+    });
+    
+    if (filterParams.toString() === '') return;
+    
+    // Buscar todos los links de paginación y agregar los parámetros de filtro
+    const paginationLinks = document.querySelectorAll('a[href*="page="]');
+    paginationLinks.forEach(link => {
+        const url = new URL(link.href);
+        const filterStr = filterParams.toString();
+        
+        // Mantener el parámetro page= existente y agregar filtros
+        if (filterStr) {
+            // Separar query string existente de los filtros
+            const existingParams = new URLSearchParams(url.search);
+            const pageNum = existingParams.get('page');
+            
+            // Crear nuevo query string con page y filtros
+            const newParams = new URLSearchParams();
+            if (pageNum) newParams.set('page', pageNum);
+            filterParams.forEach((value, key) => {
+                newParams.append(key, value);
+            });
+            
+            url.search = '?' + newParams.toString();
+            link.href = url.toString();
+        }
+    });
+    
+    console.log('🔗 Links de paginación actualizados con filtros');
+}
 
 /**
  * Actualizar badges de filtros activos

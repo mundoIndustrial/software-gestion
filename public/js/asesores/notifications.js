@@ -67,30 +67,64 @@ function renderNotifications(data) {
     
     const notifications = [];
     
-    // Agregar órdenes próximas a vencer
-    if (data.ordenes_proximas_vencer && data.ordenes_proximas_vencer.length > 0) {
-        data.ordenes_proximas_vencer.forEach(orden => {
-            const diasRestantes = Math.ceil((new Date(orden.fecha_entrega) - new Date()) / (1000 * 60 * 60 * 24));
+    // ============================================
+    // NUEVO: Pedidos/Cotizaciones de OTROS asesores
+    // ============================================
+    // Agregar notificaciones de otros asesores
+    if (data.pedidos_otros_asesores && data.pedidos_otros_asesores.length > 0) {
+        data.pedidos_otros_asesores.forEach(pedido => {
+            const fecha = new Date(pedido.created_at);
+            const horasTranscurridas = Math.floor((new Date() - fecha) / (1000 * 60 * 60));
+            let tiempoTranscurrido = '';
+            
+            if (horasTranscurridas < 1) {
+                const minutosTranscurridos = Math.floor((new Date() - fecha) / (1000 * 60));
+                tiempoTranscurrido = `${minutosTranscurridos} min`;
+            } else if (horasTranscurridas < 24) {
+                tiempoTranscurrido = `${horasTranscurridas} hora${horasTranscurridas !== 1 ? 's' : ''}`;
+            } else {
+                const diasTranscurridos = Math.floor(horasTranscurridas / 24);
+                tiempoTranscurrido = `${diasTranscurridos} día${diasTranscurridos !== 1 ? 's' : ''}`;
+            }
+            
+            notifications.push({
+                icon: 'fa-shopping-cart',
+                color: '#10b981',
+                title: `${pedido.asesor_nombre} - COT-${String(pedido.numero_cotizacion).padStart(5, '0')}`,
+                message: `PED-${String(pedido.numero_pedido).padStart(5, '0')} - ${pedido.cliente}`,
+                time: `Hace ${tiempoTranscurrido}`,
+                link: `#`
+            });
+        });
+    }
+    
+    // ============================================
+    // ANTERIOR: Órdenes próximas a vencer (propias)
+    // ============================================
+    // Agregar órdenes propias próximas a vencer
+    if (data.pedidos_proximos_entregar && data.pedidos_proximos_entregar.length > 0) {
+        data.pedidos_proximos_entregar.forEach(orden => {
+            const diasRestantes = Math.ceil((new Date(orden.fecha_estimada_de_entrega) - new Date()) / (1000 * 60 * 60 * 24));
             notifications.push({
                 icon: 'fa-clock',
                 color: '#3b82f6',
-                title: 'Orden próxima a vencer',
-                message: `${orden.numero_orden} - ${orden.cliente}`,
+                title: 'Tu orden próxima a vencer',
+                message: `${orden.numero_pedido} - ${orden.cliente}`,
                 time: `Vence en ${diasRestantes} día${diasRestantes !== 1 ? 's' : ''}`,
                 link: `/asesores/ordenes/${orden.id}`
             });
         });
     }
     
-    // Agregar órdenes urgentes
-    if (data.ordenes_urgentes > 0) {
+    // Agregar órdenes urgentes (propias)
+    if (data.pedidos_en_ejecucion > 0) {
         notifications.push({
             icon: 'fa-exclamation-triangle',
             color: '#ef4444',
-            title: 'Órdenes urgentes pendientes',
-            message: `Tienes ${data.ordenes_urgentes} orden${data.ordenes_urgentes !== 1 ? 'es' : ''} urgente${data.ordenes_urgentes !== 1 ? 's' : ''} pendiente${data.ordenes_urgentes !== 1 ? 's' : ''}`,
+            title: 'Órdenes en ejecución',
+            message: `Tienes ${data.pedidos_en_ejecucion} orden${data.pedidos_en_ejecucion !== 1 ? 'es' : ''} en ejecución`,
             time: 'Requiere atención',
-            link: '/asesores/ordenes?estado=pendiente&prioridad=urgente'
+            link: '/asesores/ordenes?estado=En%20Ejecucion'
         });
     }
     
@@ -99,7 +133,7 @@ function renderNotifications(data) {
         notificationList.innerHTML = `
             <div class="notification-empty">
                 <i class="fas fa-bell-slash"></i>
-                <p>No tienes notificaciones</p>
+                <p>Sin novedad en otros asesores</p>
             </div>
         `;
     } else {

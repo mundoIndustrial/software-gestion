@@ -36,7 +36,9 @@ class FiltroEmbudo {
     // Cargar valores únicos desde la BD
     cargarValoresFiltro() {
         console.log('🔄 Iniciando carga de valores de filtro...');
-        fetch('/asesores/cotizaciones/filtros/valores')
+        const url = window.FILTER_VALUES_URL || '/asesores/cotizaciones/filtros/valores';
+        console.log('📡 Usando URL:', url);
+        fetch(url)
             .then(response => {
                 console.log('📡 Respuesta recibida:', response.status);
                 console.log('📡 Content-Type:', response.headers.get('content-type'));
@@ -71,6 +73,9 @@ class FiltroEmbudo {
 
         // Poblar Cliente
         this.poblarCheckboxes('cliente', this.valoresFiltro.clientes);
+
+        // Poblar Asesor (para supervisor-asesores)
+        this.poblarCheckboxes('asesor', this.valoresFiltro.asesores);
 
         // Poblar Tipo
         this.poblarCheckboxes('tipo', this.valoresFiltro.tipos);

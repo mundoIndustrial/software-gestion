@@ -1,0 +1,46 @@
+/* ========================================
+   SUPERVISOR ASESORES - LAYOUT ESPECÍFICO
+   ======================================== */
+
+/* Container principal para supervisor-asesores */
+body[data-module="supervisor-asesores"] .container {
+    display: flex !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+}
+
+/* Asegurar que el sidebar no se comprima */
+body[data-module="supervisor-asesores"] .sidebar {
+    flex-shrink: 0 !important;
+}
+
+/* Main content se expande completamente */
+body[data-module="supervisor-asesores"] .main-content {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: auto !important;
+    max-width: none !important;
+    margin-right: 0 !important;
+    padding-right: 0 !important;
+    margin-left: var(--sidebar-width) !important;
+}
+
+/* Page content ocupa todo el ancho disponible */
+body[data-module="supervisor-asesores"] .page-content {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0.5rem !important;
+}
+
+/* Asegurar que tablas y contenedores dentro se expandan */
+body[data-module="supervisor-asesores"] table {
+    width: 100% !important;
+}
+
+body[data-module="supervisor-asesores"] .table-wrapper {
+    width: 100% !important;
+    overflow-x: auto !important;
+}

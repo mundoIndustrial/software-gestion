@@ -1,0 +1,310 @@
+/**
+ * Estilos para Botón y Modal de Edición de Novedades - AZUL
+ */
+
+/* ===== BOTÓN DE EDITAR ===== */
+.btn-edit-novedades {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    max-width: 100%;
+    justify-content: space-between;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.btn-edit-novedades:hover {
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-edit-novedades:active {
+    transform: translateY(0);
+}
+
+.btn-edit-novedades .novedades-text {
+    flex: 1;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    text-align: left;
+    font-size: 0.8rem;
+}
+
+.btn-edit-novedades .novedades-text.empty {
+    color: rgba(255, 255, 255, 0.7);
+    font-style: italic;
+}
+
+.btn-edit-novedades .material-symbols-rounded {
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+/* ===== MODAL DE NOVEDADES ===== */
+.novedades-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeInNovedades 0.3s ease-out;
+}
+
+.novedades-modal-overlay[style*="display: none"] {
+    display: none !important;
+}
+
+@keyframes fadeInNovedades {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.novedades-modal-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 600px;
+    overflow: hidden;
+    animation: slideUpNovedades 0.3s ease-out;
+    z-index: 10001;
+}
+
+@keyframes slideUpNovedades {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.novedades-modal-header {
+    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+    color: white;
+    padding: 24px;
+    border-bottom: none;
+    position: relative;
+}
+
+.novedades-modal-title {
+    margin: 0 0 8px 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.novedades-order-number {
+    margin: 0;
+    font-size: 0.875rem;
+    opacity: 0.9;
+    font-weight: 500;
+}
+
+.novedades-modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.novedades-modal-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.novedades-modal-close .material-symbols-rounded {
+    font-size: 20px;
+}
+
+.novedades-modal-body {
+    padding: 24px;
+}
+
+.novedades-textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    resize: vertical;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+    color: #1f2937;
+}
+
+.novedades-textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.novedades-textarea::placeholder {
+    color: #9ca3af;
+}
+
+.textarea-counter {
+    text-align: right;
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-top: 8px;
+    font-weight: 500;
+}
+
+.novedades-modal-footer {
+    padding: 16px 24px;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+}
+
+.btn-cancel,
+.btn-save {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-cancel {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.btn-cancel:hover {
+    background: #d1d5db;
+    transform: translateY(-2px);
+}
+
+.btn-save {
+    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+    color: white;
+}
+
+.btn-save:hover {
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-cancel .material-symbols-rounded,
+.btn-save .material-symbols-rounded {
+    font-size: 18px;
+}
+
+/* Estados de carga */
+.btn-save.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.btn-save.loading::after {
+    content: '';
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    margin-left: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spinNovedades 0.6s linear infinite;
+}
+
+@keyframes spinNovedades {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .novedades-modal-content {
+        width: 95%;
+        max-width: none;
+    }
+
+    .novedades-modal-header {
+        padding: 16px;
+    }
+
+    .novedades-modal-title {
+        font-size: 1.25rem;
+    }
+
+    .novedades-modal-body {
+        padding: 16px;
+    }
+
+    .novedades-modal-footer {
+        padding: 12px 16px;
+        gap: 8px;
+    }
+
+    .btn-cancel,
+    .btn-save {
+        flex: 1;
+        justify-content: center;
+        padding: 10px 16px;
+    }
+}
+
+
+/* Responsive */
+@media (max-width: 768px) {
+    .btn-edit-novedades {
+        padding: 4px 8px;
+        font-size: 0.75rem;
+    }
+
+    .btn-edit-novedades .material-symbols-rounded {
+        font-size: 16px;
+    }
+}
+
+/* Estado hover del contenedor */
+.table-cell:has(.btn-edit-novedades):hover {
+    background: rgba(102, 126, 234, 0.05);
+}

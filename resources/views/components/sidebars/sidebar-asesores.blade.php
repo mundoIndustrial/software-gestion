@@ -189,21 +189,10 @@
                         <span class="menu-label">Clientes</span>
                     </a>
                 </li>
-                <li class="menu-item">
-                    <a href="{{ route('asesores.reportes.index') }}"
-                       class="menu-link {{ request()->routeIs('asesores.reportes.*') ? 'active' : '' }}">
-                        <span class="material-symbols-rounded">bar_chart</span>
-                        <span class="menu-label">Reportes</span>
-                    </a>
-                </li>
             </ul>
         </div>
     </div>
 
     <div class="sidebar-footer">
-        <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema">
-            <span class="material-symbols-rounded">light_mode</span>
-            <span class="theme-text">Tema</span>
-        </button>
     </div>
 </aside>

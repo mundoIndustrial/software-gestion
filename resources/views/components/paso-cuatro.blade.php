@@ -48,22 +48,7 @@
             </div>
         </div>
 
-        <!-- RESUMEN REFLECTIVO -->
-        <div style="background: #f0f7ff; border: 2px solid #3498db; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-            <h3 style="margin: 0 0 10px 0; color: #0066cc;">✨ REFLECTIVO</h3>
-            <div>
-                <p style="margin: 0 0 10px 0; font-size: 0.9rem;"><strong>Descripción:</strong></p>
-                <p style="margin: 0; font-size: 0.9rem; color: #666;" id="resumen_reflectivo_desc">-</p>
-            </div>
-            <div style="margin-top: 10px;">
-                <p style="margin: 0 0 10px 0; font-size: 0.9rem;"><strong>Ubicación:</strong></p>
-                <p style="margin: 0; font-size: 0.9rem; color: #666;" id="resumen_reflectivo_ubicacion">-</p>
-            </div>
-            <div style="margin-top: 10px;">
-                <p style="margin: 0 0 10px 0; font-size: 0.9rem;"><strong>Observaciones:</strong></p>
-                <div id="resumen_reflectivo_observaciones" style="display: flex; flex-direction: column; gap: 5px;"></div>
-            </div>
-        </div>
+
     </div>
 
     <div class="form-actions">

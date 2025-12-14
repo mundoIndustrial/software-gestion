@@ -75,6 +75,24 @@ const RealtimeOrderHandler = {
                 dropdown.value = ordenData.dia_de_entrega || '';
                 console.log(`✅ Día de entrega actualizado: ${ordenData.dia_de_entrega}`);
             }
+        } else if (field === 'novedades') {
+            // 🆕 Actualizar campo de novedades en tiempo real
+            const btnEdit = row.querySelector('.btn-edit-novedades');
+            if (btnEdit && ordenData.novedades !== undefined) {
+                const textSpan = btnEdit.querySelector('.novedades-text');
+                if (textSpan) {
+                    if (ordenData.novedades) {
+                        textSpan.textContent = ordenData.novedades.length > 50 
+                            ? ordenData.novedades.substring(0, 50) + '...' 
+                            : ordenData.novedades;
+                        textSpan.classList.remove('empty');
+                    } else {
+                        textSpan.textContent = 'Sin novedades';
+                        textSpan.classList.add('empty');
+                    }
+                    console.log(`✅ Novedades actualizadas en tiempo real: ${ordenData.novedades ? 'Con contenido' : 'Vacío'}`);
+                }
+            }
         }
     },
 

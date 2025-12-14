@@ -64,6 +64,7 @@ Route::middleware(['auth', 'supervisor-access'])->group(function () {
     Route::get('/dashboard/kpis', [DashboardController::class, 'getKPIs'])->name('dashboard.kpis');
     Route::get('/dashboard/recent-orders', [DashboardController::class, 'getRecentOrders'])->name('dashboard.recent-orders');
     Route::get('/dashboard/news', [DashboardController::class, 'getNews'])->name('dashboard.news');
+    Route::get('/dashboard/admin-notifications', [DashboardController::class, 'getAdminNotifications'])->name('dashboard.admin-notifications');
     Route::post('/dashboard/news/mark-all-read', [DashboardController::class, 'markAllAsRead'])->name('dashboard.news.mark-all-read');
     Route::get('/dashboard/audit-stats', [DashboardController::class, 'getAuditStats'])->name('dashboard.audit-stats');
     Route::get('/entrega/{tipo}', [EntregaController::class, 'index'])->name('entrega.index')->where('tipo', 'pedido|bodega');
@@ -109,6 +110,7 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
 
     Route::get('/api/bodega/{numero_pedido}/dias', [RegistroBodegaController::class, 'calcularDiasAPI'])->name('api.bodega.dias');
     Route::get('/api/ordenes/{id}/procesos', [App\Http\Controllers\OrdenController::class, 'getProcesos'])->name('api.ordenes.procesos');
+    Route::post('/api/ordenes/{numero_pedido}/novedades', [RegistroOrdenController::class, 'updateNovedades'])->name('api.ordenes.novedades');
     Route::put('/api/procesos/{id}/editar', [App\Http\Controllers\OrdenController::class, 'editarProceso'])->name('api.procesos.editar');
     Route::delete('/api/procesos/{id}/eliminar', [App\Http\Controllers\OrdenController::class, 'eliminarProceso'])->name('api.procesos.eliminar');
     Route::post('/api/procesos/buscar', [App\Http\Controllers\OrdenController::class, 'buscarProceso'])->name('api.procesos.buscar');
@@ -416,6 +418,38 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     Route::put('/cotizaciones/bordado/{cotizacion}', [CotizacionBordadoController::class, 'update'])->name('cotizaciones-bordado.update');
     Route::post('/cotizaciones/bordado/{cotizacion}/enviar', [CotizacionBordadoController::class, 'enviar'])->name('cotizaciones-bordado.enviar');
     Route::delete('/cotizaciones/bordado/{cotizacion}', [CotizacionBordadoController::class, 'destroy'])->name('cotizaciones-bordado.destroy');
+});
+
+// ========================================
+// RUTAS PARA SUPERVISOR DE ASESORES
+// ========================================
+Route::middleware(['auth', 'role:supervisor_asesores,admin'])->prefix('supervisor-asesores')->name('supervisor-asesores.')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [App\Http\Controllers\SupervisorAsesoresController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard-stats', [App\Http\Controllers\SupervisorAsesoresController::class, 'dashboardStats'])->name('dashboard-stats');
+    
+    // Cotizaciones
+    Route::get('/cotizaciones', [App\Http\Controllers\SupervisorAsesoresController::class, 'cotizacionesIndex'])->name('cotizaciones.index');
+    Route::get('/cotizaciones/data', [App\Http\Controllers\SupervisorAsesoresController::class, 'cotizacionesData'])->name('cotizaciones.data');
+    Route::get('/cotizaciones/filtros/valores', [App\Http\Controllers\SupervisorAsesoresController::class, 'cotizacionesFiltrosValores'])->name('cotizaciones.filtros.valores');
+    
+    // Pedidos
+    Route::get('/pedidos', [App\Http\Controllers\SupervisorAsesoresController::class, 'pedidosIndex'])->name('pedidos.index');
+    Route::get('/pedidos/data', [App\Http\Controllers\SupervisorAsesoresController::class, 'pedidosData'])->name('pedidos.data');
+    
+    // Asesores
+    Route::get('/asesores', [App\Http\Controllers\SupervisorAsesoresController::class, 'asesoresIndex'])->name('asesores.index');
+    Route::get('/asesores/data', [App\Http\Controllers\SupervisorAsesoresController::class, 'asesoresData'])->name('asesores.data');
+    Route::get('/asesores/{id}', [App\Http\Controllers\SupervisorAsesoresController::class, 'asesoresShow'])->name('asesores.show');
+    
+    // Reportes
+    Route::get('/reportes', [App\Http\Controllers\SupervisorAsesoresController::class, 'reportesIndex'])->name('reportes.index');
+    Route::get('/reportes/data', [App\Http\Controllers\SupervisorAsesoresController::class, 'reportesData'])->name('reportes.data');
+    
+    // Perfil
+    Route::get('/perfil', [App\Http\Controllers\SupervisorAsesoresController::class, 'profileIndex'])->name('profile.index');
+    Route::get('/perfil/stats', [App\Http\Controllers\SupervisorAsesoresController::class, 'profileStats'])->name('profile.stats');
+    Route::post('/perfil/password-update', [App\Http\Controllers\SupervisorAsesoresController::class, 'profilePasswordUpdate'])->name('profile.password-update');
 });
 
 // ========== DEBUG ROUTES PARA OPTIMIZACIÓN DE /registros ==========

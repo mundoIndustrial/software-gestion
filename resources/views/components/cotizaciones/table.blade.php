@@ -46,6 +46,12 @@
                                     <td style="padding: 12px; color: #333; font-size: 0.9rem;" data-filter-column="cliente">
                                         {{ $cot->cliente ?? 'Sin cliente' }}
                                     </td>
+                                @elseif($column['key'] === 'asesor')
+                                    <td style="padding: 12px; color: #333; font-size: 0.9rem;" data-filter-column="asesor">
+                                        <span style="background: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 8px;">
+                                            {{ $cot->asesor_nombre ?? 'Desconocido' }}
+                                        </span>
+                                    </td>
                                 @elseif($column['key'] === 'tipo')
                                     <td style="padding: 12px;" data-filter-column="tipo">
                                         <span style="background: #e3f2fd; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">

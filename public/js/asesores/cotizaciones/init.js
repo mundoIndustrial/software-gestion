@@ -71,6 +71,51 @@
             console.log(`✓ Tipo de cotización: ${window.tipoCotizacionGlobal}`);
         }
 
+        // 🔄 AGREGAR EVENT LISTENERS PARA ACTUALIZAR RESUMEN EN TIEMPO REAL
+        const camposAObservar = [
+            'cliente',
+            'fechaActual',
+            'descripcion_logo',
+            'observaciones_tecnicas'
+        ];
+
+        camposAObservar.forEach(campoId => {
+            const campo = document.getElementById(campoId);
+            if (campo) {
+                // Input/change para cambios
+                campo.addEventListener('input', () => {
+                    console.log(`📝 Campo ${campoId} modificado, actualizando resumen...`);
+                    actualizarResumenFriendly();
+                });
+                
+                // Change para inputs de fecha/select
+                campo.addEventListener('change', () => {
+                    console.log(`📝 Campo ${campoId} cambiado, actualizando resumen...`);
+                    actualizarResumenFriendly();
+                });
+            }
+        });
+
+        // Observar cambios en técnicas seleccionadas
+        const tecnicasContainer = document.getElementById('tecnicas_seleccionadas');
+        if (tecnicasContainer) {
+            const observer = new MutationObserver(() => {
+                console.log('🔄 Técnicas modificadas, actualizando resumen...');
+                actualizarResumenFriendly();
+            });
+            observer.observe(tecnicasContainer, { childList: true, subtree: true });
+        }
+
+        // Observar adición/eliminación de productos
+        const formSection = document.querySelector('.form-section');
+        if (formSection) {
+            const observer = new MutationObserver(() => {
+                console.log('🔄 Productos modificados, actualizando resumen...');
+                setTimeout(() => actualizarResumenFriendly(), 100);
+            });
+            observer.observe(formSection, { childList: true, subtree: true });
+        }
+
         // Aquí puedes agregar más inicializaciones específicas
         console.log('✅ Formulario inicializado correctamente');
     }

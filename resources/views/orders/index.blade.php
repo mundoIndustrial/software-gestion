@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="{{ asset('css/orders styles/action-menu.css') }}">
     <link rel="stylesheet" href="{{ asset('css/orders styles/filter-system.css') }}">
     <link rel="stylesheet" href="{{ asset('css/orders styles/row-conditional-colors.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/novedades-button.css') }}?v={{ time() }}">
 @endpush
 
 @section('content')
@@ -156,7 +157,18 @@
                                 <!-- Novedades -->
                                 <div class="table-cell" style="flex: 0 0 120px;">
                                     <div class="cell-content" style="justify-content: flex-start;">
-                                        <span>{{ $orden->novedades ?? '-' }}</span>
+                                        <button 
+                                            class="btn-edit-novedades"
+                                            onclick="event.stopPropagation(); openNovedadesModal('{{ $orden->numero_pedido }}', `{{ addslashes($orden->novedades ?? '') }}`)"
+                                            title="Editar novedades"
+                                            type="button">
+                                            @if($orden->novedades)
+                                                <span class="novedades-text">{{ Str::limit($orden->novedades, 50, '...') }}</span>
+                                            @else
+                                                <span class="novedades-text empty">Sin novedades</span>
+                                            @endif
+                                            <span class="material-symbols-rounded">edit</span>
+                                        </button>
                                     </div>
                                 </div>
                                 
@@ -260,6 +272,9 @@
     <!-- Modal de Seguimiento del Pedido -->
     <x-orders-components.order-tracking-modal />
 
+    <!-- Modal para Editar Novedades -->
+    @include('components.modals.novedades-edit-modal')
+
     <!-- Modal de confirmación moderno para eliminar orden -->
     <div id="deleteConfirmationModal" class="delete-confirmation-modal" style="display: none;">
         <div class="delete-modal-overlay" id="deleteModalOverlay"></div>
@@ -336,15 +351,15 @@
         });
     </script>
 
-    <!-- MODAL DE SEGUIMIENTO DEL PEDIDO -->
-    @include('components.orders-components.order-tracking-modal')
-
 @endsection
 
 @push('scripts')
 
     <!-- ORDER DETAIL MODAL MANAGER (debe cargarse antes de otros scripts) -->
     <script src="{{ asset('js/orders js/order-detail-modal-manager.js') }}?v={{ time() }}"></script>
+    
+    <!-- NOVEDADES MODAL MANAGER -->
+    <script src="{{ asset('js/orders js/novedades-modal.js') }}?v={{ time() }}"></script>
     
     <!-- ORDERS TABLE MODULES (SOLID Architecture) -->
     <script src="{{ asset('js/orders js/modules/formatting.js') }}?v={{ time() }}"></script>

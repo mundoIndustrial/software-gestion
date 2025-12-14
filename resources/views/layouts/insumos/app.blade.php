@@ -142,11 +142,6 @@
         </div>
 
         <div class="sidebar-footer">
-            <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema">
-                <span class="material-symbols-rounded">light_mode</span>
-                <span class="theme-text">Tema</span>
-            </button>
-            
             <a href="{{ route('logout') }}" 
                onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
                class="logout-btn"

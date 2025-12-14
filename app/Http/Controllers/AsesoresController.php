@@ -467,7 +467,33 @@ class AsesoresController extends Controller
         // Obtener IDs de pedidos ya vistos por el usuario
         $viewedPedidoIds = session('viewed_pedidos_' . $userId, []);
         
-        // Pedidos próximos a entregar (próximos 7 días)
+        // ============================================
+        // NUEVO: Pedidos/Cotizaciones de OTROS asesores
+        // ============================================
+        // Pedidos recientes de otros asesores (últimas 24 horas)
+        $pedidosOtrosAsesores = PedidoProduccion::where('asesor_id', '!=', $userId)
+            ->whereNotNull('asesor_id')
+            ->where('created_at', '>=', now()->subHours(24))
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->with('asesora')
+            ->get()
+            ->map(function($pedido) {
+                return [
+                    'id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'numero_cotizacion' => $pedido->numero_cotizacion,
+                    'cliente' => $pedido->cliente,
+                    'asesor_nombre' => $pedido->asesora?->name ?? 'Desconocido',
+                    'estado' => $pedido->estado,
+                    'created_at' => $pedido->created_at,
+                ];
+            });
+
+        // ============================================
+        // ANTERIOR: Pedidos propios próximos a vencer
+        // ============================================
+        // Pedidos propios próximos a entregar (próximos 7 días)
         $pedidosProximosEntregar = PedidoProduccion::where('asesor_id', $userId)
             ->whereIn('estado', ['No iniciado', 'En Ejecución'])
             ->where('created_at', '<=', now()->addDays(7))
@@ -475,16 +501,17 @@ class AsesoresController extends Controller
             ->orderBy('created_at')
             ->get();
 
-        // Pedidos en ejecución
+        // Pedidos propios en ejecución
         $pedidosEnEjecucion = PedidoProduccion::where('asesor_id', $userId)
             ->where('estado', 'En Ejecución')
             ->whereNotIn('id', $viewedPedidoIds)
             ->count();
 
         return response()->json([
+            'pedidos_otros_asesores' => $pedidosOtrosAsesores,
             'pedidos_proximos_entregar' => $pedidosProximosEntregar,
             'pedidos_en_ejecucion' => $pedidosEnEjecucion,
-            'total_notificaciones' => $pedidosProximosEntregar->count() + $pedidosEnEjecucion
+            'total_notificaciones' => $pedidosOtrosAsesores->count() + $pedidosProximosEntregar->count() + $pedidosEnEjecucion
         ]);
     }
 
