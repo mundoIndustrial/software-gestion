@@ -79,6 +79,9 @@ const RealtimeOrderHandler = {
             // 🆕 Actualizar campo de novedades en tiempo real
             const btnEdit = row.querySelector('.btn-edit-novedades');
             if (btnEdit && ordenData.novedades !== undefined) {
+                // 🆕 Guardar el valor completo en data-full-novedades
+                btnEdit.setAttribute('data-full-novedades', ordenData.novedades || '');
+                
                 const textSpan = btnEdit.querySelector('.novedades-text');
                 if (textSpan) {
                     if (ordenData.novedades) {

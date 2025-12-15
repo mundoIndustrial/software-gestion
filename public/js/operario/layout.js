@@ -4,7 +4,7 @@
  */
 
 document.addEventListener('DOMContentLoaded', function() {
-    // setupUserDropdown(); // COMENTADO: El manejo del dropdown se hace en top-nav.js para evitar conflictos
+    setupUserDropdown();
     setupSearch();
 });
 

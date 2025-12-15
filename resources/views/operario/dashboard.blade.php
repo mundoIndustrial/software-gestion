@@ -85,8 +85,12 @@
                             <!-- Contenido Derecho -->
                             <div class="orden-right">
                                 <div class="orden-fecha">
-                                    <span class="orden-fecha-label">FECHA</span>
+                                    <span class="orden-fecha-label">FECHA INICIO</span>
                                     <span>{{ $pedido['fecha_creacion'] }}</span>
+                                </div>
+                                <div class="orden-fecha">
+                                    <span class="orden-fecha-label">EN {{ strtoupper($operario->areaOperario) }}</span>
+                                    <span>{{ $pedido['fecha_inicio_proceso'] }}</span>
                                 </div>
                                 <a href="{{ route('operario.ver-pedido', $pedido['numero_pedido']) }}" class="action-arrow">
                                     <span class="material-symbols-rounded">arrow_forward</span>
@@ -509,6 +513,32 @@
         document.getElementById('numeroPedidoReportar').value = numeroPedido;
         document.getElementById('numeroPedidoDisplay').textContent = '#' + numeroPedido;
         document.getElementById('clienteReportar').textContent = cliente;
+        document.getElementById('novedadText').value = '';
+        document.getElementById('novedadesAnteriores').innerHTML = '<p style="color: #999;">Cargando novedades...</p>';
+        
+        // Cargar novedades anteriores
+        fetch('/operario/api/novedades/' + numeroPedido)
+            .then(response => response.json())
+            .then(data => {
+                const contenedor = document.getElementById('novedadesAnteriores');
+                if (data.success && data.novedades) {
+                    const novedades = data.novedades.split('\n\n').filter(n => n.trim());
+                    if (novedades.length > 0) {
+                        contenedor.innerHTML = '<div class="novedades-list">' + 
+                            novedades.map(novedad => `<div class="novedad-item">${novedad}</div>`).join('') + 
+                            '</div>';
+                    } else {
+                        contenedor.innerHTML = '<p style="color: #999;">No hay novedades anteriores</p>';
+                    }
+                } else {
+                    contenedor.innerHTML = '<p style="color: #999;">No hay novedades anteriores</p>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('novedadesAnteriores').innerHTML = '<p style="color: #999;">No hay novedades anteriores</p>';
+            });
+        
         modal.style.display = 'flex';
     }
 
@@ -542,9 +572,13 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert('Novedad reportada correctamente. El estado ha sido cambiado a Pendiente.');
                 cerrarModalReportar();
-                location.reload(); // Recargar la página
+                abrirModalExito('Novedad reportada correctamente', 'El estado ha sido cambiado a Pendiente.');
+                
+                // Recargar después de 2 segundos para que se actualice con los nuevos datos
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
             } else {
                 alert('Error: ' + (data.message || 'No se pudo reportar la novedad'));
             }
@@ -558,19 +592,32 @@
     // Cerrar modal al hacer click fuera
     window.onclick = function(event) {
         const modal = document.getElementById('modalReportar');
+        const modalExito = document.getElementById('modalExito');
         if (event.target === modal) {
             cerrarModalReportar();
         }
+        if (event.target === modalExito) {
+            cerrarModalExito();
+        }
     }
+
+    // Modal de éxito
+    function abrirModalExito(titulo, mensaje) {
+        document.getElementById('exitoTitulo').textContent = titulo;
+        document.getElementById('exitoMensaje').textContent = mensaje;
+        document.getElementById('modalExito').style.display = 'flex';
+    }
+
+    function cerrarModalExito() {
+        document.getElementById('modalExito').style.display = 'none';
+    }
+
+    // Cerrar modal exitoal hacer click fuera
 
     // Función para marcar proceso como completado
     window.marcarProcesoCompletado = async function(numeroPedido) {
-        if (!confirm('¿Marcar este proceso como completado?')) {
-            return;
-        }
-
         try {
-            const response = await fetch(`/api/operario/completar-proceso/${numeroPedido}`, {
+            const response = await fetch(`/operario/api/completar-proceso/${numeroPedido}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -581,14 +628,35 @@
             const data = await response.json();
 
             if (response.ok) {
-                alert('Proceso marcado como completado');
-                location.reload();
+                // Mostrar modal de éxito
+                document.getElementById('exitoTitulo').textContent = '¡Proceso Completado!';
+                document.getElementById('exitoMensaje').textContent = 'El proceso ha sido marcado como completado correctamente.';
+                document.getElementById('modalExito').style.display = 'flex';
             } else {
-                alert('Error: ' + (data.message || 'No se pudo completar el proceso'));
+                // Mostrar modal de error
+                document.getElementById('exitoTitulo').textContent = '❌ Error';
+                document.getElementById('exitoMensaje').textContent = data.message || 'No se pudo completar el proceso';
+                document.getElementById('modalExito').style.display = 'flex';
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('Error al completar el proceso');
+            // Mostrar modal de error
+            document.getElementById('exitoTitulo').textContent = '❌ Error';
+            document.getElementById('exitoMensaje').textContent = 'Error al completar el proceso';
+            document.getElementById('modalExito').style.display = 'flex';
+        }
+    };
+
+    window.cerrarModalExito = function() {
+        const modal = document.getElementById('modalExito');
+        modal.style.display = 'none';
+        
+        // Recargar la página si fue exitoso (cuando el título es "¡Proceso Completado!")
+        const titulo = document.getElementById('exitoTitulo').textContent;
+        if (titulo === '¡Proceso Completado!') {
+            setTimeout(() => {
+                location.reload();
+            }, 500);
         }
     };
 </script>
@@ -611,6 +679,12 @@
                 <p class="info-value" id="clienteReportar"></p>
             </div>
 
+            <!-- Novedades anteriores -->
+            <div style="margin: 15px 0; padding: 10px; background: #f9f9f9; border-radius: 4px; border-left: 3px solid #3498db;">
+                <p class="info-label" style="margin-top: 0;">NOVEDADES ANTERIORES:</p>
+                <div id="novedadesAnteriores" style="max-height: 150px; overflow-y: auto; font-size: 13px;"></div>
+            </div>
+
             <textarea 
                 id="novedadText" 
                 class="modal-textarea" 
@@ -628,6 +702,22 @@
 </div>
 
 <style>
+    .novedades-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .novedad-item {
+        padding: 8px;
+        background: white;
+        border-radius: 3px;
+        border-left: 2px solid #27ae60;
+        font-size: 12px;
+        color: #2c3e50;
+        line-height: 1.4;
+    }
+    
     /* Modal Overlay */
     .modal-overlay {
         display: none;
@@ -793,6 +883,45 @@
         transform: translateY(-1px);
         box-shadow: 0 2px 6px rgba(239, 83, 80, 0.3);
     }
+
+    /* Modal de Éxito */
+    .modal-exito {
+        max-width: 400px;
+    }
+
+    .modal-header-exito {
+        background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+        border: none;
+    }
+
+    .modal-header-exito h2 {
+        color: white;
+    }
+
+    .modal-icon-exito {
+        color: white;
+        font-size: 32px;
+    }
 </style>
+
+<!-- Modal Éxito -->
+<div id="modalExito" class="modal-overlay">
+    <div class="modal-content modal-exito">
+        <div class="modal-header modal-header-exito">
+            <span class="material-symbols-rounded modal-icon-exito">check_circle</span>
+            <h2 id="exitoTitulo">¡Éxito!</h2>
+        </div>
+
+        <div class="modal-body">
+            <p id="exitoMensaje" style="text-align: center; color: #2c3e50; font-size: 16px; margin: 30px 0;">
+                La novedad ha sido guardada correctamente.
+            </p>
+        </div>
+
+        <div class="modal-footer" style="justify-content: center;">
+            <button class="btn-enviar" style="width: 150px;" onclick="cerrarModalExito()">ACEPTAR</button>
+        </div>
+    </div>
+</div>
 
 @endsection

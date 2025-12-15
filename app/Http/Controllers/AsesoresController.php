@@ -460,10 +460,35 @@ class AsesoresController extends Controller
     /**
      * Obtener notificaciones del asesor
      */
-    public function getNotifications()
+    public function getNotificaciones()
     {
         $userId = Auth::id();
         
+        // ============================================
+        // NOTIFICACIONES: Fecha Estimada de Entrega
+        // ============================================
+        // Notificaciones no leídas de fecha estimada asignada de la tabla notifications
+        $notificacionesFechaEstimada = DB::table('notifications')
+            ->where('notifiable_id', $userId)
+            ->where('notifiable_type', 'App\\Models\\User')
+            ->where('type', 'App\\Notifications\\FechaEstimadaAsignada')
+            ->whereNull('read_at')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function($notif) {
+                $data = json_decode($notif->data, true);
+                return [
+                    'id' => $notif->id,
+                    'tipo' => 'fecha_estimada',
+                    'titulo' => '📅 Fecha Estimada Asignada',
+                    'pedido_id' => $data['pedido_id'],
+                    'numero_pedido' => $data['numero_pedido'],
+                    'fecha_estimada' => $data['fecha_estimada'],
+                    'usuario_que_genero' => $data['usuario_que_genero_nombre'] ?? 'Sistema',
+                    'created_at' => $notif->created_at,
+                ];
+            });
+
         // Obtener IDs de pedidos ya vistos por el usuario
         $viewedPedidoIds = session('viewed_pedidos_' . $userId, []);
         
@@ -507,12 +532,26 @@ class AsesoresController extends Controller
             ->whereNotIn('id', $viewedPedidoIds)
             ->count();
 
+        $totalNotificaciones = $notificacionesFechaEstimada->count() + 
+                              $pedidosOtrosAsesores->count() + 
+                              $pedidosProximosEntregar->count() + 
+                              $pedidosEnEjecucion;
+
         return response()->json([
+            'notificaciones_fecha_estimada' => $notificacionesFechaEstimada,
             'pedidos_otros_asesores' => $pedidosOtrosAsesores,
             'pedidos_proximos_entregar' => $pedidosProximosEntregar,
             'pedidos_en_ejecucion' => $pedidosEnEjecucion,
-            'total_notificaciones' => $pedidosOtrosAsesores->count() + $pedidosProximosEntregar->count() + $pedidosEnEjecucion
+            'total_notificaciones' => $totalNotificaciones
         ]);
+    }
+
+    /**
+     * Obtener notificaciones del asesor (alias para compatibilidad)
+     */
+    public function getNotifications()
+    {
+        return $this->getNotificaciones();
     }
 
     /**
@@ -522,6 +561,14 @@ class AsesoresController extends Controller
     {
         try {
             $userId = Auth::id();
+            
+            // Marcar todas las notificaciones de fecha estimada como leídas
+            DB::table('notifications')
+                ->where('notifiable_id', $userId)
+                ->where('notifiable_type', 'App\\Models\\User')
+                ->where('type', 'App\\Notifications\\FechaEstimadaAsignada')
+                ->whereNull('read_at')
+                ->update(['read_at' => now()]);
             
             // Obtener todos los pedidos que generan notificaciones
             $pedidosProximos = PedidoProduccion::where('asesor_id', $userId)
@@ -548,6 +595,44 @@ class AsesoresController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Error al marcar notificaciones',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Marcar una notificación específica como leída
+     */
+    public function markNotificationAsRead($notificationId)
+    {
+        try {
+            $userId = Auth::id();
+            
+            // Verificar que la notificación pertenezca al usuario actual
+            $notificacion = DB::table('notifications')
+                ->where('id', $notificationId)
+                ->where('notifiable_id', $userId)
+                ->where('notifiable_type', 'App\\Models\\User')
+                ->first();
+            
+            if (!$notificacion) {
+                return response()->json([
+                    'error' => 'Notificación no encontrada'
+                ], 404);
+            }
+            
+            // Marcar como leída
+            DB::table('notifications')
+                ->where('id', $notificationId)
+                ->update(['read_at' => now()]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Notificación marcada como leída'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Error al marcar notificación',
                 'message' => $e->getMessage()
             ], 500);
         }

@@ -455,23 +455,23 @@
     <!-- Filtros Rápidos -->
     <div class="filtros-rapidos-asesores">
         <span class="filtros-rapidos-asesores-label">Filtrar por estado:</span>
-        <a href="{{ route('supervisor-asesores.pedidos.index') }}" class="btn-filtro-rapido-asesores {{ !request('estado') ? 'active' : '' }}">
+        <a href="{{ route('supervisor-asesores.pedidos.index') }}" class="btn-filtro-rapido-asesores {{ !request('estado') ? 'active' : '' }}" onclick="return navegarFiltro(this.href, event)">
             <span class="material-symbols-rounded">home</span>
             Todos
         </a>
-        <a href="{{ route('supervisor-asesores.pedidos.index', ['estado' => 'No iniciado']) }}" class="btn-filtro-rapido-asesores {{ request('estado') === 'No iniciado' ? 'active' : '' }}">
+        <a href="{{ route('supervisor-asesores.pedidos.index', ['estado' => 'Pendiente']) }}" class="btn-filtro-rapido-asesores {{ request('estado') === 'Pendiente' ? 'active' : '' }}" onclick="return navegarFiltro(this.href, event)">
             <span class="material-symbols-rounded">schedule</span>
             Pendientes
         </a>
-        <a href="{{ route('supervisor-asesores.pedidos.index', ['estado' => 'En Ejecución']) }}" class="btn-filtro-rapido-asesores {{ request('estado') === 'En Ejecución' ? 'active' : '' }}">
+        <a href="javascript:void(0)" onclick="filtrarEnProduccionSupervisor()" class="btn-filtro-rapido-asesores {{ (request('estado') === 'No iniciado' || request('estado') === 'En Ejecución') ? 'active' : '' }}" id="btnEnProduccionSupervisor">
             <span class="material-symbols-rounded">build</span>
             En Producción
         </a>
-        <a href="{{ route('supervisor-asesores.pedidos.index', ['estado' => 'Entregado']) }}" class="btn-filtro-rapido-asesores {{ request('estado') === 'Entregado' ? 'active' : '' }}">
+        <a href="{{ route('supervisor-asesores.pedidos.index', ['estado' => 'Entregado']) }}" class="btn-filtro-rapido-asesores {{ request('estado') === 'Entregado' ? 'active' : '' }}" onclick="return navegarFiltro(this.href, event)">
             <span class="material-symbols-rounded">check_circle</span>
             Entregados
         </a>
-        <a href="{{ route('supervisor-asesores.pedidos.index', ['estado' => 'Anulada']) }}" class="btn-filtro-rapido-asesores {{ request('estado') === 'Anulada' ? 'active' : '' }}">
+        <a href="{{ route('supervisor-asesores.pedidos.index', ['estado' => 'Anulada']) }}" class="btn-filtro-rapido-asesores {{ request('estado') === 'Anulada' ? 'active' : '' }}" onclick="return navegarFiltro(this.href, event)">
             <span class="material-symbols-rounded">cancel</span>
             Anulados
         </a>
@@ -947,13 +947,57 @@
             }
         });
     }
-
     function cerrarModalCelda() {
         const modal = document.getElementById('celdaModal');
         if (modal) {
             modal.style.animation = 'fadeIn 0.3s ease reverse';
             setTimeout(() => modal.remove(), 300);
         }
+    }
+
+    /**
+     * Navegación de filtros - Spinner ya está desactivado en esta página
+     */
+    function navegarFiltro(url, event) {
+        event.preventDefault();
+        window.location.href = url;
+        return false;
+    }
+
+    // DESACTIVAR SPINNER en esta página - solo navegación de filtros, sin AJAX
+    // El spinner se mantiene desactivado durante toda la sesión en esta página
+    window.addEventListener('DOMContentLoaded', function() {
+        if (window.setSpinnerConfig) {
+            window.setSpinnerConfig({ enabled: false });
+        }
+        console.log('✅ Spinner desactivado en página de pedidos');
+    });
+
+    // Asegurar que el spinner esté oculto al cargar
+    window.addEventListener('load', function() {
+        if (window.hideLoadingSpinner) {
+            window.hideLoadingSpinner();
+        }
+        const spinner = document.getElementById('loadingSpinner');
+        if (spinner) {
+            spinner.classList.add('hidden');
+            spinner.style.display = 'none';
+            spinner.style.visibility = 'hidden';
+        }
+        console.log('✅ Spinner oculto al cargar la página');
+    });
+
+
+
+    /**
+     * Filtrar pedidos "En Producción" (No iniciado O En Ejecución) - Supervisor
+     */
+    function filtrarEnProduccionSupervisor() {
+        const url = new URL(window.location);
+        url.searchParams.set('estado', 'En Producción');
+        
+        // Usar la función de navegación de filtros
+        navegarFiltro(url.toString(), { preventDefault: () => {} });
     }
 </script>
 <script src="{{ asset('js/asesores/pedidos-list.js') }}"></script>

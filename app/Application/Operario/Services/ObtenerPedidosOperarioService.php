@@ -147,6 +147,14 @@ class ObtenerPedidosOperarioService
             $totalPrendas = $prendas->sum('cantidad') ?? 0;
             $descripcionPrendas = $prendas->pluck('nombre_prenda')->unique()->join(', ');
 
+            // Obtener fecha de inicio del proceso en el área
+            $procesoArea = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
+                ->where('estado_proceso', '!=', 'Completado')
+                ->orderBy('created_at', 'asc')
+                ->first();
+
+            $fechaInicioProceso = $procesoArea?->fecha_inicio?->format('d/m/Y') ?? '-';
+
             return [
                 'numero_pedido' => $pedido->numero_pedido,
                 'cliente' => $pedido->cliente,
@@ -156,6 +164,7 @@ class ObtenerPedidosOperarioService
                 'estado' => $this->obtenerEstadoActual($pedido->numero_pedido),
                 'area' => $this->obtenerAreaActual($pedido->numero_pedido),
                 'fecha_creacion' => $pedido->fecha_de_creacion_de_orden?->format('d/m/Y') ?? $pedido->created_at?->format('d/m/Y'),
+                'fecha_inicio_proceso' => $fechaInicioProceso,
                 'dia_entrega' => $pedido->dia_de_entrega ?? '-',
                 'fecha_estimada' => $pedido->fecha_estimada_de_entrega?->format('d/m/Y') ?? '-',
                 'asesora' => $pedido->asesora?->name ?? 'Sin asesora',

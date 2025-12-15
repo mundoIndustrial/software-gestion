@@ -49,6 +49,10 @@ class DashboardController extends Controller
             if ($roleName === 'aprobador_cotizaciones') {
                 return redirect()->route('cotizaciones.pendientes');
             }
+
+            if ($roleName === 'cortador' || $roleName === 'costurero') {
+                return redirect()->route('operario.dashboard');
+            }
         }
 
         return view('dashboard');

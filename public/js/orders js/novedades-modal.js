@@ -1,9 +1,11 @@
 /**
  * Gestor del Modal de Novedades
- * Permite editar novedades de pedidos directamente desde la tabla
+ * Permite agregar y editar novedades de pedidos directamente desde la tabla
  * 
  * NOTA: Usa currentOrderId declarado globalmente en order-navigation.js
  */
+
+let isEditMode = false;
 
 /**
  * Abre el modal de edición de novedades
@@ -15,8 +17,9 @@ function openNovedadesModal(ordenId, novedadesActual) {
     const modal = document.getElementById('novedadesEditModal');
     const textarea = document.getElementById('novedadesTextarea');
     const orderNumber = document.getElementById('novedadesOrderNumber');
+    isEditMode = false;
 
-    // 🆕 Intentar obtener el valor actualizado del DOM primero
+    // Obtener el valor actualizado del DOM primero
     let novedadesValue = novedadesActual || '';
     const row = document.querySelector(`[data-orden-id="${ordenId}"]`);
     if (row) {
@@ -24,7 +27,6 @@ function openNovedadesModal(ordenId, novedadesActual) {
         if (btnEdit) {
             const textSpan = btnEdit.querySelector('.novedades-text');
             if (textSpan && !textSpan.classList.contains('empty')) {
-                // Si no está vacío, obtener el atributo data-full-text o el textContent
                 const fullText = btnEdit.getAttribute('data-full-novedades') || textSpan.getAttribute('title');
                 if (fullText) {
                     novedadesValue = fullText;
@@ -35,10 +37,14 @@ function openNovedadesModal(ordenId, novedadesActual) {
 
     // Establecer contenido
     textarea.value = novedadesValue;
+    textarea.readOnly = true;
     orderNumber.textContent = `Pedido: ${ordenId}`;
 
-    // Actualizar contador de caracteres
-    updateCharCount();
+    // Resetear botones y estado
+    document.getElementById('btnEditToggle').style.display = 'inline-flex';
+    document.getElementById('btnSaveEdit').style.display = 'none';
+    document.getElementById('btnAddNew').style.display = 'inline-flex';
+    document.getElementById('nuevaNovedadContainer').style.display = 'none';
 
     // Mostrar modal
     modal.style.display = 'flex';
@@ -60,21 +66,132 @@ function closeNovedadesModal() {
     modal.style.display = 'none';
     document.body.style.overflow = 'auto';
     currentOrderId = null;
+    isEditMode = false;
 }
 
 /**
- * Actualiza el contador de caracteres
+ * Alterna entre modo visualización y modo edición
  */
-function updateCharCount() {
+function toggleEditMode() {
     const textarea = document.getElementById('novedadesTextarea');
-    const charCount = document.getElementById('charCount');
-    charCount.textContent = textarea.value.length;
+    const btnEditToggle = document.getElementById('btnEditToggle');
+    const btnSaveEdit = document.getElementById('btnSaveEdit');
+    const btnAddNew = document.getElementById('btnAddNew');
+
+    isEditMode = !isEditMode;
+
+    if (isEditMode) {
+        // Habilitar edición
+        textarea.readOnly = false;
+        textarea.style.background = '#fffbeb';
+        textarea.style.borderColor = '#fbbf24';
+        textarea.focus();
+        btnEditToggle.style.display = 'none';
+        btnSaveEdit.style.display = 'inline-flex';
+        btnAddNew.style.display = 'none';
+    } else {
+        // Deshabilitar edición
+        textarea.readOnly = true;
+        textarea.style.background = '';
+        textarea.style.borderColor = '';
+        btnEditToggle.style.display = 'inline-flex';
+        btnSaveEdit.style.display = 'none';
+        btnAddNew.style.display = 'inline-flex';
+    }
 }
 
 /**
- * Guarda las novedades
+ * Muestra el input para agregar una nueva novedad
  */
-async function saveNovedades() {
+function showNewNovedadInput() {
+    const container = document.getElementById('nuevaNovedadContainer');
+    container.style.display = 'block';
+    document.getElementById('nuevaNovedadTextarea').focus();
+}
+
+/**
+ * Cancela la agregación de nueva novedad
+ */
+function cancelNewNovedad() {
+    document.getElementById('nuevaNovedadContainer').style.display = 'none';
+    document.getElementById('nuevaNovedadTextarea').value = '';
+    document.getElementById('newCharCount').textContent = '0';
+}
+
+/**
+ * Guarda una nueva novedad (agregando al final con formato [usuario - fecha hora])
+ */
+async function saveNewNovedad() {
+    if (!currentOrderId) {
+        console.error('No se especificó el ID de la orden');
+        return;
+    }
+
+    const nuevaNovedadTextarea = document.getElementById('nuevaNovedadTextarea');
+    const novedad = nuevaNovedadTextarea.value.trim();
+    const btnSaveNew = document.querySelector('.btn-save-new');
+
+    if (!novedad) {
+        showNotification('⚠️ Ingresa una novedad antes de guardar', 'warning');
+        return;
+    }
+
+    if (novedad.length > 500) {
+        showNotification('❌ La novedad no puede exceder 500 caracteres', 'error');
+        return;
+    }
+
+    try {
+        btnSaveNew.disabled = true;
+        btnSaveNew.classList.add('loading');
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+        // Enviar solicitud AJAX para agregar nueva novedad
+        const response = await fetch(`/api/ordenes/${currentOrderId}/novedades/add`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken || '',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                novedad: novedad
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error('❌ Error:', data);
+            throw new Error(data.message || `Error ${response.status}`);
+        }
+
+        console.log('✅ Novedad guardada exitosamente');
+        showNotification('✅ Novedad agregada correctamente', 'success');
+
+        // Actualizar textarea con las nuevas novedades
+        document.getElementById('novedadesTextarea').value = data.data.novedades;
+
+        // Actualizar la fila en la tabla
+        updateRowNovedades(currentOrderId, data.data.novedades);
+
+        // Limpiar input
+        cancelNewNovedad();
+
+    } catch (error) {
+        console.error('❌ Error:', error);
+        showNotification(`❌ Error: ${error.message}`, 'error');
+    } finally {
+        btnSaveNew.disabled = false;
+        btnSaveNew.classList.remove('loading');
+    }
+}
+
+/**
+ * Guarda los cambios editados en el textarea (reemplazo total)
+ */
+async function saveEditedNovedades() {
     if (!currentOrderId) {
         console.error('No se especificó el ID de la orden');
         return;
@@ -82,25 +199,16 @@ async function saveNovedades() {
 
     const textarea = document.getElementById('novedadesTextarea');
     const novedades = textarea.value.trim();
-    const btnSave = document.querySelector('.novedades-modal-footer .btn-save');
-
-    // Validación básica
-    if (novedades.length > 1000) {
-        showNotification('❌ Las novedades no pueden exceder 1000 caracteres', 'error');
-        return;
-    }
+    const btnSaveEdit = document.getElementById('btnSaveEdit');
 
     try {
-        // Desabilitar botón
-        btnSave.disabled = true;
-        btnSave.classList.add('loading');
+        btnSaveEdit.disabled = true;
+        btnSaveEdit.classList.add('loading');
 
-        // Obtener CSRF token
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-        console.log('🔐 CSRF Token:', csrfToken ? 'Presente' : 'FALTANTE');
-        console.log('🔄 Enviando novedades:', { ordenId: currentOrderId, novedades: novedades });
+        console.log('🔄 Enviando novedades editadas:', { ordenId: currentOrderId });
 
-        // Enviar solicitud AJAX
+        // Enviar solicitud AJAX para reemplazar novedades
         const response = await fetch(`/api/ordenes/${currentOrderId}/novedades`, {
             method: 'POST',
             headers: {
@@ -113,35 +221,30 @@ async function saveNovedades() {
             })
         });
 
-        console.log('📨 Status de respuesta:', response.status);
         const data = await response.json();
-        console.log('📨 Respuesta del servidor:', { status: response.status, data: data });
 
         if (!response.ok) {
-            console.error('❌ Respuesta no OK:', data);
-            throw new Error(data.message || `Error ${response.status}: ${JSON.stringify(data)}`);
+            console.error('❌ Error:', data);
+            throw new Error(data.message || `Error ${response.status}`);
         }
 
-        console.log('✅ Guardado exitoso');
-
-        // Mostrar notificación de éxito
-        showNotification('✅ Novedades guardadas correctamente', 'success');
+        console.log('✅ Cambios guardados exitosamente');
+        showNotification('✅ Novedades actualizadas correctamente', 'success');
 
         // Actualizar la fila en la tabla
         updateRowNovedades(currentOrderId, novedades);
 
-        // Cerrar modal
+        // Salir de modo edición
         setTimeout(() => {
-            closeNovedadesModal();
+            toggleEditMode();
         }, 500);
 
     } catch (error) {
         console.error('❌ Error completo:', error);
         showNotification(`❌ Error: ${error.message}`, 'error');
     } finally {
-        // Rehabilitar botón
-        btnSave.disabled = false;
-        btnSave.classList.remove('loading');
+        btnSaveEdit.disabled = false;
+        btnSaveEdit.classList.remove('loading');
     }
 }
 
@@ -154,35 +257,29 @@ function updateRowNovedades(ordenId, novedades) {
     const row = document.querySelector(`[data-orden-id="${ordenId}"]`);
     if (!row) return;
 
-    const novedadesCell = row.querySelector('[data-novedades-cell]');
-    if (!novedadesCell) {
-        // Buscar el botón de edición de novedades
-        const btnEdit = row.querySelector('.btn-edit-novedades');
-        if (btnEdit) {
-            const textSpan = btnEdit.querySelector('.novedades-text');
-            if (textSpan) {
-                if (novedades) {
-                    textSpan.textContent = novedades.length > 50 ? novedades.substring(0, 50) + '...' : novedades;
-                    textSpan.classList.remove('empty');
-                } else {
-                    textSpan.textContent = 'Sin novedades';
-                    textSpan.classList.add('empty');
-                }
+    const btnEdit = row.querySelector('.btn-edit-novedades');
+    if (btnEdit) {
+        btnEdit.setAttribute('data-full-novedades', novedades || '');
+        
+        const textSpan = btnEdit.querySelector('.novedades-text');
+        if (textSpan) {
+            if (novedades) {
+                textSpan.textContent = novedades.length > 50 ? novedades.substring(0, 50) + '...' : novedades;
+                textSpan.classList.remove('empty');
+            } else {
+                textSpan.textContent = 'Sin novedades';
+                textSpan.classList.add('empty');
             }
         }
-        return;
     }
-
-    novedadesCell.textContent = novedades || '-';
 }
 
 /**
  * Muestra una notificación al usuario
  * @param {string} message - Mensaje a mostrar
- * @param {string} type - Tipo de notificación (success, error, info)
+ * @param {string} type - Tipo de notificación (success, error, info, warning)
  */
 function showNotification(message, type = 'info') {
-    // Crear elemento de notificación
     const notification = document.createElement('div');
     notification.className = `notification notification-${type}`;
     notification.innerHTML = `
@@ -191,7 +288,6 @@ function showNotification(message, type = 'info') {
         </div>
     `;
 
-    // Estilos básicos si no están definidos en CSS
     notification.style.cssText = `
         position: fixed;
         top: 20px;
@@ -204,13 +300,12 @@ function showNotification(message, type = 'info') {
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         z-index: 10002;
         animation: slideInRight 0.3s ease-out;
-        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : type === 'warning' ? '#f59e0b' : '#3b82f6'};
         color: white;
     `;
 
     document.body.appendChild(notification);
 
-    // Remover después de 3 segundos
     setTimeout(() => {
         notification.style.animation = 'slideOutRight 0.3s ease-out';
         setTimeout(() => {
@@ -224,16 +319,19 @@ function showNotification(message, type = 'info') {
  */
 document.addEventListener('DOMContentLoaded', function() {
     const textarea = document.getElementById('novedadesTextarea');
+    const nuevaNovedadTextarea = document.getElementById('nuevaNovedadTextarea');
     const modal = document.getElementById('novedadesEditModal');
 
-    // Actualizar contador mientras escribe
-    if (textarea) {
-        textarea.addEventListener('input', updateCharCount);
+    // Actualizar contador para nueva novedad mientras escribe
+    if (nuevaNovedadTextarea) {
+        nuevaNovedadTextarea.addEventListener('input', function() {
+            document.getElementById('newCharCount').textContent = this.value.length;
+        });
 
-        // Permitir Ctrl+Enter para guardar
-        textarea.addEventListener('keydown', function(e) {
+        // Permitir Ctrl+Enter para guardar nueva novedad
+        nuevaNovedadTextarea.addEventListener('keydown', function(e) {
             if (e.ctrlKey && e.key === 'Enter') {
-                saveNovedades();
+                saveNewNovedad();
             }
         });
     }
@@ -254,3 +352,4 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+

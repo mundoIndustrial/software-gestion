@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="{{ asset('css/orders styles/row-conditional-colors.css') }}">
     <link rel="stylesheet" href="{{ asset('css/bodega-column-widths.css') }}">
     <link rel="stylesheet" href="{{ asset('css/bodega-table.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/novedades-button.css') }}?v={{ time() }}">
 @endpush
 
 @section('content')
@@ -23,6 +24,7 @@
     @include('components.orders-components.bodega-edit-modal', ['areaOptions' => $areaOptions ?? []])
     @include('components.orders-components.bodega-cell-edit-modal')
     @include('components.orders-components.bodega-tracking-modal')
+    @include('components.modals.novedades-edit-modal')
 
     <div class="table-container">
         <div class="modern-table-wrapper">
@@ -194,19 +196,36 @@
                                         $colConfig = $colIndex !== false ? $columns[$colIndex] : ['width' => '180px', 'justify' => 'flex-start'];
                                     @endphp
                                     <div class="table-cell" style="flex: 0 0 {{ $colConfig['width'] }}; width: {{ $colConfig['width'] }}; max-width: {{ $colConfig['width'] }}; justify-content: {{ $colConfig['justify'] }};">
-                                        <div class="cell-content" title="{{ $orden->$colName ?? '' }}" onclick="openCellEditModal('{{ $colName }}', '{{ addslashes($orden->$colName ?? '') }}', {{ $orden->pedido }})" style="cursor: pointer;">
-                                            <span class="cell-text" data-pedido="{{ $orden->pedido }}" style="max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                                @if($colName === 'total_de_dias_')
-                                                    <span class="dias-value" data-dias="{{ $totalDias }}">{{ $totalDias }}</span>
-                                                @elseif(in_array($colName, ['fecha_de_creacion_de_orden', 'insumos_y_telas', 'corte', 'bordado', 'estampado', 'costura', 'reflectivo', 'lavanderia', 'arreglos', 'marras', 'control_de_calidad', 'entrega', 'despacho']))
-                                                    @php
-                                                        echo !empty($orden->$colName) ? \Carbon\Carbon::parse($orden->$colName)->format('d/m/Y') : '';
-                                                    @endphp
+                                        @if($colName === 'novedades')
+                                            <!-- Botón de Novedades para Bodega -->
+                                            <button 
+                                                class="btn-edit-novedades"
+                                                data-full-novedades="{{ addslashes($orden->novedades ?? '') }}"
+                                                onclick="event.stopPropagation(); openNovedadesBodegaModal('{{ $orden->pedido }}', `{{ addslashes($orden->novedades ?? '') }}`)"
+                                                title="Editar novedades"
+                                                type="button">
+                                                @if($orden->novedades)
+                                                    <span class="novedades-text">{{ Str::limit($orden->novedades, 50, '...') }}</span>
                                                 @else
-                                                    {{ $orden->$colName ?? '' }}
+                                                    <span class="novedades-text empty">Sin novedades</span>
                                                 @endif
-                                            </span>
-                                        </div>
+                                                <span class="material-symbols-rounded">edit</span>
+                                            </button>
+                                        @else
+                                            <div class="cell-content" title="{{ $orden->$colName ?? '' }}" onclick="openCellEditModal('{{ $colName }}', '{{ addslashes($orden->$colName ?? '') }}', {{ $orden->pedido }})" style="cursor: pointer;">
+                                                <span class="cell-text" data-pedido="{{ $orden->pedido }}" style="max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                                    @if($colName === 'total_de_dias_')
+                                                        <span class="dias-value" data-dias="{{ $totalDias }}">{{ $totalDias }}</span>
+                                                    @elseif(in_array($colName, ['fecha_de_creacion_de_orden', 'insumos_y_telas', 'corte', 'bordado', 'estampado', 'costura', 'reflectivo', 'lavanderia', 'arreglos', 'marras', 'control_de_calidad', 'entrega', 'despacho']))
+                                                        @php
+                                                            echo !empty($orden->$colName) ? \Carbon\Carbon::parse($orden->$colName)->format('d/m/Y') : '';
+                                                        @endphp
+                                                    @else
+                                                        {{ $orden->$colName ?? '' }}
+                                                    @endif
+                                                </span>
+                                            </div>
+                                        @endif
                                     </div>
                                 @endforeach
                             </div>
@@ -282,6 +301,10 @@
     <script src="{{ asset('js/bodega-tracking-modal.js') }}"></script>
     <script src="{{ asset('js/bodega-conditional-colors.js') }}"></script>
     <script src="{{ asset('js/bodega-estado-handler.js') }}"></script>
+
+    <!-- Scripts de Novedades para Bodega -->
+    <script src="{{ asset('js/orders js/novedades-modal.js') }}?v={{ time() }}"></script>
+    <script src="{{ asset('js/bodega-novedades-modal.js') }}?v={{ time() }}"></script>
 
     <!-- Script de inicialización de colores -->
     <script>

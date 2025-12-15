@@ -1,14 +1,15 @@
 <!-- MODAL: ESPECIFICACIONES DE LA ORDEN -->
 <div id="modalEspecificaciones" class="modal-especificaciones" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center;">
-    <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 950px; width: 95%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+    <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 1000px; width: 98%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 3px solid #0066cc; padding-bottom: 1.5rem; background: white;">
             <h3 style="margin: 0; color: #333; font-size: 1.3rem; font-weight: 700;"><i class="fas fa-clipboard-check" style="margin-right: 10px;"></i>ESPECIFICACIONES DE LA ORDEN</h3>
-            <button type="button" onclick="cerrarModalEspecificaciones()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999; transition: all 0.2s;" onmouseover="this.style.color='#333'" onmouseout="this.style.color='#999'">
+            <button type="button" onclick="cerrarModalEspecificaciones()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999; transition: all 0.2s; flex-shrink: 0;" onmouseover="this.style.color='#333'" onmouseout="this.style.color='#999'">
                 <i class="fas fa-times"></i>
             </button>
         </div>
         
-        <table class="tabla-control-compacta" style="width: 100%; border-collapse: collapse; background: white;">
+        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+        <table class="tabla-control-compacta" style="width: 100%; border-collapse: collapse; background: white; font-size: 0.9rem;">
             <thead>
                 <tr style="background: white; border-bottom: 2px solid #ddd;">
                     <th style="width: 20%; text-align: left; padding: 12px; font-weight: 600; border: none; color: #333;">CONCEPTO</th>
@@ -257,9 +258,10 @@
                 </tbody>
             </tbody>
         </table>
+        </div>
 
         <!-- Footer -->
-        <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 3px solid #0066cc; display: flex; gap: 1rem; justify-content: flex-end;">
+        <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 3px solid #0066cc; display: flex; gap: 1rem; justify-content: flex-end; flex-wrap: wrap;">
             <button type="button" onclick="cerrarModalEspecificaciones()" style="padding: 0.6rem 1.5rem; background: #f0f0f0; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; font-weight: 600; color: #333; transition: all 0.2s;" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='#f0f0f0'">
                 CANCELAR
             </button>

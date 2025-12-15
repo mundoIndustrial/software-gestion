@@ -58,9 +58,6 @@ const CellEditModal = {
                     <div class="cell-edit-modal-body">
                         <div id="${this.config.inputId}" class="cell-view-content"></div>
                     </div>
-                    <div class="cell-edit-modal-footer">
-                        <button id="${this.config.cancelButtonId}" class="btn btn-secondary">Cerrar</button>
-                    </div>
                 </div>
             </div>
         `;

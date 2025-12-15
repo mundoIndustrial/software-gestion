@@ -22,6 +22,13 @@
      */
     function startSpinnerTimer(message = 'Espere, es posible') {
         if (!CONFIG.ENABLED) return;
+        
+        // No mostrar spinner para navegación de filtros rápidos
+        if (sessionStorage.getItem('skipSpinner') === 'true') {
+            console.log('⏭️ Saltando spinner para navegación de filtro rápido');
+            sessionStorage.removeItem('skipSpinner');
+            return;
+        }
 
         // Cancelar temporizador anterior si existe
         if (spinnerTimeout) {
@@ -33,7 +40,12 @@
 
         // Mostrar spinner después de 3 segundos
         spinnerTimeout = setTimeout(() => {
-            if (isOperationInProgress) {
+            // Verificar flag de skip NUEVAMENTE antes de mostrar
+            if (sessionStorage.getItem('skipSpinner') === 'true') {
+                console.log('⏭️ Saltando spinner - flag detectado en timeout');
+                return;
+            }
+            if (isOperationInProgress && CONFIG.ENABLED) {
                 showLoadingSpinner(message);
             }
         }, CONFIG.DELAY);
@@ -53,6 +65,13 @@
 
         // Ocultar spinner si está visible
         hideLoadingSpinner();
+        
+        // También ocultar directamente por si acaso
+        const spinner = document.getElementById('loadingSpinner');
+        if (spinner) {
+            spinner.style.display = 'none';
+            spinner.style.visibility = 'hidden';
+        }
     }
 
     /**

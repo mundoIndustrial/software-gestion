@@ -68,6 +68,39 @@ function renderNotifications(data) {
     const notifications = [];
     
     // ============================================
+    // NUEVA SECCIÓN: Fecha Estimada de Entrega
+    // ============================================
+    if (data.notificaciones_fecha_estimada && data.notificaciones_fecha_estimada.length > 0) {
+        data.notificaciones_fecha_estimada.forEach(notif => {
+            const fecha = new Date(notif.created_at);
+            const horasTranscurridas = Math.floor((new Date() - fecha) / (1000 * 60 * 60));
+            let tiempoTranscurrido = '';
+            
+            if (horasTranscurridas < 1) {
+                const minutosTranscurridos = Math.floor((new Date() - fecha) / (1000 * 60));
+                tiempoTranscurrido = `${minutosTranscurridos} min`;
+            } else if (horasTranscurridas < 24) {
+                tiempoTranscurrido = `${horasTranscurridas} hora${horasTranscurridas !== 1 ? 's' : ''}`;
+            } else {
+                const diasTranscurridos = Math.floor(horasTranscurridas / 24);
+                tiempoTranscurrido = `${diasTranscurridos} día${diasTranscurridos !== 1 ? 's' : ''}`;
+            }
+            
+            notifications.push({
+                id: notif.id,
+                icon: 'fa-calendar-check',
+                color: '#3b82f6',
+                title: notif.titulo,
+                message: `${notif.numero_pedido} - ${notif.cliente} | Fecha: ${notif.fecha_estimada}`,
+                time: `Hace ${tiempoTranscurrido}`,
+                link: `#`,
+                tipo: 'fecha_estimada',
+                isNew: true
+            });
+        });
+    }
+    
+    // ============================================
     // NUEVO: Pedidos/Cotizaciones de OTROS asesores
     // ============================================
     // Agregar notificaciones de otros asesores
@@ -97,36 +130,7 @@ function renderNotifications(data) {
             });
         });
     }
-    
-    // ============================================
-    // ANTERIOR: Órdenes próximas a vencer (propias)
-    // ============================================
-    // Agregar órdenes propias próximas a vencer
-    if (data.pedidos_proximos_entregar && data.pedidos_proximos_entregar.length > 0) {
-        data.pedidos_proximos_entregar.forEach(orden => {
-            const diasRestantes = Math.ceil((new Date(orden.fecha_estimada_de_entrega) - new Date()) / (1000 * 60 * 60 * 24));
-            notifications.push({
-                icon: 'fa-clock',
-                color: '#3b82f6',
-                title: 'Tu orden próxima a vencer',
-                message: `${orden.numero_pedido} - ${orden.cliente}`,
-                time: `Vence en ${diasRestantes} día${diasRestantes !== 1 ? 's' : ''}`,
-                link: `/asesores/ordenes/${orden.id}`
-            });
-        });
-    }
-    
-    // Agregar órdenes urgentes (propias)
-    if (data.pedidos_en_ejecucion > 0) {
-        notifications.push({
-            icon: 'fa-exclamation-triangle',
-            color: '#ef4444',
-            title: 'Órdenes en ejecución',
-            message: `Tienes ${data.pedidos_en_ejecucion} orden${data.pedidos_en_ejecucion !== 1 ? 'es' : ''} en ejecución`,
-            time: 'Requiere atención',
-            link: '/asesores/ordenes?estado=En%20Ejecucion'
-        });
-    }
+
     
     // Renderizar notificaciones
     if (notifications.length === 0) {
@@ -148,6 +152,7 @@ function createNotificationElement(notif) {
     const div = document.createElement('a');
     div.href = notif.link;
     div.className = 'notification-item';
+    div.dataset.notificationId = notif.id;
     div.style.cssText = `
         display: flex;
         align-items: flex-start;
@@ -157,6 +162,7 @@ function createNotificationElement(notif) {
         color: var(--text-primary);
         border-bottom: 1px solid var(--border-color);
         transition: background 0.2s ease;
+        ${notif.isNew ? 'background: rgba(59, 130, 246, 0.05);' : ''}
     `;
     
     div.innerHTML = `
@@ -192,12 +198,24 @@ function createNotificationElement(notif) {
         </div>
     `;
     
+    // Si es notificación de fecha estimada, marcar como leída al hacer click
+    if (notif.tipo === 'fecha_estimada' && notif.id) {
+        div.addEventListener('click', async function(e) {
+            e.preventDefault();
+            await markNotificationAsRead(notif.id);
+            // Recargar notificaciones
+            loadNotifications();
+        });
+    }
+    
     div.addEventListener('mouseenter', function() {
         this.style.background = 'var(--bg-hover)';
     });
     
     div.addEventListener('mouseleave', function() {
-        this.style.background = 'transparent';
+        if (!notif.isNew) {
+            this.style.background = 'transparent';
+        }
     });
     
     return div;
@@ -235,6 +253,20 @@ async function markAllAsRead() {
     } catch (error) {
         console.error('Error marcando notificaciones:', error);
         showToast('Error al marcar notificaciones', 'error');
+    }
+}
+
+/**
+ * Marcar una notificación específica como leída
+ */
+async function markNotificationAsRead(notificationId) {
+    try {
+        await window.fetchAPI(`/asesores/notifications/${notificationId}/mark-read`, {
+            method: 'POST'
+        });
+        console.log(`✅ Notificación ${notificationId} marcada como leída`);
+    } catch (error) {
+        console.error(`Error marcando notificación ${notificationId}:`, error);
     }
 }
 

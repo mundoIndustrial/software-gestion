@@ -4,6 +4,10 @@
 @section('page-title', 'Cotizaciones')
 
 @push('styles')
+<style>
+    /* Estilos específicos para cotizaciones */
+</style>
+
 {{-- CSS específicos de crear cotización - lazy loaded por ruta --}}
 <link rel="stylesheet" href="{{ asset('css/asesores/create-friendly.css') }}?v={{ time() }}" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="{{ asset('css/asesores/cotizaciones-tabs.css') }}?v={{ time() }}" media="print" onload="this.media='all'">

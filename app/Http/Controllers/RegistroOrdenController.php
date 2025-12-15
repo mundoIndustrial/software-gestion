@@ -805,7 +805,7 @@ class RegistroOrdenController extends Controller
             
             // Validar entrada
             $request->validate([
-                'novedades' => 'nullable|string|max:1000'
+                'novedades' => 'nullable|string|max:5000'
             ]);
 
             \Log::info('✅ Validación exitosa');
@@ -815,7 +815,7 @@ class RegistroOrdenController extends Controller
             
             \Log::info('✅ Orden encontrada', ['orden_id' => $orden->id]);
 
-            // Actualizar novedades
+            // Actualizar novedades (reemplazo total)
             $orden->update([
                 'novedades' => $request->input('novedades', '')
             ]);
@@ -858,6 +858,93 @@ class RegistroOrdenController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al guardar las novedades: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Agrega una nueva novedad al final del campo (con usuario, fecha y hora)
+     * Endpoint: POST /api/ordenes/{numero_pedido}/novedades/add
+     */
+    public function addNovedad(Request $request, $numeroPedido)
+    {
+        try {
+            \Log::info('📝 addNovedad iniciado', ['numeroPedido' => $numeroPedido]);
+            
+            // Validar entrada
+            $request->validate([
+                'novedad' => 'required|string|max:500'
+            ]);
+
+            // Buscar la orden
+            $orden = PedidoProduccion::where('numero_pedido', $numeroPedido)->firstOrFail();
+            
+            // Obtener usuario autenticado
+            $usuario = auth()->user()->name ?? auth()->user()->email ?? 'Usuario';
+            
+            // Obtener fecha y hora actual en formato d-m-Y h:i:s A (hora normal con AM/PM)
+            $fechaHora = \Carbon\Carbon::now()->format('d-m-Y h:i:s A');
+            
+            // Crear la novedad con formato [usuario - fecha hora] novedad
+            $novedadFormato = "[{$usuario} - {$fechaHora}] " . $request->input('novedad');
+            
+            // Obtener novedades actuales
+            $novedadesActuales = $orden->novedades ?? '';
+            
+            // Concatenar con salto de línea si hay novedades anteriores
+            if (!empty($novedadesActuales)) {
+                $novedadesNuevas = $novedadesActuales . "\n\n" . $novedadFormato;
+            } else {
+                $novedadesNuevas = $novedadFormato;
+            }
+            
+            // Actualizar novedades
+            $orden->update([
+                'novedades' => $novedadesNuevas
+            ]);
+            
+            \Log::info('✅ Novedad agregada', [
+                'usuario' => $usuario,
+                'fecha_hora' => $fechaHora,
+                'novedad' => $request->input('novedad')
+            ]);
+
+            // Registrar en auditoría si existe
+            if (class_exists('App\Models\AuditLog')) {
+                \App\Models\AuditLog::create([
+                    'user_id' => auth()->id(),
+                    'action' => 'add_novedad',
+                    'auditable_type' => PedidoProduccion::class,
+                    'auditable_id' => $orden->id,
+                    'changes' => [
+                        'novedad_agregada' => $novedadFormato
+                    ]
+                ]);
+            }
+
+            // Broadcast actualización en tiempo real
+            broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', ['novedades']));
+            \Log::info('📡 Evento de broadcast enviado para nueva novedad');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Novedad agregada correctamente',
+                'data' => [
+                    'numero_pedido' => $orden->numero_pedido,
+                    'novedades' => $orden->novedades
+                ]
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            \Log::error('❌ Orden no encontrada', ['numeroPedido' => $numeroPedido]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Orden no encontrada'
+            ], 404);
+        } catch (\Exception $e) {
+            \Log::error('❌ Error al agregar novedad: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al agregar la novedad: ' . $e->getMessage()
             ], 500);
         }
     }

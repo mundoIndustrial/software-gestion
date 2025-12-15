@@ -111,6 +111,11 @@
     font-size: 0.72rem;
 }
 
+/* EXCEPCIÓN: Menú flotante debe mantener su tamaño */
+.friendly-form-fullscreen #menuFlotante button {
+    font-size: 13px !important;
+}
+
 .form-step {
     display: none;
     padding: 1.2rem 2.5rem;
@@ -2227,6 +2232,11 @@ table[style*="width: 100%; border-collapse: collapse; background: white;"] td:nt
         min-width: 150px;
     }
     
+    #menuFlotante button {
+        font-size: 13px !important;
+        padding: 20px 24px !important;
+    }
+    
     /* Modal responsivo */
     #modalEspecificaciones {
         padding: 0.5rem;
@@ -2234,12 +2244,34 @@ table[style*="width: 100%; border-collapse: collapse; background: white;"] td:nt
     
     #modalEspecificaciones > div {
         width: 95% !important;
-        max-height: 80vh !important;
+        max-height: 85vh !important;
         padding: 1rem !important;
+        max-width: 100% !important;
     }
     
     .modal-especificaciones {
         padding: 0.5rem !important;
+    }
+    
+    /* Tabla dentro del modal responsiva */
+    .tabla-control-compacta {
+        font-size: 0.75rem !important;
+    }
+    
+    .tabla-control-compacta th,
+    .tabla-control-compacta td {
+        padding: 8px 6px !important;
+    }
+    
+    .tabla-control-compacta input[type="text"],
+    .tabla-control-compacta input[type="checkbox"] {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    .tabla-control-compacta button {
+        padding: 4px 8px !important;
+        font-size: 0.7rem !important;
     }
     
     /* Campos de archivo drag-drop */

@@ -64,6 +64,37 @@
 
     <!-- Page-specific styles -->
     @stack('styles')
+    
+    <style>
+        /* Loading overlay global */
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+            flex-direction: column;
+            gap: 30px;
+            pointer-events: auto;
+        }
+        
+        #loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body class="
     {{ isset($_COOKIE['theme']) && $_COOKIE['theme'] === 'dark' ? 'dark-theme' : '' }}
@@ -96,6 +127,65 @@
     </script>
 
     @yield('body')
+
+    <!-- Loading overlay global -->
+    <div id="loading-overlay">
+        <!-- Spinner mejorado -->
+        <div style="position: relative; width: 80px; height: 80px;">
+            <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" style="animation: spin 2s linear infinite;">
+                <circle cx="40" cy="40" r="35" stroke="url(#gradient)" stroke-width="4" stroke-linecap="round"/>
+                <defs>
+                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#3498db;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#2ecc71;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+            </svg>
+        </div>
+        
+        <!-- Texto -->
+        <div style="text-align: center;">
+            @if(session()->has('login_success') || (auth()->check() && session()->has('just_logged_in')))
+                <p style="margin: 0 0 12px 0; color: #2c3e50; font-size: 32px; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; letter-spacing: -0.5px;">Bienvenido</p>
+                <p style="margin: 0; color: #7f8c8d; font-size: 18px; font-weight: 500; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">Estamos cargando te prometemos que será rápido <span style="font-size: 24px; display: inline-block; margin-left: 6px;">😊</span></p>
+            @else
+                <p style="margin: 0 0 12px 0; color: #2c3e50; font-size: 32px; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; letter-spacing: -0.5px;">Cargando</p>
+                <p style="margin: 0; color: #7f8c8d; font-size: 18px; font-weight: 500; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">Te prometemos que será rápido <span style="font-size: 24px; display: inline-block; margin-left: 6px;">😊</span></p>
+            @endif
+        </div>
+    </div>
+    
+    <script>
+        console.log('📦 Script de loading overlay iniciado');
+        
+        // Ocultar loading cuando todo esté cargado
+        window.addEventListener('load', function() {
+            console.log('✅ Evento LOAD disparado');
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) {
+                console.log('🎯 Overlay encontrado');
+                overlay.style.pointerEvents = 'none';
+                console.log('🚫 pointer-events: none aplicado');
+                overlay.classList.add('hidden');
+                console.log('👻 Clase hidden agregada');
+            } else {
+                console.log('❌ Overlay NO encontrado');
+            }
+        });
+        
+        // También ocultar inmediatamente si el documento ya está completamente cargado
+        console.log('📄 readyState:', document.readyState);
+        if (document.readyState === 'complete') {
+            console.log('⚡ Documento ya está en readyState complete');
+            const overlay = document.getElementById('loading-overlay');
+            if (overlay) {
+                console.log('🎯 Overlay encontrado en readyState complete');
+                overlay.style.pointerEvents = 'none';
+                overlay.classList.add('hidden');
+                console.log('👻 Clase hidden agregada en readyState complete');
+            }
+        }
+    </script>
 
     <!-- Core JS - Crítico para funcionalidad (sin defer) -->
     <script src="{{ asset('js/sidebar.js') }}"></script>

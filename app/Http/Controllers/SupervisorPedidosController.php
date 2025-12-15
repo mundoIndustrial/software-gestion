@@ -163,7 +163,13 @@ class SupervisorPedidosController extends Controller
 
         // Filtro por estado (mantener para filtros avanzados por columnas)
         if ($request->filled('estado')) {
-            $query->where('estado', $request->estado);
+            $estado = $request->estado;
+            // Para "En Producción", filtrar por múltiples estados
+            if ($estado === 'En Producción') {
+                $query->whereIn('estado', ['No iniciado', 'En Ejecución']);
+            } else {
+                $query->where('estado', $estado);
+            }
         }
 
         // Filtro por asesora (por nombre)

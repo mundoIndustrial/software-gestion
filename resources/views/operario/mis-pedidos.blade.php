@@ -351,7 +351,7 @@
             }
 
             try {
-                const response = await fetch(`/api/operario/completar-proceso/${numeroPedido}`, {
+                const response = await fetch(`/operario/api/completar-proceso/${numeroPedido}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

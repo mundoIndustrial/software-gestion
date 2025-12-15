@@ -44,6 +44,7 @@ Route::middleware('auth')->group(function () {
     
     // Asesores
     Route::post('/asesores/notifications/mark-all-read', [App\Http\Controllers\AsesoresController::class, 'markAllAsRead'])->name('asesores.notifications.mark-all-read');
+    Route::post('/asesores/notifications/{notificationId}/mark-read', [App\Http\Controllers\AsesoresController::class, 'markNotificationAsRead'])->name('asesores.notifications.mark-read');
     Route::get('/asesores/notifications', [App\Http\Controllers\AsesoresController::class, 'getNotifications'])->name('asesores.notifications');
     
     // Supervisor Pedidos
@@ -111,6 +112,9 @@ Route::middleware(['auth', 'supervisor-readonly'])->group(function () {
     Route::get('/api/bodega/{numero_pedido}/dias', [RegistroBodegaController::class, 'calcularDiasAPI'])->name('api.bodega.dias');
     Route::get('/api/ordenes/{id}/procesos', [App\Http\Controllers\OrdenController::class, 'getProcesos'])->name('api.ordenes.procesos');
     Route::post('/api/ordenes/{numero_pedido}/novedades', [RegistroOrdenController::class, 'updateNovedades'])->name('api.ordenes.novedades');
+    Route::post('/api/ordenes/{numero_pedido}/novedades/add', [RegistroOrdenController::class, 'addNovedad'])->name('api.ordenes.novedades.add');
+    Route::post('/api/bodega/{pedido}/novedades', [RegistroBodegaController::class, 'updateNovedadesBodega'])->name('api.bodega.novedades');
+    Route::post('/api/bodega/{pedido}/novedades/add', [RegistroBodegaController::class, 'addNovedadBodega'])->name('api.bodega.novedades.add');
     Route::put('/api/procesos/{id}/editar', [App\Http\Controllers\OrdenController::class, 'editarProceso'])->name('api.procesos.editar');
     Route::delete('/api/procesos/{id}/eliminar', [App\Http\Controllers\OrdenController::class, 'eliminarProceso'])->name('api.procesos.eliminar');
     Route::post('/api/procesos/buscar', [App\Http\Controllers\OrdenController::class, 'buscarProceso'])->name('api.procesos.buscar');
@@ -293,6 +297,7 @@ Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operar
     Route::get('/mis-pedidos', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'misPedidos'])->name('mis-pedidos');
     Route::get('/pedido/{numeroPedido}', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'verPedido'])->name('ver-pedido');
     Route::get('/api/pedidos', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'obtenerPedidosJson'])->name('api.pedidos');
+    Route::get('/api/novedades/{numeroPedido}', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'obtenerNovedades'])->name('api.novedades');
     Route::post('/buscar', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'buscarPedido'])->name('buscar');
     Route::post('/reportar-pendiente', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'reportarPendiente'])->name('reportar-pendiente');
     Route::post('/api/completar-proceso/{numeroPedido}', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'completarProceso'])->name('api.completar-proceso');

@@ -362,7 +362,7 @@
     background: white;
     cursor: pointer;
     text-align: left;
-    font-size: 0.9rem;
+    font-size: 13px !important;
     color: #333;
     display: flex;
     align-items: center;

@@ -13,7 +13,7 @@
     <p>Selecciona una cotización y agrega las cantidades por talla</p>
 </div>
 
-<div class="container mx-auto px-4 py-8">
+<div style="width: 100%; padding: 1.5rem;">
     <form id="formCrearPedido" class="space-y-6">
         @csrf
 

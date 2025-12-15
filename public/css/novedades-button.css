@@ -89,6 +89,9 @@
     overflow: hidden;
     animation: slideUpNovedades 0.3s ease-out;
     z-index: 10001;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
 }
 
 @keyframes slideUpNovedades {
@@ -108,6 +111,7 @@
     padding: 24px;
     border-bottom: none;
     position: relative;
+    flex-shrink: 0;
 }
 
 .novedades-modal-title {
@@ -153,6 +157,11 @@
 
 .novedades-modal-body {
     padding: 24px;
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
 .novedades-textarea {
@@ -167,6 +176,11 @@
     transition: all 0.2s ease;
     box-sizing: border-box;
     color: #1f2937;
+}
+
+.novedades-textarea:read-only {
+    background: #f9fafb;
+    color: #374151;
 }
 
 .novedades-textarea:focus {
@@ -187,6 +201,67 @@
     font-weight: 500;
 }
 
+/* ===== CONTENEDOR NUEVA NOVEDAD ===== */
+#nuevaNovedadContainer {
+    background: #f0f4ff;
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px dashed #bfdbfe;
+}
+
+#nuevaNovedadContainer label {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+#nuevaNovedadTextarea {
+    background: #fff !important;
+}
+
+.btn-cancel-new,
+.btn-save-new {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.btn-cancel-new {
+    background: #f3f4f6;
+    color: #6b7280;
+    border: 1px solid #d1d5db;
+}
+
+.btn-cancel-new:hover {
+    background: #e5e7eb;
+}
+
+.btn-save-new {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.btn-save-new:hover {
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-cancel-new .material-symbols-rounded,
+.btn-save-new .material-symbols-rounded {
+    font-size: 18px;
+}
+
+/* ===== FOOTER MODAL ===== */
 .novedades-modal-footer {
     padding: 16px 24px;
     display: flex;
@@ -194,10 +269,14 @@
     justify-content: flex-end;
     background: #f9fafb;
     border-top: 1px solid #e5e7eb;
+    flex-shrink: 0;
+    flex-wrap: wrap;
 }
 
 .btn-cancel,
-.btn-save {
+.btn-save,
+.btn-edit-toggle,
+.btn-add-new {
     padding: 10px 20px;
     border: none;
     border-radius: 6px;
@@ -220,28 +299,52 @@
     transform: translateY(-2px);
 }
 
+.btn-edit-toggle {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+}
+
+.btn-edit-toggle:hover {
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-add-new {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+    color: white;
+}
+
+.btn-add-new:hover {
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+    transform: translateY(-2px);
+}
+
 .btn-save {
-    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     color: white;
 }
 
 .btn-save:hover {
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
     transform: translateY(-2px);
 }
 
 .btn-cancel .material-symbols-rounded,
-.btn-save .material-symbols-rounded {
+.btn-save .material-symbols-rounded,
+.btn-edit-toggle .material-symbols-rounded,
+.btn-add-new .material-symbols-rounded {
     font-size: 18px;
 }
 
 /* Estados de carga */
-.btn-save.loading {
+.btn-save.loading,
+.btn-save-new.loading {
     opacity: 0.6;
     pointer-events: none;
 }
 
-.btn-save.loading::after {
+.btn-save.loading::after,
+.btn-save-new.loading::after {
     content: '';
     display: inline-block;
     width: 14px;
@@ -264,6 +367,7 @@
     .novedades-modal-content {
         width: 95%;
         max-width: none;
+        max-height: 90vh;
     }
 
     .novedades-modal-header {
@@ -284,13 +388,22 @@
     }
 
     .btn-cancel,
-    .btn-save {
+    .btn-save,
+    .btn-edit-toggle,
+    .btn-add-new {
         flex: 1;
         justify-content: center;
-        padding: 10px 16px;
+        padding: 10px 8px;
+        font-size: 0.85rem;
+    }
+
+    .btn-cancel .material-symbols-rounded,
+    .btn-save .material-symbols-rounded,
+    .btn-edit-toggle .material-symbols-rounded,
+    .btn-add-new .material-symbols-rounded {
+        font-size: 16px;
     }
 }
-
 
 /* Responsive */
 @media (max-width: 768px) {
@@ -308,3 +421,4 @@
 .table-cell:has(.btn-edit-novedades):hover {
     background: rgba(102, 126, 234, 0.05);
 }
+

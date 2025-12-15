@@ -159,6 +159,7 @@
                                     <div class="cell-content" style="justify-content: flex-start;">
                                         <button 
                                             class="btn-edit-novedades"
+                                            data-full-novedades="{{ addslashes($orden->novedades ?? '') }}"
                                             onclick="event.stopPropagation(); openNovedadesModal('{{ $orden->numero_pedido }}', `{{ addslashes($orden->novedades ?? '') }}`)"
                                             title="Editar novedades"
                                             type="button">

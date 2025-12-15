@@ -27,6 +27,9 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
+        
+        // Marcar que el usuario acaba de iniciar sesión
+        session()->flash('just_logged_in', true);
 
         // Redirigir según el rol del usuario (SIN permitir rutas no autorizadas)
         $user = Auth::user();

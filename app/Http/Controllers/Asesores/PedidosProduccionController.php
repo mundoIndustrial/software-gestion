@@ -40,13 +40,32 @@ class PedidosProduccionController extends Controller
     /**
      * Listar pedidos de producción del asesor
      */
-    public function index()
+    public function index(Request $request)
     {
-        $pedidos = PedidoProduccion::whereHas('cotizacion', function ($query) {
+        $query = PedidoProduccion::whereHas('cotizacion', function ($query) {
             $query->where('asesor_id', Auth::id());
-        })
-        ->orderBy('created_at', 'desc')
-        ->paginate(15);
+        });
+
+        // Filtrar por estado si se proporciona
+        if ($request->has('estado')) {
+            $estado = $request->input('estado');
+            
+            // Debug: Log el estado recibido
+            \Log::info('Filtro estado recibido: "' . $estado . '"');
+            
+            // Para "En Producción", filtrar por múltiples estados
+            if ($estado === 'En Producción') {
+                $query->whereIn('estado', ['No iniciado', 'En Ejecución']);
+                \Log::info('Filtrando por En Producción (No iniciado + En Ejecución)');
+            } else {
+                $query->where('estado', $estado);
+                \Log::info('Filtrando por estado: ' . $estado);
+            }
+        }
+
+        $pedidos = $query->orderBy('created_at', 'desc')->paginate(15);
+        
+        \Log::info('Total de pedidos encontrados: ' . $pedidos->total());
 
         return view('asesores.pedidos.index', compact('pedidos'));
     }

@@ -260,6 +260,28 @@ class OperarioController extends Controller
     }
 
     /**
+     * Obtener novedades existentes de un pedido
+     */
+    public function obtenerNovedades($numeroPedido)
+    {
+        try {
+            // Obtener novedades de procesos_prenda
+            $proceso = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)->first();
+            $novedades = $proceso?->novedades ?? '';
+            
+            return response()->json([
+                'success' => true,
+                'novedades' => $novedades
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener novedades: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Reportar pendiente - Cambiar estado del proceso a Pendiente y guardar novedad
      * OPTIMIZADO: Guarda novedad en procesos_prenda, pedidos_produccion y tabla_original_bodega
      */
@@ -292,7 +314,7 @@ class OperarioController extends Controller
             }
 
             // Formato de novedad con timestamp y usuario
-            $novedadFormato = "[{$usuario->name} - " . now()->format('Y-m-d H:i:s') . "] {$area}: {$novedad}";
+            $novedadFormato = "[{$usuario->name} - " . now()->format('d-m-Y H:i:s') . "] {$area}: {$novedad}";
 
             // Cambiar estado a Pendiente y guardar novedad en proceso
             $proceso->update([
@@ -326,6 +348,10 @@ class OperarioController extends Controller
             // ===== LIMPIAR CACHÉ =====
             \Cache::forget("pedido_data_{$numeroPedido}");
             \Cache::forget("fotos_pedido_{$numeroPedido}");
+            // Limpiar caché de registros
+            \Cache::forget("registros_index");
+            \Cache::forget("registros_search_{$numeroPedido}");
+            \Cache::forget("registro_pedido_{$numeroPedido}");
 
             return response()->json([
                 'success' => true,
@@ -388,10 +414,9 @@ class OperarioController extends Controller
             $usuario = Auth::user();
             $area = $usuario->roles()->first()?->name === 'cortador' ? 'Corte' : 'Costura';
 
-            // Buscar el proceso actual del pedido
+            // Buscar el proceso del pedido (sin importar si está completado)
             $proceso = \App\Models\ProcesoPrenda::where('numero_pedido', $numeroPedido)
                 ->where('proceso', $area)
-                ->where('estado_proceso', '!=', 'Completado')
                 ->first();
 
             if (!$proceso) {
@@ -399,6 +424,15 @@ class OperarioController extends Controller
                     'success' => false,
                     'message' => 'Proceso no encontrado'
                 ], 404);
+            }
+
+            // Si ya está completado, retornar éxito
+            if ($proceso->estado_proceso === 'Completado') {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Proceso ya fue marcado como completado',
+                    'already_completed' => true
+                ]);
             }
 
             // Actualizar el proceso a completado

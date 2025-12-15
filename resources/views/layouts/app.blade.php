@@ -119,7 +119,6 @@
 @endpush
 
 @push('scripts')
-    <script src="{{ asset('js/top-nav.js') }}"></script>
     <script src="{{ asset('js/contador/notifications.js') }}"></script>
     <script src="{{ asset('js/nav-search.js') }}"></script>
 @endpush

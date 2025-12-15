@@ -1234,4 +1234,149 @@ class RegistroBodegaController extends Controller
             return response()->json(['error' => 'Error al buscar'], 500);
         }
     }
+
+    /**
+     * Actualiza novedades en tabla_original_bodega (reemplazo total)
+     * Endpoint: POST /api/bodega/{pedido}/novedades
+     */
+    public function updateNovedadesBodega(Request $request, $pedido)
+    {
+        try {
+            \Log::info('📝 updateNovedadesBodega iniciado', ['pedido' => $pedido]);
+            
+            // Validar entrada
+            $request->validate([
+                'novedades' => 'nullable|string|max:5000'
+            ]);
+
+            // Buscar el registro en tabla_original_bodega
+            $registro = TablaOriginalBodega::where('pedido', $pedido)->firstOrFail();
+            
+            \Log::info('✅ Registro encontrado', ['pedido' => $pedido]);
+
+            // Actualizar novedades
+            $registro->update([
+                'novedades' => $request->input('novedades', '')
+            ]);
+            
+            \Log::info('✅ Novedades actualizadas', ['novedades' => $request->input('novedades', '')]);
+
+            // Registrar en auditoría si existe
+            if (class_exists('App\Models\AuditLog')) {
+                \App\Models\AuditLog::create([
+                    'user_id' => auth()->id(),
+                    'action' => 'update_novedades_bodega',
+                    'auditable_type' => TablaOriginalBodega::class,
+                    'auditable_id' => $registro->id,
+                    'changes' => [
+                        'novedades' => $request->input('novedades', '')
+                    ]
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Novedades actualizadas correctamente',
+                'data' => [
+                    'pedido' => $registro->pedido,
+                    'novedades' => $registro->novedades
+                ]
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            \Log::error('❌ Registro no encontrado en bodega', ['pedido' => $pedido]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Registro no encontrado'
+            ], 404);
+        } catch (\Exception $e) {
+            \Log::error('❌ Error al actualizar novedades bodega: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar las novedades: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Agrega una nueva novedad en tabla_original_bodega
+     * Endpoint: POST /api/bodega/{pedido}/novedades/add
+     */
+    public function addNovedadBodega(Request $request, $pedido)
+    {
+        try {
+            \Log::info('📝 addNovedadBodega iniciado', ['pedido' => $pedido]);
+            
+            // Validar entrada
+            $request->validate([
+                'novedad' => 'required|string|max:500'
+            ]);
+
+            // Buscar el registro en tabla_original_bodega
+            $registro = TablaOriginalBodega::where('pedido', $pedido)->firstOrFail();
+            
+            // Obtener usuario autenticado
+            $usuario = auth()->user()->name ?? auth()->user()->email ?? 'Usuario';
+            
+            // Obtener fecha y hora actual en formato d-m-Y h:i:s A (hora normal con AM/PM)
+            $fechaHora = \Carbon\Carbon::now()->format('d-m-Y h:i:s A');
+            
+            // Crear la novedad con formato [usuario - fecha hora] novedad
+            $novedadFormato = "[{$usuario} - {$fechaHora}] " . $request->input('novedad');
+            
+            // Obtener novedades actuales
+            $novedadesActuales = $registro->novedades ?? '';
+            
+            // Concatenar con salto de línea si hay novedades anteriores
+            if (!empty($novedadesActuales)) {
+                $novedadesNuevas = $novedadesActuales . "\n\n" . $novedadFormato;
+            } else {
+                $novedadesNuevas = $novedadFormato;
+            }
+            
+            // Actualizar novedades
+            $registro->update([
+                'novedades' => $novedadesNuevas
+            ]);
+            
+            \Log::info('✅ Novedad agregada en bodega', [
+                'usuario' => $usuario,
+                'fecha_hora' => $fechaHora,
+                'novedad' => $request->input('novedad')
+            ]);
+
+            // Registrar en auditoría si existe
+            if (class_exists('App\Models\AuditLog')) {
+                \App\Models\AuditLog::create([
+                    'user_id' => auth()->id(),
+                    'action' => 'add_novedad_bodega',
+                    'auditable_type' => TablaOriginalBodega::class,
+                    'auditable_id' => $registro->id,
+                    'changes' => [
+                        'novedad_agregada' => $novedadFormato
+                    ]
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Novedad agregada correctamente',
+                'data' => [
+                    'pedido' => $registro->pedido,
+                    'novedades' => $registro->novedades
+                ]
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            \Log::error('❌ Registro no encontrado en bodega', ['pedido' => $pedido]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Registro no encontrado'
+            ], 404);
+        } catch (\Exception $e) {
+            \Log::error('❌ Error al agregar novedad en bodega: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al agregar la novedad: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

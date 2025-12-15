@@ -278,20 +278,18 @@
 }
 
 .user-menu {
-    position: fixed !important;
-    top: auto !important;
-    right: auto !important;
+    position: fixed;
+    top: auto;
+    right: auto;
     width: 280px;
     background: var(--color-bg-secondary);
     border: 1px solid var(--color-border-hr);
     border-radius: 14px;
     box-shadow: 0 10px 24px 0 rgba(0, 0, 0, 0.12);
-    display: flex !important;
+    display: flex;
     flex-direction: column;
     overflow: hidden;
-    animation: slideDown 0.2s ease-out;
-    z-index: 10001 !important;
-    pointer-events: auto !important;
+    z-index: 10001;
     visibility: hidden;
     opacity: 0;
     transition: opacity 0.2s ease-out, visibility 0.2s ease-out;
