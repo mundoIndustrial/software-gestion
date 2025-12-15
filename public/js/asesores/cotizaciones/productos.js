@@ -151,8 +151,16 @@ function agregarFotos(files, dropZone) {
     console.log('📁 Producto ID:', productoId);
     console.log('📁 Índice de prenda:', prendaIndex);
     
+    // Contar imágenes guardadas (desde cargarBorrador)
+    const fotosGuardadas = Array.from(dropZone.closest('.producto-card').querySelectorAll('[data-foto]:not([data-foto-nueva])')).length;
+    const fotosNuevas = window.fotosSeleccionadas[productoId].length;
+    const totalFotos = fotosGuardadas + fotosNuevas;
+    
+    console.log(`📊 Fotos guardadas: ${fotosGuardadas}, Fotos nuevas: ${fotosNuevas}, Total: ${totalFotos}`);
+    
     Array.from(files).forEach((file, fileIndex) => {
-        if (window.fotosSeleccionadas[productoId].length < 3) {
+        // Validar límite de 3 fotos TOTAL (guardadas + nuevas)
+        if (totalFotos + window.fotosSeleccionadas[productoId].length < 3) {
             window.fotosSeleccionadas[productoId].push(file);
             
             // Guardar con índice de prenda (similar a telaConIndice)
@@ -165,6 +173,8 @@ function agregarFotos(files, dropZone) {
             });
             
             console.log(`✅ Foto ${fileIndex + 1} de prenda guardada: ${file.name} (Prenda ${prendaIndex})`);
+        } else {
+            console.warn(`⚠️ Límite de 3 fotos alcanzado. No se puede agregar más fotos.`);
         }
     });
     actualizarPreviewFotos(dropZone);
@@ -198,22 +208,35 @@ function actualizarPreviewFotos(input) {
     
     console.log('✓ Contenedor encontrado:', container);
     
-    container.innerHTML = '';
+    // NO limpiar el contenedor - solo agregar las nuevas fotos (File objects)
+    // Las imágenes guardadas ya están en el contenedor desde cargarBorrador()
     const fotos = window.fotosSeleccionadas[productoId] || [];
     
-    console.log(`📸 Mostrando ${fotos.length} fotos para producto ${productoId}`);
+    console.log(`📸 Mostrando ${fotos.length} fotos nuevas para producto ${productoId}`);
     
     if (fotos.length === 0) {
-        console.log('ℹ️ No hay fotos para mostrar');
+        console.log('ℹ️ No hay fotos nuevas para mostrar');
         return;
     }
     
     fotos.forEach((file, index) => {
+        // Verificar si esta foto ya está en el preview (evitar duplicados)
+        const yaExiste = Array.from(container.querySelectorAll('[data-foto-nueva]')).some(el => 
+            el.dataset.fileName === file.name
+        );
+        
+        if (yaExiste) {
+            console.log(`⚠️ Foto ${file.name} ya existe en el preview`);
+            return;
+        }
+        
         const reader = new FileReader();
         reader.onload = function(e) {
             const preview = document.createElement('div');
             preview.setAttribute('data-foto', 'true');
+            preview.setAttribute('data-foto-nueva', 'true'); // Marcar como foto nueva
             preview.setAttribute('data-index', index);
+            preview.setAttribute('data-file-name', file.name); // Guardar nombre del archivo
             preview.style.cssText = 'position: relative; width: 60px; height: 60px; border-radius: 4px; overflow: hidden; background: #f0f0f0; cursor: pointer;';
             const imagenSrc = e.target.result;
             preview.innerHTML = `
@@ -322,12 +345,121 @@ function imagenSiguiente() {
 }
 
 function eliminarFoto(productoId, index) {
-    if (fotosSeleccionadas[productoId]) {
-        fotosSeleccionadas[productoId].splice(index, 1);
-        const productoCard = document.querySelector(`[data-producto-id="${productoId}"]`);
-        if (productoCard) {
-            const input = productoCard.querySelector('input[type="file"]');
-            if (input) actualizarPreviewFotos(input);
+    const productoCard = document.querySelector(`[data-producto-id="${productoId}"]`);
+    if (!productoCard) return;
+    
+    const fotosPreview = productoCard.querySelector('.fotos-preview');
+    if (!fotosPreview) return;
+    
+    // Obtener todas las fotos en el preview (guardadas + nuevas)
+    const todasLasFotos = Array.from(fotosPreview.querySelectorAll('[data-foto]'));
+    
+    // Obtener la foto a eliminar por índice
+    if (todasLasFotos[index]) {
+        const fotoAEliminar = todasLasFotos[index];
+        const esGuardada = fotoAEliminar.hasAttribute('data-foto-guardada');
+        const fileName = fotoAEliminar.getAttribute('data-file-name');
+        
+        console.log(`🗑️ Intentando eliminar foto ${index + 1}:`, {
+            esGuardada: esGuardada,
+            fileName: fileName
+        });
+        
+        if (esGuardada) {
+            // Es una foto guardada - mostrar modal de confirmación
+            Swal.fire({
+                title: '¿Eliminar imagen?',
+                text: 'Esta imagen se borrará definitivamente de la carpeta.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#f44336',
+                cancelButtonColor: '#757575',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const rutaFoto = fotoAEliminar.querySelector('img')?.src || '';
+                    
+                    console.log(`🗑️ Eliminando foto inmediatamente:`, rutaFoto);
+                    
+                    // Mostrar loading
+                    Swal.fire({
+                        title: 'Eliminando...',
+                        html: '<div style="display: flex; justify-content: center; align-items: center; gap: 10px;"><div style="width: 12px; height: 12px; border-radius: 50%; background: #f44336; animation: pulse 1.5s infinite;"></div><div style="width: 12px; height: 12px; border-radius: 50%; background: #f44336; animation: pulse 1.5s infinite 0.3s;"></div><div style="width: 12px; height: 12px; border-radius: 50%; background: #f44336; animation: pulse 1.5s infinite 0.6s;"></div></div><style>@keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }</style>',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false
+                    });
+                    
+                    // Enviar solicitud al backend para eliminar inmediatamente
+                    fetch(window.location.origin + '/asesores/fotos/eliminar', {
+                        // Nota: La ruta está dentro del grupo 'prefix(asesores)' en web.php, 
+                        // así que la URL completa es /asesores/fotos/eliminar
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            ruta: rutaFoto,
+                            cotizacion_id: window.cotizacionIdActual
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            console.log(`✅ Foto eliminada del servidor:`, rutaFoto);
+                            
+                            // Eliminar del preview
+                            fotoAEliminar.remove();
+                            
+                            Swal.fire({
+                                title: '¡Eliminada!',
+                                text: 'La imagen ha sido eliminada correctamente.',
+                                icon: 'success',
+                                confirmButtonColor: '#1e40af',
+                                timer: 2000
+                            });
+                        } else {
+                            console.error(`❌ Error al eliminar foto:`, data.message);
+                            Swal.fire({
+                                title: 'Error',
+                                text: data.message || 'No se pudo eliminar la imagen.',
+                                icon: 'error',
+                                confirmButtonColor: '#1e40af'
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error(`❌ Error en la solicitud:`, error);
+                        Swal.fire({
+                            title: 'Error',
+                            text: 'No se pudo conectar con el servidor.',
+                            icon: 'error',
+                            confirmButtonColor: '#1e40af'
+                        });
+                    });
+                }
+            });
+        } else {
+            // Es una foto nueva - eliminarla directamente sin confirmar
+            if (fotosSeleccionadas[productoId]) {
+                // Encontrar el índice en fotosSeleccionadas por nombre
+                const indexEnFotos = fotosSeleccionadas[productoId].findIndex(f => f.name === fileName);
+                if (indexEnFotos !== -1) {
+                    fotosSeleccionadas[productoId].splice(indexEnFotos, 1);
+                    console.log(`✅ Foto nueva eliminada de fotosSeleccionadas`);
+                }
+            }
+            fotoAEliminar.remove();
+            
+            // Actualizar imagenesEnMemoria
+            if (window.imagenesEnMemoria && window.imagenesEnMemoria.prendaConIndice) {
+                window.imagenesEnMemoria.prendaConIndice = window.imagenesEnMemoria.prendaConIndice.filter(item => 
+                    !(item.file && item.file.name === fileName)
+                );
+            }
         }
     }
 }
@@ -474,7 +606,22 @@ function cerrarModalImagenPrenda() {
 
 function buscarPrendas(input) {
     const valor = input.value.toLowerCase();
-    const suggestions = input.closest('.prenda-search-container').querySelector('.prenda-suggestions');
+    const container = input.closest('.prenda-search-container');
+    
+    // Validar que el contenedor existe
+    if (!container) {
+        console.warn('⚠️ Contenedor .prenda-search-container no encontrado');
+        return;
+    }
+    
+    const suggestions = container.querySelector('.prenda-suggestions');
+    
+    // Validar que suggestions existe
+    if (!suggestions) {
+        console.warn('⚠️ Elemento .prenda-suggestions no encontrado');
+        return;
+    }
+    
     const items = suggestions.querySelectorAll('.prenda-suggestion-item');
     
     if (valor.length === 0) {

@@ -45,8 +45,8 @@
                 border-radius: 6px;
                 font-weight: 700;
                 font-size: 0.85rem;
-                background: {{ $cotizacion->es_borrador ? '#fef3c7' : ($cotizacion->estado === 'ENVIADA_CONTADOR' ? '#cffafe' : ($cotizacion->estado === 'aceptada' ? '#dcfce7' : ($cotizacion->estado === 'rechazada' ? '#fee2e2' : '#cffafe'))) }};
-                color: {{ $cotizacion->es_borrador ? '#92400e' : ($cotizacion->estado === 'ENVIADA_CONTADOR' ? '#164e63' : ($cotizacion->estado === 'aceptada' ? '#166534' : ($cotizacion->estado === 'rechazada' ? '#7f1d1d' : '#164e63'))) }};
+                background: {{ $cotizacion->es_borrador ? '#fef3c7' : ($cotizacion->estado === 'ENVIADA_CONTADOR' ? '#cffafe' : ($cotizacion->estado === 'aceptada' ? '#cffafe' : ($cotizacion->estado === 'rechazada' ? '#fee2e2' : '#cffafe'))) }};
+                color: {{ $cotizacion->es_borrador ? '#92400e' : ($cotizacion->estado === 'ENVIADA_CONTADOR' ? '#164e63' : ($cotizacion->estado === 'aceptada' ? '#164e63' : ($cotizacion->estado === 'rechazada' ? '#7f1d1d' : '#164e63'))) }};
             ">
                 @if($cotizacion->es_borrador)
                     Borrador

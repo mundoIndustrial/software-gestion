@@ -1,0 +1,115 @@
+/* Estilos para el botón hamburguesa en móvil */
+.sidebar-hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    gap: 5px;
+    transition: all 0.3s ease;
+}
+
+.hamburger-line {
+    width: 24px;
+    height: 2.5px;
+    background-color: currentColor;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+/* Estado activo del hamburguesa (cuando el sidebar está abierto) */
+.sidebar-hamburger.active .hamburger-line:nth-child(1) {
+    transform: rotate(45deg) translate(8px, 8px);
+}
+
+.sidebar-hamburger.active .hamburger-line:nth-child(2) {
+    opacity: 0;
+}
+
+.sidebar-hamburger.active .hamburger-line:nth-child(3) {
+    transform: rotate(-45deg) translate(7px, -7px);
+}
+
+/* Media query para dispositivos móviles (hasta 768px) */
+@media (max-width: 768px) {
+    .sidebar-hamburger {
+        display: flex;
+    }
+
+    .sidebar-toggle {
+        display: none !important;
+    }
+
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
+        width: 280px;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        z-index: 1000;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    .asesores-wrapper {
+        position: relative;
+    }
+
+    /* Overlay cuando el sidebar está abierto */
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+    }
+
+    .sidebar-overlay.active {
+        display: block;
+    }
+
+    .main-content {
+        transition: margin-left 0.3s ease;
+    }
+
+    .sidebar-content {
+        overflow-y: auto;
+        max-height: calc(100vh - 80px);
+    }
+}
+
+/* Media query para desktop (mayor a 768px) */
+@media (min-width: 769px) {
+    .sidebar-hamburger {
+        display: none !important;
+    }
+
+    .sidebar-toggle {
+        display: flex !important;
+    }
+
+    .sidebar {
+        position: relative;
+        transform: translateX(0) !important;
+        width: auto;
+        height: auto;
+        box-shadow: none;
+    }
+
+    .sidebar-overlay {
+        display: none !important;
+    }
+}

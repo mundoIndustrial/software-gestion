@@ -3,7 +3,7 @@
 namespace App\Application\Services;
 
 use App\Models\PrendaFotoCot;
-use App\Models\PrendaTalaFotoCot;
+use App\Models\PrendaTelaFotoCot;
 use App\Models\LogoFotoCot;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
@@ -55,7 +55,7 @@ class EliminarImagenesCotizacionService
     {
         try {
             // Obtener todas las fotos de tela guardadas
-            $telasGuardadas = PrendaTalaFotoCot::where('prenda_cot_id', $prendaId)->get();
+            $telasGuardadas = PrendaTelaFotoCot::where('prenda_cot_id', $prendaId)->get();
 
             foreach ($telasGuardadas as $telaGuardada) {
                 // Verificar si esta foto está en la lista actual

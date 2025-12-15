@@ -1,0 +1,109 @@
+/* Estilos SOLO para móvil - No afecta desktop */
+@media (max-width: 768px) {
+    /* Mostrar botón hamburguesa en móvil */
+    .sidebar-hamburger {
+        display: flex !important;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 40px;
+        height: 40px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        gap: 5px;
+        transition: all 0.3s ease;
+        color: inherit;
+    }
+
+    .hamburger-line {
+        width: 24px;
+        height: 2.5px;
+        background-color: currentColor;
+        border-radius: 2px;
+        transition: all 0.3s ease;
+    }
+
+    /* Animación del hamburguesa cuando está activo */
+    .sidebar-hamburger.active .hamburger-line:nth-child(1) {
+        transform: rotate(45deg) translate(8px, 8px);
+    }
+
+    .sidebar-hamburger.active .hamburger-line:nth-child(2) {
+        opacity: 0;
+    }
+
+    .sidebar-hamburger.active .hamburger-line:nth-child(3) {
+        transform: rotate(-45deg) translate(7px, -7px);
+    }
+
+    /* Ocultar botón toggle en móvil */
+    .sidebar-toggle {
+        display: none !important;
+    }
+
+    /* Sidebar deslizable en móvil */
+    .sidebar {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        height: 100vh !important;
+        width: 280px !important;
+        transform: translateX(-100%) !important;
+        transition: transform 0.3s ease !important;
+        z-index: 1000 !important;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1) !important;
+        overflow-y: auto !important;
+    }
+
+    /* Sidebar abierto */
+    .sidebar.open {
+        transform: translateX(0) !important;
+    }
+
+    /* Overlay oscuro */
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+    }
+
+    .sidebar-overlay.active {
+        display: block !important;
+    }
+
+    /* Contenido del sidebar con scroll */
+    .sidebar-content {
+        overflow-y: auto;
+        max-height: calc(100vh - 80px);
+    }
+}
+
+/* Desktop - No cambiar nada */
+@media (min-width: 769px) {
+    .sidebar-hamburger {
+        display: none !important;
+    }
+
+    .sidebar-toggle {
+        display: flex !important;
+    }
+
+    .sidebar {
+        position: relative !important;
+        transform: translateX(0) !important;
+        width: auto !important;
+        height: auto !important;
+        box-shadow: none !important;
+    }
+
+    .sidebar-overlay {
+        display: none !important;
+    }
+}

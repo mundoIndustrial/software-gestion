@@ -3,7 +3,7 @@
     <div class="step-header" style="display: flex; justify-content: space-between; align-items: center;">
         <div>
             <h2 style="font-size: 1rem !important; margin: 0 0 0.2rem 0 !important;">PASO 2: PRENDAS DEL PEDIDO</h2>
-            <p style="font-size: 0.45rem !important; margin: 0 !important; color: #666 !important;">AGREGA LAS PRENDAS QUE TU CLIENTE QUIERE</p>
+            <p style="font-size: 0.8rem !important; margin: 0 !important; color: #666 !important;">AGREGA LAS PRENDAS QUE TU CLIENTE QUIERE</p>
         </div>
         
         <!-- Selector de tipo de venta en la esquina derecha -->

@@ -75,7 +75,8 @@ function mostrarTipo(tipo) {
         'todas': { cot: 'seccion-todas', bor: 'seccion-bor-todas' },
         'P': { cot: 'seccion-prenda', bor: 'seccion-bor-prenda' },
         'L': { cot: 'seccion-logo', bor: 'seccion-bor-logo' },
-        'PL': { cot: 'seccion-pb', bor: 'seccion-bor-pb' }
+        'PL': { cot: 'seccion-combinada', bor: 'seccion-bor-combinada' },
+        'RF': { cot: 'seccion-rf', bor: 'seccion-bor-rf' }
     };
     
     console.log('🗺️ Secciones mapeadas:', secciones);

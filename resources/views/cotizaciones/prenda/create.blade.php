@@ -552,7 +552,7 @@
                 <div class="section-title"><i class="fas fa-sticky-note"></i> DESCRIPCIÓN</div>
                     <div class="form-col full">
                         <textarea name="productos_prenda[][descripcion]" class="input-large" placeholder="DESCRIPCIÓN DE LA PRENDA..." rows="2" style="font-size: 0.75rem; padding: 0.4rem; min-height: 50px;"></textarea>
-                        <small class="help-text" style="font-size: 0.65rem; margin-top: 0.2rem; display: block;">DESCRIBE LA PRENDA, DETALLES ESPECIALES, LOGO, BORDADO, ESTAMPADO, ETC.</small>
+                        <small class="help-text" style="font-size: 0.65rem; margin-top: 0.2rem; display: block;">DESCRIBE LA PRENDA, DETALLES ESPECIALES, ETC.</small>
                     </div>
             </div>
 
@@ -798,7 +798,7 @@
                             </div>
 
                             <!-- REFLECTIVO -->
-                            <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px;">
+                            <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
                                 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
                                     <input type="checkbox" name="productos_prenda[][variantes][aplica_reflectivo]" value="1" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
                                     <label style="font-weight: 600; color: #0066cc; cursor: pointer; flex: 1;"><i class="fas fa-star"></i> Reflectivo</label>
@@ -806,6 +806,25 @@
                                 <input type="text" name="productos_prenda[][variantes][obs_reflectivo]" placeholder="Ej: En brazos y espalda..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; transition: border-color 0.2s;">
                             </div>
                         </div>
+
+                        <style>
+                            @media (max-width: 768px) {
+                                .variaciones-tabla-desktop {
+                                    display: none !important;
+                                }
+                                .variaciones-cards-mobile {
+                                    display: block !important;
+                                }
+                            }
+                            @media (min-width: 769px) {
+                                .variaciones-tabla-desktop {
+                                    display: table !important;
+                                }
+                                .variaciones-cards-mobile {
+                                    display: none !important;
+                                }
+                            }
+                        </style>
                     </div>
                 </div>
             </div>

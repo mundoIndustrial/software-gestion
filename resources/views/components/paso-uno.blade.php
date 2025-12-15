@@ -2,7 +2,7 @@
 <div class="form-step active" data-step="1">
     <div class="step-header">
         <h2 style="font-size: 1rem !important; margin: 0 0 0.2rem 0 !important;">PASO 1: INFORMACIÓN DEL CLIENTE</h2>
-        <p style="font-size: 0.60rem !important; margin: 0 !important; color: #666 !important;">CUÉNTANOS QUIÉN ES TU CLIENTE</p>
+        <p style="font-size: 0.8rem !important; margin: 0 !important; color: #666 !important;">CUÉNTANOS QUIÉN ES TU CLIENTE</p>
     </div>
 
     <div style="background: #f0f7ff; border-left: 4px solid #3498db; padding: 15px; margin-bottom: 20px; border-radius: 4px;">

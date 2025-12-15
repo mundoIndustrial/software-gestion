@@ -1,0 +1,12 @@
+$cotizaciones = \App\Models\Cotizacion::latest()->take(5)->get();
+echo "📊 ÚLTIMAS 5 COTIZACIONES:\n";
+echo "==========================\n\n";
+foreach ($cotizaciones as $cot) {
+    $tipo = $cot->tipoCotizacion ? $cot->tipoCotizacion->codigo : 'N/A';
+    echo "ID: {$cot->id}, Número: {$cot->numero_cotizacion}, Tipo: $tipo, Estado: {$cot->estado}, Fecha: {$cot->created_at}\n";
+}
+echo "\n\n📋 TIPOS DE COTIZACIÓN DISPONIBLES:\n";
+$tipos = \App\Models\TipoCotizacion::all();
+foreach ($tipos as $tipo) {
+    echo "ID: {$tipo->id}, Código: {$tipo->codigo}, Nombre: {$tipo->nombre}\n";
+}

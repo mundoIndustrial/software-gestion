@@ -36,6 +36,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
     // ========================================
+    // RUTAS DE FOTOS (Accesibles para todos los roles autenticados)
+    // ========================================
+    Route::post('/asesores/fotos/eliminar', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'eliminarFotoInmediatamente'])->name('fotos.eliminar-inmediatamente');
+    
+    // ========================================
     // RUTAS DE NOTIFICACIONES (Accesibles para todos los roles autenticados)
     // ========================================
     // Contador
@@ -366,7 +371,11 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     
     // Rutas antiguas (compatibilidad con frontend) - Aliases al nuevo controller
     Route::post('/cotizaciones/guardar', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'store'])->name('cotizaciones.guardar');
-    Route::get('/cotizaciones/{id}/editar-borrador', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'show'])->name('cotizaciones.edit-borrador');
+    Route::post('/cotizaciones/reflectivo/guardar', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'storeReflectivo'])->name('cotizaciones.reflectivo.guardar');
+    Route::get('/cotizaciones/reflectivo/{id}/editar', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'getReflectivoForEdit'])->name('cotizaciones.reflectivo.edit');
+    Route::put('/cotizaciones/reflectivo/{id}', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'updateReflectivo'])->name('cotizaciones.reflectivo.update');
+    Route::get('/cotizaciones/{id}/editar-borrador', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'editBorrador'])->name('cotizaciones.edit-borrador');
+    Route::delete('/cotizaciones/{id}/borrador', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'destroyBorrador'])->name('cotizaciones.destroy-borrador');
     Route::delete('/cotizaciones/{id}', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'destroy'])->name('cotizaciones.destroy');
     
     // ========================================

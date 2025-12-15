@@ -66,13 +66,16 @@ final class CotizacionesViewController extends Controller
                 'es_borrador_values' => $cotizaciones->pluck('es_borrador')->unique()->toArray(),
             ]);
 
-            // Mostrar todas las cotizaciones en el tab de Cotizaciones
-            // y solo las que tienen estado BORRADOR en el tab de Borradores
-            $cotizacionesTodas = $this->paginate($cotizaciones, 15);
-            $cotizacionesPrenda = $this->paginate($cotizaciones->filter(fn($c) => ($c->tipo === 'P' || $c->tipo === null)), 15);
-            $cotizacionesLogo = $this->paginate($cotizaciones->filter(fn($c) => $c->tipo === 'L'), 15);
-            $cotizacionesPrendaBordado = $this->paginate($cotizaciones->filter(fn($c) => $c->tipo === 'PL'), 15);
-            $cotizacionesReflectivo = $this->paginate($cotizaciones->filter(fn($c) => $c->tipo === 'RF'), 15);
+            // Separar cotizaciones enviadas (no borradores) de borradores
+            $cotizacionesEnviadas = $cotizaciones->filter(fn($c) => $c->es_borrador !== true && $c->es_borrador !== 1);
+            
+            // Mostrar solo cotizaciones enviadas en el tab de Cotizaciones
+            // y solo las que tienen es_borrador = 1 en el tab de Borradores
+            $cotizacionesTodas = $this->paginate($cotizacionesEnviadas, 15);
+            $cotizacionesPrenda = $this->paginate($cotizacionesEnviadas->filter(fn($c) => ($c->tipo === 'P' || $c->tipo === null)), 15);
+            $cotizacionesLogo = $this->paginate($cotizacionesEnviadas->filter(fn($c) => $c->tipo === 'L'), 15);
+            $cotizacionesPrendaBordado = $this->paginate($cotizacionesEnviadas->filter(fn($c) => $c->tipo === 'PL'), 15);
+            $cotizacionesReflectivo = $this->paginate($cotizacionesEnviadas->filter(fn($c) => $c->tipo === 'RF'), 15);
 
             // Separar borradores por tipo (solo las que tienen es_borrador = 1)
             $borradoresCollection = $cotizaciones->filter(fn($c) => $c->es_borrador === true || $c->es_borrador === 1);

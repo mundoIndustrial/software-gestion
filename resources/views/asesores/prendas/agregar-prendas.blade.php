@@ -46,7 +46,7 @@
                     </label>
                     <textarea 
                         id="descripcion"
-                        placeholder="DESCRIPCIÓN DE LA PRENDA, DETALLES ESPECIALES, LOGO, BORDADO, ESTAMPADO, ETC."
+                        placeholder="DESCRIPCIÓN DE LA PRENDA, DETALLES ESPECIALES, ETC."
                         class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                         rows="3"
                     ></textarea>
@@ -122,7 +122,9 @@
                     <label class="block text-sm font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                         <i class="fas fa-sliders-h"></i> VARIACIONES ESPECÍFICAS
                     </label>
-                    <div class="overflow-x-auto">
+                    
+                    <!-- Vista Desktop (tabla) -->
+                    <div class="overflow-x-auto variaciones-tabla-desktop" style="display: none;">
                         <table style="width: 100%; border-collapse: collapse; background: white; dark:bg-gray-700; border: 1px solid #ddd; border-radius: 4px; overflow: hidden;">
                             <thead>
                                 <tr style="background: linear-gradient(135deg, #0066cc, #0052a3); border-bottom: 2px solid #0066cc;">
@@ -205,6 +207,73 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Vista Mobile (cards) -->
+                    <div class="variaciones-cards-mobile" style="display: none;">
+                        <!-- MANGA -->
+                        <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px; dark:bg-gray-700;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                                <input type="checkbox" class="aplica-manga" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;" onchange="toggleMangaInput(this)">
+                                <label style="font-weight: 600; color: #0066cc; cursor: pointer; flex: 1;"><i class="fas fa-shirt"></i> Manga</label>
+                            </div>
+                            <input type="text" class="manga-input" placeholder="Ej: manga larga..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; opacity: 0.5; pointer-events: none; dark:bg-gray-600 dark:text-white" disabled>
+                        </div>
+
+                        <!-- BOLSILLOS -->
+                        <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px; dark:bg-gray-700;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                                <input type="checkbox" class="aplica-bolsillos" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
+                                <label style="font-weight: 600; color: #0066cc; cursor: pointer; flex: 1;"><i class="fas fa-square"></i> Bolsillos</label>
+                            </div>
+                            <input type="text" class="bolsillos-input" placeholder="Ej: 4 bolsillos, con cierre..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-600 dark:text-white">
+                        </div>
+
+                        <!-- BROCHE/BOTÓN -->
+                        <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px; dark:bg-gray-700;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                                <input type="checkbox" class="aplica-broche" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
+                                <label style="font-weight: 600; color: #0066cc; cursor: pointer; flex: 1;"><i class="fas fa-link"></i> Broche/Botón</label>
+                            </div>
+                            <input type="text" class="broche-input" placeholder="Ej: botones metálicos..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-600 dark:text-white">
+                        </div>
+
+                        <!-- PUÑO -->
+                        <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px; dark:bg-gray-700;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                                <input type="checkbox" class="aplica-puno" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
+                                <label style="font-weight: 600; color: #0066cc; cursor: pointer; flex: 1;"><i class="fas fa-ring"></i> Puño</label>
+                            </div>
+                            <input type="text" class="puno-input" placeholder="Ej: puño elástico..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-600 dark:text-white">
+                        </div>
+
+                        <!-- PROCESO -->
+                        <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px; dark:bg-gray-700;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                                <input type="checkbox" class="aplica-proceso" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
+                                <label style="font-weight: 600; color: #0066cc; cursor: pointer; flex: 1;"><i class="fas fa-cogs"></i> Proceso</label>
+                            </div>
+                            <input type="text" class="proceso-input" placeholder="Ej: lavado especial..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; dark:bg-gray-600 dark:text-white">
+                        </div>
+                    </div>
+
+                    <style>
+                        @media (max-width: 768px) {
+                            .variaciones-tabla-desktop {
+                                display: none !important;
+                            }
+                            .variaciones-cards-mobile {
+                                display: block !important;
+                            }
+                        }
+                        @media (min-width: 769px) {
+                            .variaciones-tabla-desktop {
+                                display: block !important;
+                            }
+                            .variaciones-cards-mobile {
+                                display: none !important;
+                            }
+                        }
+                    </style>
                 </div>
 
                 <!-- TALLAS Y CANTIDADES -->

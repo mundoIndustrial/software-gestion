@@ -80,20 +80,44 @@ function actualizarSelectTallas(select) {
     
     if (tipo === 'letra') {
         console.log('📝 Configurando LETRAS');
+        // LETRAS no necesita género, mostrar botones directamente
         if (generoSelect) {
-            generoSelect.style.display = 'block';
-            generoSelect.value = '';  // Asegurar que esté vacío
-            console.log('✅ generoSelect mostrado para LETRAS');
+            generoSelect.style.display = 'none';
+            generoSelect.value = '';
+            console.log('✅ generoSelect ocultado para LETRAS');
         }
         
-        if (generoSelect) {
-            console.log('📝 Agregando evento onchange para GÉNERO (LETRAS)');
-            generoSelect._handlerLetras = function() {
-                console.log('📝 Género seleccionado (LETRAS):', this.value);
-                actualizarBotonesPorGeneroLetras(container, this.value);
+        // Mostrar botones de talla directamente para LETRAS
+        tallaBotones.style.display = 'block';
+        modoSelect.style.display = 'none';
+        tallaRangoSelectors.style.display = 'none';
+        
+        // Crear botones de LETRAS
+        console.log('📝 Creando botones de LETRAS');
+        botonesDiv.innerHTML = '';
+        tallasLetras.forEach(talla => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = talla;
+            btn.className = 'talla-btn';
+            btn.dataset.talla = talla;
+            btn.style.cssText = 'padding: 0.5rem 1rem; background: white; color: #0066cc; border: 2px solid #0066cc; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s ease;';
+            btn.onmouseover = function() { if (!this.classList.contains('activo')) this.style.background = '#e6f0ff'; };
+            btn.onmouseout = function() { if (!this.classList.contains('activo')) this.style.background = 'white'; };
+            btn.onclick = function(e) {
+                e.preventDefault();
+                this.classList.toggle('activo');
+                if (this.classList.contains('activo')) {
+                    this.style.background = '#0066cc';
+                    this.style.color = 'white';
+                } else {
+                    this.style.background = 'white';
+                    this.style.color = '#0066cc';
+                }
             };
-            generoSelect.addEventListener('change', generoSelect._handlerLetras);
-        }
+            botonesDiv.appendChild(btn);
+        });
+        console.log('✅ Botones de LETRAS creados');
         
     } else if (tipo === 'numero') {
         console.log('🔢 Configurando NÚMEROS');

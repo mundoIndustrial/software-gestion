@@ -129,6 +129,14 @@ class Cotizacion extends Model
     }
 
     /**
+     * Alias para reflectivo
+     */
+    public function reflectivoCotizacion()
+    {
+        return $this->reflectivo();
+    }
+
+    /**
      * Relación con fotos de logo (logo_fotos_cot)
      */
     public function logoFotos(): HasMany

@@ -11,6 +11,7 @@ async function guardarCotizacion() {
     console.log('🚀 INICIANDO GUARDADO DE COTIZACIÓN');
     console.log('   🌐 WebSockets:', window.Echo ? 'Disponible ✓' : 'No disponible');
     console.log('   💾 localStorage:', window.localStorage ? 'Disponible ✓' : 'No disponible');
+    console.log('   🆔 Cotización ID Actual:', window.cotizacionIdActual || 'NUEVA');
     console.log('='.repeat(60));
     
     // Debug: Mostrar estado del contenedor antes de recopilar
@@ -30,12 +31,26 @@ async function guardarCotizacion() {
     const btnGuardar = document.querySelector('button[onclick="guardarCotizacion()"]');
     const btnEnviar = document.querySelector('button[onclick="enviarCotizacion()"]');
     
+    console.log('🔘 Botones encontrados:', {
+        guardar: !!btnGuardar,
+        enviar: !!btnEnviar
+    });
+    
     if (btnGuardar) btnGuardar.disabled = true;
     if (btnEnviar) btnEnviar.disabled = true;
     
+    console.log('📋 Llamando a recopilarDatos()...');
     const datos = recopilarDatos();
     
+    console.log('📦 Datos recopilados:', {
+        existe: !!datos,
+        cliente: datos?.cliente,
+        productos: datos?.productos?.length || 0,
+        tecnicas: datos?.tecnicas?.length || 0
+    });
+    
     if (!datos) {
+        console.error('❌ recopilarDatos() retornó null');
         Swal.fire({
             title: 'Error',
             text: 'No se pudieron recopilar los datos del formulario',
@@ -47,30 +62,21 @@ async function guardarCotizacion() {
         return;
     }
     
-    // 📸 Procesar imágenes a Base64
-    console.log('🖼️ Procesando imágenes a Base64...');
-    try {
-        const datosConImagenes = await procesarImagenesABase64(datos);
-        console.log('✅ Imágenes procesadas correctamente');
-        Object.assign(datos, datosConImagenes);
-    } catch (error) {
-        console.error('❌ Error al procesar imágenes:', error);
-        Swal.fire({
-            title: 'Error al procesar imágenes',
-            text: 'No se pudieron convertir las imágenes. ' + error.message,
-            icon: 'error',
-            confirmButtonColor: '#1e40af'
-        });
-        if (btnGuardar) btnGuardar.disabled = false;
-        if (btnEnviar) btnEnviar.disabled = false;
-        return;
-    }
+    // ✅ NO convertir a Base64 - enviar archivos directamente como File objects
+    console.log('📁 Preparando archivos para envío directo (sin Base64)...');
     
     // Validar que tipo_venta esté seleccionado
     const tipoVentaSelect = document.getElementById('tipo_venta');
     const tipoVenta = tipoVentaSelect ? tipoVentaSelect.value : '';
     
+    console.log('📋 Validación tipo_venta:', {
+        selectEncontrado: !!tipoVentaSelect,
+        valor: tipoVenta,
+        esValido: !!tipoVenta
+    });
+    
     if (!tipoVenta) {
+        console.error('❌ Tipo de venta no seleccionado');
         Swal.fire({
             title: 'Tipo de cotización requerido',
             text: 'Por favor selecciona el tipo de cotización (M/D/X)',
@@ -82,6 +88,7 @@ async function guardarCotizacion() {
         return;
     }
     
+    console.log('✅ Todas las validaciones pasadas, mostrando modal de guardado...');
     Swal.fire({
         title: 'Guardando...',
         html: '<div style="display: flex; justify-content: center; align-items: center; gap: 10px;"><div style="width: 12px; height: 12px; border-radius: 50%; background: #1e40af; animation: pulse 1.5s infinite;"></div><div style="width: 12px; height: 12px; border-radius: 50%; background: #1e40af; animation: pulse 1.5s infinite 0.3s;"></div><div style="width: 12px; height: 12px; border-radius: 50%; background: #1e40af; animation: pulse 1.5s infinite 0.6s;"></div></div><style>@keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }</style>',
@@ -101,14 +108,37 @@ async function guardarCotizacion() {
     });
     
     try {
+        console.log('🔄 Construyendo FormData...');
         // ✅ USAR FormData PARA ENVIAR ARCHIVOS File
         const formData = new FormData();
         
         // Datos básicos
-        formData.append('tipo', 'borrador');
+        formData.append('es_borrador', '1'); // Marcar como borrador
         formData.append('cliente', datos.cliente);
         formData.append('tipo_venta', tipoVenta);
         formData.append('tipo_cotizacion', window.tipoCotizacionGlobal || 'P');
+        
+        console.log('📝 Datos básicos agregados:', {
+            es_borrador: '1',
+            cliente: datos.cliente,
+            tipo_venta: tipoVenta,
+            tipo_cotizacion: window.tipoCotizacionGlobal || 'P'
+        });
+        
+        // Si estamos editando un borrador, enviar el ID
+        if (window.cotizacionIdActual) {
+            formData.append('cotizacion_id', window.cotizacionIdActual);
+            console.log('📝 Editando cotización existente ID:', window.cotizacionIdActual);
+        }
+        
+        // Enviar fotos a eliminar (marcadas como eliminadas)
+        if (window.fotosAEliminar && window.fotosAEliminar.length > 0) {
+            console.log('🗑️ Fotos a eliminar:', window.fotosAEliminar.length);
+            window.fotosAEliminar.forEach((foto, idx) => {
+                formData.append(`fotos_a_eliminar[${idx}]`, foto.ruta);
+                console.log(`🗑️ Foto ${idx + 1} marcada para eliminar:`, foto.ruta);
+            });
+        }
         
         // Secciones de texto
         formData.append('descripcion_logo', datos.descripcion_logo || '');
@@ -117,7 +147,15 @@ async function guardarCotizacion() {
         formData.append('ubicaciones', JSON.stringify(datos.ubicaciones || []));
         formData.append('observaciones_generales', JSON.stringify(datos.observaciones_generales || []));
         
+        console.log('📝 Datos de texto agregados:', {
+            descripcion_logo: datos.descripcion_logo ? 'Sí' : 'No',
+            tecnicas: datos.tecnicas?.length || 0,
+            ubicaciones: datos.ubicaciones?.length || 0,
+            observaciones_generales: datos.observaciones_generales?.length || 0
+        });
+        
         formData.append('especificaciones', JSON.stringify(datos.especificaciones || {}));
+        console.log('✅ FormData construido correctamente');
         
         // ✅ PRENDAS CON ARCHIVOS File
         if (datos.productos && Array.isArray(datos.productos)) {
@@ -157,42 +195,54 @@ async function guardarCotizacion() {
                     }
                 });
                 
-                // ✅ FOTOS (File objects o Base64 strings)
-                if (producto.fotos && Array.isArray(producto.fotos)) {
-                    producto.fotos.forEach((foto, fotoIndex) => {
-                        if (foto instanceof File) {
-                            formData.append(`prendas[${index}][fotos][]`, foto);
-                            console.log(`✅ Foto (File) agregada a FormData [${index}][${fotoIndex}]:`, foto.name);
-                        } else if (typeof foto === 'string') {
-                            formData.append(`prendas[${index}][fotos_base64]`, foto);
-                            console.log(`✅ Foto (Base64) agregada a FormData [${index}][${fotoIndex}]`);
+                // ✅ FOTOS DE PRENDA (File objects o rutas guardadas desde window.imagenesEnMemoria)
+                if (window.imagenesEnMemoria && window.imagenesEnMemoria.prendaConIndice) {
+                    const fotosDeEstaPrenda = window.imagenesEnMemoria.prendaConIndice.filter(p => p.prendaIndex === index);
+                    fotosDeEstaPrenda.forEach((item, fotoIndex) => {
+                        if (item.file instanceof File) {
+                            // Es un File object nuevo
+                            formData.append(`prendas[${index}][fotos][]`, item.file);
+                            console.log(`✅ Foto de prenda (File) agregada a FormData [${index}][${fotoIndex}]:`, item.file.name);
+                        } else if (typeof item.file === 'string' && item.esGuardada) {
+                            // Es una ruta de imagen guardada
+                            formData.append(`prendas[${index}][fotos_guardadas][]`, item.file);
+                            console.log(`✅ Foto de prenda (guardada) agregada a FormData [${index}][${fotoIndex}]:`, item.file);
                         }
                     });
                 }
                 
-                // ✅ TELAS (File objects o Base64 strings)
-                if (producto.telas && Array.isArray(producto.telas)) {
-                    producto.telas.forEach((tela, telaIndex) => {
-                        if (tela instanceof File) {
-                            formData.append(`prendas[${index}][telas][]`, tela);
-                            console.log(`✅ Tela (File) agregada a FormData [${index}][${telaIndex}]:`, tela.name);
-                        } else if (typeof tela === 'string') {
-                            formData.append(`prendas[${index}][telas_base64]`, tela);
-                            console.log(`✅ Tela (Base64) agregada a FormData [${index}][${telaIndex}]`);
+                // ✅ TELAS (File objects o rutas guardadas desde window.imagenesEnMemoria)
+                if (window.imagenesEnMemoria && window.imagenesEnMemoria.telaConIndice) {
+                    const telasDeEstaPrenda = window.imagenesEnMemoria.telaConIndice.filter(t => t.prendaIndex === index);
+                    telasDeEstaPrenda.forEach((item, telaIndex) => {
+                        if (item.file instanceof File) {
+                            // Es un File object nuevo
+                            formData.append(`prendas[${index}][telas][]`, item.file);
+                            console.log(`✅ Tela (File) agregada a FormData [${index}][${telaIndex}]:`, item.file.name);
+                        } else if (typeof item.file === 'string' && item.esGuardada) {
+                            // Es una ruta de imagen guardada
+                            formData.append(`prendas[${index}][telas_guardadas][]`, item.file);
+                            console.log(`✅ Tela (guardada) agregada a FormData [${index}][${telaIndex}]:`, item.file);
                         }
                     });
                 }
             });
         }
         
-        // ✅ LOGO - IMÁGENES (File objects)
-        if (datos.logo && datos.logo.imagenes && Array.isArray(datos.logo.imagenes)) {
-            datos.logo.imagenes.forEach((imagen, imagenIndex) => {
+        // ✅ LOGO - IMÁGENES (File objects desde window.imagenesEnMemoria)
+        if (window.imagenesEnMemoria && window.imagenesEnMemoria.logo && Array.isArray(window.imagenesEnMemoria.logo)) {
+            console.log('📸 Procesando imágenes de logo:', window.imagenesEnMemoria.logo.length);
+            window.imagenesEnMemoria.logo.forEach((imagen, imagenIndex) => {
                 if (imagen instanceof File) {
-                    formData.append(`logo[imagenes][]`, imagen);
+                    // Usar nombre con corchetes: logo_imagenes[] (PHP lo convertirá a array automáticamente)
+                    formData.append(`logo_imagenes[]`, imagen);
                     console.log(`✅ Imagen de logo agregada a FormData [${imagenIndex}]:`, imagen.name);
+                } else {
+                    console.log(`⚠️ Imagen de logo no es File [${imagenIndex}]:`, typeof imagen);
                 }
             });
+        } else {
+            console.log('⚠️ No hay imágenes de logo en memoria');
         }
         
         console.log('📤 FORMDATA A ENVIAR:', {
@@ -201,9 +251,11 @@ async function guardarCotizacion() {
             tipo_venta: tipoVenta,
             productos_count: datos.productos?.length || 0,
             tecnicas: datos.tecnicas?.length || 0,
-            especificaciones_keys: Object.keys(datos.especificaciones || {})
+            especificaciones_keys: Object.keys(datos.especificaciones || {}),
+            ruta: window.routes.guardarCotizacion
         });
         
+        console.log('🌐 Enviando solicitud POST a:', window.routes.guardarCotizacion);
         const response = await fetch(window.routes.guardarCotizacion, {
             method: 'POST',
             headers: {
@@ -214,11 +266,13 @@ async function guardarCotizacion() {
             body: formData
         });
         
+        console.log('✅ Solicitud enviada');
         console.log('📡 Status de respuesta:', response.status);
         console.log('📡 Content-Type:', response.headers.get('content-type'));
+        console.log('📡 OK:', response.ok);
         
         const responseText = await response.text();
-        console.log('📡 Texto de respuesta:', responseText);
+        console.log('📡 Texto de respuesta (primeros 500 caracteres):', responseText.substring(0, 500));
         
         // Intentar parsear como JSON
         let data;
@@ -240,8 +294,9 @@ async function guardarCotizacion() {
             return;
         }
         
-        if (data.success && data.cotizacion_id) {
-            console.log('✅ Cotización creada con ID:', data.cotizacion_id);
+        if (data.success && (data.cotizacion_id !== undefined || (data.data && data.data.id !== undefined))) {
+            const cotizacionId = data.cotizacion_id !== undefined ? data.cotizacion_id : (data.data && data.data.id);
+            console.log('✅ Cotización creada con ID:', cotizacionId);
             console.log('✅ Imágenes procesadas y guardadas en el servidor');
             
             // ✅ LIMPIAR TODO DESPUÉS DEL GUARDADO EXITOSO

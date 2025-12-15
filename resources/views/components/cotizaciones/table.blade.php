@@ -1,10 +1,10 @@
 {{-- Componente: Tabla de Cotizaciones Genérica --}}
 @php
     $isBorrador = str_contains($sectionId, 'bor-');
-    $headerColor = $isBorrador ? '#f39c12' : '#1e40af';
-    $headerGradient = $isBorrador ? 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)' : 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%)';
-    $headerBorder = $isBorrador ? '#e67e22' : '#1e3a8a';
-    $buttonColor = $isBorrador ? '#f39c12' : '#1e40af';
+    $headerColor = $isBorrador ? '#3b82f6' : '#1e40af';
+    $headerGradient = $isBorrador ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : 'linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%)';
+    $headerBorder = $isBorrador ? '#2563eb' : '#1e3a8a';
+    $buttonColor = $isBorrador ? '#3b82f6' : '#1e40af';
 @endphp
 
 <div id="tab-contenedor-{{ $sectionId }}" class="tab-content">
@@ -60,7 +60,9 @@
                                             @elseif($cot->tipo === 'L')
                                                 Logo
                                             @elseif($cot->tipo === 'PL')
-                                                Prenda/Logo
+                                                Combinada
+                                            @elseif($cot->tipo === 'RF')
+                                                Reflectivo
                                             @else
                                                 {{ $cot->tipo ?? 'N/A' }}
                                             @endif

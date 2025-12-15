@@ -142,6 +142,23 @@
         box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
     }
 
+    /* Input para tipo de prenda */
+    .tipo-prenda-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        background: white;
+        font-family: inherit;
+    }
+
+    .tipo-prenda-input:focus {
+        outline: none;
+        border-color: #1e40af;
+        box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+    }
+
     /* Ubicación */
     .ubicacion-box {
         background: #f9f9f9;
@@ -357,6 +374,195 @@
     .shake {
         animation: shake 0.5s ease-in-out;
     }
+
+    /* Estilos para template de prendas */
+    .producto-card {
+        background: white;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        transition: all 0.2s ease;
+    }
+
+    .producto-card:hover {
+        border-color: #cbd5e1;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .producto-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #f1f5f9;
+    }
+
+    .producto-header h4 {
+        margin: 0;
+        font-size: 1rem;
+        color: #1e40af;
+        font-weight: 700;
+    }
+
+    .producto-header-buttons {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .producto-header button {
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        padding: 0.4rem 0.6rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+
+    .producto-header button:hover {
+        background: #e2e8f0;
+        border-color: #94a3b8;
+    }
+
+    .btn-eliminar-producto {
+        background: #fee2e2 !important;
+        color: #dc2626 !important;
+        border: 1px solid #fca5a5 !important;
+    }
+
+    .btn-eliminar-producto:hover {
+        background: #fecaca !important;
+        border-color: #ef4444 !important;
+    }
+
+    .producto-body {
+        display: block;
+    }
+
+    .producto-section {
+        margin-bottom: 1.25rem;
+    }
+
+    .producto-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .section-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #1e40af;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .ubicacion-seccion-reflectivo,
+    .observaciones-seccion-reflectivo {
+        background: #f9fafb;
+        padding: 0.75rem;
+        border-radius: 6px;
+        border: 1px solid #f1f5f9;
+    }
+
+    .ubicaciones-agregadas-reflectivo {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        width: 100%;
+    }
+
+    .observaciones-agregadas-reflectivo {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .ubicaciones-agregadas-reflectivo span,
+    .observaciones-agregadas-reflectivo span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        white-space: nowrap;
+    }
+
+    .fotos-preview-reflectivo {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+    }
+
+    .foto-item-reflectivo {
+        position: relative;
+        aspect-ratio: 1;
+        border-radius: 6px;
+        overflow: hidden;
+        background: #f1f5f9;
+    }
+
+    .foto-item-reflectivo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .foto-item-reflectivo .remove-foto {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        background: #dc2626;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+
+    #prendas-contenedor {
+        margin-bottom: 2rem;
+    }
+
+    /* Floating button */
+    .floating-btn-reflectivo {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+        transition: all 0.3s ease;
+        z-index: 1000;
+    }
+
+    .floating-btn-reflectivo:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 16px rgba(14, 165, 233, 0.6);
+    }
+
+    .floating-btn-reflectivo:active {
+        transform: scale(0.95);
+    }
 </style>
 @endpush
 
@@ -405,70 +611,10 @@
             <input type="text" id="cliente" name="cliente" style="display: none;">
             <input type="text" id="asesora" name="asesora" value="{{ auth()->user()->name }}" readonly style="display: none;">
             <input type="date" id="fecha" name="fecha" style="display: none;">
-
-            <!-- DESCRIPCIÓN -->
-            <div class="form-section">
-                <div class="form-section-title">
-                    <i class="fas fa-sticky-note"></i> DESCRIPCIÓN
-                </div>
-                <div class="form-group-large">
-                    <textarea id="descripcion_reflectivo" name="descripcion_reflectivo" class="input-large" rows="3" placeholder="Describe el reflectivo, detalles especiales, aplicación, etc."></textarea>
-                </div>
-            </div>
-
-            <!-- IMÁGENES -->
-            <div class="form-section">
-                <div class="form-section-title">
-                    <i class="fas fa-images"></i> IMÁGENES (MÁXIMO 3)
-                </div>
-                <div class="form-group-large">
-                    <div class="drop-zone" id="drop_zone_imagenes">
-                        <i class="fas fa-cloud-upload-alt"></i>
-                        <p>ARRASTRA IMÁGENES AQUÍ O HAZ CLIC</p>
-                        <p class="drop-zone-small">Máximo 3 imágenes</p>
-                        <input type="file" id="imagenes_reflectivo" name="imagenes_reflectivo[]" accept="image/*" multiple style="display: none;">
-                    </div>
-                    <div class="galeria-imagenes" id="galeria_imagenes"></div>
-                </div>
-            </div>
-
-            <!-- UBICACIÓN -->
-            <div class="form-section">
-                <div class="ubicacion-box">
-                    <div class="ubicacion-header">
-                        <label>Ubicación</label>
-                        <button type="button" class="btn-add" onclick="agregarUbicacion()">+</button>
-                    </div>
-                    
-                    <label for="seccion_reflectivo" style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem;">Selecciona la sección a agregar:</label>
-                    <input type="text" id="seccion_reflectivo" list="opciones_seccion_reflectivo" class="input-large" style="width: 100%; margin-bottom: 12px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" placeholder="Escribe o selecciona una sección">
-                    <datalist id="opciones_seccion_reflectivo">
-                        <option value="PECHO">
-                        <option value="ESPALDA">
-                        <option value="MANGA IZQUIERDA">
-                        <option value="MANGA DERECHA">
-                        <option value="CUELLO">
-                        <option value="COSTADO">
-                        <option value="BOLSILLO">
-                    </datalist>
-                    <div id="errorSeccionReflectivo" style="display: none; color: #ef4444; font-size: 0.85rem; font-weight: 600; padding: 0.5rem; background: #fee2e2; border-radius: 4px; margin-bottom: 10px;">
-                        ⚠️ Debes seleccionar una ubicación
-                    </div>
-                    
-                    <div class="secciones-agregadas" id="secciones_agregadas"></div>
-                </div>
-            </div>
-
-            <!-- OBSERVACIONES GENERALES -->
-            <div class="form-section">
-                <div class="obs-box">
-                    <div class="obs-header">
-                        <label>Observaciones Generales</label>
-                        <button type="button" class="btn-add" onclick="agregarObservacion()">+</button>
-                    </div>
-                    
-                    <div class="obs-lista" id="observaciones_lista"></div>
-                </div>
+            <textarea id="especificaciones" name="especificaciones" style="display: none;"></textarea>
+            <!-- CONTENEDOR DE PRENDAS -->
+            <div id="prendas-contenedor">
+                <!-- Las prendas se agregan aquí dinámicamente -->
             </div>
 
             <!-- Botones -->
@@ -485,213 +631,619 @@
                     </button>
                 </div>
             </div>
+
+            <!-- MENÚ FLOTANTE PARA AGREGAR PRENDA O ESPECIFICACIONES -->
+            <div style="position: fixed; bottom: 30px; right: 30px; z-index: 1000;">
+                <!-- Menú flotante -->
+                <div id="menuFlotante" style="display: none; position: absolute; bottom: 70px; right: 0; background: white; border-radius: 12px; box-shadow: 0 5px 40px rgba(0,0,0,0.16); overflow: hidden; min-width: 200px;">
+                    <button type="button" onclick="agregarProductoPrenda(); document.getElementById('menuFlotante').style.display='none'; document.getElementById('btnFlotante').style.transform='scale(1) rotate(0deg)'" style="width: 100%; padding: 12px 16px; border: none; background: white; cursor: pointer; text-align: left; font-size: 0.9rem; color: #333; display: flex; align-items: center; gap: 12px; transition: all 0.2s; border-bottom: 1px solid #f0f0f0;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='white'">
+                        <i class="fas fa-plus" style="color: #1e40af; font-size: 1.1rem;"></i>
+                        <span>Agregar Prenda</span>
+                    </button>
+                    <button type="button" onclick="abrirModalEspecificaciones(); document.getElementById('menuFlotante').style.display='none'; document.getElementById('btnFlotante').style.transform='scale(1) rotate(0deg)'" style="width: 100%; padding: 12px 16px; border: none; background: white; cursor: pointer; text-align: left; font-size: 0.9rem; color: #333; display: flex; align-items: center; gap: 12px; transition: all 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='white'">
+                        <i class="fas fa-sliders-h" style="color: #3B82F6; font-size: 1.1rem;"></i>
+                        <span>Especificaciones</span>
+                    </button>
+                </div>
+                
+                <!-- Botón principal flotante -->
+                <button type="button" id="btnFlotante" onclick="const menu = document.getElementById('menuFlotante'); menu.style.display = menu.style.display === 'none' ? 'block' : 'none'; this.style.transform = menu.style.display === 'block' ? 'scale(1) rotate(45deg)' : 'scale(1) rotate(0deg)'" style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #1e40af, #0ea5e9); color: white; border: none; cursor: pointer; font-size: 1.8rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(30, 64, 175, 0.4); transition: all 0.3s ease; position: relative;" onmouseover="this.style.boxShadow='0 6px 20px rgba(30, 64, 175, 0.5)'; this.style.transform='scale(1.1) ' + (document.getElementById('menuFlotante').style.display === 'block' ? 'rotate(45deg)' : 'rotate(0deg)')" onmouseout="this.style.boxShadow='0 4px 12px rgba(30, 64, 175, 0.4)'; this.style.transform='scale(1) ' + (document.getElementById('menuFlotante').style.display === 'block' ? 'rotate(45deg)' : 'rotate(0deg)')">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
         </form>
     </div>
+
+    <!-- MODAL: ESPECIFICACIONES DEL REFLECTIVO -->
+    <div id="modalEspecificaciones" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 950px; width: 95%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 3px solid #0284c7; padding-bottom: 1.5rem;">
+                <h3 style="margin: 0; color: #0284c7; font-size: 1.4rem; font-weight: 700;"><i class="fas fa-cog" style="margin-right: 10px;"></i>ESPECIFICACIONES DEL REFLECTIVO</h3>
+                <button type="button" onclick="cerrarModalEspecificaciones()" style="background: #f0f0f0; border: none; font-size: 1.5rem; cursor: pointer; color: #666; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <table class="tabla-control-compacta" style="width: 100%; border-collapse: collapse; background: white;">
+                <thead>
+                    <tr style="background: linear-gradient(135deg, #0284c7, #0166a0); color: white;">
+                        <th style="width: 20%; text-align: left; padding: 12px; font-weight: 600; border: none;">CONCEPTO</th>
+                        <th style="width: 10%; text-align: center; padding: 12px; font-weight: 600; border: none;">APLICA</th>
+                        <th style="width: 60%; text-align: left; padding: 12px; font-weight: 600; border: none;">OBSERVACIONES</th>
+                        <th style="width: 10%; text-align: center; padding: 12px; font-weight: 600; border: none;">ACCIÓN</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- DISPONIBILIDAD -->
+                    <tr class="fila-grupo">
+                        <td colspan="4" style="font-weight: 700; background: linear-gradient(135deg, #e8f4f8, #d4e9f2); padding: 12px 15px; border-left: 4px solid #0284c7;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #0284c7;"><i class="fas fa-warehouse" style="margin-right: 8px;"></i>DISPONIBILIDAD</span>
+                                <button type="button" onclick="agregarFilaEspecificacion('disponibilidad')" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;">
+                                    <i class="fas fa-plus" style="margin-right: 4px;"></i>AGREGAR
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tbody id="tbody_disponibilidad">
+                        <tr>
+                            <td><label style="margin: 0; font-size: 0.8rem;">Bodega</label></td>
+                            <td style="text-align: center;">
+                                <input type="checkbox" name="tabla_orden[bodega]" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                            </td>
+                            <td style="padding: 10px;">
+                                <input type="text" name="tabla_orden[bodega_obs]" class="input-compact" placeholder="Observaciones" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; box-sizing: border-box;">
+                            </td>
+                            <td style="text-align: center;">
+                                <button type="button" onclick="this.closest('tr').remove()" style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" title="Eliminar">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label style="margin: 0; font-size: 0.8rem;">Cúcuta</label></td>
+                            <td style="text-align: center;">
+                                <input type="checkbox" name="tabla_orden[cucuta]" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                            </td>
+                            <td style="padding: 10px;">
+                                <input type="text" name="tabla_orden[cucuta_obs]" class="input-compact" placeholder="Observaciones" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; box-sizing: border-box;">
+                            </td>
+                            <td style="text-align: center;">
+                                <button type="button" onclick="this.closest('tr').remove()" style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" title="Eliminar">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label style="margin: 0; font-size: 0.8rem;">Lafayette</label></td>
+                            <td style="text-align: center;">
+                                <input type="checkbox" name="tabla_orden[lafayette]" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                            </td>
+                            <td style="padding: 10px;">
+                                <input type="text" name="tabla_orden[lafayette_obs]" class="input-compact" placeholder="Observaciones" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; box-sizing: border-box;">
+                            </td>
+                            <td style="text-align: center;">
+                                <button type="button" onclick="this.closest('tr').remove()" style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" title="Eliminar">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label style="margin: 0; font-size: 0.8rem;">Fábrica</label></td>
+                            <td style="text-align: center;">
+                                <input type="checkbox" name="tabla_orden[fabrica]" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                            </td>
+                            <td style="padding: 10px;">
+                                <input type="text" name="tabla_orden[fabrica_obs]" class="input-compact" placeholder="Observaciones" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; box-sizing: border-box;">
+                            </td>
+                            <td style="text-align: center;">
+                                <button type="button" onclick="this.closest('tr').remove()" style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" title="Eliminar">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+
+                    <!-- PAGO -->
+                    <tr class="fila-grupo">
+                        <td colspan="4" style="font-weight: 700; background: linear-gradient(135deg, #e8f4f8, #d4e9f2); padding: 12px 15px; border-left: 4px solid #0284c7;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #0284c7;"><i class="fas fa-credit-card" style="margin-right: 8px;"></i>FORMA DE PAGO</span>
+                                <button type="button" onclick="agregarFilaEspecificacion('pago')" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;">
+                                    <i class="fas fa-plus" style="margin-right: 4px;"></i>AGREGAR
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tbody id="tbody_pago">
+                        <tr>
+                            <td><label style="margin: 0; font-size: 0.8rem;">Contado</label></td>
+                            <td style="text-align: center;">
+                                <input type="checkbox" name="tabla_orden[contado]" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                            </td>
+                            <td style="padding: 10px;">
+                                <input type="text" name="tabla_orden[pago_contado_obs]" class="input-compact" placeholder="Observaciones" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; box-sizing: border-box;">
+                            </td>
+                            <td style="text-align: center;">
+                                <button type="button" onclick="this.closest('tr').remove()" style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" title="Eliminar">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label style="margin: 0; font-size: 0.8rem;">Crédito</label></td>
+                            <td style="text-align: center;">
+                                <input type="checkbox" name="tabla_orden[credito]" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                            </td>
+                            <td style="padding: 10px;">
+                                <input type="text" name="tabla_orden[pago_credito_obs]" class="input-compact" placeholder="Observaciones" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; box-sizing: border-box;">
+                            </td>
+                            <td style="text-align: center;">
+                                <button type="button" onclick="this.closest('tr').remove()" style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" title="Eliminar">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+
+                    <!-- RÉGIMEN -->
+                    <tr class="fila-grupo">
+                        <td colspan="4" style="font-weight: 700; background: linear-gradient(135deg, #e8f4f8, #d4e9f2); padding: 12px 15px; border-left: 4px solid #0284c7;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #0284c7;"><i class="fas fa-building" style="margin-right: 8px;"></i>RÉGIMEN</span>
+                                <button type="button" onclick="agregarFilaEspecificacion('regimen')" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;">
+                                    <i class="fas fa-plus" style="margin-right: 4px;"></i>AGREGAR
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tbody id="tbody_regimen">
+                        <tr>
+                            <td><label style="margin: 0; font-size: 0.8rem;">Común</label></td>
+                            <td style="text-align: center;">
+                                <input type="checkbox" name="tabla_orden[comun]" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                            </td>
+                            <td style="padding: 10px;">
+                                <input type="text" name="tabla_orden[regimen_comun_obs]" class="input-compact" placeholder="Observaciones" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; box-sizing: border-box;">
+                            </td>
+                            <td style="text-align: center;">
+                                <button type="button" onclick="this.closest('tr').remove()" style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" title="Eliminar">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label style="margin: 0; font-size: 0.8rem;">Simplificado</label></td>
+                            <td style="text-align: center;">
+                                <input type="checkbox" name="tabla_orden[simplificado]" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                            </td>
+                            <td style="padding: 10px;">
+                                <input type="text" name="tabla_orden[regimen_simp_obs]" class="input-compact" placeholder="Observaciones" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; box-sizing: border-box;">
+                            </td>
+                            <td style="text-align: center;">
+                                <button type="button" onclick="this.closest('tr').remove()" style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" title="Eliminar">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+
+                    <!-- SE HA VENDIDO -->
+                    <tr class="fila-grupo">
+                        <td colspan="4" style="font-weight: 700; background: linear-gradient(135deg, #e8f4f8, #d4e9f2); padding: 12px 15px; border-left: 4px solid #0284c7;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #0284c7;"><i class="fas fa-chart-bar" style="margin-right: 8px;"></i>SE HA VENDIDO</span>
+                                <button type="button" onclick="agregarFilaEspecificacion('vendido')" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;">
+                                    <i class="fas fa-plus" style="margin-right: 4px;"></i>AGREGAR
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tbody id="tbody_vendido">
+                        <tr>
+                            <td><input type="text" name="tabla_orden[vendido_item]" class="input-compact" placeholder="Escribe aquí" style="width: 100%;"></td>
+                            <td style="text-align: center;">
+                                <input type="checkbox" name="tabla_orden[vendido]" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                            </td>
+                            <td style="padding: 10px;">
+                                <input type="text" name="tabla_orden[vendido_obs]" class="input-compact" placeholder="Observaciones" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; box-sizing: border-box;">
+                            </td>
+                            <td style="text-align: center;">
+                                <button type="button" onclick="this.closest('tr').remove()" style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" title="Eliminar">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+
+                    <!-- ÚLTIMA VENTA -->
+                    <tr class="fila-grupo">
+                        <td colspan="4" style="font-weight: 700; background: linear-gradient(135deg, #e8f4f8, #d4e9f2); padding: 12px 15px; border-left: 4px solid #0284c7;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #0284c7;"><i class="fas fa-money-bill-wave" style="margin-right: 8px;"></i>ÚLTIMA VENTA</span>
+                                <button type="button" onclick="agregarFilaEspecificacion('ultima_venta')" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;">
+                                    <i class="fas fa-plus" style="margin-right: 4px;"></i>AGREGAR
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tbody id="tbody_ultima_venta">
+                        <tr>
+                            <td><input type="text" name="tabla_orden[ultima_venta_item]" class="input-compact" placeholder="Escribe aquí" style="width: 100%;"></td>
+                            <td style="text-align: center;">
+                                <input type="checkbox" name="tabla_orden[ultima_venta]" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                            </td>
+                            <td style="padding: 10px;">
+                                <input type="text" name="tabla_orden[ultima_venta_obs]" class="input-compact" placeholder="Observaciones" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; box-sizing: border-box;">
+                            </td>
+                            <td style="text-align: center;">
+                                <button type="button" onclick="this.closest('tr').remove()" style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" title="Eliminar">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+
+                    <!-- FLETE DE ENVÍO -->
+                    <tr class="fila-grupo">
+                        <td colspan="4" style="font-weight: 700; background: linear-gradient(135deg, #e8f4f8, #d4e9f2); padding: 12px 15px; border-left: 4px solid #0284c7;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: #0284c7;"><i class="fas fa-truck" style="margin-right: 8px;"></i>FLETE DE ENVÍO</span>
+                                <button type="button" onclick="agregarFilaEspecificacion('flete')" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s;">
+                                    <i class="fas fa-plus" style="margin-right: 4px;"></i>AGREGAR
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tbody id="tbody_flete">
+                        <tr>
+                            <td><input type="text" name="tabla_orden[flete_item]" class="input-compact" placeholder="Escribe aquí" style="width: 100%;"></td>
+                            <td style="text-align: center;">
+                                <input type="checkbox" name="tabla_orden[flete]" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
+                            </td>
+                            <td style="padding: 10px;">
+                                <input type="text" name="tabla_orden[flete_obs]" class="input-compact" placeholder="Observaciones" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; box-sizing: border-box;">
+                            </td>
+                            <td style="text-align: center;">
+                                <button type="button" onclick="this.closest('tr').remove()" style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" title="Eliminar">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </tbody>
+            </table>
+
+            <div style="display: flex; gap: 0.75rem; justify-content: flex-end; margin-top: 2rem;">
+                <button type="button" onclick="cerrarModalEspecificaciones()" style="padding: 0.65rem 1.5rem; background: #f1f5f9; border: 2px solid #cbd5e1; border-radius: 6px; cursor: pointer; font-weight: 600; color: #64748b; font-size: 0.9rem; transition: all 0.2s ease;">Cancelar</button>
+                <button type="button" onclick="guardarEspecificacionesReflectivo()" style="padding: 0.65rem 1.5rem; background: linear-gradient(135deg, #0284c7 0%, #0166a0 100%); border: none; border-radius: 6px; cursor: pointer; font-weight: 600; color: white; font-size: 0.9rem; transition: all 0.2s ease;">Guardar Especificaciones</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL GLOBAL PARA UBICACIÓN -->
+    <div id="modalUbicacionReflectivo" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: slideIn 0.3s ease;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="margin: 0; font-size: 1.2rem; color: #1e40af; font-weight: 700;">Agregar Ubicación</h3>
+                <button type="button" onclick="cerrarModalUbicacion()" style="background: none; border: none; font-size: 1.8rem; cursor: pointer; color: #999; line-height: 1; padding: 0;">×</button>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.75rem; font-weight: 700; color: #334155; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;">Ubicación:</label>
+                <div id="modalUbicacionNombre" style="padding: 0.75rem; background: #f1f5f9; border: 2px solid #0ea5e9; border-radius: 6px; font-weight: 600; color: #1e40af; font-size: 1rem;">PECHO</div>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; margin-bottom: 0.75rem; font-weight: 700; color: #334155; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;">Observación/Detalles:</label>
+                <textarea id="modalUbicacionTextarea" placeholder="Ej: Franja vertical de 10cm, color plateado, lado izquierdo..." style="width: 100%; padding: 0.75rem; border: 2px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; resize: vertical; min-height: 120px; font-family: inherit; transition: all 0.2s ease;" onkeydown="if(event.key==='Escape') cerrarModalUbicacion()"></textarea>
+            </div>
+            
+            <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                <button type="button" onclick="cerrarModalUbicacion()" style="padding: 0.65rem 1.5rem; background: #f1f5f9; border: 2px solid #cbd5e1; border-radius: 6px; cursor: pointer; font-weight: 600; color: #64748b; font-size: 0.9rem; transition: all 0.2s ease;">Cancelar</button>
+                <button type="button" onclick="guardarUbicacionReflectivo()" style="padding: 0.65rem 1.5rem; background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); border: none; border-radius: 6px; cursor: pointer; font-weight: 600; color: white; font-size: 0.9rem; transition: all 0.2s ease;">Guardar Ubicación</button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</div>
 </div>
 
+<!-- TEMPLATE PARA PRODUCTO DE REFLECTIVO -->
+<template id="productoReflectivoTemplate">
+    <div class="producto-card" data-producto-id="">
+        <div class="producto-header">
+            <h4 class="producto-titulo">PRENDA <span class="numero-producto">1</span></h4>
+            <div class="producto-header-buttons">
+                <button type="button" class="btn-toggle-product" onclick="toggleProductoBody(this)" title="Expandir/Contraer" style="font-size: 1rem; padding: 0.4rem 0.6rem;">▼</button>
+                <button type="button" class="btn-remove-product btn-eliminar-producto" onclick="eliminarProductoPrenda(this)" title="Eliminar prenda">✕</button>
+            </div>
+        </div>
+        <div class="producto-body" style="display: block;">
+            <!-- TIPO DE PRENDA -->
+            <div class="producto-section">
+                <div class="section-title"><i class="fas fa-tshirt"></i> TIPO DE PRENDA</div>
+                <input type="text" name="productos_reflectivo[][tipo_prenda]" class="tipo-prenda-input" placeholder="Ej: Camiseta, Pantalón, Chaqueta...">
+            </div>
+
+            <!-- DESCRIPCIÓN -->
+            <div class="producto-section">
+                <div class="section-title"><i class="fas fa-sticky-note"></i> DESCRIPCIÓN</div>
+                <textarea name="productos_reflectivo[][descripcion]" class="input-large" placeholder="Describe el reflectivo para esta prenda (tipo, tamaño, color, ubicación, etc.)..." rows="3" style="font-size: 0.9rem; width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; resize: vertical;"></textarea>
+            </div>
+
+            <!-- IMÁGENES -->
+            <div class="producto-section">
+                <div class="section-title"><i class="fas fa-images"></i> IMÁGENES (MÁXIMO 3)</div>
+                <label style="display: block; min-height: 50px; padding: 0.75rem; border: 2px dashed #0ea5e9; border-radius: 6px; cursor: pointer; text-align: center; background: #f0f7ff;" ondrop="event.preventDefault(); if(event.dataTransfer.files) this.querySelector('input').files = event.dataTransfer.files; this.querySelector('input').onchange && this.querySelector('input').onchange();" ondragover="event.preventDefault(); this.style.background='#e8f4f8';" ondragleave="this.style.background='#f0f7ff';">
+                    <input type="file" name="productos_reflectivo[][imagenes][]" class="input-file-reflectivo" accept="image/*" multiple onchange="agregarFotosAlProductoReflectivo(this)" style="display: none;">
+                    <div class="drop-zone-content" style="font-size: 0.75rem;">
+                        <i class="fas fa-cloud-upload-alt" style="font-size: 0.9rem; color: #0ea5e9; display: block; margin-bottom: 0.2rem;"></i>
+                        <p style="margin: 0.1rem 0; color: #0ea5e9; font-weight: 500; font-size: 0.8rem;">ARRASTRA IMÁGENES AQUÍ O HAZ CLIC</p>
+                        <small style="color: #666; font-size: 0.7rem;">(Máx. 3)</small>
+                    </div>
+                </label>
+                <div class="fotos-preview-reflectivo" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 0.75rem;"></div>
+            </div>
+
+            <!-- UBICACIÓN -->
+            <div class="producto-section">
+                <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleSeccionReflectivo(this)">
+                    <span><i class="fas fa-map-marker-alt"></i> UBICACIÓN</span>
+                    <i class="fas fa-chevron-down" style="transition: transform 0.3s ease;"></i>
+                </div>
+                <div class="ubicacion-seccion-reflectivo" style="display: block;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #1e40af; font-size: 0.9rem;">Selecciona la sección a agregar:</label>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+                        <input type="text" class="ubicacion-input-reflectivo" placeholder="Ej: PECHO, ESPALDA, MANGA, etc." style="flex: 1; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
+                        <button type="button" class="btn-add-ubicacion-reflectivo" onclick="abrirModalUbicacion(this)" style="background: #0ea5e9; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-weight: 600;">+</button>
+                    </div>
+                    <div class="ubicaciones-agregadas-reflectivo" style="display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+</template>
+
 <script>
-// Arrays para almacenar datos
-let ubicacionesSeleccionadas = [];
-let observacionesGenerales = [];
-let imagenesSeleccionadas = [];
+// Arrays y variables globales
+let contadorProductosReflectivo = 0;
 
-// Drag and drop para imágenes
-const dropZone = document.getElementById('drop_zone_imagenes');
-const inputImagenes = document.getElementById('imagenes_reflectivo');
+// FUNCIÓN PARA ABRIR MODAL ESPECIFICACIONES
+function abrirModalEspecificaciones() {
+    const modal = document.getElementById('modalEspecificaciones');
+    const especificacionesGuardadas = document.getElementById('especificaciones').value;
+    
+    // Si hay especificaciones guardadas, cargarlas en los checkboxes y observaciones
+    if (especificacionesGuardadas) {
+        try {
+            const datos = JSON.parse(especificacionesGuardadas);
+            // Cargar checkboxes
+            Object.keys(datos).forEach((key) => {
+                const element = document.querySelector(`[name="${key}"]`);
+                if (element) {
+                    if (element.type === 'checkbox') {
+                        element.checked = datos[key] === '1' || datos[key] === true;
+                    } else {
+                        element.value = datos[key] || '';
+                    }
+                }
+            });
+        } catch (e) {
+            console.error('Error al cargar especificaciones:', e);
+        }
+    }
+    
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
 
-dropZone.addEventListener('click', () => inputImagenes.click());
+// FUNCIÓN PARA CERRAR MODAL ESPECIFICACIONES
+function cerrarModalEspecificaciones() {
+    const modal = document.getElementById('modalEspecificaciones');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
 
-dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropZone.style.background = '#e8f4f8';
-});
+// FUNCIÓN PARA GUARDAR ESPECIFICACIONES
+function guardarEspecificacionesReflectivo() {
+    const especificaciones = {};
+    
+    // Recopilar datos de checkboxes y observaciones
+    document.querySelectorAll('[name^="reflectivo_"]').forEach((element) => {
+        if (element.type === 'checkbox') {
+            especificaciones[element.name] = element.checked ? '1' : '0';
+        } else if (element.type === 'text') {
+            especificaciones[element.name] = element.value || '';
+        }
+    });
+    
+    // Guardar como JSON en el campo oculto
+    document.getElementById('especificaciones').value = JSON.stringify(especificaciones);
+    cerrarModalEspecificaciones();
+}
 
-dropZone.addEventListener('dragleave', () => {
-    dropZone.style.background = '#f0f7ff';
-});
+// FUNCIÓN PARA AGREGAR FILA DE ESPECIFICACIÓN
+function agregarFilaEspecificacion(seccion) {
+    console.log('Agregar fila:', seccion);
+}
 
-dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropZone.style.background = '#f0f7ff';
-    manejarImagenes(e.dataTransfer.files);
-});
+// FUNCIONES PARA AGREGAR/ELIMINAR PRODUCTOS DE REFLECTIVO
+function agregarProductoPrenda() {
+    contadorProductosReflectivo++;
+    const template = document.getElementById('productoReflectivoTemplate');
+    const clone = template.content.cloneNode(true);
+    
+    // Actualizar el número de prenda
+    clone.querySelector('.numero-producto').textContent = contadorProductosReflectivo;
+    
+    // Agregar al contenedor
+    document.getElementById('prendas-contenedor').appendChild(clone);
+}
 
-inputImagenes.addEventListener('change', (e) => {
-    manejarImagenes(e.target.files);
-});
+function eliminarProductoPrenda(button) {
+    const card = button.closest('.producto-card');
+    card.remove();
+    renumerarPrendas();
+}
 
-function manejarImagenes(files) {
-    if (imagenesSeleccionadas.length + files.length > 3) {
+function renumerarPrendas() {
+    const prendas = document.querySelectorAll('.producto-card');
+    prendas.forEach((prenda, index) => {
+        prenda.querySelector('.numero-producto').textContent = index + 1;
+    });
+}
+
+function toggleProductoBody(button) {
+    const body = button.closest('.producto-card').querySelector('.producto-body');
+    body.style.display = body.style.display === 'none' ? 'block' : 'none';
+    button.textContent = body.style.display === 'none' ? '▶' : '▼';
+}
+
+function toggleSeccionReflectivo(titleElement) {
+    const icon = titleElement.querySelector('.fa-chevron-down');
+    const secciones = titleElement.parentElement.nextElementSibling;
+    
+    if (secciones) {
+        secciones.style.display = secciones.style.display === 'none' ? 'block' : 'none';
+        if (icon) {
+            icon.style.transform = secciones.style.display === 'none' ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+    }
+}
+
+function agregarFotosAlProductoReflectivo(input) {
+    const files = input.files;
+    const preview = input.closest('.producto-section').querySelector('.fotos-preview-reflectivo');
+    const previewCount = preview.querySelectorAll('img').length;
+    
+    if (previewCount + files.length > 3) {
         alert('Máximo 3 imágenes permitidas');
         return;
     }
-
+    
     Array.from(files).forEach(file => {
         if (file.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.onload = (e) => {
-                imagenesSeleccionadas.push({
-                    file: file,
-                    preview: e.target.result
-                });
-                renderizarImagenes();
+                const div = document.createElement('div');
+                div.style.cssText = 'position: relative; border-radius: 6px; overflow: hidden; aspect-ratio: 1;';
+                div.innerHTML = `
+                    <img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">
+                    <button type="button" onclick="this.parentElement.remove()" style="position: absolute; top: 2px; right: 2px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center;">×</button>
+                `;
+                preview.appendChild(div);
             };
             reader.readAsDataURL(file);
         }
     });
 }
 
-function renderizarImagenes() {
-    const galeria = document.getElementById('galeria_imagenes');
-    galeria.innerHTML = '';
-    
-    imagenesSeleccionadas.forEach((img, index) => {
-        const div = document.createElement('div');
-        div.className = 'imagen-item';
-        div.innerHTML = `
-            <img src="${img.preview}" alt="Imagen ${index + 1}">
-            <button type="button" class="remove" onclick="eliminarImagen(${index})">×</button>
-        `;
-        galeria.appendChild(div);
-    });
-}
-
-function eliminarImagen(index) {
-    imagenesSeleccionadas.splice(index, 1);
-    renderizarImagenes();
-}
-
-// Ubicaciones
-function agregarUbicacion() {
-    const input = document.getElementById('seccion_reflectivo');
+function abrirModalUbicacion(button) {
+    const input = button.previousElementSibling;
     const ubicacion = input.value.trim();
-    const errorDiv = document.getElementById('errorSeccionReflectivo');
     
     if (!ubicacion) {
         input.style.border = '2px solid #ef4444';
-        input.style.background = '#fee2e2';
-        input.classList.add('shake');
-        errorDiv.style.display = 'block';
-        
-        setTimeout(() => {
-            input.style.border = '';
-            input.style.background = '';
-            input.classList.remove('shake');
-        }, 600);
-        
-        setTimeout(() => {
-            errorDiv.style.display = 'none';
-        }, 3000);
-        
+        setTimeout(() => input.style.border = '', 1500);
         return;
     }
     
-    input.style.border = '';
-    input.style.background = '';
-    errorDiv.style.display = 'none';
+    // Guardar el botón e input para usar después
+    window.ubicacionModalData = {
+        button: button,
+        input: input,
+        ubicacion: ubicacion,
+        prenda: button.closest('.producto-card')
+    };
     
-    // Crear modal para descripción
-    let html = `
-        <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;" id="modalUbicacion">
-            <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                    <h3 style="margin: 0; color: #1e40af; font-size: 1.1rem;">${ubicacion}</h3>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <button type="button" onclick="cerrarModalUbicacion()" style="background: #ef4444; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 1.5rem; display: flex; align-items: center; justify-content: center;">×</button>
-                        <button type="button" onclick="guardarUbicacion('${ubicacion}')" style="background: #3498db; color: white; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; font-size: 1.5rem; display: flex; align-items: center; justify-content: center;">+</button>
-                    </div>
-                </div>
-                
-                <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #333;">Descripción</label>
-                    <textarea id="descUbicacion" placeholder="Describe la ubicación..." style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; resize: vertical; min-height: 80px;"></textarea>
-                </div>
-            </div>
-        </div>
-    `;
+    // Mostrar modal con la ubicación escrita
+    document.getElementById('modalUbicacionNombre').textContent = ubicacion;
+    document.getElementById('modalUbicacionTextarea').value = '';
+    document.getElementById('modalUbicacionReflectivo').style.display = 'flex';
     
-    document.body.insertAdjacentHTML('beforeend', html);
+    // Focus en el textarea
+    setTimeout(() => document.getElementById('modalUbicacionTextarea').focus(), 100);
 }
 
 function cerrarModalUbicacion() {
-    const modal = document.getElementById('modalUbicacion');
-    if (modal) modal.remove();
+    document.getElementById('modalUbicacionReflectivo').style.display = 'none';
 }
 
-function guardarUbicacion(ubicacion) {
-    const desc = document.getElementById('descUbicacion').value;
+function guardarUbicacionReflectivo() {
+    const textarea = document.getElementById('modalUbicacionTextarea');
+    const observacion = textarea.value.trim();
     
-    ubicacionesSeleccionadas.push({
-        ubicacion: ubicacion,
-        descripcion: desc
-    });
+    if (!window.ubicacionModalData) return;
     
-    cerrarModalUbicacion();
-    document.getElementById('seccion_reflectivo').value = '';
-    renderizarUbicaciones();
-}
-
-function renderizarUbicaciones() {
-    const container = document.getElementById('secciones_agregadas');
-    container.innerHTML = '';
+    const { ubicacion, prenda } = window.ubicacionModalData;
+    const container = prenda.querySelector('.ubicaciones-agregadas-reflectivo');
     
-    ubicacionesSeleccionadas.forEach((ub, index) => {
-        const div = document.createElement('div');
-        div.style.cssText = 'background: white; border: 2px solid #3498db; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;';
-        
-        div.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
-                <div>
-                    <h4 style="margin: 0 0 0.5rem 0; color: #1e40af; font-size: 0.95rem;">${ub.ubicacion}</h4>
-                    ${ub.descripcion ? `<p style="margin: 0; color: #666; font-size: 0.85rem;"><strong>Descripción:</strong> ${ub.descripcion}</p>` : ''}
-                </div>
-                <button type="button" onclick="eliminarUbicacion(${index})" style="background: #ef4444; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center;">×</button>
-            </div>
-        `;
-        container.appendChild(div);
-    });
-}
-
-function eliminarUbicacion(index) {
-    ubicacionesSeleccionadas.splice(index, 1);
-    renderizarUbicaciones();
-}
-
-// Observaciones
-function agregarObservacion() {
-    const contenedor = document.getElementById('observaciones_lista');
-    const fila = document.createElement('div');
-    fila.style.cssText = 'display: flex; gap: 10px; align-items: center; padding: 10px; background: white; border-radius: 6px; border: 1px solid #ddd;';
-    fila.innerHTML = `
-        <input type="text" name="observaciones_generales[]" class="input-large" placeholder="Escribe una observación..." style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
-        <div style="display: flex; gap: 5px; align-items: center; flex-shrink: 0;">
-            <div class="obs-checkbox-mode" style="display: flex; align-items: center; gap: 5px;">
-                <input type="checkbox" name="observaciones_check[]" style="width: 20px; height: 20px; cursor: pointer;">
-            </div>
-            <div class="obs-text-mode" style="display: none; flex: 1;">
-                <input type="text" name="observaciones_valor[]" placeholder="Valor..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
-            </div>
-            <button type="button" class="obs-toggle-btn" style="background: #3498db; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; flex-shrink: 0;">✓/✎</button>
+    if (!container) return;
+    
+    // Crear elemento de ubicación como componente expandible
+    const item = document.createElement('div');
+    item.style.cssText = 'background: white; border: 2px solid #0ea5e9; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; width: 100%; box-shadow: 0 2px 4px rgba(14, 165, 233, 0.15); position: relative;';
+    
+    const header = document.createElement('div');
+    header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; cursor: pointer;';
+    header.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1;">
+            <span style="color: #0ea5e9; font-weight: 700; font-size: 1rem;">📍</span>
+            <span style="font-weight: 700; color: #1e40af; font-size: 0.95rem;">${ubicacion}</span>
         </div>
-        <button type="button" onclick="this.closest('div').remove()" style="background: #f44336; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 1rem; flex-shrink: 0;">✕</button>
+        <span style="color: #0ea5e9; font-size: 1.2rem; transition: transform 0.3s ease;" class="ubicacion-toggle">▼</span>
     `;
-    contenedor.appendChild(fila);
     
-    const toggleBtn = fila.querySelector('.obs-toggle-btn');
-    const checkboxMode = fila.querySelector('.obs-checkbox-mode');
-    const textMode = fila.querySelector('.obs-text-mode');
-    toggleBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        if (checkboxMode.style.display === 'none') {
-            checkboxMode.style.display = 'block';
-            textMode.style.display = 'none';
-            toggleBtn.style.background = '#3498db';
-        } else {
-            checkboxMode.style.display = 'none';
-            textMode.style.display = 'block';
-            toggleBtn.style.background = '#ff9800';
-        }
+    const body = document.createElement('div');
+    body.style.cssText = 'display: block; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e2e8f0;';
+    body.innerHTML = `
+        <p style="margin: 0 0 0.5rem 0; color: #64748b; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px;">Observación:</p>
+        <p style="margin: 0; color: #334155; font-size: 0.9rem; line-height: 1.5;">${observacion || 'Sin observación adicional'}</p>
+    `;
+    
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.style.cssText = 'position: absolute; top: 0.5rem; right: 0.5rem; background: #ef4444; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: bold;';
+    deleteBtn.textContent = '×';
+    deleteBtn.onclick = (e) => {
+        e.stopPropagation();
+        item.remove();
+    };
+    
+    item.appendChild(header);
+    header.appendChild(deleteBtn);
+    item.appendChild(body);
+    
+    // Toggle para expandir/contraer
+    let expanded = true;
+    header.addEventListener('click', () => {
+        expanded = !expanded;
+        body.style.display = expanded ? 'block' : 'none';
+        header.querySelector('.ubicacion-toggle').style.transform = expanded ? 'rotate(0deg)' : 'rotate(-90deg)';
     });
+    
+    container.appendChild(item);
+    
+    // Limpiar y cerrar modal
+    window.ubicacionModalData.input.value = '';
+    cerrarModalUbicacion();
 }
 
 // Sincronizar valores del header con el formulario
@@ -707,75 +1259,67 @@ document.getElementById('header-fecha').addEventListener('change', function() {
 document.getElementById('cotizacionReflectivoForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
-    // Sincronizar valores del header antes de enviar
-    document.getElementById('cliente').value = document.getElementById('header-cliente').value;
-    document.getElementById('fecha').value = document.getElementById('header-fecha').value;
+    // Sincronizar valores del header
+    const cliente = document.getElementById('header-cliente').value.trim();
+    const fecha = document.getElementById('header-fecha').value;
 
-    const cliente = document.getElementById('cliente').value;
-    const asesora = document.getElementById('asesora').value;
-    const descripcion = document.getElementById('descripcion_reflectivo').value;
+    if (!cliente || !fecha) {
+        alert('⚠️ Completa el Cliente y la Fecha');
+        return;
+    }
 
-    if (!cliente || !asesora || !descripcion) {
-        alert('Completa los campos obligatorios');
+    // Recopilar prendas del DOM
+    const prendas = [];
+    document.querySelectorAll('.producto-card').forEach((card) => {
+        const tipoPrenda = card.querySelector('input[name="productos_reflectivo[][tipo_prenda]"]')?.value.trim() || '';
+        const descripcion = card.querySelector('textarea[name="productos_reflectivo[][descripcion]"]')?.value.trim() || '';
+        
+        if (tipoPrenda) {
+            prendas.push({
+                tipo: tipoPrenda,
+                descripcion: descripcion
+            });
+        }
+    });
+
+    if (prendas.length === 0) {
+        alert('⚠️ Debes agregar al menos una PRENDA con TIPO');
         return;
     }
 
     const submitButton = e.submitter;
     const action = submitButton ? submitButton.value : 'borrador';
 
-    // Leer observaciones generales del DOM
-    const observacionesDelDOM = [];
-    document.querySelectorAll('#observaciones_lista > div').forEach((div) => {
-        const inputTexto = div.querySelector('input[name="observaciones_generales[]"]');
-        const inputCheck = div.querySelector('input[name="observaciones_check[]"]');
-        const inputValor = div.querySelector('input[name="observaciones_valor[]"]');
-        
-        if (inputTexto && inputTexto.value.trim()) {
-            const esCheckbox = inputCheck && inputCheck.checked;
-            
-            const obs = {
-                texto: inputTexto.value.trim(),
-                tipo: esCheckbox ? 'checkbox' : 'texto',
-                valor: esCheckbox ? inputCheck.checked : (inputValor ? inputValor.value : '')
-            };
-            
-            observacionesDelDOM.push(obs);
-        }
-    });
-
-    // Preparar datos como JSON
-    const data = {
-        _token: document.querySelector('input[name="_token"]').value,
-        cliente: cliente,
-        asesora: asesora,
-        fecha: document.getElementById('header-fecha').value,
-        action: action,
-        descripcion_reflectivo: descripcion,
-        ubicaciones_reflectivo: ubicacionesSeleccionadas,
-        observaciones_generales: observacionesDelDOM
-    };
-
-    // Preparar FormData para subir imágenes
+    // Preparar FormData
     const formData = new FormData();
-    
-    // Agregar datos JSON
-    Object.keys(data).forEach(key => {
-        if (Array.isArray(data[key]) || typeof data[key] === 'object') {
-            formData.append(key, JSON.stringify(data[key]));
-        } else {
-            formData.append(key, data[key]);
-        }
-    });
+    formData.append('cliente', cliente);
+    formData.append('asesora', document.getElementById('asesora').value);
+    formData.append('fecha', fecha);
+    formData.append('action', action);
+    formData.append('tipo', 'RF');
+    formData.append('prendas', JSON.stringify(prendas));
+    formData.append('especificaciones', document.getElementById('especificaciones').value || '');
+    formData.append('descripcion_reflectivo', 'Cotización de Reflectivo');
+    formData.append('ubicaciones_reflectivo', JSON.stringify([]));
+    formData.append('observaciones_generales', JSON.stringify([]));
 
-    // Agregar imágenes
-    imagenesSeleccionadas.forEach((img) => {
-        formData.append('imagenes_reflectivo[]', img.file);
+    // Agregar imágenes por prenda (si las hay)
+    document.querySelectorAll('.input-file-reflectivo').forEach((input, index) => {
+        if (input.files.length > 0) {
+            Array.from(input.files).forEach((file) => {
+                formData.append('imagenes_reflectivo[]', file);
+            });
+        }
     });
 
     try {
-        const response = await fetch('{{ route("asesores.cotizaciones.guardar") }}', {
+        const response = await fetch('{{ route("asesores.cotizaciones.reflectivo.guardar") }}', {
             method: 'POST',
-            body: formData
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                'Accept': 'application/json'
+            }
         });
 
         const result = await response.json();
@@ -784,11 +1328,18 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
             alert('✅ Cotización guardada exitosamente');
             window.location.href = '{{ route("asesores.cotizaciones.index") }}';
         } else {
-            alert('❌ Error: ' + result.message);
+            alert('❌ Error: ' + (result.message || 'Error al guardar'));
+            console.error('Errores:', result.errores || result);
         }
     } catch (error) {
-        alert('❌ Error al guardar: ' + error.message);
+        alert('❌ Error de conexión: ' + error.message);
+        console.error('Error:', error);
     }
+});
+
+// Agregar PRENDA 1 por default al cargar la página
+document.addEventListener('DOMContentLoaded', function() {
+    agregarProductoPrenda();
 });
 </script>
 

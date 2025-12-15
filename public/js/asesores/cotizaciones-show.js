@@ -6,7 +6,9 @@
 function cambiarTab(tabName, button) {
     // Ocultar todos los tabs
     const tabs = document.querySelectorAll('.tab-content');
-    tabs.forEach(tab => tab.classList.remove('active'));
+    tabs.forEach((tab, index) => {
+        tab.classList.remove('active');
+    });
     
     // Mostrar el tab seleccionado
     const selectedTab = document.getElementById('tab-' + tabName);
@@ -16,7 +18,9 @@ function cambiarTab(tabName, button) {
     
     // Actualizar botones activos
     const buttons = document.querySelectorAll('.tab-button');
-    buttons.forEach(btn => btn.classList.remove('active'));
+    buttons.forEach((btn, index) => {
+        btn.classList.remove('active');
+    });
     button.classList.add('active');
 }
 

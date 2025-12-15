@@ -427,6 +427,15 @@ function recopilarDatos() {
                 const tela = telaInput?.value || '';
                 const referencia = referenciaInput?.value || '';
                 
+                console.log(`🔍 DEBUG Tela ${telaIndex}:`, {
+                    colorInput_encontrado: !!colorInput,
+                    telaInput_encontrado: !!telaInput,
+                    referenciaInput_encontrado: !!referenciaInput,
+                    color,
+                    tela,
+                    referencia
+                });
+                
                 // Solo agregar si al menos uno de los campos tiene valor
                 if (color || tela || referencia) {
                     telasFila.push({
@@ -466,17 +475,27 @@ function recopilarDatos() {
         if (mangaCheckbox && mangaCheckbox.checked) {
             // Buscar el input de manga ID (clase .manga-id-input)
             const mangaIdInput = item.querySelector('.manga-id-input');
+            // Buscar el input de manga nombre (clase .manga-input)
+            const mangaInput = item.querySelector('.manga-input');
             
             console.log('🔍 Buscando manga:', {
                 checkbox_checked: mangaCheckbox.checked,
                 mangaIdInput_encontrado: !!mangaIdInput,
-                mangaIdInput_value: mangaIdInput?.value
+                mangaIdInput_value: mangaIdInput?.value,
+                mangaInput_encontrado: !!mangaInput,
+                mangaInput_value: mangaInput?.value
             });
             
-            // Guardar el tipo de manga (ID del manga seleccionado)
+            // Guardar el tipo de manga ID (ID del manga seleccionado)
             if (mangaIdInput && mangaIdInput.value) {
                 variantes.tipo_manga_id = mangaIdInput.value;
                 console.log('✅ tipo_manga_id capturado:', mangaIdInput.value);
+            }
+            
+            // Guardar el tipo de manga nombre (nombre del manga seleccionado)
+            if (mangaInput && mangaInput.value) {
+                variantes.tipo_manga = mangaInput.value;
+                console.log('✅ tipo_manga capturado:', mangaInput.value);
             }
             
             // Capturar observación de manga SOLO SI CHECKBOX ESTÁ CHECKED
@@ -489,6 +508,7 @@ function recopilarDatos() {
         } else {
             console.log('ℹ️ Manga NO seleccionado - obs_manga NO se captura');
             variantes.tipo_manga_id = null;
+            variantes.tipo_manga = null;
         }
         
         // Bolsillos - SOLO SI ESTÁ CHECKED

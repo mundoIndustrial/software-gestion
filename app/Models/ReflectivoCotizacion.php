@@ -40,6 +40,6 @@ class ReflectivoCotizacion extends Model
      */
     public function fotos()
     {
-        return $this->hasMany(ReflectivofotoCotizacion::class, 'reflectivo_cotizacion_id');
+        return $this->hasMany(ReflectivoCotizacionFoto::class, 'reflectivo_cotizacion_id')->orderBy('orden');
     }
 }

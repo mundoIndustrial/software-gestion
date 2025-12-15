@@ -2,7 +2,7 @@
 <div class="form-step" data-step="4">
     <div class="step-header">
         <h2 style="font-size: 1rem !important; margin: 0 0 0.2rem 0 !important;">PASO 4: REVISAR COTIZACIÓN</h2>
-        <p style="font-size: 0.45rem !important; margin: 0 !important; color: #666 !important;">VERIFICA QUE TODO ESTÉ CORRECTO</p>
+        <p style="font-size: 0.8rem !important; margin: 0 !important; color: #666 !important;">VERIFICA QUE TODO ESTÉ CORRECTO</p>
     </div>
 
     <div class="form-section">

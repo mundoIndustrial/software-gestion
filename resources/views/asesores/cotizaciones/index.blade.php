@@ -32,7 +32,7 @@
             ['code' => 'todas', 'label' => 'Todas', 'icon' => 'fas fa-list', 'active' => true],
             ['code' => 'P', 'label' => 'Prenda', 'icon' => 'fas fa-shirt', 'active' => false],
             ['code' => 'L', 'label' => 'Logo', 'icon' => 'fas fa-palette', 'active' => false],
-            ['code' => 'PL', 'label' => 'Prenda/Logo', 'icon' => 'fas fa-shirt', 'active' => false],
+            ['code' => 'PL', 'label' => 'Combinada', 'icon' => 'fas fa-layer-group', 'active' => false],
             ['code' => 'RF', 'label' => 'Reflectivo', 'icon' => 'fas fa-lightbulb', 'active' => false],
         ]
     ])
@@ -93,13 +93,13 @@
             ])
         </div>
 
-        <div id="seccion-pb" class="seccion-tipo" style="display: none;">
+        <div id="seccion-combinada" class="seccion-tipo" style="display: none;">
             @include('components.cotizaciones.table', [
-                'sectionId' => 'pb',
-                'title' => 'Prenda/Bordado',
+                'sectionId' => 'combinada',
+                'title' => 'Combinada',
                 'cotizaciones' => $cotizacionesPrendaBordado,
                 'pageParameterName' => $pageNameCotPB ?? 'page',
-                'emptyMessage' => 'No hay cotizaciones de prenda/bordado',
+                'emptyMessage' => 'No hay cotizaciones combinadas',
                 'columns' => [
                     ['key' => 'fecha', 'label' => 'Fecha', 'align' => 'left'],
                     ['key' => 'codigo', 'label' => 'Código', 'align' => 'left'],
@@ -183,13 +183,13 @@
             ])
         </div>
 
-        <div id="seccion-bor-pb" class="seccion-tipo" style="display: none;">
+        <div id="seccion-bor-combinada" class="seccion-tipo" style="display: none;">
             @include('components.cotizaciones.table', [
-                'sectionId' => 'bor-pb',
-                'title' => 'Prenda/Bordado',
+                'sectionId' => 'bor-combinada',
+                'title' => 'Combinada',
                 'cotizaciones' => $borradorespPrendaBordado,
                 'pageParameterName' => $pageNameBorPB ?? 'page',
-                'emptyMessage' => 'No hay borradores de prenda/bordado',
+                'emptyMessage' => 'No hay borradores combinados',
                 'columns' => [
                     ['key' => 'fecha', 'label' => 'Fecha', 'align' => 'left'],
                     ['key' => 'cliente', 'label' => 'Cliente', 'align' => 'left'],

@@ -86,6 +86,10 @@
     document.addEventListener('DOMContentLoaded', function() {
         const cotizacion = {!! json_encode($cotizacion) !!};
         console.log('📂 Datos de cotización recibidos:', cotizacion);
+        console.log('📂 Cotización ID:', cotizacion.id);
+        
+        // Guardar ID en variable global para actualizar después
+        window.cotizacionIdActual = cotizacion.id;
         
         // Esperar a que los módulos estén cargados
         setTimeout(() => {
@@ -95,7 +99,7 @@
             } else {
                 console.error('❌ Función cargarBorrador no encontrada');
             }
-        }, 500);
+        }, 1000);
     });
 </script>
 @endif

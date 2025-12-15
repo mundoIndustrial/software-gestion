@@ -34,7 +34,7 @@
                     <div class="form-col full">
                         <label><i class="fas fa-pen"></i> DESCRIPCIÓN</label>
                         <textarea name="productos_friendly[][descripcion]" class="input-medium" placeholder="DESCRIPCIÓN DE LA PRENDA..." rows="2"></textarea>
-                        <small class="help-text">DESCRIBE LA PRENDA, DETALLES ESPECIALES, LOGO, BORDADO, ESTAMPADO, ETC.</small>
+                        <small class="help-text">DESCRIBE LA PRENDA, DETALLES ESPECIALES, ETC.</small>
                     </div>
                 </div>
             </div>
@@ -72,24 +72,24 @@
                         <i class="fas fa-plus"></i> Agregar Tela
                     </button>
                 </div>
-                <div class="form-row">
-                    <div class="form-col full">
-                        <table style="width: 100%; border-collapse: collapse; background: white;">
+                <div class="form-row" style="overflow-x: auto;">
+                    <div class="form-col full" style="min-width: 0;">
+                        <table style="width: 100%; border-collapse: collapse; background: white; min-width: 800px;">
                             <thead>
                                 <tr style="background-color: #f0f0f0; border-bottom: 2px solid #0066cc;">
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #0066cc; border-right: 1px solid #ddd;">
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #0066cc; border-right: 1px solid #ddd; width: 150px; white-space: nowrap;">
                                         <i class="fas fa-palette"></i> Color
                                     </th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #0066cc; border-right: 1px solid #ddd;">
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #0066cc; border-right: 1px solid #ddd; width: 150px; white-space: nowrap;">
                                         <i class="fas fa-cloth"></i> Tela
                                     </th>
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #0066cc; border-right: 1px solid #ddd;">
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #0066cc; border-right: 1px solid #ddd; width: 120px; white-space: nowrap;">
                                         <i class="fas fa-barcode"></i> Referencia
                                     </th>
-                                    <th style="padding: 12px; text-align: center; font-weight: 600; color: #0066cc; border-right: 1px solid #ddd;">
+                                    <th style="padding: 12px; text-align: center; font-weight: 600; color: #0066cc; border-right: 1px solid #ddd; width: 200px; white-space: nowrap;">
                                         <i class="fas fa-image"></i> Imagen Tela
                                     </th>
-                                    <th style="padding: 12px; text-align: center; font-weight: 600; color: #0066cc; width: 50px;">
+                                    <th style="padding: 12px; text-align: center; font-weight: 600; color: #0066cc; width: 50px; white-space: nowrap;">
                                         <i class="fas fa-trash"></i>
                                     </th>
                                 </tr>
@@ -139,12 +139,13 @@
                 </div>
             </div>
 
-            <!-- SECCIÓN DE VARIACIONES ESPECÍFICAS (Tabla HTML) -->
+            <!-- SECCIÓN DE VARIACIONES ESPECÍFICAS -->
             <div class="producto-section">
                 <div class="section-title"><i class="fas fa-sliders-h"></i> VARIACIONES ESPECÍFICAS</div>
                 <div class="form-row">
                     <div class="form-col full">
-                        <table style="width: 100%; border-collapse: collapse; background: white; margin: 0; border: 1px solid #ddd; border-radius: 4px; overflow: hidden;">
+                        <!-- Vista Desktop (tabla) -->
+                        <table style="width: 100%; border-collapse: collapse; background: white; margin: 0; border: 1px solid #ddd; border-radius: 4px; overflow: hidden; display: none;" class="variaciones-tabla-desktop">
                             <thead>
                                 <tr style="background: linear-gradient(135deg, #0066cc, #0052a3); border-bottom: 2px solid #0066cc;">
                                     <th style="padding: 14px 12px; text-align: center; font-weight: 600; color: white; border-right: 1px solid #0052a3; width: 60px;">
@@ -226,6 +227,78 @@
                                 </tr>
                             </tbody>
                         </table>
+
+                        <!-- Vista Mobile (cards) -->
+                        <div style="display: none;" class="variaciones-cards-mobile">
+                            <!-- MANGA -->
+                            <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                                    <input type="checkbox" name="productos_friendly[][variantes][aplica_manga]" value="1" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;" onchange="toggleMangaInput(this)">
+                                    <label style="font-weight: 600; color: #0066cc; cursor: pointer; flex: 1;"><i class="fas fa-shirt"></i> Manga</label>
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <div style="position: relative;">
+                                        <input type="text" class="manga-input" placeholder="Buscar tipo..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; transition: border-color 0.2s; opacity: 0.5; pointer-events: none;" onkeyup="buscarManga(this)" onkeypress="if(event.key==='Enter') crearMangaDesdeInput(this)" disabled>
+                                        <input type="hidden" name="productos_friendly[][variantes][tipo_manga_id]" class="manga-id-input" value="">
+                                        <div class="manga-suggestions" style="position: absolute; background: white; border: 1px solid #ddd; border-radius: 4px; max-height: 150px; overflow-y: auto; z-index: 1000; width: 100%; display: none; margin-top: 2px; top: 100%; left: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
+                                    </div>
+                                    <input type="text" name="productos_friendly[][variantes][obs_manga]" placeholder="Ej: manga larga..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; transition: border-color 0.2s;">
+                                </div>
+                            </div>
+
+                            <!-- BOLSILLOS -->
+                            <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                                    <input type="checkbox" name="productos_friendly[][variantes][aplica_bolsillos]" value="1" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
+                                    <label style="font-weight: 600; color: #0066cc; cursor: pointer; flex: 1;"><i class="fas fa-square"></i> Bolsillos</label>
+                                </div>
+                                <input type="text" name="productos_friendly[][variantes][obs_bolsillos]" placeholder="Ej: 4 bolsillos, con cierre..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; transition: border-color 0.2s;">
+                            </div>
+
+                            <!-- BROCHE/BOTÓN -->
+                            <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                                    <input type="checkbox" name="productos_friendly[][variantes][aplica_broche]" value="1" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
+                                    <label style="font-weight: 600; color: #0066cc; cursor: pointer; flex: 1;"><i class="fas fa-link"></i> Broche/Botón</label>
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <select name="productos_friendly[][variantes][tipo_broche_id]" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; background-color: white; cursor: pointer; transition: border-color 0.2s; box-sizing: border-box;">
+                                        <option value="">Seleccionar...</option>
+                                        <option value="1">Broche</option>
+                                        <option value="2">Botón</option>
+                                    </select>
+                                    <input type="text" name="productos_friendly[][variantes][obs_broche]" placeholder="Ej: Botones de madera..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; transition: border-color 0.2s;">
+                                </div>
+                            </div>
+
+                            <!-- REFLECTIVO -->
+                            <div style="background: white; border: 1px solid #ddd; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+                                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                                    <input type="checkbox" name="productos_friendly[][variantes][aplica_reflectivo]" value="1" style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;">
+                                    <label style="font-weight: 600; color: #0066cc; cursor: pointer; flex: 1;"><i class="fas fa-star"></i> Reflectivo</label>
+                                </div>
+                                <input type="text" name="productos_friendly[][variantes][obs_reflectivo]" placeholder="Ej: En brazos y espalda..." style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; box-sizing: border-box; transition: border-color 0.2s;">
+                            </div>
+                        </div>
+
+                        <style>
+                            @media (max-width: 768px) {
+                                .variaciones-tabla-desktop {
+                                    display: none !important;
+                                }
+                                .variaciones-cards-mobile {
+                                    display: block !important;
+                                }
+                            }
+                            @media (min-width: 769px) {
+                                .variaciones-tabla-desktop {
+                                    display: table !important;
+                                }
+                                .variaciones-cards-mobile {
+                                    display: none !important;
+                                }
+                            }
+                        </style>
                     </div>
                 </div>
             </div>

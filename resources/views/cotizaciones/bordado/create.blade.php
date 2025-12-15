@@ -472,7 +472,7 @@
                     <i class="fas fa-sticky-note"></i> DESCRIPCIÓN
                 </div>
                 <div class="form-group-large">
-                    <textarea id="descripcion" name="descripcion" class="input-large" rows="3" placeholder="Describe el bordado, detalles especiales, logo, diseño, etc."></textarea>
+                    <textarea id="descripcion" name="descripcion" class="input-large" rows="3" placeholder="Describe el bordado, detalles especiales, diseño, etc."></textarea>
                 </div>
             </div>
 
