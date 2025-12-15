@@ -594,11 +594,13 @@ Route::middleware(['auth', 'verified'])->name('pedidos.estado.')->group(function
 // ========================================
 // RUTA PARA SERVIR IMÁGENES DE STORAGE
 // ========================================
-// Sirve archivos desde storage/app/public cuando el enlace simbólico no funciona
-Route::get('/storage-serve/{path}', [StorageController::class, 'serve'])
+
+Route::get('/storage-serve/{path}', function($path) {
+    $path = str_replace('..', '', $path);
+    return redirect('/storage/' . ltrim($path, '/'));
+})
     ->where('path', '.*')
     ->name('storage.serve');
-
 // ========================================
 // API PÚBLICA - DATOS DE PEDIDOS (SIN AUTH)
 // ========================================
