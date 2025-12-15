@@ -33,7 +33,8 @@
                 <!-- Recibo Unificado -->
                 <div id="factura-container-mobile" 
                      style="display: none; width: 100%; display: flex; justify-content: center;"
-                     data-numero-pedido="{{ $pedido['numero_pedido'] }}">
+                     data-numero-pedido="{{ $pedido['numero_pedido'] }}"
+                     data-version="v2">
                     @include('components.orders-components.order-detail-modal-mobile')
                 </div>
             </div>
@@ -1239,6 +1240,8 @@
             })
             .then(function(data) {
                 console.log('✅ Datos del API recibidos:', data);
+                console.log('🔍 DEBUG - data.prendas:', data.prendas);
+                console.log('🔍 DEBUG - data.prendas[0]:', data.prendas?.[0]);
                 
                 const pedidoData = {
                     fecha: data.fecha_creacion || new Date().toISOString().split('T')[0],

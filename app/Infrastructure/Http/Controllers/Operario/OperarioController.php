@@ -368,41 +368,67 @@ class OperarioController extends Controller
 
     /**
      * API: Obtener datos del pedido para vista móvil
-     * OPTIMIZADO: Con caché y eager loading
+     * SIN CACHÉ para asegurar siempre datos frescos
      */
     public function getPedidoData($numeroPedido)
     {
-        // Usar caché por 10 minutos para evitar consultas repetidas
-        $cacheKey = "pedido_data_{$numeroPedido}";
+        $pedido = \App\Models\PedidoProduccion::with(['asesora', 'prendas'])->where('numero_pedido', $numeroPedido)->first();
         
-        return \Cache::remember($cacheKey, 600, function() use ($numeroPedido) {
-            $pedido = \App\Models\PedidoProduccion::with(['asesora', 'prendas'])->where('numero_pedido', $numeroPedido)->first();
-            
-            if (!$pedido) {
-                return response()->json(['error' => 'not found'], 404);
-            }
+        if (!$pedido) {
+            return response()->json(['error' => 'not found'], 404);
+        }
 
-            // Devolver también las prendas para que el JS construya la descripción
+        // DEBUG: Log de las prendas cargadas
+        \Log::info("getPedidoData - Prendas cargadas", [
+            'numero_pedido' => $numeroPedido,
+            'total_prendas' => $pedido->prendas->count(),
+            'prendas' => $pedido->prendas->map(function($p) {
+                return [
+                    'nombre' => $p->nombre_prenda,
+                    'cantidad' => $p->cantidad,
+                    'cantidad_talla' => $p->cantidad_talla,
+                    'cantidad_talla_type' => gettype($p->cantidad_talla),
+                    'cantidad_talla_empty' => empty($p->cantidad_talla),
+                ];
+            })->toArray()
+        ]);
+
+        // Devolver también las prendas para que el JS construya la descripción
+        $prendasFormatted = $pedido->prendas->map(function($prenda) {
+            // Convertir cantidad_talla array a string legible
+            $tallasPorCantidad = $prenda->cantidad_talla ?? [];
+            $tallasFormateadas = [];
+            
+            if (is_array($tallasPorCantidad) && !empty($tallasPorCantidad)) {
+                foreach ($tallasPorCantidad as $talla => $cantidad) {
+                    $tallasFormateadas[] = $talla . ' (' . $cantidad . ')';
+                }
+                $tallasTexto = implode(', ', $tallasFormateadas);
+            } else {
+                // Si no hay tallas desglosadas, usar la cantidad total
+                $tallasTexto = $prenda->cantidad ? 'Cantidad: ' . $prenda->cantidad : '-';
+            }
+            
             return [
-                'numero_pedido' => $pedido->numero_pedido,
-                'cliente' => $pedido->cliente ?? 'N/A',
-                'asesora' => $pedido->asesora?->name ?? 'N/A',
-                'forma_pago' => $pedido->forma_de_pago ?? 'N/A',
-                'descripcion_prendas' => $pedido->descripcion_prendas ?? 'N/A',
-                'fecha_creacion' => $pedido->fecha_creacion ?? '',
-                'cantidad' => $pedido->cantidad ?? 0,
-                'encargado' => \Illuminate\Support\Facades\Auth::user()?->name ?? 'Operario',
-                'fotos' => $this->obtenerFotosPedido($pedido->numero_pedido),
-                'prendas' => $pedido->prendas->map(function($prenda) {
-                    return [
-                        'nombre' => $prenda->nombre_prenda ?? '',
-                        'talla' => $prenda->talla ?? '',
-                        'cantidad' => $prenda->cantidad ?? 0,
-                        'descripcion' => $prenda->descripcion ?? ''
-                    ];
-                })
+                'nombre' => $prenda->nombre_prenda ?? '',
+                'talla' => $tallasTexto,  // Mostrar todas las tallas con sus cantidades
+                'cantidad' => $prenda->cantidad ?? 0,
+                'descripcion' => $prenda->descripcion ?? ''
             ];
         });
+
+        return response()->json([
+            'numero_pedido' => $pedido->numero_pedido,
+            'cliente' => $pedido->cliente ?? 'N/A',
+            'asesora' => $pedido->asesora?->name ?? 'N/A',
+            'forma_pago' => $pedido->forma_de_pago ?? 'N/A',
+            'descripcion_prendas' => $pedido->descripcion_prendas ?? 'N/A',
+            'fecha_creacion' => $pedido->fecha_creacion ?? '',
+            'cantidad' => $pedido->cantidad ?? 0,
+            'encargado' => \Illuminate\Support\Facades\Auth::user()?->name ?? 'Operario',
+            'fotos' => $this->obtenerFotosPedido($pedido->numero_pedido),
+            'prendas' => $prendasFormatted
+        ]);
     }
 
     /**

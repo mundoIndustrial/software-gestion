@@ -147,43 +147,9 @@ window.llenarReciboCosturaMobile = function(data) {
     console.log('📋 Procesando descripción...');
     console.log('📋 ¿Existe descripción?', !!data.descripcion, 'Valor:', data.descripcion);
     
-    // Determinar qué prendas mostrar (máximo 2 por pantalla)
-    let descripcionAMostrar = data.descripcion;
-    
-    if (data.prendas && Array.isArray(data.prendas) && data.prendas.length > 0) {
-        console.log('🎪 Total de prendas:', data.prendas.length, 'Índice actual:', window.prendaCarouselIndex);
-        
-        // Si hay prendas, construir descripción solo para las 2 prendas visibles
-        const prendaInicio = window.prendaCarouselIndex;
-        const prendaFin = Math.min(window.prendaCarouselIndex + 2, data.prendas.length);
-        const prendasVisibles = data.prendas.slice(prendaInicio, prendaFin);
-        
-        console.log('🎪 Prendas visibles: desde', prendaInicio, 'hasta', prendaFin - 1, '- Total visibles:', prendasVisibles.length);
-        
-        // Reconstruir descripción solo con las prendas visibles
-        descripcionAMostrar = prendasVisibles.map((prenda, idx) => {
-            let desc = 'PRENDA ' + (prendaInicio + idx + 1) + ': ' + (prenda.nombre || 'Sin nombre') + '\n';
-            if (prenda.talla) desc += 'Talla: ' + prenda.talla + '\n';
-            if (prenda.cantidad) desc += 'Cantidad: ' + prenda.cantidad + '\n';
-            if (prenda.descripcion) desc += 'DESCRIPCION:\n' + prenda.descripcion + '\n';
-            return desc;
-        }).join('\n');
-        
-        console.log('🎪 Descripción reconstruida para prendas visibles');
-    }
-    
-    if (descripcionAMostrar && descripcionAMostrar !== 'N/A') {
-        console.log('📋 Descripción detectada, largo:', descripcionAMostrar.length);
-        console.log('📋 Primeras 200 caracteres:', descripcionAMostrar.substring(0, 200));
-        
-        // El formato viene de DescripcionPrendaHelper con estructura:
-        // PRENDA 1: ...
-        // Color: ... | Tela: ... | Manga: ...
-        // DESCRIPCION: ...
-        //    . Item con viñeta
-        //    . Otro item
-        // Tallas: ...
-        const lineas = descripcionAMostrar.split('\n');
+    if (data.descripcion && data.descripcion !== 'N/A') {
+        console.log('📋 Descripción detectada, largo:', data.descripcion.length);
+        const lineas = data.descripcion.split('\n');
         console.log('📋 Total de líneas:', lineas.length);
         
         let htmlResultado = '';
@@ -193,48 +159,42 @@ window.llenarReciboCosturaMobile = function(data) {
             const lineaTrimmed = linea.trim();
             
             if (lineaTrimmed === '') {
-                // Preservar líneas vacías como espacios
                 htmlResultado += '<br>';
             } else if (lineaTrimmed.startsWith('PRENDA')) {
                 lineaCount++;
-                console.log('📋 Línea', index, '- PRENDA:', lineaTrimmed);
-                // Títulos de prenda en negrita
                 htmlResultado += '<strong style="font-size: 11px; display: block; margin-top: 8px;">' + convertMarkdownBold(lineaTrimmed) + '</strong>';
-            } else if (lineaTrimmed.includes(':') && (lineaTrimmed.includes('DESCRIPCION') || lineaTrimmed.includes('Tallas') || lineaTrimmed.includes('Reflectivo') || lineaTrimmed.includes('Bolsillos'))) {
+            } else if (lineaTrimmed.startsWith('TALLAS') || lineaTrimmed.startsWith('*** TALLAS')) {
                 lineaCount++;
-                console.log('📋 Línea', index, '- SECCION:', lineaTrimmed);
-                // Secciones en negrita
+                htmlResultado += '<strong style="font-size: 10px; display: block; margin-top: 6px; color: #d32f2f;">' + convertMarkdownBold(lineaTrimmed) + '</strong>';
+            } else if ((lineaTrimmed.startsWith('-') && lineaTrimmed.includes(':')) || /^\d+:\s*\d+/.test(lineaTrimmed) || /^-\s*\d+:\s*\d+/.test(lineaTrimmed)) {
+                lineaCount++;
+                let textoTalla = lineaTrimmed;
+                if (textoTalla.startsWith('- ')) {
+                    textoTalla = textoTalla.substring(2);
+                }
+                htmlResultado += '<div style="font-size: 10px; margin: 4px 0; font-weight: bold; color: #d32f2f;">Talla: ' + textoTalla + '</div>';
+            } else if (lineaTrimmed.startsWith('Talla:') || lineaTrimmed.startsWith('Cantidad:')) {
+                lineaCount++;
+                htmlResultado += '<div style="font-size: 10px; margin: 4px 0; font-weight: bold; color: #d32f2f;">' + convertMarkdownBold(lineaTrimmed) + '</div>';
+            } else if (lineaTrimmed.includes(':') && (lineaTrimmed.includes('DESCRIPCION') || lineaTrimmed.includes('Reflectivo') || lineaTrimmed.includes('Bolsillos'))) {
+                lineaCount++;
                 htmlResultado += '<strong style="font-size: 10px; display: block; margin-top: 6px;">' + convertMarkdownBold(lineaTrimmed) + '</strong>';
             } else if (lineaTrimmed.startsWith('•') || lineaTrimmed.startsWith('.')) {
                 lineaCount++;
-                console.log('📋 Línea', index, '- VIÑETA:', lineaTrimmed);
-                // Items con viñeta
                 htmlResultado += '<div style="margin-left: 12px; font-size: 10px;">' + convertMarkdownBold(lineaTrimmed) + '</div>';
-            } else if (lineaTrimmed.startsWith('-') && lineaTrimmed.length === 1) {
-                // Líneas vacías con guiones
-                htmlResultado += '<br>';
             } else if (lineaTrimmed.includes(':') && lineaTrimmed.includes('|')) {
                 lineaCount++;
-                console.log('📋 Línea', index, '- ATRIBUTOS:', lineaTrimmed);
-                // Líneas de atributos (Color, Tela, Manga, Tallas)
                 htmlResultado += '<div style="font-size: 10px; margin: 2px 0;">' + convertMarkdownBold(lineaTrimmed) + '</div>';
             } else {
                 lineaCount++;
-                console.log('📋 Línea', index, '- OTRA:', lineaTrimmed);
-                // Otras líneas
                 htmlResultado += '<div style="font-size: 10px; margin: 2px 0;">' + convertMarkdownBold(lineaTrimmed) + '</div>';
             }
         });
-        
-        console.log('📋 Líneas procesadas:', lineaCount);
-        console.log('📋 HTML resultante (primeros 500 chars):', htmlResultado.substring(0, 500));
         
         const descElement = document.getElementById('mobile-descripcion');
         if (descElement) {
             descElement.innerHTML = htmlResultado;
             console.log('✅ Descripción inyectada en el DOM');
-        } else {
-            console.error('❌ Elemento mobile-descripcion NO encontrado');
         }
     } else {
         console.log('⚠️ Sin descripción válida');
@@ -243,7 +203,7 @@ window.llenarReciboCosturaMobile = function(data) {
             descElement.innerHTML = '<em style="font-size: 10px; color: #999;">Sin descripción</em>';
         }
     }
-
+    
     // Implementar carousel de prendas si hay múltiples
     console.log('🎪 Procesando prendas...');
     if (data.prendas && Array.isArray(data.prendas) && data.prendas.length > 0) {
