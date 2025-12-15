@@ -12,12 +12,35 @@ let visorCostosActual = {
 function abrirModalVisorCostos(cotizacionId, cliente) {
     visorCostosActual = { cotizacionId: cotizacionId, cliente: cliente, prendas: [], indiceActual: 0 };
     
-    // Fetch de costos
-    fetch(`/contador/cotizacion/${cotizacionId}/costos`)
+    // Primero obtener los nombres de las prendas desde el endpoint de cotización
+    fetch(`/contador/cotizacion/${cotizacionId}`)
         .then(response => response.json())
-        .then(data => {
-            if (data.success && data.prendas.length > 0) {
-                visorCostosActual.prendas = data.prendas;
+        .then(cotizacionData => {
+            // Mapear nombres de prendas
+            const prendasNombres = {};
+            if (cotizacionData.prendas_cotizaciones && Array.isArray(cotizacionData.prendas_cotizaciones)) {
+                cotizacionData.prendas_cotizaciones.forEach((prenda, idx) => {
+                    prendasNombres[idx] = prenda.nombre_prenda || `Prenda ${idx + 1}`;
+                });
+            }
+            
+            // Ahora obtener los costos
+            return fetch(`/contador/cotizacion/${cotizacionId}/costos`)
+                .then(response => response.json())
+                .then(data => ({ costos: data, nombres: prendasNombres }));
+        })
+        .then(({ costos, nombres }) => {
+            console.log('Datos de costos recibidos:', costos);
+            if (costos.success && costos.prendas.length > 0) {
+                // Asignar nombres a las prendas
+                costos.prendas.forEach((prenda, idx) => {
+                    if (!prenda.nombre_producto || prenda.nombre_producto === 'Prenda sin nombre') {
+                        prenda.nombre_producto = nombres[idx] || `Prenda ${idx + 1}`;
+                    }
+                });
+                
+                visorCostosActual.prendas = costos.prendas;
+                console.log('Prendas cargadas:', visorCostosActual.prendas);
                 document.getElementById('visorCostosModal').style.display = 'flex';
                 
                 // Resetear scroll al abrir
@@ -153,6 +176,13 @@ function mostrarModalErrorCostos(mensaje) {
  */
 function cerrarVisorCostos() {
     document.getElementById('visorCostosModal').style.display = 'none';
+    
+    // Limpiar tabs
+    const tabsContainer = document.getElementById('visorCostosTabsContainer');
+    if (tabsContainer) {
+        tabsContainer.innerHTML = '';
+    }
+    
     visorCostosActual = {
         cotizacionId: null,
         cliente: null,
@@ -182,6 +212,60 @@ function visorCostosProximo() {
 }
 
 /**
+ * Genera los tabs de prendas dinámicamente
+ */
+function generarTabsPrendas() {
+    const tabsContainer = document.getElementById('visorCostosTabsContainer');
+    if (!tabsContainer) return;
+    
+    // Solo generar si no existen los tabs
+    if (tabsContainer.children.length > 0) return;
+    
+    visorCostosActual.prendas.forEach((prenda, idx) => {
+        const tab = document.createElement('button');
+        tab.setAttribute('data-prenda-tab', idx);
+        
+        // Determinar el nombre de la prenda
+        let nombrePrenda = prenda.nombre_producto || prenda.nombre || `Prenda ${idx + 1}`;
+        
+        // Si el nombre está vacío o es muy corto, usar un nombre genérico
+        if (!nombrePrenda || nombrePrenda.trim() === '') {
+            nombrePrenda = `Prenda ${idx + 1}`;
+        }
+        
+        tab.textContent = nombrePrenda;
+        tab.style.cssText = `
+            padding: 10px 20px;
+            background: #374151;
+            color: #d1d5db;
+            border: none;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            white-space: nowrap;
+        `;
+        
+        tab.onclick = () => mostrarPrendaVisor(idx);
+        
+        tab.onmouseover = function() {
+            if (idx !== visorCostosActual.indiceActual) {
+                this.style.background = '#4b5563';
+            }
+        };
+        
+        tab.onmouseout = function() {
+            if (idx !== visorCostosActual.indiceActual) {
+                this.style.background = '#374151';
+            }
+        };
+        
+        tabsContainer.appendChild(tab);
+    });
+}
+
+/**
  * Muestra la prenda en el visor
  */
 function mostrarPrendaVisor(indice) {
@@ -189,11 +273,23 @@ function mostrarPrendaVisor(indice) {
     
     if (!prenda) return;
     
-    // Actualizar título
-    const titleElement = document.getElementById('visorCostosTitle');
-    if (titleElement) {
-        titleElement.textContent = `${prenda.nombre_producto || 'Prenda'} (${indice + 1} / ${visorCostosActual.prendas.length}) - ${visorCostosActual.cliente}`;
-    }
+    // Actualizar índice actual
+    visorCostosActual.indiceActual = indice;
+    
+    // Generar tabs de prendas si no existen
+    generarTabsPrendas();
+    
+    // Actualizar estilo del tab activo
+    const tabs = document.querySelectorAll('[data-prenda-tab]');
+    tabs.forEach((tab, idx) => {
+        if (idx === indice) {
+            tab.style.background = 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)';
+            tab.style.color = 'white';
+        } else {
+            tab.style.background = '#374151';
+            tab.style.color = '#d1d5db';
+        }
+    });
     
     // Construir detalles en una línea compacta
     let detallesLinea = [];
@@ -213,58 +309,59 @@ function mostrarPrendaVisor(indice) {
         <div style="padding: 0; margin-top: -1.5rem; transform: scale(0.8); transform-origin: top left; width: 125%;">
             <!-- Sección Detalles Compacta -->
             <div style="margin-bottom: 1.5rem; margin-top: 0.5rem;">
-                <div style="font-weight: 700; color: #1e5ba8; margin-bottom: 0.75rem; font-size: 0.95rem;">📋 Detalles de la Prenda:</div>
-                
                 <!-- Línea de atributos -->
-                <div style="color: #333; font-size: 0.9rem; line-height: 1.6; margin-bottom: 0.75rem;">
+                <div style="color: #333; font-size: 0.9rem; line-height: 1.6; margin-bottom: 0.75rem; height: 1.5rem;">
                     ${detallesLinea.join(' | ')}
                 </div>
                 
                 <!-- Descripción + Especificaciones -->
-                ${prenda.descripcion ? `
-                    <div style="color: #333; font-size: 0.9rem; line-height: 1.6;">
-                        ${prenda.descripcion}
-                    </div>
-                ` : ''}
+                ${prenda.descripcion ? `<div id="descripcionPrenda" style="color: #333; font-size: 0.9rem; line-height: 1.8; white-space: pre-wrap; word-wrap: break-word;"></div>` : ''}
             </div>
             
             <!-- Contenedor de Tabla e Imágenes -->
             <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
                 <!-- Tabla de Costos con filas dinámicas -->
                 <div style="flex: 1; overflow-x: auto;">
-                    <table style="width: auto; border-collapse: collapse; background: white; border: 2px solid #333; border-radius: 8px; table-layout: auto;">
-                    <tbody>
-                        <!-- Filas dinámicas según items -->
-                        ${Array(cantidadFilas).fill(0).map((_, idx) => {
-                            const item = prenda.items && prenda.items[idx];
-                            return `
-                                <tr style="border-bottom: 2px solid #333;">
-                                    <td style="padding: 0.35rem 0.5rem; border-right: 2px solid #333; font-size: 0.75rem; color: #666; line-height: 1.2; word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">
-                                        ${item ? item.item : ''}
+                    <div style="background: white; border-radius: 8px; padding: 0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); overflow: hidden;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #1e40af; border-bottom: 2px solid #1e40af;">
+                                    <th style="padding: 8px 10px; text-align: left; font-weight: 700; color: white; border-right: 1px solid #163a8f; font-size: 0.9rem;">CONCEPTO</th>
+                                    <th style="padding: 8px 10px; text-align: right; font-weight: 700; color: white; font-size: 0.9rem;">VALOR</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Filas dinámicas según items -->
+                                ${Array(cantidadFilas).fill(0).map((_, idx) => {
+                                    const item = prenda.items && prenda.items[idx];
+                                    return `
+                                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                                            <td style="padding: 6px 10px; color: #333; font-weight: 500; border-right: 1px solid #e2e8f0; font-size: 0.85rem;">
+                                                ${item ? item.item : ''}
+                                            </td>
+                                            <td style="padding: 6px 10px; text-align: right; color: #333; font-weight: 600; font-size: 0.85rem;">
+                                                ${item ? '$' + parseFloat(item.precio || 0).toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : ''}
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                                
+                                <!-- Fila de Total -->
+                                <tr style="background: #1e40af; border-top: 2px solid #1e40af;">
+                                    <td style="padding: 8px 10px; color: white; font-weight: 700; border-right: 1px solid #163a8f; font-size: 0.9rem;">
+                                        TOTAL COSTO
                                     </td>
-                                    <td style="padding: 0.35rem 0.5rem; text-align: right; font-size: 0.75rem; color: #666; line-height: 1.2; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; width: 80px; min-width: 80px;">
-                                        ${item ? '$' + parseFloat(item.precio || 0).toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : ''}
+                                    <td style="padding: 8px 10px; text-align: right; color: white; font-weight: 700; font-size: 1rem;">
+                                        $${parseFloat(prenda.costo_total || 0).toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                                     </td>
                                 </tr>
-                            `;
-                        }).join('')}
-                        
-                        <!-- Fila de Total -->
-                        <tr style="background: #f5f5f5; font-weight: 700; border-top: 2px solid #333;">
-                            <td style="padding: 0.35rem 0.5rem; border-right: 2px solid #333; color: #ef4444; font-size: 0.75rem; line-height: 1.2; word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">
-                                TOTAL COSTO
-                            </td>
-                            <td style="padding: 0.35rem 0.5rem; text-align: right; color: #333; font-size: 0.75rem; line-height: 1.2; word-wrap: break-word; overflow-wrap: break-word; white-space: normal; width: 80px; min-width: 80px;">
-                                ${parseFloat(prenda.costo_total || 0).toLocaleString('es-CO', {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                            </td>
-                        </tr>
-                    </tbody>
-                    </table>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 
                 <!-- Sección de Imágenes -->
-                <div style="display: flex; flex-direction: column; gap: 0.75rem; justify-content: flex-start; align-items: center; min-width: 280px; padding: 0.5rem;">
-                    <div style="font-weight: 600; color: #333; font-size: 0.8rem; width: 100%; text-align: center;">IMÁGENES</div>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem; justify-content: flex-start; align-items: center; min-width: 280px; padding: 0.5rem; margin-top: -5px;">
                     ${prenda.fotos && prenda.fotos.length > 0 ? prenda.fotos.map((foto, idx) => `
                         <img src="${foto}" alt="Prenda ${idx + 1}" style="width: 100%; height: 280px; max-width: 280px; border-radius: 4px; border: 1px solid #ddd; object-fit: contain; background: #f5f5f5;">
                     `).join('') : '<div style="width: 100%; height: 280px; max-width: 280px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 0.75rem;">Sin imágenes</div>'}
@@ -275,18 +372,56 @@ function mostrarPrendaVisor(indice) {
     
     document.getElementById('visorCostosContenido').innerHTML = html;
     
+    // Procesar descripción para formatear títulos en negrilla y agregar saltos de línea
+    if (prenda.descripcion) {
+        const descripcionDiv = document.getElementById('descripcionPrenda');
+        if (descripcionDiv) {
+            let texto = prenda.descripcion.trim();
+            
+            // Títulos a buscar
+            const labels = ['Reflectivo', 'Bolsillos', 'Botón', 'Broche', 'Otros detalles', 'TALLAS', 'DESCRIPCIÓN'];
+            
+            // Reemplazar títulos con versión en negrilla y agregar saltos de línea
+            labels.forEach(label => {
+                const regex = new RegExp(`(\\*\\*\\*\\s)?${label}:`, 'gi');
+                texto = texto.replace(regex, `\n<strong>${label}:</strong>`);
+            });
+            
+            // Limpiar saltos de línea múltiples al inicio
+            texto = texto.replace(/^\n+/, '');
+            
+            // Convertir saltos de línea en <br>
+            texto = texto.replace(/\n/g, '<br>');
+            
+            descripcionDiv.innerHTML = texto;
+        }
+    }
+    
     // Ajustar altura del modal automáticamente
     setTimeout(() => {
         const modalContent = document.getElementById('visorCostosModalContent');
         const contenido = document.getElementById('visorCostosContenido');
-        if (modalContent) {
-            modalContent.style.height = 'auto';
+        
+        if (modalContent && contenido) {
+            // Calcular altura total del contenido
+            const headerHeight = modalContent.querySelector('div:first-child').offsetHeight;
+            const contentHeight = contenido.scrollHeight;
+            const totalHeight = headerHeight + contentHeight;
+            
+            // Establecer altura máxima pero permitir que crezca según el contenido
+            const maxHeight = window.innerHeight * 0.9; // 90vh
+            
+            if (totalHeight < maxHeight) {
+                // Si el contenido cabe, usar altura automática
+                modalContent.style.height = 'auto';
+                contenido.style.overflowY = 'visible';
+            } else {
+                // Si no cabe, usar max-height y scroll
+                modalContent.style.maxHeight = maxHeight + 'px';
+                contenido.style.overflowY = 'auto';
+            }
         }
-        // Aplicar scroll interno si es necesario
-        if (contenido) {
-            contenido.style.overflowY = 'auto';
-        }
-    }, 0);
+    }, 50);
 }
 
 // Cerrar modal al presionar ESC

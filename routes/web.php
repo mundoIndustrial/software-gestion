@@ -542,6 +542,9 @@ Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor
     
     // Obtener datos en JSON
     Route::get('/{id}/datos', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerDatos'])->name('datos');
+    
+    // Obtener datos para comparación (pedido vs cotización)
+    Route::get('/{id}/comparar', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerDatosComparacion'])->name('comparar');
 });
 
 // ========================================

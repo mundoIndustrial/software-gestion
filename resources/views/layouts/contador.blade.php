@@ -52,16 +52,21 @@
 </div>
 
 <!-- Modal de Visor de Costos -->
-<div id="visorCostosModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9998; justify-content: center; align-items: center; padding: 2rem; overflow: hidden;">
-    <div class="modal-content" id="visorCostosModalContent" style="width: 90%; max-width: 900px; height: 90vh; overflow: visible; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); display: flex; flex-direction: column;">
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid #e0e6ed;">
-            <h2 id="visorCostosTitle" style="margin: 0; font-size: 1.3rem; color: #2c3e50;"></h2>
-            <button onclick="cerrarVisorCostos()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #7f8c8d;">
+<div id="visorCostosModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9998; justify-content: center; align-items: flex-start; padding: 2rem; overflow: hidden; padding-top: 4rem;">
+    <div style="position: relative; width: 90%; max-width: 900px;">
+        <!-- Tabs de Prendas que sobresalen del modal -->
+        <div id="visorCostosTabsContainer" style="display: flex; gap: 0.75rem; margin-bottom: -1.5rem; position: relative; z-index: 11; flex-wrap: wrap; justify-content: flex-start;">
+            <!-- Tabs generados dinámicamente por visor-costos.js -->
+        </div>
+        
+        <!-- Contenedor principal del modal -->
+        <div class="modal-content" id="visorCostosModalContent" style="width: 100%; max-height: 85vh; overflow: visible; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); display: flex; flex-direction: column; position: relative;">
+            <button onclick="cerrarVisorCostos()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #7f8c8d; z-index: 10;">
                 <span class="material-symbols-rounded">close</span>
             </button>
-        </div>
-        <div id="visorCostosContenido" style="overflow-y: auto; flex: 1; padding: 1.5rem;">
-            <!-- Contenido cargado dinámicamente por visor-costos.js -->
+            <div id="visorCostosContenido" style="overflow-y: auto; flex: 1; padding: 1.5rem;">
+                <!-- Contenido cargado dinámicamente por visor-costos.js -->
+            </div>
         </div>
     </div>
 </div>

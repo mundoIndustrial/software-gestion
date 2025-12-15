@@ -638,4 +638,63 @@ class SupervisorPedidosController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Obtener datos del pedido y su cotización para comparación
+     * GET /supervisor-pedidos/{id}/comparar
+     */
+    public function obtenerDatosComparacion($id)
+    {
+        try {
+            $orden = PedidoProduccion::with(['prendas', 'cotizacion.prendas'])
+                                     ->findOrFail($id);
+
+            $datosComparacion = [
+                'pedido' => [
+                    'numero' => $orden->numero_pedido,
+                    'cliente' => $orden->cliente,
+                    'asesora' => $orden->asesora?->name ?? 'N/A',
+                    'estado' => $orden->estado,
+                    'fecha' => $orden->fecha_de_creacion_de_orden,
+                    'prendas' => $orden->prendas->map(function($prenda, $index) {
+                        return [
+                            'nombre' => $prenda->nombre_prenda,
+                            'descripcion' => $prenda->generarDescripcionDetallada($index + 1),
+                            'tallas' => $prenda->cantidad_talla ?? []
+                        ];
+                    })->toArray()
+                ],
+                'cotizacion' => null
+            ];
+
+            if ($orden->cotizacion) {
+                $datosComparacion['cotizacion'] = [
+                    'numero' => 'COT-' . str_pad($orden->cotizacion->id, 5, '0', STR_PAD_LEFT),
+                    'cliente' => $orden->cotizacion->cliente?->nombre ?? 'N/A',
+                    'asesora' => $orden->cotizacion->asesor?->name ?? 'N/A',
+                    'estado' => $orden->cotizacion->estado,
+                    'fecha' => $orden->cotizacion->created_at,
+                    'prendas' => $orden->cotizacion->prendas->map(function($prenda, $index) {
+                        return [
+                            'nombre' => $prenda->nombre_producto,
+                            'descripcion' => $prenda->generarDescripcionDetallada($index + 1),
+                            'tallas' => $prenda->tallas->pluck('talla')->toArray()
+                        ];
+                    })->toArray()
+                ];
+            }
+
+            return response()->json($datosComparacion);
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener datos de comparación', [
+                'error' => $e->getMessage(),
+                'orden_id' => $id
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener datos de comparación'
+            ], 500);
+        }
+    }
 }

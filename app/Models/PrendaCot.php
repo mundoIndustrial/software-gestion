@@ -113,13 +113,13 @@ class PrendaCot extends Model
                 // Reflectivos con observación
                 if ($obsReflectivo || ($variante->tiene_reflectivo && $variante->obs_reflectivo)) {
                     $texto = $obsReflectivo ?? $variante->obs_reflectivo;
-                    $lineas[] = "\n<strong>Reflectivo:</strong> " . trim($texto);
+                    $lineas[] = "<br><strong>Reflectivo:</strong> " . trim($texto);
                 }
                 
                 // Bolsillos con observación
                 if ($obsBolsillos || ($variante->tiene_bolsillos && $variante->obs_bolsillos)) {
                     $texto = $obsBolsillos ?? $variante->obs_bolsillos;
-                    $lineas[] = "\n<strong>Bolsillos:</strong> " . trim($texto);
+                    $lineas[] = "<br><strong>Bolsillos:</strong> " . trim($texto);
                 }
                 
                 // Broche/Botón con observación (SOLO si tipo_broche_id existe)
@@ -131,7 +131,7 @@ class PrendaCot extends Model
                     
                     $texto = $obsBroche ?? ($variante->aplica_broche ? $variante->obs_broche : null);
                     if ($texto) {
-                        $lineas[] = "\n<strong>{$nombreBroche}:</strong> " . trim($texto);
+                        $lineas[] = "<br><strong>{$nombreBroche}:</strong> " . trim($texto);
                     }
                 }
             }

@@ -23,11 +23,11 @@ class CostoPrendaController extends Controller
                 ], 400);
             }
 
-            // Eliminar costos anteriores de esta cotización
-            CostoPrenda::where('cotizacion_id', $cotizacionId)->delete();
+            // Obtener las prendas de la cotización para mapear índices a IDs
+            $prendasCotizacion = \App\Models\PrendaCot::where('cotizacion_id', $cotizacionId)->get();
 
-            // Guardar los nuevos costos
-            foreach ($costos as $prendaId => $costoPrenda) {
+            // Guardar los nuevos costos (actualizar o crear)
+            foreach ($costos as $prendaIndex => $costoPrenda) {
                 if (isset($costoPrenda['items']) && !empty($costoPrenda['items'])) {
                     // Calcular total
                     $total = 0;
@@ -35,13 +35,32 @@ class CostoPrendaController extends Controller
                         $total += floatval($item['precio'] ?? 0);
                     }
 
-                    CostoPrenda::create([
-                        'cotizacion_id' => $cotizacionId,
-                        'nombre_prenda' => $costoPrenda['nombre'] ?? 'N/A',
-                        'descripcion' => $costoPrenda['descripcion'] ?? null,
-                        'items' => $costoPrenda['items'],
-                        'total_costo' => $total,
-                    ]);
+                    // Obtener la prenda correspondiente por índice
+                    $prendaCot = $prendasCotizacion->get($prendaIndex);
+                    
+                    if ($prendaCot) {
+                        // Buscar si ya existe un costo para esta prenda
+                        $costoPrendaExistente = CostoPrenda::where('prenda_cot_id', $prendaCot->id)->first();
+
+                        if ($costoPrendaExistente) {
+                            // Actualizar costo existente
+                            $costoPrendaExistente->update([
+                                'descripcion' => $costoPrenda['descripcion'] ?? null,
+                                'items' => $costoPrenda['items'],
+                                'total_costo' => $total,
+                            ]);
+                        } else {
+                            // Crear nuevo costo
+                            CostoPrenda::create([
+                                'cotizacion_id' => $cotizacionId,
+                                'prenda_cot_id' => $prendaCot->id,
+                                'nombre_prenda' => $costoPrenda['nombre'] ?? $prendaCot->nombre_producto,
+                                'descripcion' => $costoPrenda['descripcion'] ?? null,
+                                'items' => $costoPrenda['items'],
+                                'total_costo' => $total,
+                            ]);
+                        }
+                    }
                 }
             }
 

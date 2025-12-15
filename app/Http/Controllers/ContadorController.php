@@ -6,6 +6,7 @@ use App\Models\Cotizacion;
 use App\Models\PrendaCotizacionFriendly;
 use App\Models\CostoPrenda;
 use App\Services\ImagenCotizacionService;
+use App\Helpers\DescripcionPrendaHelper;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Storage;
@@ -478,9 +479,22 @@ class ContadorController extends Controller
                 
                 // Si no encuentra prenda, crear una estructura mínima
                 if (!$prenda) {
+                    // Determinar nombre: usar nombre_prenda, o extraer de descripción, o usar genérico
+                    $nombreFinal = $costoPrenda->nombre_prenda;
+                    if (empty($nombreFinal)) {
+                        // Intentar extraer nombre de la descripción (primera palabra o hasta el primer espacio)
+                        $descripcion = $costoPrenda->descripcion ?? '';
+                        if (!empty($descripcion)) {
+                            $palabras = explode(' ', trim($descripcion));
+                            $nombreFinal = $palabras[0];
+                        } else {
+                            $nombreFinal = 'Prenda ' . (count($prendas) + 1);
+                        }
+                    }
+                    
                     $prendas[] = [
                         'id' => null,
-                        'nombre_producto' => $costoPrenda->nombre_prenda,
+                        'nombre_producto' => $nombreFinal,
                         'descripcion' => $costoPrenda->descripcion ?? '',
                         'color' => '',
                         'tela' => '',
@@ -511,13 +525,64 @@ class ContadorController extends Controller
                     $tela_referencia = $variantes['tela_referencia'] ?? '';
                     $manga_nombre = $variantes['manga_nombre'] ?? '';
                     
-                    // Construir descripción con especificaciones
-                    $descripcionBase = $prenda->descripcion ?? '';
-                    $especificaciones = $variantes['descripcion_adicional'] ?? '';
-                    $descripcion = $descripcionBase;
-                    if ($especificaciones) {
-                        $descripcion .= ' | ' . $especificaciones;
+                    // Construir descripción formateada usando DescripcionPrendaHelper
+                    $datosFormato = [
+                        'numero' => 1,
+                        'tipo' => $prenda->nombre_producto ?? '',
+                        'color' => $color,
+                        'tela' => $tela,
+                        'ref' => $tela_referencia,
+                        'manga' => $manga_nombre,
+                        'obs_manga' => '',
+                        'logo' => '',
+                        'bolsillos' => [],
+                        'broche' => '',
+                        'reflectivos' => [],
+                        'otros' => [],
+                        'tallas' => []
+                    ];
+                    
+                    // Extraer datos de la descripción de la prenda
+                    if ($prenda->descripcion) {
+                        $desc = $prenda->descripcion;
+                        
+                        // Extraer Logo
+                        if (preg_match('/Logo:\s*(.+?)(?:Bolsillos?:|Reflectivo?s?:|Otros:|$)/is', $desc, $matches)) {
+                            $logoText = trim($matches[1]);
+                            $logoText = preg_replace('/^(SI|NO)\s*-\s*/i', '', $logoText);
+                            if ($logoText) {
+                                $datosFormato['logo'] = trim($logoText);
+                            }
+                        }
+                        
+                        // Extraer Bolsillos
+                        if (preg_match('/Bolsillos?:\s*(.+?)(?:Reflectivo?s?:|Otros:|Broche:|$)/is', $desc, $matches)) {
+                            $bolsillosText = trim($matches[1]);
+                            $datosFormato['bolsillos'] = array_filter(array_map('trim', preg_split('/[•\-\n]/', $bolsillosText)));
+                        }
+                        
+                        // Extraer Broche
+                        if (preg_match('/Broche:\s*(.+?)(?:Reflectivo?s?:|Otros:|Bolsillos?:|$)/is', $desc, $matches)) {
+                            $brocheText = trim($matches[1]);
+                            $brocheText = str_replace('|', '', $brocheText);
+                            $datosFormato['broche'] = trim($brocheText);
+                        }
+                        
+                        // Extraer Reflectivos
+                        if (preg_match('/Reflectivo?s?:\s*(.+?)(?:Otros:|Bolsillos?:|Broche:|$)/is', $desc, $matches)) {
+                            $reflectivosText = trim($matches[1]);
+                            $datosFormato['reflectivos'] = array_filter(array_map('trim', preg_split('/[•\-\n]/', $reflectivosText)));
+                        }
+                        
+                        // Extraer Otros detalles
+                        if (preg_match('/Otros\s+detalles?:\s*(.+?)(?:Bolsillos?:|Reflectivo?s?:|Broche:|$)/is', $desc, $matches)) {
+                            $otrosText = trim($matches[1]);
+                            $datosFormato['otros'] = array_filter(array_map('trim', preg_split('/[•\-\n]/', $otrosText)));
+                        }
                     }
+                    
+                    // Generar descripción formateada
+                    $descripcion = DescripcionPrendaHelper::generarDescripcion($datosFormato);
                 }
                 
                 // Obtener fotos de la prenda
@@ -534,7 +599,7 @@ class ContadorController extends Controller
                 
                 $prendas[] = [
                     'id' => $prenda->id,
-                    'nombre_producto' => $prenda->nombre_producto,
+                    'nombre_producto' => $prenda->nombre_producto ?: $costoPrenda->nombre_prenda,
                     'descripcion' => $descripcion,
                     'color' => $color,
                     'tela' => $tela,
