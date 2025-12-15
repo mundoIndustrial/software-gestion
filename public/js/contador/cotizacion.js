@@ -15,85 +15,217 @@ function openCotizacionModal(cotizacionId) {
             return response.json();
         })
         .then(data => {
-            if (data.success) {
-                console.log('Datos recibidos:', data);
-                console.log('Prendas:', data.prendas);
-                console.log('Cantidad de prendas:', data.prendas ? data.prendas.length : 0);
+            console.log('Datos recibidos:', data);
 
-                // Construir HTML de cards de prendas
-                let html = '<div class="prendas-container" style="display: flex; flex-direction: column; gap: 1.5rem;">';
+            // Construir HTML del modal con encabezado y contenido
+            let html = '';
 
-                if (data.prendas && data.prendas.length > 0) {
-                    data.prendas.forEach((prenda, index) => {
-                        console.log('Renderizando prenda:', prenda);
-
-                        // Construir línea de atributos: Color | Tela | Manga
-                        let atributosLinea = [];
-                        if (prenda.color) atributosLinea.push(`Color: ${prenda.color}`);
-                        if (prenda.tela) {
-                            let telaText = prenda.tela;
-                            if (prenda.tela_referencia) telaText += ` REF:${prenda.tela_referencia}`;
-                            atributosLinea.push(`Tela: ${telaText}`);
-                        }
-                        if (prenda.manga_nombre) atributosLinea.push(`Manga: ${prenda.manga_nombre}`);
-
-                        html += `
-                            <div class="prenda-card" style="background: }#dadadaff; border-left: 5px solid #1e5ba8; padding: 0.5rem 1.5rem 1.5rem 1.5rem; border-radius: 4px;">
-                                <h3 style="margin: 0 0 0.5rem 0; color: #1e5ba8; font-size: 1.1rem; font-weight: 700; text-transform: uppercase;">
-                                    ${prenda.nombre_producto || 'Sin nombre'}
-                                </h3>
-                                <p style="margin: 0 0 0.75rem 0; color: #333; font-size: 0.9rem; font-weight: 500;">
-                                    ${atributosLinea.join(' | ') || ''}
-                                </p>
-                                <p style="margin: 0 0 0.5rem 0; color: #1e5ba8; font-size: 0.9rem; font-weight: 700;">
-                                    DESCRIPCION:
-                                </p>
-                                <p style="margin: 0; color: #333; font-size: 0.85rem; line-height: 1.5;">
-                                    ${prenda.descripcion || '-'}
-                                </p>
+            // Encabezado con información de la cotización
+            if (data.cotizacion) {
+                const cot = data.cotizacion;
+                html += `
+                    <div style="background: linear-gradient(135deg, #1e5ba8 0%, #1e3a8a 100%); color: white; padding: 1.5rem; border-radius: 8px 8px 0 0; margin: -2rem -2rem 1.5rem -2rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <div>
+                                <h2 style="margin: 0 0 0.5rem 0; font-size: 1.3rem; font-weight: 700;">MUNDO INDUSTRIAL</h2>
+                                <p style="margin: 0; font-size: 0.9rem; opacity: 0.9;">Cotización de Prendas</p>
                             </div>
-                        `;
-                    });
-                } else {
-                    html += '<p style="color: #999; text-align: center; padding: 2rem;">No hay prendas para mostrar</p>';
-                }
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; font-size: 0.9rem;">
+                            <div>
+                                <p style="margin: 0 0 0.25rem 0; opacity: 0.8; font-size: 0.8rem;">COTIZACIÓN #</p>
+                                <p style="margin: 0; font-weight: 700; font-size: 1rem;">${cot.numero_cotizacion || 'N/A'}</p>
+                            </div>
+                            <div>
+                                <p style="margin: 0 0 0.25rem 0; opacity: 0.8; font-size: 0.8rem;">TIPO:</p>
+                                <p style="margin: 0; font-weight: 700;">${cot.tipo_venta || 'N/A'}</p>
+                            </div>
+                            <div>
+                                <p style="margin: 0 0 0.25rem 0; opacity: 0.8; font-size: 0.8rem;">FECHA:</p>
+                                <p style="margin: 0; font-weight: 700;">${cot.created_at ? new Date(cot.created_at).toLocaleDateString('es-ES') : 'N/A'}</p>
+                            </div>
+                            <div>
+                                <p style="margin: 0 0 0.25rem 0; opacity: 0.8; font-size: 0.8rem;">CLIENTE:</p>
+                                <p style="margin: 0; font-weight: 700;">${cot.nombre_cliente || 'N/A'}</p>
+                            </div>
+                            <div>
+                                <p style="margin: 0 0 0.25rem 0; opacity: 0.8; font-size: 0.8rem;">ASESORA:</p>
+                                <p style="margin: 0; font-weight: 700;">${cot.asesora_nombre || 'N/A'}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
 
-                html += '</div>';
+            // Contenedor de prendas
+            html += '<div class="prendas-container" style="display: flex; flex-direction: column; gap: 1.5rem;">';
 
-                // Insertar contenido en el modal
-                document.getElementById('modalBody').innerHTML = html;
-                document.getElementById('cotizacionModal').style.display = 'flex';
+            if (data.prendas_cotizaciones && data.prendas_cotizaciones.length > 0) {
+                data.prendas_cotizaciones.forEach((prenda, index) => {
+                    console.log('Renderizando prenda:', prenda);
 
-                // Actualizar encabezado del modal - buscar en la fila flexbox
-                const tableRow = document.querySelector(`.table-row[data-cotizacion-id="${cotizacionId}"]`);
-                if (tableRow) {
-                    const cells = tableRow.querySelectorAll('.table-cell');
-                    if (cells.length >= 5) {
-                        // Índice 1: Número, 2: Fecha, 3: Cliente, 4: Asesora
-                        document.getElementById('modalHeaderNumber').textContent = cells[1].textContent.trim();
-                        document.getElementById('modalHeaderDate').textContent = cells[2].textContent.trim();
-                        document.getElementById('modalHeaderClient').textContent = cells[3].textContent.trim();
-                        document.getElementById('modalHeaderAdvisor').textContent = cells[4].textContent.trim();
+                    // Construir atributos principales
+                    let atributosLinea = [];
+
+                    // Obtener color de variantes o telas
+                    let color = '';
+                    if (prenda.variantes && prenda.variantes.length > 0 && prenda.variantes[0].color) {
+                        color = prenda.variantes[0].color;
                     }
-                } else {
-                    // Fallback: si no encuentra en flexbox, intenta en tabla tradicional
-                    const row = document.querySelector(`tr:has(button[onclick*="${cotizacionId}"])`);
-                    if (row) {
-                        const cells = row.querySelectorAll('td');
-                        if (cells.length >= 4) {
-                            document.getElementById('modalHeaderNumber').textContent = cells[0].textContent.trim();
-                            document.getElementById('modalHeaderDate').textContent = cells[1].textContent.trim();
-                            document.getElementById('modalHeaderClient').textContent = cells[2].textContent.trim();
-                            document.getElementById('modalHeaderAdvisor').textContent = cells[3].textContent.trim();
+
+                    // Obtener tela de telas
+                    let telaInfo = '';
+                    if (prenda.telas && prenda.telas.length > 0) {
+                        const tela = prenda.telas[0];
+                        telaInfo = tela.nombre_tela || '';
+                        if (tela.referencia) {
+                            telaInfo += ` REF:${tela.referencia}`;
                         }
                     }
+
+                    // Obtener manga de variantes
+                    let manga = '';
+                    if (prenda.variantes && prenda.variantes.length > 0 && prenda.variantes[0].tipo_manga) {
+                        manga = prenda.variantes[0].tipo_manga;
+                    }
+
+                    // Obtener manga de variantes
+                    let manguaInfo = '';
+                    if (prenda.variantes && prenda.variantes.length > 0) {
+                        const variante = prenda.variantes[0];
+                        if (variante.manga && variante.manga.nombre) {
+                            manguaInfo = variante.manga.nombre;
+                        }
+                    }
+
+                    if (color) atributosLinea.push(`Color: ${color}`);
+                    if (telaInfo) atributosLinea.push(`Tela: ${telaInfo}`);
+                    if (manguaInfo) atributosLinea.push(`Manga: ${manguaInfo}`);
+
+                    // Construir HTML de la prenda
+                    html += `
+                        <div class="prenda-card" style="background: #f5f5f5; border-left: 5px solid #1e5ba8; padding: 1rem 1.5rem; border-radius: 4px;">
+                            <h3 style="margin: 0 0 0.5rem 0; color: #1e5ba8; font-size: 1.1rem; font-weight: 700; text-transform: uppercase;">
+                                ${prenda.nombre_prenda || 'Sin nombre'}
+                            </h3>
+                            <p style="margin: 0 0 0.75rem 0; color: #666; font-size: 0.9rem; font-weight: 500;">
+                                ${atributosLinea.join(' | ') || ''}
+                            </p>
+                            <div style="margin: 0 0 1rem 0; color: #333; font-size: 0.85rem; line-height: 1.6;">
+                                <span style="color: #1e5ba8; font-weight: 700;">DESCRIPCION:</span> ${(prenda.descripcion_formateada || prenda.descripcion || '-').replace(/\n/g, '<br>')}
+                            </div>
+                    `;
+
+                    // Mostrar tallas si existen
+                    if (prenda.tallas && prenda.tallas.length > 0) {
+                        html += `
+                            <p style="margin: 0 0 0.5rem 0; color: #1e5ba8; font-size: 0.9rem; font-weight: 700;">
+                                Tallas: <span style="color: #ef4444; font-weight: 700;">${prenda.tallas.map(t => t.talla).join(', ')}</span>
+                            </p>
+                        `;
+                    }
+
+                    // Mostrar fotos de la prenda si existen
+                    if (prenda.fotos && prenda.fotos.length > 0) {
+                        html += `
+                            <p style="margin: 0 0 0.5rem 0; color: #1e5ba8; font-size: 0.9rem; font-weight: 700;">
+                                IMAGENES:
+                            </p>
+                            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                        `;
+                        prenda.fotos.forEach(foto => {
+                            html += `
+                                <img src="${foto}" alt="Foto prenda" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" onclick="abrirImagenGrande('${foto}')">
+                            `;
+                        });
+                        html += `</div>`;
+                    }
+
+                    // Mostrar fotos de telas si existen
+                    if (prenda.tela_fotos && prenda.tela_fotos.length > 0) {
+                        html += `
+                            <p style="margin: 0 0 0.5rem 0; color: #1e5ba8; font-size: 0.9rem; font-weight: 700;">
+                                TELAS:
+                            </p>
+                            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                        `;
+                        prenda.tela_fotos.forEach(foto => {
+                            if (foto) {
+                                html += `
+                                    <img src="${foto}" alt="Foto tela" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" onclick="abrirImagenGrande('${foto}')">
+                                `;
+                            }
+                        });
+                        html += `</div>`;
+                    }
+
+                    html += `</div>`;
+                });
+            } else {
+                html += '<p style="color: #999; text-align: center; padding: 2rem;">No hay prendas para mostrar</p>';
+            }
+
+            html += '</div>';
+
+            // Agregar tabla de Especificaciones Generales
+            if (data.cotizacion && data.cotizacion.especificaciones && Object.keys(data.cotizacion.especificaciones).length > 0) {
+                const especificacionesMap = {
+                    'disponibilidad': 'DISPONIBILIDAD',
+                    'forma_pago': 'FORMA DE PAGO',
+                    'regimen': 'RÉGIMEN',
+                    'se_ha_vendido': 'SE HA VENDIDO',
+                    'ultima_venta': 'ÚLTIMA VENTA',
+                    'flete': 'FLETE DE ENVÍO'
+                };
+
+                html += `
+                    <div style="margin-top: 2rem;">
+                        <h3 style="margin: 0 0 1rem 0; color: #1e5ba8; font-size: 1.1rem; font-weight: 700; text-transform: uppercase;">Especificaciones Generales</h3>
+                        <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #ddd; border-radius: 4px; overflow: hidden;">
+                            <thead>
+                                <tr style="background: #f5f5f5; border-bottom: 2px solid #1e5ba8;">
+                                    <th style="padding: 0.75rem 1rem; text-align: left; color: #1e5ba8; font-weight: 700; font-size: 0.9rem;">Especificación</th>
+                                    <th style="padding: 0.75rem 1rem; text-align: left; color: #1e5ba8; font-weight: 700; font-size: 0.9rem;">Opciones Seleccionadas</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                for (const [clave, nombreCategoria] of Object.entries(especificacionesMap)) {
+                    const valores = data.cotizacion.especificaciones[clave] || [];
+                    let valoresText = '-';
+
+                    if (Array.isArray(valores) && valores.length > 0) {
+                        valoresText = valores.map(v => {
+                            if (typeof v === 'object') {
+                                return Object.values(v).join(', ');
+                            }
+                            return String(v);
+                        }).join(', ');
+                    } else if (typeof valores === 'string' && valores.trim() !== '') {
+                        valoresText = valores;
+                    }
+
+                    html += `
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    <td style="padding: 0.75rem 1rem; color: #333; font-weight: 600; font-size: 0.85rem;">${nombreCategoria}</td>
+                                    <td style="padding: 0.75rem 1rem; color: #666; font-size: 0.85rem;">${valoresText}</td>
+                                </tr>
+                    `;
                 }
 
-                console.log('✅ Modal abierto correctamente con', data.prendas.length, 'prendas');
-            } else {
-                console.error('Error:', data.message || 'No se pudo cargar la cotización');
-                alert('Error: ' + (data.message || 'No se pudo cargar la cotización'));
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
             }
+
+            // Insertar contenido en el modal
+            document.getElementById('cotizacionContent').innerHTML = html;
+            document.getElementById('cotizacionModal').style.display = 'flex';
+
+            console.log('✅ Modal abierto correctamente con', data.prendas_cotizaciones ? data.prendas_cotizaciones.length : 0, 'prendas');
         })
         .catch(error => {
             console.error('Error:', error);
@@ -105,6 +237,13 @@ function openCotizacionModal(cotizacionId) {
  * Cierra el modal de cotización
  */
 function closeCotizacionModal() {
+    document.getElementById('cotizacionModal').style.display = 'none';
+}
+
+/**
+ * Cierra el modal de cotización (alias)
+ */
+function cerrarModalCotizacion() {
     document.getElementById('cotizacionModal').style.display = 'none';
 }
 
@@ -388,3 +527,65 @@ function aprobarCotizacionEnLinea(cotizacionId) {
     });
 }
 
+/**
+ * Abre una imagen en grande en un modal
+ * @param {string} imagenUrl - URL de la imagen
+ */
+function abrirImagenGrande(imagenUrl) {
+    // Crear modal dinámicamente si no existe
+    let modalImagen = document.getElementById('modalImagenGrande');
+    if (!modalImagen) {
+        modalImagen = document.createElement('div');
+        modalImagen.id = 'modalImagenGrande';
+        modalImagen.style.cssText = `
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        `;
+        modalImagen.innerHTML = `
+            <div style="position: relative; max-width: 90vw; max-height: 90vh;">
+                <button onclick="cerrarImagenGrande()" style="position: absolute; top: -40px; right: 0; background: white; border: none; font-size: 2rem; cursor: pointer; color: white; z-index: 10001;">
+                    ✕
+                </button>
+                <img id="imagenGrandeContent" src="" alt="Imagen ampliada" style="max-width: 100%; max-height: 100%; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+            </div>
+        `;
+        document.body.appendChild(modalImagen);
+    }
+
+    document.getElementById('imagenGrandeContent').src = imagenUrl;
+    modalImagen.style.display = 'flex';
+}
+
+/**
+ * Cierra el modal de imagen grande
+ */
+function cerrarImagenGrande() {
+    const modal = document.getElementById('modalImagenGrande');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Cerrar modal de imagen al hacer clic fuera
+document.addEventListener('click', function (event) {
+    const modal = document.getElementById('modalImagenGrande');
+    if (modal && event.target === modal) {
+        cerrarImagenGrande();
+    }
+});
+
+// Cerrar modal de imagen al presionar ESC
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+        cerrarImagenGrande();
+    }
+});

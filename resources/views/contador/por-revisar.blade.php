@@ -5,13 +5,6 @@
     <link rel="stylesheet" href="{{ asset('css/contador/tabla-por-revisar.css') }}?v={{ time() }}">
 @endpush
 
-<!-- Barra de Búsqueda y Filtros -->
-@include('components.contador.search-filter-bar', [
-    'clientes' => $cotizacionesParaRevisar->pluck('cliente')->unique()->map(function($c) {
-        return is_object($c) ? $c->nombre : $c;
-    })->filter()->sort()->values()
-])
-
 <!-- Sección de Cotizaciones a Revisar -->
 <section id="revision-section" class="section-content active" style="display: block;">
     <div class="table-container">
@@ -282,20 +275,9 @@ document.getElementById('modalPDF').addEventListener('click', function(event) {
         cerrarModalPDF();
     }
 });
-
-// Función para limpiar filtros
-function limpiarFiltros() {
-    document.getElementById('inputBusqueda').value = '';
-    document.querySelectorAll('table tbody tr').forEach(row => {
-        row.style.display = '';
-    });
-}
 </script>
 
 <!-- Script de Tabla de Cotizaciones -->
 <script src="{{ asset('js/contador/tabla-cotizaciones.js') }}"></script>
-
-<!-- Script de Búsqueda y Filtros -->
-<script src="{{ asset('js/contador/busqueda-filtros.js') }}"></script>
 
 @endsection

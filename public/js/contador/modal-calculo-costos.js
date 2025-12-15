@@ -17,83 +17,62 @@ function abrirModalCalculoCostos(cotizacionId, cliente) {
     fetch(`/contador/cotizacion/${cotizacionId}`)
         .then(response => response.json())
         .then(data => {
-            if (data.success && data.html) {
-                // Parsear el HTML para extraer las prendas
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(data.html, 'text/html');
-                
-                // Buscar todos los títulos de prendas (h5)
-                const prendasElements = doc.querySelectorAll('h5');
-                const prendas = [];
-                
-                prendasElements.forEach((el, index) => {
-                    const nombrePrenda = el.textContent.trim();
-                    if (nombrePrenda && nombrePrenda !== 'ESPECIFICACIONES DE LA ORDEN' && 
-                        nombrePrenda !== 'TÉCNICAS' && nombrePrenda !== 'OBSERVACIONES TÉCNICAS' &&
-                        nombrePrenda !== 'OBSERVACIONES GENERALES' && nombrePrenda !== 'PRENDAS DETALLADAS' &&
-                        nombrePrenda !== 'Prenda sin nombre') {
-                        
-                        // Obtener descripción
-                        let descripcion = '';
-                        let elemento = el.nextElementSibling;
-                        if (elemento && elemento.tagName === 'P') {
-                            descripcion = elemento.textContent.trim();
-                        }
-                        
-                        prendas.push({
-                            id: index,
-                            nombre: nombrePrenda,
-                            descripcion: descripcion
-                        });
-                    }
-                });
-                
-                if (prendas.length === 0) {
-                    alert('No se encontraron prendas en esta cotización');
-                    return;
-                }
-                
-                // Llenar tabs de prendas
-                const tabsContainer = document.getElementById('prendasTabs');
-                tabsContainer.innerHTML = '';
-                
-                prendas.forEach((prenda, index) => {
-                    const tab = document.createElement('button');
-                    tab.style.cssText = `
-                        padding: 0.75rem 1.25rem;
-                        background: ${index === 0 ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : '#374151'};
-                        color: white;
-                        border: none;
-                        border-radius: 6px;
-                        cursor: pointer;
-                        font-weight: 600;
-                        transition: all 0.2s;
-                        white-space: nowrap;
-                        text-transform: uppercase;
-                        font-size: 0.8rem;
-                        letter-spacing: 0.3px;
-                    `;
-                    tab.textContent = prenda.nombre;
-                    tab.onclick = () => cambiarPrendaTab(prenda.id, prendas);
-                    tabsContainer.appendChild(tab);
-                });
-                
-                // Mostrar primera prenda
-                cambiarPrendaTab(0, prendas);
-                
-                // Inicializar tabla vacía
-                limpiarTablaPrecios();
-                
-                // Cargar items guardados si existen
-                cargarItemsGuardados(cotizacionId);
-                
-                // Mostrar modal
-                document.getElementById('calculoCostosModal').style.display = 'flex';
+            // El endpoint retorna {cotizacion: {...}, prendas_cotizaciones: [...]}
+            let prendas = [];
+            
+            if (data.prendas_cotizaciones && Array.isArray(data.prendas_cotizaciones)) {
+                prendas = data.prendas_cotizaciones.map((prenda, index) => ({
+                    id: index,
+                    nombre: prenda.nombre_prenda || `Prenda ${index + 1}`,
+                    descripcion: prenda.descripcion_formateada || prenda.descripcion || ''
+                }));
             }
+            
+            if (prendas.length === 0) {
+                alert('No se encontraron prendas en esta cotización');
+                return;
+            }
+            
+            // Llenar tabs de prendas
+            const tabsContainer = document.getElementById('prendasTabs');
+            tabsContainer.innerHTML = '';
+            
+            prendas.forEach((prenda, index) => {
+                const tab = document.createElement('button');
+                tab.style.cssText = `
+                    padding: 0.75rem 1.25rem;
+                    background: ${index === 0 ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : '#374151'};
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-weight: 600;
+                    transition: all 0.2s;
+                    white-space: nowrap;
+                    text-transform: uppercase;
+                    font-size: 0.8rem;
+                    letter-spacing: 0.3px;
+                `;
+                tab.textContent = prenda.nombre;
+                tab.onclick = () => cambiarPrendaTab(prenda.id, prendas);
+                tabsContainer.appendChild(tab);
+            });
+            
+            // Mostrar primera prenda
+            cambiarPrendaTab(0, prendas);
+            
+            // Inicializar tabla vacía
+            limpiarTablaPrecios();
+            
+            // Cargar items guardados si existen
+            cargarItemsGuardados(cotizacionId);
+            
+            // Mostrar modal
+            document.getElementById('calculoCostosModal').style.display = 'flex';
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error al cargar las prendas');
+            alert('Error al cargar las prendas: ' + error.message);
         });
 }
 
