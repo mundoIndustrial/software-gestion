@@ -161,6 +161,7 @@
     <script src="{{ asset('js/contador/notifications.js') }}"></script>
     <script src="{{ asset('js/contador/modal-calculo-costos.js') }}"></script>
     <script src="{{ asset('js/contador/visor-costos.js') }}"></script>
+    <script src="{{ asset('js/contador/busqueda-header.js') }}"></script>
     <script>
         /**
          * Cargar contador de cotizaciones pendientes

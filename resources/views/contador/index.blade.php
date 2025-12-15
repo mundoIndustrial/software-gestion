@@ -39,13 +39,6 @@
     <link rel="stylesheet" href="{{ asset('css/contador/tabla-index.css') }}?v={{ time() }}">
 @endpush
 
-<!-- Barra de Búsqueda y Filtros -->
-@include('components.contador.search-filter-bar', [
-    'clientes' => $cotizaciones->pluck('cliente')->unique()->map(function($c) {
-        return is_object($c) ? $c->nombre : $c;
-    })->filter()->sort()->values()
-])
-
 <script>
 // Función global para toggle del dropdown de Ver
 window.toggleViewDropdown = function(button) {
@@ -227,66 +220,8 @@ document.addEventListener('click', function(event) {
     </div>
 </section>
 
-
-<!-- Modal de Visor de Costos por Prenda -->
-<div id="visorCostosModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9998; justify-content: center; align-items: center; padding: 2rem; overflow: hidden;">
-    <div class="modal-content" id="visorCostosModalContent" style="width: 90%; max-width: 800px; height: auto; overflow: visible; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); display: flex; flex-direction: column;">
-        <style>
-            #visorCostosModal {
-                overflow: hidden;
-            }
-            #visorCostosModal .modal-content {
-                max-height: calc(100vh - 4rem);
-                overflow: visible;
-            }
-            #visorCostosContenido {
-                overflow-x: hidden;
-                overflow-y: auto;
-                max-height: none;
-            }
-            #visorCostosContenido::-webkit-scrollbar {
-                width: 8px;
-            }
-            #visorCostosContenido::-webkit-scrollbar-track {
-                background: transparent;
-            }
-            #visorCostosContenido::-webkit-scrollbar-thumb {
-                background: #ccc;
-                border-radius: 4px;
-            }
-            #visorCostosContenido::-webkit-scrollbar-thumb:hover {
-                background: #999;
-            }
-        </style>
-        <!-- Header del Modal -->
-        <div style="background: linear-gradient(135deg, #1e5ba8 0%, #2b7ec9 100%); color: white; padding: 0.75rem 1.5rem; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; transform: scale(0.8); transform-origin: top left; width: 125%;">
-            <div>
-                <h2 style="margin: 0; font-size: 1.2rem; font-weight: 700;" id="visorTitulo">-</h2>
-                <p style="margin: 0.25rem 0 0 0; font-size: 0.75rem; opacity: 0.9;" id="visorCliente">Cliente: -</p>
-            </div>
-            <div style="display: flex; gap: 1rem; align-items: center;">
-                <button onclick="visorCostosAnterior()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 4px; transition: all 0.2s;" title="Prenda Anterior" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-                    ‹
-                </button>
-                <span style="color: white; font-weight: 600; min-width: 60px; text-align: center;" id="visorIndice">1 / 1</span>
-                <button onclick="visorCostosProximo()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 4px; transition: all 0.2s;" title="Próxima Prenda" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-                    ›
-                </button>
-                <button onclick="cerrarVisorCostos()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0.5rem 1rem; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-                    ✕
-                </button>
-            </div>
-        </div>
-
-        <!-- Contenido del Modal -->
-        <div style="padding: 2rem;" id="visorCostosContenido">
-            <!-- Se llena dinámicamente -->
-        </div>
-    </div>
-</div>
-
 <!-- Modal de Cálculo de Costos por Prenda -->
-<div id="calculoCostosModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; padding: 2rem;">
+<div id="calculoCostosModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9997; justify-content: center; align-items: center; padding: 2rem; flex-direction: column;">
     <div style="background: linear-gradient(135deg, #1a1f3a 0%, #0f1419 100%); border-radius: 12px; width: 100%; max-width: 700px; max-height: 95vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.5); border: 1px solid rgba(59, 130, 246, 0.3);">
         
         <!-- Tabs de Prendas con Scroll Horizontal -->
@@ -351,6 +286,16 @@ document.addEventListener('click', function(event) {
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Modal de Cotización -->
+<div id="cotizacionModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; overflow-y: auto;">
+    <div class="modal-content" style="background: white; border-radius: 12px; margin: 2rem auto; max-width: 1000px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        <button onclick="cerrarModalCotizacion()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; z-index: 10001;">
+            <span class="material-symbols-rounded">close</span>
+        </button>
+        <div id="cotizacionContent" style="padding: 2rem;"></div>
     </div>
 </div>
 
@@ -431,8 +376,5 @@ document.addEventListener('click', function(event) {
 
 <!-- Script de Cotizaciones -->
 <script src="{{ asset('js/contador/cotizacion.js') }}"></script>
-
-<!-- Script de Búsqueda y Filtros -->
-<script src="{{ asset('js/contador/busqueda-filtros.js') }}"></script>
 
 @endsection

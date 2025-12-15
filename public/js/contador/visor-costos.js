@@ -189,12 +189,11 @@ function mostrarPrendaVisor(indice) {
     
     if (!prenda) return;
     
-    // Actualizar índice
-    document.getElementById('visorIndice').textContent = `${indice + 1} / ${visorCostosActual.prendas.length}`;
-    
     // Actualizar título
-    document.getElementById('visorTitulo').textContent = prenda.nombre_producto || 'Prenda';
-    document.getElementById('visorCliente').textContent = `Cliente: ${visorCostosActual.cliente}`;
+    const titleElement = document.getElementById('visorCostosTitle');
+    if (titleElement) {
+        titleElement.textContent = `${prenda.nombre_producto || 'Prenda'} (${indice + 1} / ${visorCostosActual.prendas.length}) - ${visorCostosActual.cliente}`;
+    }
     
     // Construir detalles en una línea compacta
     let detallesLinea = [];

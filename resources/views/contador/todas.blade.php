@@ -5,13 +5,6 @@
     <link rel="stylesheet" href="{{ asset('css/contador/tabla-cotizaciones.css') }}?v={{ time() }}">
 @endpush
 
-<!-- Barra de Búsqueda y Filtros -->
-@include('components.contador.search-filter-bar', [
-    'clientes' => $todasLasCotizaciones->pluck('cliente')->unique()->map(function($c) {
-        return is_object($c) ? $c->nombre : $c;
-    })->filter()->sort()->values()
-])
-
 <!-- Sección de Todas las Cotizaciones -->
 <section id="todas-section" class="section-content active" style="display: block;">
     <div class="table-container">
@@ -153,6 +146,16 @@
     </div>
 </section>
 
+<!-- Modal de Cotización -->
+<div id="cotizacionModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; overflow-y: auto;">
+    <div class="modal-content" style="background: white; border-radius: 12px; margin: 2rem auto; max-width: 1000px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+        <button onclick="cerrarModalCotizacion()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; z-index: 10001;">
+            <span class="material-symbols-rounded">close</span>
+        </button>
+        <div id="cotizacionContent" style="padding: 2rem;"></div>
+    </div>
+</div>
+
 <!-- Modal de Visor de Costos por Prenda -->
 <div id="visorCostosModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9998; justify-content: center; align-items: center; padding: 2rem; overflow: hidden;">
     <div class="modal-content" id="visorCostosModalContent" style="width: 90%; max-width: 800px; height: auto; overflow: visible; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); display: flex; flex-direction: column;">
@@ -210,10 +213,10 @@
     </div>
 </div>
 
+<!-- Script de Cotización Modal -->
+<script src="{{ asset('js/contador/cotizacion.js') }}"></script>
+
 <!-- Script de Tabla de Cotizaciones -->
 <script src="{{ asset('js/contador/tabla-cotizaciones.js') }}"></script>
-
-<!-- Script de Búsqueda y Filtros -->
-<script src="{{ asset('js/contador/busqueda-filtros.js') }}"></script>
 
 @endsection

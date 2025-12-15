@@ -170,50 +170,111 @@ class ContadorController extends Controller
 
     /**
      * Obtener detalle de una cotización para el modal
+     * Devuelve toda la información completa de la cotización y sus prendas
      */
     public function getCotizacionDetail($id)
     {
         try {
-            $cotizacion = Cotizacion::with('prendasCotizaciones')->findOrFail($id);
-            
-            // Obtener prendas desde la relación
-            $prendas = $cotizacion->prendasCotizaciones ?? [];
-            
+            // Obtener la cotización con TODAS sus relaciones anidadas
+            $cotizacionModelo = Cotizacion::with([
+                'cliente',
+                'asesor',
+                'prendas' => function($query) {
+                    $query->with([
+                        'fotos',
+                        'telas',
+                        'telas.color',
+                        'telas.tela',
+                        'telaFotos',
+                        'tallas',
+                        'variantes' => function($q) {
+                            $q->with(['manga', 'broche']);
+                        }
+                    ]);
+                }
+            ])->findOrFail($id);
+
             \Log::info('getCotizacionDetail - Cotización ID: ' . $id);
-            \Log::info('getCotizacionDetail - Prendas encontradas: ' . count($prendas));
-            
-            // Si no hay prendas en prendasCotizaciones, intentar con prendas
-            if (count($prendas) === 0) {
-                \Log::info('getCotizacionDetail - Intentando con relación prendas');
-                $prendas = $cotizacion->prendas ?? [];
-                \Log::info('getCotizacionDetail - Prendas desde relación prendas: ' . count($prendas));
-            }
-            
-            $prendasArray = [];
-            if (is_object($prendas)) {
-                $prendasArray = $prendas->toArray();
-            } elseif (is_array($prendas)) {
-                $prendasArray = $prendas;
-            }
-            
-            return response()->json([
-                'success' => true,
-                'prendas' => array_map(function($prenda) {
-                    $prendaArray = is_object($prenda) ? $prenda->toArray() : $prenda;
+            \Log::info('getCotizacionDetail - Prendas encontradas: ' . $cotizacionModelo->prendas->count());
+
+            // Preparar datos de la cotización
+            $datos = [
+                'cotizacion' => [
+                    'id' => $cotizacionModelo->id,
+                    'numero_cotizacion' => $cotizacionModelo->numero_cotizacion,
+                    'asesora_nombre' => $cotizacionModelo->asesor ? $cotizacionModelo->asesor->name : 'N/A',
+                    'empresa' => $cotizacionModelo->empresa_solicitante ?? 'N/A',
+                    'nombre_cliente' => $cotizacionModelo->cliente ? $cotizacionModelo->cliente->nombre : 'N/A',
+                    'created_at' => $cotizacionModelo->created_at,
+                    'estado' => $cotizacionModelo->estado,
+                    'tipo_venta' => $cotizacionModelo->tipo_venta ?? 'N/A',
+                    'especificaciones' => $cotizacionModelo->especificaciones ?? [],
+                ],
+                'prendas_cotizaciones' => $cotizacionModelo->prendas->map(function($prenda, $index) {
+                    // Generar descripción formateada usando el método del modelo
+                    $descripcionFormateada = $prenda->generarDescripcionDetallada($index + 1);
+                    
                     return [
-                        'id' => $prendaArray['id'] ?? null,
-                        'nombre_producto' => $prendaArray['nombre_producto'] ?? 'Sin nombre',
-                        'descripcion' => $prendaArray['descripcion'] ?? '',
-                        'color' => $prendaArray['color'] ?? '',
-                        'tela' => $prendaArray['tela'] ?? '',
-                        'tela_referencia' => $prendaArray['tela_referencia'] ?? '',
-                        'manga_nombre' => $prendaArray['manga_nombre'] ?? '',
-                        'tallas' => $prendaArray['tallas'] ?? [],
-                        'fotos' => $prendaArray['fotos'] ?? [],
-                        'telas' => $prendaArray['telas'] ?? []
+                        'id' => $prenda->id,
+                        'nombre_prenda' => $prenda->nombre_producto ?? 'Prenda sin nombre',
+                        'cantidad' => $prenda->cantidad ?? 0,
+                        'descripcion' => $prenda->descripcion ?? null,
+                        'descripcion_formateada' => $descripcionFormateada,
+                        'detalles_proceso' => $prenda->descripcion ?? null,
+                        // Fotos de la prenda - URLs completas (asset)
+                        'fotos' => $prenda->fotos ? $prenda->fotos->map(function($foto) {
+                            return asset($foto->ruta_webp ?? $foto->url);
+                        })->toArray() : [],
+                        // Telas asociadas - URLs de imagen
+                        'telas' => $prenda->telas ? $prenda->telas->map(function($tela) {
+                            return [
+                                'id' => $tela->id,
+                                'color' => $tela->color ?? null,
+                                'nombre_tela' => $tela->tela->nombre ?? null,
+                                'referencia' => $tela->tela->referencia ?? null,
+                                'url_imagen' => asset($tela->ruta_webp ?? $tela->url_imagen),
+                            ];
+                        })->toArray() : [],
+                        // Fotos de telas - URLs completas (asset)
+                        'tela_fotos' => $prenda->telaFotos ? $prenda->telaFotos->map(function($foto) {
+                            return asset($foto->ruta_webp ?? $foto->url ?? null);
+                        })->toArray() : [],
+                        // Tallas
+                        'tallas' => $prenda->tallas ? $prenda->tallas->map(function($talla) {
+                            return [
+                                'id' => $talla->id,
+                                'talla' => $talla->talla,
+                                'cantidad' => $talla->cantidad,
+                            ];
+                        })->toArray() : [],
+                        // Variantes
+                        'variantes' => $prenda->variantes ? $prenda->variantes->map(function($variante) {
+                            return [
+                                'id' => $variante->id,
+                                'tipo_prenda' => $variante->tipo_prenda ?? null,
+                                'es_jean_pantalon' => $variante->es_jean_pantalon ?? null,
+                                'tipo_jean_pantalon' => $variante->tipo_jean_pantalon ?? null,
+                                'genero_id' => $variante->genero_id ?? null,
+                                'color' => $variante->color ?? null,
+                                'tiene_bolsillos' => $variante->tiene_bolsillos ?? null,
+                                'aplica_manga' => $variante->aplica_manga ?? null,
+                                'tipo_manga' => $variante->tipo_manga ?? null,
+                                'aplica_broche' => $variante->aplica_broche ?? null,
+                                'tipo_broche_id' => $variante->tipo_broche_id ?? null,
+                                'tiene_reflectivo' => $variante->tiene_reflectivo ?? null,
+                                'descripcion_adicional' => $variante->descripcion_adicional ?? null,
+                            ];
+                        })->toArray() : [],
                     ];
-                }, $prendasArray)
+                })->toArray(),
+            ];
+
+            return response()->json($datos);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            \Log::warning('getCotizacionDetail: Cotización no encontrada', [
+                'cotizacion_id' => $id,
             ]);
+            return response()->json(['error' => 'Cotización no encontrada'], 404);
         } catch (\Exception $e) {
             \Log::error('Error en getCotizacionDetail: ' . $e->getMessage());
             return response()->json([
