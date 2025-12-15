@@ -4,6 +4,9 @@
  * Descripción: Gestiona el modal para calcular costos por prenda en cotizaciones
  */
 
+// Variable global para rastrear la prenda actual
+let prendaActualIndex = 0;
+
 /**
  * Abre el modal de cálculo de costos
  * @param {number} cotizacionId - ID de la cotización
@@ -12,6 +15,7 @@
 function abrirModalCalculoCostos(cotizacionId, cliente) {
     // Guardar cotización ID para guardar después
     window.cotizacionIdActual = cotizacionId;
+    prendaActualIndex = 0;
     
     // Obtener las prendas de la cotización
     fetch(`/contador/cotizacion/${cotizacionId}`)
@@ -82,10 +86,13 @@ function abrirModalCalculoCostos(cotizacionId, cliente) {
  * @param {array} prendas - Array de prendas
  */
 function cambiarPrendaTab(prendaId, prendas) {
+    // Guardar el índice de la prenda actual
+    prendaActualIndex = prendas.findIndex(p => p.id === prendaId);
+    
     // Actualizar descripción
     const prenda = prendas.find(p => p.id === prendaId);
     if (prenda) {
-        document.getElementById('prendasDescripcion').textContent = prenda.descripcion || '';
+        document.getElementById('prendasDescripcion').innerHTML = prenda.descripcion || '';
     }
     
     // Actualizar estilos de tabs
@@ -315,12 +322,16 @@ function guardarCalculoCostos() {
     
     // Validar que haya al menos un item
     if (items.length === 0) {
+        console.warn('No hay items para guardar');
         Swal.fire({
-            title: '⚠️ Campos Vacíos',
+            title: '⚠️ Sin Items',
             html: `
                 <div style="text-align: left; color: #4b5563;">
                     <p style="margin: 0; font-size: 0.95rem;">
-                        Por favor, agrega al menos un item con nombre antes de guardar.
+                        Por favor, agrega al menos un item con nombre y precio antes de guardar.
+                    </p>
+                    <p style="margin: 0.75rem 0 0 0; font-size: 0.85rem; color: #7f8c8d;">
+                        Haz clic en "+ AGREGAR" para agregar un nuevo item.
                     </p>
                 </div>
             `,
@@ -348,13 +359,47 @@ function guardarCalculoCostos() {
     prendaDescripcion = prendasDescripcion.textContent.trim();
     
     // Preparar datos para enviar en la estructura esperada por el controlador
-    const costos = {
-        0: {
-            nombre: prendaNombre,
+    // Guardar costos de la prenda actual usando el índice guardado
+    const costos = {};
+    
+    console.log('Prenda actual index:', prendaActualIndex);
+    console.log('Items a guardar:', items);
+    console.log('Descripción:', prendaDescripcion);
+    
+    // Si hay items, guardar la prenda actual
+    if (items.length > 0) {
+        const nombrePrenda = prendasTabs[prendaActualIndex]?.textContent.trim() || 'Prenda sin nombre';
+        
+        costos[prendaActualIndex] = {
+            nombre: nombrePrenda,
             descripcion: prendaDescripcion,
             items: items
-        }
-    };
+        };
+        
+        console.log(`✓ Guardando prenda ${prendaActualIndex}: ${nombrePrenda} con ${items.length} items`);
+    }
+    
+    console.log('Costos a enviar:', costos);
+    console.log('¿Costos vacío?', Object.keys(costos).length === 0);
+    
+    // Validar que haya costos para guardar
+    if (Object.keys(costos).length === 0) {
+        console.error('No hay costos para guardar - objeto vacío');
+        Swal.fire({
+            title: '⚠️ Sin Costos',
+            html: `
+                <div style="text-align: left; color: #4b5563;">
+                    <p style="margin: 0; font-size: 0.95rem;">
+                        No hay costos para guardar. Por favor, agrega items a la prenda actual antes de guardar.
+                    </p>
+                </div>
+            `,
+            icon: 'warning',
+            confirmButtonColor: '#f59e0b',
+            confirmButtonText: 'Entendido'
+        });
+        return;
+    }
     
     // Enviar al servidor
     fetch('/contador/costos/guardar', {

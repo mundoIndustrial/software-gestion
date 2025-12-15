@@ -21,6 +21,7 @@ class CostoPrenda extends Model
      */
     protected $fillable = [
         'cotizacion_id',
+        'prenda_cot_id',
         'nombre_prenda',
         'descripcion',
         'items',
@@ -45,5 +46,13 @@ class CostoPrenda extends Model
     public function cotizacion(): BelongsTo
     {
         return $this->belongsTo(Cotizacion::class);
+    }
+
+    /**
+     * Relación con PrendaCot
+     */
+    public function prenda(): BelongsTo
+    {
+        return $this->belongsTo(PrendaCot::class, 'prenda_cot_id');
     }
 }
