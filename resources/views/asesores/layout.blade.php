@@ -6,6 +6,17 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Panel de Asesores') - MundoIndustrial</title>
     
+    <!-- Script crítico para prevenir flash de tema - DEBE estar ANTES de CSS -->
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme') || 'light';
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark-theme');
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
+    
     <!-- CSS -->
     <link rel="stylesheet" href="{{ asset('css/asesores/layout.css') }}">
     <link rel="stylesheet" href="{{ asset('css/asesores/module.css') }}">
@@ -60,6 +71,7 @@
     @stack('styles')
     
 </head>
+<body>
     <!-- Sidebar Asesores (Componente) -->
     @include('components.sidebars.sidebar-asesores')
 
@@ -160,7 +172,7 @@
 
     <!-- Scripts -->
     <script src="{{ asset('js/toast-notifications.js') }}"></script>
-    <script src="{{ asset('js/asesores/layout.js') }}"></script>
+    <script src="{{ asset('js/sidebar.js') }}"></script>
     <script src="{{ asset('js/asesores/notifications.js') }}"></script>
     <script src="{{ asset('js/asesores/sidebar-responsive.js') }}"></script>
     @stack('scripts')

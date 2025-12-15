@@ -29,9 +29,9 @@ function irAlPaso(paso) {
         actualizarResumenFriendly();
     }
     
-    // Si es el paso 5 (REVISAR COTIZACIÓN), actualizar resumen completo
-    if (paso === 5) {
-        console.log('🎯 Navegando al PASO 5: REVISAR COTIZACIÓN');
+    // Si es el paso 4 (REVISAR COTIZACIÓN), actualizar resumen completo
+    if (paso === 4) {
+        console.log('🎯 Navegando al PASO 4: REVISAR COTIZACIÓN');
         
         // Usar la función más completa si está disponible
         if (typeof actualizarResumenCompleto === 'function') {

@@ -30,58 +30,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ========================================
-// THEME TOGGLE
-// ========================================
-document.addEventListener('DOMContentLoaded', function() {
-    const themeToggle = document.getElementById('themeToggle');
-    const body = document.body;
-    const html = document.documentElement;
-    
-    // Toggle theme
-    if (themeToggle) {
-        themeToggle.addEventListener('click', function() {
-            body.classList.toggle('dark-theme');
-            html.classList.toggle('dark-theme');
-            html.setAttribute('data-theme', body.classList.contains('dark-theme') ? 'dark' : 'light');
-            
-            const isDark = body.classList.contains('dark-theme');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-            updateThemeButton(isDark);
-        });
-    }
-    
-    // Sincronizar estado actual del tema
-    const currentIsDark = body.classList.contains('dark-theme');
-    if (currentIsDark) {
-        updateThemeButton(true);
-    } else {
-        updateThemeButton(false);
-    }
-    
-    function updateThemeButton(isDark) {
-        if (!themeToggle) return;
-        
-        const icon = themeToggle.querySelector('.material-symbols-rounded');
-        const text = themeToggle.querySelector('.theme-text');
-        const logo = document.querySelector('.header-logo');
-        
-        if (isDark) {
-            if (icon) icon.textContent = 'light_mode';
-            if (text) text.textContent = 'Modo Claro';
-            if (logo && logo.dataset.logoDark) {
-                logo.src = logo.dataset.logoDark;
-            }
-        } else {
-            if (icon) icon.textContent = 'dark_mode';
-            if (text) text.textContent = 'Modo Oscuro';
-            if (logo && logo.dataset.logoLight) {
-                logo.src = logo.dataset.logoLight;
-            }
-        }
-    }
-});
-
-// ========================================
 // USER DROPDOWN
 // ========================================
 // COMENTADO: El manejo del dropdown de usuario se hace en top-nav.js para evitar conflictos
