@@ -13,6 +13,7 @@ class CrearPedidoProduccionDTO
     public function __construct(
         public readonly int $cotizacionId,
         public readonly array $prendasData, // Array de PrendaCreacionDTO
+        public readonly ?array $logo = null, // Logo del pedido (opcional)
     ) {}
 
     /**
@@ -32,6 +33,7 @@ class CrearPedidoProduccionDTO
         return new self(
             cotizacionId: $data['cotizacion_id'] ?? 0,
             prendasData: $prendasData,
+            logo: $data['logo'] ?? null,
         );
     }
 

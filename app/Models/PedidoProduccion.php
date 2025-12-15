@@ -475,6 +475,22 @@ class PedidoProduccion extends Model
     }
 
     /**
+     * Relación: Un pedido tiene muchas prendas normalizadas (nuevas tablas DDD)
+     */
+    public function prendasPed(): HasMany
+    {
+        return $this->hasMany(PrendaPed::class, 'pedido_produccion_id');
+    }
+
+    /**
+     * Relación: Un pedido tiene un logo (nuevas tablas DDD)
+     */
+    public function logo(): HasMany
+    {
+        return $this->hasMany(LogoPed::class, 'pedido_produccion_id');
+    }
+
+    /**
      * Constantes de estados y opciones
      */
     const ESTADOS = ['Pendiente', 'No iniciado', 'En Ejecución', 'Entregado', 'Anulada'];

@@ -21,10 +21,11 @@ use Tests\TestCase;
  * - Múltiples asesores creando simultáneamente
  * - Transacciones y locks para evitar race conditions
  * - Incrementos secuenciales de numero_cotizacion
+ * 
+ * ⚠️ NOTA: No usa RefreshDatabase para preservar datos existentes
  */
 class CotizacionesConcurrencyTest extends TestCase
 {
-    use RefreshDatabase;
 
     /**
      * TEST 1: Simular 100 creaciones secuenciales - verificar secuencialidad perfecta
@@ -347,10 +348,11 @@ class CotizacionesConcurrencyTest extends TestCase
             $cotizacionesPorTipo[$codigo] = [];
 
             for ($i = 1; $i <= 5; $i++) {
+                $numeroFormato = sprintf('%03d', $i);
                 $cot = Cotizacion::create([
                     'asesor_id' => $asesor->id,
                     'cliente_id' => $cliente->id,
-                    'numero_cotizacion' => "COT-{$codigo}-{$i:03d}",
+                    'numero_cotizacion' => "COT-{$codigo}-{$numeroFormato}",
                     'tipo_cotizacion_id' => $tipo->id,
                     'fecha_inicio' => now(),
                     'es_borrador' => false,
@@ -438,8 +440,9 @@ class CotizacionesConcurrencyTest extends TestCase
 
         $this->assertLessThan(30, $tiempoTotal); // Debe tomar menos de 30 segundos
 
-        echo "\n✅ 50 Cotizaciones completas creadas en {$tiempoTotal:.2f} segundos\n";
-        echo "Promedio: " . ($tiempoTotal / 50) . " segundos por cotización\n";
+        $tiempoFormato = number_format($tiempoTotal, 2);
+        echo "\n✅ 50 Cotizaciones completas creadas en {$tiempoFormato} segundos\n";
+        echo "Promedio: " . number_format($tiempoTotal / 50, 2) . " segundos por cotización\n";
     }
 
     /**

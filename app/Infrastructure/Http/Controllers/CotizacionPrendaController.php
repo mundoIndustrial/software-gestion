@@ -4,9 +4,11 @@ namespace App\Infrastructure\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cotizacion;
+use App\Models\NumeroSecuencia;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class CotizacionPrendaController extends Controller
 {
@@ -20,6 +22,7 @@ class CotizacionPrendaController extends Controller
 
     /**
      * Guardar cotización de prenda
+     * SINCRÓNICO: Genera número INMEDIATAMENTE con pessimistic lock
      */
     public function store(Request $request)
     {
@@ -46,11 +49,20 @@ class CotizacionPrendaController extends Controller
                     $clienteId = $cliente->id;
                 }
 
-                // Crear cotización (sin número si es borrador)
+                // Generar número SINCRONICAMENTE si se envía
+                $numeroCotizacion = null;
+                if (!$esBorrador) {
+                    $numeroCotizacion = $this->generarNumeroCotizacion('cotizaciones_prenda');
+                    Log::info('✅ Número generado sincronicamente', [
+                        'numero' => $numeroCotizacion
+                    ]);
+                }
+
+                // Crear cotización CON número generado
                 $cotizacion = Cotizacion::create([
                     'asesor_id' => Auth::id(),
                     'cliente_id' => $clienteId,
-                    'numero_cotizacion' => null, // Se genera en el job si se envía
+                    'numero_cotizacion' => $numeroCotizacion,
                     'tipo_cotizacion_id' => 3, // Cotización de Prenda
                     'tipo_venta' => $request->input('tipo_venta', 'M'),
                     'es_borrador' => $esBorrador,
@@ -66,20 +78,23 @@ class CotizacionPrendaController extends Controller
 
                 Log::info('✅ Cotización de Prenda creada', [
                     'cotizacion_id' => $cotizacion->id,
+                    'numero_cotizacion' => $numeroCotizacion,
                     'es_borrador' => $esBorrador,
                     'estado' => $estado,
                     'cliente_id' => $clienteId,
                 ]);
 
-                // Si se envía (no es borrador), encolar el job para generar número
+                // OPTIMIZACIÓN: Si se envía, aún encolamos el job pero ahora el número YA EXISTE
+                // El job puede usarlo directamente sin generar otro
                 if (!$esBorrador) {
                     \App\Jobs\ProcesarEnvioCotizacionJob::dispatch(
                         $cotizacion->id,
                         3 // tipo_cotizacion_id para Prenda
                     )->onQueue('cotizaciones');
 
-                    Log::info('📋 Job de envío encolado', [
+                    Log::info('📋 Job de envío encolado (número ya existe)', [
                         'cotizacion_id' => $cotizacion->id,
+                        'numero' => $numeroCotizacion,
                         'queue' => 'cotizaciones'
                     ]);
                 }
@@ -102,7 +117,7 @@ class CotizacionPrendaController extends Controller
 
                 return response()->json([
                     'success' => true,
-                    'message' => $esBorrador ? 'Cotización guardada como borrador' : 'Cotización enviada (procesando número)',
+                    'message' => $esBorrador ? 'Cotización guardada como borrador' : 'Cotización enviada - Número: ' . $numeroCotizacion,
                     'data' => $cotizacionCompleta->toArray(),
                     'redirect' => route('asesores.cotizaciones.index')
                 ], 201);
@@ -119,6 +134,49 @@ class CotizacionPrendaController extends Controller
                 throw $e;
             }
         }, attempts: 3); // Reintentar hasta 3 veces si hay deadlock
+    }
+
+    /**
+     * Generar número de cotización sincronicamente con pessimistic lock
+     * 
+     * Usa lockForUpdate() para prevenir race conditions
+     * Formato: COT-20250124-001
+     * 
+     * @param string $tipo tipo de secuencia (cotizaciones_prenda, cotizaciones_bordado, etc)
+     * @return string número generado
+     */
+    private function generarNumeroCotizacion($tipo = 'cotizaciones_prenda')
+    {
+        // Adquirir LOCK pessimista en la fila de numero_secuencias
+        // Ningún otro proceso puede leerla o modificarla hasta que confirmemos
+        $secuencia = DB::table('numero_secuencias')
+            ->lockForUpdate()
+            ->where('tipo', $tipo)
+            ->first();
+
+        if (!$secuencia) {
+            throw new \Exception("Secuencia de tipo '{$tipo}' no encontrada en numero_secuencias");
+        }
+
+        // Obtener próximo número
+        $siguiente = $secuencia->siguiente;
+
+        // Incrementar y guardar
+        DB::table('numero_secuencias')
+            ->where('tipo', $tipo)
+            ->update(['siguiente' => $siguiente + 1]);
+
+        // Generar formato: COT-20250124-001
+        $numero = 'COT-' . date('Ymd') . '-' . str_pad($siguiente, 3, '0', STR_PAD_LEFT);
+
+        Log::debug('🔐 Número generado con lock', [
+            'tipo' => $tipo,
+            'numero' => $numero,
+            'secuencia_anterior' => $siguiente,
+            'secuencia_nueva' => $siguiente + 1
+        ]);
+
+        return $numero;
     }
 
     /**

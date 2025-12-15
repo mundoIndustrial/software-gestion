@@ -18,11 +18,12 @@ use App\Models\PrendaTelaCot;
 use App\Models\PrendaFotoCot;
 use App\Models\LogoCotizacion;
 use App\Models\LogoFoto;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
  * Test Suite Completo: Cotizaciones - 11 por Tipo
+ * 
+ * ⚠️ NOTA: No usa RefreshDatabase para preservar datos existentes
  * 
  * Objetivo: Validar que se puede crear 11 cotizaciones por tipo sin errores,
  * incluyendo TODOS los campos, fotos y relaciones.
@@ -33,7 +34,6 @@ use Tests\TestCase;
  */
 class CotizacionesCompleteTest extends TestCase
 {
-    use RefreshDatabase;
 
     protected User $asesor1;
     protected User $asesor2;

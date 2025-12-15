@@ -11,18 +11,18 @@ use App\Models\PrendaVarianteCot;
 use App\Models\PrendaTallaCot;
 use App\Models\PrendaTelaCot;
 use App\Models\PrendaFotoCot;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
  * Test Suite: Validación de Campos e Integridad
+ * 
+ * ⚠️ NOTA: No usa RefreshDatabase para preservar datos existentes
  * 
  * Este archivo complementa CotizacionesCompleteTest.php con validaciones
  * específicas de campos, constraints y validaciones de negocio.
  */
 class CotizacionesIntegrityTest extends TestCase
 {
-    use RefreshDatabase;
 
     protected User $asesor;
     protected Cliente $cliente;

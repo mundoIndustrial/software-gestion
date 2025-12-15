@@ -5,6 +5,8 @@ namespace App\Jobs;
 use App\Models\PedidoProduccion;
 use App\DTOs\CrearPedidoProduccionDTO;
 use App\Services\Pedidos\PrendaProcessorService;
+use App\Application\Services\PedidoPrendaService;
+use App\Application\Services\PedidoLogoService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -25,10 +27,13 @@ class CrearPedidoProduccionJob implements ShouldQueue
     /**
      * Execute the job.
      */
-    public function handle(PrendaProcessorService $prendaProcessor): PedidoProduccion
-    {
+    public function handle(
+        PrendaProcessorService $prendaProcessor,
+        PedidoPrendaService $prendaService,
+        PedidoLogoService $logoService
+    ): PedidoProduccion {
         // Usar transacción para garantizar atomicidad
-        return DB::transaction(function () use ($prendaProcessor) {
+        return DB::transaction(function () use ($prendaProcessor, $prendaService, $logoService) {
             // Obtener y incrementar número de pedido de forma segura
             $numeroPedido = DB::table('numero_secuencias')
                 ->where('tipo', 'pedido_produccion')
@@ -48,13 +53,25 @@ class CrearPedidoProduccionJob implements ShouldQueue
             );
 
             // Crear pedido con número generado
-            return PedidoProduccion::create([
+            $pedido = PedidoProduccion::create([
                 'cotizacion_id' => $this->dto->cotizacionId,
                 'asesor_id' => $this->asesorId,
                 'numero_pedido' => $numeroPedido,
                 'prendas' => $prendasProcesadas,
                 'estado' => 'Pendiente',
             ]);
+
+            // Guardar prendas en tablas normalizadas (DDD)
+            if (!empty($this->prendas)) {
+                $prendaService->guardarPrendasEnPedido($pedido, $this->prendas);
+            }
+
+            // Guardar logo si existe (DDD)
+            if (!empty($this->dto->logo)) {
+                $logoService->guardarLogoEnPedido($pedido, $this->dto->logo);
+            }
+
+            return $pedido;
         });
     }
 }

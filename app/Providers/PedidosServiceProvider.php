@@ -5,6 +5,8 @@ namespace App\Providers;
 use App\Services\Pedidos\CotizacionSearchService;
 use App\Services\Pedidos\PedidoProduccionCreatorService;
 use App\Services\Pedidos\PrendaProcessorService;
+use App\Application\Services\PedidoPrendaService;
+use App\Application\Services\PedidoLogoService;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -37,6 +39,16 @@ class PedidosServiceProvider extends ServiceProvider
             return new PedidoProduccionCreatorService(
                 $app->make(PrendaProcessorService::class)
             );
+        });
+
+        // Registrar PedidoPrendaService como singleton (DDD)
+        $this->app->singleton(PedidoPrendaService::class, function ($app) {
+            return new PedidoPrendaService();
+        });
+
+        // Registrar PedidoLogoService como singleton (DDD)
+        $this->app->singleton(PedidoLogoService::class, function ($app) {
+            return new PedidoLogoService();
         });
     }
 
