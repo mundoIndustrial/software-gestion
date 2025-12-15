@@ -12,10 +12,10 @@ class AsesoresInventarioTelasController extends Controller
     public function index()
     {
         $telas = InventarioTela::orderBy('categoria')->orderBy('nombre_tela')->get();
-        $userRole = Auth::user()->role;
+        $user = Auth::user();
         
-        // Si es insumos, retornar con layout general
-        if ($userRole === 'insumos' || (is_object($userRole) && $userRole->name === 'insumos')) {
+        // Si el usuario tiene el rol "insumos", retornar con layout de insumos
+        if ($user->hasRole('insumos')) {
             return view('inventario-telas.index-insumos', compact('telas'));
         }
         
@@ -187,6 +187,31 @@ class AsesoresInventarioTelasController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al obtener el historial: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function destroy($id)
+    {
+        try {
+            $tela = InventarioTela::findOrFail($id);
+            
+            // Eliminar historial asociado
+            DB::table('inventario_telas_historial')
+                ->where('inventario_tela_id', $id)
+                ->delete();
+            
+            // Eliminar la tela
+            $tela->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tela eliminada correctamente'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar la tela: ' . $e->getMessage()
             ], 500);
         }
     }

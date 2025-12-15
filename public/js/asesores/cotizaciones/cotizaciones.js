@@ -178,7 +178,20 @@ function irAlPaso(paso) {
     const stepElement = document.querySelector(`.step[data-step="${paso}"]`);
     if (stepElement) stepElement.classList.add('active');
     
-    if (paso === 4) setTimeout(() => actualizarResumenFriendly(), 100);
+    // Si es el paso 4 (REVISAR COTIZACIÓN), actualizar resumen completo
+    if (paso === 4) {
+        console.log('🎯 Navegando al PASO 4: REVISAR COTIZACIÓN');
+        setTimeout(() => {
+            // Usar la función más completa si está disponible
+            if (typeof actualizarResumenCompleto === 'function') {
+                console.log('✅ Llamando a actualizarResumenCompleto()');
+                actualizarResumenCompleto();
+            } else if (typeof actualizarResumenFriendly === 'function') {
+                console.log('✅ Llamando a actualizarResumenFriendly()');
+                actualizarResumenFriendly();
+            }
+        }, 100);
+    }
 }
 
 // ============ UTILIDADES ============

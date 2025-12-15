@@ -39,6 +39,13 @@
     <link rel="stylesheet" href="{{ asset('css/contador/tabla-index.css') }}?v={{ time() }}">
 @endpush
 
+<!-- Barra de Búsqueda y Filtros -->
+@include('components.contador.search-filter-bar', [
+    'clientes' => $cotizaciones->pluck('cliente')->unique()->map(function($c) {
+        return is_object($c) ? $c->nombre : $c;
+    })->filter()->sort()->values()
+])
+
 <script>
 // Función global para toggle del dropdown de Ver
 window.toggleViewDropdown = function(button) {
@@ -90,8 +97,14 @@ document.addEventListener('click', function(event) {
                     
                     @foreach($columns as $column)
                         <div class="table-header-cell{{ $column['key'] === 'acciones' ? ' acciones-column' : '' }}" style="flex: {{ $column['flex'] }}; justify-content: {{ $column['justify'] }};">
-                            <div class="th-wrapper">
+                            <div class="th-wrapper" style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
                                 <span class="header-text">{{ $column['label'] }}</span>
+                                @if($column['key'] !== 'acciones')
+                                    <button type="button" class="btn-filter-column" data-filter-column="{{ $column['key'] }}" onclick="abrirFiltroColumna('{{ $column['key'] }}', obtenerValoresColumna('{{ $column['key'] }}'))" title="Filtrar {{ $column['label'] }}">
+                                        <span class="material-symbols-rounded">filter_alt</span>
+                                        <div class="filter-badge"></div>
+                                    </button>
+                                @endif
                             </div>
                         </div>
                     @endforeach
@@ -110,7 +123,7 @@ document.addEventListener('click', function(event) {
                         @endphp
                         
                         @forelse($cotizacionesPaginadas as $cotizacion)
-                            <div class="table-row" data-cotizacion-id="{{ $cotizacion->id }}">
+                            <div class="table-row" data-cotizacion-id="{{ $cotizacion->id }}" data-numero="COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}" data-cliente="{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}" data-asesora="{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? '') }}" data-fecha="{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y') : '' }}">
                                 <!-- Acciones -->
                                 <div class="table-cell acciones-column" style="flex: 0 0 120px; justify-content: center; position: relative;">
                                     <div class="actions-group">
@@ -141,28 +154,28 @@ document.addEventListener('click', function(event) {
                                 </div>
                                 
                                 <!-- Número -->
-                                <div class="table-cell" style="flex: 0 0 140px;">
+                                <div class="table-cell" style="flex: 0 0 140px;" data-numero="COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}">
                                     <div class="cell-content" style="justify-content: center;">
                                         <span style="font-weight: 600;">COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}</span>
                                     </div>
                                 </div>
                                 
                                 <!-- Fecha -->
-                                <div class="table-cell" style="flex: 0 0 180px;">
+                                <div class="table-cell" style="flex: 0 0 180px;" data-fecha="{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y') : '' }}">
                                     <div class="cell-content" style="justify-content: center;">
                                         <span>{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y H:i') : '-' }}</span>
                                     </div>
                                 </div>
                                 
                                 <!-- Cliente -->
-                                <div class="table-cell" style="flex: 0 0 200px;">
+                                <div class="table-cell" style="flex: 0 0 200px;" data-cliente="{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}">
                                     <div class="cell-content" style="justify-content: center;">
                                         <span>{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '-') }}</span>
                                     </div>
                                 </div>
                                 
                                 <!-- Asesora -->
-                                <div class="table-cell" style="flex: 0 0 150px;">
+                                <div class="table-cell" style="flex: 0 0 150px;" data-asesora="{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? '') }}">
                                     <div class="cell-content" style="justify-content: center;">
                                         <span>{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? '-') }}</span>
                                     </div>

@@ -44,6 +44,16 @@
         </a>
       </li>
 
+      <!-- Inventario de Telas -->
+      <li class="menu-item">
+        <a href="{{ route('inventario-telas.index') }}"
+           class="menu-link {{ request()->routeIs('inventario-telas.*') || request()->is('inventario-telas*') ? 'active' : '' }}"
+           aria-label="Inventario de Telas">
+          <span class="material-symbols-rounded" aria-hidden="true">checkroom</span>
+          <span class="menu-label">Inventario de Telas</span>
+        </a>
+      </li>
+
       <!-- Volver al Dashboard Principal - Solo para supervisor_planta y admin -->
       @if(auth()->user()->role && in_array(auth()->user()->role->name, ['supervisor_planta', 'admin']))
       <li class="menu-item">
