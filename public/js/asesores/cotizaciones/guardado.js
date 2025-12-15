@@ -234,8 +234,8 @@ async function guardarCotizacion() {
             console.log('📸 Procesando imágenes de logo:', window.imagenesEnMemoria.logo.length);
             window.imagenesEnMemoria.logo.forEach((imagen, imagenIndex) => {
                 if (imagen instanceof File) {
-                    // Usar nombre con corchetes: logo_imagenes[] (PHP lo convertirá a array automáticamente)
-                    formData.append(`logo_imagenes[]`, imagen);
+                    // Usar nombre con índices entre corchetes: logo[imagenes][0], logo[imagenes][1], etc.
+                    formData.append(`logo[imagenes][${imagenIndex}]`, imagen);
                     console.log(`✅ Imagen de logo agregada a FormData [${imagenIndex}]:`, imagen.name);
                 } else {
                     console.log(`⚠️ Imagen de logo no es File [${imagenIndex}]:`, typeof imagen);

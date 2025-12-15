@@ -693,21 +693,21 @@ final class CotizacionController extends Controller
             }
 
             // Procesar imágenes de logo
-            // FormData envía múltiples archivos con nombre: logo_imagenes[]
+            // FormData envía múltiples archivos con nombre: logo[imagenes][0], logo[imagenes][1], etc.
             $logoArchivos = [];
             
             // Intentar obtener archivos de logo
             $allFiles = $request->allFiles();
             Log::info('DEBUG - allFiles keys:', ['keys' => array_keys($allFiles)]);
             
-            // Buscar logo_imagenes en allFiles
-            if (isset($allFiles['logo_imagenes'])) {
-                $logoArchivos = $allFiles['logo_imagenes'];
-                Log::info('DEBUG - Encontrado logo_imagenes en allFiles');
+            // Buscar logo[imagenes] en allFiles
+            if (isset($allFiles['logo']) && is_array($allFiles['logo']) && isset($allFiles['logo']['imagenes'])) {
+                $logoArchivos = $allFiles['logo']['imagenes'];
+                Log::info('DEBUG - Encontrado logo[imagenes] en allFiles');
             } else {
                 // Si no, intentar con $request->file()
-                $logoArchivos = $request->file('logo_imagenes') ?? [];
-                Log::info('DEBUG - Buscado logo_imagenes con request->file()');
+                $logoArchivos = $request->file('logo.imagenes') ?? [];
+                Log::info('DEBUG - Buscado logo.imagenes con request->file()');
             }
             
             Log::info('DEBUG - Buscando archivos de logo:', [
