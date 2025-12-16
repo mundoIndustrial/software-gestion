@@ -899,6 +899,20 @@ document.getElementById('header-fecha').addEventListener('change', function() {
 document.getElementById('cotizacionBordadoForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
+    // Detectar cuál botón se presionó PRIMERO
+    const submitButton = e.submitter;
+    if (!submitButton) {
+        console.error('❌ No se detectó el botón de envío');
+        return;
+    }
+
+    // Desactivar botones durante el envío
+    document.querySelectorAll('button[type="submit"]').forEach(btn => {
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+        btn.style.cursor = 'not-allowed';
+    });
+
     // Sincronizar valores del header antes de enviar
     document.getElementById('cliente').value = document.getElementById('header-cliente').value;
     document.getElementById('fecha').value = document.getElementById('header-fecha').value;
@@ -908,16 +922,20 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     const observacionesTecnicas = document.getElementById('observaciones_tecnicas').value;
 
     if (!cliente || !asesora) {
-        alert('Completa los campos obligatorios');
+        Swal.fire('⚠️ Campos Incompletos', 'Completa el cliente y otros campos obligatorios', 'warning');
+        document.querySelectorAll('button[type="submit"]').forEach(btn => {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+        });
         return;
     }
 
-    // Detectar cuál botón se presionó
-    const submitButton = e.submitter;
-    const action = submitButton ? submitButton.value : 'borrador';
+    const action = submitButton.value;
     
     console.log('🔵 Botón presionado:', submitButton?.textContent?.trim());
     console.log('🔵 Acción:', action);
+    console.log('⏳ Enviando cotización...');
 
     // Leer observaciones generales del DOM con TODA la información
     const observacionesDelDOM = [];
@@ -971,9 +989,15 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     });
 
     try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || 
+                         document.querySelector('input[name="_token"]')?.value;
+        
         const response = await fetch('{{ route("asesores.cotizaciones-bordado.store") }}', {
             method: 'POST',
-            body: formData
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': csrfToken
+            }
         });
 
         const result = await response.json();
@@ -994,17 +1018,26 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
                 window.location.href = result.redirect;
             });
         } else {
+            console.error('❌ Respuesta del servidor indica error:', result);
             Swal.fire({
-                title: '❌ Error',
-                text: result.message,
+                title: '❌ Error al Guardar',
+                text: result.message || 'No se pudo guardar la cotización',
                 icon: 'error'
             });
         }
     } catch (error) {
+        console.error('❌ Error en el fetch:', error);
         Swal.fire({
-            title: '❌ Error',
-            text: 'Error al guardar: ' + error.message,
+            title: '❌ Error en la Conexión',
+            text: error.message || 'No se pudo conectar con el servidor',
             icon: 'error'
+        });
+    } finally {
+        // Re-habilitar botones
+        document.querySelectorAll('button[type="submit"]').forEach(btn => {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
         });
     }
 });

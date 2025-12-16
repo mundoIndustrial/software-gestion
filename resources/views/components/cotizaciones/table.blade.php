@@ -93,8 +93,12 @@
                                             </a>
                                         @else
                                             <a href="{{ route('asesores.cotizaciones.show', $cot->id) }}" 
-                                                style="background: {{ $buttonColor }}; color: white; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: 600;">
+                                                style="background: {{ $buttonColor }}; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600; margin-right: 5px;">
                                                 Ver
+                                            </a>
+                                            <a href="#" onclick="eliminarCotizacion({{ $cot->id }}); return false;" 
+                                                style="background: #e74c3c; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600;">
+                                                Eliminar
                                             </a>
                                         @endif
                                     </td>

@@ -988,7 +988,7 @@
             <div class="producto-section">
                 <div class="section-title"><i class="fas fa-images"></i> IMÁGENES (MÁXIMO 3)</div>
                 <label style="display: block; min-height: 50px; padding: 0.75rem; border: 2px dashed #0ea5e9; border-radius: 6px; cursor: pointer; text-align: center; background: #f0f7ff;" ondrop="event.preventDefault(); if(event.dataTransfer.files) this.querySelector('input').files = event.dataTransfer.files; this.querySelector('input').onchange && this.querySelector('input').onchange();" ondragover="event.preventDefault(); this.style.background='#e8f4f8';" ondragleave="this.style.background='#f0f7ff';">
-                    <input type="file" name="productos_reflectivo[][imagenes][]" class="input-file-reflectivo" accept="image/*" multiple onchange="agregarFotosAlProductoReflectivo(this)" style="display: none;">
+                    <input type="file" class="input-file-reflectivo" accept="image/*" multiple onchange="agregarFotosAlProductoReflectivo(this)" style="display: none;">
                     <div class="drop-zone-content" style="font-size: 0.75rem;">
                         <i class="fas fa-cloud-upload-alt" style="font-size: 0.9rem; color: #0ea5e9; display: block; margin-bottom: 0.2rem;"></i>
                         <p style="margin: 0.1rem 0; color: #0ea5e9; font-weight: 500; font-size: 0.8rem;">ARRASTRA IMÁGENES AQUÍ O HAZ CLIC</p>
@@ -1329,6 +1329,13 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
     formData.append('fecha', fecha);
     formData.append('action', action);
     formData.append('tipo', 'RF');
+    
+    // DEBUG: Log de datos que se envían
+    console.log('📦 DATOS QUE SE ENVIARÁN:');
+    console.log('   cliente:', cliente);
+    console.log('   fecha:', fecha);
+    console.log('   action:', action);
+    console.log('   tipo:', 'RF');
     formData.append('prendas', JSON.stringify(prendas)); // Enviar como JSON string
     formData.append('especificaciones', document.getElementById('especificaciones').value || '');
     formData.append('descripcion_reflectivo', document.getElementById('descripcion_reflectivo')?.value || 'Reflectivo');
@@ -1350,13 +1357,54 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
         }
     });
 
+    // Agregar fotos eliminadas
+    if (fotosEliminadas.length > 0) {
+        console.log('🗑️ Fotos a eliminar:', fotosEliminadas);
+        formData.append('imagenes_a_eliminar', JSON.stringify(fotosEliminadas));
+    }
+
     try {
-        const response = await fetch('{{ route("asesores.cotizaciones.reflectivo.guardar") }}', {
-            method: 'POST',
-            body: formData,
+        // Determinar ruta y método según si es edición o creación
+        let url, metodo;
+        let bodyData;
+        
+        if (window.esEdicion && window.cotizacionIdActual) {
+            // EDICIÓN: Usar PUT updateReflectivo con JSON
+            url = '/asesores/cotizaciones/reflectivo/' + window.cotizacionIdActual;
+            metodo = 'PUT';
+            console.log('✏️ EDICIÓN - Enviando a:', url);
+            
+            // Construir objeto JSON en lugar de FormData para PUT
+            bodyData = {
+                cliente: cliente,
+                asesora: document.getElementById('asesora').value,
+                fecha: fecha,
+                action: action,
+                tipo: 'RF',
+                prendas: prendas.length > 0 ? prendas : null,
+                especificaciones: document.getElementById('especificaciones').value || '',
+                descripcion_reflectivo: document.getElementById('descripcion_reflectivo')?.value || 'Reflectivo',
+                ubicaciones_reflectivo: ubicaciones.length > 0 ? ubicaciones : [],
+                observaciones_generales: [],
+                imagenes_a_eliminar: fotosEliminadas.length > 0 ? fotosEliminadas : null
+            };
+            
+            console.log('📦 JSON a enviar:', JSON.stringify(bodyData, null, 2));
+        } else {
+            // CREACIÓN: Usar POST storeReflectivo con FormData
+            url = '/asesores/cotizaciones/reflectivo/guardar';
+            metodo = 'POST';
+            console.log('➕ CREACIÓN - Enviando a:', url);
+            bodyData = formData;
+        }
+        
+        const response = await fetch(url, {
+            method: metodo,
+            body: window.esEdicion ? JSON.stringify(bodyData) : bodyData,
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
-                'Accept': 'application/json'
+                'Accept': 'application/json',
+                ...(window.esEdicion && { 'Content-Type': 'application/json' })
             }
         });
 
@@ -1366,8 +1414,31 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
             alert('✅ Cotización guardada exitosamente');
             window.location.href = '{{ route("asesores.cotizaciones.index") }}';
         } else {
-            alert('❌ Error: ' + (result.message || 'Error al guardar'));
-            console.error('Errores:', result.errores || result);
+            console.error('❌ Error en respuesta:', result);
+            let mensajeError = result.message || 'Error al guardar';
+            
+            if (result.errors) {
+                console.log('📋 Campos con error:');
+                const errores = [];
+                for (const [campo, msgs] of Object.entries(result.errors)) {
+                    const mensaje = Array.isArray(msgs) ? msgs[0] : msgs;
+                    console.log(`   - ${campo}: ${mensaje}`);
+                    errores.push(`${campo}: ${mensaje}`);
+                }
+                mensajeError += '\n\n' + errores.join('\n');
+            } else if (result.errores) {
+                console.log('📋 Campos con error (errores):');
+                const errores = [];
+                for (const [campo, msgs] of Object.entries(result.errores)) {
+                    const mensaje = Array.isArray(msgs) ? msgs[0] : msgs;
+                    console.log(`   - ${campo}: ${mensaje}`);
+                    errores.push(`${campo}: ${mensaje}`);
+                }
+                mensajeError += '\n\n' + errores.join('\n');
+            }
+            
+            alert('❌ Error:\n' + mensajeError);
+            console.error('Errores detallados:', result);
         }
     } catch (error) {
         alert('❌ Error de conexión: ' + error.message);
@@ -1375,8 +1446,48 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
     }
 });
 
+// Variable global para rastrear fotos eliminadas
+let fotosEliminadas = [];
+
+/**
+ * Función para eliminar una foto del reflectivo
+ */
+function eliminarFotoReflectivo(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const boton = event.target;
+    const fotoId = boton.getAttribute('data-foto-id');
+    const contenedor = boton.closest('div[data-foto-id]');
+    
+    if (!fotoId || !contenedor) {
+        console.warn('⚠️ No se pudo obtener ID de foto');
+        return;
+    }
+    
+    console.log('🗑️ Eliminando foto:', fotoId);
+    
+    // Registrar en lista de fotos a eliminar
+    if (!fotosEliminadas.includes(fotoId)) {
+        fotosEliminadas.push(fotoId);
+        console.log('📋 Fotos a eliminar registradas:', fotosEliminadas);
+    }
+    
+    // Remover del DOM
+    contenedor.remove();
+    console.log('✅ Foto eliminada del DOM');
+}
+
 // Agregar PRENDA 1 por default al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
+    // Capturar ID de cotización si existe (para edición)
+    window.cotizacionIdActual = {!! isset($cotizacionId) ? $cotizacionId : 'null' !!};
+    window.esEdicion = !!window.cotizacionIdActual;
+    
+    console.log('🔑 Información de cotización:');
+    console.log('   ID:', window.cotizacionIdActual);
+    console.log('   Es edición:', window.esEdicion);
+    
     // Si hay datos iniciales (edición), cargarlos
     const datosIniciales = {!! isset($datosIniciales) ? $datosIniciales : 'null' !!};
     
@@ -1480,9 +1591,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         console.log(`    ✓ Foto ${index + 1}:`, foto);
                         const imgDiv = document.createElement('div');
                         imgDiv.style.position = 'relative';
+                        imgDiv.setAttribute('data-foto-id', foto.id); // AGREGAR ID PARA RASTREAR ELIMINACIONES
+                        imgDiv.setAttribute('data-foto-nueva', 'false'); // Marcar como existente (no nueva)
                         imgDiv.innerHTML = `
                             <img src="${foto.url}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 4px;">
-                            <button type="button" class="btn-eliminar-foto" onclick="this.parentElement.remove()" style="position: absolute; top: 2px; right: 2px; background: red; color: white; border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 0.7rem;">✕</button>
+                            <button type="button" class="btn-eliminar-foto" data-foto-id="${foto.id}" onclick="eliminarFotoReflectivo(event)" style="position: absolute; top: 2px; right: 2px; background: red; color: white; border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 0.7rem;">✕</button>
                         `;
                         fotosContainer.appendChild(imgDiv);
                     });

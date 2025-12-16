@@ -371,9 +371,7 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     
     // Rutas antiguas (compatibilidad con frontend) - Aliases al nuevo controller
     Route::post('/cotizaciones/guardar', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'store'])->name('cotizaciones.guardar');
-    Route::post('/cotizaciones/reflectivo/guardar', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'storeReflectivo'])->name('cotizaciones.reflectivo.guardar');
     Route::get('/cotizaciones/reflectivo/{id}/editar', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'getReflectivoForEdit'])->name('cotizaciones.reflectivo.edit');
-    Route::put('/cotizaciones/reflectivo/{id}', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'updateReflectivo'])->name('cotizaciones.reflectivo.update');
     Route::get('/cotizaciones/{id}/editar-borrador', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'editBorrador'])->name('cotizaciones.edit-borrador');
     Route::delete('/cotizaciones/{id}/borrador', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'destroyBorrador'])->name('cotizaciones.destroy-borrador');
     Route::delete('/cotizaciones/{id}', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'destroy'])->name('cotizaciones.destroy');
@@ -410,6 +408,13 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     Route::get('/prendas/agregar', function () {
         return view('asesores.prendas.agregar-prendas');
     })->name('prendas.agregar');
+
+    // ========================================
+    // COTIZACIONES - Rutas protegidas (dentro del grupo asesores)
+    // ========================================
+    Route::post('/cotizaciones/reflectivo/guardar', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'storeReflectivo'])->name('cotizaciones.reflectivo.guardar');
+    Route::delete('/cotizaciones/{id}/borrador', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'destroyBorrador'])->name('cotizaciones.destroy-borrador');
+    Route::put('/cotizaciones/reflectivo/{id}', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'updateReflectivo'])->name('cotizaciones.reflectivo.update');
 
     // ========================================
     // COTIZACIONES DE PRENDA - Solo Asesor

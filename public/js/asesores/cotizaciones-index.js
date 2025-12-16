@@ -203,6 +203,98 @@ function eliminarBorrador(id) {
 }
 
 /**
+ * Elimina una cotización enviada con confirmación SweetAlert
+ * @param {number} id - ID de la cotización a eliminar
+ */
+function eliminarCotizacion(id) {
+    Swal.fire({
+        title: '¿Eliminar cotización?',
+        text: 'Esta acción no se puede deshacer',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#6b7280',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        customClass: {
+            popup: 'swal-custom-popup',
+            title: 'swal-custom-title',
+            confirmButton: 'swal-custom-confirm',
+            cancelButton: 'swal-custom-cancel'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            fetch(`/asesores/cotizaciones/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Animación de eliminación
+                    const rows = document.querySelectorAll('table tbody tr');
+                    rows.forEach(row => {
+                        const cell = row.querySelector(`a[onclick*="eliminarCotizacion(${id})"]`);
+                        if (cell) {
+                            row.style.transition = 'opacity 0.3s ease';
+                            row.style.opacity = '0';
+                            setTimeout(() => row.remove(), 300);
+                        }
+                    });
+                    
+                    // Toast de éxito
+                    Swal.fire({
+                        toast: true,
+                        position: 'top-end',
+                        icon: 'success',
+                        title: '¡Cotización eliminada!',
+                        showConfirmButton: false,
+                        timer: 3000,
+                        timerProgressBar: true,
+                        didOpen: (toast) => {
+                            toast.addEventListener('mouseenter', Swal.stopTimer)
+                            toast.addEventListener('mouseleave', Swal.resumeTimer)
+                        },
+                        customClass: {
+                            popup: 'swal-toast-popup',
+                            title: 'swal-toast-title'
+                        }
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'Error',
+                        text: data.message || 'No se pudo eliminar la cotización',
+                        icon: 'error',
+                        confirmButtonColor: '#1e40af',
+                        customClass: {
+                            popup: 'swal-custom-popup',
+                            title: 'swal-custom-title',
+                            confirmButton: 'swal-custom-confirm'
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Ocurrió un error al eliminar la cotización',
+                    icon: 'error',
+                    confirmButtonColor: '#1e40af',
+                    customClass: {
+                        popup: 'swal-custom-popup',
+                        title: 'swal-custom-title',
+                        confirmButton: 'swal-custom-confirm'
+                    }
+                });
+            });
+        }
+    });
+}
+
+/**
  * Inicialización al cargar el DOM
  */
 document.addEventListener('DOMContentLoaded', () => {

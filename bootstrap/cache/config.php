@@ -53,16 +53,16 @@
   array (
     'paths' => 
     array (
-      0 => 'C:\\Users\\Usuario\\Documents\\trabahiiiii\\v10\\v10\\mundoindustrial\\resources\\views',
+      0 => 'C:\\Users\\Usuario\\Documents\\proyecto\\v10\\mundoindustrial\\resources\\views',
     ),
-    'compiled' => 'C:\\Users\\Usuario\\Documents\\trabahiiiii\\v10\\v10\\mundoindustrial\\storage\\framework\\views',
+    'compiled' => 'C:\\Users\\Usuario\\Documents\\proyecto\\v10\\mundoindustrial\\storage\\framework\\views',
   ),
   'app' => 
   array (
     'name' => 'Mundo Industrial',
     'env' => 'local',
     'debug' => true,
-    'url' => 'http://DESKTOP-8UN1EHM:8000',
+    'url' => 'http://SERVERMI:8000',
     'frontend_url' => 'http://localhost:3000',
     'asset_url' => NULL,
     'timezone' => 'America/Bogota',
@@ -208,7 +208,7 @@
         'app_id' => '123456',
         'options' => 
         array (
-          'host' => 'DESKTOP-8UN1EHM',
+          'host' => 'SERVERMI',
           'port' => '8080',
           'scheme' => 'http',
           'useTLS' => false,
@@ -275,8 +275,8 @@
       'file' => 
       array (
         'driver' => 'file',
-        'path' => 'C:\\Users\\Usuario\\Documents\\trabahiiiii\\v10\\v10\\mundoindustrial\\storage\\framework/cache/data',
-        'lock_path' => 'C:\\Users\\Usuario\\Documents\\trabahiiiii\\v10\\v10\\mundoindustrial\\storage\\framework/cache/data',
+        'path' => 'C:\\Users\\Usuario\\Documents\\proyecto\\v10\\mundoindustrial\\storage\\framework/cache/data',
+        'lock_path' => 'C:\\Users\\Usuario\\Documents\\proyecto\\v10\\mundoindustrial\\storage\\framework/cache/data',
       ),
       'memcached' => 
       array (
@@ -352,11 +352,11 @@
       array (
         'driver' => 'mysql',
         'url' => NULL,
-        'host' => '127.0.0.1',
+        'host' => '192.168.0.54',
         'port' => '3306',
         'database' => 'mundo_bd',
-        'username' => 'root',
-        'password' => '29522628',
+        'username' => 'tu_usuario',
+        'password' => 'tu_password',
         'unix_socket' => '',
         'charset' => 'utf8mb4',
         'collation' => 'utf8mb4_unicode_ci',
@@ -372,11 +372,11 @@
       array (
         'driver' => 'mariadb',
         'url' => NULL,
-        'host' => '127.0.0.1',
+        'host' => '192.168.0.54',
         'port' => '3306',
         'database' => 'mundo_bd',
-        'username' => 'root',
-        'password' => '29522628',
+        'username' => 'tu_usuario',
+        'password' => 'tu_password',
         'unix_socket' => '',
         'charset' => 'utf8mb4',
         'collation' => 'utf8mb4_unicode_ci',
@@ -392,11 +392,11 @@
       array (
         'driver' => 'pgsql',
         'url' => NULL,
-        'host' => '127.0.0.1',
+        'host' => '192.168.0.54',
         'port' => '3306',
         'database' => 'mundo_bd',
-        'username' => 'root',
-        'password' => '29522628',
+        'username' => 'tu_usuario',
+        'password' => 'tu_password',
         'charset' => 'utf8',
         'prefix' => '',
         'prefix_indexes' => true,
@@ -407,11 +407,11 @@
       array (
         'driver' => 'sqlsrv',
         'url' => NULL,
-        'host' => '127.0.0.1',
+        'host' => '192.168.0.54',
         'port' => '3306',
         'database' => 'mundo_bd',
-        'username' => 'root',
-        'password' => '29522628',
+        'username' => 'tu_usuario',
+        'password' => 'tu_password',
         'charset' => 'utf8',
         'prefix' => '',
         'prefix_indexes' => true,
@@ -533,7 +533,7 @@
       'local' => 
       array (
         'driver' => 'local',
-        'root' => 'C:\\Users\\Usuario\\Documents\\trabahiiiii\\v10\\v10\\mundoindustrial\\storage\\app/private',
+        'root' => 'C:\\Users\\Usuario\\Documents\\proyecto\\v10\\mundoindustrial\\storage\\app/private',
         'serve' => true,
         'throw' => false,
         'report' => false,
@@ -541,8 +541,8 @@
       'public' => 
       array (
         'driver' => 'local',
-        'root' => 'C:\\Users\\Usuario\\Documents\\trabahiiiii\\v10\\v10\\mundoindustrial\\storage\\app/public',
-        'url' => 'http://DESKTOP-8UN1EHM:8000/storage',
+        'root' => 'C:\\Users\\Usuario\\Documents\\proyecto\\v10\\mundoindustrial\\storage\\app/public',
+        'url' => 'http://SERVERMI:8000/storage',
         'visibility' => 'public',
         'throw' => false,
         'report' => false,
@@ -563,7 +563,7 @@
     ),
     'links' => 
     array (
-      'C:\\Users\\Usuario\\Documents\\trabahiiiii\\v10\\v10\\mundoindustrial\\public\\storage' => 'C:\\Users\\Usuario\\Documents\\trabahiiiii\\v10\\v10\\mundoindustrial\\storage\\app/public',
+      'C:\\Users\\Usuario\\Documents\\proyecto\\v10\\mundoindustrial\\public\\storage' => 'C:\\Users\\Usuario\\Documents\\proyecto\\v10\\mundoindustrial\\storage\\app/public',
     ),
   ),
   'logging' => 
@@ -588,14 +588,14 @@
       'single' => 
       array (
         'driver' => 'single',
-        'path' => 'C:\\Users\\Usuario\\Documents\\trabahiiiii\\v10\\v10\\mundoindustrial\\storage\\logs/laravel.log',
+        'path' => 'C:\\Users\\Usuario\\Documents\\proyecto\\v10\\mundoindustrial\\storage\\logs/laravel.log',
         'level' => 'debug',
         'replace_placeholders' => true,
       ),
       'daily' => 
       array (
         'driver' => 'daily',
-        'path' => 'C:\\Users\\Usuario\\Documents\\trabahiiiii\\v10\\v10\\mundoindustrial\\storage\\logs/laravel.log',
+        'path' => 'C:\\Users\\Usuario\\Documents\\proyecto\\v10\\mundoindustrial\\storage\\logs/laravel.log',
         'level' => 'debug',
         'days' => 14,
         'replace_placeholders' => true,
@@ -660,12 +660,12 @@
       ),
       'emergency' => 
       array (
-        'path' => 'C:\\Users\\Usuario\\Documents\\trabahiiiii\\v10\\v10\\mundoindustrial\\storage\\logs/laravel.log',
+        'path' => 'C:\\Users\\Usuario\\Documents\\proyecto\\v10\\mundoindustrial\\storage\\logs/laravel.log',
       ),
       'security' => 
       array (
         'driver' => 'daily',
-        'path' => 'C:\\Users\\Usuario\\Documents\\trabahiiiii\\v10\\v10\\mundoindustrial\\storage\\logs/security.log',
+        'path' => 'C:\\Users\\Usuario\\Documents\\proyecto\\v10\\mundoindustrial\\storage\\logs/security.log',
         'level' => 'debug',
         'days' => 90,
         'replace_placeholders' => true,
@@ -687,7 +687,7 @@
         'username' => NULL,
         'password' => NULL,
         'timeout' => NULL,
-        'local_domain' => 'DESKTOP-8UN1EHM',
+        'local_domain' => 'SERVERMI',
       ),
       'ses' => 
       array (
@@ -746,7 +746,7 @@
       'theme' => 'default',
       'paths' => 
       array (
-        0 => 'C:\\Users\\Usuario\\Documents\\trabahiiiii\\v10\\v10\\mundoindustrial\\resources\\views/vendor/mail',
+        0 => 'C:\\Users\\Usuario\\Documents\\proyecto\\v10\\mundoindustrial\\resources\\views/vendor/mail',
       ),
     ),
   ),
@@ -833,7 +833,7 @@
         'host' => '127.0.0.1',
         'port' => '8080',
         'path' => '',
-        'hostname' => 'DESKTOP-8UN1EHM',
+        'hostname' => 'SERVERMI',
         'options' => 
         array (
           'tls' => 
@@ -872,7 +872,7 @@
           'app_id' => '123456',
           'options' => 
           array (
-            'host' => 'DESKTOP-8UN1EHM',
+            'host' => 'SERVERMI',
             'port' => '8080',
             'scheme' => 'http',
             'useTLS' => false,
@@ -926,7 +926,7 @@
     'lifetime' => 120,
     'expire_on_close' => false,
     'encrypt' => false,
-    'files' => 'C:\\Users\\Usuario\\Documents\\trabahiiiii\\v10\\v10\\mundoindustrial\\storage\\framework/sessions',
+    'files' => 'C:\\Users\\Usuario\\Documents\\proyecto\\v10\\mundoindustrial\\storage\\framework/sessions',
     'connection' => NULL,
     'table' => 'sessions',
     'store' => NULL,
@@ -950,10 +950,10 @@
     'convert_entities' => true,
     'options' => 
     array (
-      'font_dir' => 'C:\\Users\\Usuario\\Documents\\trabahiiiii\\v10\\v10\\mundoindustrial\\storage\\fonts',
-      'font_cache' => 'C:\\Users\\Usuario\\Documents\\trabahiiiii\\v10\\v10\\mundoindustrial\\storage\\fonts',
+      'font_dir' => 'C:\\Users\\Usuario\\Documents\\proyecto\\v10\\mundoindustrial\\storage\\fonts',
+      'font_cache' => 'C:\\Users\\Usuario\\Documents\\proyecto\\v10\\mundoindustrial\\storage\\fonts',
       'temp_dir' => 'C:\\Users\\Usuario\\AppData\\Local\\Temp',
-      'chroot' => 'C:\\Users\\Usuario\\Documents\\trabahiiiii\\v10\\v10\\mundoindustrial',
+      'chroot' => 'C:\\Users\\Usuario\\Documents\\proyecto\\v10\\mundoindustrial',
       'allowed_protocols' => 
       array (
         'data://' => 
