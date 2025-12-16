@@ -58,7 +58,7 @@ class ProcesoPrendaObserver
             }
 
             // Obtener el último proceso de TODAS las prendas del pedido, ordenado por fecha más reciente
-            $ultimoProceso = ProcesoPrenda::whereIn('prenda_pedido_id', $pedido->prendas()->pluck('id'))
+            $ultimoProceso = ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
                 ->orderBy('created_at', 'desc')
                 ->first();
 

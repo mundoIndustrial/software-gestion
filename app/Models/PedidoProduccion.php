@@ -235,7 +235,7 @@ class PedidoProduccion extends Model
     {
         // Obtener el último proceso de cualquiera de las prendas del pedido
         $ultimoProceso = ProcesoPrenda::whereIn('prenda_pedido_id', $this->prendas()->pluck('id'))
-            ->orderBy('created_at', 'desc')
+            ->orderBy('updated_at', 'desc')
             ->first();
 
         if ($ultimoProceso) {
@@ -281,7 +281,7 @@ class PedidoProduccion extends Model
         }
 
         // Obtener la última fecha de fin de todos los procesos
-        $ultimaFecha = ProcesoPrenda::whereIn('prenda_pedido_id', $this->prendas()->pluck('id'))
+        $ultimaFecha = ProcesoPrenda::where('numero_pedido', $this->numero_pedido)
             ->whereNotNull('fecha_fin')
             ->max('fecha_fin');
 
@@ -479,7 +479,7 @@ class PedidoProduccion extends Model
      */
     public function prendasPed(): HasMany
     {
-        return $this->hasMany(PrendaPed::class, 'pedido_produccion_id');
+        return $this->hasMany(PrendaPedido::class, 'numero_pedido', 'numero_pedido');
     }
 
     /**

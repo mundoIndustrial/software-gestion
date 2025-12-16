@@ -57,10 +57,10 @@ class RegistrosOptimizationService
     /**
      * Obtener prendas solo si es necesario (lazy loading)
      */
-    public static function getPrendasByPedido($pedidoId)
+    public static function getPrendasByPedido($numeroPedido)
     {
         return DB::table('prendas_pedido')
-            ->where('pedido_produccion_id', $pedidoId)
+            ->where('numero_pedido', $numeroPedido)
             ->select('id', 'nombre_prenda', 'cantidad', 'descripcion', 'cantidad_talla')
             ->get();
     }

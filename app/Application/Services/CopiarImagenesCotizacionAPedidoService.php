@@ -3,7 +3,7 @@
 namespace App\Application\Services;
 
 use App\Models\PrendaCot;
-use App\Models\PrendaPed;
+use App\Models\PrendaPedido;
 use App\Models\PrendaFotoPed;
 use Illuminate\Support\Facades\Log;
 
@@ -41,7 +41,9 @@ class CopiarImagenesCotizacionAPedidoService
             }
 
             // Obtener prendas del pedido en el mismo orden de creación
-            $prendasPedido = PrendaPed::where('pedido_produccion_id', $pedidoId)
+            // Obtener el numero_pedido desde el pedido_produccion_id
+            $pedido = \App\Models\PedidoProduccion::findOrFail($pedidoId);
+            $prendasPedido = PrendaPedido::where('numero_pedido', $pedido->numero_pedido)
                 ->orderBy('id')
                 ->get();
 
@@ -109,7 +111,7 @@ class CopiarImagenesCotizacionAPedidoService
      * 
      * @return int Cantidad de fotos copiadas
      */
-    private function copiarFotosPrenda(PrendaCot $prendaCot, PrendaPed $prendaPed): int
+    private function copiarFotosPrenda(PrendaCot $prendaCot, PrendaPedido $prendaPedido): int
     {
         try {
             $fotos = $prendaCot->fotos()->orderBy('orden')->get();
@@ -117,14 +119,14 @@ class CopiarImagenesCotizacionAPedidoService
             if ($fotos->isEmpty()) {
                 Log::debug('Prenda sin fotos', [
                     'prenda_cot_id' => $prendaCot->id,
-                    'prenda_ped_id' => $prendaPed->id
+                    'prenda_pedido_id' => $prendaPedido->id
                 ]);
                 return 0;
             }
 
             foreach ($fotos as $foto) {
                 PrendaFotoPed::create([
-                    'prenda_ped_id' => $prendaPed->id,
+                    'prenda_ped_id' => $prendaPedido->id,
                     'ruta_original' => $foto->ruta_original,
                     'ruta_webp' => $foto->ruta_webp,
                     'ruta_miniatura' => $foto->ruta_miniatura,
@@ -137,7 +139,7 @@ class CopiarImagenesCotizacionAPedidoService
 
             Log::info('📸 Fotos de prenda copiadas', [
                 'prenda_cot_id' => $prendaCot->id,
-                'prenda_ped_id' => $prendaPed->id,
+                'prenda_pedido_id' => $prendaPedido->id,
                 'cantidad_fotos' => $fotos->count()
             ]);
 
@@ -146,7 +148,7 @@ class CopiarImagenesCotizacionAPedidoService
         } catch (\Exception $e) {
             Log::error('❌ Error al copiar fotos de prenda', [
                 'prenda_cot_id' => $prendaCot->id,
-                'prenda_ped_id' => $prendaPed->id,
+                'prenda_pedido_id' => $prendaPedido->id,
                 'error' => $e->getMessage()
             ]);
             return 0;
@@ -158,7 +160,7 @@ class CopiarImagenesCotizacionAPedidoService
      * 
      * @return int Cantidad de fotos de tela copiadas
      */
-    private function copiarFotosTela(PrendaCot $prendaCot, PrendaPed $prendaPed): int
+    private function copiarFotosTela(PrendaCot $prendaCot, PrendaPedido $prendaPedido): int
     {
         try {
             $fotosTela = $prendaCot->telaFotos()->orderBy('orden')->get();
@@ -166,14 +168,14 @@ class CopiarImagenesCotizacionAPedidoService
             if ($fotosTela->isEmpty()) {
                 Log::debug('Prenda sin fotos de tela', [
                     'prenda_cot_id' => $prendaCot->id,
-                    'prenda_ped_id' => $prendaPed->id
+                    'prenda_pedido_id' => $prendaPedido->id
                 ]);
                 return 0;
             }
 
             // Primero crear una tela en el pedido para asociar las fotos
             $telaPed = \App\Models\PrendaTelaPed::create([
-                'prenda_ped_id' => $prendaPed->id,
+                'prenda_ped_id' => $prendaPedido->id,
                 'color_id' => null,
                 'tela_id' => null,
             ]);
@@ -194,7 +196,7 @@ class CopiarImagenesCotizacionAPedidoService
 
             Log::info('🧵 Fotos de tela copiadas', [
                 'prenda_cot_id' => $prendaCot->id,
-                'prenda_ped_id' => $prendaPed->id,
+                'prenda_pedido_id' => $prendaPedido->id,
                 'tela_ped_id' => $telaPed->id,
                 'cantidad_fotos_tela' => $fotosTela->count()
             ]);
@@ -204,7 +206,7 @@ class CopiarImagenesCotizacionAPedidoService
         } catch (\Exception $e) {
             Log::error('❌ Error al copiar fotos de tela', [
                 'prenda_cot_id' => $prendaCot->id,
-                'prenda_ped_id' => $prendaPed->id,
+                'prenda_pedido_id' => $prendaPedido->id,
                 'error' => $e->getMessage()
             ]);
             return 0;
