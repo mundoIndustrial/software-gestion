@@ -31,6 +31,7 @@ final class CotizacionesViewController extends Controller
             $cotizacionesModelo = \App\Models\Cotizacion::where('asesor_id', Auth::id())
                 ->with([
                     'cliente',
+                    'tipoCotizacion',
                     'prendas.fotos',
                     'prendas.tallas',
                     'prendas.variantes',
@@ -40,13 +41,22 @@ final class CotizacionesViewController extends Controller
                 ])
                 ->orderBy('created_at', 'desc')
                 ->get();
+            // Mapeo de tipo_cotizacion_id a código
+            $mapeoTipos = [
+                1 => 'PL',  // Combinada
+                2 => 'L',   // Logo
+                3 => 'P',   // Prenda
+                4 => 'RF',  // Reflectivo
+            ];
 
             // Convertir modelos a objetos para la vista
-            $cotizaciones = $cotizacionesModelo->map(function($cot) {
+            $cotizaciones = $cotizacionesModelo->map(function($cot) use ($mapeoTipos) {
+                $tipo = $mapeoTipos[$cot->tipo_cotizacion_id] ?? 'P';
                 $obj = (object)[
                     'id' => $cot->id,
                     'numero_cotizacion' => $cot->numero_cotizacion,
-                    'tipo' => $cot->tipo_cotizacion_id ? ($cot->tipoCotizacion->codigo ?? 'P') : 'P',
+                    'tipo' => $tipo,
+                    'tipo_cotizacion_id' => $cot->tipo_cotizacion_id,
                     'estado' => $cot->estado,
                     'es_borrador' => $cot->es_borrador,
                     'cliente' => $cot->cliente ? $cot->cliente->nombre : 'Sin cliente',

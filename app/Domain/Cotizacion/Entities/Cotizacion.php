@@ -289,10 +289,11 @@ final class Cotizacion
 
     /**
      * Verificar si puede ser eliminada
+     * Permite eliminar tanto borradores como cotizaciones enviadas
      */
     public function puedeSerEliminada(): bool
     {
-        return $this->esBorrador;
+        return true;
     }
 
     /**
@@ -343,12 +344,13 @@ final class Cotizacion
     public function toArray(): array
     {
         // Mapear tipo a tipo_cotizacion_id
-        // BD: ID 1 = PL (Combinada), ID 2 = L (Logo), ID 3 = P (Prenda)
+        // BD: ID 1 = PL (Combinada), ID 2 = L (Logo), ID 3 = P (Prenda), ID 4 = RF (Reflectivo)
         $tipoCotizacionId = match($this->tipo->value) {
-            'P' => 3,   // Prenda únicamente
-            'L' => 2,   // Logo/Bordado únicamente
-            'PL' => 1,  // Combinada (Prenda + Logo/Bordado)
-            'PB' => 1,  // Alias para Combinada (Prenda + Bordado)
+            'P' => 3,    // Prenda únicamente
+            'L' => 2,    // Logo/Bordado únicamente
+            'PL' => 1,   // Combinada (Prenda + Logo/Bordado)
+            'PB' => 1,   // Alias para Combinada (Prenda + Bordado)
+            'RF' => 4,   // Reflectivo
             default => 3,
         };
 

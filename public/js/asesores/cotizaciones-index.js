@@ -207,6 +207,7 @@ function eliminarBorrador(id) {
  * @param {number} id - ID de la cotización a eliminar
  */
 function eliminarCotizacion(id) {
+    console.log('🗑️ eliminarCotizacion() llamado con id:', id);
     Swal.fire({
         title: '¿Eliminar cotización?',
         text: 'Esta acción no se puede deshacer',
@@ -224,20 +225,28 @@ function eliminarCotizacion(id) {
         }
     }).then((result) => {
         if (result.isConfirmed) {
+            console.log('✅ Usuario confirmó eliminación, enviando DELETE a /asesores/cotizaciones/' + id);
             fetch(`/asesores/cotizaciones/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('📡 Respuesta recibida, status:', response.status);
+                return response.json();
+            })
             .then(data => {
+                console.log('📦 Datos de respuesta:', data);
                 if (data.success) {
+                    console.log('✅ Eliminación exitosa, removiendo fila de la tabla');
                     // Animación de eliminación
                     const rows = document.querySelectorAll('table tbody tr');
+                    console.log('🔍 Total de filas encontradas:', rows.length);
                     rows.forEach(row => {
                         const cell = row.querySelector(`a[onclick*="eliminarCotizacion(${id})"]`);
                         if (cell) {
+                            console.log('🎯 Fila encontrada, animando eliminación');
                             row.style.transition = 'opacity 0.3s ease';
                             row.style.opacity = '0';
                             setTimeout(() => row.remove(), 300);
@@ -263,6 +272,7 @@ function eliminarCotizacion(id) {
                         }
                     });
                 } else {
+                    console.error('❌ Error en respuesta:', data.message);
                     Swal.fire({
                         title: 'Error',
                         text: data.message || 'No se pudo eliminar la cotización',
@@ -277,7 +287,7 @@ function eliminarCotizacion(id) {
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('❌ Error en fetch:', error);
                 Swal.fire({
                     title: 'Error',
                     text: 'Ocurrió un error al eliminar la cotización',
