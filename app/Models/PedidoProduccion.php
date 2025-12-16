@@ -234,7 +234,7 @@ class PedidoProduccion extends Model
     public function getAreaActual()
     {
         // Obtener el último proceso de cualquiera de las prendas del pedido
-        $ultimoProceso = ProcesoPrenda::whereIn('prenda_pedido_id', $this->prendas()->pluck('id'))
+        $ultimoProceso = ProcesoPrenda::where('numero_pedido', $this->numero_pedido)
             ->orderBy('updated_at', 'desc')
             ->first();
 
