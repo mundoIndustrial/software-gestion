@@ -289,11 +289,11 @@ final class Cotizacion
 
     /**
      * Verificar si puede ser eliminada
-     * Permite eliminar tanto borradores como cotizaciones enviadas
+     * Solo permite eliminar cotizaciones en estado borrador
      */
     public function puedeSerEliminada(): bool
     {
-        return true;
+        return $this->esBorrador();
     }
 
     /**

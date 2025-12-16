@@ -325,6 +325,96 @@ final class CotizacionController extends Controller
     }
 
     /**
+     * Borrar imagen de prenda específica
+     */
+    public function borrarImagenPrenda(Request $request, $id)
+    {
+        try {
+            $fotoId = $request->input('foto_id');
+            
+            Log::info('🗑️ Borrando imagen de prenda:', ['foto_id' => $fotoId, 'cotizacion_id' => $id]);
+            
+            // Buscar y borrar la imagen
+            $foto = \App\Models\PrendaFotoCot::find($fotoId);
+            
+            if (!$foto) {
+                Log::warning('⚠️ Imagen no encontrada:', ['foto_id' => $fotoId]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Imagen no encontrada'
+                ], 404);
+            }
+            
+            // Borrar archivo del storage
+            if ($foto->ruta_original && \Storage::disk('public')->exists($foto->ruta_original)) {
+                \Storage::disk('public')->delete($foto->ruta_original);
+            }
+            
+            // Borrar la imagen de la BD
+            $foto->forceDelete();
+            
+            Log::info('✅ Imagen de prenda borrada exitosamente:', ['foto_id' => $fotoId]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Imagen borrada exitosamente'
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('❌ Error al borrar imagen de prenda:', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al borrar imagen: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Borrar imagen de tela específica
+     */
+    public function borrarImagenTela(Request $request, $id)
+    {
+        try {
+            $fotoId = $request->input('foto_id');
+            
+            Log::info('🗑️ Borrando imagen de tela:', ['foto_id' => $fotoId, 'cotizacion_id' => $id]);
+            
+            // Buscar y borrar la imagen
+            $foto = \App\Models\PrendaTelaFotoCot::find($fotoId);
+            
+            if (!$foto) {
+                Log::warning('⚠️ Imagen de tela no encontrada:', ['foto_id' => $fotoId]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Imagen no encontrada'
+                ], 404);
+            }
+            
+            // Borrar archivo del storage
+            if ($foto->ruta_original && \Storage::disk('public')->exists($foto->ruta_original)) {
+                \Storage::disk('public')->delete($foto->ruta_original);
+            }
+            
+            // Borrar la imagen de la BD
+            $foto->forceDelete();
+            
+            Log::info('✅ Imagen de tela borrada exitosamente:', ['foto_id' => $fotoId]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Imagen borrada exitosamente'
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('❌ Error al borrar imagen de tela:', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al borrar imagen: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Crear cotización
      */
     public function store(Request $request): JsonResponse
@@ -1360,6 +1450,37 @@ final class CotizacionController extends Controller
                 $esBorrador = ($validated['action'] === 'borrador');
                 $estado = $esBorrador ? 'BORRADOR' : 'ENVIADA_CONTADOR';
 
+                // Procesar especificaciones - PRESERVAR LAS EXISTENTES SI NO HAY NUEVAS
+                $especificacionesExistentes = $cotizacion->especificaciones 
+                    ? (is_string($cotizacion->especificaciones) ? json_decode($cotizacion->especificaciones, true) : $cotizacion->especificaciones)
+                    : [];
+                
+                $especificacionesArray = $especificacionesExistentes;
+                
+                if ($request->has('especificaciones')) {
+                    $especificacionesData = $validated['especificaciones'] ?? '{}';
+                    if (is_string($especificacionesData)) {
+                        $nuevasEspecificaciones = json_decode($especificacionesData, true) ?? [];
+                    } else {
+                        $nuevasEspecificaciones = is_array($especificacionesData) ? $especificacionesData : [];
+                    }
+                    
+                    Log::info('🔍 DEBUG Especificaciones en updateReflectivo', [
+                        'especificaciones_data_recibida' => $especificacionesData,
+                        'nuevas_especificaciones_parseadas' => $nuevasEspecificaciones,
+                        'especificaciones_existentes' => $especificacionesExistentes,
+                        'es_vacio' => empty($nuevasEspecificaciones),
+                    ]);
+                    
+                    // Solo actualizar si hay especificaciones reales (no solo {} o [])
+                    if (!empty($nuevasEspecificaciones) && $nuevasEspecificaciones !== []) {
+                        $especificacionesArray = $nuevasEspecificaciones;
+                        Log::info('✅ Actualizando especificaciones con nuevos datos');
+                    } else {
+                        Log::info('ℹ️ Preservando especificaciones existentes (nuevas están vacías)');
+                    }
+                }
+
                 // Actualizar cotización
                 $cotizacion->update([
                     'cliente_id' => $cliente->id,
@@ -1368,6 +1489,7 @@ final class CotizacionController extends Controller
                     'estado' => $estado,
                     'numero_cotizacion' => !$esBorrador && !$cotizacion->numero_cotizacion ? $this->generarNumeroCotizacion() : $cotizacion->numero_cotizacion,
                     'fecha_envio' => !$esBorrador && !$cotizacion->fecha_envio ? \Carbon\Carbon::now('America/Bogota') : $cotizacion->fecha_envio,
+                    'especificaciones' => json_encode($especificacionesArray),
                 ]);
 
                 Log::info('✅ Cotización RF actualizada', ['cotizacion_id' => $cotizacion->id]);
@@ -1458,16 +1580,20 @@ final class CotizacionController extends Controller
                     $imagenesAEliminar = $request->input('imagenes_a_eliminar');
                     if (is_string($imagenesAEliminar)) {
                         $imagenesAEliminar = json_decode($imagenesAEliminar, true) ?? [];
+                    } elseif (!is_array($imagenesAEliminar)) {
+                        $imagenesAEliminar = [];
                     }
                     
-                    foreach ($imagenesAEliminar as $fotoId) {
-                        $foto = \App\Models\ReflectivoCotizacionFoto::findOrFail($fotoId);
-                        // Eliminar archivo
-                        if ($foto->ruta_original && Storage::disk('public')->exists($foto->ruta_original)) {
-                            Storage::disk('public')->delete($foto->ruta_original);
+                    if (is_array($imagenesAEliminar) && count($imagenesAEliminar) > 0) {
+                        foreach ($imagenesAEliminar as $fotoId) {
+                            $foto = \App\Models\ReflectivoCotizacionFoto::findOrFail($fotoId);
+                            // Eliminar archivo
+                            if ($foto->ruta_original && Storage::disk('public')->exists($foto->ruta_original)) {
+                                Storage::disk('public')->delete($foto->ruta_original);
+                            }
+                            $foto->delete();
+                            Log::info('📸 Imagen eliminada', ['foto_id' => $fotoId, 'ruta' => $foto->ruta_original]);
                         }
-                        $foto->delete();
-                        Log::info('📸 Imagen eliminada', ['foto_id' => $fotoId, 'ruta' => $foto->ruta_original]);
                     }
                 }
 
@@ -1569,16 +1695,34 @@ final class CotizacionController extends Controller
     }
 
     /**
-     * Generar número de cotización único
+     * Generar número de cotización único usando secuencia universal
      */
     private function generarNumeroCotizacion(): string
     {
+        // Usar secuencia universal para TODAS las cotizaciones
+        $secuencia = DB::table('numero_secuencias')
+            ->where('nombre', 'cotizaciones_universal')
+            ->first();
+        
+        if (!$secuencia) {
+            // Fallback si no existe la secuencia
+            $mes = date('m');
+            $anio = date('y');
+            $contador = \App\Models\Cotizacion::where('numero_cotizacion', 'like', "COT-{$anio}{$mes}-%")
+                ->count() + 1;
+            return sprintf('COT-%s%s-%04d', $anio, $mes, $contador);
+        }
+        
+        // Incrementar el contador
+        $nuevoNumero = $secuencia->numero_actual + 1;
+        DB::table('numero_secuencias')
+            ->where('nombre', 'cotizaciones_universal')
+            ->update(['numero_actual' => $nuevoNumero]);
+        
+        // Generar número con formato
         $mes = date('m');
         $anio = date('y');
-        $contador = \App\Models\Cotizacion::where('numero_cotizacion', 'like', "COT-{$anio}{$mes}-%")
-            ->count() + 1;
-        
-        return sprintf('COT-%s%s-%04d', $anio, $mes, $contador);
+        return sprintf('COT-%s%s-%04d', $anio, $mes, $nuevoNumero);
     }
 
     /**
@@ -1590,7 +1734,7 @@ final class CotizacionController extends Controller
     public function editBorrador(int $id)
     {
         try {
-            $cotizacion = Cotizacion::findOrFail($id);
+            $cotizacion = \App\Models\Cotizacion::findOrFail($id);
 
             // Verificar que el borrador sea del asesor autenticado
             if ($cotizacion->asesor_id !== auth()->id()) {
@@ -1605,7 +1749,7 @@ final class CotizacionController extends Controller
             // Mapeo de tipos a rutas de redirección
             $mapeoTipos = [
                 1 => '/asesores/pedidos/create?tipo=PB&editar={id}',
-                2 => '/asesores/cotizaciones/bordado/{id}/editar',
+                2 => '/asesores/cotizaciones/bordado/crear?editar={id}',
                 3 => '/asesores/cotizaciones/prenda/{id}/editar',
                 4 => null, // Reflectivo se maneja especialmente
             ];
@@ -1614,7 +1758,25 @@ final class CotizacionController extends Controller
 
             // Si es Reflectivo (tipo 4), mostrar la vista
             if ($tipoCotizacionId === 4) {
-                return view('asesores.pedidos.create-reflectivo', ['cotizacion' => $cotizacion, 'esEdicion' => true]);
+                // Cargar datos completos del reflectivo
+                $cotizacion->load(['cliente', 'prendas', 'reflectivoCotizacion.fotos']);
+                
+                // Preparar datos iniciales en formato JSON
+                $datosIniciales = [
+                    'id' => $cotizacion->id,
+                    'cliente' => $cotizacion->cliente ? ['id' => $cotizacion->cliente->id, 'nombre' => $cotizacion->cliente->nombre] : null,
+                    'fecha_inicio' => $cotizacion->fecha_inicio,
+                    'especificaciones' => $cotizacion->especificaciones,
+                    'prendas' => $cotizacion->prendas ? $cotizacion->prendas->toArray() : [],
+                    'reflectivo_cotizacion' => $cotizacion->reflectivoCotizacion ? $cotizacion->reflectivoCotizacion->toArray() : null,
+                    'reflectivo' => $cotizacion->reflectivoCotizacion ? $cotizacion->reflectivoCotizacion->toArray() : null,
+                ];
+                
+                return view('asesores.pedidos.create-reflectivo', [
+                    'cotizacionId' => $cotizacion->id,
+                    'datosIniciales' => json_encode($datosIniciales),
+                    'esEdicion' => true
+                ]);
             }
 
             // Para otros tipos, obtener la ruta y redirigir

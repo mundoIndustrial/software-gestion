@@ -1,3 +1,4 @@
+OR
 @extends('layouts.asesores')
 
 @push('styles')
@@ -429,7 +430,7 @@
             <div style="display: flex; align-items: center; gap: 0.75rem; grid-column: 1 / -1;">
                 <span class="material-symbols-rounded" style="font-size: 1.75rem; color: white;">brush</span>
                 <div>
-                    <h2 style="margin: 0; color: white; font-size: 1.25rem; font-weight: 700;">Cotización de Bordado</h2>
+                    <h2 style="margin: 0; color: white; font-size: 1.25rem; font-weight: 700;">Cotización de Logo</h2>
                     <p style="margin: 0.2rem 0 0 0; color: rgba(255,255,255,0.85); font-size: 0.8rem;">Completa los datos de la cotización</p>
                 </div>
             </div>
@@ -568,7 +569,9 @@
     </div>
 </div>
 
+@if(!isset($cotizacion) || !$cotizacion)
 <script src="{{ asset('js/asesores/cotizaciones/persistencia.js') }}"></script>
+@endif
 
 <script>
 // Arrays para almacenar datos
@@ -576,6 +579,18 @@ let tecnicasSeleccionadas = [];
 let seccionesSeleccionadas = [];
 let observacionesGenerales = [];
 let imagenesSeleccionadas = [];
+let imagenesABorrar = [];  // Rastrear IDs de imágenes a borrar
+
+// Crear un Proxy para rastrear cambios en tecnicasSeleccionadas
+const originalTecnicas = tecnicasSeleccionadas;
+tecnicasSeleccionadas = new Proxy(originalTecnicas, {
+    set(target, property, value) {
+        console.log(`🔔 tecnicasSeleccionadas.${property} = ${value}`);
+        console.trace('📍 Stack trace:');
+        target[property] = value;
+        return true;
+    }
+});
 
 // Opciones por ubicación
 const opcionesPorUbicacion = {
@@ -646,7 +661,47 @@ function renderizarImagenes() {
 }
 
 function eliminarImagen(index) {
+    const imagenAEliminar = imagenesSeleccionadas[index];
+    
+    console.log('🗑️ Eliminando imagen:', imagenAEliminar);
+    
+    // Si es una imagen existente (tiene ID), borrarla inmediatamente de la BD
+    if (imagenAEliminar.existing && imagenAEliminar.id) {
+        console.log('🗑️ Borrando imagen de la BD:', imagenAEliminar.id);
+        
+        // Obtener cotizacion_id de la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const cotizacionId = urlParams.get('editar');
+        
+        if (cotizacionId) {
+            // Hacer petición AJAX para borrar la imagen
+            fetch(`/cotizaciones-bordado/${cotizacionId}/borrar-imagen`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ||
+                                   document.querySelector('input[name="_token"]')?.value
+                },
+                body: JSON.stringify({
+                    foto_id: imagenAEliminar.id
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('✅ Imagen borrada de la BD:', imagenAEliminar.id);
+                } else {
+                    console.error('❌ Error al borrar imagen:', data.message);
+                }
+            })
+            .catch(error => console.error('❌ Error en petición:', error));
+        }
+    }
+    
+    // SIEMPRE quitar la imagen del array (sea existente o nueva)
     imagenesSeleccionadas.splice(index, 1);
+    console.log('📸 imagenesSeleccionadas después de eliminar:', imagenesSeleccionadas);
+    
     renderizarImagenes();
 }
 
@@ -654,6 +709,11 @@ function eliminarImagen(index) {
 function agregarTecnica() {
     const selector = document.getElementById('selector_tecnicas');
     const tecnica = selector.value;
+    
+    console.log('➕ Agregando técnica:', tecnica);
+    console.log('📊 tecnicasSeleccionadas antes:', tecnicasSeleccionadas);
+    console.log('📊 Tipo de tecnicasSeleccionadas:', typeof tecnicasSeleccionadas);
+    console.log('📊 Es array?', Array.isArray(tecnicasSeleccionadas));
     
     if (!tecnica) {
         alert('Selecciona una técnica');
@@ -666,6 +726,8 @@ function agregarTecnica() {
     }
     
     tecnicasSeleccionadas.push(tecnica);
+    console.log('📊 tecnicasSeleccionadas después de push:', tecnicasSeleccionadas);
+    console.log('📊 Length después de push:', tecnicasSeleccionadas.length);
     selector.value = '';
     renderizarTecnicas();
 }
@@ -919,7 +981,15 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
 
     const cliente = document.getElementById('cliente').value;
     const asesora = document.getElementById('asesora').value;
+    const descripcion = document.getElementById('descripcion').value;
     const observacionesTecnicas = document.getElementById('observaciones_tecnicas').value;
+
+    console.log('📋 Valores sincronizados:', {
+        cliente: cliente,
+        asesora: asesora,
+        descripcion: descripcion,
+        observacionesTecnicas: observacionesTecnicas
+    });
 
     if (!cliente || !asesora) {
         Swal.fire('⚠️ Campos Incompletos', 'Completa el cliente y otros campos obligatorios', 'warning');
@@ -936,6 +1006,22 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     console.log('🔵 Botón presionado:', submitButton?.textContent?.trim());
     console.log('🔵 Acción:', action);
     console.log('⏳ Enviando cotización...');
+    console.log('🎨 tecnicasSeleccionadas ANTES de enviar:', tecnicasSeleccionadas);
+    console.log('🎨 Tipo de tecnicasSeleccionadas:', typeof tecnicasSeleccionadas);
+    console.log('🎨 Es array?', Array.isArray(tecnicasSeleccionadas));
+
+    // Determinar si es edición o creación
+    let url, method;
+    if (window.location.search.includes('editar=')) {
+        // Editando borrador
+        const cotizacionId = new URLSearchParams(window.location.search).get('editar');
+        url = `/cotizaciones-bordado/${cotizacionId}/borrador`;
+        method = 'PUT';
+    } else {
+        // Creando nueva cotización
+        url = `/cotizaciones-bordado`;
+        method = 'POST';
+    }
 
     // Leer observaciones generales del DOM con TODA la información
     const observacionesDelDOM = [];
@@ -962,6 +1048,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
     const data = {
         _token: document.querySelector('input[name="_token"]').value,
         cliente: cliente,
+        descripcion: descripcion,
         asesora: asesora,
         fecha: document.getElementById('header-fecha').value,
         action: action,
@@ -971,34 +1058,105 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
         observaciones_generales: observacionesDelDOM
     };
 
-    // Preparar FormData para subir imágenes
-    const formData = new FormData();
+    console.log('📦 Datos a enviar:', data);
+    console.log('🎨 Técnicas seleccionadas:', tecnicasSeleccionadas);
+    console.log('📍 Ubicaciones seleccionadas:', seccionesSeleccionadas);
+    console.log('📝 Observaciones generales:', observacionesDelDOM);
+
+    // Verificar si hay imágenes nuevas
+    const tieneImagenesNuevas = imagenesSeleccionadas.some(img => !img.existing);
     
-    // Agregar datos JSON
-    Object.keys(data).forEach(key => {
-        if (Array.isArray(data[key]) || typeof data[key] === 'object') {
-            formData.append(key, JSON.stringify(data[key]));
-        } else {
-            formData.append(key, data[key]);
-        }
-    });
+    console.log('📸 ¿Tiene imágenes nuevas?', tieneImagenesNuevas);
+    
+    let response;
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content ||
+                     document.querySelector('input[name="_token"]')?.value;
 
-    // Agregar imágenes
-    imagenesSeleccionadas.forEach((img) => {
-        formData.append('imagenes[]', img.file);
-    });
-
-    try {
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || 
-                         document.querySelector('input[name="_token"]')?.value;
+    if (tieneImagenesNuevas) {
+        // Si hay imágenes nuevas, usar FormData
+        const formData = new FormData();
         
-        const response = await fetch('{{ route("asesores.cotizaciones-bordado.store") }}', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRF-TOKEN': csrfToken
+        // Si es PUT, agregar _method para que Laravel lo reconozca
+        if (method === 'PUT') {
+            formData.append('_method', 'PUT');
+        }
+        
+        // Agregar datos JSON
+        Object.keys(data).forEach(key => {
+            if (Array.isArray(data[key]) || typeof data[key] === 'object') {
+                formData.append(key, JSON.stringify(data[key]));
+            } else {
+                formData.append(key, data[key]);
             }
         });
+        
+        console.log('📤 FormData enviado (cliente):', formData.get('cliente'));
+        console.log('📤 FormData enviado (tecnicas):', formData.get('tecnicas'));
+        console.log('📤 FormData enviado (descripcion):', formData.get('descripcion'));
+        console.log('📤 FormData enviado (observaciones_tecnicas):', formData.get('observaciones_tecnicas'));
+
+        // Agregar solo imágenes nuevas (no existentes)
+        imagenesSeleccionadas.forEach((img) => {
+            if (!img.existing) {
+                formData.append('imagenes[]', img.file);
+            }
+        });
+        
+        // Agregar IDs de imágenes a borrar DIRECTAMENTE al FormData
+        formData.append('imagenes_a_borrar', JSON.stringify(imagenesABorrar));
+        console.log('📤 FormData enviado (imagenes_a_borrar):', formData.get('imagenes_a_borrar'));
+
+        // Enviar IDs de imágenes existentes para preservarlas
+        console.log('📸 imagenesSeleccionadas completo:', imagenesSeleccionadas);
+        const imagenesExistentesIds = imagenesSeleccionadas
+            .filter(img => img.existing)
+            .map(img => img.id);
+
+        console.log('📸 Imágenes existentes a preservar:', imagenesExistentesIds);
+        
+        // IMPORTANTE: Siempre enviar imagenes_existentes, aunque sea vacío
+        formData.append('imagenes_existentes', JSON.stringify(imagenesExistentesIds));
+
+        try {
+            response = await fetch(url, {
+                method: method,
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken
+                }
+            });
+        } catch (error) {
+            console.error('❌ Error en el fetch con FormData:', error);
+            throw error;
+        }
+    } else {
+        // Si NO hay imágenes nuevas, enviar como JSON
+        console.log('📤 Enviando como JSON (sin imágenes nuevas)');
+        
+        // Agregar datos adicionales al objeto data
+        data.imagenes_a_borrar = imagenesABorrar;
+        data.imagenes_existentes = imagenesSeleccionadas
+            .filter(img => img.existing)
+            .map(img => img.id);
+        
+        console.log('📤 Datos JSON a enviar:', data);
+        
+        try {
+            response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                body: JSON.stringify(data)
+            });
+        } catch (error) {
+            console.error('❌ Error en el fetch con JSON:', error);
+            throw error;
+        }
+    }
+
+    try {
 
         const result = await response.json();
 
@@ -1011,7 +1169,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
             
             Swal.fire({
                 title: '✅ Éxito',
-                text: 'Cotización guardada en borrador',
+                text: result.message || 'Cotización guardada exitosamente',
                 icon: 'success',
                 confirmButtonText: 'Continuar'
             }).then(() => {
@@ -1046,11 +1204,18 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
 
 // Cargar datos al iniciar
 document.addEventListener('DOMContentLoaded', function() {
+    // Cargar datos del borrador si existe (antes de cualquier limpieza)
+    @if(isset($cotizacion) && $cotizacion)
+        console.log('🔄 Iniciando carga de datos del borrador...');
+        cargarDatosBorrador(@json($cotizacion));
+    @endif
+
     // Crear función de guardado para bordado
     function guardarBordadoEnStorage() {
         try {
             const datos = {
                 cliente: document.querySelector('[name="cliente"]')?.value || '',
+                descripcion: document.getElementById('descripcion')?.value || '',
                 asesora: document.querySelector('[name="asesora"]')?.value || '',
                 observaciones_tecnicas: document.querySelector('[name="observaciones_tecnicas"]')?.value || '',
                 tecnicas: tecnicasSeleccionadas,
@@ -1058,23 +1223,204 @@ document.addEventListener('DOMContentLoaded', function() {
                 observaciones_generales: observacionesGenerales,
                 timestamp: new Date().toISOString()
             };
-            
+
             localStorage.setItem('cotizacion_bordado_datos', JSON.stringify(datos));
             console.log('💾 Datos bordado guardados en localStorage');
         } catch (error) {
             console.error('❌ Error al guardar bordado:', error);
         }
     }
-    
+
     // Auto-guardar cada 5 segundos
     setInterval(guardarBordadoEnStorage, 5000);
-    
+
     // Guardar antes de cerrar la página
     window.addEventListener('beforeunload', function() {
         guardarBordadoEnStorage();
     });
-    
+
     console.log('⏱️ Auto-guardado bordado configurado (cada 5 segundos)');
 });
+
+// Función para cargar datos del borrador
+function cargarDatosBorrador(cotizacion) {
+    console.log('📥 Cargando datos del borrador:', cotizacion);
+
+    try {
+        // Cargar cliente
+        console.log('👤 Cliente en cotizacion:', cotizacion.cliente);
+        console.log('👤 Tipo de cliente:', typeof cotizacion.cliente);
+        
+        let nombreCliente = null;
+        
+        // Manejar si cliente es un objeto con propiedad nombre
+        if (cotizacion.cliente && typeof cotizacion.cliente === 'object' && cotizacion.cliente.nombre) {
+            nombreCliente = cotizacion.cliente.nombre;
+        } 
+        // Manejar si cliente es directamente un string
+        else if (typeof cotizacion.cliente === 'string') {
+            nombreCliente = cotizacion.cliente;
+        }
+        
+        if (nombreCliente) {
+            console.log('✅ Cargando cliente:', nombreCliente);
+            document.getElementById('header-cliente').value = nombreCliente;
+            document.getElementById('cliente').value = nombreCliente;
+        } else {
+            console.log('⚠️ No se encontró cliente en cotizacion');
+        }
+
+        // Cargar descripción
+        if (cotizacion.logo_cotizacion && cotizacion.logo_cotizacion.descripcion) {
+            console.log('📝 Descripción encontrada:', cotizacion.logo_cotizacion.descripcion);
+            document.getElementById('descripcion').value = cotizacion.logo_cotizacion.descripcion;
+        } else {
+            console.log('⚠️ No se encontró descripción en logo_cotizacion');
+        }
+
+        // Cargar técnicas - SOLO si tecnicasSeleccionadas está vacío (no se han agregado en la página actual)
+        if (tecnicasSeleccionadas.length === 0) {
+            if (cotizacion.logo_cotizacion && cotizacion.logo_cotizacion.tecnicas) {
+                console.log('🎨 Técnicas encontradas en BD:', cotizacion.logo_cotizacion.tecnicas);
+                console.log('🎨 Tipo de técnicas:', typeof cotizacion.logo_cotizacion.tecnicas);
+
+                const tecnicas = typeof cotizacion.logo_cotizacion.tecnicas === 'string'
+                    ? JSON.parse(cotizacion.logo_cotizacion.tecnicas)
+                    : cotizacion.logo_cotizacion.tecnicas;
+
+                console.log('🎨 Técnicas parseadas:', tecnicas);
+                console.log('🎨 Es array?', Array.isArray(tecnicas));
+
+                if (Array.isArray(tecnicas) && tecnicas.length > 0) {
+                    tecnicasSeleccionadas = tecnicas;
+                    renderizarTecnicas();
+                    console.log('✅ Técnicas cargadas correctamente:', tecnicasSeleccionadas);
+                } else {
+                    console.log('⚠️ Técnicas vacías en BD, no se cargan');
+                }
+            } else {
+                console.log('⚠️ No se encontraron técnicas en logo_cotizacion');
+            }
+        } else {
+            console.log('✅ tecnicasSeleccionadas ya tiene datos, no se sobrescriben:', tecnicasSeleccionadas);
+        }
+
+        // Cargar ubicaciones
+        if (cotizacion.logo_cotizacion && cotizacion.logo_cotizacion.ubicaciones) {
+            const ubicaciones = typeof cotizacion.logo_cotizacion.ubicaciones === 'string'
+                ? JSON.parse(cotizacion.logo_cotizacion.ubicaciones)
+                : cotizacion.logo_cotizacion.ubicaciones;
+
+            if (Array.isArray(ubicaciones)) {
+                seccionesSeleccionadas = ubicaciones;
+                renderizarSecciones();
+            }
+        }
+
+        // Cargar observaciones técnicas
+        if (cotizacion.logo_cotizacion && cotizacion.logo_cotizacion.observaciones_tecnicas) {
+            console.log('📝 Observaciones técnicas encontradas:', cotizacion.logo_cotizacion.observaciones_tecnicas);
+            document.getElementById('observaciones_tecnicas').value = cotizacion.logo_cotizacion.observaciones_tecnicas;
+        } else {
+            console.log('⚠️ No se encontraron observaciones técnicas');
+        }
+
+        // Cargar observaciones generales
+        if (cotizacion.logo_cotizacion && cotizacion.logo_cotizacion.observaciones_generales) {
+            const observaciones = typeof cotizacion.logo_cotizacion.observaciones_generales === 'string'
+                ? JSON.parse(cotizacion.logo_cotizacion.observaciones_generales)
+                : cotizacion.logo_cotizacion.observaciones_generales;
+
+            if (Array.isArray(observaciones)) {
+                observaciones.forEach(obs => {
+                    agregarObservacionDesdeBorrador(obs);
+                });
+            }
+        }
+
+        // Cargar imágenes si existen
+        console.log('📸 Fotos en logo_cotizacion:', cotizacion.logo_cotizacion?.fotos);
+        if (cotizacion.logo_cotizacion && cotizacion.logo_cotizacion.fotos && Array.isArray(cotizacion.logo_cotizacion.fotos)) {
+            console.log('📸 Cargando imágenes existentes:', cotizacion.logo_cotizacion.fotos.length);
+            
+            // NO limpiar imagenesSeleccionadas, solo agregar las nuevas
+            // Esto preserva cualquier imagen nueva que el usuario haya agregado
+            const imagenesNuevas = [];
+            
+            cotizacion.logo_cotizacion.fotos.forEach(foto => {
+                if (foto.ruta_original) {
+                    // Crear preview de imagen existente - usar el accessor 'url' si existe
+                    const previewUrl = foto.url || ('/storage/' + (foto.ruta_miniatura || foto.ruta_original));
+                    console.log('📸 Agregando imagen existente:', foto.id, previewUrl);
+                    imagenesNuevas.push({
+                        preview: previewUrl,
+                        existing: true,
+                        id: foto.id,
+                        file: null  // No hay archivo para imágenes existentes
+                    });
+                }
+            });
+            
+            // Reemplazar imagenesSeleccionadas con las imágenes existentes
+            imagenesSeleccionadas = imagenesNuevas;
+            // IMPORTANTE: NO limpiar imagenesABorrar aquí
+            // Se mantiene para rastrear imágenes que el usuario quiera borrar
+            
+            console.log('📸 Total imágenes cargadas:', imagenesSeleccionadas.length);
+            console.log('📸 imagenesSeleccionadas después de cargar:', imagenesSeleccionadas);
+            console.log('📸 imagenesABorrar preservado:', imagenesABorrar);
+            renderizarImagenes();
+        } else {
+            console.log('⚠️ No se encontraron imágenes en logo_cotizacion');
+            imagenesSeleccionadas = [];
+            // IMPORTANTE: NO limpiar imagenesABorrar aquí
+            renderizarImagenes();
+        }
+
+        console.log('✅ Datos del borrador cargados correctamente');
+
+    } catch (error) {
+        console.error('❌ Error al cargar datos del borrador:', error);
+    }
+}
+
+// Función auxiliar para agregar observaciones desde borrador
+function agregarObservacionDesdeBorrador(obs) {
+    const contenedor = document.getElementById('observaciones_lista');
+    const fila = document.createElement('div');
+    fila.style.cssText = 'display: flex; gap: 10px; align-items: center; padding: 10px; background: white; border-radius: 6px; border: 1px solid #ddd;';
+    fila.innerHTML = `
+        <input type="text" name="observaciones_generales[]" class="input-large" value="${obs.texto || ''}" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
+        <div style="display: flex; gap: 5px; align-items: center; flex-shrink: 0;">
+            <div class="obs-checkbox-mode" style="display: flex; align-items: center; gap: 5px;">
+                <input type="checkbox" name="observaciones_check[]" ${obs.tipo === 'checkbox' && obs.valor ? 'checked' : ''} style="width: 20px; height: 20px; cursor: pointer;">
+            </div>
+            <div class="obs-text-mode" style="${obs.tipo === 'texto' ? 'display: flex;' : 'display: none;'} flex: 1;">
+                <input type="text" name="observaciones_valor[]" value="${obs.tipo === 'texto' ? obs.valor || '' : ''}" placeholder="Valor..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
+            </div>
+            <button type="button" class="obs-toggle-btn" style="background: ${obs.tipo === 'texto' ? '#ff9800' : '#3498db'}; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; flex-shrink: 0;">${obs.tipo === 'texto' ? '✎' : '✓'}</button>
+        </div>
+        <button type="button" onclick="this.closest('div').remove()" style="background: #f44336; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 1rem; flex-shrink: 0;">✕</button>
+    `;
+    contenedor.appendChild(fila);
+
+    const toggleBtn = fila.querySelector('.obs-toggle-btn');
+    const checkboxMode = fila.querySelector('.obs-checkbox-mode');
+    const textMode = fila.querySelector('.obs-text-mode');
+    toggleBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (checkboxMode.style.display === 'none') {
+            checkboxMode.style.display = 'block';
+            textMode.style.display = 'none';
+            toggleBtn.style.background = '#3498db';
+            toggleBtn.textContent = '✓';
+        } else {
+            checkboxMode.style.display = 'none';
+            textMode.style.display = 'block';
+            toggleBtn.style.background = '#ff9800';
+            toggleBtn.textContent = '✎';
+        }
+    });
+}
 </script>
 @endsection

@@ -1,239 +1,144 @@
-{{-- Reflectivo Tab Content - Versión Direct (sin clase tab-content) --}}
+{{-- Reflectivo Tab Content - Versión Direct con Tabs por Prenda --}}
 <div id="tab-content-reflectivo-direct" style="padding: 0; background: transparent; border-radius: 0;">
     @if($cotizacion->reflectivoCotizacion)
         @php
             $reflectivo = $cotizacion->reflectivoCotizacion;
+            $especificaciones = is_array($cotizacion->especificaciones) ? $cotizacion->especificaciones : json_decode($cotizacion->especificaciones, true) ?? [];
+            $ubicacionesReflectivo = is_string($reflectivo->ubicacion) ? json_decode($reflectivo->ubicacion, true) ?? [] : ($reflectivo->ubicacion ?? []);
+            $categoriasMap = [
+                'bodega' => 'DISPONIBILIDAD - Bodega',
+                'cucuta' => 'DISPONIBILIDAD - Cúcuta',
+                'lafayette' => 'DISPONIBILIDAD - Lafayette',
+                'fabrica' => 'DISPONIBILIDAD - Fábrica',
+                'contado' => 'FORMA DE PAGO - Contado',
+                'credito' => 'FORMA DE PAGO - Crédito',
+                'comun' => 'RÉGIMEN - Común',
+                'simplificado' => 'RÉGIMEN - Simplificado',
+                'vendido' => 'SE HA VENDIDO',
+                'ultima_venta' => 'ÚLTIMA VENTA',
+                'flete' => 'FLETE DE ENVÍO'
+            ];
         @endphp
         
-        {{-- Prendas con Reflectivo Individual --}}
+        {{-- Tabs de Prendas --}}
         @if($cotizacion->prendas && count($cotizacion->prendas) > 0)
             <div style="margin-bottom: 2rem;">
-                <h3 style="color: #1e40af; font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">
-                    <i class="fas fa-tshirt" style="margin-right: 0.5rem;"></i> Prendas con Reflectivo
-                </h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
-                    @foreach($cotizacion->prendas as $prenda)
-                        <div style="border: 1px solid #e2e8f0; border-left: 4px solid #0ea5e9; border-radius: 8px; padding: 1.5rem; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                            <h4 style="color: #1e40af; font-weight: 600; margin: 0 0 0.75rem 0; font-size: 1rem;">
-                                {{ $prenda->nombre_producto ?? 'Prenda' }}
-                            </h4>
+                <div style="display: flex; gap: 0.5rem; border-bottom: 2px solid #e2e8f0; overflow-x: auto; padding-bottom: 0;">
+                    @foreach($cotizacion->prendas as $index => $prenda)
+                        <button onclick="mostrarPrendaReflectivo({{ $index }})" 
+                                id="tab-prenda-{{ $index }}"
+                                style="padding: 1rem 1.5rem; background: {{ $index === 0 ? '#1e40af' : '#f1f5f9' }}; color: {{ $index === 0 ? 'white' : '#64748b' }}; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-weight: 600; transition: all 0.2s; white-space: nowrap;">
+                            <i class="fas fa-tshirt" style="margin-right: 0.5rem;"></i>{{ $prenda->nombre_producto ?? 'Prenda ' . ($index + 1) }}
+                        </button>
+                    @endforeach
+                </div>
+                
+                {{-- Contenido de cada prenda --}}
+                @foreach($cotizacion->prendas as $index => $prenda)
+                    <div id="content-prenda-{{ $index }}" 
+                         style="display: {{ $index === 0 ? 'block' : 'none' }}; background: white; border-radius: 0 8px 8px 8px; padding: 2rem; border: 1px solid #e2e8f0; border-top: none;">
+                        
+                        {{-- Información de la Prenda --}}
+                        <div style="margin-bottom: 2rem; background: #f0f7ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1.5rem;">
+                            <h4 style="color: #1e40af; font-weight: 600; margin: 0 0 0.75rem 0;">{{ $prenda->nombre_producto ?? 'Prenda' }}</h4>
                             @if($prenda->descripcion)
-                                <div style="background: #f0f7ff; border-radius: 6px; padding: 0.75rem; border-left: 3px solid #0284c7;">
-                                    <p style="color: #475569; font-size: 0.9rem; line-height: 1.5; margin: 0;">{{ $prenda->descripcion }}</p>
-                                </div>
+                                <p style="color: #475569; font-size: 0.9rem; line-height: 1.5; margin: 0;">{{ $prenda->descripcion }}</p>
                             @else
-                                <p style="color: #94a3b8; font-size: 0.9rem; margin: 0; font-style: italic;">Sin descripción del reflectivo</p>
+                                <p style="color: #94a3b8; font-size: 0.9rem; margin: 0; font-style: italic;">Sin descripción</p>
                             @endif
                         </div>
-                    @endforeach
-                </div>
-            </div>
-        @endif
-        
-        {{-- Descripción del Reflectivo (General) --}}
-        <div style="margin-bottom: 2rem;">
-            <h3 style="color: #1e40af; font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">Descripción General</h3>
-            <div style="background: #f0f7ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1.5rem;">
-                <p style="color: #475569; line-height: 1.6; margin: 0;">{{ $reflectivo->descripcion ?? 'Sin descripción' }}</p>
-            </div>
-        </div>
-
-        {{-- Especificaciones Generales --}}
-        @php
-            $especificaciones = is_array($cotizacion->especificaciones) ? $cotizacion->especificaciones : json_decode($cotizacion->especificaciones, true) ?? [];
-        @endphp
-        @if(!empty($especificaciones))
-            <div style="margin-bottom: 2rem;">
-                <h3 style="color: #1e40af; font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">Especificaciones</h3>
-                <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem;">
-                    <ul style="list-style: none; padding: 0; margin: 0;">
-                        @foreach($especificaciones as $key => $valor)
-                            <li style="padding: 0.75rem 0; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
-                                <span style="color: #64748b; font-weight: 500;">{{ is_array($valor) ? ($valor['texto'] ?? $key) : $key }}</span>
-                                @if(is_array($valor))
-                                    <span style="color: #1e40af; font-weight: 600;">{{ $valor['valor'] ?? $valor }}</span>
-                                @else
-                                    <span style="color: #1e40af; font-weight: 600;">{{ $valor }}</span>
-                                @endif
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
-            </div>
-        @endif
-
-        {{-- Ubicaciones del Reflectivo (de la tabla cotizaciones) --}}
-        @php
-            $ubicaciones = $cotizacion->ubicaciones ?? [];
-            if (is_string($ubicaciones)) {
-                $ubicaciones = json_decode($ubicaciones, true) ?? [];
-            }
-        @endphp
-        @if(!empty($ubicaciones))
-            <div style="margin-bottom: 2rem;">
-                <h3 style="color: #1e40af; font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">Ubicaciones (Cotización)</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
-                    @foreach($ubicaciones as $ubicacion)
-                        <div style="border: 1px solid #cbd5e1; border-radius: 8px; padding: 1rem; background: #f8fafc;">
-                            <h4 style="color: #0f172a; font-weight: 600; margin-bottom: 0.5rem;">
-                                {{ $ubicacion['ubicacion'] ?? $ubicacion }}
-                            </h4>
-                            @if(is_array($ubicacion) && isset($ubicacion['descripcion']))
-                                <p style="color: #64748b; font-size: 0.9rem; margin: 0;">{{ $ubicacion['descripcion'] }}</p>
-                            @endif
+                        
+                        {{-- Descripción del Reflectivo --}}
+                        <div style="margin-bottom: 2rem;">
+                            <h4 style="color: #1e40af; font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Descripción General</h4>
+                            <div style="background: #f0f7ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 1.5rem;">
+                                <p style="color: #475569; line-height: 1.6; margin: 0;">{{ $reflectivo->descripcion ?? 'Sin descripción' }}</p>
+                            </div>
                         </div>
-                    @endforeach
-                </div>
-            </div>
-        @endif
-
-        {{-- Ubicaciones del Reflectivo (de la tabla reflectivo_cotizacion) --}}
-        @php
-            $ubicacionesReflectivo = $reflectivo->ubicacion ?? [];
-            if (is_string($ubicacionesReflectivo)) {
-                $ubicacionesReflectivo = json_decode($ubicacionesReflectivo, true) ?? [];
-            }
-        @endphp
-        @if(!empty($ubicacionesReflectivo))
-            <div style="margin-bottom: 2rem;">
-                <h3 style="color: #1e40af; font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">Ubicaciones del Reflectivo</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
-                    @foreach($ubicacionesReflectivo as $ubicacion)
-                        <div style="border: 1px solid #e2e8f0; border-left: 4px solid #0ea5e9; border-radius: 8px; padding: 1rem; background: white;">
-                            <h4 style="color: #1e40af; font-weight: 600; margin-bottom: 0.5rem;">
-                                {{ $ubicacion['ubicacion'] ?? $ubicacion }}
-                            </h4>
-                            @if(is_array($ubicacion) && isset($ubicacion['descripcion']))
-                                <p style="color: #64748b; font-size: 0.9rem; margin: 0;">{{ $ubicacion['descripcion'] }}</p>
-                            @endif
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        @endif
-
-        {{-- Observaciones Generales de la Cotización --}}
-        @php
-            $obsGenerales = is_array($cotizacion->observaciones_generales) ? $cotizacion->observaciones_generales : json_decode($cotizacion->observaciones_generales, true) ?? [];
-        @endphp
-        @if(!empty($obsGenerales))
-            <div style="margin-bottom: 2rem;">
-                <h3 style="color: #1e40af; font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">Observaciones de Cotización</h3>
-                <div style="background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 1.5rem;">
-                    <ul style="list-style: none; padding: 0; margin: 0;">
-                        @foreach($obsGenerales as $obs)
-                            <li style="padding: 0.75rem; background: white; border-left: 4px solid #f59e0b; margin-bottom: 0.75rem; border-radius: 4px;">
-                                @if(is_array($obs) && $obs['tipo'] === 'checkbox' && $obs['valor'] === true)
-                                    <strong style="color: #92400e;">{{ $obs['texto'] }}</strong>
-                                    <span style="color: #f59e0b; font-size: 1.2rem; font-weight: bold; margin-left: 0.5rem;">✓</span>
-                                @elseif(is_array($obs) && isset($obs['valor']))
-                                    <strong style="color: #92400e;">{{ $obs['texto'] }} = {{ $obs['valor'] }}</strong>
-                                @else
-                                    <strong style="color: #92400e;">{{ is_array($obs) ? ($obs['texto'] ?? $obs) : $obs }}</strong>
-                                @endif
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
-            </div>
-        @endif
-
-        {{-- Observaciones del Reflectivo --}}
-        @php
-            $obsReflectivo = is_array($reflectivo->observaciones_generales) ? $reflectivo->observaciones_generales : json_decode($reflectivo->observaciones_generales, true) ?? [];
-        @endphp
-        @if(!empty($obsReflectivo))
-            <div style="margin-bottom: 2rem;">
-                <h3 style="color: #1e40af; font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">Observaciones del Reflectivo</h3>
-                <div style="background: white; border: 1px solid #e2e8f0; border-left: 4px solid #0ea5e9; border-radius: 8px; padding: 1.5rem;">
-                    <ul style="list-style: none; padding: 0; margin: 0;">
-                        @foreach($obsReflectivo as $obs)
-                            <li style="padding: 0.75rem; background: transparent; border-left: none; margin-bottom: 0.75rem; border-radius: 4px;">
-                                @if(is_array($obs) && $obs['tipo'] === 'checkbox' && $obs['valor'] === true)
-                                    <strong style="color: #1e293b;">{{ $obs['texto'] }}</strong>
-                                    <span style="color: #0ea5e9; font-size: 1.2rem; font-weight: bold; margin-left: 0.5rem;">✓</span>
-                                @elseif(is_array($obs) && isset($obs['valor']))
-                                    <strong style="color: #1e293b;">{{ $obs['texto'] }} = {{ $obs['valor'] }}</strong>
-                                @else
-                                    <strong style="color: #1e293b;">{{ is_array($obs) ? ($obs['texto'] ?? $obs) : $obs }}</strong>
-                                @endif
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
-            </div>
-        @endif
-
-        {{-- Imágenes del Reflectivo (de la tabla reflectivo_fotos_cotizacion) --}}
-        @if($reflectivo && $reflectivo->fotos && count($reflectivo->fotos) > 0)
-            <div style="
-                font-size: 1.4rem;
-                font-weight: 800;
-                color: #1e293b;
-                margin-top: 2rem;
-                margin-bottom: 1.75rem;
-                padding-bottom: 1rem;
-                border-bottom: 3px solid #0ea5e9;
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-            ">
-                <i class="fas fa-images" style="color: #0ea5e9; font-size: 1.4rem;"></i> Imágenes Reflectivo ({{ $reflectivo->fotos->count() }})
-            </div>
-            <div style="
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-                gap: 1.5rem;
-                margin-bottom: 2rem;
-            ">
-                @php
-                    $fotosArray = $reflectivo->fotos->map(fn($f) => asset('storage/' . $f->ruta_original))->toArray();
-                    $fotosJson = json_encode($fotosArray);
-                @endphp
-                @foreach($reflectivo->fotos as $index => $foto)
-                    @if($foto->ruta_original)
-                        <div style="border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 6px 16px rgba(0, 0, 0, 0.15)'" onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.1)'">
-                            <img src="{{ asset('storage/' . $foto->ruta_original) }}" alt="Reflectivo" 
-                                 width="300" height="150"
-                                 style="width: 100%; height: 150px; object-fit: cover; cursor: pointer; transition: transform 0.3s ease;"
-                                 onmouseover="this.style.transform='scale(1.05)'"
-                                 onmouseout="this.style.transform=''"
-                                 onclick="abrirModalImagen('{{ asset('storage/' . $foto->ruta_original) }}', 'Reflectivo - Imagen {{ $index + 1 }}', {{ $fotosJson }}, {{ $index }})">
-                        </div>
-                    @endif
-                @endforeach
-            </div>
-        @else
-            <div style="text-align: center; padding: 3rem 2rem; color: #94a3b8; font-style: italic; font-size: 0.95rem;">
-                <i class="fas fa-images" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
-                Sin imágenes de reflectivo
-            </div>
-        @endif
-
-        {{-- Imágenes Generales --}}
-        @php
-            $imagenesGenerales = is_array($cotizacion->imagenes) ? $cotizacion->imagenes : json_decode($cotizacion->imagenes, true) ?? [];
-        @endphp
-        @if(!empty($imagenesGenerales))
-            <div style="margin-bottom: 2rem;">
-                <h3 style="color: #1e40af; font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem;">Imágenes Generales</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
-                    @foreach($imagenesGenerales as $imagen)
-                        @php
-                            $rutaImagen = $imagen['ruta'] ?? $imagen;
-                            if (is_array($imagen)) {
-                                $rutaImagen = $imagen['ruta'] ?? null;
-                            }
-                        @endphp
-                        @if($rutaImagen)
-                            <div style="border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
-                                <a href="{{ asset('storage/' . $rutaImagen) }}" target="_blank" style="display: block;">
-                                    <img src="{{ asset('storage/' . $rutaImagen) }}" alt="Imagen" style="width: 100%; height: 200px; object-fit: cover; display: block;">
-                                </a>
+                        
+                        {{-- Especificaciones --}}
+                        @if(!empty($especificaciones))
+                            <div style="margin-bottom: 2rem;">
+                                <h4 style="color: #1e40af; font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Especificaciones</h4>
+                                <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem; overflow-x: auto;">
+                                    <table style="width: 100%; border-collapse: collapse;">
+                                        <thead>
+                                            <tr style="background: #f0f0f0; border-bottom: 2px solid #ddd;">
+                                                <th style="padding: 10px; text-align: left; font-weight: 600; color: #333;">Concepto</th>
+                                                <th style="padding: 10px; text-align: center; font-weight: 600; color: #333;">Aplica</th>
+                                                <th style="padding: 10px; text-align: left; font-weight: 600; color: #333;">Observaciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($especificaciones as $clave => $valor)
+                                                @php
+                                                    if (preg_match('/tabla_orden\[([^\]]+)\]/', $clave, $matches)) {
+                                                        $nombreCampo = $matches[1];
+                                                        if (strpos($nombreCampo, '_obs') !== false) continue;
+                                                        $nombreCategoria = $categoriasMap[$nombreCampo] ?? ucfirst(str_replace('_', ' ', $nombreCampo));
+                                                        $esSeleccionado = ($valor === '1' || $valor === true) ? '✓' : '✗';
+                                                        $claveObs = 'tabla_orden[' . $nombreCampo . '_obs]';
+                                                        $observacion = $especificaciones[$claveObs] ?? '';
+                                                    } else {
+                                                        continue;
+                                                    }
+                                                @endphp
+                                                <tr style="border-bottom: 1px solid #eee;">
+                                                    <td style="padding: 10px; color: #333;">{{ $nombreCategoria }}</td>
+                                                    <td style="padding: 10px; text-align: center; font-weight: 600; color: {{ $esSeleccionado === '✓' ? '#10b981' : '#999' }};">{{ $esSeleccionado }}</td>
+                                                    <td style="padding: 10px; color: #666;">{{ $observacion }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         @endif
-                    @endforeach
-                </div>
+                        
+                        {{-- Ubicaciones del Reflectivo --}}
+                        @if(!empty($ubicacionesReflectivo))
+                            <div style="margin-bottom: 2rem;">
+                                <h4 style="color: #1e40af; font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Ubicaciones del Reflectivo</h4>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+                                    @foreach($ubicacionesReflectivo as $ubicacion)
+                                        <div style="border: 1px solid #e2e8f0; border-left: 4px solid #0ea5e9; border-radius: 8px; padding: 1rem; background: white;">
+                                            <h5 style="color: #1e40af; font-weight: 600; margin-bottom: 0.5rem; margin: 0 0 0.5rem 0;">
+                                                {{ $ubicacion['ubicacion'] ?? $ubicacion }}
+                                            </h5>
+                                            @if(is_array($ubicacion) && isset($ubicacion['descripcion']))
+                                                <p style="color: #64748b; font-size: 0.9rem; margin: 0;">{{ $ubicacion['descripcion'] }}</p>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+                        
+                        {{-- Imágenes del Reflectivo --}}
+                        @if($reflectivo && $reflectivo->fotos && count($reflectivo->fotos) > 0)
+                            <div style="margin-bottom: 2rem;">
+                                <h4 style="color: #1e40af; font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Imágenes Reflectivo ({{ $reflectivo->fotos->count() }})</h4>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1.5rem;">
+                                    @php
+                                        $fotosArray = $reflectivo->fotos->map(fn($f) => asset('storage/' . $f->ruta_original))->toArray();
+                                        $fotosJson = json_encode($fotosArray);
+                                    @endphp
+                                    @foreach($reflectivo->fotos as $fotoIndex => $foto)
+                                        @if($foto->ruta_original)
+                                            <div style="border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 6px 16px rgba(0, 0, 0, 0.15)'" onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.1)'">
+                                                <img src="{{ asset('storage/' . $foto->ruta_original) }}" alt="Reflectivo" 
+                                                     style="width: 100%; height: 150px; object-fit: cover; cursor: pointer; transition: transform 0.3s ease;"
+                                                     onmouseover="this.style.transform='scale(1.05)'"
+                                                     onmouseout="this.style.transform=''"
+                                                     onclick="abrirModalImagen('{{ asset('storage/' . $foto->ruta_original) }}', 'Reflectivo - Imagen {{ $fotoIndex + 1 }}', {{ $fotosJson }}, {{ $fotoIndex }})">
+                                            </div>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                @endforeach
             </div>
         @endif
 
@@ -243,3 +148,23 @@
         </div>
     @endif
 </div>
+
+<script>
+function mostrarPrendaReflectivo(index) {
+    // Ocultar todos los tabs
+    document.querySelectorAll('[id^="content-prenda-"]').forEach(el => {
+        el.style.display = 'none';
+    });
+    
+    // Desmarcar todos los botones
+    document.querySelectorAll('[id^="tab-prenda-"]').forEach(btn => {
+        btn.style.background = '#f1f5f9';
+        btn.style.color = '#64748b';
+    });
+    
+    // Mostrar tab seleccionado
+    document.getElementById('content-prenda-' + index).style.display = 'block';
+    document.getElementById('tab-prenda-' + index).style.background = '#1e40af';
+    document.getElementById('tab-prenda-' + index).style.color = 'white';
+}
+</script>

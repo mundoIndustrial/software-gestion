@@ -4,7 +4,6 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\TipoPrenda;
-use App\Models\PrendaVariacionesDisponibles;
 use Illuminate\Http\Request;
 
 class PrendaController extends Controller
@@ -15,7 +14,6 @@ class PrendaController extends Controller
     public function tiposPrenda()
     {
         $tipos = TipoPrenda::where('activo', true)
-            ->with('variacionesDisponibles')
             ->get();
 
         return response()->json($tipos);
@@ -45,33 +43,9 @@ class PrendaController extends Controller
             ], 404);
         }
 
-        $variaciones = $tipo->variacionesDisponibles;
-
         return response()->json([
             'success' => true,
-            'tipo' => $tipo,
-            'variaciones' => $variaciones
-        ]);
-    }
-
-    /**
-     * Obtener variaciones disponibles para un tipo de prenda
-     */
-    public function variaciones($tipoPrendaId)
-    {
-        $variaciones = PrendaVariacionesDisponibles::where('tipo_prenda_id', $tipoPrendaId)
-            ->first();
-
-        if (!$variaciones) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Variaciones no encontradas'
-            ], 404);
-        }
-
-        return response()->json([
-            'success' => true,
-            'variaciones' => $variaciones
+            'tipo' => $tipo
         ]);
     }
 }

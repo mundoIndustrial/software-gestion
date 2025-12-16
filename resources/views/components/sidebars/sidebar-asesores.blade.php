@@ -66,14 +66,14 @@
                         <span class="material-symbols-rounded submenu-arrow">expand_more</span>
                     </button>
                     <ul class="submenu">
-                        <li class="submenu-item">
+                        {{-- <li class="submenu-item">
                             <a href="{{ route('asesores.pedidos.create', ['tipo' => 'P']) }}"
                                class="menu-link {{ request()->routeIs('asesores.pedidos.create') && request()->query('tipo') === 'P' ? 'active' : '' }}"
                                aria-label="Crear cotización Prenda">
                                 <span class="material-symbols-rounded">checkroom</span>
                                 <span class="menu-label">Prenda</span>
                             </a>
-                        </li>
+                        </li> --}}
                         <li class="submenu-item">
                             <a href="{{ route('asesores.pedidos.create', ['tipo' => 'B']) }}"
                                class="menu-link {{ request()->routeIs('asesores.pedidos.create') && request()->query('tipo') === 'B' ? 'active' : '' }}"

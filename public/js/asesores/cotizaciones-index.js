@@ -243,13 +243,20 @@ function eliminarCotizacion(id) {
                     // Animación de eliminación
                     const rows = document.querySelectorAll('table tbody tr');
                     console.log('🔍 Total de filas encontradas:', rows.length);
+                    let rowRemoved = false;
                     rows.forEach(row => {
-                        const cell = row.querySelector(`a[onclick*="eliminarCotizacion(${id})"]`);
-                        if (cell) {
-                            console.log('🎯 Fila encontrada, animando eliminación');
-                            row.style.transition = 'opacity 0.3s ease';
-                            row.style.opacity = '0';
-                            setTimeout(() => row.remove(), 300);
+                        if (!rowRemoved) {
+                            const cell = row.querySelector(`a[onclick*="eliminarCotizacion(${id})"]`);
+                            if (cell) {
+                                console.log('🎯 Fila encontrada, animando eliminación');
+                                row.style.transition = 'opacity 0.3s ease';
+                                row.style.opacity = '0';
+                                setTimeout(() => {
+                                    row.remove();
+                                    console.log('✅ Fila removida del DOM');
+                                }, 300);
+                                rowRemoved = true;
+                            }
                         }
                     });
                     

@@ -11,7 +11,8 @@
 @section('content')
 
 @php
-    $esReflectivo = $cotizacion->tipoCotizacion && $cotizacion->tipoCotizacion->codigo === 'RF';
+    $idReflectivo = \App\Models\TipoCotizacion::getIdPorCodigo('RF');
+    $esReflectivo = $cotizacion->tipo_cotizacion_id === $idReflectivo;
 @endphp
 
 <div class="page-wrapper">
@@ -36,9 +37,14 @@
             {{-- Tab Content Wrapper --}}
             <div class="tab-content-wrapper">
                 {{-- Prendas Tab --}}
+                @php
+                    $idLogo = \App\Models\TipoCotizacion::getIdPorCodigo('L');
+                    $idCombinada = \App\Models\TipoCotizacion::getIdPorCodigo('PL');
+                    $esLogoTab = $cotizacion->tipo_cotizacion_id === $idLogo || $cotizacion->tipo_cotizacion_id === $idCombinada;
+                @endphp
                 @include('components.cotizaciones.show.prendas-tab', [
                     'cotizacion' => $cotizacion,
-                    'esLogo' => $cotizacion->tipo === 'L' || $cotizacion->tipo === 'PL',
+                    'esLogo' => $esLogoTab,
                     'tienePrendas' => $cotizacion->prendas && count($cotizacion->prendas) > 0
                 ])
 
@@ -46,7 +52,7 @@
                 @include('components.cotizaciones.show.logo-tab', [
                     'logo' => $logo ?? null,
                     'cotizacion' => $cotizacion,
-                    'esLogo' => $cotizacion->tipo === 'L' || $cotizacion->tipo === 'PL'
+                    'esLogo' => $esLogoTab
                 ])
 
                 {{-- Reflectivo Tab --}}

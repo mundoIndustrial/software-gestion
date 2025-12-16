@@ -309,60 +309,71 @@ class PDFCotizacionController extends Controller
      */
     private function generarTablaEspecificacionesHTML($cotizacion)
     {
-        // Mapeo de claves de especificaciones a nombres legibles
-        $especificacionesMap = [
-            'disponibilidad' => 'DISPONIBILIDAD',
-            'forma_pago' => 'FORMA DE PAGO',
-            'regimen' => 'RÉGIMEN',
-            'se_ha_vendido' => 'SE HA VENDIDO',
+        // Obtener especificaciones desde la tabla cotizaciones
+        $especificacionesData = $cotizacion->especificaciones ?? [];
+        
+        // Convertir a array si es string JSON
+        if (is_string($especificacionesData)) {
+            $especificacionesData = json_decode($especificacionesData, true) ?? [];
+        }
+        
+        if (!is_array($especificacionesData) || empty($especificacionesData)) {
+            return '<p style="color: #999;">No hay especificaciones registradas</p>';
+        }
+        
+        // Mapeo de categorías
+        $categoriasMap = [
+            'bodega' => 'DISPONIBILIDAD - Bodega',
+            'cucuta' => 'DISPONIBILIDAD - Cúcuta',
+            'lafayette' => 'DISPONIBILIDAD - Lafayette',
+            'fabrica' => 'DISPONIBILIDAD - Fábrica',
+            'contado' => 'FORMA DE PAGO - Contado',
+            'credito' => 'FORMA DE PAGO - Crédito',
+            'comun' => 'RÉGIMEN - Común',
+            'simplificado' => 'RÉGIMEN - Simplificado',
+            'vendido' => 'SE HA VENDIDO',
             'ultima_venta' => 'ÚLTIMA VENTA',
             'flete' => 'FLETE DE ENVÍO'
         ];
         
-        // Obtener especificaciones desde la tabla cotizaciones
-        $especificacionesData = $cotizacion->especificaciones ?? [];
-        
-        // Convertir a array si es necesario
-        if (!is_array($especificacionesData)) {
-            $especificacionesData = (array) $especificacionesData;
-        }
-        
         $html = '
         <div class="spec-wrapper">
-            <table class="spec-table">
+            <table class="spec-table" style="width: 100%; border-collapse: collapse; margin: 1rem 0;">
                 <thead>
-                    <tr>
-                        <th>Especificación</th>
-                        <th>Opciones Seleccionadas</th>
+                    <tr style="background: #f0f0f0; border-bottom: 2px solid #ddd;">
+                        <th style="padding: 10px; text-align: left; font-weight: 600;">Concepto</th>
+                        <th style="padding: 10px; text-align: center; font-weight: 600;">Aplica</th>
+                        <th style="padding: 10px; text-align: left; font-weight: 600;">Observaciones</th>
                     </tr>
                 </thead>
                 <tbody>';
         
-        foreach ($especificacionesMap as $clave => $nombreCategoria) {
-            $valores = $especificacionesData[$clave] ?? [];
-            
-            // Asegurar que sea un array
-            if (!is_array($valores)) {
-                $valores = (array) $valores;
-            }
-            
-            // Convertir valores a string de forma segura
-            $valoresLimpios = [];
-            foreach ($valores as $v) {
-                if (is_array($v)) {
-                    // Si es un array, convertirlo a string
-                    $valoresLimpios[] = implode(', ', array_map('strval', $v));
-                } elseif (!empty($v)) {
-                    $valoresLimpios[] = (string)$v;
+        // Procesar especificaciones guardadas
+        foreach ($especificacionesData as $clave => $valor) {
+            // Extraer el nombre de la categoría de claves como "tabla_orden[bodega]"
+            if (preg_match('/tabla_orden\[([^\]]+)\]/', $clave, $matches)) {
+                $nombreCampo = $matches[1];
+                
+                // Ignorar campos de observación, se procesarán junto con su checkbox
+                if (strpos($nombreCampo, '_obs') !== false) {
+                    continue;
                 }
-            }
-            $valoresText = count($valoresLimpios) > 0 ? implode(', ', $valoresLimpios) : '-';
-            
-            $html .= '
-                    <tr>
-                        <td class="label">' . $nombreCategoria . '</td>
-                        <td>' . $valoresText . '</td>
+                
+                // Obtener el nombre legible
+                $nombreCategoria = $categoriasMap[$nombreCampo] ?? ucfirst(str_replace('_', ' ', $nombreCampo));
+                
+                // Obtener el valor del checkbox y la observación
+                $esSeleccionado = ($valor === '1' || $valor === true) ? '✓' : '✗';
+                $claveObs = 'tabla_orden[' . $nombreCampo . '_obs]';
+                $observacion = $especificacionesData[$claveObs] ?? '';
+                
+                $html .= '
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 10px;">' . htmlspecialchars($nombreCategoria) . '</td>
+                        <td style="padding: 10px; text-align: center; font-weight: 600; color: ' . ($esSeleccionado === '✓' ? '#10b981' : '#999') . ';">' . $esSeleccionado . '</td>
+                        <td style="padding: 10px;">' . htmlspecialchars($observacion) . '</td>
                     </tr>';
+            }
         }
         
         $html .= '

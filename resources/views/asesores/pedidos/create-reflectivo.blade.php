@@ -921,6 +921,20 @@
         </div>
     </div>
 
+    <!-- MODAL DE ÉXITO -->
+    <div id="modalExito" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 10001; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 16px; padding: 3rem; max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center; animation: slideIn 0.3s ease;">
+            <div style="font-size: 4rem; margin-bottom: 1.5rem; color: #10b981;">✓</div>
+            <h2 id="modalExitoTitulo" style="margin: 0 0 1rem 0; font-size: 1.5rem; color: #1e293b; font-weight: 700;">Cotización guardada exitosamente</h2>
+            <p id="modalExitoMensaje" style="margin: 0 0 1.5rem 0; color: #64748b; font-size: 1rem; line-height: 1.6;"></p>
+            <div id="modalExitoNumero" style="display: none; margin: 1.5rem 0; padding: 1rem; background: #f0fdf4; border: 2px solid #10b981; border-radius: 8px;">
+                <p style="margin: 0 0 0.5rem 0; color: #64748b; font-size: 0.9rem; font-weight: 600; text-transform: uppercase;">Número de Cotización:</p>
+                <p id="modalExitoNumeroCotizacion" style="margin: 0; font-size: 1.8rem; color: #10b981; font-weight: 700;"></p>
+            </div>
+            <button type="button" onclick="cerrarModalExito()" style="padding: 0.75rem 2rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none; border-radius: 8px; cursor: pointer; font-weight: 600; color: white; font-size: 1rem; transition: all 0.2s ease;">Aceptar</button>
+        </div>
+    </div>
+
     <!-- MODAL GLOBAL PARA UBICACIÓN -->
     <div id="modalUbicacionReflectivo" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;">
         <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: slideIn 0.3s ease;">
@@ -1028,24 +1042,41 @@ function abrirModalEspecificaciones() {
     const modal = document.getElementById('modalEspecificaciones');
     const especificacionesGuardadas = document.getElementById('especificaciones').value;
     
+    console.log('🔓 Abriendo modal de especificaciones');
+    console.log('📋 Especificaciones guardadas en campo:', especificacionesGuardadas);
+    
     // Si hay especificaciones guardadas, cargarlas en los checkboxes y observaciones
-    if (especificacionesGuardadas) {
+    if (especificacionesGuardadas && especificacionesGuardadas !== '{}' && especificacionesGuardadas !== '[]') {
         try {
             const datos = JSON.parse(especificacionesGuardadas);
+            console.log('✅ Datos parseados:', datos);
+            
             // Cargar checkboxes
             Object.keys(datos).forEach((key) => {
                 const element = document.querySelector(`[name="${key}"]`);
                 if (element) {
                     if (element.type === 'checkbox') {
                         element.checked = datos[key] === '1' || datos[key] === true;
+                        console.log(`  ✓ Checkbox ${key}: ${element.checked}`);
                     } else {
                         element.value = datos[key] || '';
+                        console.log(`  ✓ Input ${key}: ${element.value}`);
                     }
                 }
             });
         } catch (e) {
-            console.error('Error al cargar especificaciones:', e);
+            console.error('❌ Error al cargar especificaciones:', e);
         }
+    } else {
+        console.log('ℹ️ No hay especificaciones guardadas, limpiando checkboxes');
+        // Limpiar todos los checkboxes si no hay especificaciones guardadas
+        document.querySelectorAll('[name^="reflectivo_"]').forEach((element) => {
+            if (element.type === 'checkbox') {
+                element.checked = false;
+            } else if (element.type === 'text') {
+                element.value = '';
+            }
+        });
     }
     
     if (modal) {
@@ -1065,17 +1096,29 @@ function cerrarModalEspecificaciones() {
 function guardarEspecificacionesReflectivo() {
     const especificaciones = {};
     
-    // Recopilar datos de checkboxes y observaciones
-    document.querySelectorAll('[name^="reflectivo_"]').forEach((element) => {
-        if (element.type === 'checkbox') {
-            especificaciones[element.name] = element.checked ? '1' : '0';
-        } else if (element.type === 'text') {
-            especificaciones[element.name] = element.value || '';
-        }
-    });
+    // Recopilar datos de checkboxes y observaciones del modal
+    // Buscar todos los inputs dentro del modal (checkboxes y text inputs)
+    const modal = document.getElementById('modalEspecificaciones');
+    if (modal) {
+        modal.querySelectorAll('input[type="checkbox"], input[type="text"]').forEach((element) => {
+            if (element.name) {
+                if (element.type === 'checkbox') {
+                    especificaciones[element.name] = element.checked ? '1' : '0';
+                } else if (element.type === 'text') {
+                    especificaciones[element.name] = element.value || '';
+                }
+            }
+        });
+    }
     
     // Guardar como JSON en el campo oculto
-    document.getElementById('especificaciones').value = JSON.stringify(especificaciones);
+    const especificacionesJSON = JSON.stringify(especificaciones);
+    document.getElementById('especificaciones').value = especificacionesJSON;
+    
+    console.log('💾 Especificaciones guardadas en campo oculto:', especificacionesJSON);
+    console.log('📋 Datos guardados:', especificaciones);
+    console.log('📊 Total de elementos capturados:', Object.keys(especificaciones).length);
+    
     cerrarModalEspecificaciones();
 }
 
@@ -1411,8 +1454,13 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
         const result = await response.json();
 
         if (result.success) {
-            alert('✅ Cotización guardada exitosamente');
-            window.location.href = '{{ route("asesores.cotizaciones.index") }}';
+            // Mostrar modal de éxito
+            const titulo = action === 'borrador' ? 'Cotización guardada como borrador' : 'Cotización enviada al contador';
+            const mensaje = action === 'borrador' 
+                ? 'Tu cotización ha sido guardada correctamente como borrador. Podrás seguir editándola cuando lo necesites.'
+                : 'Tu cotización ha sido enviada al contador para su revisión y aprobación.';
+            
+            mostrarModalExito(titulo, mensaje, result.data?.cotizacion?.numero_cotizacion, action === 'enviar');
         } else {
             console.error('❌ Error en respuesta:', result);
             let mensajeError = result.message || 'Error al guardar';
@@ -1448,6 +1496,46 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
 
 // Variable global para rastrear fotos eliminadas
 let fotosEliminadas = [];
+
+/**
+ * Mostrar modal de éxito
+ */
+function mostrarModalExito(titulo, mensaje, numeroCotizacion, mostrarNumero) {
+    const modal = document.getElementById('modalExito');
+    const modalTitulo = document.getElementById('modalExitoTitulo');
+    const modalMensaje = document.getElementById('modalExitoMensaje');
+    const modalNumero = document.getElementById('modalExitoNumero');
+    const modalNumeroCotizacion = document.getElementById('modalExitoNumeroCotizacion');
+    
+    // Establecer contenido
+    modalTitulo.textContent = titulo;
+    modalMensaje.textContent = mensaje;
+    
+    // Mostrar número de cotización si se envía
+    if (mostrarNumero && numeroCotizacion) {
+        modalNumero.style.display = 'block';
+        modalNumeroCotizacion.textContent = numeroCotizacion;
+    } else {
+        modalNumero.style.display = 'none';
+    }
+    
+    // Mostrar modal
+    if (modal) {
+        modal.style.display = 'flex';
+    }
+}
+
+/**
+ * Cerrar modal de éxito
+ */
+function cerrarModalExito() {
+    const modal = document.getElementById('modalExito');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    // Redirigir a cotizaciones después de cerrar
+    window.location.href = '{{ route("asesores.cotizaciones.index") }}';
+}
 
 /**
  * Función para eliminar una foto del reflectivo
@@ -1515,7 +1603,28 @@ document.addEventListener('DOMContentLoaded', function() {
             // Cargar especificaciones
             if (datosIniciales.especificaciones) {
                 console.log('⚙️ Cargando especificaciones:', datosIniciales.especificaciones);
-                document.getElementById('especificaciones').value = JSON.stringify(datosIniciales.especificaciones);
+                let especificacionesValue = '';
+                
+                if (typeof datosIniciales.especificaciones === 'string') {
+                    // Si es string, parsearlo para verificar si tiene datos
+                    try {
+                        const parsed = JSON.parse(datosIniciales.especificaciones);
+                        // Si es un objeto con propiedades, guardar el string original
+                        if (Object.keys(parsed).length > 0) {
+                            especificacionesValue = datosIniciales.especificaciones;
+                        } else {
+                            especificacionesValue = '{}';
+                        }
+                    } catch (e) {
+                        especificacionesValue = datosIniciales.especificaciones;
+                    }
+                } else if (typeof datosIniciales.especificaciones === 'object') {
+                    // Si es objeto, convertir a JSON string
+                    especificacionesValue = JSON.stringify(datosIniciales.especificaciones);
+                }
+                
+                console.log('⚙️ Especificaciones a cargar en campo:', especificacionesValue);
+                document.getElementById('especificaciones').value = especificacionesValue;
             }
             
             // Cargar prendas (reflectivo)

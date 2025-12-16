@@ -147,15 +147,14 @@ class CotizacionPrendaController extends Controller
      */
     private function generarNumeroCotizacion($tipo = 'cotizaciones_prenda')
     {
-        // Adquirir LOCK pessimista en la fila de numero_secuencias
-        // Ningún otro proceso puede leerla o modificarla hasta que confirmemos
+        // Usar secuencia universal para TODAS las cotizaciones
         $secuencia = DB::table('numero_secuencias')
             ->lockForUpdate()
-            ->where('tipo', $tipo)
+            ->where('tipo', 'cotizaciones_universal')
             ->first();
 
         if (!$secuencia) {
-            throw new \Exception("Secuencia de tipo '{$tipo}' no encontrada en numero_secuencias");
+            throw new \Exception("Secuencia universal 'cotizaciones_universal' no encontrada en numero_secuencias");
         }
 
         // Obtener próximo número
@@ -163,14 +162,14 @@ class CotizacionPrendaController extends Controller
 
         // Incrementar y guardar
         DB::table('numero_secuencias')
-            ->where('tipo', $tipo)
+            ->where('tipo', 'cotizaciones_universal')
             ->update(['siguiente' => $siguiente + 1]);
 
-        // Generar formato: COT-20250124-001
-        $numero = 'COT-' . date('Ymd') . '-' . str_pad($siguiente, 3, '0', STR_PAD_LEFT);
+        // Generar formato: COT-000001
+        $numero = 'COT-' . str_pad($siguiente, 6, '0', STR_PAD_LEFT);
 
-        Log::debug('🔐 Número generado con lock', [
-            'tipo' => $tipo,
+        Log::debug('🔐 Número generado con lock universal', [
+            'tipo_recibido' => $tipo,
             'numero' => $numero,
             'secuencia_anterior' => $siguiente,
             'secuencia_nueva' => $siguiente + 1

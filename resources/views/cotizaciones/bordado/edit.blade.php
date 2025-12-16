@@ -255,7 +255,7 @@
                 </button>
                 @endif
                 
-                <a href="{{ route('asesores.cotizaciones-bordado.lista') }}" class="flex-1 bg-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-400 text-center">
+                <a href="{{ route('cotizaciones-bordado.lista') }}" class="flex-1 bg-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-400 text-center">
                     Volver
                 </a>
             </div>
@@ -317,7 +317,7 @@ document.getElementById('btnEnviar').addEventListener('click', async function() 
 
         if (result.success) {
             alert('Cotización enviada. Pedido creado: #' + result.pedido_id);
-            window.location.href = '{{ route("cotizaciones.bordado.lista") }}';
+            window.location.href = '{{ route("cotizaciones-bordado.lista") }}';
         } else {
             alert('Error: ' + result.message);
         }

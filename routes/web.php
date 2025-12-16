@@ -203,6 +203,10 @@ Route::middleware(['auth', 'role:asesor'])->group(function () {
     Route::put('/cotizaciones-prenda/{cotizacion}', [CotizacionPrendaController::class, 'update'])->name('cotizaciones-prenda.update');
     Route::post('/cotizaciones-prenda/{cotizacion}/enviar', [CotizacionPrendaController::class, 'enviar'])->name('cotizaciones-prenda.enviar');
     Route::delete('/cotizaciones-prenda/{cotizacion}', [CotizacionPrendaController::class, 'destroy'])->name('cotizaciones-prenda.destroy');
+    
+    // Rutas para borrar imágenes de cotizaciones (Prenda)
+    Route::post('/cotizaciones/{id}/borrar-imagen-prenda', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'borrarImagenPrenda'])->name('cotizaciones.borrar-imagen-prenda');
+    Route::post('/cotizaciones/{id}/borrar-imagen-tela', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'borrarImagenTela'])->name('cotizaciones.borrar-imagen-tela');
 });
 
 // ========================================
@@ -212,6 +216,8 @@ Route::middleware(['auth', 'role:asesor'])->group(function () {
     // Cotizaciones tipo BORDADO/LOGO
     Route::get('/cotizaciones-bordado/crear', [CotizacionBordadoController::class, 'create'])->name('cotizaciones-bordado.create');
     Route::post('/cotizaciones-bordado', [CotizacionBordadoController::class, 'store'])->name('cotizaciones-bordado.store');
+    Route::put('/cotizaciones-bordado/{id}/borrador', [CotizacionBordadoController::class, 'updateBorrador'])->name('cotizaciones-bordado.update-borrador');
+    Route::post('/cotizaciones-bordado/{id}/borrar-imagen', [CotizacionBordadoController::class, 'borrarImagen'])->name('cotizaciones-bordado.borrar-imagen');
     Route::get('/cotizaciones-bordado', [CotizacionBordadoController::class, 'lista'])->name('cotizaciones-bordado.lista');
     Route::get('/cotizaciones-bordado/{cotizacion}/editar', [CotizacionBordadoController::class, 'edit'])->name('cotizaciones-bordado.edit');
     Route::put('/cotizaciones-bordado/{cotizacion}', [CotizacionBordadoController::class, 'update'])->name('cotizaciones-bordado.update');
@@ -491,11 +497,10 @@ Route::middleware(['auth'])->prefix('inventario-telas')->name('inventario-telas.
     Route::get('/historial', [App\Http\Controllers\AsesoresInventarioTelasController::class, 'historial'])->name('historial');
 });
 
-// API Routes para Prendas (Reconocimiento y Variaciones)
+// API Routes para Prendas (Reconocimiento)
 Route::middleware('auth')->prefix('api')->name('api.')->group(function () {
     Route::get('/tipos-prenda', [App\Http\Controllers\API\PrendaController::class, 'tiposPrenda'])->name('tipos-prenda');
     Route::post('/prenda/reconocer', [App\Http\Controllers\API\PrendaController::class, 'reconocer'])->name('prenda.reconocer');
-    Route::get('/prenda-variaciones/{tipoPrendaId}', [App\Http\Controllers\API\PrendaController::class, 'variaciones'])->name('prenda.variaciones');
 });
 
 // Rutas de Insumos

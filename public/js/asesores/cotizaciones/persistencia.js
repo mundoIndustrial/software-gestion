@@ -297,13 +297,21 @@ function limpiarFormularioCompleto() {
             console.log('✓ Botón ENVIAR resetado a rojo');
         }
         
-        // 7. Limpiar variables globales adicionales
-        window.fotosSeleccionadas = {};
-        window.especificacionesSeleccionadas = {};
-        window.imagenesEnMemoria = { prenda: [], tela: [], logo: [], prendaConIndice: [], telaConIndice: [] };
+        // 7. Limpiar variables globales adicionales (SOLO si existen)
+        if (typeof fotosSeleccionadas !== 'undefined') {
+            window.fotosSeleccionadas = {};
+        }
+        if (typeof especificacionesSeleccionadas !== 'undefined') {
+            window.especificacionesSeleccionadas = {};
+        }
+        if (typeof imagenesEnMemoria !== 'undefined') {
+            window.imagenesEnMemoria = { prenda: [], tela: [], logo: [], prendaConIndice: [], telaConIndice: [] };
+        }
         if (typeof seccionesSeleccionadasFriendly !== 'undefined') {
             window.seccionesSeleccionadasFriendly = [];
         }
+        // NO limpiar tecnicasSeleccionadas, seccionesSeleccionadas, observacionesGenerales, imagenesSeleccionadas
+        // porque se declaran DESPUÉS de que se carga este script
         
         console.log('✅ Limpieza completa del formulario finalizada');
         
@@ -330,7 +338,16 @@ document.addEventListener('DOMContentLoaded', function() {
     // ✅ DESACTIVADO: No cargar datos del localStorage
     // Esto evita que se carguen datos de cotizaciones anteriores
     console.log('📝 localStorage DESACTIVADO - Formulario limpio');
-    limpiarFormularioCompleto();
+    
+    // ⚠️ NO limpiar si estamos en la página de bordado
+    // La página de bordado declara sus propias variables globales DESPUÉS de que se carga este script
+    if (window.location.pathname.includes('/cotizaciones-bordado/') || window.location.pathname.includes('/cotizaciones/bordado/')) {
+        console.log('⚠️ Página de bordado detectada - No se ejecuta limpiarFormularioCompleto()');
+    } else if (!window.location.search.includes('editar=')) {
+        limpiarFormularioCompleto();
+    } else {
+        console.log('⚠️ Modo edición detectado - No se limpian variables globales');
+    }
     
     // ✅ DESACTIVADO: Auto-guardado desactivado
     // configurarAutoGuardado();

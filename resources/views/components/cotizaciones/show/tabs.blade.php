@@ -1,21 +1,29 @@
 {{-- Tabs Navigation --}}
 @php
-    // Determinar qué tabs mostrar basado en el tipo de cotización
-    // Usar tipoCotizacion->codigo si existe, si no usar tipo
-    $tipo = ($cotizacion->tipoCotizacion && $cotizacion->tipoCotizacion->codigo) ? $cotizacion->tipoCotizacion->codigo : ($cotizacion->tipo ?? 'P');
-    $esPrenda = $tipo === 'P' || $tipo === 'PL';
-    $esLogo = $tipo === 'L' || $tipo === 'PL';
-    $esReflectivo = $tipo === 'RF';
+    // Obtener IDs de tipos de cotización
+    $idPrenda = \App\Models\TipoCotizacion::getIdPorCodigo('P');
+    $idLogo = \App\Models\TipoCotizacion::getIdPorCodigo('L');
+    $idCombinada = \App\Models\TipoCotizacion::getIdPorCodigo('PL');
+    $idReflectivo = \App\Models\TipoCotizacion::getIdPorCodigo('RF');
+    
+    // Determinar qué tabs mostrar basado en el tipo_cotizacion_id
+    $tipoCotizacionId = $cotizacion->tipo_cotizacion_id;
+    $esPrenda = $tipoCotizacionId === $idPrenda || $tipoCotizacionId === $idCombinada;
+    $esLogo = $tipoCotizacionId === $idLogo || $tipoCotizacionId === $idCombinada;
+    $esReflectivo = $tipoCotizacionId === $idReflectivo;
     $tienePrendas = $cotizacion->prendas && count($cotizacion->prendas) > 0;
     $tieneReflectivoCotizacion = $cotizacion->reflectivoCotizacion !== null;
-    
+
     // Verificar si alguna prenda tiene reflectivo
     $tieneReflectivoPrenda = false;
     if ($cotizacion->prendas) {
         $tieneReflectivoPrenda = $cotizacion->prendas->contains(fn($prenda) => $prenda->tiene_reflectivo ?? false);
     }
-    
+
     $tieneReflectivo = $tieneReflectivoCotizacion || $tieneReflectivoPrenda;
+
+    // Mostrar tab de logo si es tipo logo O si tiene información de logo
+    $mostrarTabLogo = $esLogo || ($logo && ($logo->descripcion || ($logo->fotos && $logo->fotos->count() > 0)));
 @endphp
 
 <div style="
@@ -30,7 +38,7 @@
     width: 100%;
 ">
     @if($esPrenda && $tienePrendas)
-        <button class="tab-button {{ !$esLogo ? 'active' : '' }}" onclick="cambiarTab('prendas', this)" style="
+        <button class="tab-button {{ !$mostrarTabLogo ? 'active' : '' }}" onclick="cambiarTab('prendas', this)" style="
             padding: 1rem 1.5rem;
             background: none;
             border: none;
@@ -50,8 +58,8 @@
         </button>
     @endif
     
-    @if($esLogo)
-        <button class="tab-button {{ $esLogo ? 'active' : '' }}" onclick="cambiarTab('bordado', this)" style="
+    @if($mostrarTabLogo)
+        <button class="tab-button {{ $mostrarTabLogo ? 'active' : '' }}" onclick="cambiarTab('bordado', this)" style="
             padding: 1rem 1.5rem;
             background: none;
             border: none;

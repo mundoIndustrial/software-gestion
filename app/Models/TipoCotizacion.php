@@ -19,6 +19,14 @@ class TipoCotizacion extends Model
         'activo' => 'boolean'
     ];
 
+    // Constantes para los IDs de tipos de cotización
+    // Se obtienen dinámicamente según el código
+    public static function getIdPorCodigo(string $codigo): ?int
+    {
+        $tipo = self::where('codigo', $codigo)->first();
+        return $tipo?->id;
+    }
+
     /**
      * Relación con Cotizaciones
      */
