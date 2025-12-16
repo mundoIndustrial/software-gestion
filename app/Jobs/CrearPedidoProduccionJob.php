@@ -7,6 +7,7 @@ use App\DTOs\CrearPedidoProduccionDTO;
 use App\Services\Pedidos\PrendaProcessorService;
 use App\Application\Services\PedidoPrendaService;
 use App\Application\Services\PedidoLogoService;
+use App\Application\Services\CopiarImagenesCotizacionAPedidoService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -30,10 +31,11 @@ class CrearPedidoProduccionJob implements ShouldQueue
     public function handle(
         PrendaProcessorService $prendaProcessor,
         PedidoPrendaService $prendaService,
-        PedidoLogoService $logoService
+        PedidoLogoService $logoService,
+        CopiarImagenesCotizacionAPedidoService $copiarImagenesService
     ): PedidoProduccion {
         // Usar transacción para garantizar atomicidad
-        return DB::transaction(function () use ($prendaProcessor, $prendaService, $logoService) {
+        return DB::transaction(function () use ($prendaProcessor, $prendaService, $logoService, $copiarImagenesService) {
             // Obtener y incrementar número de pedido de forma segura
             $numeroPedido = DB::table('numero_secuencias')
                 ->where('tipo', 'pedido_produccion')
@@ -58,6 +60,7 @@ class CrearPedidoProduccionJob implements ShouldQueue
                 'asesor_id' => $this->asesorId,
                 'numero_pedido' => $numeroPedido,
                 'prendas' => $prendasProcesadas,
+                'forma_de_pago' => $this->dto->formaDePago,
                 'estado' => 'Pendiente',
             ]);
 
@@ -65,6 +68,12 @@ class CrearPedidoProduccionJob implements ShouldQueue
             if (!empty($this->prendas)) {
                 $prendaService->guardarPrendasEnPedido($pedido, $this->prendas);
             }
+
+            // Copiar imágenes de la cotización al pedido
+            $copiarImagenesService->copiarImagenesCotizacionAPedido(
+                $this->dto->cotizacionId,
+                $pedido->id
+            );
 
             // Guardar logo si existe (DDD)
             if (!empty($this->dto->logo)) {

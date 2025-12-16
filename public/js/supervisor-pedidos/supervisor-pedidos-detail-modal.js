@@ -95,7 +95,7 @@ window.openOrderDetailModal = async function openOrderDetailModal(ordenId) {
         // Número de orden
         const ordenDiv = document.getElementById('order-pedido');
         if (ordenDiv) {
-            ordenDiv.textContent = `N° ${data.id}`;
+            ordenDiv.textContent = `N° ${data.numero_pedido}`;
         }
         
         // Información del pedido
