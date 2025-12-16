@@ -64,12 +64,18 @@ class CrearPedidoProduccionJob
             ]);
 
             // Guardar prendas en tablas normalizadas (DDD)
-            // Convertir DTOs a arrays antes de guardar
+            // Convertir DTOs a arrays antes de guardar - CONVERSIÓN EXPLÍCITA
             if (!empty($this->prendas)) {
-                $prendasArray = array_map(
-                    fn($prenda) => $prenda instanceof PrendaCreacionDTO ? $prenda->toArray() : $prenda,
-                    $this->prendas
-                );
+                $prendasArray = [];
+                foreach ($this->prendas as $prenda) {
+                    if ($prenda instanceof PrendaCreacionDTO) {
+                        $prendasArray[] = $prenda->toArray();
+                    } elseif (is_object($prenda) && method_exists($prenda, 'toArray')) {
+                        $prendasArray[] = $prenda->toArray();
+                    } else {
+                        $prendasArray[] = $prenda;
+                    }
+                }
                 $prendaService->guardarPrendasEnPedido($pedido, $prendasArray);
             }
 

@@ -41,6 +41,11 @@ class PedidoPrendaService
         try {
             $index = 1;
             foreach ($prendas as $prendaData) {
+                // CRÍTICO: Convertir DTO a array si es necesario
+                if (is_object($prendaData) && method_exists($prendaData, 'toArray')) {
+                    $prendaData = $prendaData->toArray();
+                }
+                
                 $this->guardarPrenda($pedido, $prendaData, $index);
                 $index++;
             }
@@ -64,8 +69,23 @@ class PedidoPrendaService
      * Genera descripción formateada usando DescripcionPrendaLegacyFormatter
      * (Formato compatible con pedidos legacy como 45452)
      */
-    private function guardarPrenda(PedidoProduccion $pedido, array $prendaData, int $index = 1): void
+    private function guardarPrenda(PedidoProduccion $pedido, mixed $prendaData, int $index = 1): void
     {
+        // DEFENSA: Convertir DTO a array si llega un objeto
+        if (is_object($prendaData) && method_exists($prendaData, 'toArray')) {
+            $prendaData = $prendaData->toArray();
+        } elseif (is_object($prendaData)) {
+            // Conversión forzada de objeto a array como último recurso
+            $prendaData = (array)$prendaData;
+        }
+        
+        // Validar que sea array después de conversión
+        if (!is_array($prendaData)) {
+            throw new \InvalidArgumentException(
+                'guardarPrenda: prendaData debe ser un array o DTO con toArray(). Recibido: ' . gettype($prendaData)
+            );
+        }
+
         // Construir array de datos para el formatter legacy
         $datosParaFormatter = $this->construirDatosParaFormatter($prendaData, $index);
         
