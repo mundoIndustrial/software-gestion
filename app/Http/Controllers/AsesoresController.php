@@ -4,12 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\ProductoPedido;
 use App\Models\PedidoProduccion;
+use App\Models\PrendaPedido;
+use App\Models\ProcesoPrenda;
+use App\Models\MaterialesOrdenInsumos;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\AsesoresInventarioTelasController;
 use App\Application\Services\PedidoLogoService;
+use App\Application\Services\PedidoPrendaService;
 
 class AsesoresController extends Controller
 {
@@ -255,15 +259,15 @@ class AsesoresController extends Controller
                 'estado' => 'No iniciado',
             ]);
 
-            // Crear los productos del pedido usando PrendaPedido
-            foreach ($validated[$productosKey] as $productoData) {
-                $pedidoBorrador->prendas()->create([
-                    'nombre_prenda' => $productoData['nombre_producto'],
-                    'talla' => $productoData['talla'] ?? null,
-                    'cantidad' => $productoData['cantidad'],
-                    'precio_unitario' => $productoData['precio_unitario'] ?? null,
-                ]);
-            }
+            // ✅ Guardar prendas COMPLETAS usando PedidoPrendaService
+            // Este servicio guarda toda la información de las prendas:
+            // - Nombre, cantidad, descripción
+            // - Variaciones (manga, broche, bolsillos, reflectivo)
+            // - Colores y telas
+            // - Fotos de prendas, logos y telas
+            // - Descripción formateada en formato legacy
+            $pedidoPrendaService = new PedidoPrendaService();
+            $pedidoPrendaService->guardarPrendasEnPedido($pedidoBorrador, $validated[$productosKey]);
 
             // ✅ GUARDAR LOGO Y SUS IMÁGENES (PASO 3)
             if (!empty($request->get('logo.descripcion')) || $request->hasFile('logo.imagenes')) {
@@ -460,6 +464,20 @@ class AsesoresController extends Controller
     /**
      * Eliminar pedido
      */
+    /**
+     * Eliminar un pedido completamente (incluyendo todas sus relaciones)
+     * 
+     * Elimina:
+     * - El pedido de producción
+     * - Todas las prendas asociadas
+     * - Todos los procesos de prenda
+     * - Todos los materiales de insumos
+     * - Historial de cambios de estado
+     * - Los logos asociados
+     * - Todas las fotos de prendas (prenda_fotos_pedido)
+     * - Todas las fotos de telas (prenda_fotos_tela_pedido)
+     * - Todas las fotos de logos de prendas (prenda_fotos_logo_pedido)
+     */
     public function destroy($pedido)
     {
         $userId = Auth::id();
@@ -470,18 +488,83 @@ class AsesoresController extends Controller
 
         DB::beginTransaction();
         try {
-            // Las prendas se eliminan automáticamente por la foreign key cascade
+            $numeroPedido = $pedidoData->numero_pedido;
+            
+            \Log::info('🗑️ Iniciando eliminación de pedido', [
+                'numero_pedido' => $numeroPedido,
+                'pedido_id' => $pedidoData->id,
+            ]);
+            
+            // Obtener todas las prendas del pedido para eliminar sus fotos
+            $prendas = PrendaPedido::where('numero_pedido', $numeroPedido)->get();
+            
+            // 1. Eliminar fotos de prendas (prenda_fotos_pedido)
+            foreach ($prendas as $prenda) {
+                DB::table('prenda_fotos_pedido')
+                    ->where('prenda_pedido_id', $prenda->id)
+                    ->delete();
+                
+                // 2. Eliminar fotos de telas (prenda_fotos_tela_pedido)
+                DB::table('prenda_fotos_tela_pedido')
+                    ->where('prenda_pedido_id', $prenda->id)
+                    ->delete();
+                
+                // 3. Eliminar fotos de logos de prendas (prenda_fotos_logo_pedido)
+                DB::table('prenda_fotos_logo_pedido')
+                    ->where('prenda_pedido_id', $prenda->id)
+                    ->delete();
+            }
+            
+            \Log::info('🗑️ Fotos eliminadas del pedido', [
+                'numero_pedido' => $numeroPedido,
+                'prendas_procesadas' => $prendas->count()
+            ]);
+            
+            // 4. Eliminar procesos de prenda (relacionados por numero_pedido)
+            ProcesoPrenda::where('numero_pedido', $numeroPedido)->delete();
+            
+            // 5. Eliminar prendas (relacionadas por numero_pedido)
+            PrendaPedido::where('numero_pedido', $numeroPedido)->delete();
+            
+            \Log::info('🗑️ Prendas eliminadas', [
+                'numero_pedido' => $numeroPedido,
+                'cantidad_prendas' => $prendas->count()
+            ]);
+            
+            // 6. Eliminar materiales de insumos (relacionados por numero_pedido)
+            MaterialesOrdenInsumos::where('numero_pedido', $numeroPedido)->delete();
+            
+            // 7. Eliminar el pedido de pedidos_produccion
             $pedidoData->delete();
+            
+            \Log::info('🗑️ Pedido eliminado de pedidos_produccion', [
+                'numero_pedido' => $numeroPedido,
+                'pedido_id' => $pedidoData->id,
+            ]);
+            
+            // 8. Decrementar el número de secuencia
+            DB::table('numero_secuencias')
+                ->where('tipo', 'pedido_produccion')
+                ->decrement('siguiente');
+            
+            \Log::info('🗑️ Número de secuencia decrementado', [
+                'numero_pedido' => $numeroPedido,
+            ]);
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Pedido eliminado exitosamente'
+                'message' => 'Pedido, prendas y todas sus fotos eliminados exitosamente'
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error('❌ Error al eliminar pedido: ' . $e->getMessage(), [
+                'pedido' => $pedido,
+                'usuario' => $userId,
+                'exception' => $e
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error al eliminar el pedido: ' . $e->getMessage()

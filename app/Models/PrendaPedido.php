@@ -96,6 +96,14 @@ class PrendaPedido extends Model
     }
 
     /**
+     * Relación: Una prenda tiene muchas fotos de tela
+     */
+    public function fotosTela(): HasMany
+    {
+        return $this->hasMany(PrendaFotoTelaPedido::class, 'prenda_pedido_id');
+    }
+
+    /**
      * Generar descripción detallada con formato template especificado
      * Utiliza DescripcionPrendaHelper para generar formato estructurado
      * 

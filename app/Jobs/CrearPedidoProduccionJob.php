@@ -34,6 +34,12 @@ class CrearPedidoProduccionJob
     ): PedidoProduccion {
         // Usar transacción para garantizar atomicidad
         return DB::transaction(function () use ($prendaProcessor, $prendaService, $logoService, $copiarImagenesService) {
+            \Log::info('🔍 [CrearPedidoProduccionJob] Iniciando creación de pedido', [
+                'dto_forma_de_pago' => $this->dto->formaDePago,
+                'dto_cliente' => $this->dto->cliente,
+                'dto_cotizacion_id' => $this->dto->cotizacionId,
+            ]);
+
             // Obtener y incrementar número de pedido de forma segura
             $numeroPedido = DB::table('numero_secuencias')
                 ->where('tipo', 'pedido_produccion')
@@ -52,6 +58,13 @@ class CrearPedidoProduccionJob
                 $this->prendas
             );
 
+            \Log::info('🔍 [CrearPedidoProduccionJob] Datos a guardar en PedidoProduccion', [
+                'numero_pedido' => $numeroPedido,
+                'forma_de_pago' => $this->dto->formaDePago,
+                'cliente' => $this->dto->cliente,
+                'asesor_id' => $this->asesorId,
+            ]);
+
             // Crear pedido con número generado
             $pedido = PedidoProduccion::create([
                 'cotizacion_id' => $this->dto->cotizacionId,
@@ -62,8 +75,14 @@ class CrearPedidoProduccionJob
                 'descripcion' => $this->dto->descripcion,
                 'forma_de_pago' => $this->dto->formaDePago,
                 'prendas' => $prendasProcesadas,
-                'forma_de_pago' => $this->dto->formaDePago,
                 'estado' => 'Pendiente',
+                'fecha_de_creacion_de_orden' => now(),
+            ]);
+
+            \Log::info('✅ [CrearPedidoProduccionJob] Pedido creado exitosamente', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+                'forma_de_pago_guardada' => $pedido->forma_de_pago,
             ]);
 
             // Guardar prendas en tablas normalizadas (DDD)

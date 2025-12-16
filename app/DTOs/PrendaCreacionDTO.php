@@ -30,6 +30,9 @@ class PrendaCreacionDTO
         public readonly ?int $telaId = null,
         public readonly ?int $tipoMangaId = null,
         public readonly ?int $tipoBrocheId = null,
+        public readonly array $fotos = [],
+        public readonly array $telas = [],
+        public readonly array $logos = [],
     ) {}
 
     /**
@@ -59,6 +62,9 @@ class PrendaCreacionDTO
             telaId: $data['tela_id'] ?? null,
             tipoMangaId: $data['tipo_manga_id'] ?? null,
             tipoBrocheId: $data['tipo_broche_id'] ?? null,
+            fotos: $data['fotos'] ?? [],
+            telas: $data['telas'] ?? [],
+            logos: $data['logos'] ?? [],
         );
     }
 
@@ -105,6 +111,9 @@ class PrendaCreacionDTO
             'tela_id' => $this->telaId,
             'tipo_manga_id' => $this->tipoMangaId,
             'tipo_broche_id' => $this->tipoBrocheId,
+            'fotos' => $this->fotos,
+            'telas' => $this->telas,
+            'logos' => $this->logos,
         ];
     }
 }

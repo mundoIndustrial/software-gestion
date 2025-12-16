@@ -67,12 +67,61 @@ class PedidoProduccionController extends Controller
                 'forma_de_pago' => 'nullable|string',
             ]);
 
+            \Log::info('🔍 [PedidoProduccionController] Request recibido', [
+                'validated' => $validated,
+                'all_request' => $request->all(),
+            ]);
+
             // Obtener cotización
             $cotizacion = Cotizacion::with('cliente')->findOrFail($validated['cotizacion_id']);
+
+            \Log::info('🔍 [PedidoProduccionController] Cotización obtenida', [
+                'cotizacion_id' => $cotizacion->id,
+                'especificaciones' => $cotizacion->especificaciones,
+            ]);
 
             // Extraer TODA la información normalizada de la cotización
             // (prendas, variantes, telas, tallas, fotos)
             $datosExtraidos = $this->dataExtractor->extraerDatos($cotizacion);
+
+            // Extraer forma de pago de especificaciones
+            $formaDePago = null;
+            if ($cotizacion->especificaciones) {
+                $especificaciones = is_array($cotizacion->especificaciones) 
+                    ? $cotizacion->especificaciones 
+                    : json_decode($cotizacion->especificaciones, true);
+                
+                \Log::info('🔍 [PedidoProduccionController] Especificaciones decodificadas', [
+                    'especificaciones' => $especificaciones,
+                ]);
+
+                if (isset($especificaciones['forma_pago'])) {
+                    $formaPagoArray = $especificaciones['forma_pago'];
+                    \Log::info('🔍 [PedidoProduccionController] forma_pago encontrada en especificaciones', [
+                        'forma_pago_array' => $formaPagoArray,
+                        'es_array' => is_array($formaPagoArray),
+                    ]);
+                    
+                    // Si es un array, tomar el primer elemento (si existe)
+                    if (is_array($formaPagoArray) && !empty($formaPagoArray)) {
+                        $formaDePago = $formaPagoArray[0];
+                    } elseif (!is_array($formaPagoArray)) {
+                        $formaDePago = $formaPagoArray;
+                    }
+                }
+            }
+
+            // Usar forma_de_pago del request si viene
+            if (!empty($validated['forma_de_pago'])) {
+                \Log::info('🔍 [PedidoProduccionController] Usando forma_de_pago del request', [
+                    'forma_de_pago_request' => $validated['forma_de_pago'],
+                ]);
+                $formaDePago = $validated['forma_de_pago'];
+            }
+
+            \Log::info('🔍 [PedidoProduccionController] Forma de pago final antes de DTO', [
+                'forma_de_pago_final' => $formaDePago,
+            ]);
 
             // Crear DTO con los datos extraídos
             $dto = CrearPedidoProduccionDTO::fromRequest([
@@ -80,6 +129,11 @@ class PedidoProduccionController extends Controller
                 'prendas' => $datosExtraidos['prendas'],
                 'cliente' => $datosExtraidos['cliente'],
                 'cliente_id' => $datosExtraidos['cliente_id'],
+                'forma_de_pago' => $formaDePago,
+            ]);
+
+            \Log::info('🔍 [PedidoProduccionController] DTO creado', [
+                'dto_forma_de_pago' => $dto->formaDePago,
             ]);
 
             // Validar DTO

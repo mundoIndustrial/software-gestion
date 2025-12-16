@@ -25,6 +25,12 @@ class PedidoProduccionCreatorService
      */
     public function crear(CrearPedidoProduccionDTO $dto, int $asesorId): ?PedidoProduccion
     {
+        \Log::info('🔍 [PedidoProduccionCreatorService] Iniciando creación de pedido', [
+            'dto_forma_de_pago' => $dto->formaDePago,
+            'dto_cliente' => $dto->cliente,
+            'dto_cotizacion_id' => $dto->cotizacionId,
+        ]);
+
         // Validar DTO
         if (!$dto->esValido()) {
             throw new \InvalidArgumentException('Datos inválidos para crear pedido');
@@ -36,9 +42,21 @@ class PedidoProduccionCreatorService
             throw new \InvalidArgumentException('No hay prendas con cantidades válidas');
         }
 
+        \Log::info('🔍 [PedidoProduccionCreatorService] Despachando Job', [
+            'forma_de_pago_antes_job' => $dto->formaDePago,
+            'prendas_validas' => count($prendas),
+        ]);
+
         // Ejecutar el Job de forma sincrónica para garantizar número secuencial
         // y retornar el pedido creado inmediatamente
-        return Bus::dispatchSync(new CrearPedidoProduccionJob($dto, $asesorId, $prendas));
+        $pedido = Bus::dispatchSync(new CrearPedidoProduccionJob($dto, $asesorId, $prendas));
+
+        \Log::info('✅ [PedidoProduccionCreatorService] Pedido creado desde servicio', [
+            'pedido_id' => $pedido?->id,
+            'forma_de_pago_guardada' => $pedido?->forma_de_pago,
+        ]);
+
+        return $pedido;
     }
 
 }

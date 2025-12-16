@@ -34,13 +34,31 @@ class CrearPedidoProduccionDTO
             );
         }
 
+        // Normalizar forma_de_pago: si es array, tomar el primer elemento
+        $formaDePago = $data['forma_de_pago'] ?? null;
+        
+        \Log::info('🔍 [CrearPedidoProduccionDTO] Datos recibidos en fromRequest', [
+            'forma_de_pago_raw' => $formaDePago,
+            'es_array' => is_array($formaDePago),
+            'tipo' => gettype($formaDePago),
+        ]);
+        
+        if (is_array($formaDePago)) {
+            $formaDePago = (isset($formaDePago[0]) && !empty($formaDePago[0])) ? $formaDePago[0] : null;
+        }
+
+        \Log::info('🔍 [CrearPedidoProduccionDTO] Forma de pago normalizada', [
+            'forma_de_pago_final' => $formaDePago,
+            'tipo_final' => gettype($formaDePago),
+        ]);
+
         return new self(
             cotizacionId: $data['cotizacion_id'] ?? 0,
             prendasData: $prendasData,
             cliente: $data['cliente'] ?? null,
             clienteId: $data['cliente_id'] ?? null,
             descripcion: $data['descripcion'] ?? null,
-            formaDePago: $data['forma_de_pago'] ?? null,
+            formaDePago: $formaDePago,
             logo: $data['logo'] ?? null,
         );
     }

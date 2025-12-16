@@ -95,6 +95,24 @@ document.addEventListener('DOMContentLoaded', function() {
                     <i class="fas fa-ban" style="color: #ef4444;"></i> Ver Motivo
                 </button>
             ` : ''}
+            <div style="height: 1px; background: #e5e7eb;"></div>
+            <button onclick="confirmarEliminarPedido(${pedido}); closeDropdown()" style="
+                width: 100%;
+                text-align: left;
+                padding: 0.875rem 1rem;
+                border: none;
+                background: transparent;
+                cursor: pointer;
+                color: #dc2626;
+                font-size: 0.875rem;
+                transition: background 0.2s ease;
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                font-weight: 500;
+            " onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='transparent'">
+                <i class="fas fa-trash-alt" style="color: #dc2626;"></i> Eliminar
+            </button>
         `;
         
         container.appendChild(dropdown);

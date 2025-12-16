@@ -258,9 +258,26 @@ class PedidoPrendaService
      */
     private function guardarFotosTelas(PrendaPedido $prenda, array $telas): void
     {
+        Log::info('🧵 guardarFotosTelas - Iniciando', [
+            'prenda_id' => $prenda->id,
+            'cantidad_telas' => count($telas),
+            'telas_data' => $telas,
+        ]);
+
         foreach ($telas as $tela) {
+            Log::info('🧵 Procesando tela', [
+                'tela_data' => $tela,
+                'tiene_fotos' => !empty($tela['fotos']),
+            ]);
+            
             if (!empty($tela['fotos'])) {
                 foreach ($tela['fotos'] as $index => $foto) {
+                    Log::info('🧵 Guardando foto de tela', [
+                        'foto_data' => $foto,
+                        'tela_id' => $tela['tela_id'] ?? null,
+                        'color_id' => $tela['color_id'] ?? null,
+                    ]);
+                    
                     DB::table('prenda_fotos_tela_pedido')->insert([
                         'prenda_pedido_id' => $prenda->id,
                         'tela_id' => $tela['tela_id'] ?? null,
@@ -277,6 +294,177 @@ class PedidoPrendaService
                     ]);
                 }
             }
+        }
+        
+        Log::info('🧵 guardarFotosTelas - Completado');
+    }
+
+    /**
+     * Copiar imágenes de la cotización al pedido
+     * 
+     * Cuando se convierte una cotización a pedido, copia las URLs de las imágenes
+     * sin duplicar archivos en storage (solo copia las rutas)
+     */
+    public function copiarImagenesDeCotizacion(PedidoProduccion $pedido, int $cotizacionId): void
+    {
+        try {
+            // Obtener prendas de la cotización
+            $prendasCot = DB::table('prendas_cot')
+                ->where('cotizacion_id', $cotizacionId)
+                ->get();
+
+            if ($prendasCot->isEmpty()) {
+                Log::warning('PedidoPrendaService: No hay prendas en cotización para copiar', [
+                    'cotizacion_id' => $cotizacionId,
+                    'pedido_id' => $pedido->id,
+                ]);
+                return;
+            }
+
+            DB::beginTransaction();
+            try {
+                foreach ($prendasCot as $prendaCot) {
+                    // Obtener la prenda correspondiente en el pedido
+                    $prendaPedido = PrendaPedido::where('numero_pedido', $pedido->numero_pedido)
+                        ->orderBy('id')
+                        ->first();
+
+                    if (!$prendaPedido) {
+                        continue; // Saltar si no hay prenda correspondiente
+                    }
+
+                    // 1. Copiar fotos de prendas
+                    $this->copiarFotosPrendaDeCotizacion($prendaPedido, $prendaCot->id);
+
+                    // 2. Copiar fotos de telas
+                    $this->copiarFotosTelasDeCotizacion($prendaPedido, $prendaCot->id);
+
+                    // 3. Copiar logos (si existen)
+                    $this->copiarLogosDePrenadaDeCotizacion($prendaPedido, $prendaCot->id);
+                }
+
+                DB::commit();
+                Log::info('PedidoPrendaService: Imágenes copiadas de cotización a pedido', [
+                    'cotizacion_id' => $cotizacionId,
+                    'pedido_id' => $pedido->id,
+                ]);
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        } catch (\Exception $e) {
+            Log::error('PedidoPrendaService: Error copiando imágenes de cotización', [
+                'cotizacion_id' => $cotizacionId,
+                'pedido_id' => $pedido->id,
+                'error' => $e->getMessage(),
+            ]);
+            // No lanzar excepción, solo registrar el error
+        }
+    }
+
+    /**
+     * Copiar fotos de prenda desde cotización al pedido
+     */
+    private function copiarFotosPrendaDeCotizacion(PrendaPedido $prendaPedido, int $prendaCotId): void
+    {
+        $fotosCot = DB::table('prenda_fotos_cot')
+            ->where('prenda_cot_id', $prendaCotId)
+            ->orderBy('orden')
+            ->get();
+
+        foreach ($fotosCot as $foto) {
+            DB::table('prenda_fotos_pedido')->insert([
+                'prenda_pedido_id' => $prendaPedido->id,
+                'ruta_original' => $foto->ruta_original,
+                'ruta_webp' => $foto->ruta_webp,
+                'ruta_miniatura' => $foto->ruta_miniatura,
+                'orden' => $foto->orden,
+                'ancho' => $foto->ancho,
+                'alto' => $foto->alto,
+                'tamaño' => $foto->tamaño,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        Log::info('PedidoPrendaService: Fotos de prenda copiadas', [
+            'prenda_pedido_id' => $prendaPedido->id,
+            'prenda_cot_id' => $prendaCotId,
+            'cantidad' => $fotosCot->count(),
+        ]);
+    }
+
+    /**
+     * Copiar fotos de telas desde cotización al pedido
+     */
+    private function copiarFotosTelasDeCotizacion(PrendaPedido $prendaPedido, int $prendaCotId): void
+    {
+        $fotosTelaCot = DB::table('prenda_tela_fotos_cot')
+            ->where('prenda_cot_id', $prendaCotId)
+            ->orderBy('orden')
+            ->get();
+
+        foreach ($fotosTelaCot as $foto) {
+            DB::table('prenda_fotos_tela_pedido')->insert([
+                'prenda_pedido_id' => $prendaPedido->id,
+                'tela_id' => null, // No se copia tela_id, solo las fotos
+                'color_id' => null,
+                'ruta_original' => $foto->ruta_original,
+                'ruta_webp' => $foto->ruta_webp,
+                'ruta_miniatura' => $foto->ruta_miniatura,
+                'orden' => $foto->orden,
+                'ancho' => $foto->ancho,
+                'alto' => $foto->alto,
+                'tamaño' => $foto->tamaño,
+                'observaciones' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        Log::info('PedidoPrendaService: Fotos de telas copiadas', [
+            'prenda_pedido_id' => $prendaPedido->id,
+            'prenda_cot_id' => $prendaCotId,
+            'cantidad' => $fotosTelaCot->count(),
+        ]);
+    }
+
+    /**
+     * Copiar logos de prenda desde cotización al pedido
+     */
+    private function copiarLogosDePrenadaDeCotizacion(PrendaPedido $prendaPedido, int $prendaCotId): void
+    {
+        // Buscar logo cotización asociado a la prenda
+        $logosCot = DB::table('logo_fotos_cot')
+            ->join('logo_cotizacion', 'logo_fotos_cot.logo_cotizacion_id', '=', 'logo_cotizacion.id')
+            ->where('logo_cotizacion.prenda_cot_id', $prendaCotId)
+            ->select('logo_fotos_cot.*')
+            ->orderBy('logo_fotos_cot.orden')
+            ->get();
+
+        foreach ($logosCot as $logo) {
+            DB::table('prenda_fotos_logo_pedido')->insert([
+                'prenda_pedido_id' => $prendaPedido->id,
+                'ruta_original' => $logo->ruta_original,
+                'ruta_webp' => $logo->ruta_webp,
+                'ruta_miniatura' => $logo->ruta_miniatura,
+                'orden' => $logo->orden,
+                'ubicacion' => null, // Se puede llenar después si es necesario
+                'ancho' => $logo->ancho,
+                'alto' => $logo->alto,
+                'tamaño' => $logo->tamaño,
+                'observaciones' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        if ($logosCot->isNotEmpty()) {
+            Log::info('PedidoPrendaService: Logos de prenda copiados', [
+                'prenda_pedido_id' => $prendaPedido->id,
+                'prenda_cot_id' => $prendaCotId,
+                'cantidad' => $logosCot->count(),
+            ]);
         }
     }
 }

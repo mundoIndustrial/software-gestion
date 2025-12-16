@@ -79,9 +79,9 @@ class CopiarImagenesCotizacionAPedidoService
                     continue;
                 }
 
-                // Copiar fotos de prenda
-                $fotosCopiadas = $this->copiarFotosPrenda($prendaCot, $prendaPed);
-                $totalImagenesCopiadas += $fotosCopiadas;
+                // Copiar fotos de prenda (comentado: tabla prenda_fotos_ped no existe)
+                // $fotosCopiadas = $this->copiarFotosPrenda($prendaCot, $prendaPed);
+                // $totalImagenesCopiadas += $fotosCopiadas;
 
                 // Copiar fotos de tela
                 $fotosTelaCopiadas = $this->copiarFotosTela($prendaCot, $prendaPed);
@@ -173,17 +173,12 @@ class CopiarImagenesCotizacionAPedidoService
                 return 0;
             }
 
-            // Primero crear una tela en el pedido para asociar las fotos
-            $telaPed = \App\Models\PrendaTelaPed::create([
-                'prenda_ped_id' => $prendaPedido->id,
-                'color_id' => null,
-                'tela_id' => null,
-            ]);
-
-            // Luego copiar las fotos de tela
+            // Copiar las fotos de tela directamente a prenda_fotos_tela_pedido
             foreach ($fotosTela as $foto) {
-                \App\Models\PrendaTalaFotoPed::create([
-                    'prenda_tela_ped_id' => $telaPed->id,
+                \App\Models\PrendaFotoTelaPedido::create([
+                    'prenda_pedido_id' => $prendaPedido->id,
+                    'tela_id' => null,
+                    'color_id' => null,
                     'ruta_original' => $foto->ruta_original,
                     'ruta_webp' => $foto->ruta_webp,
                     'ruta_miniatura' => $foto->ruta_miniatura,
@@ -197,7 +192,6 @@ class CopiarImagenesCotizacionAPedidoService
             Log::info('🧵 Fotos de tela copiadas', [
                 'prenda_cot_id' => $prendaCot->id,
                 'prenda_pedido_id' => $prendaPedido->id,
-                'tela_ped_id' => $telaPed->id,
                 'cantidad_fotos_tela' => $fotosTela->count()
             ]);
 

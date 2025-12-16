@@ -7,6 +7,7 @@ use App\Services\Pedidos\PedidoProduccionCreatorService;
 use App\Services\Pedidos\PrendaProcessorService;
 use App\Application\Services\PedidoPrendaService;
 use App\Application\Services\PedidoLogoService;
+use App\Application\Services\CopiarImagenesCotizacionAPedidoService;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -49,6 +50,11 @@ class PedidosServiceProvider extends ServiceProvider
         // Registrar PedidoLogoService como singleton (DDD)
         $this->app->singleton(PedidoLogoService::class, function ($app) {
             return new PedidoLogoService();
+        });
+
+        // Registrar CopiarImagenesCotizacionAPedidoService como singleton
+        $this->app->singleton(CopiarImagenesCotizacionAPedidoService::class, function ($app) {
+            return new CopiarImagenesCotizacionAPedidoService();
         });
     }
 

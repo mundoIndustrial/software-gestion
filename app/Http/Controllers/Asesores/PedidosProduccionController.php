@@ -145,11 +145,22 @@ class PedidosProduccionController extends Controller
                 $numeroCotizacion = implode(',', $numeroCotizacion);
             }
             
-            // Sanitizar forma_de_pago (convertir a string si es array)
-            $formaPago = $especificaciones['forma_pago'] ?? null;
-            if (is_array($formaPago)) {
-                $formaPago = implode(',', $formaPago);
+            // Obtener forma_de_pago del request (enviado por frontend)
+            $formaPago = request()->input('forma_de_pago');
+            
+            // Si no viene en el request, intentar obtener de las especificaciones
+            if (empty($formaPago)) {
+                $formaPago = $especificaciones['forma_pago'] ?? null;
+                if (is_array($formaPago)) {
+                    $formaPago = implode(',', $formaPago);
+                }
             }
+            
+            \Log::info('💰 Forma de pago recibida:', [
+                'forma_de_pago' => $formaPago,
+                'from_request' => request()->input('forma_de_pago'),
+                'from_spec' => $especificaciones['forma_pago'] ?? 'none'
+            ]);
             
             $pedido = PedidoProduccion::create([
                 'cotizacion_id' => $cotizacion->id,

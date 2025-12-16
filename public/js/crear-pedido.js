@@ -391,7 +391,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     broche_obs: observacionesMap.broche_obs,
                     reflectivo_obs: observacionesMap.reflectivo_obs,
                     observaciones: prenda.variantes?.observaciones,
-                    cantidades: cantidadesPorTalla
+                    cantidades: cantidadesPorTalla,
+                    // ✅ FOTOS DE PRENDA
+                    fotos: prenda.fotos || [],
+                    // ✅ FOTOS DE TELAS
+                    telas: prenda.telaFotos || prenda.telas || [],
+                    // ✅ FOTOS DE LOGOS
+                    logos: prenda.logos || []
                 });
             }
         });

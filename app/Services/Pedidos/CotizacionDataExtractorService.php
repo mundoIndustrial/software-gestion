@@ -64,8 +64,11 @@ class CotizacionDataExtractorService
             // Obtener tallas
             $cantidades = $this->extraerTallas($prenda->id);
             
-            // Obtener fotos
+            // Obtener fotos de prenda
             $fotos = $this->extraerFotos($prenda->id);
+            
+            // ✅ Obtener logos de prenda
+            $logos = $this->extraerLogos($prenda->id);
 
             $prendasProcesadas[] = [
                 'index' => count($prendasProcesadas) + 1,
@@ -90,9 +93,10 @@ class CotizacionDataExtractorService
                 'color_id' => $primeraTela['color_id'] ?? null,
                 'tela_id' => $primeraTela['tela_id'] ?? null,
                 
-                // Datos extra si se necesitan
-                'telas' => $telas,
+                // Datos extra: fotos, telas y logos
                 'fotos' => $fotos,
+                'telas' => $telas,
+                'logos' => $logos,
             ];
         }
 
@@ -154,13 +158,31 @@ class CotizacionDataExtractorService
             $tela = DB::table('telas_prenda')->where('id', $prendaTela->tela_id)->first();
             $color = DB::table('colores_prenda')->where('id', $prendaTela->color_id)->first();
             
+            // ✅ EXTRAER FOTOS DE TELA
+            $fotosTela = DB::table('prenda_tela_fotos_cot')
+                ->where('prenda_tela_cot_id', $prendaTela->id)
+                ->get();
+            
+            $fotosTelaFormato = [];
+            foreach ($fotosTela as $foto) {
+                $fotosTelaFormato[] = [
+                    'ruta_original' => $foto->ruta_original,
+                    'ruta_webp' => $foto->ruta_webp,
+                    'ruta_miniatura' => $foto->ruta_miniatura,
+                    'ancho' => $foto->ancho,
+                    'alto' => $foto->alto,
+                    'tamaño' => $foto->tamaño,
+                    'orden' => $foto->orden,
+                ];
+            }
+            
             $resultado[] = [
                 'color' => $color?->nombre ?? '',
                 'nombre_tela' => $tela?->nombre ?? '',
                 'referencia' => $tela?->referencia ?? '',
-                'url_imagen' => null,
                 'color_id' => $prendaTela->color_id,
                 'tela_id' => $prendaTela->tela_id,
+                'fotos' => $fotosTelaFormato,
             ];
         }
 
@@ -205,8 +227,59 @@ class CotizacionDataExtractorService
 
         foreach ($fotos as $foto) {
             $resultado[] = [
-                'url' => $foto->ruta_original ?? $foto->ruta_webp,
-                'nombre' => basename($foto->ruta_original ?? $foto->ruta_webp),
+                'ruta_original' => $foto->ruta_original,
+                'ruta_webp' => $foto->ruta_webp,
+                'ruta_miniatura' => $foto->ruta_miniatura,
+                'ancho' => $foto->ancho,
+                'alto' => $foto->alto,
+                'tamaño' => $foto->tamaño,
+                'orden' => $foto->orden,
+            ];
+        }
+
+        return $resultado;
+    }
+
+    /**
+     * Extrae los logos de una prenda
+     * 
+     * @param int $prendaCotId
+     * @return array
+     */
+    private function extraerLogos(int $prendaCotId): array
+    {
+        // Obtener la cotización de la prenda para acceder a los logos
+        $prendaCot = DB::table('prendas_cot')->find($prendaCotId);
+        if (!$prendaCot) {
+            return [];
+        }
+
+        // Obtener logos de la cotización
+        $logoCotizaciones = DB::table('logo_cotizaciones')
+            ->where('cotizacion_id', $prendaCot->cotizacion_id)
+            ->first();
+        
+        if (!$logoCotizaciones) {
+            return [];
+        }
+
+        // Obtener fotos del logo
+        $logos = DB::table('logo_fotos_cot')
+            ->where('logo_cotizacion_id', $logoCotizaciones->id)
+            ->get();
+
+        $resultado = [];
+
+        foreach ($logos as $logo) {
+            $resultado[] = [
+                'ruta_original' => $logo->ruta_original,
+                'ruta_webp' => $logo->ruta_webp,
+                'ruta_miniatura' => $logo->ruta_miniatura,
+                'ancho' => $logo->ancho,
+                'alto' => $logo->alto,
+                'tamaño' => $logo->tamaño,
+                'orden' => $logo->orden,
+                'ubicacion' => $logo->ubicacion ?? null,
             ];
         }
 

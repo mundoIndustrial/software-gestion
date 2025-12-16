@@ -62,6 +62,10 @@ export class FormularioPedidoController {
      */
     async enviar(cotizacionId, prendasData) {
         try {
+            // Obtener forma de pago del campo del formulario
+            const formaPagoInput = document.getElementById('forma_de_pago');
+            const formaDePago = formaPagoInput ? formaPagoInput.value : null;
+
             const response = await fetch(
                 `/asesores/cotizaciones/${cotizacionId}/crear-pedido-produccion`,
                 {
@@ -74,6 +78,7 @@ export class FormularioPedidoController {
                     body: JSON.stringify({
                         cotizacion_id: cotizacionId,
                         prendas: prendasData,
+                        forma_de_pago: formaDePago,
                     })
                 }
             );

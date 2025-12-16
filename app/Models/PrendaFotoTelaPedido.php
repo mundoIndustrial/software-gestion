@@ -7,26 +7,26 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * PrendaTalaFotoPed Model
+ * PrendaFotoTelaPedido Model
  * 
  * Representa una foto de tela en un pedido
- * Equivalente a PrendaTalaFotoCot pero para pedidos
+ * Equivalente a PrendaTelaFotoCot pero para pedidos
  */
-class PrendaTalaFotoPed extends Model
+class PrendaFotoTelaPedido extends Model
 {
     use SoftDeletes;
 
-    protected $table = 'prenda_tela_fotos_ped';
+    protected $table = 'prenda_fotos_tela_pedido';
     protected $guarded = [];
 
     protected $appends = ['url'];
 
     /**
-     * Relación: Pertenece a una tela
+     * Relación: Pertenece a una prenda
      */
-    public function tela(): BelongsTo
+    public function prenda(): BelongsTo
     {
-        return $this->belongsTo(PrendaTelaPed::class, 'prenda_tela_ped_id');
+        return $this->belongsTo(PrendaPedido::class, 'prenda_pedido_id');
     }
 
     /**
