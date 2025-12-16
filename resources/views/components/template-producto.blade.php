@@ -52,8 +52,8 @@
                         <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; margin-bottom: 0.5rem; color: #0066cc; font-size: 0.85rem;">
                             <i class="fas fa-image"></i> FOTOS PRENDA
                         </label>
-                        <label style="display: block; min-height: 80px; padding: 0.75rem; border: 2px dashed #0066cc; border-radius: 6px; cursor: pointer; text-align: center; background: #f0f7ff;" ondrop="manejarDrop(event)" ondragover="event.preventDefault()" ondragleave="this.classList.remove('drag-over')">
-                            <input type="file" name="productos_friendly[][fotos][]" class="input-file-single" accept="image/*" multiple onchange="agregarFotos(this.files, this.closest('label').nextElementSibling)" style="display: none;">
+                        <label style="display: block; min-height: 80px; padding: 0.75rem; border: 2px dashed #0066cc; border-radius: 6px; cursor: pointer; text-align: center; background: #f0f7ff;" ondrop="manejarDrop(event, this)" ondragover="event.preventDefault()" ondragleave="this.classList.remove('drag-over')">
+                            <input type="file" name="productos_friendly[][fotos][]" class="input-file-single" accept="image/*" multiple onchange="agregarFotos(this.files, this.closest('label'))" style="display: none;">
                             <div class="drop-zone-content" style="font-size: 0.75rem;">
                                 <i class="fas fa-cloud-upload-alt" style="font-size: 1rem; color: #0066cc;"></i>
                                 <p style="margin: 0.25rem 0; color: #0066cc; font-weight: 500;">ARRASTRA O CLIC</p>
@@ -117,7 +117,7 @@
                                         <input type="text" id="referencia-input" name="productos_friendly[][variantes][referencia]" class="referencia-input" placeholder="Ref..." style="width: 100%; padding: 12px; border: 2px solid #0066cc; border-radius: 4px; font-size: 0.95rem; box-sizing: border-box; min-height: 44px;" aria-label="Referencia del producto">
                                     </td>
                                     <td style="padding: 14px; text-align: center; border-right: 1px solid #ddd;">
-                                        <label style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; padding: 8px; border: 2px dashed #0066cc; border-radius: 6px; cursor: pointer; text-align: center; background: #f0f7ff;" ondrop="manejarDrop(event)" ondragover="event.preventDefault(); this.style.background='#e8f4f8';" ondragleave="this.style.background='#f0f7ff'">
+                                        <label style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; padding: 8px; border: 2px dashed #0066cc; border-radius: 6px; cursor: pointer; text-align: center; background: #f0f7ff;" ondrop="manejarDrop(event, this)" ondragover="event.preventDefault(); this.style.background='#e8f4f8';" ondragleave="this.style.background='#f0f7ff'">
                                             <input type="file" name="productos_friendly[][telas][]" class="input-file-tela" accept="image/*" multiple onchange="agregarFotoTela(this)" style="display: none;">
                                             <div class="drop-zone-content" style="font-size: 0.8rem;">
                                                 <i class="fas fa-cloud-upload-alt" style="font-size: 1.2rem; color: #0066cc; margin-bottom: 4px;"></i>
@@ -307,6 +307,9 @@
                 <div class="section-title"><i class="fas fa-ruler"></i> TALLAS A COTIZAR</div>
                 <div class="form-row">
                     <div class="form-col full">
+                        <!-- Input oculto para guardar el género seleccionado -->
+                        <input type="hidden" name="productos_friendly[][variantes][genero_id]" class="genero-id-hidden" value="">
+                        
                         <!-- Fila 1: Selectores de tipo, género y modo -->
                         <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;">
                             <select class="talla-tipo-select" onchange="actualizarSelectTallas(this)" style="padding: 0.6rem 0.8rem; border: 2px solid #0066cc; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; color: #0066cc; font-weight: 600; max-width: 300px;">
@@ -315,10 +318,11 @@
                                 <option value="numero">NÚMEROS (DAMA/CABALLERO)</option>
                             </select>
                             
-                            <select class="talla-genero-select" style="padding: 0.6rem 0.8rem; border: 2px solid #0066cc; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; color: #0066cc; font-weight: 600; max-width: 200px; display: none;">
+                            <select class="talla-genero-select" onchange="actualizarGeneroSeleccionado(this)" style="padding: 0.6rem 0.8rem; border: 2px solid #0066cc; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; color: #0066cc; font-weight: 600; max-width: 200px; display: none;">
                                 <option value="">Selecciona género</option>
-                                <option value="dama">DAMA</option>
-                                <option value="caballero">CABALLERO</option>
+                                <option value="dama">Dama</option>
+                                <option value="caballero">Caballero</option>
+                                <option value="ambos">Ambos (Dama y Caballero)</option>
                             </select>
                             
                             <select class="talla-modo-select" style="padding: 0.6rem 0.8rem; border: 2px solid #0066cc; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; color: #0066cc; font-weight: 600; max-width: 200px; display: none;">

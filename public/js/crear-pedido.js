@@ -253,6 +253,24 @@ document.addEventListener('DOMContentLoaded', function() {
                         ` : ''}
                     </div>
                     
+                    <div class="genero-selector" style="margin: 1rem 0; padding: 1rem; background: #f9fafb; border-radius: 4px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.75rem; color: #1f2937;">
+                            Selecciona género(s):
+                        </label>
+                        <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" name="genero[${index}][]" value="dama" class="genero-checkbox" data-prenda="${index}" style="cursor: pointer;">
+                                <span style="font-size: 0.9rem; color: #374151;">Dama</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" name="genero[${index}][]" value="caballero" class="genero-checkbox" data-prenda="${index}" style="cursor: pointer;">
+                                <span style="font-size: 0.9rem; color: #374151;">Caballero</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div style="font-weight: 600; margin: 1rem 0 0.5rem 0; color: #1f2937;">TALLAS A COTIZAR</div>
+                    
                     <div class="tallas-grid">
             `;
 
@@ -349,6 +367,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }
                 
+                // Recopilar géneros seleccionados del formulario
+                const generosSeleccionados = [];
+                const generosCheckboxes = prendasCard.querySelectorAll('.genero-checkbox:checked');
+                generosCheckboxes.forEach(checkbox => {
+                    generosSeleccionados.push(checkbox.value);
+                });
+                
                 prendas.push({
                     index: index,
                     nombre_producto: prenda.nombre_producto,
@@ -356,7 +381,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     tela: prenda.variantes?.tela,
                     tela_referencia: prenda.variantes?.tela_referencia,
                     color: prenda.variantes?.color,
-                    genero: prenda.variantes?.genero,
+                    genero: generosSeleccionados.length > 0 ? generosSeleccionados : prenda.variantes?.genero,
                     manga: prenda.variantes?.manga,
                     broche: prenda.variantes?.broche,
                     tiene_bolsillos: prenda.variantes?.tiene_bolsillos,

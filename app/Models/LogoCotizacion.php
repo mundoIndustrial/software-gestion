@@ -40,6 +40,6 @@ class LogoCotizacion extends Model
      */
     public function fotos(): HasMany
     {
-        return $this->hasMany(LogoFoto::class, 'logo_cotizacion_id')->orderBy('orden');
+        return $this->hasMany(LogoFotoCot::class, 'logo_cotizacion_id')->orderBy('orden');
     }
 }

@@ -13,6 +13,7 @@ class ReflectivoCotizacion extends Model
 
     protected $fillable = [
         'cotizacion_id',
+        'tipo_prenda',
         'descripcion',
         'ubicacion',
         'imagenes',
@@ -20,6 +21,7 @@ class ReflectivoCotizacion extends Model
     ];
 
     protected $casts = [
+        'ubicacion' => 'array',
         'imagenes' => 'array',
         'observaciones_generales' => 'array',
         'created_at' => 'datetime',

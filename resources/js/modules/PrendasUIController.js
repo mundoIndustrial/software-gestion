@@ -49,6 +49,24 @@ export class PrendasUIController {
                     ${imagen ? this.crearImagenHTML(imagen, prenda.nombre_producto) : ''}
                 </div>
                 
+                <div class="genero-selector" style="margin: 1rem 0; padding: 1rem; background: #f9fafb; border-radius: 4px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 0.75rem; color: #1f2937;">
+                        Selecciona género(s):
+                    </label>
+                    <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" name="genero[${index}][]" value="dama" class="genero-checkbox" data-prenda="${index}" style="cursor: pointer;">
+                            <span style="font-size: 0.9rem; color: #374151;">Dama</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" name="genero[${index}][]" value="caballero" class="genero-checkbox" data-prenda="${index}" style="cursor: pointer;">
+                            <span style="font-size: 0.9rem; color: #374151;">Caballero</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div style="font-weight: 600; margin: 1rem 0 0.5rem 0; color: #1f2937;">TALLAS A COTIZAR</div>
+                
                 <div class="tallas-grid">
                     ${tallas.length > 0 
                         ? tallas.map(talla => this.crearTallaHTML(index, talla)).join('')
@@ -262,13 +280,122 @@ export class PrendasUIController {
             });
             
             if (Object.keys(cantidadesPorTalla).length > 0) {
+                // Obtener datos de la prenda original
+                const prendaOriginal = this.prendas[index] || {};
+                
+                // Construir descripción detallada con toda la información
+                const descripcion = this.construirDescripcionCompleta(prendaOriginal);
+                
                 prendas.push({
                     index: index,
-                    cantidades: cantidadesPorTalla
+                    nombre_producto: prendaOriginal.nombre_producto || '',
+                    descripcion: descripcion,
+                    tela: prendaOriginal.variantes?.tela || null,
+                    tela_referencia: prendaOriginal.variantes?.tela_referencia || null,
+                    tela_id: prendaOriginal.variantes?.tela_id || null,
+                    color: prendaOriginal.variantes?.color || null,
+                    color_id: prendaOriginal.variantes?.color_id || null,
+                    genero: prendaOriginal.variantes?.genero || null,
+                    manga: prendaOriginal.variantes?.manga || null,
+                    tipo_manga_id: prendaOriginal.variantes?.tipo_manga_id || null,
+                    broche: prendaOriginal.variantes?.broche || null,
+                    tipo_broche_id: prendaOriginal.variantes?.tipo_broche_id || null,
+                    tiene_bolsillos: prendaOriginal.variantes?.tiene_bolsillos || false,
+                    tiene_reflectivo: prendaOriginal.variantes?.tiene_reflectivo || false,
+                    manga_obs: prendaOriginal.variantes?.manga_obs || null,
+                    bolsillos_obs: prendaOriginal.variantes?.bolsillos_obs || null,
+                    broche_obs: prendaOriginal.variantes?.broche_obs || null,
+                    reflectivo_obs: prendaOriginal.variantes?.reflectivo_obs || null,
+                    observaciones: prendaOriginal.variantes?.observaciones || null,
+                    cantidades: cantidadesPorTalla,
+                    fotos: prendaOriginal.fotos || [],
+                    logos: prendaOriginal.logos || [],
+                    telas: prendaOriginal.telas || [],
                 });
             }
         });
 
         return prendas;
+    }
+
+    /**
+     * Construye descripción completa de la prenda para persistencia
+     * Formato similar al que se ve en pedidos históricos
+     */
+    construirDescripcionCompleta(prenda, tallas = {}) {
+        const variantes = prenda.variantes || {};
+        
+        // Construir descripción con formato texto estructurado
+        let descripcion = '';
+        
+        // 1. Nombre de prenda
+        descripcion += `Prenda 1: ${prenda.nombre_producto || ''}\n`;
+        
+        // 2. Descripción general
+        if (variantes.descripcion || variantes.observaciones) {
+            descripcion += `Descripción: ${variantes.descripcion || variantes.observaciones}\n`;
+        }
+        
+        // 3. Tela y referencia
+        if (variantes.tela) {
+            const tela = variantes.tela + (variantes.tela_referencia ? `\n  REF:${variantes.tela_referencia}` : '');
+            descripcion += `Tela: ${tela}\n`;
+        }
+        
+        // 4. Color
+        if (variantes.color) {
+            descripcion += `Color: ${variantes.color}\n`;
+        }
+        
+        // 5. Género
+        if (variantes.genero) {
+            descripcion += `Género: ${variantes.genero}\n`;
+        }
+        
+        // 6. Manga
+        if (variantes.manga) {
+            descripcion += `Manga: ${variantes.manga}`;
+            if (variantes.manga_obs) {
+                descripcion += ` - ${variantes.manga_obs}`;
+            }
+            descripcion += '\n';
+        }
+        
+        // 7. Bolsillos
+        if (variantes.tiene_bolsillos || variantes.bolsillos_obs) {
+            descripcion += `Bolsillos: ${variantes.tiene_bolsillos ? 'SI' : 'NO'}`;
+            if (variantes.bolsillos_obs) {
+                descripcion += ` - ${variantes.bolsillos_obs}`;
+            }
+            descripcion += '\n';
+        }
+        
+        // 8. Broche
+        if (variantes.broche || variantes.broche_obs) {
+            descripcion += `Broche: ${variantes.broche || 'N/A'}`;
+            if (variantes.broche_obs) {
+                descripcion += ` - ${variantes.broche_obs}`;
+            }
+            descripcion += '\n';
+        }
+        
+        // 9. Reflectivo
+        if (variantes.tiene_reflectivo || variantes.reflectivo_obs) {
+            descripcion += `Reflectivo: ${variantes.tiene_reflectivo ? 'SI' : 'NO'}`;
+            if (variantes.reflectivo_obs) {
+                descripcion += ` - ${variantes.reflectivo_obs}`;
+            }
+            descripcion += '\n';
+        }
+        
+        // 10. Tallas con cantidades
+        if (Object.keys(tallas).length > 0) {
+            const tallasCadena = Object.entries(tallas)
+                .map(([talla, cant]) => `${talla}:${cant}`)
+                .join(', ');
+            descripcion += `Tallas: ${tallasCadena}\n`;
+        }
+        
+        return descripcion.trim() || null;
     }
 }

@@ -31,6 +31,7 @@ class PrendaCotizacion extends Model
     ];
 
     protected $casts = [
+        'genero' => 'array',
         'tallas' => 'array',
         'fotos' => 'array',
         'telas' => 'array',

@@ -199,33 +199,67 @@ ${prenda.atributos}<br>
             }
         });
     } else {
-        // Usar formato simple para pedidos sin cotización
-        prendasActuales.forEach(prenda => {
-            // Parsear y formatear tallas
-            let tallasFormato = '-';
-            try {
-                if (typeof prenda.cantidad_talla === 'string') {
-                    const tallasObj = JSON.parse(prenda.cantidad_talla);
-                    tallasFormato = Object.entries(tallasObj)
-                        .map(([talla, cantidad]) => `${talla}: ${cantidad}`)
-                        .join(', ');
-                } else if (typeof prenda.cantidad_talla === 'object' && prenda.cantidad_talla !== null) {
-                    tallasFormato = Object.entries(prenda.cantidad_talla)
-                        .map(([talla, cantidad]) => `${talla}: ${cantidad}`)
-                        .join(', ');
-                } else {
-                    tallasFormato = prenda.cantidad_talla || '-';
-                }
-            } catch (e) {
-                tallasFormato = prenda.cantidad_talla || '-';
+        // Usar formato formateado para pedidos sin cotización
+        // La descripción está guardada en formato multi-línea correcto
+        prendasActuales.forEach((prenda, index) => {
+            // La descripción en prendas_pedido.descripcion tiene el formato COMPLETO:
+            // PRENDA X: [tipo]
+            // Color: ... | Tela: ... | Manga: ...
+            // DESCRIPCION: ...
+            //    . Reflectivo: ...
+            //    . Bolsillos: ...
+            // Tallas: ...
+            
+            // Obtener descripción y convertir a string
+            let descripcionRaw = prenda.descripcion || '-';
+            
+            // Si es string, usarlo directamente. Si es objeto (parseado), convertir a string
+            if (typeof descripcionRaw === 'object') {
+                descripcionRaw = JSON.stringify(descripcionRaw);
             }
             
-            descripcionHTML += `<div class="prenda-item">
-                <strong>PRENDA ${prenda.numero}: ${prenda.nombre}</strong><br>
-                <span>DESCRIPCION: ${prenda.descripcion}</span><br>
-                <span>TALLAS: <span style="color: red; font-weight: bold;">${tallasFormato}</span></span><br>
-                <br>
+            // Dividir por saltos de línea reales
+            const lineas = descripcionRaw.split(/\r?\n/);
+            let descripcionFormateada = '';
+            
+            lineas.forEach((linea) => {
+                if (!linea || !linea.trim()) {
+                    // Línea vacía
+                    descripcionFormateada += '';
+                    return;
+                }
+                
+                // Escapar caracteres HTML pero preservar espacios
+                let html = String(linea)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+                
+                // Aplicar formatos
+                // Negritas para títulos principales
+                html = html.replace(/^(PRENDA \d+:.*?)$/i, '<strong>$1</strong>');
+                html = html.replace(/^(DESCRIPCION:)(.*)$/i, '<strong>$1</strong>$2');
+                html = html.replace(/^(Tallas:)(.*)$/i, '<strong style="color: #d32f2f;">$1</strong>$2');
+                
+                // Negritas para atributos de línea 2
+                html = html.replace(/^(Color:)/i, '<strong>$1</strong>');
+                html = html.replace(/\s\|\s(Tela:)/i, ' | <strong>$1</strong>');
+                html = html.replace(/\s\|\s(Manga:)/i, ' | <strong>$1</strong>');
+                
+                // Transformar bullets (   .) a formato visual
+                html = html.replace(/^(\s+)\./, '<span style="margin-left: 1.5em;">•</span>');
+                
+                descripcionFormateada += html + '<br>';
+            });
+            
+            descripcionHTML += `<div class="prenda-item" style="margin-bottom: 20px; line-height: 1.6; font-size: 0.95rem; color: #333;">
+                ${descripcionFormateada}
             </div>`;
+            
+            // Agregar separador solo entre prendas mostradas
+            if (index < prendasActuales.length - 1) {
+                descripcionHTML += `<hr style="border: none; border-top: 2px solid #ccc; margin: 16px 0;">`;
+            }
         });
     }
     

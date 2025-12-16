@@ -4,6 +4,33 @@
  * Compatible con: localStorage (persistencia) y WebSockets (sin conflictos)
  */
 
+// ============ FUNCIÓN HELPER: PROCESAR GÉNERO "AMBOS" ============
+
+/**
+ * Procesa el campo género para convertir "ambos" en ["dama", "caballero"]
+ */
+function procesarGenero(genero) {
+    if (!genero) return null;
+    
+    if (typeof genero === 'string') {
+        if (genero === 'ambos') {
+            return ['dama', 'caballero'];
+        }
+        return [genero];
+    }
+    
+    if (Array.isArray(genero)) {
+        // Si el array contiene "ambos", expandirlo
+        if (genero.includes('ambos')) {
+            const otros = genero.filter(g => g !== 'ambos');
+            return [...new Set([...otros, 'dama', 'caballero'])]; // Evitar duplicados
+        }
+        return genero;
+    }
+    
+    return null;
+}
+
 // ============ GUARDAR COTIZACIÓN ============
 
 async function guardarCotizacion() {
@@ -168,14 +195,24 @@ async function guardarCotizacion() {
                 
                 // Variantes como array (no JSON string)
                 const variantes = producto.variantes || {};
+                
+                console.log(`🔍 DEBUG VARIANTES PRODUCTO ${index}:`, {
+                    keys: Object.keys(variantes),
+                    tipo_manga_id: variantes.tipo_manga_id,
+                    tipo_manga: variantes.tipo_manga,
+                    tiene_bolsillos: variantes.tiene_bolsillos,
+                    todas_variantes: variantes
+                });
+                
                 Object.keys(variantes).forEach(key => {
-                    const value = variantes[key];
+                    let value = variantes[key];
+                    
                     if (key === 'telas_multiples' && Array.isArray(value)) {
                         // Caso especial: telas_multiples es un array de objetos
                         // Enviar como JSON string completo
                         formData.append(`prendas[${index}][variantes][${key}]`, JSON.stringify(value));
                     } else if (Array.isArray(value)) {
-                        // Si es array (pero no telas_multiples), agregar cada elemento
+                        // Si es array, agregar cada elemento
                         value.forEach((item, idx) => {
                             if (typeof item === 'object' && item !== null) {
                                 formData.append(`prendas[${index}][variantes][${key}][${idx}]`, JSON.stringify(item));
@@ -183,6 +220,7 @@ async function guardarCotizacion() {
                                 formData.append(`prendas[${index}][variantes][${key}][${idx}]`, item);
                             }
                         });
+                        console.log(`   ✅ Array enviado para ${key}:`, value);
                     } else if (typeof value === 'object' && value !== null) {
                         // Si es objeto, convertir a JSON string
                         formData.append(`prendas[${index}][variantes][${key}]`, JSON.stringify(value));
@@ -192,6 +230,10 @@ async function guardarCotizacion() {
                     } else {
                         // Si es valor simple, agregar directamente
                         formData.append(`prendas[${index}][variantes][${key}]`, value || '');
+                    }
+                    
+                    if (key === 'tipo_manga_id') {
+                        console.log(`   ✅ AGREGANDO MANGA AL FORMDATA: ${key} = ${value}`);
                     }
                 });
                 
@@ -229,20 +271,43 @@ async function guardarCotizacion() {
             });
         }
         
-        // ✅ LOGO - IMÁGENES (File objects desde window.imagenesEnMemoria)
+        // ✅ LOGO - IMÁGENES (File objects desde window.imagenesEnMemoria + rutas guardadas)
         if (window.imagenesEnMemoria && window.imagenesEnMemoria.logo && Array.isArray(window.imagenesEnMemoria.logo)) {
             console.log('📸 Procesando imágenes de logo:', window.imagenesEnMemoria.logo.length);
+            
+            // Enviar archivos File nuevos
             window.imagenesEnMemoria.logo.forEach((imagen, imagenIndex) => {
                 if (imagen instanceof File) {
                     // Usar nombre con índices entre corchetes: logo[imagenes][0], logo[imagenes][1], etc.
                     formData.append(`logo[imagenes][${imagenIndex}]`, imagen);
-                    console.log(`✅ Imagen de logo agregada a FormData [${imagenIndex}]:`, imagen.name);
+                    console.log(`✅ Imagen de logo (File) agregada a FormData [${imagenIndex}]:`, imagen.name);
                 } else {
                     console.log(`⚠️ Imagen de logo no es File [${imagenIndex}]:`, typeof imagen);
                 }
             });
         } else {
             console.log('⚠️ No hay imágenes de logo en memoria');
+        }
+        
+        // ✅ LOGO - FOTOS GUARDADAS (Para conservar las existentes al reguardar)
+        // Buscar imágenes dentro del contenedor galeria_imagenes que tengan data-foto-guardada="true"
+        const galeriaImagenes = document.getElementById('galeria_imagenes');
+        if (galeriaImagenes) {
+            const fotosGuardadas = galeriaImagenes.querySelectorAll('[data-foto-guardada="true"] img');
+            if (fotosGuardadas.length > 0) {
+                console.log('📸 Agregando fotos de logo guardadas:', fotosGuardadas.length);
+                fotosGuardadas.forEach((img, index) => {
+                    const ruta = img.getAttribute('data-ruta') || img.src;
+                    if (ruta && !ruta.includes('data:image')) {
+                        formData.append(`logo_fotos_guardadas[]`, ruta);
+                        console.log(`✅ Ruta de logo guardada agregada [${index}]:`, ruta);
+                    }
+                });
+            } else {
+                console.log('⚠️ No hay fotos guardadas en la galería');
+            }
+        } else {
+            console.log('⚠️ No se encontró el elemento galeria_imagenes');
         }
         
         console.log('📤 FORMDATA A ENVIAR:', {
@@ -254,6 +319,14 @@ async function guardarCotizacion() {
             especificaciones_keys: Object.keys(datos.especificaciones || {}),
             ruta: window.routes.guardarCotizacion
         });
+        
+        // Debug: Mostrar contenido del FormData
+        console.log('🔍 DEBUG - Contenido completo del FormData:');
+        for (let pair of formData.entries()) {
+            if (!pair[0].includes('[fotos]')) {  // Excluir archivos para no saturar el log
+                console.log(`   ${pair[0]}: ${pair[1]}`);
+            }
+        }
         
         console.log('🌐 Enviando solicitud POST a:', window.routes.guardarCotizacion);
         const response = await fetch(window.routes.guardarCotizacion, {

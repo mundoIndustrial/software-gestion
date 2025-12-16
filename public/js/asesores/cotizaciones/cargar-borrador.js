@@ -45,47 +45,96 @@ function cargarBorrador(cotizacion) {
             Object.keys(cotizacion.especificaciones).forEach(key => {
                 const valor = cotizacion.especificaciones[key];
                 
-                // Si es un array, tomar el primer elemento
-                let valorFinal = '';
-                let esCheckbox = false;
-                
+                // Si es un array, procesar cada elemento
                 if (Array.isArray(valor) && valor.length > 0) {
-                    const primerElemento = valor[0];
-                    
-                    // Si el primer elemento es un objeto con propiedades valor y observacion
-                    if (typeof primerElemento === 'object' && primerElemento !== null) {
-                        // Extraer el valor
-                        valorFinal = primerElemento.valor || '';
-                        
-                        // Detectar si es checkbox (valor es ✓ o similar)
-                        esCheckbox = valorFinal === '✓' || valorFinal === 'on' || valorFinal === true;
-                    } else {
-                        valorFinal = primerElemento;
-                    }
-                }
-                
-                console.log(`🔍 DEBUG Especificación ${key}:`, {
-                    valor: valorFinal,
-                    esCheckbox: esCheckbox,
-                    tipo: typeof valorFinal
-                });
-                
-                // Buscar el input correspondiente en el modal
-                const input = document.querySelector(`input[name="tabla_orden[${key}_obs]"]`);
-                const checkbox = document.querySelector(`input[name="tabla_orden[${key}_check]"]`);
-                
-                if (input && valorFinal && typeof valorFinal === 'string') {
-                    input.value = valorFinal;
-                    input.dispatchEvent(new Event('input', { bubbles: true }));
-                    console.log(`✅ Especificación cargada: ${key} = ${valorFinal}`);
-                }
-                
-                if (checkbox && esCheckbox) {
-                    checkbox.checked = true;
-                    checkbox.dispatchEvent(new Event('change', { bubbles: true }));
-                    console.log(`✅ Checkbox especificación marcado: ${key}`);
+                    valor.forEach((item, index) => {
+                        if (typeof item === 'object' && item !== null) {
+                            const valorItem = item.valor || '';
+                            const observacion = item.observacion || '';
+                            
+                            console.log(`🔍 DEBUG Especificación ${key}[${index}]:`, {
+                                valor: valorItem,
+                                observacion: observacion
+                            });
+                            
+                            // Buscar la fila correspondiente por el label o valor
+                            let fila = null;
+                            
+                            // Buscar en todos los tbody de la categoría correspondiente
+                            const tbodyId = `tbody_${key}`;
+                            const tbody = document.getElementById(tbodyId);
+                            
+                            if (tbody) {
+                                const filas = tbody.querySelectorAll('tr');
+                                
+                                // Primero intentar buscar por label fijo (DISPONIBILIDAD, FORMA DE PAGO, REGIMEN)
+                                filas.forEach(tr => {
+                                    const label = tr.querySelector('label');
+                                    if (label && label.textContent.trim() === valorItem) {
+                                        fila = tr;
+                                    }
+                                });
+                                
+                                // Si no se encontró por label, buscar primera fila vacía (SE HA VENDIDO, ÚLTIMA VENTA, FLETE)
+                                if (!fila) {
+                                    filas.forEach(tr => {
+                                        const itemInput = tr.querySelector('input[type="text"]:not([name*="_obs"])');
+                                        const checkbox = tr.querySelector('input[type="checkbox"].checkbox-guardar');
+                                        
+                                        // Buscar fila vacía y no usada
+                                        if (itemInput && !itemInput.value && checkbox && !checkbox.checked) {
+                                            if (!fila) fila = tr; // Tomar solo la primera vacía
+                                        }
+                                    });
+                                }
+                            }
+                            
+                            if (fila) {
+                                // Para items sin label fijo, cargar el valor en el itemInput
+                                const itemInput = fila.querySelector('input[type="text"]:not([name*="_obs"])');
+                                if (itemInput && !fila.querySelector('label')) {
+                                    itemInput.value = valorItem;
+                                    itemInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                    console.log(`✅ Valor de item cargado: ${valorItem}`);
+                                }
+                                
+                                // Cargar la observación
+                                const obsInput = fila.querySelector('input[name*="_obs"]');
+                                if (obsInput && observacion) {
+                                    obsInput.value = observacion;
+                                    obsInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                    console.log(`✅ Observación cargada: ${observacion}`);
+                                }
+                                
+                                // Marcar el checkbox
+                                const checkbox = fila.querySelector('input[type="checkbox"].checkbox-guardar');
+                                if (checkbox) {
+                                    checkbox.checked = true;
+                                    checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+                                    console.log(`✅ Checkbox marcado para: ${valorItem}`);
+                                }
+                            } else {
+                                console.log(`⚠️ No se encontró fila disponible para: ${valorItem} en ${key}`);
+                            }
+                        }
+                    });
                 }
             });
+            
+            // ✅ GUARDAR EN window.especificacionesSeleccionadas PARA REGUARDAR
+            // Después de cargar todo en el DOM, cargar también en memoria
+            setTimeout(() => {
+                console.log('💾 Cargando especificaciones en window.especificacionesSeleccionadas');
+                window.especificacionesSeleccionadas = cotizacion.especificaciones || {};
+                
+                // Actualizar color del botón enviar
+                if (typeof actualizarColorBotonEnviar === 'function') {
+                    actualizarColorBotonEnviar();
+                    console.log('✅ Color del botón enviar actualizado');
+                }
+                
+                console.log('✅ Especificaciones en memoria:', window.especificacionesSeleccionadas);
+            }, 1000);
         }, 500);
     }
     
@@ -241,11 +290,26 @@ function cargarBorrador(cotizacion) {
                         
                         const variantes = producto.variantes;
                         
-                        // Cargar género si existe (para tallas numéricas)
-                        if (variantes.genero_id) {
-                            console.log('👤 Género ID encontrado:', variantes.genero_id);
-                            // El género se cargará cuando se seleccione el tipo de talla número
-                            window.generoIdGuardado = variantes.genero_id;
+                        // Cargar género en el selector de TALLAS A COTIZAR
+                        if (variantes.genero_id !== undefined) {
+                            const generoSelect = ultimoProducto.querySelector('.talla-genero-select');
+                            if (generoSelect) {
+                                // Mapeo de IDs a valores del select
+                                let valorGenero = '';
+                                if (variantes.genero_id === null || variantes.genero_id === 4) {
+                                    // NULL o 4 = Ambos
+                                    valorGenero = 'ambos';
+                                } else if (variantes.genero_id === 1) {
+                                    valorGenero = 'dama';
+                                } else if (variantes.genero_id === 2) {
+                                    valorGenero = 'caballero';
+                                }
+                                
+                                if (valorGenero) {
+                                    generoSelect.value = valorGenero;
+                                    console.log('✅ Género cargado en selector de tallas:', valorGenero, '(ID:', variantes.genero_id, ')');
+                                }
+                            }
                         }
                         
                         // Color
@@ -288,19 +352,32 @@ function cargarBorrador(cotizacion) {
                             }
                             
                             setTimeout(() => {
-                                const mangaIdInput = ultimoProducto.querySelector('.manga-id-input');
+                                // Buscar el input de manga
                                 const mangaInput = ultimoProducto.querySelector('.manga-input');
                                 
-                                if (mangaIdInput) {
-                                    mangaIdInput.value = variantes.tipo_manga_id;
-                                    mangaIdInput.dispatchEvent(new Event('change', { bubbles: true }));
+                                if (mangaInput) {
+                                    // Mapeo de IDs a nombres
+                                    const mangasMap = {
+                                        1: 'Larga',
+                                        2: 'Corta',
+                                        3: '3/4'
+                                    };
+                                    
+                                    const nombreManga = mangasMap[variantes.tipo_manga_id] || variantes.tipo_manga || `Manga ${variantes.tipo_manga_id}`;
+                                    
+                                    // Usar la función seleccionarManga de variantes-prendas.js si está disponible
+                                    if (typeof seleccionarManga === 'function') {
+                                        seleccionarManga(variantes.tipo_manga_id, nombreManga, mangaInput);
+                                    } else {
+                                        // Fallback manual
+                                        const mangaIdInput = ultimoProducto.querySelector('.manga-id-input');
+                                        if (mangaIdInput) {
+                                            mangaIdInput.value = variantes.tipo_manga_id;
+                                        }
+                                        mangaInput.value = nombreManga;
+                                    }
+                                    
                                     console.log('✅ Manga ID cargado:', variantes.tipo_manga_id);
-                                }
-                                
-                                if (mangaInput && variantes.tipo_manga) {
-                                    mangaInput.value = variantes.tipo_manga;
-                                    mangaInput.dispatchEvent(new Event('input', { bubbles: true }));
-                                    console.log('✅ Manga nombre cargado:', variantes.tipo_manga);
                                 }
                             }, 300);
                         }
@@ -690,21 +767,37 @@ function cargarBorrador(cotizacion) {
             }
             
             if (Array.isArray(tecnicas) && tecnicas.length > 0) {
-                const tecnicasContainer = document.getElementById('tecnicas_seleccionadas');
-                if (tecnicasContainer) {
-                    tecnicas.forEach(tecnica => {
-                        const div = document.createElement('div');
-                        div.style.cssText = 'background: #0066cc; color: white; padding: 6px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; margin-right: 8px; margin-bottom: 8px;';
-                        div.innerHTML = `
-                            <span>${tecnica}</span>
-                            <button type="button" onclick="this.closest('div').remove()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1rem; padding: 0; line-height: 1;">✕</button>
-                            <input type="hidden" name="tecnicas[]" value="${tecnica}">
-                        `;
-                        tecnicasContainer.appendChild(div);
-                    });
-                    console.log('✅ Técnicas cargadas:', tecnicas.length);
-                }
+                setTimeout(() => {
+                    const tecnicasContainer = document.getElementById('tecnicas_seleccionadas');
+                    console.log('🎨 DEBUG Técnicas:', { container: !!tecnicasContainer, tecnicas: tecnicas });
+                    if (tecnicasContainer) {
+                        tecnicas.forEach(tecnica => {
+                            const div = document.createElement('div');
+                            div.style.cssText = 'background: rgb(52, 152, 219); color: white; padding: 6px 12px; border-radius: 20px; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: 600;';
+                            div.innerHTML = `
+                                <input type="hidden" name="tecnicas[]" value="${tecnica}">
+                                <span>${tecnica}</span>
+                                <button type="button" onclick="this.closest('div').remove()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.2rem; padding: 0; line-height: 1;">✕</button>
+                            `;
+                            tecnicasContainer.appendChild(div);
+                        });
+                        console.log('✅ Técnicas cargadas:', tecnicas.length);
+                    }
+                }, 1500);
             }
+        }
+        
+        // Cargar observaciones de técnica
+        if (cotizacion.logo_cotizacion.observaciones_tecnicas) {
+            setTimeout(() => {
+                const obsTecnicasTextarea = document.querySelector('textarea[name="observaciones_tecnicas"]');
+                console.log('📝 DEBUG Obs Técnicas:', { textarea: !!obsTecnicasTextarea, valor: cotizacion.logo_cotizacion.observaciones_tecnicas });
+                if (obsTecnicasTextarea) {
+                    obsTecnicasTextarea.value = cotizacion.logo_cotizacion.observaciones_tecnicas;
+                    obsTecnicasTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+                    console.log('✅ Observaciones de técnica cargadas');
+                }
+            }, 1500);
         }
         
         // Cargar ubicaciones del logo
@@ -719,20 +812,25 @@ function cargarBorrador(cotizacion) {
             }
             
             if (Array.isArray(ubicaciones) && ubicaciones.length > 0) {
-                const ubicacionesContainer = document.getElementById('ubicaciones_seleccionadas');
-                if (ubicacionesContainer) {
-                    ubicaciones.forEach(ubicacion => {
-                        const div = document.createElement('div');
-                        div.style.cssText = 'background: #10b981; color: white; padding: 6px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; margin-right: 8px; margin-bottom: 8px;';
-                        div.innerHTML = `
-                            <span>${ubicacion.seccion || ubicacion}</span>
-                            <button type="button" onclick="this.closest('div').remove()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1rem; padding: 0; line-height: 1;">✕</button>
-                            <input type="hidden" name="ubicaciones[]" value="${ubicacion.seccion || ubicacion}">
-                        `;
-                        ubicacionesContainer.appendChild(div);
-                    });
-                    console.log('✅ Ubicaciones cargadas:', ubicaciones.length);
-                }
+                setTimeout(() => {
+                    console.log('📍 DEBUG Ubicaciones:', { ubicaciones: ubicaciones });
+                    // Cargar en seccionesSeleccionadasFriendly para que renderizarSeccionesFriendly() las dibuje
+                    if (typeof seccionesSeleccionadasFriendly !== 'undefined') {
+                        seccionesSeleccionadasFriendly = [];
+                        ubicaciones.forEach(ubicacion => {
+                            seccionesSeleccionadasFriendly.push({
+                                ubicacion: ubicacion.seccion || ubicacion,
+                                opciones: ubicacion.ubicaciones_seleccionadas || [],
+                                observaciones: ubicacion.observaciones || ''
+                            });
+                        });
+                        // Renderizar usando la función existente (mismo diseño que crear nuevo)
+                        if (typeof renderizarSeccionesFriendly === 'function') {
+                            renderizarSeccionesFriendly();
+                            console.log('✅ Ubicaciones cargadas:', ubicaciones.length);
+                        }
+                    }
+                }, 500);
             }
         }
         
@@ -748,33 +846,56 @@ function cargarBorrador(cotizacion) {
             }
             
             if (Array.isArray(obsGenerales) && obsGenerales.length > 0) {
-                const obsContainer = document.getElementById('observaciones_lista');
-                if (obsContainer) {
-                    obsGenerales.forEach(obs => {
-                        const fila = document.createElement('div');
-                        fila.style.cssText = 'display: flex; gap: 10px; align-items: center; padding: 10px; background: white; border-radius: 6px; border: 1px solid #ddd;';
+                setTimeout(() => {
+                    const obsContainer = document.getElementById('observaciones_lista');
+                    console.log('💬 DEBUG Observaciones:', { container: !!obsContainer, observaciones: obsGenerales });
+                    if (obsContainer) {
+                        // Limpiar observaciones existentes
+                        obsContainer.innerHTML = '';
                         
-                        let texto = obs.texto || obs;
-                        let tipo = obs.tipo || 'texto';
-                        let valor = obs.valor || '';
-                        
-                        fila.innerHTML = `
-                            <input type="text" name="observaciones_generales[]" class="input-large" value="${texto}" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
-                            <div style="display: flex; gap: 5px; align-items: center; flex-shrink: 0;">
-                                <div class="obs-checkbox-mode" style="display: flex; align-items: center; gap: 5px; ${tipo === 'checkbox' ? '' : 'display: none;'}">
-                                    <input type="checkbox" name="observaciones_check[]" style="width: 20px; height: 20px; cursor: pointer;" ${tipo === 'checkbox' ? 'checked' : ''}>
+                        obsGenerales.forEach(obs => {
+                            let texto = obs.texto || obs;
+                            let tipo = obs.tipo || 'texto';
+                            let valor = obs.valor || '';
+                            
+                            // Crear el mismo HTML que agregarObservacion()
+                            const fila = document.createElement('div');
+                            fila.style.cssText = 'display: flex; gap: 10px; align-items: center; padding: 10px; background: white; border-radius: 6px; border: 1px solid #ddd;';
+                            fila.innerHTML = `
+                                <input type="text" name="observaciones_generales[]" class="input-large" value="${texto}" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
+                                <div style="display: flex; gap: 5px; align-items: center; flex-shrink: 0;">
+                                    <div class="obs-checkbox-mode" style="display: ${tipo === 'checkbox' ? 'flex' : 'none'}; align-items: center; gap: 5px;">
+                                        <input type="checkbox" name="observaciones_check[]" style="width: 20px; height: 20px; cursor: pointer;" ${valor === 'on' ? 'checked' : ''}>
+                                    </div>
+                                    <div class="obs-text-mode" style="display: ${tipo === 'texto' ? 'flex' : 'none'}; flex: 1;">
+                                        <input type="text" name="observaciones_valor[]" placeholder="Valor..." value="${valor}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
+                                    </div>
+                                    <button type="button" class="obs-toggle-btn" style="background: #3498db; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; flex-shrink: 0;">✓/✎</button>
                                 </div>
-                                <div class="obs-text-mode" style="display: ${tipo === 'texto' ? 'block' : 'none'}; flex: 1;">
-                                    <input type="text" name="observaciones_valor[]" placeholder="Valor..." value="${valor}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
-                                </div>
-                                <button type="button" class="obs-toggle-btn" style="background: ${tipo === 'checkbox' ? '#3498db' : '#ff9800'}; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold; flex-shrink: 0;">✓/✎</button>
-                            </div>
-                            <button type="button" onclick="this.closest('div').remove()" style="background: #f44336; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 1rem; flex-shrink: 0;">✕</button>
-                        `;
-                        obsContainer.appendChild(fila);
-                    });
-                    console.log('✅ Observaciones generales cargadas:', obsGenerales.length);
-                }
+                                <button type="button" onclick="this.closest('div').remove()" style="background: #ef4444; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; flex-shrink: 0;">✕</button>
+                            `;
+                            
+                            // Agregar evento al toggle button
+                            const toggleBtn = fila.querySelector('.obs-toggle-btn');
+                            toggleBtn.onclick = function() {
+                                const checkboxMode = fila.querySelector('.obs-checkbox-mode');
+                                const textMode = fila.querySelector('.obs-text-mode');
+                                const isCheckboxMode = checkboxMode.style.display !== 'none';
+                                
+                                if (isCheckboxMode) {
+                                    checkboxMode.style.display = 'none';
+                                    textMode.style.display = 'flex';
+                                } else {
+                                    checkboxMode.style.display = 'flex';
+                                    textMode.style.display = 'none';
+                                }
+                            };
+                            
+                            obsContainer.appendChild(fila);
+                        });
+                        console.log('✅ Observaciones generales cargadas:', obsGenerales.length);
+                    }
+                }, 500);
             }
         }
     }

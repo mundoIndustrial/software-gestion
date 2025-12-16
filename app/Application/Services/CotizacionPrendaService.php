@@ -139,6 +139,12 @@ class CotizacionPrendaService
                     $variantes = json_decode($variantes, true) ?? [];
                 }
                 
+                // Nota sobre genero_id:
+                // - null = Aplica a AMBOS géneros (Dama y Caballero)
+                // - 1 = Solo Dama
+                // - 2 = Solo Caballero
+                // - 3 = Unisex
+                
                 // Verificar si hay al menos un campo de variante
                 $tieneVariantes = !empty($variantes) && (
                     isset($variantes['genero_id']) || 
@@ -166,19 +172,10 @@ class CotizacionPrendaService
                     }
                     
                     // Convertir tipo_manga_id a número si es string
-                    $tipoMangaId = $variantes['tipo_manga_id'] ?? null;
-                    Log::info("DEBUG tipo_manga_id recibido", [
-                        'tipo_manga_id_raw' => $tipoMangaId,
-                        'tipo_manga_id_type' => gettype($tipoMangaId),
-                        'variantes_keys' => array_keys($variantes)
-                    ]);
+                    $tipoMangaId = isset($variantes['tipo_manga_id']) ? $variantes['tipo_manga_id'] : null;
                     if (is_string($tipoMangaId) && !empty($tipoMangaId)) {
                         $tipoMangaId = (int)$tipoMangaId;
                     }
-                    Log::info("DEBUG tipo_manga_id después conversión", [
-                        'tipo_manga_id_final' => $tipoMangaId,
-                        'tipo_manga_id_final_type' => gettype($tipoMangaId)
-                    ]);
                     
                     // Verificar si la manga existe en la BD, si no, crearla
                     if ($tipoMangaId && $tipoMangaId > 0) {
@@ -198,15 +195,17 @@ class CotizacionPrendaService
                         }
                     }
                     
-                    Log::info("DEBUG antes de crear variante", [
-                        'tipo_manga_id_a_guardar' => $tipoMangaId,
-                        'genero_id' => $variantes['genero_id'] ?? null,
-                        'color' => $color
-                    ]);
+                    // GUARDAR UN SOLO REGISTRO DE VARIANTE
+                    // genero_id = null significa "Aplica a Ambos géneros"
+                    // También convertir cadenas vacías a null
+                    $generoIdAGuardar = isset($variantes['genero_id']) ? $variantes['genero_id'] : null;
+                    if ($generoIdAGuardar === '' || $generoIdAGuardar === '0') {
+                        $generoIdAGuardar = null;
+                    }
                     
                     try {
                         $variante = $prenda->variantes()->create([
-                            'genero_id' => $variantes['genero_id'] ?? null,
+                            'genero_id' => $generoIdAGuardar,
                             'color' => $color,
                             'tipo_manga_id' => $tipoMangaId,
                             'tipo_broche_id' => $variantes['tipo_broche_id'] ?? null,
@@ -220,9 +219,10 @@ class CotizacionPrendaService
                             'descripcion_adicional' => $variantes['descripcion_adicional'] ?? '',
                             'telas_multiples' => !empty($telasMultiples) ? json_encode($telasMultiples) : null,
                         ]);
-                        Log::info("✅ Variantes guardadas", [
+                        Log::info("✅ Variante guardada", [
                             'variante_id' => $variante->id,
-                            'genero_id' => $variantes['genero_id'] ?? null,
+                            'genero_id' => $generoIdAGuardar,
+                            'genero_id_es_null' => $generoIdAGuardar === null,
                             'color' => $color,
                             'referencia' => $referencia,
                             'tipo_manga_id' => $tipoMangaId,
@@ -230,10 +230,10 @@ class CotizacionPrendaService
                             'telas_multiples_count' => count($telasMultiples),
                         ]);
                     } catch (\Exception $e) {
-                        Log::error("❌ ERROR al guardar variantes", [
+                        Log::error("❌ ERROR al guardar variante", [
                             'error' => $e->getMessage(),
                             'tipo_manga_id' => $tipoMangaId,
-                            'genero_id' => $variantes['genero_id'] ?? null,
+                            'genero_id' => $generoIdAGuardar,
                             'color' => $color
                         ]);
                     }

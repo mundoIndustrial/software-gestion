@@ -167,8 +167,13 @@ function agregarFilaEspecificacion(categoria) {
         <td style="text-align: center;">
             <input type="checkbox" class="checkbox-guardar" style="width: 20px; height: 20px; cursor: pointer; accent-color: #10b981;">
         </td>
-        <td style="display: flex; gap: 5px;">
-            <input type="text" name="tabla_orden[${categoria}_obs]" class="input-compact" placeholder="Observaciones" style="flex: 1;">
+        <td style="padding: 10px;">
+            <input type="text" name="tabla_orden[${categoria}_obs]" class="input-compact" placeholder="Observaciones" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; box-sizing: border-box;">
+        </td>
+        <td style="text-align: center;">
+            <button type="button" onclick="this.closest('tr').remove()" style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;" title="Eliminar">
+                <i class="fas fa-trash-alt"></i>
+            </button>
         </td>
     `;
     tbody.appendChild(fila);

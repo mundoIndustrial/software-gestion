@@ -401,18 +401,7 @@ function recopilarDatos() {
         const variantes = {};
         const observacionesVariantes = [];
         
-        // Género - Convertir nombre a ID
-        const generoSelect = item.querySelector('.talla-genero-select');
-        if (generoSelect && generoSelect.value) {
-            const generoNombre = generoSelect.value.toLowerCase();
-            const generoId = GENEROS_MAP[generoNombre];
-            if (generoId) {
-                variantes.genero_id = generoId;
-                console.log(`✅ Género capturado: ${generoNombre} → ID: ${generoId}`);
-            } else {
-                console.warn(`⚠️ Género no reconocido: ${generoNombre}`);
-            }
-        }
+        // NOTA: El género NO se captura de variantes, se maneja en el sistema de tallas
         
         // Capturar MÚLTIPLES TELAS (color, tela, referencia)
         const telasFila = [];
@@ -473,29 +462,53 @@ function recopilarDatos() {
         // Manga - SOLO SI ESTÁ CHECKED
         const mangaCheckbox = item.querySelector('input[name*="aplica_manga"]');
         if (mangaCheckbox && mangaCheckbox.checked) {
-            // Buscar el input de manga ID (clase .manga-id-input)
-            const mangaIdInput = item.querySelector('.manga-id-input');
-            // Buscar el input de manga nombre (clase .manga-input)
-            const mangaInput = item.querySelector('.manga-input');
+            // OPCIÓN 1: Buscar el select dinámico (variantes-prendas.js)
+            let mangaIdInput = item.querySelector('select[data-variante="tipo_manga_id"]');
+            let mangaId = null;
+            let mangaNombre = null;
+            
+            // OPCIÓN 2: Si no está el select, buscar los inputs estáticos (create.blade.php)
+            if (!mangaIdInput) {
+                mangaIdInput = item.querySelector('.manga-id-input');
+                const mangaInput = item.querySelector('.manga-input');
+                
+                if (mangaIdInput && mangaIdInput.value) {
+                    mangaId = mangaIdInput.value;
+                }
+                if (mangaInput && mangaInput.value) {
+                    mangaNombre = mangaInput.value;
+                }
+            } else {
+                // Para el select, el valor es el ID directamente
+                if (mangaIdInput.value) {
+                    mangaId = mangaIdInput.value;
+                    // Obtener el texto de la opción seleccionada
+                    const selectedOption = mangaIdInput.options[mangaIdInput.selectedIndex];
+                    if (selectedOption) {
+                        mangaNombre = selectedOption.text;
+                    }
+                }
+            }
             
             console.log('🔍 Buscando manga:', {
                 checkbox_checked: mangaCheckbox.checked,
-                mangaIdInput_encontrado: !!mangaIdInput,
-                mangaIdInput_value: mangaIdInput?.value,
-                mangaInput_encontrado: !!mangaInput,
-                mangaInput_value: mangaInput?.value
+                tipo: mangaIdInput?.tagName,
+                mangaId_encontrado: !!mangaId,
+                mangaId_value: mangaId,
+                mangaNombre_encontrado: !!mangaNombre,
+                mangaNombre_value: mangaNombre
             });
             
             // Guardar el tipo de manga ID (ID del manga seleccionado)
-            if (mangaIdInput && mangaIdInput.value) {
-                variantes.tipo_manga_id = mangaIdInput.value;
-                console.log('✅ tipo_manga_id capturado:', mangaIdInput.value);
+            if (mangaId) {
+                variantes.tipo_manga_id = mangaId;
+                console.log('✅ tipo_manga_id capturado:', mangaId);
             }
             
             // Guardar el tipo de manga nombre (nombre del manga seleccionado)
-            if (mangaInput && mangaInput.value) {
-                variantes.tipo_manga = mangaInput.value;
-                console.log('✅ tipo_manga capturado:', mangaInput.value);
+            if (mangaNombre) {
+                variantes.tipo_manga = mangaNombre;
+                console.log('✅ tipo_manga capturado:', mangaNombre);
             }
             
             // Capturar observación de manga SOLO SI CHECKBOX ESTÁ CHECKED
@@ -587,11 +600,24 @@ function recopilarDatos() {
             console.log('ℹ️ Sin observaciones de variantes para agregar a descripcion_adicional');
         }
         
+        // ✅ CAPTURAR GENERO_ID desde el input hidden (IMPORTANTE para "ambos")
+        // NOTA: Solo se captura si tiene un valor definido
+        const generoIdInput = item.querySelector('.genero-id-hidden');
+        if (generoIdInput && generoIdInput.value) {
+            // Solo asignar si tiene valor (no incluir la clave si está vacío)
+            variantes.genero_id = generoIdInput.value;
+            console.log('✅ genero_id capturado:', variantes.genero_id);
+        } else {
+            // Si no existe o está vacío, NO incluir la clave en variantes
+            // genero_id = null en backend significa "aplica a ambos géneros"
+            console.log('ℹ️ genero_id vacío/no encontrado - no se incluye en variantes (null = ambos)');
+        }
+        
         console.log('📝 RESUMEN VARIANTES CAPTURADAS:', {
             '✅ Color': variantes.color || '(vacío)',
             '✅ Tela': variantes.tela || '(vacío)',
             '✅ Referencia': variantes.referencia || '(vacío)',
-            '✅ Género': variantes.genero || '(vacío)',
+            '👥 Género ID': variantes.genero_id || '(NO CAPTURADO)',
             '🎽 Tipo Manga ID': variantes.tipo_manga_id || '(NO CAPTURADO)',
             '🎽 Manga Nombre': variantes.manga_nombre || '(NO CAPTURADO)',
             '🎽 Obs Manga': variantes.obs_manga || '(vacío)',
@@ -687,6 +713,7 @@ function recopilarDatos() {
     }
     
     console.log('📍 Ubicaciones recopiladas:', ubicaciones);
+    console.log('📍 seccionesSeleccionadasFriendly:', typeof seccionesSeleccionadasFriendly !== 'undefined' ? seccionesSeleccionadasFriendly : 'NO DEFINIDO');
     
     // Recopilar observaciones generales CON TIPO Y VALOR como objetos
     const observaciones_generales = [];
@@ -732,6 +759,7 @@ function recopilarDatos() {
         }
     });
     console.log('💬 Observaciones generales recopiladas:', observaciones_generales);
+    console.log('💬 Observaciones #observaciones_lista divs encontrados:', document.querySelectorAll('#observaciones_lista > div').length);
     
     // Obtener la fecha seleccionada
     const fechaInput = document.getElementById('fechaActual');

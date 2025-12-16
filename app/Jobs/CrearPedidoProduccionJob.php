@@ -4,19 +4,17 @@ namespace App\Jobs;
 
 use App\Models\PedidoProduccion;
 use App\DTOs\CrearPedidoProduccionDTO;
+use App\DTOs\PrendaCreacionDTO;
 use App\Services\Pedidos\PrendaProcessorService;
 use App\Application\Services\PedidoPrendaService;
 use App\Application\Services\PedidoLogoService;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 
-class CrearPedidoProduccionJob implements ShouldQueue
+class CrearPedidoProduccionJob
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, Queueable;
 
     public function __construct(
         private CrearPedidoProduccionDTO $dto,
@@ -57,13 +55,22 @@ class CrearPedidoProduccionJob implements ShouldQueue
                 'cotizacion_id' => $this->dto->cotizacionId,
                 'asesor_id' => $this->asesorId,
                 'numero_pedido' => $numeroPedido,
+                'cliente' => $this->dto->cliente,
+                'cliente_id' => $this->dto->clienteId,
+                'descripcion' => $this->dto->descripcion,
+                'forma_de_pago' => $this->dto->formaDePago,
                 'prendas' => $prendasProcesadas,
                 'estado' => 'Pendiente',
             ]);
 
             // Guardar prendas en tablas normalizadas (DDD)
+            // Convertir DTOs a arrays antes de guardar
             if (!empty($this->prendas)) {
-                $prendaService->guardarPrendasEnPedido($pedido, $this->prendas);
+                $prendasArray = array_map(
+                    fn($prenda) => $prenda instanceof PrendaCreacionDTO ? $prenda->toArray() : $prenda,
+                    $this->prendas
+                );
+                $prendaService->guardarPrendasEnPedido($pedido, $prendasArray);
             }
 
             // Guardar logo si existe (DDD)

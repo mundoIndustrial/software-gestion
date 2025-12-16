@@ -123,10 +123,13 @@ function toggleProductoBody(btn) {
 
 // ============ FOTOS DE PRODUCTOS ============
 
-function manejarDrop(event) {
+function manejarDrop(event, dropZone) {
     event.preventDefault();
     event.stopPropagation();
-    const dropZone = event.currentTarget;
+    // Si no se pasa dropZone, usar event.currentTarget (para compatibilidad)
+    if (!dropZone) {
+        dropZone = event.currentTarget;
+    }
     dropZone.classList.remove('drag-over');
     agregarFotos(event.dataTransfer.files, dropZone);
 }
@@ -154,14 +157,15 @@ function agregarFotos(files, dropZone) {
     // Contar imágenes guardadas (desde cargarBorrador)
     const fotosGuardadas = Array.from(dropZone.closest('.producto-card').querySelectorAll('[data-foto]:not([data-foto-nueva])')).length;
     const fotosNuevas = window.fotosSeleccionadas[productoId].length;
-    const totalFotos = fotosGuardadas + fotosNuevas;
+    let totalFotos = fotosGuardadas + fotosNuevas;
     
     console.log(`📊 Fotos guardadas: ${fotosGuardadas}, Fotos nuevas: ${fotosNuevas}, Total: ${totalFotos}`);
     
     Array.from(files).forEach((file, fileIndex) => {
         // Validar límite de 3 fotos TOTAL (guardadas + nuevas)
-        if (totalFotos + window.fotosSeleccionadas[productoId].length < 3) {
+        if (totalFotos < 3) {
             window.fotosSeleccionadas[productoId].push(file);
+            totalFotos++; // Incrementar contador después de agregar
             
             // Guardar con índice de prenda (similar a telaConIndice)
             if (!window.imagenesEnMemoria.prendaConIndice) {
@@ -230,19 +234,26 @@ function actualizarPreviewFotos(input) {
             return;
         }
         
+        // Generar un ID único para esta foto (usando timestamp + índice)
+        const fotoId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        
         const reader = new FileReader();
         reader.onload = function(e) {
             const preview = document.createElement('div');
             preview.setAttribute('data-foto', 'true');
             preview.setAttribute('data-foto-nueva', 'true'); // Marcar como foto nueva
-            preview.setAttribute('data-index', index);
+            preview.setAttribute('data-foto-id', fotoId); // ID único en lugar de índice
             preview.setAttribute('data-file-name', file.name); // Guardar nombre del archivo
             preview.style.cssText = 'position: relative; width: 60px; height: 60px; border-radius: 4px; overflow: hidden; background: #f0f0f0; cursor: pointer;';
             const imagenSrc = e.target.result;
+            
+            // Contar el número de fotos en el preview para mostrar el número correcto
+            const numeroFoto = container.querySelectorAll('[data-foto]').length + 1;
+            
             preview.innerHTML = `
                 <img src="${imagenSrc}" style="width: 100%; height: 100%; object-fit: cover;">
-                <span style="position: absolute; top: 1px; left: 1px; background: #0066cc; color: white; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold;">${index + 1}</span>
-                <button type="button" onclick="event.stopPropagation(); eliminarFoto('${productoId}', ${index})" style="position: absolute; top: 1px; left: 1px; background: #f44336; color: white; border: none; border-radius: 50%; width: 16px; height: 16px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: center; padding: 0; opacity: 0; transition: opacity 0.2s;">✕</button>
+                <span style="position: absolute; top: 1px; left: 1px; background: #0066cc; color: white; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold;">${numeroFoto}</span>
+                <button type="button" onclick="event.stopPropagation(); eliminarFotoById('${productoId}', '${fotoId}')" style="position: absolute; top: 1px; left: 1px; background: #f44336; color: white; border: none; border-radius: 50%; width: 16px; height: 16px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: center; padding: 0; opacity: 0; transition: opacity 0.2s;">✕</button>
             `;
             
             // Agregar evento para abrir modal al hacer clic en la imagen
@@ -359,10 +370,12 @@ function eliminarFoto(productoId, index) {
         const fotoAEliminar = todasLasFotos[index];
         const esGuardada = fotoAEliminar.hasAttribute('data-foto-guardada');
         const fileName = fotoAEliminar.getAttribute('data-file-name');
+        const fotoId = fotoAEliminar.getAttribute('data-foto-id');
         
         console.log(`🗑️ Intentando eliminar foto ${index + 1}:`, {
             esGuardada: esGuardada,
-            fileName: fileName
+            fileName: fileName,
+            fotoId: fotoId
         });
         
         if (esGuardada) {
@@ -413,6 +426,7 @@ function eliminarFoto(productoId, index) {
                             
                             // Eliminar del preview
                             fotoAEliminar.remove();
+                            actualizarNumerosPreview(fotosPreview);
                             
                             Swal.fire({
                                 title: '¡Eliminada!',
@@ -453,6 +467,7 @@ function eliminarFoto(productoId, index) {
                 }
             }
             fotoAEliminar.remove();
+            actualizarNumerosPreview(fotosPreview);
             
             // Actualizar imagenesEnMemoria
             if (window.imagenesEnMemoria && window.imagenesEnMemoria.prendaConIndice) {
@@ -462,6 +477,143 @@ function eliminarFoto(productoId, index) {
             }
         }
     }
+}
+
+/**
+ * Eliminar foto usando ID único (más seguro que índices)
+ */
+function eliminarFotoById(productoId, fotoId) {
+    const productoCard = document.querySelector(`[data-producto-id="${productoId}"]`);
+    if (!productoCard) return;
+    
+    const fotosPreview = productoCard.querySelector('.fotos-preview');
+    if (!fotosPreview) return;
+    
+    // Encontrar la foto por su ID único
+    const fotoAEliminar = fotosPreview.querySelector(`[data-foto-id="${fotoId}"]`);
+    if (!fotoAEliminar) {
+        console.warn(`⚠️ No se encontró foto con ID: ${fotoId}`);
+        return;
+    }
+    
+    const esGuardada = fotoAEliminar.hasAttribute('data-foto-guardada');
+    const fileName = fotoAEliminar.getAttribute('data-file-name');
+    
+    console.log(`🗑️ Eliminando foto con ID ${fotoId}:`, {
+        esGuardada: esGuardada,
+        fileName: fileName
+    });
+    
+    if (esGuardada) {
+        // Es una foto guardada - mostrar modal de confirmación
+        Swal.fire({
+            title: '¿Eliminar imagen?',
+            text: 'Esta imagen se borrará definitivamente de la carpeta.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#f44336',
+            cancelButtonColor: '#757575',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const rutaFoto = fotoAEliminar.querySelector('img')?.src || '';
+                
+                console.log(`🗑️ Eliminando foto del servidor:`, rutaFoto);
+                
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Eliminando...',
+                    html: '<div style="display: flex; justify-content: center; align-items: center; gap: 10px;"><div style="width: 12px; height: 12px; border-radius: 50%; background: #f44336; animation: pulse 1.5s infinite;"></div><div style="width: 12px; height: 12px; border-radius: 50%; background: #f44336; animation: pulse 1.5s infinite 0.3s;"></div><div style="width: 12px; height: 12px; border-radius: 50%; background: #f44336; animation: pulse 1.5s infinite 0.6s;"></div></div><style>@keyframes pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }</style>',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false
+                });
+                
+                // Enviar solicitud al backend para eliminar inmediatamente
+                fetch(window.location.origin + '/asesores/fotos/eliminar', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ruta: rutaFoto,
+                        cotizacion_id: window.cotizacionIdActual
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log(`✅ Foto eliminada del servidor:`, rutaFoto);
+                        
+                        // Eliminar del preview
+                        fotoAEliminar.remove();
+                        actualizarNumerosPreview(fotosPreview);
+                        
+                        Swal.fire({
+                            title: '¡Eliminada!',
+                            text: 'La imagen ha sido eliminada correctamente.',
+                            icon: 'success',
+                            confirmButtonColor: '#1e40af',
+                            timer: 2000
+                        });
+                    } else {
+                        console.error(`❌ Error al eliminar foto:`, data.message);
+                        Swal.fire({
+                            title: 'Error',
+                            text: data.message || 'No se pudo eliminar la imagen.',
+                            icon: 'error',
+                            confirmButtonColor: '#1e40af'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error(`❌ Error en la solicitud:`, error);
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'No se pudo conectar con el servidor.',
+                        icon: 'error',
+                        confirmButtonColor: '#1e40af'
+                    });
+                });
+            }
+        });
+    } else {
+        // Es una foto nueva - eliminarla directamente sin confirmar
+        if (fotosSeleccionadas[productoId]) {
+            // Encontrar el índice en fotosSeleccionadas por nombre
+            const indexEnFotos = fotosSeleccionadas[productoId].findIndex(f => f.name === fileName);
+            if (indexEnFotos !== -1) {
+                fotosSeleccionadas[productoId].splice(indexEnFotos, 1);
+                console.log(`✅ Foto nueva eliminada de fotosSeleccionadas`);
+            }
+        }
+        fotoAEliminar.remove();
+        actualizarNumerosPreview(fotosPreview);
+        
+        // Actualizar imagenesEnMemoria
+        if (window.imagenesEnMemoria && window.imagenesEnMemoria.prendaConIndice) {
+            window.imagenesEnMemoria.prendaConIndice = window.imagenesEnMemoria.prendaConIndice.filter(item => 
+                !(item.file && item.file.name === fileName)
+            );
+        }
+    }
+}
+
+/**
+ * Actualizar números de fotos después de eliminar una
+ */
+function actualizarNumerosPreview(fotosPreview) {
+    const todasLasFotos = Array.from(fotosPreview.querySelectorAll('[data-foto]'));
+    todasLasFotos.forEach((fotoElement, index) => {
+        const spanNumero = fotoElement.querySelector('span');
+        if (spanNumero) {
+            spanNumero.textContent = index + 1;
+        }
+    });
+    console.log(`📊 Números de fotos actualizados. Total: ${todasLasFotos.length}`);
 }
 
 function agregarFotoTela(input) {
@@ -516,16 +668,25 @@ function mostrarPreviewFoto(input, container) {
     if (!container.style.display) container.style.cssText = 'display: grid; grid-template-columns: repeat(3, 60px); gap: 0.4rem; margin-top: 0.5rem;';
     
     Array.from(input.files).forEach((file, index) => {
+        // Generar ID único para esta foto de tela
+        const fotoTelaId = Date.now() + '-' + Math.random().toString(36).substr(2, 9) + '-' + index;
+        
         const reader = new FileReader();
         reader.onload = function(e) {
             const preview = document.createElement('div');
             preview.setAttribute('data-foto', 'true');
+            preview.setAttribute('data-foto-tela-id', fotoTelaId); // ID único
+            preview.setAttribute('data-file-name', file.name);
             preview.style.cssText = 'position: relative; width: 60px; height: 60px; border-radius: 4px; overflow: hidden; background: #f0f0f0; cursor: pointer;';
             const imagenSrc = e.target.result;
+            
+            // Contar el número correcto basado en todas las fotos en el contenedor
+            const numeroFoto = container.querySelectorAll('div[data-foto]').length + 1;
+            
             preview.innerHTML = `
                 <img src="${imagenSrc}" style="width: 100%; height: 100%; object-fit: cover;">
-                <span style="position: absolute; top: 1px; left: 1px; background: #0066cc; color: white; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold;">${fotosExistentes + index + 1}</span>
-                <button type="button" onclick="event.stopPropagation(); this.closest('div').remove()" style="position: absolute; top: 1px; left: 1px; background: #f44336; color: white; border: none; border-radius: 50%; width: 16px; height: 16px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: center; padding: 0; opacity: 0; transition: opacity 0.2s;">✕</button>
+                <span style="position: absolute; top: 1px; left: 1px; background: #0066cc; color: white; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: bold;">${numeroFoto}</span>
+                <button type="button" onclick="event.stopPropagation(); eliminarFotoTelaById('${fotoTelaId}'); return false;" style="position: absolute; top: 1px; left: 1px; background: #f44336; color: white; border: none; border-radius: 50%; width: 16px; height: 16px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: center; padding: 0; opacity: 0; transition: opacity 0.2s;">✕</button>
             `;
             
             // Agregar evento para abrir modal al hacer clic en la imagen
@@ -573,6 +734,64 @@ function abrirModalImagenTela(imagenSrc) {
 function cerrarModalImagenTela() {
     const modal = document.getElementById('modalImagenTela');
     if (modal) modal.style.display = 'none';
+}
+
+/**
+ * Eliminar foto de tela usando ID único (dinámico)
+ */
+function eliminarFotoTelaById(fotoTelaId) {
+    // Encontrar el contenedor de fotos de tela
+    const fotoElement = document.querySelector(`[data-foto-tela-id="${fotoTelaId}"]`);
+    if (!fotoElement) {
+        console.warn(`⚠️ No se encontró foto de tela con ID: ${fotoTelaId}`);
+        return;
+    }
+    
+    // Obtener el contenedor (foto-tela-preview)
+    const container = fotoElement.closest('.foto-tela-preview');
+    if (!container) {
+        console.warn(`⚠️ No se encontró contenedor .foto-tela-preview`);
+        return;
+    }
+    
+    const fileName = fotoElement.getAttribute('data-file-name');
+    
+    console.log(`🗑️ Eliminando foto de tela con ID ${fotoTelaId}:`, fileName);
+    
+    // Eliminar la foto del DOM
+    fotoElement.remove();
+    
+    // Actualizar números de las fotos restantes
+    const todasLasFotos = Array.from(container.querySelectorAll('[data-foto]'));
+    todasLasFotos.forEach((fotoEl, index) => {
+        const spanNumero = fotoEl.querySelector('span');
+        if (spanNumero) {
+            spanNumero.textContent = index + 1;
+        }
+    });
+    
+    console.log(`✅ Foto de tela eliminada. Total restante: ${todasLasFotos.length}`);
+    
+    // Actualizar telasSeleccionadas
+    // Buscar el producto card para obtener el productoId
+    const productoCard = container.closest('.producto-card');
+    if (productoCard) {
+        const productoId = productoCard.dataset.productoId;
+        if (window.telasSeleccionadas && window.telasSeleccionadas[productoId]) {
+            const indexEnTelas = window.telasSeleccionadas[productoId].findIndex(f => f.name === fileName);
+            if (indexEnTelas !== -1) {
+                window.telasSeleccionadas[productoId].splice(indexEnTelas, 1);
+                console.log(`✅ Foto de tela eliminada de telasSeleccionadas`);
+            }
+        }
+    }
+    
+    // Actualizar imagenesEnMemoria
+    if (window.imagenesEnMemoria && window.imagenesEnMemoria.telaConIndice) {
+        window.imagenesEnMemoria.telaConIndice = window.imagenesEnMemoria.telaConIndice.filter(item => 
+            !(item.file && item.file.name === fileName)
+        );
+    }
 }
 
 // Función para abrir modal de imagen de prenda

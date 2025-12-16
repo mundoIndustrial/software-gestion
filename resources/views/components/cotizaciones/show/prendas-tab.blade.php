@@ -19,7 +19,7 @@
             <tbody>
                 @foreach($cotizacion->prendas as $index => $prenda)
                     @php
-                        $variante = $prenda->variantes->first();
+                        $variante = $prenda->variantes && $prenda->variantes->count() > 0 ? $prenda->variantes->first() : null;
                     @endphp
                     @include('components.cotizaciones.show.prenda-row', ['prenda' => $prenda, 'variante' => $variante])
                 @endforeach

@@ -71,6 +71,59 @@ class PrendaCot extends Model
     }
 
     /**
+     * ACCESSOR: Determinar el género basado en las tallas seleccionadas
+     * - Tallas 6,8,10,12,14,16,18,20,22,24,26 = DAMA
+     * - Tallas 28,30,32,34,36,38,40,42,44,46,48,50 = CABALLERO
+     * - Si hay de ambas = AMBOS
+     * - Si hay letras (XS,S,M,L,XL,XXL,XXXL,XXXXL) = el tipo depende del contexto
+     */
+    public function getGeneroAttribute()
+    {
+        $tallasDama = ['6', '8', '10', '12', '14', '16', '18', '20', '22', '24', '26'];
+        $tallasCaballero = ['28', '30', '32', '34', '36', '38', '40', '42', '44', '46', '48', '50'];
+        
+        // Obtener todas las tallas de esta prenda
+        // Usar la relación ya cargada si está disponible, sino cargar fresh
+        $tallas = [];
+        if ($this->relationLoaded('tallas')) {
+            // Si tallas ya fue eager-loaded, usarlas
+            $tallas = $this->tallas->pluck('talla')->toArray();
+        } else {
+            // Si no, cargar manualmente (lazy loading, pero necesario)
+            $tallas = $this->tallas()->pluck('talla')->toArray();
+        }
+        
+        if (empty($tallas)) {
+            return null;
+        }
+        
+        // Verificar cuáles tallas tiene
+        $tieneDama = false;
+        $tieneCaballero = false;
+        
+        foreach ($tallas as $talla) {
+            if (in_array($talla, $tallasDama)) {
+                $tieneDama = true;
+            }
+            if (in_array($talla, $tallasCaballero)) {
+                $tieneCaballero = true;
+            }
+        }
+        
+        // Determinar y retornar el género
+        if ($tieneDama && $tieneCaballero) {
+            return 'Ambos (Dama y Caballero)';
+        } elseif ($tieneDama) {
+            return 'Dama';
+        } elseif ($tieneCaballero) {
+            return 'Caballero';
+        }
+        
+        // Si son letras o desconocidas, retornar null
+        return null;
+    }
+
+    /**
      * Generar descripción detallada con formato template especificado
      * Utiliza datos de variantes y telas para generar formato estructurado
      */

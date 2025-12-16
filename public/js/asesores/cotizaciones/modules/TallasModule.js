@@ -38,12 +38,24 @@ class TallasModule {
      * Configura tallas por letra
      */
     configurarTallasLetra(formCol, generoSelect, modoSelect, tallaBotones, tallasSection, rangoSelectors) {
-        generoSelect.style.display = 'none';
+        generoSelect.style.display = 'block';  // Mostrar género para letras también
+        generoSelect.value = '';  // Resetear valor
         modoSelect.style.display = 'block';
         modoSelect.value = 'manual';
         tallaBotones.style.display = 'block';
         tallasSection.style.display = 'block';
         rangoSelectors.style.display = 'none';
+
+        // Agregar event listener al modoSelect para cambios
+        modoSelect.addEventListener('change', () => {
+            if (modoSelect.value === 'rango') {
+                rangoSelectors.style.display = 'flex';
+                this.llenarSelectoresRangoLetras(formCol);
+            } else {
+                rangoSelectors.style.display = 'none';
+                tallaBotones.style.display = 'block';
+            }
+        });
 
         this.crearBotonesTallas(formCol, this.tallasPorLetra);
     }
@@ -139,6 +151,31 @@ class TallasModule {
         hastaSelect.innerHTML = '<option value="">Hasta</option>';
 
         tallas.forEach(talla => {
+            const optionDesde = document.createElement('option');
+            optionDesde.value = talla;
+            optionDesde.textContent = talla;
+            desdeSelect.appendChild(optionDesde);
+
+            const optionHasta = document.createElement('option');
+            optionHasta.value = talla;
+            optionHasta.textContent = talla;
+            hastaSelect.appendChild(optionHasta);
+        });
+    }
+
+    /**
+     * Llena los selectores de rango para LETRAS
+     */
+    llenarSelectoresRangoLetras(formCol) {
+        const desdeSelect = formCol.querySelector('.talla-desde');
+        const hastaSelect = formCol.querySelector('.talla-hasta');
+
+        if (!desdeSelect || !hastaSelect) return;
+
+        desdeSelect.innerHTML = '<option value="">Desde</option>';
+        hastaSelect.innerHTML = '<option value="">Hasta</option>';
+
+        this.tallasPorLetra.forEach(talla => {
             const optionDesde = document.createElement('option');
             optionDesde.value = talla;
             optionDesde.textContent = talla;

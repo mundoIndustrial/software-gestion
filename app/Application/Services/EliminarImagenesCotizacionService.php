@@ -94,6 +94,13 @@ class EliminarImagenesCotizacionService
             // Obtener todas las fotos del logo guardadas
             $fotosGuardadas = LogoFotoCot::where('logo_cotizacion_id', $logoCotizacionId)->get();
 
+            Log::info('DEBUG - Eliminación de fotos de logo:', [
+                'logo_id' => $logoCotizacionId,
+                'fotos_guardadas_count' => $fotosGuardadas->count(),
+                'fotos_a_conservar_count' => count($fotosActuales),
+                'fotos_a_conservar' => $fotosActuales
+            ]);
+
             foreach ($fotosGuardadas as $fotoGuardada) {
                 // Verificar si esta foto está en la lista actual
                 $estaEnLista = collect($fotosActuales)->contains(function ($fotoActual) use ($fotoGuardada) {
@@ -107,7 +114,13 @@ class EliminarImagenesCotizacionService
                     $this->eliminarFoto($fotoGuardada->ruta_original);
                     $fotoGuardada->delete();
                     
-                    Log::info('Foto de logo eliminada', [
+                    Log::info('❌ Foto de logo ELIMINADA', [
+                        'logo_id' => $logoCotizacionId,
+                        'foto_id' => $fotoGuardada->id,
+                        'ruta' => $fotoGuardada->ruta_original
+                    ]);
+                } else {
+                    Log::info('✅ Foto de logo CONSERVADA', [
                         'logo_id' => $logoCotizacionId,
                         'foto_id' => $fotoGuardada->id,
                         'ruta' => $fotoGuardada->ruta_original

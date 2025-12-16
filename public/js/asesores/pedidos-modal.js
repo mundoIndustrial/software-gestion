@@ -174,6 +174,56 @@ function actualizarResumenModal() {
 }
 
 // ========================================
+// RECOPILAR DATOS DEL LOGO (PASO 3)
+// ========================================
+function recopilarDatosLogo() {
+    console.log('📸 Recopilando datos del logo...');
+    
+    const descripcionLogo = document.getElementById('descripcion_logo')?.value || '';
+    
+    // Recopilar técnicas
+    const tecnicasElementos = document.querySelectorAll('#tecnicas_seleccionadas input[name="tecnicas[]"]');
+    const tecnicas = Array.from(tecnicasElementos).map(el => el.value);
+    
+    // Recopilar observaciones
+    const observacionesTecnicas = document.getElementById('observaciones_tecnicas')?.value || '';
+    
+    // Recopilar ubicaciones
+    const ubicacionesElementos = document.querySelectorAll('#secciones_agregadas .seccion-item');
+    const ubicaciones = Array.from(ubicacionesElementos).map(el => {
+        return {
+            seccion: el.querySelector('input[name="seccion"]')?.value || '',
+            ubicaciones_seleccionadas: Array.from(el.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value)
+        };
+    });
+    
+    // Recopilar observaciones generales
+    const observacionesGenerales = Array.from(document.querySelectorAll('#observaciones_lista textarea')).map(ta => ta.value);
+    
+    // Recopilar imágenes (File objects)
+    const imagenes = Array.from(document.querySelectorAll('#galeria_imagenes img')).map(img => {
+        // Intentar obtener el File object si existe
+        return img.dataset.file || img.src;
+    });
+    
+    console.log('✅ Datos del logo recopilados:', {
+        descripcion: descripcionLogo.substring(0, 50),
+        tecnicas: tecnicas.length,
+        ubicaciones: ubicaciones.length,
+        imagenes: imagenes.length
+    });
+    
+    return {
+        descripcion: descripcionLogo,
+        tecnicas: tecnicas,
+        observaciones_tecnicas: observacionesTecnicas,
+        ubicaciones: ubicaciones,
+        observaciones_generales: observacionesGenerales,
+        imagenes: imagenes
+    };
+}
+
+// ========================================
 // GUARDAR PEDIDO MODAL COMO BORRADOR
 // ========================================
 function guardarPedidoModal() {
@@ -192,6 +242,28 @@ function guardarPedidoModal() {
     const formData = new FormData(form);
     // NO incluir el ID de pedido - se asignará después
     formData.delete('pedido');
+    
+    // ✅ AGREGAR DATOS DEL LOGO (PASO 3)
+    const datosLogo = recopilarDatosLogo();
+    
+    // Agregar descripción del logo
+    formData.append('logo[descripcion]', datosLogo.descripcion);
+    formData.append('logo[observaciones_tecnicas]', datosLogo.observaciones_tecnicas);
+    formData.append('logo[tecnicas]', JSON.stringify(datosLogo.tecnicas));
+    formData.append('logo[ubicaciones]', JSON.stringify(datosLogo.ubicaciones));
+    formData.append('logo[observaciones_generales]', JSON.stringify(datosLogo.observaciones_generales));
+    
+    console.log('📸 Datos del logo agregados a FormData');
+    
+    // Agregar imágenes del logo si existen en memoria
+    if (window.imagenesEnMemoria && window.imagenesEnMemoria.logo && Array.isArray(window.imagenesEnMemoria.logo)) {
+        window.imagenesEnMemoria.logo.forEach((imagen, idx) => {
+            if (imagen instanceof File) {
+                formData.append(`logo[imagenes][]`, imagen);
+                console.log(`✅ Imagen de logo agregada [${idx}]:`, imagen.name);
+            }
+        });
+    }
     
     Swal.fire({
         title: '¿Guardar pedido?',

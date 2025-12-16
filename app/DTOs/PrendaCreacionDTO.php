@@ -26,6 +26,10 @@ class PrendaCreacionDTO
         public readonly ?string $reflectivoObs,
         public readonly ?string $observaciones,
         public readonly array $cantidades, // ['talla' => cantidad]
+        public readonly ?int $colorId = null,
+        public readonly ?int $telaId = null,
+        public readonly ?int $tipoMangaId = null,
+        public readonly ?int $tipoBrocheId = null,
     ) {}
 
     /**
@@ -51,6 +55,10 @@ class PrendaCreacionDTO
             reflectivoObs: $data['reflectivo_obs'] ?? null,
             observaciones: $data['observaciones'] ?? null,
             cantidades: $data['cantidades'] ?? [],
+            colorId: $data['color_id'] ?? null,
+            telaId: $data['tela_id'] ?? null,
+            tipoMangaId: $data['tipo_manga_id'] ?? null,
+            tipoBrocheId: $data['tipo_broche_id'] ?? null,
         );
     }
 
@@ -93,6 +101,10 @@ class PrendaCreacionDTO
             'reflectivo_obs' => $this->reflectivoObs,
             'observaciones' => $this->observaciones,
             'cantidades' => $this->cantidades,
+            'color_id' => $this->colorId,
+            'tela_id' => $this->telaId,
+            'tipo_manga_id' => $this->tipoMangaId,
+            'tipo_broche_id' => $this->tipoBrocheId,
         ];
     }
 }

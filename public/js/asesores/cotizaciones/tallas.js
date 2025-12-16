@@ -4,6 +4,39 @@ const tallasDama = ['6', '8', '10', '12', '14', '16', '18', '20', '22', '24', '2
 const tallasCaballero = ['28', '30', '32', '34', '36', '38', '40', '42', '44', '46', '48', '50'];
 
 /**
+ * Actualiza el input oculto genero_id con el género seleccionado
+ */
+function actualizarGeneroSeleccionado(select) {
+    const productoCard = select.closest('.producto-card');
+    if (!productoCard) {
+        console.warn('⚠️ No se encontró .producto-card para actualizar genero_id');
+        return;
+    }
+    
+    const generoInput = productoCard.querySelector('.genero-id-hidden');
+    if (!generoInput) {
+        console.warn('⚠️ No se encontró .genero-id-hidden');
+        return;
+    }
+    
+    const generoValue = select.value;
+    console.log('🔵 Género seleccionado:', generoValue);
+    
+    // Mapear valores de género a IDs
+    let generoId = '';
+    if (generoValue === 'dama') {
+        generoId = '1';
+    } else if (generoValue === 'caballero') {
+        generoId = '2';
+    } else if (generoValue === 'ambos') {
+        generoId = '4'; // o null, según la BD
+    }
+    
+    generoInput.value = generoId;
+    console.log('✅ genero_id actualizado a:', generoId);
+}
+
+/**
  * Actualiza el selector de tallas basado en el tipo seleccionado
  */
 function actualizarSelectTallas(select) {
@@ -80,16 +113,28 @@ function actualizarSelectTallas(select) {
     
     if (tipo === 'letra') {
         console.log('📝 Configurando LETRAS');
-        // LETRAS no necesita género, mostrar botones directamente
+        // LETRAS ahora muestra selector de género
         if (generoSelect) {
-            generoSelect.style.display = 'none';
+            generoSelect.style.display = 'block';
             generoSelect.value = '';
-            console.log('✅ generoSelect ocultado para LETRAS');
+            console.log('✅ generoSelect MOSTRADO para LETRAS');
         }
+        
+        // Mostrar selector de modo para LETRAS
+        modoSelect.style.display = 'block';
+        modoSelect.value = 'manual';
+        console.log('✅ modoSelect MOSTRADO para LETRAS');
+        
+        // Agregar event listener al modoSelect para LETRAS
+        modoSelect._handlerLetras = function() {
+            console.log('📝 Modo cambiado para LETRAS:', this.value);
+            actualizarModoLetras(container, this.value);
+        };
+        modoSelect.addEventListener('change', modoSelect._handlerLetras);
+        console.log('✅ Event listener agregado a modoSelect para LETRAS');
         
         // Mostrar botones de talla directamente para LETRAS
         tallaBotones.style.display = 'block';
-        modoSelect.style.display = 'none';
         tallaRangoSelectors.style.display = 'none';
         
         // Crear botones de LETRAS
@@ -486,6 +531,125 @@ function actualizarBotonesPorGenero(container, genero) {
         };
         modoSelect.addEventListener('change', modoSelect._handler);
         
+    } else if (genero === 'ambos') {
+        console.log('👨👩 AMBOS (DAMA Y CABALLERO) seleccionado');
+        
+        // Crear pestañas para Dama y Caballero
+        const tabsContainer = document.createElement('div');
+        tabsContainer.style.cssText = 'display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 2px solid #0066cc;';
+        
+        const tabDama = document.createElement('button');
+        tabDama.type = 'button';
+        tabDama.textContent = '👩 DAMA';
+        tabDama.style.cssText = 'padding: 8px 16px; background: white; color: #0066cc; border: none; border-bottom: 3px solid white; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.2s;';
+        tabDama.className = 'tab-genero activo';
+        tabDama.dataset.genero = 'dama';
+        
+        const tabCaballero = document.createElement('button');
+        tabCaballero.type = 'button';
+        tabCaballero.textContent = '👨 CABALLERO';
+        tabCaballero.style.cssText = 'padding: 8px 16px; background: white; color: #0066cc; border: none; border-bottom: 3px solid white; cursor: pointer; font-weight: 600; font-size: 0.95rem; transition: all 0.2s;';
+        tabCaballero.className = 'tab-genero';
+        tabCaballero.dataset.genero = 'caballero';
+        
+        tabsContainer.appendChild(tabDama);
+        tabsContainer.appendChild(tabCaballero);
+        botonesDiv.parentElement.insertBefore(tabsContainer, botonesDiv);
+        
+        // Inicializar con DAMA
+        botonesDiv.innerHTML = '';
+        console.log('👩 Agregando botones de DAMA para AMBOS:', tallasDama);
+        tallasDama.forEach(talla => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = talla;
+            btn.className = 'talla-btn';
+            btn.dataset.talla = talla;
+            btn.dataset.genero = 'dama';
+            btn.style.cssText = 'padding: 0.5rem 1rem; background: white; color: #0066cc; border: 2px solid #0066cc; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s ease;';
+            btn.onmouseover = function() { if (!this.classList.contains('activo')) this.style.background = '#e6f0ff'; };
+            btn.onmouseout = function() { if (!this.classList.contains('activo')) this.style.background = 'white'; };
+            btn.onclick = function(e) {
+                e.preventDefault();
+                this.classList.toggle('activo');
+                if (this.classList.contains('activo')) {
+                    this.style.background = '#0066cc';
+                    this.style.color = 'white';
+                } else {
+                    this.style.background = 'white';
+                    this.style.color = '#0066cc';
+                }
+            };
+            botonesDiv.appendChild(btn);
+        });
+        
+        tallaBotones.style.display = 'block';
+        
+        // Event listeners para las pestañas
+        tabDama.onclick = function(e) {
+            e.preventDefault();
+            tabDama.style.borderBottom = '3px solid #0066cc';
+            tabCaballero.style.borderBottom = '3px solid white';
+            botonesDiv.innerHTML = '';
+            
+            tallasDama.forEach(talla => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = talla;
+                btn.className = 'talla-btn';
+                btn.dataset.talla = talla;
+                btn.dataset.genero = 'dama';
+                btn.style.cssText = 'padding: 0.5rem 1rem; background: white; color: #0066cc; border: 2px solid #0066cc; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s ease;';
+                btn.onmouseover = function() { if (!this.classList.contains('activo')) this.style.background = '#e6f0ff'; };
+                btn.onmouseout = function() { if (!this.classList.contains('activo')) this.style.background = 'white'; };
+                btn.onclick = function(e) {
+                    e.preventDefault();
+                    this.classList.toggle('activo');
+                    if (this.classList.contains('activo')) {
+                        this.style.background = '#0066cc';
+                        this.style.color = 'white';
+                    } else {
+                        this.style.background = 'white';
+                        this.style.color = '#0066cc';
+                    }
+                };
+                botonesDiv.appendChild(btn);
+            });
+            console.log('👩 Tallas DAMA mostradas');
+        };
+        
+        tabCaballero.onclick = function(e) {
+            e.preventDefault();
+            tabDama.style.borderBottom = '3px solid white';
+            tabCaballero.style.borderBottom = '3px solid #0066cc';
+            botonesDiv.innerHTML = '';
+            
+            tallasCaballero.forEach(talla => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = talla;
+                btn.className = 'talla-btn';
+                btn.dataset.talla = talla;
+                btn.dataset.genero = 'caballero';
+                btn.style.cssText = 'padding: 0.5rem 1rem; background: white; color: #0066cc; border: 2px solid #0066cc; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s ease;';
+                btn.onmouseover = function() { if (!this.classList.contains('activo')) this.style.background = '#e6f0ff'; };
+                btn.onmouseout = function() { if (!this.classList.contains('activo')) this.style.background = 'white'; };
+                btn.onclick = function(e) {
+                    e.preventDefault();
+                    this.classList.toggle('activo');
+                    if (this.classList.contains('activo')) {
+                        this.style.background = '#0066cc';
+                        this.style.color = 'white';
+                    } else {
+                        this.style.background = 'white';
+                        this.style.color = '#0066cc';
+                    }
+                };
+                botonesDiv.appendChild(btn);
+            });
+            console.log('👨 Tallas CABALLERO mostradas');
+        };
+        
     } else {
         tallaBotones.style.display = 'none';
     }
@@ -506,6 +670,12 @@ function actualizarBotonesPorGeneroLetras(container, genero) {
     botonesDiv.innerHTML = '';
     console.log('📝 botonesDiv limpiado');
     
+    // Eliminar pestañas anteriores si existen
+    const tabsAnteriores = container.querySelector('.tabs-genero-letras');
+    if (tabsAnteriores) {
+        tabsAnteriores.remove();
+    }
+    
     // Ocultar secciones
     tallaBotones.style.display = 'none';
     tallaRangoSelectors.style.display = 'none';
@@ -525,15 +695,26 @@ function actualizarBotonesPorGeneroLetras(container, genero) {
         modoSelect._handlerNumeros = null;
     }
     
-    modoSelect.style.display = 'block';
-    console.log('📝 modoSelect mostrado (valor actual:', modoSelect.value, ')');
-    
-    console.log('📝 Agregando evento onchange al modoSelect para LETRAS');
-    modoSelect._handlerLetras = function() {
-        console.log('📝 LETRAS: Modo cambiado a:', this.value);
-        actualizarModoLetras(container, this.value);
-    };
-    modoSelect.addEventListener('change', modoSelect._handlerLetras);
+    // Para "ambos", mostrar directamente sin necesidad de modo
+    if (genero === 'ambos') {
+        console.log('📝 AMBOS (Letras) - Sin diferencia de género en letras');
+        modoSelect.style.display = 'block';
+        modoSelect._handlerLetras = function() {
+            console.log('📝 LETRAS (Ambos): Modo cambiado a:', this.value);
+            actualizarModoLetras(container, this.value);
+        };
+        modoSelect.addEventListener('change', modoSelect._handlerLetras);
+    } else {
+        modoSelect.style.display = 'block';
+        console.log('📝 modoSelect mostrado (valor actual:', modoSelect.value, ')');
+        
+        console.log('📝 Agregando evento onchange al modoSelect para LETRAS');
+        modoSelect._handlerLetras = function() {
+            console.log('📝 LETRAS: Modo cambiado a:', this.value);
+            actualizarModoLetras(container, this.value);
+        };
+        modoSelect.addEventListener('change', modoSelect._handlerLetras);
+    }
 }
 
 /**

@@ -36,6 +36,12 @@
         <span style="color: #1e293b;">{{ $variante->color ?? '-' }}</span>
     </div>
 
+    {{-- Género --}}
+    <div style="margin-bottom: 8px;">
+        <span style="font-weight: 600; color: #0066cc;">Género:</span>
+        <span style="color: #1e293b;">{{ $variante->genero_nombre ?? '-' }}</span>
+    </div>
+
     {{-- Tela --}}
     <div style="margin-bottom: 8px;">
         <span style="font-weight: 600; color: #0066cc;">Tela:</span>

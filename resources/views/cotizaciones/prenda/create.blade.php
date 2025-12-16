@@ -844,8 +844,9 @@
                             
                             <select class="talla-genero-select" style="padding: 0.4rem 0.6rem; border: 2px solid #0066cc; border-radius: 6px; font-size: 0.75rem; cursor: pointer; background-color: white; color: #0066cc; font-weight: 600; max-width: 180px; display: none;">
                                 <option value="">Selecciona género</option>
-                                <option value="dama">DAMA</option>
-                                <option value="caballero">CABALLERO</option>
+                                <option value="dama">Dama</option>
+                                <option value="caballero">Caballero</option>
+                                <option value="ambos">Ambos (Dama y Caballero)</option>
                             </select>
                             
                             <select class="talla-modo-select" style="padding: 0.4rem 0.6rem; border: 2px solid #0066cc; border-radius: 6px; font-size: 0.75rem; cursor: pointer; background-color: white; color: #0066cc; font-weight: 600; max-width: 180px; display: none;">
@@ -1113,7 +1114,30 @@ function seleccionarManga(valor, element) {
     const suggestionsDiv = element.closest('.manga-suggestions');
     const parentDiv = suggestionsDiv.closest('div');
     const input = parentDiv.querySelector('.manga-input');
+    const idInput = parentDiv.querySelector('.manga-id-input');
+    
+    // Buscar el ID en los datos de mangas disponibles
+    const mangaData = [
+        { id: 1, nombre: 'Larga' },
+        { id: 2, nombre: 'Corta' },
+        { id: 3, nombre: '3/4' }
+    ];
+    
+    // Buscar si existe en la lista conocida
+    let mangaId = null;
+    const existente = mangaData.find(m => m.nombre.toLowerCase() === valor.toLowerCase());
+    if (existente) {
+        mangaId = existente.id;
+    } else {
+        // Si no existe, usar el próximo ID disponible
+        mangaId = Math.max(...mangaData.map(m => m.id), 0) + 1;
+    }
+    
     input.value = valor;
+    if (idInput) {
+        idInput.value = mangaId;
+        console.log(`✅ Manga seleccionada: ${valor} (ID: ${mangaId})`);
+    }
     suggestionsDiv.style.display = 'none';
 }
 

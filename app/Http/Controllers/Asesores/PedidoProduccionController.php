@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Cotizacion;
 use App\Models\PedidoProduccion;
 use App\Services\Pedidos\CotizacionSearchService;
+use App\Services\Pedidos\CotizacionDataExtractorService;
 use App\Services\Pedidos\PedidoProduccionCreatorService;
 use App\Services\Pedidos\PrendaProcessorService;
 use App\DTOs\CrearPedidoProduccionDTO;
@@ -26,6 +27,7 @@ class PedidoProduccionController extends Controller
 {
     public function __construct(
         private CotizacionSearchService $cotizacionSearch,
+        private CotizacionDataExtractorService $dataExtractor,
         private PedidoProduccionCreatorService $pedidoCreator,
         private PrendaProcessorService $prendaProcessor,
     ) {}
@@ -62,13 +64,22 @@ class PedidoProduccionController extends Controller
             // Validar request
             $validated = $request->validate([
                 'cotizacion_id' => 'required|integer|exists:cotizaciones,id',
-                'prendas' => 'required|array',
-                'prendas.*.nombre_producto' => 'required|string',
-                'prendas.*.cantidades' => 'required|array',
             ]);
 
-            // Crear DTO desde request
-            $dto = CrearPedidoProduccionDTO::fromRequest($validated);
+            // Obtener cotización
+            $cotizacion = Cotizacion::with('cliente')->findOrFail($validated['cotizacion_id']);
+
+            // Extraer TODA la información normalizada de la cotización
+            // (prendas, variantes, telas, tallas, fotos)
+            $datosExtraidos = $this->dataExtractor->extraerDatos($cotizacion);
+
+            // Crear DTO con los datos extraídos
+            $dto = CrearPedidoProduccionDTO::fromRequest([
+                'cotizacion_id' => $validated['cotizacion_id'],
+                'prendas' => $datosExtraidos['prendas'],
+                'cliente' => $datosExtraidos['cliente'],
+                'cliente_id' => $datosExtraidos['cliente_id'],
+            ]);
 
             // Validar DTO
             if (!$dto->esValido()) {

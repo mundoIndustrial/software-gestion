@@ -1199,23 +1199,26 @@ function guardarUbicacionReflectivo() {
     
     // Crear elemento de ubicación como componente expandible
     const item = document.createElement('div');
+    item.className = 'ubicacion-item-reflectivo'; // ADD CLASS FOR EASY IDENTIFICATION
     item.style.cssText = 'background: white; border: 2px solid #0ea5e9; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; width: 100%; box-shadow: 0 2px 4px rgba(14, 165, 233, 0.15); position: relative;';
     
     const header = document.createElement('div');
+    header.className = 'ubicacion-header-reflectivo'; // ADD CLASS
     header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; cursor: pointer;';
     header.innerHTML = `
         <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1;">
             <span style="color: #0ea5e9; font-weight: 700; font-size: 1rem;">📍</span>
-            <span style="font-weight: 700; color: #1e40af; font-size: 0.95rem;">${ubicacion}</span>
+            <span class="ubicacion-nombre-reflectivo" style="font-weight: 700; color: #1e40af; font-size: 0.95rem;">${ubicacion}</span>
         </div>
         <span style="color: #0ea5e9; font-size: 1.2rem; transition: transform 0.3s ease;" class="ubicacion-toggle">▼</span>
     `;
     
     const body = document.createElement('div');
+    body.className = 'ubicacion-body-reflectivo'; // ADD CLASS
     body.style.cssText = 'display: block; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e2e8f0;';
     body.innerHTML = `
-        <p style="margin: 0 0 0.5rem 0; color: #64748b; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px;">Observación:</p>
-        <p style="margin: 0; color: #334155; font-size: 0.9rem; line-height: 1.5;">${observacion || 'Sin observación adicional'}</p>
+        <p style="margin: 0 0 0.5rem 0; color: #64748b; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px;">Descripción:</p>
+        <p class="ubicacion-descripcion-reflectivo" style="margin: 0; color: #334155; font-size: 0.9rem; line-height: 1.5;">${observacion || 'Sin descripción adicional'}</p>
     `;
     
     const deleteBtn = document.createElement('button');
@@ -1287,6 +1290,35 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
         return;
     }
 
+    // Recopilar ubicaciones del DOM usando las clases CSS
+    const ubicaciones = [];
+    const ubicacionesContainer = document.querySelector('.ubicaciones-agregadas-reflectivo');
+    if (ubicacionesContainer) {
+        // Buscar todos los items de ubicación usando la clase CSS
+        ubicacionesContainer.querySelectorAll('.ubicacion-item-reflectivo').forEach((item) => {
+            const nombreSpan = item.querySelector('.ubicacion-nombre-reflectivo');
+            const descripcionP = item.querySelector('.ubicacion-descripcion-reflectivo');
+            
+            if (nombreSpan && descripcionP) {
+                const ubicacionText = nombreSpan.textContent.trim();
+                const descripcion = descripcionP.textContent.trim();
+                
+                console.log('🔍 RECOPILANDO - Ubicación encontrada:', {
+                    ubicacion: ubicacionText,
+                    descripcion: descripcion
+                });
+                
+                if (ubicacionText && ubicacionText !== 'Sin descripción adicional') {
+                    ubicaciones.push({
+                        ubicacion: ubicacionText,
+                        descripcion: descripcion
+                    });
+                }
+            }
+        });
+        console.log('📦 Total de ubicaciones recopiladas:', ubicaciones.length);
+    }
+
     const submitButton = e.submitter;
     const action = submitButton ? submitButton.value : 'borrador';
 
@@ -1297,11 +1329,17 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
     formData.append('fecha', fecha);
     formData.append('action', action);
     formData.append('tipo', 'RF');
-    formData.append('prendas', JSON.stringify(prendas));
+    formData.append('prendas', JSON.stringify(prendas)); // Enviar como JSON string
     formData.append('especificaciones', document.getElementById('especificaciones').value || '');
-    formData.append('descripcion_reflectivo', 'Cotización de Reflectivo');
-    formData.append('ubicaciones_reflectivo', JSON.stringify([]));
+    formData.append('descripcion_reflectivo', document.getElementById('descripcion_reflectivo')?.value || 'Reflectivo');
+    formData.append('ubicaciones_reflectivo', JSON.stringify(ubicaciones)); // Enviar ubicaciones recopiladas
     formData.append('observaciones_generales', JSON.stringify([]));
+
+    // DEBUG: Log de ubicaciones que se van a enviar
+    console.log('🚀 ENVIAR FORMULARIO - Ubicaciones que se enviarán:');
+    console.log('   Cantidad:', ubicaciones.length);
+    console.log('   Data:', JSON.stringify(ubicaciones, null, 2));
+    console.log('   FormData value:', formData.get('ubicaciones_reflectivo'));
 
     // Agregar imágenes por prenda (si las hay)
     document.querySelectorAll('.input-file-reflectivo').forEach((input, index) => {
@@ -1339,7 +1377,229 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
 
 // Agregar PRENDA 1 por default al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
-    agregarProductoPrenda();
+    // Si hay datos iniciales (edición), cargarlos
+    const datosIniciales = {!! isset($datosIniciales) ? $datosIniciales : 'null' !!};
+    
+    console.log('📋 Datos iniciales recibidos:', datosIniciales);
+    
+    if (datosIniciales) {
+        try {
+            // Cargar cliente
+            if (datosIniciales.cliente) {
+                const nombreCliente = datosIniciales.cliente.nombre || datosIniciales.cliente;
+                console.log('👤 Cargando cliente:', nombreCliente);
+                document.getElementById('header-cliente').value = nombreCliente;
+                document.getElementById('cliente').value = nombreCliente;
+            }
+            
+            // Cargar fecha
+            if (datosIniciales.fecha_inicio) {
+                const fecha = new Date(datosIniciales.fecha_inicio);
+                const fechaFormato = fecha.toISOString().split('T')[0];
+                console.log('📅 Cargando fecha:', fechaFormato);
+                document.getElementById('header-fecha').value = fechaFormato;
+                document.getElementById('fecha').value = fechaFormato;
+            }
+            
+            // Cargar especificaciones
+            if (datosIniciales.especificaciones) {
+                console.log('⚙️ Cargando especificaciones:', datosIniciales.especificaciones);
+                document.getElementById('especificaciones').value = JSON.stringify(datosIniciales.especificaciones);
+            }
+            
+            // Cargar prendas (reflectivo)
+            if (datosIniciales.prendas && datosIniciales.prendas.length > 0) {
+                console.log('👔 Cargando', datosIniciales.prendas.length, 'prendas');
+                // Limpiar la prenda por defecto
+                const contenedor = document.getElementById('prendas-contenedor');
+                contenedor.innerHTML = '';
+                
+                // Agregar cada prenda
+                datosIniciales.prendas.forEach((prenda, index) => {
+                    console.log('  - Prenda', index + 1, ':', prenda);
+                    contadorProductosReflectivo++;
+                    const template = document.getElementById('productoReflectivoTemplate');
+                    const clone = template.content.cloneNode(true);
+                    
+                    // Actualizar número
+                    clone.querySelector('.numero-producto').textContent = contadorProductosReflectivo;
+                    
+                    // Cargar tipo de prenda
+                    const tipoInput = clone.querySelector('[name*="tipo_prenda"]');
+                    if (tipoInput && prenda.nombre_producto) {
+                        tipoInput.value = prenda.nombre_producto;
+                        console.log('    ✓ Tipo:', prenda.nombre_producto);
+                    }
+                    
+                    // Cargar descripción
+                    const descInput = clone.querySelector('[name*="descripcion"]');
+                    if (descInput && prenda.descripcion) {
+                        descInput.value = prenda.descripcion;
+                        console.log('    ✓ Descripción:', prenda.descripcion);
+                    }
+                    
+                    // Cargar fotos
+                    if (prenda.fotos && prenda.fotos.length > 0) {
+                        console.log('    ✓ Fotos:', prenda.fotos.length);
+                        const fotosContainer = clone.querySelector('.fotos-preview-reflectivo');
+                        const fileInput = clone.querySelector('.input-file-reflectivo');
+                        
+                        prenda.fotos.forEach((foto) => {
+                            const imgDiv = document.createElement('div');
+                            imgDiv.style.position = 'relative';
+                            imgDiv.innerHTML = `
+                                <img src="${foto.url}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 4px;">
+                                <button type="button" class="btn-eliminar-foto" onclick="this.parentElement.remove()" style="position: absolute; top: 2px; right: 2px; background: red; color: white; border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 0.7rem;">✕</button>
+                            `;
+                            fotosContainer.appendChild(imgDiv);
+                        });
+                    }
+                    
+                    contenedor.appendChild(clone);
+                });
+                console.log('✅ Prendas cargadas correctamente');
+            } else {
+                console.log('⚠️ No hay prendas, agregando una por defecto');
+                agregarProductoPrenda();
+            }
+            
+            // Cargar fotos del reflectivo (si existe)
+            console.log('🔍 Buscando reflectivo en datosIniciales...');
+            console.log('   reflectivo_cotizacion:', datosIniciales.reflectivo_cotizacion ? 'EXISTE' : 'NO');
+            console.log('   reflectivo:', datosIniciales.reflectivo ? 'EXISTE' : 'NO');
+            
+            // Intentar ambas formas: reflectivo_cotizacion o reflectivo
+            const reflectivo = datosIniciales.reflectivo_cotizacion || datosIniciales.reflectivo;
+            
+            if (reflectivo && reflectivo.fotos && reflectivo.fotos.length > 0) {
+                console.log('📸 REFLECTIVO - Cargando', reflectivo.fotos.length, 'fotos');
+                const fotosContainer = document.querySelector('.fotos-preview-reflectivo');
+                
+                if (fotosContainer) {
+                    reflectivo.fotos.forEach((foto, index) => {
+                        console.log(`    ✓ Foto ${index + 1}:`, foto);
+                        const imgDiv = document.createElement('div');
+                        imgDiv.style.position = 'relative';
+                        imgDiv.innerHTML = `
+                            <img src="${foto.url}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 4px;">
+                            <button type="button" class="btn-eliminar-foto" onclick="this.parentElement.remove()" style="position: absolute; top: 2px; right: 2px; background: red; color: white; border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 0.7rem;">✕</button>
+                        `;
+                        fotosContainer.appendChild(imgDiv);
+                    });
+                    console.log('✅ Fotos del reflectivo cargadas correctamente');
+                } else {
+                    console.warn('⚠️ Contenedor .fotos-preview-reflectivo no encontrado');
+                }
+            } else {
+                console.log('ℹ️ No hay fotos de reflectivo para cargar');
+                if (!reflectivo) {
+                    console.warn('  Reflectivo no encontrado en datosIniciales');
+                } else if (!reflectivo.fotos) {
+                    console.warn('  reflectivo.fotos no existe');
+                } else {
+                    console.warn('  reflectivo.fotos está vacío, length:', reflectivo.fotos.length);
+                }
+            }
+            
+            // Cargar descripción del reflectivo (si existe)
+            if (reflectivo && reflectivo.descripcion) {
+                console.log('📝 REFLECTIVO - Cargando descripción');
+                const descInput = document.getElementById('descripcion_reflectivo');
+                if (descInput) {
+                    descInput.value = reflectivo.descripcion;
+                    console.log('    ✓ Descripción:', reflectivo.descripcion);
+                }
+            }
+            
+            // Cargar ubicación del reflectivo (si existe)
+            if (reflectivo && reflectivo.ubicacion) {
+                console.log('📍 REFLECTIVO - Cargando ubicación');
+                console.log('   Type:', typeof reflectivo.ubicacion);
+                console.log('   Value:', reflectivo.ubicacion);
+                try {
+                    const ubicacionData = typeof reflectivo.ubicacion === 'string' 
+                        ? JSON.parse(reflectivo.ubicacion)
+                        : reflectivo.ubicacion;
+                    
+                    console.log('   Después de parsear:', ubicacionData);
+                    console.log('   Es Array?:', Array.isArray(ubicacionData));
+                    console.log('   Length:', Array.isArray(ubicacionData) ? ubicacionData.length : 'N/A');
+                    
+                    if (Array.isArray(ubicacionData) && ubicacionData.length > 0) {
+                        const contenedor = document.querySelector('.ubicaciones-agregadas-reflectivo');
+                        if (!contenedor) {
+                            console.warn('⚠️ Contenedor .ubicaciones-agregadas-reflectivo no encontrado');
+                        } else {
+                            ubicacionData.forEach(ubi => {
+                                if (ubi && ubi.ubicacion) {
+                                    // Crear elemento con la MISMA estructura que guardarUbicacionReflectivo()
+                                    const item = document.createElement('div');
+                                    item.className = 'ubicacion-item-reflectivo'; // USE CLASS
+                                    item.style.cssText = 'background: white; border: 2px solid #0ea5e9; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; width: 100%; box-shadow: 0 2px 4px rgba(14, 165, 233, 0.15); position: relative;';
+                                    
+                                    const header = document.createElement('div');
+                                    header.className = 'ubicacion-header-reflectivo'; // USE CLASS
+                                    header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; cursor: pointer;';
+                                    header.innerHTML = `
+                                        <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1;">
+                                            <span style="color: #0ea5e9; font-weight: 700; font-size: 1rem;">📍</span>
+                                            <span class="ubicacion-nombre-reflectivo" style="font-weight: 700; color: #1e40af; font-size: 0.95rem;">${ubi.ubicacion}</span>
+                                        </div>
+                                        <span style="color: #0ea5e9; font-size: 1.2rem; transition: transform 0.3s ease;" class="ubicacion-toggle">▼</span>
+                                    `;
+                                    
+                                    const body = document.createElement('div');
+                                    body.className = 'ubicacion-body-reflectivo'; // USE CLASS
+                                    body.style.cssText = 'display: block; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e2e8f0;';
+                                    body.innerHTML = `
+                                        <p style="margin: 0 0 0.5rem 0; color: #64748b; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px;">Descripción:</p>
+                                        <p class="ubicacion-descripcion-reflectivo" style="margin: 0; color: #334155; font-size: 0.9rem; line-height: 1.5;">${ubi.descripcion || 'Sin descripción adicional'}</p>
+                                    `;
+                                    
+                                    const deleteBtn = document.createElement('button');
+                                    deleteBtn.type = 'button';
+                                    deleteBtn.style.cssText = 'position: absolute; top: 0.5rem; right: 0.5rem; background: #ef4444; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: bold;';
+                                    deleteBtn.textContent = '×';
+                                    deleteBtn.onclick = (e) => {
+                                        e.stopPropagation();
+                                        item.remove();
+                                    };
+                                    
+                                    item.appendChild(header);
+                                    header.appendChild(deleteBtn);
+                                    item.appendChild(body);
+                                    
+                                    // Toggle para expandir/contraer
+                                    let expanded = true;
+                                    header.addEventListener('click', () => {
+                                        expanded = !expanded;
+                                        body.style.display = expanded ? 'block' : 'none';
+                                        header.querySelector('.ubicacion-toggle').style.transform = expanded ? 'rotate(0deg)' : 'rotate(-90deg)';
+                                    });
+                                    
+                                    contenedor.appendChild(item);
+                                }
+                            });
+                            console.log('    ✓ Ubicaciones cargadas:', ubicacionData.length);
+                        }
+                    } else {
+                        console.log('   ℹ️ ubicacionData está vacío o no es array');
+                    }
+                } catch (e) {
+                    console.warn('⚠️ Error al cargar ubicación:', e);
+                }
+            } else {
+                console.log('ℹ️ No hay ubicación en reflectivo');
+            }
+        } catch (e) {
+            console.error('❌ Error cargando datos iniciales:', e);
+            console.error('Stack:', e.stack);
+            agregarProductoPrenda();
+        }
+    } else {
+        console.log('ℹ️ No hay datos iniciales, agregando prenda por defecto');
+        agregarProductoPrenda();
+    }
 });
 </script>
 

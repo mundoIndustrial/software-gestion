@@ -145,6 +145,8 @@ final class CotizacionController extends Controller
     public function getReflectivoForEdit(int $id): JsonResponse
     {
         try {
+            Log::info('🔍 getReflectivoForEdit: INICIANDO', ['cotizacion_id' => $id, 'usuario_id' => Auth::id()]);
+
             // Obtener cotización reflectivo con todas sus relaciones
             $cotizacion = \App\Models\Cotizacion::with([
                 'cliente',
@@ -152,13 +154,17 @@ final class CotizacionController extends Controller
                 'reflectivoCotizacion.fotos',
             ])->findOrFail($id);
 
+            Log::info('✅ Cotización cargada', ['cotizacion_id' => $cotizacion->id, 'asesor_id' => $cotizacion->asesor_id]);
+
             // Verificar que el usuario es propietario
             if ($cotizacion->asesor_id !== Auth::id()) {
+                Log::warning('❌ Usuario no autorizado', ['cotizacion_asesor' => $cotizacion->asesor_id, 'usuario_actual' => Auth::id()]);
                 return response()->json(['success' => false, 'message' => 'No tienes permiso'], 403);
             }
 
             // Verificar que es reflectivo y borrador
             if ($cotizacion->es_borrador === false) {
+                Log::warning('❌ No es borrador', ['cotizacion_id' => $id, 'es_borrador' => $cotizacion->es_borrador]);
                 return response()->json(['success' => false, 'message' => 'Solo se pueden editar borradores'], 403);
             }
 
@@ -174,6 +180,41 @@ final class CotizacionController extends Controller
                 }
             }
 
+            // DEBUG DETALLADO DE REFLECTIVO
+            Log::info('🔍 DEBUG REFLECTIVO', [
+                'tiene_reflectivo' => $cotizacion->reflectivoCotizacion ? 'SÍ' : 'NO',
+                'reflectivo_id' => $cotizacion->reflectivoCotizacion?->id,
+                'reflectivo_cotizacion_id' => $cotizacion->reflectivoCotizacion?->cotizacion_id,
+            ]);
+
+            if ($cotizacion->reflectivoCotizacion) {
+                $fotos = $cotizacion->reflectivoCotizacion->fotos;
+                Log::info('🔍 DEBUG FOTOS', [
+                    'fotos_count' => $fotos ? count($fotos) : 0,
+                    'fotos_relation_existe' => $fotos ? 'SÍ' : 'NO',
+                ]);
+
+                if ($fotos && count($fotos) > 0) {
+                    foreach ($fotos as $idx => $foto) {
+                        Log::info("🔍 DEBUG FOTO {$idx}", [
+                            'foto_id' => $foto->id,
+                            'ruta_original' => $foto->ruta_original,
+                            'ruta_webp' => $foto->ruta_webp,
+                            'url_accessor' => $foto->url,
+                            'orden' => $foto->orden,
+                        ]);
+                    }
+                }
+            }
+
+            // Preparar fotos para respuesta
+            $fotosParaRespuesta = $cotizacion->reflectivoCotizacion?->fotos ? $cotizacion->reflectivoCotizacion->fotos->toArray() : [];
+            
+            Log::info('📸 FOTOS A DEVOLVER', [
+                'count' => count($fotosParaRespuesta),
+                'fotos_json' => json_encode($fotosParaRespuesta),
+            ]);
+
             Log::info('CotizacionController@getReflectivoForEdit: Cotización RF cargada para editar', [
                 'cotizacion_id' => $cotizacion->id,
                 'fotos_count' => $cotizacion->reflectivoCotizacion?->fotos ? $cotizacion->reflectivoCotizacion->fotos->count() : 0,
@@ -187,11 +228,11 @@ final class CotizacionController extends Controller
                     'cotizacion' => $cotizacion->toArray(),
                     'prendas' => $prendasProcesadas,
                     'reflectivo' => $cotizacion->reflectivoCotizacion?->toArray(),
-                    'fotos' => $cotizacion->reflectivoCotizacion?->fotos ? $cotizacion->reflectivoCotizacion->fotos->toArray() : [],
+                    'fotos' => $fotosParaRespuesta,
                 ],
             ]);
         } catch (\Exception $e) {
-            Log::error('CotizacionController@getReflectivoForEdit: Error', ['error' => $e->getMessage()]);
+            Log::error('CotizacionController@getReflectivoForEdit: Error', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
@@ -241,13 +282,13 @@ final class CotizacionController extends Controller
     {
         try {
             // Obtener cotización con todas sus relaciones
+            // IMPORTANTE: Cargar variantes sin eager load de genero.* para evitar filtros de NULL
             $cotizacion = \App\Models\Cotizacion::with([
                 'cliente',
                 'prendas.fotos',
                 'prendas.telaFotos',
                 'prendas.tallas',
-                'prendas.variantes.manga',
-                'prendas.variantes.broche',
+                'prendas.variantes',
                 'logoCotizacion.fotos',
                 'reflectivoCotizacion.fotos',
                 'tipoCotizacion'
@@ -514,19 +555,9 @@ final class CotizacionController extends Controller
                 }
             }
 
-            // Procesar nuevas imágenes
-            $this->procesarImagenesCotizacion($request, $id);
-
-            // Procesar logo
+            // Procesar logo ANTES de procesar nuevas imágenes para que la eliminación funcione correctamente
             $logoCotizacion = $cotizacion->logoCotizacion;
             if ($logoCotizacion) {
-                // Eliminar fotos de logo que no están en la lista actual
-                $fotosLogoActuales = $request->input('logo.imagenes', []);
-                $this->eliminarImagenesService->eliminarImagenesLogoNoIncluidas(
-                    $logoCotizacion->id,
-                    $fotosLogoActuales
-                );
-
                 // Actualizar datos del logo
                 $logoCotizacion->update([
                     'descripcion' => $request->input('descripcion_logo', ''),
@@ -535,7 +566,59 @@ final class CotizacionController extends Controller
                     'ubicaciones' => json_encode($request->input('ubicaciones', [])),
                     'observaciones_generales' => json_encode($request->input('observaciones_generales', [])),
                 ]);
+                
+                // Obtener las fotos guardadas que se envían desde el frontend
+                // Pueden venir como array: logo_fotos_guardadas[]
+                $fotosLogoGuardadas = $request->input('logo_fotos_guardadas', []);
+                if (!is_array($fotosLogoGuardadas)) {
+                    $fotosLogoGuardadas = $fotosLogoGuardadas ? [$fotosLogoGuardadas] : [];
+                }
+                
+                // Limpiar rutas: remover /storage/ del principio si existe
+                $fotosLogoGuardadas = array_map(function($ruta) {
+                    // Si empieza con /storage/, dejarlo como está (comparar con ruta_webp/ruta_original en BD)
+                    // Si empieza con http, extraer la parte después de /storage/
+                    if (strpos($ruta, 'http') === 0) {
+                        // Es una URL completa como http://localhost/storage/cotizaciones/1/logo/...
+                        if (preg_match('#/storage/(.+)$#', $ruta, $matches)) {
+                            return '/storage/' . $matches[1];
+                        }
+                    }
+                    return $ruta;
+                }, $fotosLogoGuardadas);
+                
+                Log::info('DEBUG - Fotos de logo a conservar (procesadas):', [
+                    'logo_id' => $logoCotizacion->id,
+                    'fotos_guardadas_count' => count($fotosLogoGuardadas),
+                    'fotos_guardadas' => $fotosLogoGuardadas,
+                    'raw_input' => $request->input('logo_fotos_guardadas', [])
+                ]);
+                
+                // Obtener archivos nuevos para saber si se están enviando archivos
+                $archivosNuevos = $request->file('logo.imagenes') ?? [];
+                $allFiles = $request->allFiles();
+                if (empty($archivosNuevos) && isset($allFiles['logo']['imagenes'])) {
+                    $archivosNuevos = $allFiles['logo']['imagenes'];
+                }
+                if ($archivosNuevos instanceof \Illuminate\Http\UploadedFile) {
+                    $archivosNuevos = [$archivosNuevos];
+                }
+                
+                Log::info('DEBUG - Archivos nuevos de logo:', [
+                    'logo_id' => $logoCotizacion->id,
+                    'archivos_nuevos_count' => count($archivosNuevos)
+                ]);
+                
+                // SIEMPRE ejecutar eliminación, pasando las fotos a conservar
+                // El servicio decide cuáles eliminar basándose en la lista de fotos a conservar
+                $this->eliminarImagenesService->eliminarImagenesLogoNoIncluidas(
+                    $logoCotizacion->id,
+                    $fotosLogoGuardadas
+                );
             }
+            
+            // Procesar nuevas imágenes DESPUÉS de actualizar logo
+            $this->procesarImagenesCotizacion($request, $id);
 
             // Recargar la cotización con todas sus relaciones
             $cotizacionCompleta = \App\Models\Cotizacion::with([
@@ -780,15 +863,33 @@ final class CotizacionController extends Controller
                         Log::info('DEBUG - Guardando foto de logo:', [
                             'logoCotizacion_id' => $logoCotizacion->id,
                             'ruta' => $ruta,
-                            'orden' => $orden
+                            'orden' => $orden,
+                            'modelo_relacion' => get_class($logoCotizacion->fotos()->getRelated())
                         ]);
                         
                         // Guardar en logo_fotos_cot (múltiples fotos con orden incremental)
-                        $logoCotizacion->fotos()->create([
-                            'ruta_original' => $ruta,
-                            'ruta_webp' => $ruta,
-                            'orden' => $orden,
-                        ]);
+                        try {
+                            $fotoCreada = $logoCotizacion->fotos()->create([
+                                'ruta_original' => $ruta,
+                                'ruta_webp' => $ruta,
+                                'orden' => $orden,
+                            ]);
+                            
+                            Log::info('✅ Logo foto CREADA EN BD', [
+                                'cotizacion_id' => $cotizacionId,
+                                'foto_id' => $fotoCreada->id ?? 'NULL',
+                                'logo_cotizacion_id' => $logoCotizacion->id,
+                                'ruta' => $ruta,
+                                'orden' => $orden
+                            ]);
+                        } catch (\Exception $e) {
+                            Log::error('❌ ERROR al crear foto de logo', [
+                                'cotizacion_id' => $cotizacionId,
+                                'logo_cotizacion_id' => $logoCotizacion->id,
+                                'error' => $e->getMessage(),
+                                'trace' => $e->getTraceAsString()
+                            ]);
+                        }
                         $orden++;
                         
                         Log::info('Logo foto guardada', ['cotizacion_id' => $cotizacionId, 'ruta' => $ruta, 'orden' => $orden - 1]);
@@ -800,7 +901,37 @@ final class CotizacionController extends Controller
 
             // Procesar PASO 4: REFLECTIVO
             $reflectivoDescripcion = $request->input('reflectivo.descripcion', '');
-            $reflectivoUbicacion = $request->input('reflectivo.ubicacion', '');
+            
+            // Obtener ubicación desde 'ubicaciones_reflectivo' (array JSON) o 'reflectivo.ubicacion' (string legacy)
+            $ubicacionesData = $request->input('ubicaciones_reflectivo', '[]');
+            
+            \Log::info('🔍 DEBUG storeReflectivo - Datos recibidos:', [
+                'reflectivo_descripcion' => $reflectivoDescripcion,
+                'ubicaciones_data_tipo' => gettype($ubicacionesData),
+                'ubicaciones_data_raw' => $ubicacionesData,
+                'ubicaciones_data_length' => is_string($ubicacionesData) ? strlen($ubicacionesData) : (is_array($ubicacionesData) ? count($ubicacionesData) : 0),
+                'all_request_keys' => array_keys($request->all()),
+            ]);
+            
+            if (is_string($ubicacionesData)) {
+                $ubicacionesArray = json_decode($ubicacionesData, true) ?? [];
+            } else {
+                $ubicacionesArray = (array)$ubicacionesData;
+            }
+            
+            \Log::info('🔍 DEBUG storeReflectivo - Ubicaciones después de decode:', [
+                'ubicaciones_array' => $ubicacionesArray,
+                'ubicaciones_count' => count($ubicacionesArray),
+                'array_structure' => json_encode($ubicacionesArray),
+            ]);
+            
+            $reflectivoUbicacion = !empty($ubicacionesArray) ? json_encode($ubicacionesArray) : ($request->input('reflectivo.ubicacion', '') ?? '[]');
+            
+            \Log::info('🔍 DEBUG storeReflectivo - Ubicación final a guardar:', [
+                'reflectivo_ubicacion' => $reflectivoUbicacion,
+                'sera_guardado' => !empty($reflectivoUbicacion),
+            ]);
+            
             $reflectivoObservacionesGenerales = $request->input('reflectivo.observaciones_generales', []);
             if (is_string($reflectivoObservacionesGenerales)) {
                 $reflectivoObservacionesGenerales = json_decode($reflectivoObservacionesGenerales, true) ?? [];
@@ -1021,13 +1152,23 @@ final class CotizacionController extends Controller
                 'fecha' => 'required|date',
                 'action' => 'required|in:borrador,enviar',
                 'tipo' => 'required|in:RF',
-                'prendas' => 'required|array|min:1',
+                'prendas' => 'required|string', // Ahora acepta string JSON
                 'especificaciones' => 'nullable|string',
                 'descripcion_reflectivo' => 'required|string',
                 'ubicaciones_reflectivo' => 'nullable',
                 'observaciones_generales' => 'nullable',
                 'imagenes_reflectivo.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
             ]);
+
+            // Decodificar prendas del JSON string
+            $prendas = json_decode($validated['prendas'], true);
+            if (!is_array($prendas) || count($prendas) === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Prendas inválidas. Debe ser un array con al menos 1 prenda.',
+                    'errores' => ['prendas' => ['Array inválido o vacío']]
+                ], 422);
+            }
 
             DB::beginTransaction();
 
@@ -1057,13 +1198,9 @@ final class CotizacionController extends Controller
                 Log::info('✅ Cotización RF creada', ['cotizacion_id' => $cotizacion->id]);
 
                 // Procesar prendas - ahora vienen como objetos {tipo, descripcion}
-                if (isset($validated['prendas']) && is_array($validated['prendas'])) {
-                    foreach ($validated['prendas'] as $prenda) {
-                        // La prenda puede venir como JSON string o array
-                        if (is_string($prenda)) {
-                            $prenda = json_decode($prenda, true);
-                        }
-                        
+                if (!empty($prendas)) {
+                    foreach ($prendas as $prenda) {
+                        // La prenda ya está decodificada como array
                         if (is_array($prenda)) {
                             // Guardar prenda en prendas_cot
                             \App\Models\PrendaCot::create([
@@ -1089,7 +1226,8 @@ final class CotizacionController extends Controller
                             ]);
                         }
                     }
-                    Log::info('✅ Prendas guardadas', ['cotizacion_id' => $cotizacion->id, 'prendas_count' => count($validated['prendas'])]);
+                    $prendasCount = is_array($prendas) ? count($prendas) : 0;
+                    Log::info('✅ Prendas guardadas', ['cotizacion_id' => $cotizacion->id, 'prendas_count' => $prendasCount]);
                 }
 
 
@@ -1407,7 +1545,8 @@ final class CotizacionController extends Controller
                 'prendas.variantes.manga',
                 'prendas.variantes.broche',
                 'logoCotizacion.fotos',
-                'tipoCotizacion'
+                'tipoCotizacion',
+                'reflectivoCotizacion.fotos'
             ])->findOrFail($id);
 
             // Verificar que el usuario es propietario
@@ -1421,7 +1560,10 @@ final class CotizacionController extends Controller
             }
 
             // Determinar el tipo de cotización y la vista a mostrar
-            $tipo = $cotizacion->tipo ?? 'P';
+            // Si existe reflectivo_cotizacion, es tipo RF (reflectivo)
+            // Si no, obtener del tipoCotizacion por codigo
+            $tieneReflectivo = $cotizacion->reflectivoCotizacion !== null;
+            $tipo = $tieneReflectivo ? 'RF' : ($cotizacion->tipoCotizacion->codigo ?? 'P');
             $vista = 'asesores.pedidos.create-friendly';
             
             if ($tipo === 'RF') {
@@ -1437,6 +1579,44 @@ final class CotizacionController extends Controller
 
             // Transformar prendas a productos para que cargarBorrador() funcione correctamente
             $cotizacionArray = $cotizacion->toArray();
+            
+            // Forzar la inclusión de relaciones en el array
+            try {
+                // Incluir cliente manualmente
+                if ($cotizacion->cliente) {
+                    $cotizacionArray['cliente'] = $cotizacion->cliente->toArray();
+                }
+                
+                // Incluir reflectivo manualmente (IMPORTANTE: asegurar que siempre esté)
+                if ($cotizacion->reflectivoCotizacion) {
+                    $cotizacionArray['reflectivo_cotizacion'] = $cotizacion->reflectivoCotizacion->toArray();
+                    // Asegurar que las fotos están incluidas
+                    if ($cotizacion->reflectivoCotizacion->relationLoaded('fotos')) {
+                        $cotizacionArray['reflectivo_cotizacion']['fotos'] = $cotizacion->reflectivoCotizacion->fotos->toArray();
+                    }
+                } else {
+                    \Log::warning('⚠️ editBorrador - reflectivoCotizacion es NULL');
+                    // Intentar cargar por reflectivo_id si existe
+                    if (isset($cotizacion->reflectivo_id) && $cotizacion->reflectivo_id) {
+                        $reflectivoModel = \App\Models\ReflectivoCotizacion::with('fotos')->find($cotizacion->reflectivo_id);
+                        if ($reflectivoModel) {
+                            $cotizacionArray['reflectivo_cotizacion'] = $reflectivoModel->toArray();
+                            if ($reflectivoModel->fotos) {
+                                $cotizacionArray['reflectivo_cotizacion']['fotos'] = $reflectivoModel->fotos->toArray();
+                            }
+                        }
+                    }
+                }
+                
+                // Incluir prendas manualmente con cada una convertida a array
+                if ($cotizacion->prendas && count($cotizacion->prendas) > 0) {
+                    $cotizacionArray['prendas'] = $cotizacion->prendas->map(function($prenda) {
+                        return $prenda->toArray();
+                    })->toArray();
+                }
+            } catch (\Exception $e) {
+                \Log::warning('Error intentando cargar relaciones en editBorrador', ['error' => $e->getMessage()]);
+            }
             
             // Debug: Verificar que las fotos se están incluyendo
             \Log::info('DEBUG editBorrador - Prendas con fotos:', [
@@ -1454,15 +1634,23 @@ final class CotizacionController extends Controller
             
             // Asegurar que especificaciones esté correctamente deserializada
             if (isset($cotizacionArray['especificaciones']) && is_string($cotizacionArray['especificaciones'])) {
-                $cotizacionArray['especificaciones'] = json_decode($cotizacionArray['especificaciones'], true) ?? [];
+                // Primer decode
+                $decoded = json_decode($cotizacionArray['especificaciones'], true);
+                
+                // Si sigue siendo string (doblemente escapado), hacer otro decode
+                if (is_string($decoded)) {
+                    $decoded = json_decode($decoded, true);
+                }
+                
+                $cotizacionArray['especificaciones'] = $decoded ?? [];
             }
             
             // Asegurar que logo_cotizacion.fotos se devuelve correctamente
             if (isset($cotizacionArray['logo_cotizacion'])) {
                 $logoId = $cotizacionArray['logo_cotizacion']['id'] ?? null;
-                \Log::info('DEBUG - Intentando cargar logo fotos:', [
+                \Log::info('DEBUG editBorrador - Logo cotización campos:', [
                     'logo_id' => $logoId,
-                    'fotos_existe' => isset($cotizacionArray['logo_cotizacion']['fotos']),
+                    'campos_disponibles' => array_keys($cotizacionArray['logo_cotizacion']),
                     'fotos_count' => isset($cotizacionArray['logo_cotizacion']['fotos']) ? count($cotizacionArray['logo_cotizacion']['fotos']) : 0
                 ]);
                 
@@ -1473,16 +1661,67 @@ final class CotizacionController extends Controller
                         \Log::info('DEBUG - Logo fotos cargadas directamente desde modelo:', [
                             'logo_id' => $logoId,
                             'fotos_count' => count($cotizacionArray['logo_cotizacion']['fotos']),
-                            'fotos_sample' => count($cotizacionArray['logo_cotizacion']['fotos']) > 0 ? $cotizacionArray['logo_cotizacion']['fotos'][0] : null
-                        ]);
-                    } else {
-                        \Log::info('DEBUG - Logo model no encontrado o sin fotos:', [
-                            'logo_id' => $logoId,
-                            'model_existe' => !!$logoCotizacionModel,
-                            'fotos_existe' => $logoCotizacionModel ? !!$logoCotizacionModel->fotos : false
                         ]);
                     }
                 }
+                
+                // Deserializar técnicas, ubicaciones y observaciones_generales (ya vienen como arrays por los casts)
+                // Pero verificar por si vienen como strings
+                if (isset($cotizacionArray['logo_cotizacion']['tecnicas']) && is_string($cotizacionArray['logo_cotizacion']['tecnicas'])) {
+                    $cotizacionArray['logo_cotizacion']['tecnicas'] = json_decode($cotizacionArray['logo_cotizacion']['tecnicas'], true) ?? [];
+                }
+                if (isset($cotizacionArray['logo_cotizacion']['ubicaciones']) && is_string($cotizacionArray['logo_cotizacion']['ubicaciones'])) {
+                    $cotizacionArray['logo_cotizacion']['ubicaciones'] = json_decode($cotizacionArray['logo_cotizacion']['ubicaciones'], true) ?? [];
+                }
+                if (isset($cotizacionArray['logo_cotizacion']['observaciones_generales']) && is_string($cotizacionArray['logo_cotizacion']['observaciones_generales'])) {
+                    $cotizacionArray['logo_cotizacion']['observaciones_generales'] = json_decode($cotizacionArray['logo_cotizacion']['observaciones_generales'], true) ?? [];
+                }
+                
+                // Asegurar que observaciones_tecnicas existe (es un campo de texto, no JSON)
+                if (!isset($cotizacionArray['logo_cotizacion']['observaciones_tecnicas'])) {
+                    $cotizacionArray['logo_cotizacion']['observaciones_tecnicas'] = '';
+                }
+                
+                \Log::info('DEBUG editBorrador - Logo después de procesar:', [
+                    'tecnicas' => $cotizacionArray['logo_cotizacion']['tecnicas'] ?? null,
+                    'ubicaciones' => $cotizacionArray['logo_cotizacion']['ubicaciones'] ?? null,
+                    'obs_generales' => $cotizacionArray['logo_cotizacion']['observaciones_generales'] ?? null,
+                    'obs_tecnicas' => $cotizacionArray['logo_cotizacion']['observaciones_tecnicas'] ?? null,
+                    'fotos_count' => isset($cotizacionArray['logo_cotizacion']['fotos']) ? count($cotizacionArray['logo_cotizacion']['fotos']) : 0
+                ]);
+            }
+
+            // Procesar reflectivo_cotizacion si existe
+            if (isset($cotizacionArray['reflectivo_cotizacion'])) {
+                $reflectivoId = $cotizacionArray['reflectivo_cotizacion']['id'] ?? null;
+                \Log::info('🔍 DEBUG editBorrador - Reflectivo cargado:', [
+                    'reflectivo_id' => $reflectivoId,
+                    'campos_disponibles' => array_keys($cotizacionArray['reflectivo_cotizacion']),
+                    'fotos_count' => isset($cotizacionArray['reflectivo_cotizacion']['fotos']) ? count($cotizacionArray['reflectivo_cotizacion']['fotos']) : 0
+                ]);
+
+                // Si fotos está vacío, intentar cargar desde el modelo
+                if (empty($cotizacionArray['reflectivo_cotizacion']['fotos']) && $reflectivoId) {
+                    $reflectivoModel = \App\Models\ReflectivoCotizacion::with('fotos')->find($reflectivoId);
+                    if ($reflectivoModel && $reflectivoModel->fotos && count($reflectivoModel->fotos) > 0) {
+                        $cotizacionArray['reflectivo_cotizacion']['fotos'] = $reflectivoModel->fotos->toArray();
+                        \Log::info('✅ DEBUG - Reflectivo fotos cargadas desde modelo:', [
+                            'reflectivo_id' => $reflectivoId,
+                            'fotos_count' => count($cotizacionArray['reflectivo_cotizacion']['fotos'])
+                        ]);
+                    } else {
+                        \Log::warning('⚠️ DEBUG - No se encontraron fotos en reflectivo', [
+                            'reflectivo_id' => $reflectivoId,
+                            'modelo_existe' => $reflectivoModel ? 'SÍ' : 'NO',
+                            'fotos_existe' => $reflectivoModel && $reflectivoModel->fotos ? 'SÍ' : 'NO'
+                        ]);
+                    }
+                }
+
+                \Log::info('✅ DEBUG editBorrador - Reflectivo después de procesar:', [
+                    'reflectivo_id' => $reflectivoId,
+                    'fotos_final_count' => isset($cotizacionArray['reflectivo_cotizacion']['fotos']) ? count($cotizacionArray['reflectivo_cotizacion']['fotos']) : 0
+                ]);
             }
             
             if (isset($cotizacionArray['prendas'])) {
@@ -1597,17 +1836,42 @@ final class CotizacionController extends Controller
                         'tela_fotos_sample' => (isset($prenda['tela_fotos']) && count($prenda['tela_fotos']) > 0) ? $prenda['tela_fotos'][0] : null
                     ]);
                 }
-                $cotizacionArray['productos'] = $cotizacionArray['prendas'];
-                unset($cotizacionArray['prendas']);
+                // Mantener prendas en el array (no usar productos para evitar confusión)
+                // $cotizacionArray['productos'] = $cotizacionArray['prendas'];
             }
             
             // Pasar los datos a la vista de edición
+            // Renombrar reflectivo_cotizacion a reflectivo para que el JavaScript funcione correctamente
+            if (isset($cotizacionArray['reflectivo_cotizacion'])) {
+                $cotizacionArray['reflectivo'] = $cotizacionArray['reflectivo_cotizacion'];
+                unset($cotizacionArray['reflectivo_cotizacion']);
+            }
+            
+            $datosJSON = json_encode($cotizacionArray);
+            
+            // DEBUG: Verificar que reflectivo está en JSON
+            $datosDecodificados = json_decode($datosJSON, true);
+            $reflectivoEnJSON = isset($datosDecodificados['reflectivo']) ? 'SÍ' : 'NO';
+            $fotosEnJSON = isset($datosDecodificados['reflectivo']['fotos']) ? count($datosDecodificados['reflectivo']['fotos']) : 0;
+            
+            Log::info('CotizacionController@editBorrador: Datos a pasar a vista', [
+                'cotizacion_id' => $cotizacion->id,
+                'tipo' => $tipo,
+                'cliente_existe' => isset($cotizacionArray['cliente']),
+                'fecha_inicio_existe' => isset($cotizacionArray['fecha_inicio']),
+                'prendas_count' => isset($cotizacionArray['prendas']) ? count($cotizacionArray['prendas']) : 0,
+                'reflectivo_cotizacion_en_json' => $reflectivoEnJSON,
+                'fotos_count_en_json' => $fotosEnJSON,
+                'datosJSON_length' => strlen($datosJSON),
+                'datos_sample' => substr($datosJSON, 0, 500)
+            ]);
+            
             return view($vista, [
                 'cotizacionId' => $cotizacion->id,
                 'cotizacion' => (object)$cotizacionArray,
                 'tipo' => $tipo,
                 'esEdicion' => true,
-                'datosIniciales' => json_encode($cotizacionArray),
+                'datosIniciales' => $datosJSON,
             ]);
         } catch (\Exception $e) {
             Log::error('CotizacionController@editBorrador: Error', ['error' => $e->getMessage()]);

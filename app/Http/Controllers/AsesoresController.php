@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Controllers\AsesoresInventarioTelasController;
+use App\Application\Services\PedidoLogoService;
 
 class AsesoresController extends Controller
 {
@@ -230,6 +231,14 @@ class AsesoresController extends Controller
             $productosKey.'.*.cantidad' => 'required|integer|min:1',
             $productosKey.'.*.ref_hilo' => 'nullable|string',
             $productosKey.'.*.precio_unitario' => 'nullable|numeric|min:0',
+            // Validaciones para datos del logo
+            'logo.descripcion' => 'nullable|string',
+            'logo.observaciones_tecnicas' => 'nullable|string',
+            'logo.tecnicas' => 'nullable|string', // JSON string
+            'logo.ubicaciones' => 'nullable|string', // JSON string
+            'logo.observaciones_generales' => 'nullable|string', // JSON string
+            'logo.imagenes' => 'nullable|array',
+            'logo.imagenes.*' => 'nullable|file|image|max:5242880', // Máximo 5MB por imagen
         ]);
 
         DB::beginTransaction();
@@ -256,6 +265,38 @@ class AsesoresController extends Controller
                 ]);
             }
 
+            // ✅ GUARDAR LOGO Y SUS IMÁGENES (PASO 3)
+            if (!empty($request->get('logo.descripcion')) || $request->hasFile('logo.imagenes')) {
+                $logoService = new PedidoLogoService();
+                
+                // Procesar imágenes del logo
+                $imagenesProcesadas = [];
+                if ($request->hasFile('logo.imagenes')) {
+                    foreach ($request->file('logo.imagenes') as $imagen) {
+                        if ($imagen->isValid()) {
+                            // Guardar en storage y obtener la ruta
+                            $rutaGuardada = $imagen->store('logos/pedidos', 'public');
+                            $imagenesProcesadas[] = [
+                                'ruta_original' => Storage::url($rutaGuardada),
+                                'ruta_webp' => null,
+                                'ruta_miniatura' => null
+                            ];
+                        }
+                    }
+                }
+                
+                // Preparar datos del logo
+                $logoData = [
+                    'descripcion' => $validated['logo.descripcion'] ?? null,
+                    'ubicacion' => null, // Se puede extender si lo necesitas
+                    'observaciones_generales' => null,
+                    'fotos' => $imagenesProcesadas
+                ];
+                
+                // Guardar logo en el pedido
+                $logoService->guardarLogoEnPedido($pedidoBorrador, $logoData);
+            }
+
             DB::commit();
 
             return response()->json([
@@ -266,6 +307,10 @@ class AsesoresController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error('Error al guardar pedido:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error al guardar el pedido: ' . $e->getMessage()

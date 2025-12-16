@@ -197,8 +197,21 @@ function mostrarSelectorJeanPantalon(inputElement, nombrePrenda) {
  * Habilitar/Deshabilitar input de MANGA según el checkbox
  */
 function toggleMangaInput(checkbox) {
-    const row = checkbox.closest('tr');
-    const mangaInput = row.querySelector('.manga-input');
+    // Buscar el contenedor más cercano (puede ser tr o div)
+    let container = checkbox.closest('tr') || checkbox.closest('td') || checkbox.closest('div');
+    
+    if (!container) {
+        console.warn('⚠️ No se encontró contenedor para el checkbox de manga');
+        return;
+    }
+    
+    const mangaInput = container.querySelector('.manga-input');
+    const mangaIdInput = container.querySelector('.manga-id-input');
+    
+    if (!mangaInput) {
+        console.warn('⚠️ No se encontró .manga-input en el contenedor');
+        return;
+    }
     
     if (checkbox.checked) {
         // Habilitar input
@@ -211,7 +224,9 @@ function toggleMangaInput(checkbox) {
         mangaInput.style.opacity = '0.5';
         mangaInput.style.pointerEvents = 'none';
         mangaInput.value = '';
-        row.querySelector('.manga-id-input').value = '';
+        if (mangaIdInput) {
+            mangaIdInput.value = '';
+        }
     }
 }
 
@@ -242,7 +257,7 @@ function crearSelectorVariantes(inputElement, tipoPrenda, variaciones) {
                         <label style="font-weight: 600; color: #0066cc; font-size: 0.9rem; display: block; margin-bottom: 6px;">
                             <i class="fas fa-shirt"></i> Manga
                         </label>
-                        <select class="variante-select" data-variante="tipo_manga_id" style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px;">
+                        <select class="variante-select" data-variante="tipo_manga_id" name="productos_prenda[][variantes][tipo_manga_id]" style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px;">
                             <option value="">Seleccionar...</option>
                             <option value="1">Larga</option>
                             <option value="2">Corta</option>
@@ -256,7 +271,7 @@ function crearSelectorVariantes(inputElement, tipoPrenda, variaciones) {
                         <label style="font-weight: 600; color: #0066cc; font-size: 0.9rem; display: block; margin-bottom: 6px;">
                             <i class="fas fa-square"></i> Bolsillos
                         </label>
-                        <select class="variante-select" data-variante="tiene_bolsillos" style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px;">
+                        <select class="variante-select" data-variante="tiene_bolsillos" name="productos_prenda[][variantes][tiene_bolsillos]" style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px;">
                             <option value="">Seleccionar...</option>
                             <option value="1">Sí</option>
                             <option value="0">No</option>
@@ -269,7 +284,7 @@ function crearSelectorVariantes(inputElement, tipoPrenda, variaciones) {
                         <label style="font-weight: 600; color: #0066cc; font-size: 0.9rem; display: block; margin-bottom: 6px;">
                             <i class="fas fa-link"></i> Broche
                         </label>
-                        <select class="variante-select" data-variante="tipo_broche_id" style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px;">
+                        <select class="variante-select" data-variante="tipo_broche_id" name="productos_prenda[][variantes][tipo_broche_id]" style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px;">
                             <option value="">Seleccionar...</option>
                             <option value="1">Metálico</option>
                             <option value="2">Plástico</option>
@@ -281,11 +296,12 @@ function crearSelectorVariantes(inputElement, tipoPrenda, variaciones) {
                     <label style="font-weight: 600; color: #0066cc; font-size: 0.9rem; display: block; margin-bottom: 6px;">
                         <i class="fas fa-venus-mars"></i> Género
                     </label>
-                    <select class="variante-select" data-variante="genero_id" style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px;">
+                    <select class="variante-select" data-variante="genero_id" name="productos_prenda[][variantes][genero_id]" style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px;">
                         <option value="">Seleccionar...</option>
                         <option value="1">Dama</option>
                         <option value="2">Caballero</option>
                         <option value="3">Unisex</option>
+                        <option value="4">Ambos (Dama + Caballero)</option>
                     </select>
                 </div>
                 
@@ -293,7 +309,7 @@ function crearSelectorVariantes(inputElement, tipoPrenda, variaciones) {
                     <label style="font-weight: 600; color: #0066cc; font-size: 0.9rem; display: block; margin-bottom: 6px;">
                         <i class="fas fa-palette"></i> Color
                     </label>
-                    <select class="variante-select" data-variante="color_id" style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px;">
+                    <select class="variante-select" data-variante="color_id" name="productos_prenda[][variantes][color_id]" style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px;">
                         <option value="">Seleccionar...</option>
                         <option value="1">Azul</option>
                         <option value="2">Negro</option>
@@ -310,7 +326,7 @@ function crearSelectorVariantes(inputElement, tipoPrenda, variaciones) {
                     <label style="font-weight: 600; color: #0066cc; font-size: 0.9rem; display: block; margin-bottom: 6px;">
                         <i class="fas fa-cloth"></i> Tela
                     </label>
-                    <select class="variante-select" data-variante="tela_id" style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px;">
+                    <select class="variante-select" data-variante="tela_id" name="productos_prenda[][variantes][tela_id]" style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px;">
                         <option value="">Seleccionar...</option>
                         <option value="1">NAPOLES (REF-NAP-001)</option>
                         <option value="2">DRILL BORNEO (REF-DB-001)</option>
@@ -325,7 +341,7 @@ function crearSelectorVariantes(inputElement, tipoPrenda, variaciones) {
                         <label style="font-weight: 600; color: #0066cc; font-size: 0.9rem; display: block; margin-bottom: 6px;">
                             <i class="fas fa-star"></i> Reflectivo
                         </label>
-                        <select class="variante-select" data-variante="tiene_reflectivo" style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px;">
+                        <select class="variante-select" data-variante="tiene_reflectivo" name="productos_prenda[][variantes][tiene_reflectivo]" style="width: 100%; padding: 8px; border: 1px solid #0066cc; border-radius: 4px;">
                             <option value="">Seleccionar...</option>
                             <option value="1">Sí</option>
                             <option value="0">No</option>
