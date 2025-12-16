@@ -64,6 +64,7 @@ class PedidoProduccionController extends Controller
             // Validar request
             $validated = $request->validate([
                 'cotizacion_id' => 'required|integer|exists:cotizaciones,id',
+                'forma_de_pago' => 'nullable|string',
             ]);
 
             // Obtener cotización

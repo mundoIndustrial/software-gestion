@@ -398,6 +398,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const dataToSend = {
             cotizacion_id: cotizacionId,
+            forma_de_pago: formaPagoInput.value,
             prendas: prendas,
             _token: document.querySelector('input[name="_token"]').value
         };

@@ -646,8 +646,18 @@ class SupervisorPedidosController extends Controller
     public function obtenerDatosComparacion($id)
     {
         try {
-            $orden = PedidoProduccion::with(['prendas', 'cotizacion.prendas'])
-                                     ->findOrFail($id);
+            $orden = PedidoProduccion::with([
+                'prendas',
+                'asesora',
+                'cotizacion' => function($query) {
+                    $query->with([
+                        'prendas' => function($q) {
+                            $q->with('tallas');
+                        },
+                        'asesor'
+                    ]);
+                }
+            ])->findOrFail($id);
 
             $datosComparacion = [
                 'pedido' => [
@@ -670,15 +680,16 @@ class SupervisorPedidosController extends Controller
             if ($orden->cotizacion) {
                 $datosComparacion['cotizacion'] = [
                     'numero' => 'COT-' . str_pad($orden->cotizacion->id, 5, '0', STR_PAD_LEFT),
-                    'cliente' => $orden->cotizacion->cliente?->nombre ?? 'N/A',
+                    'cliente' => $orden->cotizacion->cliente?->nombre ?? $orden->cliente ?? 'N/A',
                     'asesora' => $orden->cotizacion->asesor?->name ?? 'N/A',
                     'estado' => $orden->cotizacion->estado,
                     'fecha' => $orden->cotizacion->created_at,
                     'prendas' => $orden->cotizacion->prendas->map(function($prenda, $index) {
+                        $tallas = $prenda->tallas ? $prenda->tallas->pluck('talla')->toArray() : [];
                         return [
                             'nombre' => $prenda->nombre_producto,
                             'descripcion' => $prenda->generarDescripcionDetallada($index + 1),
-                            'tallas' => $prenda->tallas->pluck('talla')->toArray()
+                            'tallas' => $tallas
                         ];
                     })->toArray()
                 ];

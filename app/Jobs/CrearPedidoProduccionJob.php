@@ -8,6 +8,7 @@ use App\DTOs\PrendaCreacionDTO;
 use App\Services\Pedidos\PrendaProcessorService;
 use App\Application\Services\PedidoPrendaService;
 use App\Application\Services\PedidoLogoService;
+use App\Application\Services\CopiarImagenesCotizacionAPedidoService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Support\Facades\DB;
@@ -28,10 +29,11 @@ class CrearPedidoProduccionJob
     public function handle(
         PrendaProcessorService $prendaProcessor,
         PedidoPrendaService $prendaService,
-        PedidoLogoService $logoService
+        PedidoLogoService $logoService,
+        CopiarImagenesCotizacionAPedidoService $copiarImagenesService
     ): PedidoProduccion {
         // Usar transacción para garantizar atomicidad
-        return DB::transaction(function () use ($prendaProcessor, $prendaService, $logoService) {
+        return DB::transaction(function () use ($prendaProcessor, $prendaService, $logoService, $copiarImagenesService) {
             // Obtener y incrementar número de pedido de forma segura
             $numeroPedido = DB::table('numero_secuencias')
                 ->where('tipo', 'pedido_produccion')
@@ -60,6 +62,7 @@ class CrearPedidoProduccionJob
                 'descripcion' => $this->dto->descripcion,
                 'forma_de_pago' => $this->dto->formaDePago,
                 'prendas' => $prendasProcesadas,
+                'forma_de_pago' => $this->dto->formaDePago,
                 'estado' => 'Pendiente',
             ]);
 
@@ -78,6 +81,12 @@ class CrearPedidoProduccionJob
                 }
                 $prendaService->guardarPrendasEnPedido($pedido, $prendasArray);
             }
+
+            // Copiar imágenes de la cotización al pedido
+            $copiarImagenesService->copiarImagenesCotizacionAPedido(
+                $this->dto->cotizacionId,
+                $pedido->id
+            );
 
             // Guardar logo si existe (DDD)
             if (!empty($this->dto->logo)) {
