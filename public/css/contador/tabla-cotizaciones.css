@@ -99,8 +99,7 @@ body.dark-theme {
 
 /* ===== HEADERS ===== */
 .table-head { 
-  position: sticky; 
-  top: 0;
+  position: relative;
   z-index: 20;
   background: linear-gradient(135deg, var(--primary) 0%, #2b7ec9 100%);
   border-radius: 16px 16px 0 0;
@@ -160,7 +159,7 @@ body.dark-theme .table-body {
 
 .table-row { 
   transition: var(--transition);
-  height: 70px;
+  height: 90px;
   background: var(--surface-white);
   border-radius: 12px;
   border: 1px solid var(--border-light);

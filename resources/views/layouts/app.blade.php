@@ -17,8 +17,8 @@
                     <h1 class="page-title">@yield('page-title', 'Dashboard')</h1>
                 </div>
                 
-                <!-- 🆕 Barra de búsqueda (solo en vista de órdenes y bodega) -->
-                @if(Route::currentRouteName() === 'registros.index' || Route::currentRouteName() === 'bodega.index')
+                <!-- 🆕 Barra de búsqueda (solo en vista de órdenes, bodega y cotizaciones pendientes) -->
+                @if(Route::currentRouteName() === 'registros.index' || Route::currentRouteName() === 'bodega.index' || Route::currentRouteName() === 'cotizaciones.pendientes')
                 <div class="nav-search-container">
                     <div class="nav-search-wrapper">
                         <span class="material-symbols-rounded search-icon" aria-hidden="true">search</span>
@@ -26,9 +26,9 @@
                             type="text" 
                             id="navSearchInput" 
                             class="nav-search-input" 
-                            placeholder="Buscar por número o cliente..."
+                            placeholder="Buscar por número, cliente o asesora..."
                             autocomplete="off"
-                            aria-label="Búsqueda de órdenes"
+                            aria-label="Búsqueda de cotizaciones"
                         >
                         <button class="nav-search-clear" id="navSearchClear" style="display: none;" aria-label="Limpiar búsqueda">
                             <span class="material-symbols-rounded" aria-hidden="true">close</span>

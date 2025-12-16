@@ -4,151 +4,215 @@
 @section('page-title', 'Cotizaciones Pendientes de Aprobación')
 
 @section('content')
-<div class="p-8">
-    <!-- Header -->
-    <div class="mb-8">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900">Cotizaciones Pendientes</h1>
-                <p class="text-gray-600 mt-2">Total: <span class="font-semibold text-blue-600">{{ count($cotizaciones) }}</span> cotizaciones</p>
-            </div>
-        </div>
-    </div>
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('css/contador/tabla-cotizaciones.css') }}?v={{ time() }}">
+@endpush
 
-    <!-- Tabla -->
-    @if(count($cotizaciones) > 0)
-    <div class="bg-white rounded-lg shadow-lg" style="overflow: visible;">
-        <div class="overflow-x-auto" style="overflow-y: visible;">
-            <table class="w-full">
-                <thead>
-                    <tr class="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-                        <th class="px-6 py-4 text-left text-sm font-semibold">Cotización</th>
-                        <th class="px-6 py-4 text-left text-sm font-semibold">Fecha Creación</th>
-                        <th class="px-6 py-4 text-left text-sm font-semibold">Fecha Envío a Aprobador</th>
-                        <th class="px-6 py-4 text-left text-sm font-semibold">Cliente</th>
-                        <th class="px-6 py-4 text-left text-sm font-semibold">Asesora</th>
-                        <th class="px-6 py-4 text-left text-sm font-semibold">Estado</th>
-                        <th class="px-6 py-4 text-center text-sm font-semibold">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                    @foreach($cotizaciones as $cotizacion)
-                    <tr class="hover:bg-blue-50 transition-colors duration-200">
-                        <!-- Cotización -->
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                                    <span class="material-symbols-rounded text-blue-600 text-lg">receipt</span>
-                                </div>
-                                <span class="font-semibold text-gray-900">#{{ $cotizacion->id }}</span>
+<script>
+/**
+ * Búsqueda en tabla de cotizaciones pendientes
+ */
+function aplicarBusquedaCotizaciones() {
+    const searchInput = document.getElementById('navSearchInput');
+    if (!searchInput) return;
+    
+    const query = searchInput.value.toLowerCase().trim();
+    const tableRows = document.querySelectorAll('.table-row');
+    let visibleCount = 0;
+    
+    tableRows.forEach(row => {
+        const numero = row.getAttribute('data-numero') || '';
+        const cliente = row.getAttribute('data-cliente') || '';
+        const asesora = row.getAttribute('data-asesora') || '';
+        const fecha = row.getAttribute('data-fecha') || '';
+        
+        const matches = numero.toLowerCase().includes(query) ||
+                       cliente.toLowerCase().includes(query) ||
+                       asesora.toLowerCase().includes(query) ||
+                       fecha.toLowerCase().includes(query);
+        
+        if (query === '' || matches) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Actualizar contador
+    const paginationInfo = document.getElementById('paginationInfo');
+    if (paginationInfo) {
+        if (query === '') {
+            paginationInfo.textContent = `Total: {{ count($cotizaciones) }} cotizaciones`;
+        } else {
+            paginationInfo.textContent = `Resultados: ${visibleCount} cotizaciones`;
+        }
+    }
+}
+
+// Inicializar búsqueda
+document.addEventListener('DOMContentLoaded', () => {
+    const searchInput = document.getElementById('navSearchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', aplicarBusquedaCotizaciones);
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                aplicarBusquedaCotizaciones();
+            }
+        });
+    }
+});
+</script>
+
+<!-- Sección de Cotizaciones Pendientes -->
+<section id="pendientes-section" class="section-content active" style="display: block;">
+    <div class="table-container">
+        <div class="modern-table-wrapper">
+            <div class="table-head" id="tableHead">
+                <div style="display: flex; align-items: center; width: 100%; gap: 12px; padding: 14px 12px;">
+                    @php
+                        $columns = [
+                            ['key' => 'acciones', 'label' => 'Acciones', 'flex' => '0 0 280px', 'justify' => 'center'],
+                            ['key' => 'numero', 'label' => 'Número', 'flex' => '0 0 140px', 'justify' => 'center'],
+                            ['key' => 'fecha_creacion', 'label' => 'Fecha Creación', 'flex' => '0 0 180px', 'justify' => 'center'],
+                            ['key' => 'fecha_envio', 'label' => 'Fecha Envío a Aprobador', 'flex' => '0 0 200px', 'justify' => 'center'],
+                            ['key' => 'cliente', 'label' => 'Cliente', 'flex' => '1', 'justify' => 'center'],
+                            ['key' => 'asesora', 'label' => 'Asesora', 'flex' => '0 0 150px', 'justify' => 'center'],
+                            ['key' => 'estado', 'label' => 'Estado', 'flex' => '0 0 150px', 'justify' => 'center'],
+                        ];
+                    @endphp
+                    
+                    @foreach($columns as $column)
+                        <div class="table-header-cell{{ $column['key'] === 'acciones' ? ' acciones-column' : '' }}" style="flex: {{ $column['flex'] }}; justify-content: {{ $column['justify'] }};">
+                            <div class="th-wrapper" style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                                <span class="header-text">{{ $column['label'] }}</span>
                             </div>
-                        </td>
-
-                        <!-- Fecha Creación -->
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-600">
-                                {{ $cotizacion->created_at->format('d/m/Y') }}
-                            </div>
-                            <div class="text-xs text-gray-400">
-                                {{ $cotizacion->created_at->format('h:i A') }}
-                            </div>
-                        </td>
-
-                        <!-- Fecha Envío a Aprobador -->
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            @if($cotizacion->fecha_enviado_a_aprobador)
-                                <div class="text-sm text-gray-600">
-                                    {{ $cotizacion->fecha_enviado_a_aprobador->format('d/m/Y') }}
-                                </div>
-                                <div class="text-xs text-gray-400">
-                                    {{ $cotizacion->fecha_enviado_a_aprobador->format('h:i A') }}
-                                </div>
-                            @else
-                                <span class="text-xs text-gray-400">Pendiente</span>
-                            @endif
-                        </td>
-
-                        <!-- Cliente -->
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm font-medium text-gray-900">{{ $cotizacion->cliente?->nombre ?? 'N/A' }}</span>
-                        </td>
-
-                        <!-- Asesora -->
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm text-gray-600">{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? 'N/A') }}</span>
-                        </td>
-
-                        <!-- Estado -->
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                <span class="w-2 h-2 bg-blue-600 rounded-full mr-2"></span>
-                                Pendiente
-                            </span>
-                        </td>
-
-                        <!-- Acciones -->
-                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                            <div class="flex items-center justify-center space-x-2">
-                                <!-- Botón Ver (sin submenu) -->
-                                <button onclick="verComparacion({{ $cotizacion->id }})" 
-                                        class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium"
-                                        title="Ver cotización">
-                                    <span class="material-symbols-rounded text-base mr-1">visibility</span>
-                                    Ver
-                                </button>
-                                
-                                <!-- Botón Aprobar -->
-                                <button onclick="aprobarCotizacionAprobador({{ $cotizacion->id }})" 
-                                        class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 text-sm font-medium"
-                                        title="Aprobar cotización">
-                                    <span class="material-symbols-rounded text-base mr-1">check_circle</span>
-                                    Aprobar
-                                </button>
-                                
-                                <!-- Botón Corregir -->
-                                <button onclick="abrirFormularioCorregir({{ $cotizacion->id }})" 
-                                        class="inline-flex items-center px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors duration-200 text-sm font-medium"
-                                        title="Enviar a corrección">
-                                    <span class="material-symbols-rounded text-base mr-1">edit</span>
-                                    Corregir
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
+                        </div>
                     @endforeach
-                </tbody>
-            </table>
-        </div>
-    </div>
-    @else
-    <!-- Empty State -->
-    <div class="bg-white rounded-lg shadow-lg p-12 text-center">
-        <div class="mb-6">
-            <div class="inline-flex items-center justify-center w-20 h-20 bg-blue-100 rounded-full mb-4">
-                <span class="material-symbols-rounded text-4xl text-blue-600">inbox</span>
+                </div>
+            </div>
+            <div class="table-scroll-container">
+                <div class="modern-table">
+                    <div id="tablaCotizacionesBody" class="table-body">
+                        @forelse($cotizaciones as $cotizacion)
+                            <div class="table-row" data-cotizacion-id="{{ $cotizacion->id }}" data-numero="COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}" data-cliente="{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}" data-asesora="{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? '') }}" data-fecha="{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y') : '' }}">
+                                <!-- Acciones -->
+                                <div class="table-cell acciones-column" style="flex: 0 0 280px; justify-content: center; position: relative;">
+                                    <div class="actions-group" style="display: flex; gap: 8px; align-items: center; justify-content: center;">
+                                        <button class="btn-action" onclick="verComparacion({{ $cotizacion->id }})" title="Ver cotización" style="background: #3b82f6; color: white; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">
+                                            <i class="fas fa-eye" style="margin-right: 4px;"></i>Ver
+                                        </button>
+                                        <button class="btn-action" onclick="aprobarCotizacionAprobador({{ $cotizacion->id }})" title="Aprobar cotización" style="background: #10b981; color: white; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
+                                            <i class="fas fa-check-circle" style="margin-right: 4px;"></i>Aprobar
+                                        </button>
+                                        <button class="btn-action" onclick="abrirFormularioCorregir({{ $cotizacion->id }})" title="Enviar a corrección" style="background: #f59e0b; color: white; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: all 0.2s;" onmouseover="this.style.background='#d97706'" onmouseout="this.style.background='#f59e0b'">
+                                            <i class="fas fa-edit" style="margin-right: 4px;"></i>Corregir
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Número -->
+                                <div class="table-cell" style="flex: 0 0 140px;" data-numero="COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}">
+                                    <div class="cell-content" style="justify-content: center;">
+                                        <span style="font-weight: 600;">COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Fecha Creación -->
+                                <div class="table-cell" style="flex: 0 0 180px;" data-fecha="{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y') : '' }}">
+                                    <div class="cell-content" style="justify-content: center;">
+                                        <div style="text-align: center;">
+                                            <div style="font-size: 0.85rem; font-weight: 500;">{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y') : '-' }}</div>
+                                            <div style="font-size: 0.75rem; color: #6b7280;">{{ $cotizacion->created_at ? $cotizacion->created_at->format('H:i') : '' }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Fecha Envío a Aprobador -->
+                                <div class="table-cell" style="flex: 0 0 200px;">
+                                    <div class="cell-content" style="justify-content: center;">
+                                        <div style="text-align: center;">
+                                            @if($cotizacion->fecha_enviado_a_aprobador)
+                                                <div style="font-size: 0.85rem; font-weight: 500;">{{ $cotizacion->fecha_enviado_a_aprobador->format('d/m/Y') }}</div>
+                                                <div style="font-size: 0.75rem; color: #6b7280;">{{ $cotizacion->fecha_enviado_a_aprobador->format('H:i') }}</div>
+                                            @else
+                                                <span style="font-size: 0.85rem; color: #9ca3af;">Pendiente</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Cliente -->
+                                <div class="table-cell" style="flex: 1;" data-cliente="{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}">
+                                    <div class="cell-content" style="justify-content: center;">
+                                        <span>{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '-') }}</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Asesora -->
+                                <div class="table-cell" style="flex: 0 0 150px;" data-asesora="{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? '') }}">
+                                    <div class="cell-content" style="justify-content: center;">
+                                        <span>{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? '-') }}</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Estado -->
+                                <div class="table-cell" style="flex: 0 0 150px;">
+                                    <div class="cell-content" style="justify-content: center;">
+                                        <span style="display: inline-flex; align-items: center; padding: 4px 12px; background: #dbeafe; color: #1e40af; border-radius: 20px; font-size: 0.85rem; font-weight: 600; white-space: nowrap;">
+                                            <span style="width: 6px; height: 6px; background: #1e40af; border-radius: 50%; margin-right: 6px;"></span>
+                                            Pendiente
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        @empty
+                            <div style="padding: 40px; text-align: center; color: #9ca3af;">
+                                <p>No hay cotizaciones pendientes</p>
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-pagination" id="tablePagination">
+                <div class="pagination-info">
+                    <span id="paginationInfo">Total: {{ count($cotizaciones) }} cotizaciones</span>
+                </div>
             </div>
         </div>
-        <h3 class="text-xl font-semibold text-gray-900 mb-2">No hay cotizaciones pendientes</h3>
-        <p class="text-gray-600">Todas las cotizaciones han sido aprobadas o rechazadas</p>
     </div>
-    @endif
-</div>
+</section>
 
-<!-- Modal para comparar cotización -->
-<div id="modal-comparar-cotizacion" class="modal-overlay" onclick="if(event.target === this) cerrarModalComparar();">
-    <div class="modal-content">
-        <!-- Header del Modal -->
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 24px; border-bottom: 1px solid #e5e7eb; background: linear-gradient(to right, #3b82f6, #1e40af);">
-            <h2 style="margin: 0; color: white; font-size: 1.5rem; font-weight: bold;">Comparar Cotización</h2>
-            <button onclick="cerrarModalComparar()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.5rem;">
-                <span class="material-symbols-rounded">close</span>
+<!-- Modal de Cotización (Mismo del Contador) -->
+<div id="cotizacionModal" class="modal fullscreen" style="display: none;">
+    <div class="modal-content" style="background: white;">
+        <div class="modal-header">
+            <img src="{{ asset('images/logo2.png') }}" alt="Logo Mundo Industrial" class="modal-header-logo" width="150" height="60">
+            <div style="display: flex; gap: 3rem; align-items: center; flex: 1; margin-left: 2rem; color: white; font-size: 0.85rem;">
+                <div>
+                    <p style="margin: 0; opacity: 0.8;">Cotización #</p>
+                    <p id="modalHeaderNumber" style="margin: 0; font-size: 1.1rem; font-weight: 600;">-</p>
+                </div>
+                <div>
+                    <p style="margin: 0; opacity: 0.8;">Fecha</p>
+                    <p id="modalHeaderDate" style="margin: 0; font-size: 1.1rem; font-weight: 600;">-</p>
+                </div>
+                <div>
+                    <p style="margin: 0; opacity: 0.8;">Cliente</p>
+                    <p id="modalHeaderClient" style="margin: 0; font-size: 1.1rem; font-weight: 600;">-</p>
+                </div>
+                <div>
+                    <p style="margin: 0; opacity: 0.8;">Asesora</p>
+                    <p id="modalHeaderAdvisor" style="margin: 0; font-size: 1.1rem; font-weight: 600;">-</p>
+                </div>
+            </div>
+            <button onclick="closeCotizacionModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 0.5rem 1rem; border-radius: 4px; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                ✕
             </button>
         </div>
-
-        <!-- Contenido del Modal - Con scroll vertical -->
-        <div id="modal-contenido-comparar" style="padding: 24px; display: flex; flex-direction: column; max-height: 70vh; overflow-y: auto;">
-            <!-- Se llenará dinámicamente con JavaScript -->
-        </div>
+        <div id="modalBody" style="padding: 2rem; overflow-y: auto; background: white;"></div>
     </div>
 </div>
 
@@ -240,10 +304,6 @@
         margin: 20px auto;
     }
     
-    #modal-comparar-cotizacion .modal-content {
-        max-width: 1200px;
-    }
-    
     #modal-corregir-cotizacion .modal-content {
         max-width: 600px;
     }
@@ -258,6 +318,75 @@
     
     .submenu-item:hover {
         background: #f3f4f6;
+    }
+
+    /* Modal Fullscreen Styles */
+    .modal.fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        margin: 0;
+    }
+
+    .modal.fullscreen .modal-content {
+        width: 95%;
+        max-width: 1400px;
+        height: 90vh;
+        max-height: 90vh;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal.fullscreen .modal-header {
+        background: linear-gradient(135deg, #1e5ba8 0%, #1e3a8a 100%);
+        color: white;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        flex-shrink: 0;
+        border-bottom: 2px solid #1e40af;
+    }
+
+    .modal.fullscreen .modal-header-logo {
+        height: 60px;
+        width: auto;
+    }
+
+    .modal.fullscreen #modalBody {
+        flex: 1;
+        overflow-y: auto;
+        padding: 2rem;
+        background: white;
+    }
+
+    .prenda-card {
+        background: #f5f5f5;
+        border-left: 5px solid #1e5ba8;
+        padding: 1rem 1.5rem;
+        border-radius: 4px;
+        margin-bottom: 1.5rem;
+    }
+
+    .prenda-card:last-child {
+        margin-bottom: 0;
+    }
+
+    .prendas-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
     }
 </style>
 
@@ -280,201 +409,247 @@ function transformarEstado(estado) {
 }
 
 function verComparacion(cotizacionId) {
+    console.log('🔄 Cargando cotización:', cotizacionId);
+
     fetch(`/cotizaciones/${cotizacionId}/datos`)
         .then(response => {
-            if (!response.ok) throw new Error('Error al cargar los datos');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             return response.json();
         })
         .then(data => {
-            mostrarComparacionCotizacion(data);
-            const modal = document.getElementById('modal-comparar-cotizacion');
-            modal.style.setProperty('display', 'flex', 'important');
-            modal.style.setProperty('visibility', 'visible', 'important');
-            modal.style.setProperty('opacity', '1', 'important');
+            console.log('Datos recibidos:', data);
+
+            // Construir HTML del modal con encabezado y contenido
+            let html = '';
+
+            // Encabezado con información de la cotización
+            if (data.cotizacion) {
+                const cot = data.cotizacion;
+                
+                // Llenar información del header
+                document.getElementById('modalHeaderNumber').textContent = cot.numero_cotizacion || 'N/A';
+                document.getElementById('modalHeaderDate').textContent = cot.created_at ? new Date(cot.created_at).toLocaleDateString('es-ES') : 'N/A';
+                document.getElementById('modalHeaderClient').textContent = cot.nombre_cliente || 'N/A';
+                document.getElementById('modalHeaderAdvisor').textContent = cot.asesora_nombre || 'N/A';
+                
+                html += `
+                    <div style="background: linear-gradient(135deg, #1e5ba8 0%, #1e3a8a 100%); color: white; padding: 1.5rem; border-radius: 8px 8px 0 0; margin: -2rem -2rem 1.5rem -2rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <div>
+                                <h2 style="margin: 0 0 0.5rem 0; font-size: 1.3rem; font-weight: 700;">MUNDO INDUSTRIAL</h2>
+                                <p style="margin: 0; font-size: 0.9rem; opacity: 0.9;">Cotización de Prendas</p>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; font-size: 0.9rem;">
+                            <div>
+                                <p style="margin: 0 0 0.25rem 0; opacity: 0.8; font-size: 0.8rem;">COTIZACIÓN #</p>
+                                <p style="margin: 0; font-weight: 700; font-size: 1rem;">${cot.numero_cotizacion || 'N/A'}</p>
+                            </div>
+                            <div>
+                                <p style="margin: 0 0 0.25rem 0; opacity: 0.8; font-size: 0.8rem;">TIPO:</p>
+                                <p style="margin: 0; font-weight: 700;">${cot.tipo_venta || 'N/A'}</p>
+                            </div>
+                            <div>
+                                <p style="margin: 0 0 0.25rem 0; opacity: 0.8; font-size: 0.8rem;">FECHA:</p>
+                                <p style="margin: 0; font-weight: 700;">${cot.created_at ? new Date(cot.created_at).toLocaleDateString('es-ES') : 'N/A'}</p>
+                            </div>
+                            <div>
+                                <p style="margin: 0 0 0.25rem 0; opacity: 0.8; font-size: 0.8rem;">CLIENTE:</p>
+                                <p style="margin: 0; font-weight: 700;">${cot.nombre_cliente || 'N/A'}</p>
+                            </div>
+                            <div>
+                                <p style="margin: 0 0 0.25rem 0; opacity: 0.8; font-size: 0.8rem;">ASESORA:</p>
+                                <p style="margin: 0; font-weight: 700;">${cot.asesora_nombre || 'N/A'}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Contenedor de prendas
+            html += '<div class="prendas-container" style="display: flex; flex-direction: column; gap: 1.5rem;">';
+
+            if (data.prendas_cotizaciones && data.prendas_cotizaciones.length > 0) {
+                data.prendas_cotizaciones.forEach((prenda, index) => {
+                    console.log('Renderizando prenda:', prenda);
+
+                    // Construir atributos principales
+                    let atributosLinea = [];
+
+                    // Obtener color de variantes o telas
+                    let color = '';
+                    if (prenda.variantes && prenda.variantes.length > 0 && prenda.variantes[0].color) {
+                        color = prenda.variantes[0].color;
+                    }
+
+                    // Obtener tela de telas
+                    let telaInfo = '';
+                    if (prenda.telas && prenda.telas.length > 0) {
+                        const tela = prenda.telas[0];
+                        telaInfo = tela.nombre_tela || '';
+                        if (tela.referencia) {
+                            telaInfo += ` REF:${tela.referencia}`;
+                        }
+                    }
+
+                    // Obtener manga de variantes
+                    let manga = '';
+                    if (prenda.variantes && prenda.variantes.length > 0 && prenda.variantes[0].tipo_manga) {
+                        manga = prenda.variantes[0].tipo_manga;
+                    }
+
+                    // Obtener manga de variantes
+                    let manguaInfo = '';
+                    if (prenda.variantes && prenda.variantes.length > 0) {
+                        const variante = prenda.variantes[0];
+                        if (variante.manga && variante.manga.nombre) {
+                            manguaInfo = variante.manga.nombre;
+                        }
+                    }
+
+                    if (color) atributosLinea.push(`Color: ${color}`);
+                    if (telaInfo) atributosLinea.push(`Tela: ${telaInfo}`);
+                    if (manguaInfo) atributosLinea.push(`Manga: ${manguaInfo}`);
+
+                    // Construir HTML de la prenda
+                    html += `
+                        <div class="prenda-card" style="background: #f5f5f5; border-left: 5px solid #1e5ba8; padding: 1rem 1.5rem; border-radius: 4px;">
+                            <h3 style="margin: 0 0 0.5rem 0; color: #1e5ba8; font-size: 1.1rem; font-weight: 700; text-transform: uppercase;">
+                                ${prenda.nombre_prenda || 'Sin nombre'}
+                            </h3>
+                            <p style="margin: 0 0 0.75rem 0; color: #666; font-size: 0.9rem; font-weight: 500;">
+                                ${atributosLinea.join(' | ') || ''}
+                            </p>
+                            <div style="margin: 0 0 1rem 0; color: #333; font-size: 0.85rem; line-height: 1.6;">
+                                <span style="color: #1e5ba8; font-weight: 700;">DESCRIPCION:</span> ${(prenda.descripcion_formateada || prenda.descripcion || '-').replace(/\n/g, '<br>')}
+                            </div>
+                    `;
+
+                    // Mostrar tallas si existen
+                    if (prenda.tallas && prenda.tallas.length > 0) {
+                        html += `
+                            <p style="margin: 0 0 0.5rem 0; color: #1e5ba8; font-size: 0.9rem; font-weight: 700;">
+                                Tallas: <span style="color: #ef4444; font-weight: 700;">${prenda.tallas.map(t => t.talla).join(', ')}</span>
+                            </p>
+                        `;
+                    }
+
+                    // Mostrar fotos de la prenda si existen
+                    if (prenda.fotos && prenda.fotos.length > 0) {
+                        html += `
+                            <p style="margin: 0 0 0.5rem 0; color: #1e5ba8; font-size: 0.9rem; font-weight: 700;">
+                                IMAGENES:
+                            </p>
+                            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                        `;
+                        prenda.fotos.forEach(foto => {
+                            html += `
+                                <img src="${foto}" alt="Foto prenda" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" onclick="abrirImagenGrande('${foto}')">
+                            `;
+                        });
+                        html += `</div>`;
+                    }
+
+                    // Mostrar fotos de telas si existen
+                    if (prenda.tela_fotos && prenda.tela_fotos.length > 0) {
+                        html += `
+                            <p style="margin: 0 0 0.5rem 0; color: #1e5ba8; font-size: 0.9rem; font-weight: 700;">
+                                TELAS:
+                            </p>
+                            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                        `;
+                        prenda.tela_fotos.forEach(foto => {
+                            if (foto) {
+                                html += `
+                                    <img src="${foto}" alt="Foto tela" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" onclick="abrirImagenGrande('${foto}')">
+                                `;
+                            }
+                        });
+                        html += `</div>`;
+                    }
+
+                    html += `</div>`;
+                });
+            } else {
+                html += '<p style="color: #999; text-align: center; padding: 2rem;">No hay prendas para mostrar</p>';
+            }
+
+            html += '</div>';
+
+            // Agregar tabla de Especificaciones Generales
+            if (data.cotizacion && data.cotizacion.especificaciones && Object.keys(data.cotizacion.especificaciones).length > 0) {
+                const especificacionesMap = {
+                    'disponibilidad': 'DISPONIBILIDAD',
+                    'forma_pago': 'FORMA DE PAGO',
+                    'regimen': 'RÉGIMEN',
+                    'se_ha_vendido': 'SE HA VENDIDO',
+                    'ultima_venta': 'ÚLTIMA VENTA',
+                    'flete': 'FLETE DE ENVÍO'
+                };
+
+                html += `
+                    <div style="margin-top: 2rem;">
+                        <h3 style="margin: 0 0 1rem 0; color: #1e5ba8; font-size: 1.1rem; font-weight: 700; text-transform: uppercase;">Especificaciones Generales</h3>
+                        <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #ddd; border-radius: 4px; overflow: hidden;">
+                            <thead>
+                                <tr style="background: #f5f5f5; border-bottom: 2px solid #1e5ba8;">
+                                    <th style="padding: 0.75rem 1rem; text-align: left; color: #1e5ba8; font-weight: 700; font-size: 0.9rem;">Especificación</th>
+                                    <th style="padding: 0.75rem 1rem; text-align: left; color: #1e5ba8; font-weight: 700; font-size: 0.9rem;">Opciones Seleccionadas</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                for (const [clave, nombreCategoria] of Object.entries(especificacionesMap)) {
+                    const valores = data.cotizacion.especificaciones[clave] || [];
+                    let valoresText = '-';
+
+                    if (Array.isArray(valores) && valores.length > 0) {
+                        valoresText = valores.map(v => {
+                            if (typeof v === 'object') {
+                                return Object.values(v).join(', ');
+                            }
+                            return String(v);
+                        }).join(', ');
+                    } else if (typeof valores === 'string' && valores.trim() !== '') {
+                        valoresText = valores;
+                    }
+
+                    html += `
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    <td style="padding: 0.75rem 1rem; color: #333; font-weight: 600; font-size: 0.85rem;">${nombreCategoria}</td>
+                                    <td style="padding: 0.75rem 1rem; color: #666; font-size: 0.85rem;">${valoresText}</td>
+                                </tr>
+                    `;
+                }
+
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            // Insertar contenido en el modal
+            document.getElementById('modalBody').innerHTML = html;
+            document.getElementById('cotizacionModal').style.display = 'flex';
+
+            console.log('✅ Modal abierto correctamente con', data.prendas_cotizaciones ? data.prendas_cotizaciones.length : 0, 'prendas');
         })
         .catch(error => {
             console.error('Error:', error);
-            Swal.fire('Error', 'No se pudo cargar la comparación', 'error');
+            Swal.fire('Error', 'No se pudo cargar la cotización: ' + error.message, 'error');
         });
 }
 
-function mostrarComparacionCotizacion(data) {
-    const contenido = document.getElementById('modal-contenido-comparar');
-    
-    // Función para convertir markdown bold
-    const convertMarkdownBold = (texto) => {
-        return texto.replace(/\*\*\*(.*?)\*\*\*/g, '<strong>$1</strong>')
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    };
-    
-    // Función para procesar la descripción con formato
-    const procesarDescripcion = (descripcion) => {
-        if (!descripcion || descripcion === 'N/A') {
-            return '<em style="color: #999; font-size: 0.75rem;">Sin descripción</em>';
-        }
-        
-        const lineas = descripcion.split('\n');
-        let htmlResultado = '';
-        
-        lineas.forEach((linea) => {
-            const lineaTrimmed = linea.trim();
-            
-            if (lineaTrimmed === '') {
-                htmlResultado += '<br>';
-            } else if (lineaTrimmed.startsWith('PRENDA')) {
-                htmlResultado += '<strong style="font-size: 11px; display: block; margin-top: 8px;">' + convertMarkdownBold(lineaTrimmed) + '</strong>';
-            } else if (lineaTrimmed.includes(':') && (lineaTrimmed.includes('DESCRIPCION') || lineaTrimmed.includes('Tallas') || lineaTrimmed.includes('Reflectivo') || lineaTrimmed.includes('Bolsillos') || lineaTrimmed.includes('Botón') || lineaTrimmed.includes('Broche') || lineaTrimmed.includes('Manga'))) {
-                htmlResultado += '<strong style="font-size: 10px; display: block; margin-top: 6px;">' + convertMarkdownBold(lineaTrimmed) + '</strong>';
-            } else if (lineaTrimmed.startsWith('•') || lineaTrimmed.startsWith('.')) {
-                htmlResultado += '<div style="margin-left: 12px; font-size: 10px;">' + convertMarkdownBold(lineaTrimmed) + '</div>';
-            } else if (lineaTrimmed.startsWith('-') && lineaTrimmed.length === 1) {
-                htmlResultado += '<br>';
-            } else if (lineaTrimmed.includes(':') && lineaTrimmed.includes('|')) {
-                htmlResultado += '<div style="font-size: 10px; margin: 2px 0;">' + convertMarkdownBold(lineaTrimmed) + '</div>';
-            } else {
-                htmlResultado += '<div style="font-size: 10px; margin: 2px 0;">' + convertMarkdownBold(lineaTrimmed) + '</div>';
-            }
-        });
-        
-        return htmlResultado;
-    };
-    
-    const cotizacion = data.cotizacion;
-    const prendas = data.prendas_cotizaciones || [];
-    
-    let html = `
-        <!-- Información de la Cotización -->
-        <div style="margin-bottom: 24px; padding: 16px; background: #f9fafb; border-radius: 8px; border-left: 4px solid #3b82f6;">
-            <h3 style="color: #3b82f6; font-weight: bold; margin: 0 0 16px 0;">Cotización #${cotizacion.numero_cotizacion}</h3>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                <div>
-                    <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">ASESORA</p>
-                    <p style="color: #1f2937; font-weight: bold; margin: 4px 0 0 0;">${cotizacion.asesora_nombre || 'N/A'}</p>
-                </div>
-                <div>
-                    <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">CLIENTE</p>
-                    <p style="color: #1f2937; font-weight: bold; margin: 4px 0 0 0;">${cotizacion.nombre_cliente || 'N/A'}</p>
-                </div>
-                <div>
-                    <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">FECHA</p>
-                    <p style="color: #1f2937; font-weight: bold; margin: 4px 0 0 0;">${new Date(cotizacion.created_at).toLocaleDateString()}</p>
-                </div>
-                <div>
-                    <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">ESTADO</p>
-                    <p style="margin: 4px 0 0 0;"><span style="background: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 4px; font-size: 0.875rem; font-weight: bold;">${transformarEstado(cotizacion.estado)}</span></p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Prendas de la Cotización -->
-        <div style="margin-top: 24px;">
-            <h4 style="font-weight: bold; margin: 0 0 12px 0; color: #374151;">Prendas Cotizadas</h4>
-            <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
-    `;
-    
-    if (prendas.length === 0) {
-        html += '<div style="padding: 16px; color: #6b7280; text-align: center;">No hay prendas en esta cotización</div>';
-    } else {
-        html += '<table style="width: 100%; border-collapse: collapse;">';
-        html += `
-            <thead>
-                <tr style="background: #f3f4f6; border-bottom: 1px solid #e5e7eb;">
-                    <th style="padding: 12px; text-align: left; color: #374151; font-weight: bold; font-size: 0.875rem;">PRENDA</th>
-                    <th style="padding: 12px; text-align: left; color: #374151; font-weight: bold; font-size: 0.875rem;">TELA</th>
-                    <th style="padding: 12px; text-align: center; color: #374151; font-weight: bold; font-size: 0.875rem;">CANTIDAD</th>
-                    <th style="padding: 12px; text-align: left; color: #374151; font-weight: bold; font-size: 0.875rem;">DESCRIPCIÓN</th>
-                </tr>
-            </thead>
-            <tbody>
-        `;
-        
-        prendas.forEach((prenda, indiceFor) => {
-            const fotosArray = Array.isArray(prenda.fotos) ? prenda.fotos : [];
-            const telasArray = Array.isArray(prenda.tela_fotos) ? prenda.tela_fotos : [];
-            const fotosCount = fotosArray.length;
-            const telasCount = telasArray.length;
-            
-            // Guardar los arrays en variables globales para acceso desde event listeners
-            window[`fotos_${indiceFor}`] = fotosArray;
-            window[`telas_${indiceFor}`] = telasArray;
-            
-            html += `
-                <tr style="border-bottom: 1px solid #e5e7eb; ${indiceFor % 2 === 0 ? 'background: #ffffff;' : 'background: #f9fafb;'}">
-                    <td style="padding: 12px; color: #1f2937; font-weight: 500;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            ${fotosCount > 0 ? `
-                                <div class="foto-prenda-container" data-fotos-key="fotos_${indiceFor}" data-title="${(prenda.nombre_prenda || 'Prenda').replace(/"/g, '&quot;')}" style="position: relative; cursor: pointer;">
-                                    <img src="${fotosArray[0]}" alt="${prenda.nombre_prenda || 'Prenda'}" 
-                                         width="60" height="60"
-                                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 2px solid #3b82f6;">
-                                    ${fotosCount > 1 ? `<div style="position: absolute; top: -8px; right: -8px; background: #3b82f6; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">+${fotosCount - 1}</div>` : ''}
-                                </div>
-                            ` : '<div style="width: 60px; height: 60px; background: #e5e7eb; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 0.75rem;">Sin foto</div>'}
-                            <span>${prenda.nombre_prenda || 'Prenda'}</span>
-                        </div>
-                    </td>
-                    <td style="padding: 12px; color: #1f2937; font-weight: 500;">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            ${telasCount > 0 ? `
-                                <div class="foto-tela-container" data-fotos-key="telas_${indiceFor}" data-title="${(prenda.nombre_prenda || 'Prenda').replace(/"/g, '&quot;')} - Tela" style="position: relative; cursor: pointer;">
-                                    <img src="${telasArray[0]}" alt="Tela" 
-                                         width="60" height="60"
-                                         style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 2px solid #8B4513;">
-                                    ${telasCount > 1 ? `<div style="position: absolute; top: -8px; right: -8px; background: #3b82f6; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">+${telasCount - 1}</div>` : ''}
-                                </div>
-                            ` : '<div style="width: 60px; height: 60px; background: #e5e7eb; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 0.75rem;">Sin tela</div>'}
-                        </div>
-                    </td>
-                    <td style="padding: 12px; text-align: center; color: #1f2937; font-weight: 500;">${prenda.cantidad}</td>
-                    <td style="padding: 12px; color: #6b7280; font-size: 0.875rem;">
-                        <div style="max-height: 200px; overflow-y: auto;">
-                            ${procesarDescripcion(prenda.descripcion_formateada || prenda.descripcion || prenda.detalles_proceso)}
-                        </div>
-                    </td>
-                </tr>
-            `;
-        });
-        
-        html += `
-            </tbody>
-        </table>
-        `;
-    }
-    
-    html += `
-            </div>
-        </div>
-    `;
-    
-    contenido.innerHTML = html;
-    
-    // Agregar event listeners para fotos de prendas
-    document.querySelectorAll('.foto-prenda-container').forEach(el => {
-        el.addEventListener('click', function() {
-            const fotosKey = this.getAttribute('data-fotos-key');
-            const title = this.getAttribute('data-title');
-            const fotos = window[fotosKey] || [];
-            abrirModalImagenesArray(fotos, title, 0);
-        });
-    });
-    
-    // Agregar event listeners para fotos de telas
-    document.querySelectorAll('.foto-tela-container').forEach(el => {
-        el.addEventListener('click', function() {
-            const fotosKey = this.getAttribute('data-fotos-key');
-            const title = this.getAttribute('data-title');
-            const fotos = window[fotosKey] || [];
-            abrirModalImagenesArray(fotos, title, 0);
-        });
-    });
+function closeCotizacionModal() {
+    document.getElementById('cotizacionModal').style.display = 'none';
 }
 
 function cerrarModalComparar() {
-    const modal = document.getElementById('modal-comparar-cotizacion');
-    modal.style.setProperty('display', 'none', 'important');
-    modal.style.setProperty('visibility', 'hidden', 'important');
-    modal.style.setProperty('opacity', '0', 'important');
+    closeCotizacionModal();
 }
 
 function cerrarModalCorregir() {
@@ -584,12 +759,84 @@ function aprobarCotizacionAprobador(cotizacionId) {
     });
 }
 
-// Cerrar menú al hacer clic en otro lugar
+// Cerrar modal al hacer clic fuera
 document.addEventListener('click', function(event) {
-    const comparar = document.getElementById('modal-comparar-cotizacion');
-    
-    if (comparar && event.target === comparar) {
-        cerrarModalComparar();
+    const modal = document.getElementById('cotizacionModal');
+    if (event.target === modal) {
+        closeCotizacionModal();
+    }
+});
+
+// Cerrar modal al presionar ESC
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        const modal = document.getElementById('cotizacionModal');
+        if (modal && modal.style.display === 'flex') {
+            closeCotizacionModal();
+        }
+    }
+});
+
+/**
+ * Abre una imagen en grande en un modal
+ * @param {string} imagenUrl - URL de la imagen
+ */
+function abrirImagenGrande(imagenUrl) {
+    // Crear modal dinámicamente si no existe
+    let modalImagen = document.getElementById('modalImagenGrande');
+    if (!modalImagen) {
+        modalImagen = document.createElement('div');
+        modalImagen.id = 'modalImagenGrande';
+        modalImagen.style.cssText = `
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        `;
+        modalImagen.innerHTML = `
+            <div style="position: relative; max-width: 90vw; max-height: 90vh;">
+                <button onclick="cerrarImagenGrande()" style="position: absolute; top: -40px; right: 0; background: white; border: none; font-size: 2rem; cursor: pointer; color: white; z-index: 10001;">
+                    ✕
+                </button>
+                <img id="imagenGrandeContent" src="" alt="Imagen ampliada" style="max-width: 100%; max-height: 100%; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+            </div>
+        `;
+        document.body.appendChild(modalImagen);
+    }
+
+    document.getElementById('imagenGrandeContent').src = imagenUrl;
+    modalImagen.style.display = 'flex';
+}
+
+/**
+ * Cierra el modal de imagen grande
+ */
+function cerrarImagenGrande() {
+    const modal = document.getElementById('modalImagenGrande');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Cerrar modal de imagen al hacer clic fuera
+document.addEventListener('click', function (event) {
+    const modal = document.getElementById('modalImagenGrande');
+    if (modal && event.target === modal) {
+        cerrarImagenGrande();
+    }
+});
+
+// Cerrar modal de imagen al presionar ESC
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') {
+        cerrarImagenGrande();
     }
 });
 
