@@ -638,7 +638,14 @@ class PDFCotizacionController extends Controller
             }
             
             if (count($tallasInfo) > 0) {
-                $html .= '<div style="font-size: 10px; font-weight: bold; margin-top: 8px; margin-bottom: 12px; color: #e74c3c;">Tallas: ' . implode(', ', $tallasInfo) . '</div>';
+                $tallasTexto = implode(', ', $tallasInfo);
+                
+                // Agregar texto personalizado si existe
+                if ($prenda->texto_personalizado_tallas) {
+                    $tallasTexto .= ' ' . htmlspecialchars($prenda->texto_personalizado_tallas);
+                }
+                
+                $html .= '<div style="font-size: 10px; font-weight: bold; margin-top: 8px; margin-bottom: 12px; color: #e74c3c;">Tallas: ' . $tallasTexto . '</div>';
             }
             
             // IMÁGENES: Prenda y Tela - TODAS EN UNA SOLA LÍNEA

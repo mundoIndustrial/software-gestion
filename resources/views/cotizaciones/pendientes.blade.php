@@ -3,121 +3,130 @@
 @section('title', 'Cotizaciones')
 @section('page-title', 'Cotizaciones Pendientes de Aprobación')
 
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('css/contador/tabla-index.css') }}?v={{ time() }}">
+@endpush
+
 @section('content')
 <div class="p-8">
-    <!-- Header -->
-    <div class="mb-8">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900">Cotizaciones Pendientes</h1>
-                <p class="text-gray-600 mt-2">Total: <span class="font-semibold text-blue-600">{{ count($cotizaciones) }}</span> cotizaciones</p>
-            </div>
-        </div>
-    </div>
-
     <!-- Tabla -->
     @if(count($cotizaciones) > 0)
-    <div class="bg-white rounded-lg shadow-lg" style="overflow: visible;">
-        <div class="overflow-x-auto" style="overflow-y: visible;">
-            <table class="w-full">
-                <thead>
-                    <tr class="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-                        <th class="px-6 py-4 text-left text-sm font-semibold">Cotización</th>
-                        <th class="px-6 py-4 text-left text-sm font-semibold">Fecha Creación</th>
-                        <th class="px-6 py-4 text-left text-sm font-semibold">Fecha Envío a Aprobador</th>
-                        <th class="px-6 py-4 text-left text-sm font-semibold">Cliente</th>
-                        <th class="px-6 py-4 text-left text-sm font-semibold">Asesora</th>
-                        <th class="px-6 py-4 text-left text-sm font-semibold">Estado</th>
-                        <th class="px-6 py-4 text-center text-sm font-semibold">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                    @foreach($cotizaciones as $cotizacion)
-                    <tr class="hover:bg-blue-50 transition-colors duration-200">
-                        <!-- Cotización -->
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="flex items-center">
-                                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                                    <span class="material-symbols-rounded text-blue-600 text-lg">receipt</span>
-                                </div>
-                                <span class="font-semibold text-gray-900">#{{ $cotizacion->id }}</span>
+    <div class="table-container">
+        <div class="modern-table-wrapper">
+            <div class="table-head" id="tableHead">
+                <div style="display: flex; align-items: center; width: 100%; gap: 12px; padding: 14px 12px;">
+                    @php
+                        $columns = [
+                            ['key' => 'acciones', 'label' => 'Acciones', 'flex' => '0 0 120px', 'justify' => 'flex-start'],
+                            ['key' => 'estado', 'label' => 'Estado', 'flex' => '0 0 150px', 'justify' => 'center'],
+                            ['key' => 'numero', 'label' => 'Número', 'flex' => '0 0 140px', 'justify' => 'center'],
+                            ['key' => 'fecha', 'label' => 'Fecha', 'flex' => '0 0 180px', 'justify' => 'center'],
+                            ['key' => 'cliente', 'label' => 'Cliente', 'flex' => '0 0 200px', 'justify' => 'center'],
+                            ['key' => 'asesora', 'label' => 'Asesora', 'flex' => '0 0 150px', 'justify' => 'center'],
+                            ['key' => 'novedades', 'label' => 'Novedades', 'flex' => '0 0 180px', 'justify' => 'center'],
+                        ];
+                    @endphp
+                    @foreach($columns as $column)
+                        <div class="table-header-cell{{ $column['key'] === 'acciones' ? ' acciones-column' : '' }}" style="flex: {{ $column['flex'] }}; justify-content: {{ $column['justify'] }};">
+                            <div class="th-wrapper" style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                                <span class="header-text">{{ $column['label'] }}</span>
+                                @if($column['key'] !== 'acciones')
+                                    <button type="button" class="btn-filter-column" data-filter-column="{{ $column['key'] }}" onclick="abrirFiltroColumna('{{ $column['key'] }}', obtenerValoresColumna('{{ $column['key'] }}'))" title="Filtrar {{ $column['label'] }}">
+                                        <span class="material-symbols-rounded">filter_alt</span>
+                                        <div class="filter-badge"></div>
+                                    </button>
+                                @endif
                             </div>
-                        </td>
-
-                        <!-- Fecha Creación -->
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <div class="text-sm text-gray-600">
-                                {{ $cotizacion->created_at->format('d/m/Y') }}
-                            </div>
-                            <div class="text-xs text-gray-400">
-                                {{ $cotizacion->created_at->format('h:i A') }}
-                            </div>
-                        </td>
-
-                        <!-- Fecha Envío a Aprobador -->
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            @if($cotizacion->fecha_enviado_a_aprobador)
-                                <div class="text-sm text-gray-600">
-                                    {{ $cotizacion->fecha_enviado_a_aprobador->format('d/m/Y') }}
-                                </div>
-                                <div class="text-xs text-gray-400">
-                                    {{ $cotizacion->fecha_enviado_a_aprobador->format('h:i A') }}
-                                </div>
-                            @else
-                                <span class="text-xs text-gray-400">Pendiente</span>
-                            @endif
-                        </td>
-
-                        <!-- Cliente -->
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm font-medium text-gray-900">{{ $cotizacion->cliente?->nombre ?? 'N/A' }}</span>
-                        </td>
-
-                        <!-- Asesora -->
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="text-sm text-gray-600">{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? 'N/A') }}</span>
-                        </td>
-
-                        <!-- Estado -->
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                <span class="w-2 h-2 bg-blue-600 rounded-full mr-2"></span>
-                                Pendiente
-                            </span>
-                        </td>
-
-                        <!-- Acciones -->
-                        <td class="px-6 py-4 whitespace-nowrap text-center">
-                            <div class="flex items-center justify-center space-x-2">
-                                <!-- Botón Ver (sin submenu) -->
-                                <button onclick="verComparacion({{ $cotizacion->id }})" 
-                                        class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium"
-                                        title="Ver cotización">
-                                    <span class="material-symbols-rounded text-base mr-1">visibility</span>
-                                    Ver
-                                </button>
-                                
-                                <!-- Botón Aprobar -->
-                                <button onclick="aprobarCotizacionAprobador({{ $cotizacion->id }})" 
-                                        class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200 text-sm font-medium"
-                                        title="Aprobar cotización">
-                                    <span class="material-symbols-rounded text-base mr-1">check_circle</span>
-                                    Aprobar
-                                </button>
-                                
-                                <!-- Botón Corregir -->
-                                <button onclick="abrirFormularioCorregir({{ $cotizacion->id }})" 
-                                        class="inline-flex items-center px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors duration-200 text-sm font-medium"
-                                        title="Enviar a corrección">
-                                    <span class="material-symbols-rounded text-base mr-1">edit</span>
-                                    Corregir
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
+                        </div>
                     @endforeach
-                </tbody>
-            </table>
+                </div>
+            </div>
+            <div class="table-scroll-container">
+                <div class="modern-table">
+                    <div id="tablaCotizacionesBody" class="table-body">
+                        @foreach($cotizaciones as $cotizacion)
+                            <div class="table-row" 
+                                data-cotizacion-id="{{ $cotizacion->id }}" 
+                                data-numero="{{ $cotizacion->numero_cotizacion ?? 'Por asignar' }}" 
+                                data-fecha="{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y') : '' }}" 
+                                data-cliente="{{ $cotizacion->cliente?->nombre ?? 'N/A' }}" 
+                                data-asesora="{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? 'N/A') }}"
+                                data-estado="{{ $cotizacion->estado }}"
+                                data-novedades="{{ $cotizacion->novedades ?? '-' }}"
+                            >
+                                <!-- Acciones -->
+                                <div class="table-cell acciones-column" style="flex: 0 0 120px; justify-content: center; position: relative;">
+                                    <div class="actions-group">
+                                        <button class="action-view-btn" title="Ver opciones" data-cotizacion-id="{{ $cotizacion->id }}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <div class="action-menu" data-cotizacion-id="{{ $cotizacion->id }}">
+                                            <a href="#" class="action-menu-item" data-action="cotizacion" onclick="verComparacion({{ $cotizacion->id }}); return false;">
+                                                <i class="fas fa-file-alt"></i>
+                                                <span>Ver Cotización</span>
+                                            </a>
+                                            <a href="#" class="action-menu-item" data-action="costos" onclick="abrirModalVisorCostosAprobacion({{ $cotizacion->id }}, '{{ $cotizacion->cliente?->nombre ?? 'N/A' }}'); return false;">
+                                                <i class="fas fa-chart-bar"></i>
+                                                <span>Ver Costos</span>
+                                            </a>
+                                        </div>
+                                        <button class="btn-action btn-success" onclick="aprobarCotizacionAprobador({{ $cotizacion->id }})" title="Aprobar Cotización">
+                                            <i class="fas fa-check-circle"></i>
+                                        </button>
+                                        <button class="btn-action btn-edit" onclick="abrirFormularioCorregir({{ $cotizacion->id }})" title="Enviar a Corrección">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Estado -->
+                                <div class="table-cell" style="flex: 0 0 150px;">
+                                    <div class="cell-content" style="justify-content: center;">
+                                        <span style="background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">
+                                            PENDIENTE
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Número -->
+                                <div class="table-cell" style="flex: 0 0 140px;">
+                                    <div class="cell-content" style="justify-content: center;">
+                                        <span style="font-weight: 600;">{{ $cotizacion->numero_cotizacion ?? 'Por asignar' }}</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Fecha -->
+                                <div class="table-cell" style="flex: 0 0 180px;">
+                                    <div class="cell-content" style="justify-content: center;">
+                                        <span>{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y H:i') : '-' }}</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Cliente -->
+                                <div class="table-cell" style="flex: 0 0 200px;">
+                                    <div class="cell-content" style="justify-content: center;">
+                                        <span>{{ $cotizacion->cliente?->nombre ?? 'N/A' }}</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Asesora -->
+                                <div class="table-cell" style="flex: 0 0 150px;">
+                                    <div class="cell-content" style="justify-content: center;">
+                                        <span>{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? 'N/A') }}</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Novedades -->
+                                <div class="table-cell" style="flex: 0 0 180px;">
+                                    <div class="cell-content" style="justify-content: center;">
+                                        <span style="font-size: 0.85rem;">{{ $cotizacion->novedades ?? '-' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     @else
@@ -685,5 +694,186 @@ document.addEventListener('keydown', function(event) {
         }
     }
 });
+
+// ===== WRAPPER FUNCTION FOR VISOR COSTOS =====
+// Override abrirModalVisorCostos to use public routes instead of contador routes
+window.abrirModalVisorCostosAprobacion = function(cotizacionId, cliente) {
+    visorCostosActual = { cotizacionId: cotizacionId, cliente: cliente, prendas: [], indiceActual: 0 };
+    
+    // Usar ruta pública de cotizaciones en lugar de ruta de contador
+    fetch(`/cotizaciones/${cotizacionId}/datos`)
+        .then(response => response.json())
+        .then(cotizacionData => {
+            // Mapear nombres de prendas
+            const prendasNombres = {};
+            if (cotizacionData.prendas_cotizaciones && Array.isArray(cotizacionData.prendas_cotizaciones)) {
+                cotizacionData.prendas_cotizaciones.forEach((prenda, idx) => {
+                    prendasNombres[idx] = prenda.nombre_prenda || `Prenda ${idx + 1}`;
+                });
+            }
+            
+            // Obtener costos usando ruta pública de cotizaciones
+            return fetch(`/cotizaciones/${cotizacionId}/costos`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('No se pudieron cargar los costos');
+                    }
+                    return response.json();
+                })
+                .then(data => ({ costos: data, nombres: prendasNombres }));
+        })
+        .then(({ costos, nombres }) => {
+            console.log('Datos de costos recibidos:', costos);
+            if (costos.success && costos.prendas.length > 0) {
+                // Asignar nombres a las prendas
+                costos.prendas.forEach((prenda, idx) => {
+                    if (!prenda.nombre_producto || prenda.nombre_producto === 'Prenda sin nombre') {
+                        prenda.nombre_producto = nombres[idx] || `Prenda ${idx + 1}`;
+                    }
+                });
+                
+                visorCostosActual.prendas = costos.prendas;
+                console.log('Prendas cargadas:', visorCostosActual.prendas);
+                document.getElementById('visorCostosModal').style.display = 'flex';
+                
+                // Resetear scroll al abrir
+                setTimeout(() => {
+                    const contenido = document.getElementById('visorCostosContenido');
+                    if (contenido) {
+                        contenido.scrollTop = 0;
+                    }
+                }, 0);
+                
+                mostrarPrendaVisor(0);
+            } else {
+                // Mostrar modal de "sin costos"
+                Swal.fire({
+                    title: 'Sin Costos Calculados',
+                    html: `No hay costos calculados para la cotización del cliente <strong>${cliente}</strong>.<br><br>Por favor, solicita al contador que calcule los costos de las prendas primero.`,
+                    icon: 'info',
+                    confirmButtonColor: '#1e5ba8',
+                    confirmButtonText: 'Entendido'
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            Swal.fire({
+                title: 'Error al Cargar Costos',
+                html: `Ocurrió un error al intentar cargar los costos de la cotización.<br><br>${error.message || 'Por favor, intenta de nuevo más tarde.'}`,
+                icon: 'error',
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'Cerrar'
+            });
+        });
+};
+
+// ===== HORIZONTAL SCROLL SYNCHRONIZATION =====
+document.addEventListener('DOMContentLoaded', function() {
+    const scrollContainer = document.querySelector('.table-scroll-container');
+    const tableHead = document.querySelector('.table-head');
+    
+    if (scrollContainer && tableHead) {
+        scrollContainer.addEventListener('scroll', function() {
+            tableHead.style.transform = 'translateX(' + (-this.scrollLeft) + 'px)';
+        });
+    }
+});
+
+// ===== ACTION MENU FUNCTIONALITY =====
+document.addEventListener('DOMContentLoaded', function() {
+    // Toggle action menu
+    document.addEventListener('click', function(event) {
+        const viewBtn = event.target.closest('.action-view-btn');
+        
+        if (viewBtn) {
+            event.stopPropagation();
+            const cotizacionId = viewBtn.getAttribute('data-cotizacion-id');
+            const menu = document.querySelector(`.action-menu[data-cotizacion-id="${cotizacionId}"]`);
+            
+            // Close all other menus
+            document.querySelectorAll('.action-menu').forEach(m => {
+                if (m !== menu) {
+                    m.classList.remove('active');
+                }
+            });
+            
+            // Toggle current menu
+            if (menu) {
+                menu.classList.toggle('active');
+            }
+        } else if (!event.target.closest('.action-menu')) {
+            // Close all menus when clicking outside
+            document.querySelectorAll('.action-menu').forEach(m => {
+                m.classList.remove('active');
+            });
+        }
+    });
+    
+    // Close menu when clicking on menu item
+    document.querySelectorAll('.action-menu-item').forEach(item => {
+        item.addEventListener('click', function() {
+            document.querySelectorAll('.action-menu').forEach(m => {
+                m.classList.remove('active');
+            });
+        });
+    });
+});
 </script>
+
+<!-- Modal Visor de Costos -->
+<div id="visorCostosModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8); z-index: 9998; justify-content: center; align-items: center; padding: 2rem;">
+    <div id="visorCostosModalContent" style="background: white; border-radius: 12px; width: 100%; max-width: 1400px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.5); overflow: hidden;">
+        
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #1e5ba8 0%, #1e40af 100%); padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+            <h2 style="margin: 0; color: white; font-size: 1.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                📊 COSTOS DE PRENDAS
+            </h2>
+            <button onclick="cerrarVisorCostos()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+                ✕
+            </button>
+        </div>
+
+        <!-- Tabs de Prendas -->
+        <div id="visorCostosTabsContainer" style="display: flex; gap: 0.75rem; padding: 1.5rem 1.5rem 0 1.5rem; overflow-x: auto; overflow-y: hidden; flex-wrap: nowrap; min-height: 50px; align-items: center; border-bottom: 1px solid #e5e7eb; flex-shrink: 0; background: #f9fafb;">
+            <!-- Se llenará dinámicamente -->
+        </div>
+
+        <!-- Contenido -->
+        <div id="visorCostosContenido" style="padding: 2rem; overflow-y: auto; flex: 1; background: white;">
+            <!-- Se llenará dinámicamente -->
+        </div>
+    </div>
+</div>
+
+<!-- Estilos para botones de filtro -->
+<style>
+.btn-filter-column {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    padding: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.btn-filter-column:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.btn-filter-column .material-symbols-rounded {
+    font-size: 18px;
+    color: white;
+}
+</style>
+
+<!-- Scripts -->
+<script src="{{ asset('js/contador/visor-costos.js') }}"></script>
+
 @endsection

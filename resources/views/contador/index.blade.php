@@ -93,7 +93,7 @@ document.addEventListener('click', function(event) {
                         <div class="table-header-cell{{ $column['key'] === 'acciones' ? ' acciones-column' : '' }}" style="flex: {{ $column['flex'] }}; justify-content: {{ $column['justify'] }};">
                             <div class="th-wrapper" style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
                                 <span class="header-text">{{ $column['label'] }}</span>
-                                @if($column['key'] !== 'acciones' && $column['key'] !== 'estado' && $column['key'] !== 'novedades')
+                                @if($column['key'] !== 'acciones')
                                     <button type="button" class="btn-filter-column" data-filter-column="{{ $column['key'] }}" onclick="abrirFiltroColumna('{{ $column['key'] }}', obtenerValoresColumna('{{ $column['key'] }}'))" title="Filtrar {{ $column['label'] }}">
                                         <span class="material-symbols-rounded">filter_alt</span>
                                         <div class="filter-badge"></div>
@@ -117,7 +117,7 @@ document.addEventListener('click', function(event) {
                         @endphp
                         
                         @forelse($cotizacionesPaginadas as $cotizacion)
-                            <div class="table-row" data-cotizacion-id="{{ $cotizacion->id }}" data-numero="{{ $cotizacion->numero_cotizacion ?? 'N/A' }}" data-cliente="{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}" data-asesora="{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? '') }}" data-fecha="{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y') : '' }}">
+                            <div class="table-row" data-cotizacion-id="{{ $cotizacion->id }}" data-numero="{{ $cotizacion->numero_cotizacion ?? 'N/A' }}" data-cliente="{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}" data-asesora="{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? '') }}" data-fecha="{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y') : '' }}" data-estado="{{ $cotizacion->estado }}" data-novedades="{{ $cotizacion->novedades ?? '-' }}">
                                 <!-- Acciones -->
                                 <div class="table-cell acciones-column" style="flex: 0 0 120px; justify-content: center; position: relative;">
                                     <div class="actions-group">

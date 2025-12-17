@@ -17,6 +17,9 @@
                 <span style="font-size: 0.9rem; color: #1e293b;">
                     @if($prenda->tallas && $prenda->tallas->count() > 0)
                         {{ $prenda->tallas->pluck('talla')->implode(', ') }}
+                        @if($prenda->texto_personalizado_tallas)
+                            <span style="color: #e74c3c; font-weight: 600;"> {{ $prenda->texto_personalizado_tallas }}</span>
+                        @endif
                     @else
                         -
                     @endif

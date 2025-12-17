@@ -115,6 +115,7 @@
 
 @push('scripts')
     <script src="{{ asset('js/contador/editar-tallas.js') }}"></script>
+    <script src="{{ asset('js/contador/editar-tallas-personalizado.js') }}"></script>
     <script src="{{ asset('js/contador/cotizacion.js') }}"></script>
     <script src="{{ asset('js/contador/contador.js') }}"></script>
     <script src="{{ asset('js/contador/notifications.js') }}"></script>

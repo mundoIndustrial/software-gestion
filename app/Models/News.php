@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Events\NewNotificationEvent;
 
 class News extends Model
 {
@@ -16,12 +17,20 @@ class News extends Model
         'pedido',
         'metadata',
         'read_at',
+        'status',
     ];
 
     protected $casts = [
         'metadata' => 'array',
         'read_at' => 'datetime',
     ];
+
+    protected static function booted()
+    {
+        static::created(function ($news) {
+            broadcast(new NewNotificationEvent($news, $news->user_id))->toOthers();
+        });
+    }
 
     /**
      * Relación con el usuario que realizó la acción

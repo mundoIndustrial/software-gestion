@@ -17,6 +17,7 @@ class PrendaCot extends Model
         'nombre_producto',
         'descripcion',
         'cantidad',
+        'texto_personalizado_tallas',
     ];
 
     protected $casts = [

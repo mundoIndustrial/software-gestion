@@ -43,19 +43,27 @@ Route::middleware('auth')->group(function () {
     // ========================================
     // RUTAS DE NOTIFICACIONES (Accesibles para todos los roles autenticados)
     // ========================================
-    // Contador
+    // Sistema unificado de notificaciones en tiempo real
+    Route::get('/notifications', [App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/unread-count', [App\Http\Controllers\NotificationController::class, 'getUnreadCount'])->name('notifications.unread-count');
+    Route::post('/notifications/{id}/mark-read', [App\Http\Controllers\NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+    Route::post('/notifications/mark-multiple-read', [App\Http\Controllers\NotificationController::class, 'markMultipleAsRead'])->name('notifications.mark-multiple-read');
+    Route::post('/notifications/mark-all-read', [App\Http\Controllers\NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    Route::post('/notifications/mark-read-on-open', [App\Http\Controllers\NotificationController::class, 'markAsReadOnOpen'])->name('notifications.mark-read-on-open');
+    
+    // Contador (mantener compatibilidad)
     Route::post('/contador/notifications/marcar-leidas', [App\Http\Controllers\ContadorController::class, 'markAllNotificationsAsRead'])->name('contador.notifications.mark-all-read');
     Route::get('/contador/notifications', [App\Http\Controllers\ContadorController::class, 'getNotifications'])->name('contador.notifications');
     
-    // Asesores
+    // Asesores (mantener compatibilidad)
     Route::post('/asesores/notifications/mark-all-read', [App\Http\Controllers\AsesoresController::class, 'markAllAsRead'])->name('asesores.notifications.mark-all-read');
     Route::post('/asesores/notifications/{notificationId}/mark-read', [App\Http\Controllers\AsesoresController::class, 'markNotificationAsRead'])->name('asesores.notifications.mark-read');
     Route::get('/asesores/notifications', [App\Http\Controllers\AsesoresController::class, 'getNotifications'])->name('asesores.notifications');
     
-    // Supervisor Pedidos
+    // Supervisor Pedidos (mantener compatibilidad)
     Route::post('/supervisor-pedidos/notifications/mark-all-read', [App\Http\Controllers\SupervisorPedidosController::class, 'markAllNotificationsAsRead'])->name('supervisor-pedidos.notifications.mark-all-read');
     
-    // Insumos / Supervisor Planta
+    // Insumos / Supervisor Planta (mantener compatibilidad)
     Route::post('/insumos/notifications/marcar-leidas', [App\Http\Controllers\Insumos\InsumosController::class, 'markAllNotificationsAsRead'])->name('insumos.notifications.mark-all-read');
 });
 
@@ -255,6 +263,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/cotizaciones/{cotizacion}/datos', [CotizacionesViewController::class, 'getDatosForModal'])
         ->name('cotizaciones.obtener-datos');
 
+    // Obtener costos de cotización (AJAX)
+    Route::get('/cotizaciones/{cotizacion}/costos', [App\Http\Controllers\ContadorController::class, 'obtenerCostos'])
+        ->name('cotizaciones.obtener-costos');
+
     // Obtener contador de cotizaciones pendientes para aprobador (AJAX)
     Route::get('/pendientes-count', [CotizacionesViewController::class, 'cotizacionesPendientesAprobadorCount'])
         ->name('cotizaciones.pendientes-count');
@@ -282,6 +294,9 @@ Route::middleware(['auth', 'role:contador,admin'])->prefix('contador')->name('co
     
     // Rutas para notas de tallas
     Route::post('/prenda/{prendaId}/notas-tallas', [App\Http\Controllers\ContadorController::class, 'guardarNotasTallas'])->name('prenda.guardar-notas-tallas');
+    
+    // Ruta para texto personalizado de tallas (módulo contador)
+    Route::post('/prenda/{prendaId}/texto-personalizado-tallas', [App\Http\Controllers\ContadorController::class, 'guardarTextoPersonalizadoTallas'])->name('prenda.guardar-texto-personalizado-tallas');
     
     // Rutas para PDF
     Route::get('/cotizacion/{id}/pdf', [App\Http\Controllers\PDFCotizacionController::class, 'generarPDF'])->name('cotizacion.pdf');

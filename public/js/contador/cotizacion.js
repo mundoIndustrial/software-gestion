@@ -118,10 +118,22 @@ function openCotizacionModal(cotizacionId) {
 
                     // Mostrar tallas si existen
                     if (prenda.tallas && prenda.tallas.length > 0) {
+                        const tallasTexto = prenda.tallas.map(t => t.talla).join(', ');
+                        const textoPersonalizado = prenda.texto_personalizado_tallas ? ` ${prenda.texto_personalizado_tallas}` : '';
+                        const textoCompleto = tallasTexto + textoPersonalizado;
+                        
                         html += `
-                            <p style="margin: 0 0 0.5rem 0; color: #1e5ba8; font-size: 0.9rem; font-weight: 700;">
-                                Tallas: <span style="color: #ef4444; font-weight: 700;">${prenda.tallas.map(t => t.talla).join(', ')}</span>
-                            </p>
+                            <div style="margin: 0 0 0.5rem 0;">
+                                <span style="color: #1e5ba8; font-size: 0.9rem; font-weight: 700;">Tallas: </span>
+                                <span 
+                                    id="tallas-prenda-${prenda.id}" 
+                                    ondblclick="editarTallasPersonalizado(this, ${prenda.id}, '${tallasTexto}', '${prenda.texto_personalizado_tallas || ''}')"
+                                    style="color: #ef4444; font-weight: 700; font-size: 0.9rem; cursor: pointer; padding: 0.25rem 0.5rem; border-radius: 4px; transition: all 0.2s; display: inline-block;"
+                                    onmouseover="this.style.backgroundColor='#fee2e2'"
+                                    onmouseout="this.style.backgroundColor='transparent'"
+                                    title="Doble click para editar"
+                                >${textoCompleto}</span>
+                            </div>
                         `;
                     }
 
@@ -222,7 +234,7 @@ function openCotizacionModal(cotizacionId) {
             }
 
             // Insertar contenido en el modal
-            document.getElementById('cotizacionContent').innerHTML = html;
+            document.getElementById('modalBody').innerHTML = html;
             document.getElementById('cotizacionModal').style.display = 'flex';
 
             console.log('✅ Modal abierto correctamente con', data.prendas_cotizaciones ? data.prendas_cotizaciones.length : 0, 'prendas');

@@ -256,6 +256,8 @@ class ContadorController extends Controller
                                 'cantidad' => $talla->cantidad,
                             ];
                         })->toArray() : [],
+                        // Texto personalizado de tallas
+                        'texto_personalizado_tallas' => $prenda->texto_personalizado_tallas ?? null,
                         // Variantes
                         'variantes' => $prenda->variantes ? $prenda->variantes->map(function($variante) {
                             return [
@@ -402,6 +404,36 @@ class ContadorController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al guardar las notas: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Guardar texto personalizado de tallas para una prenda (módulo contador)
+     */
+    public function guardarTextoPersonalizadoTallas($prendaId, Request $request)
+    {
+        try {
+            $prenda = \App\Models\PrendaCot::findOrFail($prendaId);
+            
+            // Validar que se envíe el texto personalizado
+            $request->validate([
+                'texto_personalizado' => 'nullable|string'
+            ]);
+            
+            // Guardar el texto personalizado
+            $prenda->texto_personalizado_tallas = $request->input('texto_personalizado');
+            $prenda->save();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Texto personalizado de tallas guardado correctamente',
+                'texto_personalizado' => $prenda->texto_personalizado_tallas
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar el texto personalizado: ' . $e->getMessage()
             ], 500);
         }
     }

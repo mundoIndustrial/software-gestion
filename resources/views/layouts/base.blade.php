@@ -4,6 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    @auth
+    <meta name="user-id" content="{{ auth()->id() }}">
+    @endauth
     <meta name="google" content="notranslate">
     <meta http-equiv="Content-Language" content="es">
     <meta name="description" content="Plataforma integral de gestión de producción textil con seguimiento en tiempo real y análisis de datos.">
@@ -55,6 +58,27 @@
 
     <!-- Vite (contiene app.css y app.js críticos) -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    
+    <!-- Laravel Echo & Pusher JS (para notificaciones en tiempo real) -->
+    <script src="https://cdn.jsdelivr.net/npm/pusher-js@8/dist/web/pusher.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1/dist/echo.iife.js"></script>
+    
+    <!-- Configurar Laravel Echo -->
+    @auth
+    <script>
+        window.Echo = new Echo({
+            broadcaster: 'reverb',
+            key: '{{ config('broadcasting.connections.reverb.key') }}',
+            wsHost: '{{ config('broadcasting.connections.reverb.options.host') }}',
+            wsPort: {{ config('broadcasting.connections.reverb.options.port') }},
+            wssPort: {{ config('broadcasting.connections.reverb.options.port') }},
+            forceTLS: {{ config('broadcasting.connections.reverb.options.scheme') === 'https' ? 'true' : 'false' }},
+            enabledTransports: ['ws', 'wss'],
+            disableStats: true,
+        });
+        console.log('✅ Laravel Echo configurado');
+    </script>
+    @endauth
     
     <!-- SweetAlert2 JS (diferido) -->
     <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
