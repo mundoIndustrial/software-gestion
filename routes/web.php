@@ -283,6 +283,7 @@ Route::middleware(['auth', 'role:contador,admin'])->prefix('contador')->name('co
     Route::get('/dashboard', [App\Http\Controllers\ContadorController::class, 'index'])->name('index');
     Route::get('/todas', [App\Http\Controllers\ContadorController::class, 'todas'])->name('todas');
     Route::get('/por-revisar', [App\Http\Controllers\ContadorController::class, 'porRevisar'])->name('por-revisar');
+    Route::get('/aprobadas', [App\Http\Controllers\ContadorController::class, 'aprobadas'])->name('aprobadas');
     Route::get('/cotizacion/{id}', [App\Http\Controllers\ContadorController::class, 'getCotizacionDetail'])->name('cotizacion.detail');
     Route::delete('/cotizacion/{id}', [App\Http\Controllers\ContadorController::class, 'deleteCotizacion'])->name('cotizacion.delete');
     // NOTA: Funcionalidad migrada a Handlers DDD

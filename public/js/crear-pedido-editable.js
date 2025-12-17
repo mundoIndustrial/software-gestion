@@ -546,8 +546,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 logoCotizacion.fotos.forEach(logo => {
                     const logoUrl = logo.url || logo.ruta_webp || logo.ruta_original;
                     if (logoUrl) {
+                        const logoURLEncoded = encodeURIComponent(JSON.stringify(logo));
                         html += `<div style="position: relative; display: inline-block; width: 100%;">
-                            <img src="${logoUrl}" alt="Logo" style="width: 100%; height: 150px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 1px solid #d0d0d0; transition: transform 0.2s;" onclick="abrirModalImagen('${logoUrl}', 'Logo de cotización')">
+                            <img src="${logoUrl}" 
+                                 alt="Logo" 
+                                 data-logo-url="${logoURLEncoded}"
+                                 style="width: 100%; height: 150px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 1px solid #d0d0d0; transition: transform 0.2s;" 
+                                 onclick="abrirModalImagen('${logoUrl}', 'Logo de cotización')">
                             <button type="button"
                                     onclick="eliminarImagenLogo(this)"
                                     style="position: absolute; top: 5px; right: 5px; background: #dc3545; color: white; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 1rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="Eliminar imagen">×</button>
@@ -811,6 +816,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const prendas = [];
         
+        // Recopilar fotos de logo que quedan en el DOM (las no eliminadas)
+        const fotosLogoGlobales = [];
+        const imagenesLogoDOM = document.querySelectorAll('img[data-logo-url]');
+        imagenesLogoDOM.forEach(img => {
+            const logoJSON = img.getAttribute('data-logo-url');
+            if (logoJSON) {
+                try {
+                    const logo = JSON.parse(decodeURIComponent(logoJSON));
+                    fotosLogoGlobales.push(logo);
+                } catch (e) {
+                    console.error('Error parseando logo:', e);
+                }
+            }
+        });
+        
+        console.log('📸 Fotos de logo globales encontradas:', fotosLogoGlobales.length);
+        
         prendasCargadas.forEach((prenda, index) => {
             // Saltar prendas eliminadas
             if (prendasEliminadas.has(index)) {
@@ -930,7 +952,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 cantidades: cantidadesPorTalla,
                 fotos: fotosEnDOM.length > 0 ? fotosEnDOM : prenda.fotos || [],
                 telas: fotosTelaEnDOM.length > 0 ? fotosTelaEnDOM : (prenda.telaFotos || prenda.telas || []),
-                logos: prenda.logos || []
+                logos: fotosLogoGlobales.length > 0 ? fotosLogoGlobales : (prenda.logos || [])
             });
         });
 

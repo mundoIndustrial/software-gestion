@@ -9,6 +9,16 @@ class DescripcionPrendaHelper
     
     /**
      * Genera descripción formateada de una prenda según template especificado
+     * REPLICANDO EXACTAMENTE LA LÓGICA DEL MODAL (order-detail-modal-manager.js líneas 183-303)
+     * 
+     * Formato:
+     * 1. PRENDA X: NOMBRE
+     * 2. Color: X | Tela: X REF:X | Manga: X
+     * 3. DESCRIPCION:
+     *    • Reflectivo: X
+     *    • Bolsillos: X
+     *    • Broche/Botón: X
+     * 4. Tallas: X: Y, Z: W
      * 
      * @param array $prenda Array con estructura: [
      *      'numero' => int,
@@ -18,11 +28,10 @@ class DescripcionPrendaHelper
      *      'ref' => string (referencia tela),
      *      'manga' => string,
      *      'obs_manga' => string (observación de manga),
-     *      'logo' => string,
+     *      'tipo_broche' => string (nombre del tipo: Botón, Broche, etc.),
+     *      'broche' => string (observación del broche),
      *      'bolsillos' => array de strings,
-     *      'broche' => string,
      *      'reflectivos' => array de strings,
-     *      'otros' => array de strings,
      *      'tallas' => array ['talla' => cantidad]
      * ]
      * @return string
@@ -37,13 +46,12 @@ class DescripcionPrendaHelper
         $ref = $prenda['ref'] ?? '';
         $manga = $prenda['manga'] ?? '';
         $obsManga = $prenda['obs_manga'] ?? '';
-        $logo = $prenda['logo'] ?? '';
+        $tipoBroche = $prenda['tipo_broche'] ?? '';
+        $broche = $prenda['broche'] ?? '';
         
         // Procesar listas
         $bolsillos = $prenda['bolsillos'] ?? [];
-        $broche = $prenda['broche'] ?? '';
         $reflectivos = $prenda['reflectivos'] ?? [];
-        $otros = $prenda['otros'] ?? [];
         $tallas = $prenda['tallas'] ?? [];
 
         // Limpiar bolsillos de "SI" si existe como primer item
@@ -51,117 +59,75 @@ class DescripcionPrendaHelper
         
         // Limpiar reflectivos de "SI" si existe como primer item
         $reflectivos = self::limpiarListaItem($reflectivos);
+
+        // 1. Nombre de la prenda
+        $descripcion = "PRENDA {$numero}: {$tipo}";
         
-        // Limpiar otros de "SI" si existe como primer item
-        $otros = self::limpiarListaItem($otros);
-
-        // Formatear bolsillos
-        $bolsillosFormato = '';
-        if (!empty($bolsillos)) {
-            $bolsillosLista = array_map(function($b) {
-                return self::BULLET . " " . trim($b);
-            }, $bolsillos);
-            $bolsillosFormato = implode("\n", $bolsillosLista);
+        // 2. Línea de atributos: Color | Tela | Manga (con observación de manga si existe)
+        $atributos = [];
+        
+        if ($color) {
+            $atributos[] = "Color: " . strtoupper($color);
         }
-
-        // Formatear reflectivos
-        $reflectivosFormato = '';
+        
+        if ($tela) {
+            $telaTexto = strtoupper($tela);
+            if ($ref) {
+                $telaTexto .= " " . strtoupper($ref);
+            }
+            $atributos[] = "Tela: {$telaTexto}";
+        }
+        
+        if ($manga) {
+            $mangaTexto = strtoupper($manga);
+            // Agregar observación de manga si existe y es diferente al tipo
+            if ($obsManga && strtoupper($obsManga) !== strtoupper($manga)) {
+                $mangaTexto .= " ({$obsManga})";
+            }
+            $atributos[] = "Manga: {$mangaTexto}";
+        }
+        
+        if (!empty($atributos)) {
+            $descripcion .= "\n" . implode(' | ', $atributos);
+        }
+        
+        // 3. DESCRIPCION con viñetas (sin manga, solo reflectivo, bolsillos y broche si existe)
+        $partes = [];
+        
+        // Reflectivo
         if (!empty($reflectivos)) {
-            $reflectivosLista = array_map(function($r) {
-                return self::BULLET . " " . trim($r);
-            }, $reflectivos);
-            $reflectivosFormato = implode("\n", $reflectivosLista);
+            $reflectivoTexto = implode(', ', array_map('strtoupper', $reflectivos));
+            $partes[] = self::BULLET . " Reflectivo: {$reflectivoTexto}";
         }
-
-        // Formatear otros
-        $otrosFormato = '';
-        if (!empty($otros)) {
-            $otrosLista = array_map(function($o) {
-                return self::BULLET . " " . trim($o);
-            }, $otros);
-            $otrosFormato = implode("\n", $otrosLista);
+        
+        // Bolsillos
+        if (!empty($bolsillos)) {
+            $bolsillosTexto = implode(', ', array_map('strtoupper', $bolsillos));
+            $partes[] = self::BULLET . " Bolsillos: {$bolsillosTexto}";
         }
-
-        // Formatear tallas
-        $tallasFormato = '';
+        
+        // Broche/Botón - SOLO si existe tipo_broche (label dinámico según el tipo)
+        if ($tipoBroche && $broche) {
+            $tipoLabel = strtoupper($tipoBroche);
+            $observacion = strtoupper($broche);
+            $partes[] = self::BULLET . " {$tipoLabel}: {$observacion}";
+        }
+        
+        if (!empty($partes)) {
+            $descripcion .= "\nDESCRIPCION:\n" . implode("\n", $partes);
+        }
+        
+        // 4. Tallas
         if (!empty($tallas) && is_array($tallas)) {
             $tallasList = [];
             foreach ($tallas as $talla => $cant) {
                 if ($cant > 0) {
-                    $tallasList[] = "• {$talla}: {$cant}";
+                    $tallasList[] = "{$talla}: {$cant}";
                 }
             }
             if (!empty($tallasList)) {
-                $tallasFormato = implode("\n", $tallasList);
+                $descripcion .= "\nTallas: " . implode(', ', $tallasList);
             }
-        }
-
-        // Construir referencia de tela
-        $telaRef = $tela;
-        if ($ref) {
-            $telaRef .= " {$ref}";
-        }
-
-        // Construir descripción completa
-        $descripcion = "PRENDA {$numero}: {$tipo}";
-        
-        // Agregar color si existe
-        if ($color) {
-            $descripcion .= "\nColor:";
-            $descripcion .= "\n" . self::BULLET . " {$color}";
-        }
-
-        // Agregar tela y referencia si existen
-        if ($telaRef) {
-            $descripcion .= "\nTela:";
-            $descripcion .= "\n" . self::BULLET . " {$telaRef}";
-        }
-
-        // Solo agregar sección DESCRIPCIÓN si hay logo
-        if ($logo) {
-            $descripcion .= "\nDESCRIPCIÓN:";
-            $descripcion .= "\n- Logo: {$logo}";
-        }
-
-        // Agregar bolsillos solo si hay contenido
-        if ($bolsillosFormato) {
-            $descripcion .= "\nBolsillos:";
-            $descripcion .= "\n{$bolsillosFormato}";
-        }
-
-        // Agregar manga solo si hay contenido
-        if ($manga) {
-            $descripcion .= "\nManga:";
-            $mangaFormato = self::BULLET . " {$manga}";
-            if ($obsManga) {
-                $mangaFormato .= " ({$obsManga})";
-            }
-            $descripcion .= "\n{$mangaFormato}";
-        }
-
-        // Agregar reflectivos solo si hay contenido
-        if ($reflectivosFormato) {
-            $descripcion .= "\nReflectivo:";
-            $descripcion .= "\n{$reflectivosFormato}";
-        }
-
-        // Agregar broche con su nombre dinámico como subtítulo si hay contenido
-        if ($broche) {
-            $brocheLimpio = strtoupper(trim($broche));
-            $descripcion .= "\n{$brocheLimpio}:";
-            $descripcion .= "\n" . self::BULLET . " {$broche}";
-        }
-
-        // Agregar otros detalles solo si hay contenido
-        if ($otrosFormato) {
-            $descripcion .= "\nOtros detalles:";
-            $descripcion .= "\n{$otrosFormato}";
-        }
-
-        // Agregar tallas solo si hay contenido
-        if ($tallasFormato) {
-            $descripcion .= "\nTALLAS:";
-            $descripcion .= "\n{$tallasFormato}";
         }
 
         return trim($descripcion);
@@ -185,11 +151,10 @@ class DescripcionPrendaHelper
             'ref' => '',
             'manga' => '',
             'obs_manga' => '',
-            'logo' => '',
-            'bolsillos' => [],
+            'tipo_broche' => '',
             'broche' => '',
+            'bolsillos' => [],
             'reflectivos' => [],
-            'otros' => [],
             'tallas' => [],
         ];
 
@@ -231,6 +196,16 @@ class DescripcionPrendaHelper
             $manga = \App\Models\TipoManga::find($prenda->tipo_manga_id);
             if ($manga) {
                 $datos['manga'] = $manga->nombre;
+            }
+        }
+
+        // Extraer Tipo de Broche desde la relación
+        if ($prenda->relationLoaded('tipoBroche') && $prenda->tipoBroche) {
+            $datos['tipo_broche'] = $prenda->tipoBroche->nombre;
+        } elseif ($prenda->tipo_broche_id) {
+            $tipoBroche = \App\Models\TipoBroche::find($prenda->tipo_broche_id);
+            if ($tipoBroche) {
+                $datos['tipo_broche'] = $tipoBroche->nombre;
             }
         }
 
@@ -285,17 +260,12 @@ class DescripcionPrendaHelper
                 }
             }
 
-            // Buscar Broche - solo capturar hasta fin de línea o siguiente sección
+            // Buscar Broche - solo capturar la observación (el tipo ya se obtuvo de la relación)
             if (empty($datos['broche'])) {
                 if (preg_match('/Broche:\s*([^\n\r]+?)(?:Manga:|Reflectivo?s?:|Bolsillos?:|Otros:|[\n\r]|$)/is', $varDesc, $matches)) {
                     $brocheText = trim($matches[1]);
-                    // Extraer solo la parte válida antes de guiones o pipes
-                    if (preg_match('/\b(BOTÓN|BOTóN|CREMALLERA|VELCRO|BOTONES|BROCHE|GANCHOS?)\b/i', $brocheText, $brocheMatch)) {
-                        $datos['broche'] = $brocheMatch[1];
-                    } elseif (strlen($brocheText) < 30 && !strpos($brocheText, 'PRUEBA')) {
-                        // Si es corto y no contiene "PRUEBA", usarlo
-                        $datos['broche'] = trim(str_replace(['|', '•', '-'], '', $brocheText));
-                    }
+                    // Limpiar y usar como observación
+                    $datos['broche'] = trim(str_replace(['|', '•'], '', $brocheText));
                 }
             }
 

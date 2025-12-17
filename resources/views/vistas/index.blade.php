@@ -177,7 +177,21 @@
                                                             @endphp
                                                             <tr data-id="{{ $registro->id }}" data-tipo="{{ $tipo }}" data-talla="{{ $talla }}">
                                                                 <td class="prenda-cell cell-clickable" data-content="{{ $registro->nombre_prenda ?: '-' }}">{{ $registro->nombre_prenda ?: '-' }}</td>
-                                                                <td class="descripcion-cell cell-clickable" data-content="{{ $registro->descripcion ?: '-' }}">{{ $registro->descripcion ?: '-' }}</td>
+                                                                <td class="descripcion-cell cell-clickable descripcion-dinamica" 
+                                                                    data-descripcion="{{ $registro->descripcion ?: '' }}"
+                                                                    data-color="{{ $registro->color?->nombre ?? '' }}"
+                                                                    data-tela="{{ $registro->tela?->nombre ?? '' }}"
+                                                                    data-tipo-manga="{{ $registro->tipoManga?->nombre ?? '' }}"
+                                                                    data-obs-manga="{{ $registro->obs_manga ?? '' }}"
+                                                                    data-tiene-reflectivo="{{ $registro->tiene_reflectivo ? 'Sí' : '' }}"
+                                                                    data-obs-reflectivo="{{ $registro->obs_reflectivo ?? '' }}"
+                                                                    data-tiene-bolsillos="{{ $registro->tiene_bolsillos ? 'Sí' : '' }}"
+                                                                    data-obs-bolsillos="{{ $registro->obs_bolsillos ?? '' }}"
+                                                                    data-tipo-broche="{{ $registro->tipoBroche?->nombre ?? '' }}"
+                                                                    data-obs-broche="{{ $registro->obs_broche ?? '' }}"
+                                                                    data-cantidad-talla="{{ json_encode($cantidadTalla) }}">
+                                                                    {{ $registro->descripcion ?: '-' }}
+                                                                </td>
                                                                 <td class="talla-cell">{{ $talla }}</td>
                                                                 <td class="cantidad-cell editable" data-field="cantidad" data-value="{{ $cantidad }}">{{ $cantidad }}</td>
                                                                 <td class="costurero-cell cell-clickable editable" data-field="costurero" data-content="{{ $costurero }}" data-value="{{ $entrega ? ($entrega->costurero ?? '') : '' }}">{{ $costurero }}</td>
@@ -619,5 +633,105 @@
             }
         `;
         document.head.appendChild(style);
+
+        // ============================================================
+        // CONSTRUIR DESCRIPCIONES DINÁMICAS
+        // ============================================================
+        function construirDescripcionDinamica() {
+            const celdas = document.querySelectorAll('.descripcion-dinamica');
+            console.log('🔍 [DESCRIPCION] Total de celdas encontradas:', celdas.length);
+            
+            celdas.forEach((cell, index) => {
+                const descripcion = cell.dataset.descripcion || '';
+                const color = cell.dataset.color || '';
+                const tela = cell.dataset.tela || '';
+                const tipoManga = cell.dataset.tipoManga || '';
+                const obsManga = cell.dataset.obsManga || '';
+                const tieneReflectivo = cell.dataset.tieneReflectivo || '';
+                const obsReflectivo = cell.dataset.obsReflectivo || '';
+                const tieneBolsillos = cell.dataset.tieneBolsillos || '';
+                const obsBolsillos = cell.dataset.obsBolsillos || '';
+                const tipoBroche = cell.dataset.tipoBroche || '';
+                const obsBroche = cell.dataset.obsBroche || '';
+                const cantidadTallaJSON = cell.dataset.cantidadTalla || '{}';
+
+                console.log(`📋 [DESCRIPCION] Celda ${index + 1}:`, {
+                    descripcion,
+                    color,
+                    tela,
+                    tipoManga,
+                    tiene_datos: !!(color || tela || tipoManga)
+                });
+
+                // Si no hay datos de variantes, mostrar solo la descripción simple
+                if (!color && !tela && !tipoManga) {
+                    console.log(`⚠️ [DESCRIPCION] Celda ${index + 1}: Sin datos de variantes, mostrando descripción simple`);
+                    cell.innerHTML = descripcion || '-';
+                    return;
+                }
+
+                console.log(`✅ [DESCRIPCION] Celda ${index + 1}: Construyendo descripción dinámica`);
+
+                // Construir descripción dinámica
+                let html = '';
+
+                // Línea principal: Descripción | Color | Tela | Manga (observación)
+                const partesPrincipales = [];
+                if (descripcion) partesPrincipales.push(descripcion);
+                if (color) partesPrincipales.push(color);
+                if (tela) partesPrincipales.push(tela);
+                if (tipoManga) {
+                    const mangaTexto = obsManga ? `${tipoManga} (${obsManga})` : tipoManga;
+                    partesPrincipales.push(mangaTexto);
+                }
+
+                html += '<div style="font-size: 0.75rem; line-height: 1.4; color: #333;">';
+                html += partesPrincipales.join(' | ');
+
+                // DESCRIPCION (viñetas)
+                const viñetas = [];
+                if (tieneReflectivo) {
+                    viñetas.push(`<strong style="color: #000;">• Reflectivo:</strong> ${tieneReflectivo}${obsReflectivo ? ' (' + obsReflectivo + ')' : ''}`);
+                }
+                if (tieneBolsillos) {
+                    viñetas.push(`<strong style="color: #000;">• Bolsillos:</strong> ${tieneBolsillos}${obsBolsillos ? ' (' + obsBolsillos + ')' : ''}`);
+                }
+                if (tipoBroche) {
+                    viñetas.push(`<strong style="color: #000;">• ${tipoBroche}:</strong> Sí${obsBroche ? ' (' + obsBroche + ')' : ''}`);
+                }
+
+                if (viñetas.length > 0) {
+                    html += '<br>' + viñetas.join('<br>');
+                }
+
+                // Tallas en rojo
+                try {
+                    const cantidadTalla = JSON.parse(cantidadTallaJSON);
+                    if (cantidadTalla && Object.keys(cantidadTalla).length > 0) {
+                        const tallasTexto = Object.entries(cantidadTalla)
+                            .map(([talla, cantidad]) => `${talla}: ${cantidad}`)
+                            .join(', ');
+                        html += `<br><strong style="color: #000;">Tallas:</strong> <span style="color: #dc2626;">${tallasTexto}</span>`;
+                    }
+                } catch (e) {
+                    // Si falla el parse, no mostrar tallas
+                }
+
+                html += '</div>';
+                cell.innerHTML = html;
+            });
+        }
+
+        // Ejecutar al cargar la página
+        document.addEventListener('DOMContentLoaded', construirDescripcionDinamica);
+
+        // Ejecutar después de búsquedas AJAX (observar cambios en el DOM)
+        const observer = new MutationObserver(() => {
+            construirDescripcionDinamica();
+        });
+        observer.observe(document.getElementById('results-container'), {
+            childList: true,
+            subtree: true
+        });
     </script>
 @endsection

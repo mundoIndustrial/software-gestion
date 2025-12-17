@@ -23,7 +23,8 @@ class RegistroOrdenExtendedQueryService
      * Incluye:
      * - Selección de 13 columnas específicas
      * - Eager loading de relaciones necesarias (asesora, prendas)
-     * - Relaciones nested (color, tela, tipoManga de prendas)
+     * - Relaciones nested (color, tela, tipoManga, tipoBroche de prendas) para descripción dinámica
+     * - Filtro: Excluye pedidos con estado 'Pendiente'
      * 
      * @return Builder
      */
@@ -35,9 +36,14 @@ class RegistroOrdenExtendedQueryService
                 'novedades', 'dia_de_entrega', 'fecha_de_creacion_de_orden',
                 'fecha_estimada_de_entrega', 'asesor_id', 'cliente_id', 'id'
             ])
+            ->where('estado', '!=', 'Pendiente')
             ->with([
                 'asesora:id,name',
-                'prendas:numero_pedido,nombre_prenda,cantidad,descripcion,cantidad_talla'
+                'prendas:id,numero_pedido,nombre_prenda,cantidad,descripcion,descripcion_variaciones,cantidad_talla,color_id,tela_id,tipo_manga_id,tipo_broche_id',
+                'prendas.color:id,nombre',
+                'prendas.tela:id,nombre,referencia',
+                'prendas.tipoManga:id,nombre',
+                'prendas.tipoBroche:id,nombre'
             ])
             ->orderBy('created_at', 'asc');
     }

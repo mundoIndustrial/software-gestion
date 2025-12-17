@@ -38,7 +38,7 @@ class RegistroOrdenCreationService
 
         try {
             // Crear pedido en PedidoProduccion
-            $estado = $data['estado'] ?? 'No iniciado';
+            $estado = $data['estado'] ?? 'Pendiente';
             
             $pedido = PedidoProduccion::create([
                 'numero_pedido' => $data['pedido'],

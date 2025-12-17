@@ -799,4 +799,19 @@ class ContadorController extends Controller
         }
     }
 
+    /**
+     * Mostrar cotizaciones aprobadas por el aprobador (APROBADA_POR_APROBADOR)
+     */
+    public function aprobadas(): View
+    {
+        // Obtener cotizaciones aprobadas por el aprobador de cotizaciones
+        $cotizacionesAprobadas = Cotizacion::with('cliente', 'usuario')
+            ->where('estado', 'APROBADA_POR_APROBADOR')
+            ->where('es_borrador', 0)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('contador.aprobadas', compact('cotizacionesAprobadas'));
+    }
+
 }

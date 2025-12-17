@@ -114,8 +114,8 @@
   function handleDetalle(ordenId) {
     console.log('Ver detalle de orden:', ordenId);
     
-    // Obtener datos de la orden
-    fetch(`/orders/${ordenId}`, {
+    // Obtener datos de la orden usando el mismo endpoint que asesores
+    fetch(`/registros/${ordenId}`, {
       method: 'GET',
       headers: {
         'X-Requested-With': 'XMLHttpRequest',

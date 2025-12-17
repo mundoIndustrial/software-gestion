@@ -100,7 +100,7 @@ class RegistroOrdenController extends Controller
             $this->creationService->logOrderCreated(
                 $pedido->numero_pedido,
                 $validatedData['cliente'],
-                $validatedData['estado'] ?? 'No iniciado'
+                $validatedData['estado'] ?? 'Pendiente'
             );
 
             // Broadcast evento

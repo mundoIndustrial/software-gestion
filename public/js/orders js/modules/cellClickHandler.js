@@ -9,10 +9,10 @@ console.log('📦 Cargando CellClickHandler...');
 const CellClickHandler = {
     /**
      * Columnas editables
+     * NOTA: 'descripcion' NO está aquí porque usa su propio modal personalizado (abrirModalCelda)
      */
     editableColumns: [
         'novedades',
-        'descripcion',
         'cliente',
         'asesor',
         'forma_de_pago',
@@ -170,7 +170,6 @@ const CellClickHandler = {
         const cells = Array.from(row.querySelectorAll('.table-cell'));
         const columnMap = {
             'cliente': 6,
-            'descripcion': 7,
             'novedades': 9,
             'asesor': 10,
             'forma_de_pago': 11,
@@ -198,7 +197,6 @@ const CellClickHandler = {
     _getColumnLabel(column) {
         const labels = {
             novedades: 'Novedades',
-            descripcion: 'Descripción',
             cliente: 'Cliente',
             asesor: 'Asesor',
             forma_de_pago: 'Forma de Pago',

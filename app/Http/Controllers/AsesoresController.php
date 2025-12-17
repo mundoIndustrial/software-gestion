@@ -298,7 +298,7 @@ class AsesoresController extends Controller
                 'cliente' => $validated['cliente'],
                 'asesor_id' => Auth::id(),
                 'forma_de_pago' => $validated['forma_de_pago'] ?? null,
-                'estado' => 'No iniciado',
+                'estado' => 'Pendiente',
             ]);
 
             // ✅ Guardar prendas COMPLETAS usando PedidoPrendaService

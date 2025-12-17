@@ -137,8 +137,20 @@
                                 
                                 <!-- Descripción -->
                                 <div class="table-cell" style="flex: 10;">
-                                    <div class="cell-content" style="justify-content: center;">
-                                        <span>{{ $orden->getNombresPrendas() }}</span>
+                                    <div class="cell-content" style="justify-content: flex-start;">
+                                        <span style="color: #6b7280; font-size: 0.875rem; cursor: pointer; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="abrirModalCelda('Descripción', `{{ addslashes($orden->descripcion_prendas ?? '-') }}`)" title="Click para ver completo">
+                                            @php
+                                                if ($orden->prendas && $orden->prendas->count() > 0) {
+                                                    $prendasInfo = $orden->prendas->map(function($prenda) {
+                                                        return $prenda->nombre_prenda ?? 'Prenda sin nombre';
+                                                    })->unique()->toArray();
+                                                    $descripcion = !empty($prendasInfo) ? implode(', ', $prendasInfo) : '-';
+                                                    echo $descripcion . ' <span style="color: #3b82f6; font-weight: 600;">...</span>';
+                                                } else {
+                                                    echo '-';
+                                                }
+                                            @endphp
+                                        </span>
                                     </div>
                                 </div>
                                 
@@ -350,6 +362,155 @@
                 });
             }
         });
+
+        // ==================== MODAL DE CELDA ====================
+        function abrirModalCelda(titulo, contenido) {
+            let contenidoLimpio = contenido || '-';
+            
+            contenidoLimpio = contenidoLimpio.replace(/\*\*\*/g, '');
+            contenidoLimpio = contenidoLimpio.replace(/\*\*\*\s*[A-Z\s]+:\s*\*\*\*/g, '');
+            
+            let prendas = contenidoLimpio.split('\n\n').filter(p => p.trim());
+            
+            let htmlContenido = '';
+            
+            prendas.forEach((prenda, index) => {
+                let lineas = prenda.split('\n').map(l => l.trim()).filter(l => l);
+                
+                htmlContenido += '<div style="margin-bottom: 1.5rem; padding: 1rem; background: #f9fafb; border-radius: 8px; border-left: 4px solid #3b82f6;">';
+                
+                lineas.forEach((linea, i) => {
+                    if (linea.match(/^(\d+)\.\s+Prenda:/i) || linea.match(/^Prenda \d+:/i) || linea.match(/^PRENDA \d+:/i)) {
+                        htmlContenido += `<div style="font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; color: #1f2937;">${linea}</div>`;
+                    }
+                    else if (linea.match(/^Color:|^Tela:|^Manga:/i)) {
+                        htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;">${linea}</div>`;
+                    }
+                    else if (linea.match(/^DESCRIPCIÓN:|^DESCRIPCION:/i)) {
+                        htmlContenido += `<div style="margin-top: 0.5rem; margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
+                    }
+                    else if (linea.match(/^(Reflectivo|Bolsillos|Broche|Ojal|BOTÓN|BOTON|CREMALLERA):/i)) {
+                        htmlContenido += `<div style="margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
+                    }
+                    else if (linea.startsWith('•') || linea.startsWith('-')) {
+                        htmlContenido += `<div style="margin-left: 1.5rem; margin-bottom: 0.25rem; color: #374151;">• ${linea.substring(1).trim()}</div>`;
+                    }
+                    else if (linea.match(/^Tallas:/i)) {
+                        htmlContenido += `<div style="margin-top: 0.5rem; margin-bottom: 0.5rem; color: #374151;"><strong>${linea}</strong></div>`;
+                    }
+                    else if (linea) {
+                        htmlContenido += `<div style="margin-bottom: 0.25rem; color: #374151;">${linea}</div>`;
+                    }
+                });
+                
+                htmlContenido += '</div>';
+            });
+            
+            const modalHTML = `
+                <div id="celdaModal" style="
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0, 0, 0, 0.5);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 9999;
+                    animation: fadeIn 0.3s ease;
+                " onclick="if(event.target.id === 'celdaModal') cerrarModalCelda()">
+                    <div style="
+                        background: white;
+                        border-radius: 12px;
+                        padding: 2rem;
+                        max-width: 600px;
+                        width: 90%;
+                        max-height: 80vh;
+                        overflow-y: auto;
+                        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                        animation: slideIn 0.3s ease;
+                    " onclick="event.stopPropagation()">
+                        <div style="
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            margin-bottom: 1.5rem;
+                            border-bottom: 2px solid #e5e7eb;
+                            padding-bottom: 1rem;
+                        ">
+                            <h2 style="
+                                margin: 0;
+                                font-size: 1.25rem;
+                                font-weight: 700;
+                                color: #1f2937;
+                            ">${titulo}</h2>
+                            <button onclick="cerrarModalCelda()" style="
+                                background: none;
+                                border: none;
+                                font-size: 1.5rem;
+                                cursor: pointer;
+                                color: #6b7280;
+                                padding: 0;
+                                width: 32px;
+                                height: 32px;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                border-radius: 6px;
+                                transition: all 0.2s ease;
+                            " onmouseover="this.style.background='#f3f4f6'; this.style.color='#1f2937'" onmouseout="this.style.background='none'; this.style.color='#6b7280'">
+                                ✕
+                            </button>
+                        </div>
+                        <div style="
+                            color: #374151;
+                            font-size: 0.95rem;
+                            line-height: 1.8;
+                        ">
+                            ${htmlContenido}
+                        </div>
+                        <div style="
+                            margin-top: 1.5rem;
+                            display: flex;
+                            justify-content: flex-end;
+                            gap: 0.75rem;
+                        ">
+                            <button onclick="cerrarModalCelda()" style="
+                                background: white;
+                                border: 2px solid #d1d5db;
+                                color: #374151;
+                                padding: 0.625rem 1.25rem;
+                                border-radius: 6px;
+                                cursor: pointer;
+                                font-weight: 600;
+                                font-size: 0.875rem;
+                                transition: all 0.2s ease;
+                            " onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='#9ca3af'" onmouseout="this.style.background='white'; this.style.borderColor='#d1d5db'">
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            document.addEventListener('keydown', function cerrarConEsc(event) {
+                if (event.key === 'Escape') {
+                    cerrarModalCelda();
+                    document.removeEventListener('keydown', cerrarConEsc);
+                }
+            });
+        }
+
+        function cerrarModalCelda() {
+            const modal = document.getElementById('celdaModal');
+            if (modal) {
+                modal.style.animation = 'fadeIn 0.3s ease reverse';
+                setTimeout(() => modal.remove(), 300);
+            }
+        }
     </script>
 
 @endsection

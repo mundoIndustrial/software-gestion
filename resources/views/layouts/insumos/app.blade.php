@@ -145,13 +145,18 @@
             <a href="{{ route('logout') }}" 
                onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
                class="logout-btn"
-               title="Salir">
+               title="Cerrar Sesión">
                 <i class="fas fa-sign-out-alt"></i>
-                <span class="menu-label">Salir</span>
+                <span class="menu-label">Cerrar Sesión</span>
             </a>
             <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
                 @csrf
             </form>
+            
+            <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema">
+                <span class="material-symbols-rounded">light_mode</span>
+                <span class="theme-text">Tema Claro</span>
+            </button>
         </div>
     </aside>
 

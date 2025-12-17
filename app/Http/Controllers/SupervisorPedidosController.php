@@ -139,12 +139,11 @@ class SupervisorPedidosController extends Controller
         // FILTRO DE APROBACIÓN: Mostrar solo órdenes según su estado de aprobación
         if ($request->filled('aprobacion')) {
             if ($request->aprobacion === 'pendiente') {
-                // Órdenes pendientes de aprobación (sin aprobado_por_supervisor_en Y NO ANULADAS Y CON COTIZACIÓN)
-                $query->whereNull('aprobado_por_supervisor_en')
-                      ->where('estado', '!=', 'Anulada')
-                      ->whereNotNull('cotizacion_id');
+                // Órdenes PENDIENTES: Estado "PENDIENTE_SUPERVISOR" y sin aprobado_por_supervisor_en
+                $query->where('estado', 'PENDIENTE_SUPERVISOR')
+                      ->whereNull('aprobado_por_supervisor_en');
             } elseif ($request->aprobacion === 'aprobadas') {
-                // Órdenes ya aprobadas o anuladas (con aprobado_por_supervisor_en)
+                // Órdenes ya aprobadas (con aprobado_por_supervisor_en)
                 $query->whereNotNull('aprobado_por_supervisor_en');
             }
         } else {
@@ -189,7 +188,8 @@ class SupervisorPedidosController extends Controller
 
         // Ordenar por fecha descendente
         $ordenes = $query->orderBy('fecha_de_creacion_de_orden', 'desc')
-                        ->paginate(15);
+                        ->paginate(15)
+                        ->appends($request->query());
 
         // Obtener estados únicos para filtro
         $estados = PedidoProduccion::distinct()
@@ -271,11 +271,11 @@ class SupervisorPedidosController extends Controller
         try {
             $orden = PedidoProduccion::findOrFail($id);
 
-            // Verificar que la orden esté en estado "No iniciado"
-            if ($orden->estado !== 'No iniciado') {
+            // Verificar que la orden esté en estado "PENDIENTE_SUPERVISOR"
+            if ($orden->estado !== 'PENDIENTE_SUPERVISOR') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Solo se pueden aprobar órdenes en estado "No iniciado"'
+                    'message' => 'Solo se pueden aprobar órdenes en estado "Pendiente de Supervisor"'
                 ], 422);
             }
 

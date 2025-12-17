@@ -1,8 +1,9 @@
-@extends('layouts.app')
+@extends('layouts.insumos.app')
+
+@section('page-title', 'Dashboard Insumos')
 
 @section('content')
-<div class="container">
-    <h1>Dashboard Insumos</h1>
+<div class="container-fluid">
     
     <div class="row">
         <div class="col-md-3">

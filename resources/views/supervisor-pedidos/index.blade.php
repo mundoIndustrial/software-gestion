@@ -903,6 +903,26 @@
     <!-- Buscador General -->
     <div style="margin-bottom: 2rem;">
         <form method="GET" action="{{ route('supervisor-pedidos.index') }}" style="display: flex; gap: 1rem;">
+            <!-- Preservar parámetros importantes -->
+            @if(request('aprobacion'))
+                <input type="hidden" name="aprobacion" value="{{ request('aprobacion') }}">
+            @endif
+            @if(request('estado'))
+                <input type="hidden" name="estado" value="{{ request('estado') }}">
+            @endif
+            @if(request('asesora'))
+                <input type="hidden" name="asesora" value="{{ request('asesora') }}">
+            @endif
+            @if(request('forma_pago'))
+                <input type="hidden" name="forma_pago" value="{{ request('forma_pago') }}">
+            @endif
+            @if(request('fecha_desde'))
+                <input type="hidden" name="fecha_desde" value="{{ request('fecha_desde') }}">
+            @endif
+            @if(request('fecha_hasta'))
+                <input type="hidden" name="fecha_hasta" value="{{ request('fecha_hasta') }}">
+            @endif
+            
             <div style="flex: 1;">
                 <input type="text" 
                        name="busqueda" 
@@ -916,7 +936,7 @@
                 <span class="material-symbols-rounded">search</span>
                 Buscar
             </button>
-            <a href="{{ route('supervisor-pedidos.index') }}" class="btn-limpiar" style="padding: 0.75rem 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+            <a href="{{ route('supervisor-pedidos.index', request('aprobacion') ? ['aprobacion' => request('aprobacion')] : []) }}" class="btn-limpiar" style="padding: 0.75rem 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
                 <span class="material-symbols-rounded">clear</span>
                 Limpiar
             </a>
@@ -1036,26 +1056,19 @@
                                                 <span class="material-symbols-rounded">visibility</span>
                                             </button>
                                             <div class="ver-submenu" id="ver-menu-{{ $orden->id }}" style="display: none;">
-                                                <button class="submenu-item" onclick="verOrdenComparar({{ $orden->id }})">
-                                                    <span class="material-symbols-rounded">compare_arrows</span>
-                                                    Comparar
-                                                </button>
                                                 <button class="submenu-item" onclick="verOrdenDetalles({{ $orden->id }})">
                                                     <span class="material-symbols-rounded">description</span>
                                                     Detalles
                                                 </button>
-                                                <a href="{{ route('supervisor-pedidos.pdf', $orden->id) }}" 
-                                                   class="submenu-item"
-                                                   title="Descargar PDF"
-                                                   target="_blank">
-                                                    <span class="material-symbols-rounded">picture_as_pdf</span>
-                                                    Descargar PDF
-                                                </a>
+                                                <button class="submenu-item" onclick="abrirSeguimiento({{ $orden->id }})">
+                                                    <span class="material-symbols-rounded">local_shipping</span>
+                                                    Seguimiento
+                                                </button>
                                             </div>
                                         </div>
 
                                         <!-- Aprobar Orden (Enviar a Producción) -->
-                                        @if($orden->estado === 'No iniciado' && !$orden->aprobado_por_supervisor_en && !request()->filled('estado'))
+                                        @if($orden->estado === 'PENDIENTE_SUPERVISOR' && !$orden->aprobado_por_supervisor_en && (request('aprobacion') === 'pendiente' || !request()->filled('estado')))
                                             <button class="btn-accion btn-aprobar" 
                                                     title="Aprobar orden"
                                                     onclick="aprobarOrden({{ $orden->id }}, '{{ $orden->numero_pedido }}')">
@@ -1064,7 +1077,7 @@
                                         @endif
 
                                         <!-- Anular Orden -->
-                                        @if($orden->estado !== 'Anulada' && !$orden->aprobado_por_supervisor_en && !request()->filled('estado'))
+                                        @if($orden->estado !== 'Anulada' && !$orden->aprobado_por_supervisor_en && (request('aprobacion') !== 'pendiente' && !request()->filled('estado')))
                                             <button class="btn-accion btn-anular" 
                                                     title="Anular orden"
                                                     onclick="abrirModalAnulacion({{ $orden->id }}, '{{ $orden->numero_pedido }}')">
@@ -2041,6 +2054,20 @@
         // Abrir el modal de detalles usando la función externa
         openOrderDetailModal(ordenId);
     }
+
+    // Función para abrir el seguimiento
+    function abrirSeguimiento(ordenId) {
+        // Cerrar el menú ver
+        const menu = document.getElementById(`ver-menu-${ordenId}`);
+        if (menu) {
+            menu.style.display = 'none';
+        }
+        
+        // Abrir el modal de seguimiento usando la función externa
+        if (typeof openOrderTrackingModal === 'function') {
+            openOrderTrackingModal(ordenId);
+        }
+    }
 </script>
 
 <!-- Modal Overlay y Wrapper para Detalles de Orden -->
@@ -2052,6 +2079,9 @@
 
 <!-- Modal Comparar Pedido y Cotización -->
 <x-supervisor-pedidos.modal-comparar-pedido />
+
+<!-- Modal Seguimiento del Pedido -->
+<x-orders-components.order-tracking-modal />
 
 @push('scripts')
     <script src="{{ asset('js/supervisor-pedidos/supervisor-pedidos-detail-modal.js') }}"></script>

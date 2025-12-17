@@ -1,6 +1,6 @@
 <link rel="stylesheet" href="{{ asset('css/order-detail-modal.css') }}">
 
-<div class="order-detail-modal-container">
+<div class="order-detail-modal-container" style="display: flex; flex-direction: column; width: 100%; height: 100%;">
     <div class="order-detail-card">
         <img src="{{ asset('images/logo.png') }}" alt="Mundo Industrial Logo" class="order-logo" width="150" height="80">
         <div id="order-date" class="order-date">
@@ -50,7 +50,7 @@
 </div>
 
 <!-- Botones flotantes para cambiar a galería de fotos -->
-<div style="position: fixed; right: 30px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 12px; z-index: 10000;">
+<div style="position: fixed; right: 10px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 12px; z-index: 10000;">
     <button id="btn-factura" type="button" title="Ver factura" onclick="toggleFactura()" style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #1e40af, #0ea5e9); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 24px; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
         <i class="fas fa-receipt"></i>
     </button>
@@ -65,6 +65,11 @@ let currentImageIndex = 0;
 
 function toggleFactura() {
     // Mostrar factura y ocultar galería
+    const container = document.querySelector('.order-detail-modal-container');
+    container.style.padding = '1.5cm';  // Restaurar padding original
+    container.style.alignItems = 'center';  // Restaurar center
+    container.style.justifyContent = 'center';  // Restaurar center
+    
     document.querySelector('.order-detail-card').style.display = 'block';
     const galeria = document.getElementById('galeria-modal');
     if (galeria) galeria.style.display = 'none';
@@ -82,12 +87,18 @@ function toggleGaleria() {
     // Ocultar factura y mostrar galería
     document.querySelector('.order-detail-card').style.display = 'none';
     
+    // Configurar el contenedor para la galería
+    const container = document.querySelector('.order-detail-modal-container');
+    container.style.padding = '0';
+    container.style.alignItems = 'stretch';  // Cambiar de center a stretch
+    container.style.justifyContent = 'flex-start';  // Cambiar de center a flex-start
+    
     // Crear galería si no existe
     let galeria = document.getElementById('galeria-modal');
     if (!galeria) {
         galeria = document.createElement('div');
         galeria.id = 'galeria-modal';
-        galeria.style.cssText = 'padding: 20px;';
+        galeria.style.cssText = 'width: 100%; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100%;';
         document.querySelector('.order-detail-modal-container').appendChild(galeria);
     }
     galeria.style.display = 'block';
@@ -134,30 +145,167 @@ function loadGaleria(container) {
         })
         .then(data => {
             console.log('🖼️ [GALERIA] Datos recibidos:', data);
-            console.log('🖼️ [GALERIA] Total de imágenes:', data.images?.length || 0);
+            console.log('📊 [GALERIA] Total prendas:', data.prendas?.length || 0);
             
-            allImages = data.images || [];
-            let html = '<h2 style="text-align: center; margin: 20px 0;">Galería de Imágenes</h2>';
-            html += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; padding: 0 20px;">';
+            // Construir array de todas las imágenes para el visor
+            allImages = [];
+            let html = '<div style="background: linear-gradient(135deg, #1e40af, #0ea5e9); padding: 12px; margin: 0; border-radius: 0; width: 100%; box-sizing: border-box; position: sticky; top: 0; z-index: 100;">';
+            html += '<h2 style="text-align: center; margin: 0; font-size: 1.6rem; font-weight: 700; color: white; letter-spacing: 1px;">GALERIA</h2>';
+            html += '</div>';
+            html += '<div style="padding: 20px; flex: 1; overflow-y: auto;">';
             
-            if (allImages && allImages.length > 0) {
-                allImages.forEach((image, index) => {
-                    console.log(`🖼️ [GALERIA] Imagen ${index + 1}:`, image.url);
-                    html += `<div style="aspect-ratio: 1; border-radius: 6px; overflow: hidden; background: #f5f5f5; cursor: pointer; border: 2px solid transparent; transition: all 0.2s ease;" 
-                        onmouseover="this.style.borderColor='#1e40af'; this.style.transform='scale(1.05)';"
-                        onmouseout="this.style.borderColor='transparent'; this.style.transform='scale(1)';"
-                        onclick="openImageViewer(${index})">
-                        <img src="${image.url}" alt="Foto" style="width: 100%; height: 100%; object-fit: cover;">
-                    </div>`;
+            console.log('📦 [GALERIA] Iniciando construcción de galería...');
+            
+            // Mostrar prendas con sus imágenes (separando fotos de prenda/tela de fotos de logo)
+            let fotosLogo = [];
+            
+            if (data.prendas && data.prendas.length > 0) {
+                data.prendas.forEach((prenda, idx) => {
+                    if (prenda.imagenes && prenda.imagenes.length > 0) {
+                        // Separar fotos de logo de las demás
+                        const fotosPrendaTela = prenda.imagenes.filter(img => img.type !== 'logo');
+                        const fotosLogoPrend = prenda.imagenes.filter(img => img.type === 'logo');
+                        
+                        console.log(`📍 [GALERIA] PRENDA ${idx + 1}:`, {
+                            nombre: prenda.nombre,
+                            total_imagenes: prenda.imagenes.length,
+                            fotos_prenda_tela: fotosPrendaTela.length,
+                            fotos_logo: fotosLogoPrend.length,
+                            mostrara_en_galeria: fotosPrendaTela.length > 0 ? '✅ SÍ' : '❌ NO'
+                        });
+                        
+                        // Guardar fotos de logo para mostrar al final
+                        if (fotosLogoPrend.length > 0) {
+                            fotosLogo.push({
+                                prenda: prenda,
+                                fotos: fotosLogoPrend
+                            });
+                        }
+                        
+                        // Mostrar solo fotos de prenda y tela
+                        if (fotosPrendaTela.length > 0) {
+                            const fotosAMostrar = fotosPrendaTela.slice(0, 4);
+                            const fotosOcultas = Math.max(0, fotosPrendaTela.length - 4);
+                            
+                            console.log(`📸 [GALERIA] Renderizando prenda ${prenda.numero}:`, {
+                                fotos_a_mostrar: fotosAMostrar.length,
+                                fotos_ocultas: fotosOcultas,
+                                mostrara_plus: fotosOcultas > 0 ? '✅ Sí (+' + fotosOcultas + ')' : '❌ No'
+                            });
+                            
+                            html += `<div style="margin-bottom: 1.5rem; display: flex; gap: 12px; align-items: flex-start; padding: 0 20px;">
+                                <div style="border-left: 4px solid #1e40af; padding-left: 12px; display: flex; flex-direction: column; justify-content: flex-start; min-width: 120px;">
+                                    <h3 style="font-size: 0.65rem; font-weight: 700; color: #1e40af; margin: 0; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.2;">
+                                        PRENDA ${prenda.numero}:<br>${prenda.nombre.toUpperCase()}
+                                    </h3>
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; flex: 1;">`;
+                            
+                            fotosAMostrar.forEach(image => {
+                                const imageIndex = allImages.length;
+                                allImages.push(image);
+                                
+                                html += `<div style="aspect-ratio: 1; border-radius: 4px; overflow: hidden; background: #f5f5f5; cursor: pointer; border: 2px solid #e5e5e5; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.08);" 
+                                    onmouseover="this.style.borderColor='#1e40af'; this.style.transform='scale(1.08)'; this.style.boxShadow='0 4px 12px rgba(30,64,175,0.2)';"
+                                    onmouseout="this.style.borderColor='#e5e5e5'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.08)';"
+                                    onclick="openImageViewer(${imageIndex})">
+                                    <img src="${image.url}" alt="Foto ${prenda.nombre}" style="width: 100%; height: 100%; object-fit: cover;">
+                                </div>`;
+                            });
+                            
+                            if (fotosOcultas > 0) {
+                                const firstOccultaIndex = allImages.length;
+                                // Agregar las fotos ocultas al array
+                                fotosPrendaTela.slice(4).forEach(image => {
+                                    allImages.push(image);
+                                });
+                                
+                                html += `<div style="aspect-ratio: 1; border-radius: 4px; overflow: hidden; background: #1e40af; cursor: pointer; border: 2px solid #1e40af; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.08); display: flex; align-items: center; justify-content: center;" 
+                                    onmouseover="this.style.transform='scale(1.08)'; this.style.boxShadow='0 4px 12px rgba(30,64,175,0.2)';"
+                                    onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.08)';"
+                                    onclick="openImageViewer(${firstOccultaIndex})">
+                                    <span style="color: white; font-weight: bold; font-size: 18px;">+${fotosOcultas}</span>
+                                </div>`;
+                            }
+                            
+                            html += '</div></div>';
+                        }
+                    }
+                });
+                
+                // Mostrar fotos de logo al final
+                if (fotosLogo.length > 0) {
+                    console.log('🖼️ [GALERIA] Mostrando fotos de logo. Total grupos:', fotosLogo.length);
+                    
+                    fotosLogo.forEach(item => {
+                        const fotosAMostrar = item.fotos.slice(0, 4);
+                        const fotosOcultas = Math.max(0, item.fotos.length - 4);
+                        
+                        html += `<div style="margin-top: 1.5rem; display: flex; gap: 12px; align-items: flex-start; padding: 0 20px;">
+                            <div style="border-left: 4px solid #dc2626; padding-left: 12px; display: flex; flex-direction: column; justify-content: flex-start; min-width: 120px;">
+                                <h3 style="font-size: 0.65rem; font-weight: 700; color: #dc2626; margin: 0; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.2;">
+                                    LOGO/BORDADO
+                                </h3>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; flex: 1;">`;
+                        
+                        fotosAMostrar.forEach(image => {
+                            const imageIndex = allImages.length;
+                            allImages.push(image);
+                            
+                            html += `<div style="aspect-ratio: 1; border-radius: 4px; overflow: hidden; background: #f5f5f5; cursor: pointer; border: 2px solid #e5e5e5; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.08);" 
+                                onmouseover="this.style.borderColor='#dc2626'; this.style.transform='scale(1.08)'; this.style.boxShadow='0 4px 12px rgba(220,38,38,0.2)';"
+                                onmouseout="this.style.borderColor='#e5e5e5'; this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.08)';"
+                                onclick="openImageViewer(${imageIndex})">
+                                <img src="${image.url}" alt="Foto Logo" style="width: 100%; height: 100%; object-fit: cover;">
+                            </div>`;
+                        });
+                        
+                        if (fotosOcultas > 0) {
+                            const firstOccultaIndex = allImages.length;
+                            // Agregar las fotos ocultas al array
+                            item.fotos.slice(4).forEach(image => {
+                                allImages.push(image);
+                            });
+                            
+                            html += `<div style="aspect-ratio: 1; border-radius: 4px; overflow: hidden; background: #dc2626; cursor: pointer; border: 2px solid #dc2626; transition: all 0.2s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.08); display: flex; align-items: center; justify-content: center;" 
+                                onmouseover="this.style.transform='scale(1.08)'; this.style.boxShadow='0 4px 12px rgba(220,38,38,0.2)';"
+                                onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(0,0,0,0.08)';"
+                                onclick="openImageViewer(${firstOccultaIndex})">
+                                <span style="color: white; font-weight: bold; font-size: 18px;">+${fotosOcultas}</span>
+                            </div>`;
+                        }
+                        
+                        html += '</div></div>';
+                    });
+                } else {
+                    console.log('⚠️ [GALERIA] No hay fotos de logo para mostrar');
+                }
+                
+                console.log('✅ [GALERIA] Total de imágenes cargadas:', allImages.length);
+                console.log('📋 [GALERIA] Estructura de diseño:', {
+                    total_prendas: data.prendas.length,
+                    total_imagenes_cargadas: allImages.length,
+                    tiene_fotos_logo: fotosLogo.length > 0,
+                    secciones_logo: fotosLogo.length
                 });
             } else {
                 console.warn('⚠️ [GALERIA] No hay imágenes para mostrar');
-                html += '<p style="grid-column: 1/-1; text-align: center; color: #999;">No hay imágenes para este pedido</p>';
+                html += '<p style="text-align: center; color: #999; padding: 2rem;">No hay imágenes para este pedido</p>';
             }
             
             html += '</div>';
             container.innerHTML = html;
-            console.log('✅ [GALERIA] HTML de galería generado');
+            console.log('✅ [GALERIA] HTML de galería generado y renderizado en el DOM');
+            console.log('📊 [GALERIA] Resumen final del diseño:');
+            console.table({
+                'Header': '✅ Azul con texto GALERIA',
+                'Contenedor': '✅ Flex con gap 12px',
+                'Prendas': data.prendas?.length || 0 + ' prendas mostradas',
+                'Fotos por prenda': '4 principales + botón si hay más',
+                'Total imágenes cargadas': allImages.length,
+                'Logos': fotosLogo.length > 0 ? '✅ Sí' : '❌ No'
+            });
         })
         .catch(error => {
             console.error('❌ [GALERIA] Error al cargar imágenes:', error);

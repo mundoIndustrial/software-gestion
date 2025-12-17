@@ -91,18 +91,18 @@ class CotizacionEstadoController extends Controller
                 ], 422);
             }
 
-            // Actualizar estado a APROBADO_PARA_PEDIDO
+            // Actualizar estado a APROBADA_POR_APROBADOR
             $cotizacion->update([
-                'estado' => 'APROBADO_PARA_PEDIDO'
+                'estado' => 'APROBADA_POR_APROBADOR'
             ]);
 
-            Log::info('Cotización aprobada para pedido', [
+            Log::info('Cotización aprobada por aprobador', [
                 'cotizacion_id' => $cotizacion->id
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Cotización aprobada para pedido exitosamente',
+                'message' => 'Cotización aprobada por aprobador exitosamente',
                 'cotizacion' => $cotizacion
             ]);
 

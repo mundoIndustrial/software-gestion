@@ -1,13 +1,14 @@
-@extends('layouts.app')
+@extends('layouts.insumos.app')
+
+@section('page-title', 'Materiales Insumos')
 
 @section('content')
-<div class="container">
+<div class="container-fluid">
     <div class="row mb-4">
-        <div class="col-md-8">
-            <h1>Materiales Insumos</h1>
-        </div>
-        <div class="col-md-4 text-end">
-            <a href="{{ route('insumos.dashboard') }}" class="btn btn-secondary">Volver</a>
+        <div class="col-md-12 text-end">
+            <a href="{{ route('insumos.dashboard') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+            </a>
         </div>
     </div>
 

@@ -59,6 +59,17 @@
           @endif
         </a>
       </li>
+
+      <!-- Cotizaciones Aprobadas -->
+      <li class="menu-item">
+        <a href="{{ route('contador.aprobadas') }}"
+           class="menu-link {{ request()->routeIs('contador.aprobadas') ? 'active' : '' }}"
+           style="display:flex;align-items:center;gap:0.5rem;"
+           aria-label="Ver Cotizaciones Aprobadas">
+          <span class="material-symbols-rounded" aria-hidden="true">verified</span>
+          <span class="menu-label">Cotizaciones Aprobadas</span>
+        </a>
+      </li>
     </ul>
   </div>
 

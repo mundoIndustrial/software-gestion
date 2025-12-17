@@ -181,7 +181,8 @@ function renderPrendasPage() {
     {
         // Generar descripción dinámica para pedidos
         prendasActuales.forEach((prenda, index) => {
-            console.log('🔍 [PRENDA] Datos de prenda:', prenda);
+            console.log('🔍 [PRENDA] Datos completos de prenda:', JSON.stringify(prenda, null, 2));
+            console.log('🔍 [PRENDA] Keys disponibles:', Object.keys(prenda));
             console.log('🔍 [PRENDA] Color:', prenda.color);
             console.log('🔍 [PRENDA] Tela:', prenda.tela);
             console.log('🔍 [PRENDA] Tipo manga:', prenda.tipo_manga);

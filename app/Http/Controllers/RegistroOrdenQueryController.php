@@ -322,8 +322,9 @@ class RegistroOrdenQueryController extends Controller
             // SIEMPRE cargar prendas con relaciones para generar descripción dinámica
             // (sin importar si es cotización o no)
             {
-                // Cargar prendas SIN eager loading para evitar conflictos de modelos
+                // Cargar prendas CON relaciones necesarias para descripción dinámica
                 $prendas = \App\Models\PrendaPedido::where('numero_pedido', $pedido)
+                    ->with(['color', 'tela', 'tipoManga', 'tipoBroche'])
                     ->orderBy('id', 'asc')
                     ->get();
 
@@ -503,34 +504,35 @@ class RegistroOrdenQueryController extends Controller
                 }
             }
 
-            // 2) Incluir imágenes guardadas por prenda en el pedido
+            // 2) Incluir imágenes guardadas por prenda en el pedido (AGRUPADAS POR PRENDA)
             try {
-                $prendaIds = \DB::table('prendas_pedido')->where('numero_pedido', $pedido)->pluck('id')->toArray();
+                $prendas = \DB::table('prendas_pedido')
+                    ->where('numero_pedido', $pedido)
+                    ->orderBy('id', 'asc')
+                    ->get(['id', 'nombre_prenda']);
 
-                \Log::info('🖼️ [getOrderImages] IDs de prendas encontradas', [
-                    'prenda_ids' => $prendaIds,
-                    'total_prendas' => count($prendaIds)
+                \Log::info('🖼️ [getOrderImages] Prendas encontradas', [
+                    'total_prendas' => $prendas->count()
                 ]);
 
-                if (!empty($prendaIds)) {
+                $prendasConImagenes = [];
+                
+                foreach ($prendas as $index => $prenda) {
+                    $imagenesPrend = [];
+                    
                     // Fotos de prenda
                     $fotosPrenda = \DB::table('prenda_fotos_pedido')
-                        ->whereIn('prenda_pedido_id', $prendaIds)
+                        ->where('prenda_pedido_id', $prenda->id)
                         ->orderBy('orden', 'asc')
-                        ->get(['ruta_webp', 'ruta_original', 'ruta_miniatura', 'prenda_pedido_id', 'orden']);
-
-                    \Log::info('🖼️ [getOrderImages] Fotos de prenda encontradas', [
-                        'total_fotos_prenda' => $fotosPrenda->count()
-                    ]);
+                        ->get(['ruta_webp', 'ruta_original', 'ruta_miniatura', 'orden']);
 
                     foreach ($fotosPrenda as $fp) {
                         $ruta = $fp->ruta_webp ?? $fp->ruta_original ?? $fp->ruta_miniatura ?? null;
                         $url = $normalize($ruta);
                         if ($url) {
-                            $images[] = [
+                            $imagenesPrend[] = [
                                 'url' => $url,
                                 'type' => 'prenda',
-                                'prenda_pedido_id' => $fp->prenda_pedido_id,
                                 'orden' => $fp->orden
                             ];
                         }
@@ -538,72 +540,67 @@ class RegistroOrdenQueryController extends Controller
 
                     // Fotos de tela
                     $fotosTela = \DB::table('prenda_fotos_tela_pedido')
-                        ->whereIn('prenda_pedido_id', $prendaIds)
+                        ->where('prenda_pedido_id', $prenda->id)
                         ->orderBy('orden', 'asc')
-                        ->get(['ruta_webp', 'ruta_original', 'ruta_miniatura', 'prenda_pedido_id', 'orden']);
-
-                    \Log::info('🖼️ [getOrderImages] Fotos de tela encontradas', [
-                        'total_fotos_tela' => $fotosTela->count()
-                    ]);
+                        ->get(['ruta_webp', 'ruta_original', 'ruta_miniatura', 'orden']);
 
                     foreach ($fotosTela as $ft) {
                         $ruta = $ft->ruta_webp ?? $ft->ruta_original ?? $ft->ruta_miniatura ?? null;
                         $url = $normalize($ruta);
                         if ($url) {
-                            $images[] = [
+                            $imagenesPrend[] = [
                                 'url' => $url,
                                 'type' => 'tela',
-                                'prenda_pedido_id' => $ft->prenda_pedido_id,
                                 'orden' => $ft->orden
                             ];
                         }
                     }
 
-                    // Fotos de logo aplicadas a la prenda
+                    // Fotos de logo
                     $fotosLogo = \DB::table('prenda_fotos_logo_pedido')
-                        ->whereIn('prenda_pedido_id', $prendaIds)
+                        ->where('prenda_pedido_id', $prenda->id)
                         ->orderBy('orden', 'asc')
-                        ->get(['ruta_webp', 'ruta_original', 'ruta_miniatura', 'prenda_pedido_id', 'orden']);
-
-                    \Log::info('🖼️ [getOrderImages] Fotos de logo encontradas', [
-                        'total_fotos_logo' => $fotosLogo->count()
-                    ]);
+                        ->get(['ruta_webp', 'ruta_original', 'ruta_miniatura', 'orden']);
 
                     foreach ($fotosLogo as $fl) {
                         $ruta = $fl->ruta_webp ?? $fl->ruta_original ?? $fl->ruta_miniatura ?? null;
                         $url = $normalize($ruta);
                         if ($url) {
-                            $images[] = [
+                            $imagenesPrend[] = [
                                 'url' => $url,
                                 'type' => 'logo',
-                                'prenda_pedido_id' => $fl->prenda_pedido_id,
                                 'orden' => $fl->orden
                             ];
                         }
                     }
+                    
+                    // Solo agregar prenda si tiene imágenes
+                    if (!empty($imagenesPrend)) {
+                        $prendasConImagenes[] = [
+                            'numero' => $index + 1,
+                            'nombre' => $prenda->nombre_prenda,
+                            'imagenes' => $imagenesPrend
+                        ];
+                    }
                 }
+                
+                \Log::info('🖼️ [getOrderImages] Prendas con imágenes', [
+                    'total_prendas_con_imagenes' => count($prendasConImagenes)
+                ]);
+                
             } catch (\Exception $inner) {
                 \Log::warning('Error al consultar tablas de fotos de prenda: ' . $inner->getMessage(), ['pedido' => $pedido]);
             }
 
-            // Normalizar: eliminar duplicados por URL y resetear índices
-            $unique = [];
-            foreach ($images as $img) {
-                if (!empty($img['url'])) {
-                    $unique[$img['url']] = $img;
-                }
-            }
-            $images = array_values($unique);
-
             \Log::info('🖼️ [getOrderImages] Resultado final', [
-                'total_images' => count($images),
-                'images' => $images
+                'total_prendas' => count($prendasConImagenes ?? []),
+                'total_images_cotizacion' => count($images)
             ]);
 
             return response()->json([
                 'success' => true,
-                'images' => $images,
-                'total' => count($images),
+                'prendas' => $prendasConImagenes ?? [],
+                'images_cotizacion' => $images,
                 'pedido' => $pedido
             ]);
 

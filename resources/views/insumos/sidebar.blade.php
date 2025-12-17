@@ -65,25 +65,23 @@
         </a>
       </li>
       @endif
-
-      <!-- Salir -->
-      <li class="menu-item">
-        <form action="{{ route('logout') }}" method="POST">
-          @csrf
-          <button type="submit"
-                  class="menu-link"
-                  style="border:none;background:none;cursor:pointer;width:100%;"
-                  aria-label="Cerrar sesión">
-            <span class="material-symbols-rounded" aria-hidden="true">logout</span>
-            <span class="menu-label">Salir</span>
-          </button>
-        </form>
-      </li>
     </ul>
   </div>
 
-  <!-- Footer con toggle de tema -->
+  <!-- Footer con botón de salir y toggle de tema -->
   <div class="sidebar-footer">
+    <!-- Botón de Cerrar Sesión -->
+    <form action="{{ route('logout') }}" method="POST" style="width: 100%; margin: 0;">
+      @csrf
+      <button type="submit"
+              class="logout-btn"
+              aria-label="Cerrar sesión">
+        <i class="fas fa-sign-out-alt"></i>
+        <span class="menu-label">Cerrar Sesión</span>
+      </button>
+    </form>
+
+    <!-- Botón de Tema -->
     <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema">
       <div class="theme-label">
         <span class="material-symbols-rounded" aria-hidden="true">light_mode</span>

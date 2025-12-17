@@ -39,7 +39,13 @@ class VistasController extends Controller
             $title = 'Vista Costura - Pedidos';
             $icon = 'fas fa-shopping-cart';
             
-            $prendaQuery = \App\Models\PrendaPedido::with('pedido')
+            $prendaQuery = \App\Models\PrendaPedido::with([
+                    'pedido',
+                    'color',
+                    'tela',
+                    'tipoManga',
+                    'tipoBroche'
+                ])
                 ->whereHas('pedido', function($q) {
                     // Solo prendas de pedidos que existen
                 });
@@ -94,7 +100,13 @@ class VistasController extends Controller
             }
         } else {
             // Para Costura - Pedidos: usar prendas_pedido con relación a pedidos_produccion
-            $registrosQuery = \App\Models\PrendaPedido::with('pedido');
+            $registrosQuery = \App\Models\PrendaPedido::with([
+                'pedido',
+                'color',
+                'tela',
+                'tipoManga',
+                'tipoBroche'
+            ]);
         }
 
         // Aplicar filtro de búsqueda si hay query
