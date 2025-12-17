@@ -324,6 +324,16 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('%c📦 [MODAL] Evento load-order-detail recibido', 'color: orange; font-weight: bold; font-size: 14px;');
         const orden = event.detail;
         renderOrderDetail(orden);
+
+        // Cargar imágenes de la orden si el módulo está disponible
+        if (typeof loadOrderImages === 'function') {
+            try {
+                loadOrderImages(orden.numero_pedido);
+            } catch (err) {
+                console.warn('⚠️ Error cargando imágenes de la orden:', err);
+            }
+        }
+
         window.openOrderDetailModal();
     });
     

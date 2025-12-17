@@ -380,22 +380,123 @@ class RegistroOrdenQueryController extends Controller
     {
         try {
             $images = [];
-            
+
             // Obtener desde PedidoProduccion
             $pedidoProduccion = PedidoProduccion::where('numero_pedido', $pedido)->first();
-            
-            if ($pedidoProduccion) {
-                // Si tiene cotización asociada, obtener imágenes de la cotización
-                if ($pedidoProduccion->cotizacion_id) {
-                    $cotizacion = Cotizacion::find($pedidoProduccion->cotizacion_id);
-                    if ($cotizacion && $cotizacion->imagenes) {
-                        $images = is_array($cotizacion->imagenes) ? $cotizacion->imagenes : [];
+
+            // Helper para normalizar rutas a URL públicas
+            $normalize = function ($ruta) {
+                if (empty($ruta)) return null;
+                if (str_starts_with($ruta, 'http')) {
+                    return $ruta;
+                }
+                if (str_starts_with($ruta, '/storage/')) {
+                    return $ruta;
+                }
+                return '/storage/' . ltrim($ruta, '/');
+            };
+
+            // 1) Incluir imágenes asociadas a la cotización (si existe)
+            if ($pedidoProduccion && $pedidoProduccion->cotizacion_id) {
+                $cotizacion = Cotizacion::find($pedidoProduccion->cotizacion_id);
+                if ($cotizacion && $cotizacion->imagenes) {
+                    $cotImages = is_array($cotizacion->imagenes) ? $cotizacion->imagenes : (json_decode($cotizacion->imagenes, true) ?? []);
+                    foreach ($cotImages as $ci) {
+                        // Soportar formatos: string URL ó objeto/array con campo 'url'
+                        $raw = null;
+                        if (is_string($ci)) {
+                            $raw = $ci;
+                        } elseif (is_array($ci) && isset($ci['url'])) {
+                            $raw = $ci['url'];
+                        } elseif (is_object($ci) && isset($ci->url)) {
+                            $raw = $ci->url;
+                        }
+
+                        $url = $normalize($raw);
+                        if ($url) {
+                            $images[] = [
+                                'url' => $url,
+                                'type' => 'cotizacion'
+                            ];
+                        }
                     }
                 }
             }
-            
-            // Remover duplicados y resetear índices
-            $images = array_values(array_unique(array_filter($images)));
+
+            // 2) Incluir imágenes guardadas por prenda en el pedido
+            try {
+                $prendaIds = \DB::table('prendas_pedido')->where('numero_pedido', $pedido)->pluck('id')->toArray();
+
+                if (!empty($prendaIds)) {
+                    // Fotos de prenda
+                    $fotosPrenda = \DB::table('prenda_fotos_pedido')
+                        ->whereIn('prenda_pedido_id', $prendaIds)
+                        ->orderBy('orden', 'asc')
+                        ->get(['ruta_webp', 'ruta_original', 'ruta_miniatura', 'prenda_pedido_id', 'orden']);
+
+                    foreach ($fotosPrenda as $fp) {
+                        $ruta = $fp->ruta_webp ?? $fp->ruta_original ?? $fp->ruta_miniatura ?? null;
+                        $url = $normalize($ruta);
+                        if ($url) {
+                            $images[] = [
+                                'url' => $url,
+                                'type' => 'prenda',
+                                'prenda_pedido_id' => $fp->prenda_pedido_id,
+                                'orden' => $fp->orden
+                            ];
+                        }
+                    }
+
+                    // Fotos de tela
+                    $fotosTela = \DB::table('prenda_fotos_tela_pedido')
+                        ->whereIn('prenda_pedido_id', $prendaIds)
+                        ->orderBy('orden', 'asc')
+                        ->get(['ruta_webp', 'ruta_original', 'ruta_miniatura', 'prenda_pedido_id', 'orden']);
+
+                    foreach ($fotosTela as $ft) {
+                        $ruta = $ft->ruta_webp ?? $ft->ruta_original ?? $ft->ruta_miniatura ?? null;
+                        $url = $normalize($ruta);
+                        if ($url) {
+                            $images[] = [
+                                'url' => $url,
+                                'type' => 'tela',
+                                'prenda_pedido_id' => $ft->prenda_pedido_id,
+                                'orden' => $ft->orden
+                            ];
+                        }
+                    }
+
+                    // Fotos de logo aplicadas a la prenda
+                    $fotosLogo = \DB::table('prenda_fotos_logo_pedido')
+                        ->whereIn('prenda_pedido_id', $prendaIds)
+                        ->orderBy('orden', 'asc')
+                        ->get(['ruta_webp', 'ruta_original', 'ruta_miniatura', 'prenda_pedido_id', 'orden']);
+
+                    foreach ($fotosLogo as $fl) {
+                        $ruta = $fl->ruta_webp ?? $fl->ruta_original ?? $fl->ruta_miniatura ?? null;
+                        $url = $normalize($ruta);
+                        if ($url) {
+                            $images[] = [
+                                'url' => $url,
+                                'type' => 'logo',
+                                'prenda_pedido_id' => $fl->prenda_pedido_id,
+                                'orden' => $fl->orden
+                            ];
+                        }
+                    }
+                }
+            } catch (\Exception $inner) {
+                \Log::warning('Error al consultar tablas de fotos de prenda: ' . $inner->getMessage(), ['pedido' => $pedido]);
+            }
+
+            // Normalizar: eliminar duplicados por URL y resetear índices
+            $unique = [];
+            foreach ($images as $img) {
+                if (!empty($img['url'])) {
+                    $unique[$img['url']] = $img;
+                }
+            }
+            $images = array_values($unique);
 
             return response()->json([
                 'success' => true,
