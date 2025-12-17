@@ -33,6 +33,22 @@ class PedidoProduccionController extends Controller
     ) {}
 
     /**
+     * Listar todos los pedidos de producción del asesor
+     * 
+     * @return View
+     */
+    public function index(): View
+    {
+        $pedidos = PedidoProduccion::where('asesor_id', auth()->id())
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        return view('asesores.pedidos.index', [
+            'pedidos' => $pedidos,
+        ]);
+    }
+
+    /**
      * Muestra formulario para crear pedido desde cotización
      * 
      * @return View

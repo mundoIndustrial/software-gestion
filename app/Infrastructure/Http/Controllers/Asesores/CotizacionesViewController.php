@@ -210,9 +210,9 @@ final class CotizacionesViewController extends Controller
                         'descripcion' => $prenda->descripcion ?? null,
                         'descripcion_formateada' => $descripcionFormateada,
                         'detalles_proceso' => $prenda->descripcion ?? null,
-                        // Fotos de la prenda - URLs completas (asset)
+                        // Fotos de la prenda - URLs completas
                         'fotos' => $prenda->fotos ? $prenda->fotos->map(function($foto) {
-                            return asset($foto->ruta_webp ?? $foto->url);
+                            return $foto->url;  // Usar el accessor 'url' del modelo que maneja /storage/ correctamente
                         })->toArray() : [],
                         // Telas asociadas - URLs de imagen
                         'telas' => $prenda->telas ? $prenda->telas->map(function($tela) {
@@ -221,12 +221,12 @@ final class CotizacionesViewController extends Controller
                                 'color' => $tela->color ?? null,
                                 'nombre_tela' => $tela->tela->nombre ?? null,
                                 'referencia' => $tela->tela->referencia ?? null,
-                                'url_imagen' => asset($tela->ruta_webp ?? $tela->url_imagen),
+                                'url_imagen' => $tela->url ?? asset($tela->ruta_webp),  // Usar url si existe, sino asset
                             ];
                         })->toArray() : [],
-                        // Fotos de telas - URLs completas (asset)
+                        // Fotos de telas - URLs completas
                         'tela_fotos' => $prenda->telaFotos ? $prenda->telaFotos->map(function($foto) {
-                            return asset($foto->ruta_webp ?? $foto->url ?? null);
+                            return $foto->url;  // Usar el accessor 'url' del modelo que maneja /storage/ correctamente
                         })->toArray() : [],
                         // Tallas
                         'tallas' => $prenda->tallas ? $prenda->tallas->map(function($talla) {

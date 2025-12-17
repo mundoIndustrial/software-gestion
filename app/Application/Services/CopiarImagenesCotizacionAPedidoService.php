@@ -32,6 +32,11 @@ class CopiarImagenesCotizacionAPedidoService
                 ->orderBy('id')
                 ->get();
 
+            // Obtener logos de la cotización
+            $logoCotizacion = \App\Models\LogoCotizacion::where('cotizacion_id', $cotizacionId)
+                ->with(['fotos'])
+                ->first();
+
             if ($prendasCotizacion->isEmpty()) {
                 Log::info('No hay prendas en la cotización para copiar imágenes', [
                     'cotizacion_id' => $cotizacionId,
@@ -79,13 +84,19 @@ class CopiarImagenesCotizacionAPedidoService
                     continue;
                 }
 
-                // Copiar fotos de prenda (comentado: tabla prenda_fotos_ped no existe)
-                // $fotosCopiadas = $this->copiarFotosPrenda($prendaCot, $prendaPed);
-                // $totalImagenesCopiadas += $fotosCopiadas;
+                // Copiar fotos de prenda
+                $fotosCopiadas = $this->copiarFotosPrenda($prendaCot, $prendaPed);
+                $totalImagenesCopiadas += $fotosCopiadas;
 
                 // Copiar fotos de tela
                 $fotosTelaCopiadas = $this->copiarFotosTela($prendaCot, $prendaPed);
                 $totalImagenesCopiadas += $fotosTelaCopiadas;
+
+                // Copiar logos (una sola vez por cotización, para la primera prenda)
+                if ($index === 0 && $logoCotizacion) {
+                    $logosCopiados = $this->copiarLogos($logoCotizacion, $prendaPed);
+                    $totalImagenesCopiadas += $logosCopiados;
+                }
             }
 
             Log::info('✅ Imágenes copiadas exitosamente de cotización a pedido', [
@@ -125,8 +136,8 @@ class CopiarImagenesCotizacionAPedidoService
             }
 
             foreach ($fotos as $foto) {
-                PrendaFotoPed::create([
-                    'prenda_ped_id' => $prendaPedido->id,
+                \App\Models\PrendaFotoPedido::create([
+                    'prenda_pedido_id' => $prendaPedido->id,
                     'ruta_original' => $foto->ruta_original,
                     'ruta_webp' => $foto->ruta_webp,
                     'ruta_miniatura' => $foto->ruta_miniatura,
@@ -200,6 +211,56 @@ class CopiarImagenesCotizacionAPedidoService
         } catch (\Exception $e) {
             Log::error('❌ Error al copiar fotos de tela', [
                 'prenda_cot_id' => $prendaCot->id,
+                'prenda_pedido_id' => $prendaPedido->id,
+                'error' => $e->getMessage()
+            ]);
+            return 0;
+        }
+    }
+
+    /**
+     * Copiar logos de cotización a pedido
+     * 
+     * @return int Cantidad de logos copiados
+     */
+    private function copiarLogos(\App\Models\LogoCotizacion $logoCotizacion, PrendaPedido $prendaPedido): int
+    {
+        try {
+            $fotosLogos = $logoCotizacion->fotos()->orderBy('orden')->get();
+
+            if ($fotosLogos->isEmpty()) {
+                Log::debug('Cotización sin fotos de logos', [
+                    'logo_cotizacion_id' => $logoCotizacion->id,
+                    'prenda_pedido_id' => $prendaPedido->id
+                ]);
+                return 0;
+            }
+
+            // Copiar las fotos de logo a prenda_fotos_logo_pedido
+            foreach ($fotosLogos as $foto) {
+                \App\Models\PrendaFotoLogoPedido::create([
+                    'prenda_pedido_id' => $prendaPedido->id,
+                    'ruta_original' => $foto->ruta_original,
+                    'ruta_webp' => $foto->ruta_webp,
+                    'ruta_miniatura' => $foto->ruta_miniatura,
+                    'orden' => $foto->orden,
+                    'ancho' => $foto->ancho,
+                    'alto' => $foto->alto,
+                    'tamaño' => $foto->tamaño,
+                ]);
+            }
+
+            Log::info('🎨 Fotos de logo copiadas', [
+                'logo_cotizacion_id' => $logoCotizacion->id,
+                'prenda_pedido_id' => $prendaPedido->id,
+                'cantidad_fotos_logo' => $fotosLogos->count()
+            ]);
+
+            return $fotosLogos->count();
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error al copiar fotos de logo', [
+                'logo_cotizacion_id' => $logoCotizacion->id,
                 'prenda_pedido_id' => $prendaPedido->id,
                 'error' => $e->getMessage()
             ]);

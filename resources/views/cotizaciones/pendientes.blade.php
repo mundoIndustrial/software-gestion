@@ -139,7 +139,7 @@
     <div class="modal-content">
         <!-- Header del Modal -->
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 24px; border-bottom: 1px solid #e5e7eb; background: linear-gradient(to right, #3b82f6, #1e40af);">
-            <h2 style="margin: 0; color: white; font-size: 1.5rem; font-weight: bold;">Comparar Cotización</h2>
+            <h2 style="margin: 0; color: white; font-size: 1.5rem; font-weight: bold;">Cotización</h2>
             <button onclick="cerrarModalComparar()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.5rem;">
                 <span class="material-symbols-rounded">close</span>
             </button>
@@ -186,7 +186,7 @@
 
 <!-- Modal para ver imágenes -->
 <div id="modal-imagenes" class="modal-overlay" onclick="if(event.target === this) cerrarModalImagenes();" style="z-index: 10000; background: rgba(0, 0, 0, 0.95); display: none; align-items: center; justify-content: center;">
-    <div class="modal-content" style="max-width: 90vw; max-height: 90vh; background: #1f2937; display: flex; flex-direction: column;">
+    <div class="modal-content" style="width: 95vw; height: 95vh; max-width: 1400px; max-height: 850px; background: #1f2937; display: flex; flex-direction: column;">
         <!-- Header del Modal -->
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 24px; border-bottom: 1px solid #374151; flex-shrink: 0;">
             <h2 id="modal-imagenes-titulo" style="margin: 0; color: white; font-size: 1.5rem; font-weight: bold;"></h2>
@@ -197,7 +197,7 @@
 
         <!-- Contenido del Modal -->
         <div style="padding: 24px; text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: auto;">
-            <img id="modal-imagenes-img" src="" alt="Imagen" style="max-width: 100%; max-height: 70vh; object-fit: contain; border-radius: 8px; margin-bottom: 20px;">
+            <img id="modal-imagenes-img" src="" alt="Imagen" style="width: 100%; height: 100%; object-fit: contain; border-radius: 8px; margin-bottom: 20px;">
             
             <!-- Navegación -->
             <div id="modal-imagenes-nav" style="display: flex; gap: 12px; justify-content: center; align-items: center; flex-wrap: wrap; flex-shrink: 0;">
@@ -430,6 +430,12 @@ function mostrarComparacionCotizacion(data) {
                     <td style="padding: 12px; color: #6b7280; font-size: 0.875rem;">
                         <div style="max-height: 200px; overflow-y: auto;">
                             ${procesarDescripcion(prenda.descripcion_formateada || prenda.descripcion || prenda.detalles_proceso)}
+                            ${prenda.tallas && prenda.tallas.length > 0 ? `
+                                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
+                                    <strong style="font-size: 10px; display: block; margin-bottom: 4px;">TALLAS:</strong>
+                                    <div style="font-size: 9px; color: #4b5563;">${prenda.tallas.map(t => t.talla).join(', ')}</div>
+                                </div>
+                            ` : ''}
                         </div>
                     </td>
                 </tr>

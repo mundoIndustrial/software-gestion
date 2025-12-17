@@ -544,18 +544,18 @@ function abrirImagenGrande(imagenUrl) {
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.9);
             z-index: 10000;
             justify-content: center;
             align-items: center;
             padding: 2rem;
         `;
         modalImagen.innerHTML = `
-            <div style="position: relative; max-width: 90vw; max-height: 90vh;">
-                <button onclick="cerrarImagenGrande()" style="position: absolute; top: -40px; right: 0; background: white; border: none; font-size: 2rem; cursor: pointer; color: white; z-index: 10001;">
+            <div style="position: relative; width: 90vw; height: 90vh; max-width: 1200px; max-height: 800px;">
+                <button onclick="cerrarImagenGrande()" style="position: absolute; top: -40px; right: 0; background: white; border: none; font-size: 2rem; cursor: pointer; color: white; z-index: 10001; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
                     ✕
                 </button>
-                <img id="imagenGrandeContent" src="" alt="Imagen ampliada" style="max-width: 100%; max-height: 100%; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                <img id="imagenGrandeContent" src="" alt="Imagen ampliada" style="width: 100%; height: 100%; object-fit: contain; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
             </div>
         `;
         document.body.appendChild(modalImagen);

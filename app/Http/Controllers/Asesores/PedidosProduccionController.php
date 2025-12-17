@@ -69,7 +69,12 @@ class PedidosProduccionController extends Controller
     {
         $query = PedidoProduccion::whereHas('cotizacion', function ($query) {
             $query->where('asesor_id', Auth::id());
-        });
+        })
+        ->with([
+            'prendas' => function ($q) {
+                $q->with(['color', 'tela', 'tipoManga']);
+            }
+        ]);
 
         // Filtrar por estado si se proporciona
         if ($request->has('estado')) {
@@ -191,7 +196,7 @@ class PedidosProduccionController extends Controller
                 'cotizacion_id' => $cotizacion->id,
                 'numero_cotizacion' => $numeroCotizacion,
                 'numero_pedido' => $this->generarNumeroPedido(),
-                'cliente' => $cotizacion->cliente,
+                'cliente' => $cotizacion->cliente->nombre ?? 'Sin nombre',
                 'asesor_id' => auth()->id(),
                 'forma_de_pago' => $formaPago,
                 'estado' => 'No iniciado',
@@ -266,7 +271,13 @@ class PedidosProduccionController extends Controller
                         'nombre_prenda' => $prenda['nombre_producto'] ?? 'Sin nombre',
                         'cantidad' => $cantidadTotal,
                         'descripcion' => $descripcionPrenda,
-                        'cantidad_talla' => json_encode($cantidadesPorTalla)
+                        'cantidad_talla' => json_encode($cantidadesPorTalla),
+                        'color_id' => $prenda['color_id'] ?? null,
+                        'tela_id' => $prenda['tela_id'] ?? null,
+                        'tipo_manga_id' => $prenda['tipo_manga_id'] ?? null,
+                        'tipo_broche_id' => $prenda['tipo_broche_id'] ?? null,
+                        'tiene_bolsillos' => ($prenda['tiene_bolsillos'] ?? false) ? 1 : 0,
+                        'tiene_reflectivo' => ($prenda['tiene_reflectivo'] ?? false) ? 1 : 0,
                     ]);
 
                     // Crear proceso inicial para cada prenda
@@ -282,6 +293,14 @@ class PedidosProduccionController extends Controller
                     $this->heredarVariantesDePrenda($cotizacion, $prendaPedido, $index);
                 }
             }
+
+            // Calcular cantidad_total: suma de todas las cantidades de todas las prendas
+            $cantidadTotalPedido = PrendaPedido::where('numero_pedido', $pedido->numero_pedido)
+                ->sum('cantidad');
+            
+            $pedido->update([
+                'cantidad_total' => $cantidadTotalPedido
+            ]);
 
             // NO cambiar el estado de la cotización para permitir crear múltiples pedidos
             // La cotización mantiene su estado actual (enviada, aceptada, etc.)
@@ -399,23 +418,51 @@ class PedidosProduccionController extends Controller
             $lineas[] = "Descripción: " . strtoupper($producto['descripcion']);
         }
         
-        // 3. Tela con referencia
-        if (!empty($producto['tela'])) {
-            $tela = strtoupper($producto['tela']);
-            if (!empty($producto['tela_referencia'])) {
-                $tela .= ' REF:' . strtoupper($producto['tela_referencia']);
+        // 3. Telas/Colores múltiples (nuevas del formulario editable)
+        if (!empty($producto['telas_multiples']) && is_array($producto['telas_multiples'])) {
+            foreach ($producto['telas_multiples'] as $telaMultiple) {
+                $telaDescripcion = '';
+                
+                if (!empty($telaMultiple['tela'])) {
+                    $telaDescripcion .= strtoupper($telaMultiple['tela']);
+                }
+                
+                if (!empty($telaMultiple['referencia'])) {
+                    $telaDescripcion .= ' REF:' . strtoupper($telaMultiple['referencia']);
+                }
+                
+                if (!empty($telaMultiple['color'])) {
+                    $telaDescripcion .= ' - ' . strtoupper($telaMultiple['color']);
+                }
+                
+                if (!empty($telaDescripcion)) {
+                    $lineas[] = "Tela/Color: " . $telaDescripcion;
+                }
             }
-            $lineas[] = "Tela: " . $tela;
-        }
-        
-        // 4. Color
-        if (!empty($producto['color'])) {
-            $lineas[] = "Color: " . strtoupper($producto['color']);
+        } else {
+            // Fallback a tela individual antigua
+            if (!empty($producto['tela'])) {
+                $tela = strtoupper($producto['tela']);
+                if (!empty($producto['tela_referencia'])) {
+                    $tela .= ' REF:' . strtoupper($producto['tela_referencia']);
+                }
+                $lineas[] = "Tela: " . $tela;
+            }
+            
+            // 4. Color
+            if (!empty($producto['color'])) {
+                $lineas[] = "Color: " . strtoupper($producto['color']);
+            }
         }
         
         // 5. Género
         if (!empty($producto['genero'])) {
-            $lineas[] = "Genero: " . strtoupper($producto['genero']);
+            if (is_array($producto['genero'])) {
+                $genero = implode(', ', array_map('strtoupper', $producto['genero']));
+            } else {
+                $genero = strtoupper($producto['genero']);
+            }
+            $lineas[] = "Genero: " . $genero;
         }
         
         // 6. Manga + observación

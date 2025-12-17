@@ -81,29 +81,41 @@
                                         @endif
                                     </td>
                                 @elseif($column['key'] === 'accion')
-                                    <td style="padding: 12px; text-align: center; display: flex; gap: 5px; justify-content: center; flex-wrap: wrap;">
+                                    <td style="padding: 12px; text-align: center;">
+                                        <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
                                         @if($isBorrador)
                                             <a href="{{ route('asesores.cotizaciones.edit-borrador', $cot->id) }}" 
-                                                style="background: {{ $buttonColor }}; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600;">
-                                                Editar
+                                                title="Editar Borrador"
+                                                style="background: {{ $buttonColor }}; color: white; width: 36px; height: 36px; border-radius: 6px; text-decoration: none; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(30, 64, 175, 0.3);"
+                                                onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(30, 64, 175, 0.4)'" 
+                                                onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(30, 64, 175, 0.3)'">
+                                                <i class="fas fa-edit" style="font-size: 1rem;"></i>
                                             </a>
                                             <a href="#" onclick="eliminarBorrador({{ $cot->id }}); return false;" 
-                                                style="background: #e74c3c; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600;">
-                                                Eliminar
+                                                title="Eliminar Borrador"
+                                                style="background: #e74c3c; color: white; width: 36px; height: 36px; border-radius: 6px; text-decoration: none; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);"
+                                                onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(231, 76, 60, 0.4)'" 
+                                                onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(231, 76, 60, 0.3)'">
+                                                <i class="fas fa-trash-alt" style="font-size: 1rem;"></i>
                                             </a>
                                         @else
                                             <a href="{{ route('asesores.cotizaciones.show', $cot->id) }}" 
-                                                style="background: {{ $buttonColor }}; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600;">
-                                                Ver
+                                                title="Ver Cotización"
+                                                style="background: {{ $buttonColor }}; color: white; width: 36px; height: 36px; border-radius: 6px; text-decoration: none; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(30, 64, 175, 0.3);"
+                                                onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(30, 64, 175, 0.4)'" 
+                                                onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(30, 64, 175, 0.3)'">
+                                                <i class="fas fa-eye" style="font-size: 1rem;"></i>
                                             </a>
                                             <!-- Botón PDF con menú dinámico -->
                                             <div style="position: relative; display: inline-block;">
                                                 @if($cot->tipo === 'PL')
                                                     <!-- Combinada: mostrar botón con dropdown -->
                                                     <button onclick="toggleMenuPDF({{ $cot->id }}, '{{ $cot->tipo }}')" 
-                                                        style="background: #10b981; color: white; padding: 6px 12px; border-radius: 4px; border: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                                                        <i class="fas fa-file-pdf"></i>
-                                                        <span>PDF ▼</span>
+                                                        title="Descargar PDF"
+                                                        style="background: #10b981; color: white; width: 36px; height: 36px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);"
+                                                        onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.4)'" 
+                                                        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.3)'">
+                                                        <i class="fas fa-file-pdf" style="font-size: 1rem;"></i>
                                                     </button>
                                                     <div id="menu-pdf-{{ $cot->id }}" class="menu-pdf" style="display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid #d1d5db; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; margin-top: 4px; min-width: 150px;">
                                                     <a href="#" onclick="abrirPDFEnPestana({{ $cot->id }}, 'prenda'); return false;" 
@@ -118,31 +130,50 @@
                                                 @elseif($cot->tipo === 'RF')
                                                     <!-- Reflectivo: botón directo a PDF Prenda -->
                                                     <button onclick="abrirPDFEnPestana({{ $cot->id }}, 'prenda')" 
-                                                        style="background: #10b981; color: white; padding: 6px 12px; border-radius: 4px; border: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                                                        <i class="fas fa-file-pdf"></i>
-                                                        <span>PDF</span>
+                                                        title="Descargar PDF"
+                                                        style="background: #10b981; color: white; width: 36px; height: 36px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);"
+                                                        onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.4)'" 
+                                                        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.3)'">
+                                                        <i class="fas fa-file-pdf" style="font-size: 1rem;"></i>
                                                     </button>
                                                 @elseif($cot->tipo === 'L')
                                                     <!-- Logo: botón directo a PDF Logo -->
                                                     <button onclick="abrirPDFEnPestana({{ $cot->id }}, 'logo')" 
-                                                        style="background: #10b981; color: white; padding: 6px 12px; border-radius: 4px; border: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                                                        <i class="fas fa-file-pdf"></i>
-                                                        <span>PDF</span>
+                                                        title="Descargar PDF"
+                                                        style="background: #10b981; color: white; width: 36px; height: 36px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);"
+                                                        onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.4)'" 
+                                                        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.3)'">
+                                                        <i class="fas fa-file-pdf" style="font-size: 1rem;"></i>
                                                     </button>
                                                 @else
                                                     <!-- Otro tipo: PDF Prenda por defecto -->
                                                     <button onclick="abrirPDFEnPestana({{ $cot->id }}, 'prenda')" 
-                                                        style="background: #10b981; color: white; padding: 6px 12px; border-radius: 4px; border: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                                                        <i class="fas fa-file-pdf"></i>
-                                                        <span>PDF</span>
+                                                        title="Descargar PDF"
+                                                        style="background: #10b981; color: white; width: 36px; height: 36px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);"
+                                                        onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.4)'" 
+                                                        onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.3)'">
+                                                        <i class="fas fa-file-pdf" style="font-size: 1rem;"></i>
                                                     </button>
                                                 @endif
                                             </div>
+                                            @if($cot->estado !== 'Anulada')
+                                            <a href="#" onclick="confirmarAnularCotizacion({{ $cot->id }}, '{{ $cot->numero_cotizacion }}'); return false;" 
+                                                title="Anular Cotización"
+                                                style="background: #f59e0b; color: white; width: 36px; height: 36px; border-radius: 6px; text-decoration: none; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);"
+                                                onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(245, 158, 11, 0.4)'" 
+                                                onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(245, 158, 11, 0.3)'">
+                                                <i class="fas fa-ban" style="font-size: 1rem;"></i>
+                                            </a>
+                                            @endif
                                             <a href="#" onclick="eliminarCotizacion({{ $cot->id }}); return false;" 
-                                                style="background: #e74c3c; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600;">
-                                                Eliminar
+                                                title="Eliminar Cotización"
+                                                style="background: #e74c3c; color: white; width: 36px; height: 36px; border-radius: 6px; text-decoration: none; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);"
+                                                onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(231, 76, 60, 0.4)'" 
+                                                onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(231, 76, 60, 0.3)'">
+                                                <i class="fas fa-trash-alt" style="font-size: 1rem;"></i>
                                             </a>
                                         @endif
+                                        </div>
                                     </td>
                                 @endif
                             @endforeach

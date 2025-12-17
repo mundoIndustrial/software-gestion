@@ -40,6 +40,7 @@ class PedidoProduccion extends Model
         'motivo_anulacion',
         'fecha_anulacion',
         'usuario_anulacion',
+        'cantidad_total',
     ];
 
     protected $casts = [

@@ -242,7 +242,14 @@ class RegistroOrdenQueryController extends Controller
     public function show($pedido)
     {
         // Buscar en PedidoProduccion por 'numero_pedido'
-        $order = PedidoProduccion::with(['asesora', 'prendas', 'cotizacion'])->where('numero_pedido', $pedido)->firstOrFail();
+        $order = PedidoProduccion::with([
+            'asesora', 
+            'prendas',
+            'prendas.fotos',
+            'prendas.fotosLogo',
+            'prendas.fotosTela',
+            'cotizacion'
+        ])->where('numero_pedido', $pedido)->firstOrFail();
 
         // Obtener estadísticas mediante servicio
         $stats = $this->statsService->getOrderStats($pedido);

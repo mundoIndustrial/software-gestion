@@ -226,6 +226,7 @@
 
 <script src="{{ asset('js/asesores/cotizaciones/filtros-embudo.js') }}"></script>
 <script src="{{ asset('js/asesores/cotizaciones-index.js') }}"></script>
+<script src="{{ asset('js/asesores/cotizaciones-anular.js') }}"></script>
 
 <script>
     // Variables globales para PDF

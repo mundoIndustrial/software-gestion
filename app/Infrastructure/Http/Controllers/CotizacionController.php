@@ -2109,6 +2109,59 @@ final class CotizacionController extends Controller
         }
     }
 
+    /**
+     * Anular cotización con novedad
+     */
+    public function anularCotizacion(Request $request, int $id)
+    {
+        $request->validate([
+            'novedad' => 'required|string|min:10|max:500',
+        ], [
+            'novedad.required' => 'La novedad es obligatoria',
+            'novedad.min' => 'La novedad debe tener al menos 10 caracteres',
+            'novedad.max' => 'La novedad no puede exceder 500 caracteres',
+        ]);
+
+        $cotizacion = \App\Models\Cotizacion::findOrFail($id);
+
+        // Verificar que la cotización pertenece al asesor autenticado
+        if ($cotizacion->asesor_id !== Auth::id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permiso para anular esta cotización',
+            ], 403);
+        }
+
+        // Formatear la novedad con nombre y fecha
+        $nombreUsuario = auth()->user()->name;
+        $fechaHora = now()->format('d-m-Y h:i:s A');
+        $nuevaNovedad = "[{$nombreUsuario} - {$fechaHora}] {$request->novedad}";
+        
+        // Agregar la novedad al campo novedades existente
+        $novedadesActuales = $cotizacion->novedades ?? '';
+        $novedadesActualizadas = trim($novedadesActuales) !== '' 
+            ? $novedadesActuales . "\n" . $nuevaNovedad 
+            : $nuevaNovedad;
+
+        // Actualizar estado y novedades
+        $cotizacion->update([
+            'estado' => 'Anulada',
+            'novedades' => $novedadesActualizadas,
+        ]);
+
+        // Log de auditoría
+        Log::info("Cotización #{$cotizacion->numero_cotizacion} anulada por asesor " . auth()->user()->name, [
+            'novedad' => $request->novedad,
+            'fecha' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cotización anulada correctamente',
+            'cotizacion' => $cotizacion,
+        ]);
+    }
+
     private function obtenerTipoCotizacionId(string $tipo): int
     {
         // Crear o buscar tipo de cotización

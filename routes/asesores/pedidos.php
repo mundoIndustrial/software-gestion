@@ -14,6 +14,11 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'role:asesor'])->group(function () {
     
+    // Listar todos los pedidos de producción
+    Route::get('/pedidos-produccion',
+        [PedidoProduccionController::class, 'index'])
+        ->name('pedidos-produccion.index');
+
     // Mostrar formulario para crear pedido desde cotización
     Route::get('/pedidos-produccion/crear-desde-cotizacion', 
         [PedidoProduccionController::class, 'mostrarFormularioCrearDesdeCotzacion'])

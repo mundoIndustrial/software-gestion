@@ -151,8 +151,10 @@ function abrirModalImagen(src, titulo, imagenes = null, indiceActual = 0) {
                 <!-- Contenedor de imagen con drag -->
                 <div id="imagenContenedor" style="
                     position: relative;
-                    width: 600px;
-                    height: 400px;
+                    width: 90vw;
+                    height: 80vh;
+                    max-width: 1200px;
+                    max-height: 750px;
                     overflow: hidden;
                     border-radius: 8px;
                     background: transparent;
@@ -161,8 +163,8 @@ function abrirModalImagen(src, titulo, imagenes = null, indiceActual = 0) {
                     justify-content: center;
                 ">
                     <img id="imagenModal" src="" alt="Imagen ampliada" style="
-                        width: 600px;
-                        height: 400px;
+                        width: 100%;
+                        height: 100%;
                         object-fit: contain;
                         border-radius: 8px;
                         box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);

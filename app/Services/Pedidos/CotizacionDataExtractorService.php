@@ -141,48 +141,50 @@ class CotizacionDataExtractorService
 
     /**
      * Extrae las telas/colores de una prenda
+     * Lee desde prenda_variantes_cot.telas_multiples (JSON)
      * 
      * @param int $prendaCotId
      * @return array
      */
     private function extraerTelas(int $prendaCotId): array
     {
-        $prendaTelas = DB::table('prenda_telas_cot')
+        // Obtener la variante de esta prenda (si existe)
+        $variante = DB::table('prenda_variantes_cot')
             ->where('prenda_cot_id', $prendaCotId)
-            ->get();
+            ->first();
+
+        if (!$variante || empty($variante->telas_multiples)) {
+            return [];
+        }
+
+        // Decodificar JSON de telas
+        $telasJson = json_decode($variante->telas_multiples, true);
+        if (!is_array($telasJson)) {
+            return [];
+        }
 
         $resultado = [];
 
-        foreach ($prendaTelas as $prendaTela) {
-            // Obtener datos reales de tela y color desde sus tablas
-            $tela = DB::table('telas_prenda')->where('id', $prendaTela->tela_id)->first();
-            $color = DB::table('colores_prenda')->where('id', $prendaTela->color_id)->first();
+        foreach ($telasJson as $telaData) {
+            // Buscar el tela_id por nombre en telas_prenda
+            $nombreTela = $telaData['tela'] ?? '';
+            $tela = DB::table('telas_prenda')
+                ->where('nombre', $nombreTela)
+                ->first();
             
-            // ✅ EXTRAER FOTOS DE TELA
-            $fotosTela = DB::table('prenda_tela_fotos_cot')
-                ->where('prenda_tela_cot_id', $prendaTela->id)
-                ->get();
-            
-            $fotosTelaFormato = [];
-            foreach ($fotosTela as $foto) {
-                $fotosTelaFormato[] = [
-                    'ruta_original' => $foto->ruta_original,
-                    'ruta_webp' => $foto->ruta_webp,
-                    'ruta_miniatura' => $foto->ruta_miniatura,
-                    'ancho' => $foto->ancho,
-                    'alto' => $foto->alto,
-                    'tamaño' => $foto->tamaño,
-                    'orden' => $foto->orden,
-                ];
-            }
-            
+            // Buscar el color_id por nombre en colores_prenda
+            $nombreColor = $telaData['color'] ?? '';
+            $color = DB::table('colores_prenda')
+                ->where('nombre', $nombreColor)
+                ->first();
+
             $resultado[] = [
-                'color' => $color?->nombre ?? '',
-                'nombre_tela' => $tela?->nombre ?? '',
-                'referencia' => $tela?->referencia ?? '',
-                'color_id' => $prendaTela->color_id,
-                'tela_id' => $prendaTela->tela_id,
-                'fotos' => $fotosTelaFormato,
+                'color' => $nombreColor,
+                'nombre_tela' => $nombreTela,
+                'referencia' => $telaData['referencia'] ?? '',
+                'color_id' => $color?->id ?? null,
+                'tela_id' => $tela?->id ?? null,  // ✅ BUSCAR POR NOMBRE
+                'fotos' => [],  // Las fotos de tela no se usan en pedidos
             ];
         }
 

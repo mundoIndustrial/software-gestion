@@ -180,6 +180,7 @@ class PedidoPrendaService
             'bolsillos_obs' => $prendaData['bolsillos_obs'] ?? '',
             'tiene_reflectivo' => $prendaData['tiene_reflectivo'] ?? false,
             'reflectivo_obs' => $prendaData['reflectivo_obs'] ?? '',
+            'broche_obs' => $prendaData['broche_obs'] ?? '',
             'tallas' => $tallas,
         ];
     }

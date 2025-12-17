@@ -77,6 +77,11 @@ class DescripcionPrendaLegacyFormatter
             $partes[] = "   . Bolsillos: {$prenda['bolsillos_obs']}";
         }
         
+        // Agregar botón/broche si existe observación
+        if (!empty($prenda['broche_obs'])) {
+            $partes[] = "   . Botón: {$prenda['broche_obs']}";
+        }
+        
         // Última línea: Tallas: [talla]: [cant], [talla]: [cant], ...
         if (!empty($prenda['tallas']) && is_array($prenda['tallas'])) {
             $tallasList = [];

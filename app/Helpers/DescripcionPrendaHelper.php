@@ -46,6 +46,15 @@ class DescripcionPrendaHelper
         $otros = $prenda['otros'] ?? [];
         $tallas = $prenda['tallas'] ?? [];
 
+        // Limpiar bolsillos de "SI" si existe como primer item
+        $bolsillos = self::limpiarListaItem($bolsillos);
+        
+        // Limpiar reflectivos de "SI" si existe como primer item
+        $reflectivos = self::limpiarListaItem($reflectivos);
+        
+        // Limpiar otros de "SI" si existe como primer item
+        $otros = self::limpiarListaItem($otros);
+
         // Formatear bolsillos
         $bolsillosFormato = '';
         if (!empty($bolsillos)) {
@@ -79,7 +88,7 @@ class DescripcionPrendaHelper
             $tallasList = [];
             foreach ($tallas as $talla => $cant) {
                 if ($cant > 0) {
-                    $tallasList[] = "- {$talla}: {$cant}";
+                    $tallasList[] = "• {$talla}: {$cant}";
                 }
             }
             if (!empty($tallasList)) {
@@ -96,46 +105,63 @@ class DescripcionPrendaHelper
         // Construir descripción completa
         $descripcion = "PRENDA {$numero}: {$tipo}";
         
-        if ($color || $tela || $manga) {
-            $atributos = [];
-            if ($color) $atributos[] = "Color: {$color}";
-            if ($telaRef) $atributos[] = "Tela: {$telaRef}";
-            if ($manga) {
-                $mangaConObs = "Manga: {$manga}";
-                if ($obsManga) {
-                    $mangaConObs .= " ({$obsManga})";
-                }
-                $atributos[] = $mangaConObs;
-            }
-            $descripcion .= "\n" . implode(" | ", $atributos);
+        // Agregar color si existe
+        if ($color) {
+            $descripcion .= "\nColor:";
+            $descripcion .= "\n" . self::BULLET . " {$color}";
         }
 
-        // Solo agregar sección DESCRIPCIÓN si hay logo o si hay bolsillos/reflectivos/otros
-        if ($logo || $bolsillosFormato || $reflectivosFormato || $otrosFormato) {
-            $descripcion .= "\n*** DESCRIPCIÓN: ***";
-            if ($logo) {
-                $descripcion .= "\n- Logo: {$logo}";
-            }
+        // Agregar tela y referencia si existen
+        if ($telaRef) {
+            $descripcion .= "\nTela:";
+            $descripcion .= "\n" . self::BULLET . " {$telaRef}";
         }
 
+        // Solo agregar sección DESCRIPCIÓN si hay logo
+        if ($logo) {
+            $descripcion .= "\nDESCRIPCIÓN:";
+            $descripcion .= "\n- Logo: {$logo}";
+        }
+
+        // Agregar bolsillos solo si hay contenido
         if ($bolsillosFormato) {
-            $descripcion .= "\n*** Bolsillos: ***\n{$bolsillosFormato}";
+            $descripcion .= "\nBolsillos:";
+            $descripcion .= "\n{$bolsillosFormato}";
         }
 
-        if ($prenda['broche'] ?? false) {
-            $descripcion .= "\n*** Broche: ***\n{$prenda['broche']}";
+        // Agregar manga solo si hay contenido
+        if ($manga) {
+            $descripcion .= "\nManga:";
+            $mangaFormato = self::BULLET . " {$manga}";
+            if ($obsManga) {
+                $mangaFormato .= " ({$obsManga})";
+            }
+            $descripcion .= "\n{$mangaFormato}";
         }
 
+        // Agregar reflectivos solo si hay contenido
         if ($reflectivosFormato) {
-            $descripcion .= "\n*** Reflectivo: ***\n{$reflectivosFormato}";
+            $descripcion .= "\nReflectivo:";
+            $descripcion .= "\n{$reflectivosFormato}";
         }
 
+        // Agregar broche con su nombre dinámico como subtítulo si hay contenido
+        if ($broche) {
+            $brocheLimpio = strtoupper(trim($broche));
+            $descripcion .= "\n{$brocheLimpio}:";
+            $descripcion .= "\n" . self::BULLET . " {$broche}";
+        }
+
+        // Agregar otros detalles solo si hay contenido
         if ($otrosFormato) {
-            $descripcion .= "\n*** Otros detalles: ***\n{$otrosFormato}";
+            $descripcion .= "\nOtros detalles:";
+            $descripcion .= "\n{$otrosFormato}";
         }
 
+        // Agregar tallas solo si hay contenido
         if ($tallasFormato) {
-            $descripcion .= "\n*** TALLAS: ***\n{$tallasFormato}";
+            $descripcion .= "\nTALLAS:";
+            $descripcion .= "\n{$tallasFormato}";
         }
 
         return trim($descripcion);
@@ -212,64 +238,45 @@ class DescripcionPrendaHelper
         if ($prenda->descripcion) {
             $desc = $prenda->descripcion;
             
+            // Extraer Color (si existe en la descripción)
+            if (empty($datos['color'])) {
+                if (preg_match('/\b(NARANJA|ROJO|AZUL|GRIS|NEGRO|BLANCO|VERDE|AMARILLO|BORDO|PÚRPURA|ROSA|BLANCO Y NEGRO|MULTI[A-Z]*)\b/i', $desc, $matches)) {
+                    $datos['color'] = $matches[1];
+                }
+            }
+            
+            // Extraer Tela (si existe en la descripción)
+            if (empty($datos['tela'])) {
+                if (preg_match('/\b(DRILL|POLIESTER|ALGODÓN|OXFORD|LINO|SARGA|TWILL|POPELINA|GABARDINA)(?:\s+([A-Z]+))?\b/i', $desc, $matches)) {
+                    $datos['tela'] = $matches[1];
+                    // Agregar el modificador si existe (como BORNEO)
+                    if (!empty($matches[2]) && strtoupper($matches[2]) !== 'NARANJA' && strtoupper($matches[2]) !== 'GRIS' && strtoupper($matches[2]) !== 'MANGA') {
+                        $datos['tela'] .= ' ' . $matches[2];
+                    }
+                }
+            }
+            
             // Buscar Logo
-            if (preg_match('/Logo:\s*(.+?)(?:Bolsillos?:|Reflectivo?s?:|Otros:|$)/is', $desc, $matches)) {
+            if (preg_match('/Logo:\s*(.+?)(?:Bolsillos?:|Reflectivo?s?:|Broche:|Manga:|$)/is', $desc, $matches)) {
                 $logoText = trim($matches[1]);
                 // Limpiar "SI -" si existe
                 $logoText = preg_replace('/^(SI|NO)\s*-\s*/i', '', $logoText);
-                if ($logoText) {
+                if ($logoText && strlen($logoText) > 5) {
                     $datos['logo'] = trim($logoText);
                 }
             }
         }
 
-        // Extraer Bolsillos, Reflectivos, Otros de descripcion_variaciones (formato prioritario)
-        if ($prenda->descripcion_variaciones) {
-            $varDesc = $prenda->descripcion_variaciones;
+        // Extraer Bolsillos, Reflectivos, Broche y Manga de descripcion (si no están en variaciones)
+        // Primero intenta descripcion_variaciones, luego descripcion
+        $fuente = ($prenda->descripcion_variaciones) ? $prenda->descripcion_variaciones : $prenda->descripcion;
+        
+        if ($fuente) {
+            $varDesc = $fuente;
             
-            // Buscar Bolsillos
-            if (preg_match('/Bolsillos?:\s*(.+?)(?:Reflectivo?s?:|Otros:|Broche:|$)/is', $varDesc, $matches)) {
-                $bolsillosText = trim($matches[1]);
-                $bolsilloParsed = self::parsearListaItems($bolsillosText);
-                if (!empty($bolsilloParsed)) {
-                    $datos['bolsillos'] = $bolsilloParsed;
-                }
-            }
-
-            // Buscar Broche
-            if (preg_match('/Broche:\s*(.+?)(?:Reflectivo?s?:|Otros:|Bolsillos?:|$)/is', $varDesc, $matches)) {
-                $brocheText = trim($matches[1]);
-                // Limpiar pipes y caracteres especiales
-                $brocheText = str_replace('|', '', $brocheText);
-                $brocheText = trim($brocheText);
-                $datos['broche'] = $brocheText;
-            }
-
-            // Buscar Reflectivos
-            if (preg_match('/Reflectivo?s?:\s*(.+?)(?:Otros:|Bolsillos?:|Broche:|$)/is', $varDesc, $matches)) {
-                $reflectivosText = trim($matches[1]);
-                $reflectivoParsed = self::parsearListaItems($reflectivosText);
-                if (!empty($reflectivoParsed)) {
-                    $datos['reflectivos'] = $reflectivoParsed;
-                }
-            }
-
-            // Buscar Otros detalles
-            if (preg_match('/Otros\s+detalles?:\s*(.+?)(?:Bolsillos?:|Reflectivo?s?:|Broche:|$)/is', $varDesc, $matches)) {
-                $otrosText = trim($matches[1]);
-                $otrosParsed = self::parsearListaItems($otrosText);
-                if (!empty($otrosParsed)) {
-                    $datos['otros'] = $otrosParsed;
-                }
-            }
-        }
-
-        // Fallback: Extraer Bolsillos y Reflectivos de descripcion si no están en variaciones
-        if ($prenda->descripcion && (empty($datos['bolsillos']) || empty($datos['reflectivos']))) {
-            $desc = $prenda->descripcion;
-            
+            // Buscar Bolsillos - detener en Broche, Reflectivo, Otros, Manga, o salto de línea
             if (empty($datos['bolsillos'])) {
-                if (preg_match('/Bolsillos?:\s*(.+?)(?:Reflectivo?s?:|Otros:|$)/is', $desc, $matches)) {
+                if (preg_match('/Bolsillos?:\s*(.+?)(?:Broche:|Reflectivo?s?:|Otros:|Manga:|[\n\r]|$)/is', $varDesc, $matches)) {
                     $bolsillosText = trim($matches[1]);
                     $bolsilloParsed = self::parsearListaItems($bolsillosText);
                     if (!empty($bolsilloParsed)) {
@@ -278,8 +285,38 @@ class DescripcionPrendaHelper
                 }
             }
 
+            // Buscar Broche - solo capturar hasta fin de línea o siguiente sección
+            if (empty($datos['broche'])) {
+                if (preg_match('/Broche:\s*([^\n\r]+?)(?:Manga:|Reflectivo?s?:|Bolsillos?:|Otros:|[\n\r]|$)/is', $varDesc, $matches)) {
+                    $brocheText = trim($matches[1]);
+                    // Extraer solo la parte válida antes de guiones o pipes
+                    if (preg_match('/\b(BOTÓN|BOTóN|CREMALLERA|VELCRO|BOTONES|BROCHE|GANCHOS?)\b/i', $brocheText, $brocheMatch)) {
+                        $datos['broche'] = $brocheMatch[1];
+                    } elseif (strlen($brocheText) < 30 && !strpos($brocheText, 'PRUEBA')) {
+                        // Si es corto y no contiene "PRUEBA", usarlo
+                        $datos['broche'] = trim(str_replace(['|', '•', '-'], '', $brocheText));
+                    }
+                }
+            }
+
+            // Buscar Manga - detener en Broche, Reflectivo, Bolsillos, Otros
+            if (empty($datos['manga'])) {
+                if (preg_match('/Manga:\s*(.+?)(?:Broche:|Bolsillos?:|Reflectivo?s?:|Otros:|[\n\r]|$)/is', $varDesc, $matches)) {
+                    $mangaText = trim($matches[1]);
+                    // Extraer solo el tipo de manga (CORTA, LARGA, 3/4, etc.)
+                    if (preg_match('/\b(CORTA|LARGA|MEDIA|3\/4|TRES CUARTOS|SIN MANGA)\b/i', $mangaText, $mangaMatch)) {
+                        $datos['manga'] = $mangaMatch[1];
+                    }
+                    // Extraer observación de manga (después del guion)
+                    if (preg_match('/-\s*(.+)$/i', $mangaText, $obsMatch)) {
+                        $datos['obs_manga'] = trim($obsMatch[1]);
+                    }
+                }
+            }
+
+            // Buscar Reflectivos - detener en Broche, Otros, Bolsillos, Manga, o salto de línea
             if (empty($datos['reflectivos'])) {
-                if (preg_match('/Reflectivo?s?:\s*(.+?)(?:Otros:|Bolsillos?:|$)/is', $desc, $matches)) {
+                if (preg_match('/Reflectivo?s?:\s*(.+?)(?:Broche:|Otros:|Bolsillos?:|Manga:|[\n\r]|$)/is', $varDesc, $matches)) {
                     $reflectivosText = trim($matches[1]);
                     $reflectivoParsed = self::parsearListaItems($reflectivosText);
                     if (!empty($reflectivoParsed)) {
@@ -288,8 +325,9 @@ class DescripcionPrendaHelper
                 }
             }
 
+            // Buscar Otros detalles
             if (empty($datos['otros'])) {
-                if (preg_match('/Otros\s+detalles?:\s*(.+?)(?:Bolsillos?:|Reflectivo?s?:|$)/is', $desc, $matches)) {
+                if (preg_match('/Otros\s+detalles?:\s*(.+?)(?:Bolsillos?:|Reflectivo?s?:|Broche:|Manga:|[\n\r]|$)/is', $varDesc, $matches)) {
                     $otrosText = trim($matches[1]);
                     $otrosParsed = self::parsearListaItems($otrosText);
                     if (!empty($otrosParsed)) {
@@ -313,8 +351,8 @@ class DescripcionPrendaHelper
 
     /**
      * Parsea texto con items separados por viñetas o líneas
-     * Limpia formatos redundantes como "SI -", "NO -", etc.
-     * Ej: "• SI - Pecho" → "Pecho" o "• Pecho" → "Pecho"
+     * Limpia formatos redundantes como "SI -", "NO -", "LLEVA...", etc.
+     * Ej: "• SI - Pecho" → "Pecho" o "• LLEVA BOLSILLOS CON..." → "BOLSILLOS CON..."
      * 
      * @param string $text
      * @return array
@@ -343,6 +381,14 @@ class DescripcionPrendaHelper
             
             // Limpiar prefijos redundantes: "SI -", "NO -", etc. (incluyendo espacios)
             $linea = preg_replace('/^\s*(SI|NO)\s*[\-:\s]+/i', '', $linea);
+            
+            // Limpiar prefijos que comienzan con "LLEVA " (como "LLEVA BOLSILLOS CON...")
+            // Reemplazar con la parte descriptiva sin el "LLEVA"
+            $linea = preg_replace('/^LLEVA\s+/i', '', $linea);
+            
+            // Limpiar si empieza con "CON " después del anterior
+            $linea = preg_replace('/^CON\s+/i', '', $linea);
+            
             $linea = trim($linea);
             
             if ($linea) {
@@ -353,6 +399,27 @@ class DescripcionPrendaHelper
             }
         }
         
+        return $items;
+    }
+
+    /**
+     * Limpia un array de items removiendo "SI" o "NO" como primer elemento
+     * Si el primer item es solo "SI" o "NO", lo remueve
+     * 
+     * @param array $items
+     * @return array
+     */
+    private static function limpiarListaItem(array $items): array
+    {
+        if (empty($items)) {
+            return $items;
+        }
+
+        // Si el primer item es exactamente "SI" o "NO" (sin más), removerlo
+        if (count($items) > 0 && in_array(strtoupper(trim($items[0])), ['SI', 'NO'])) {
+            array_shift($items);
+        }
+
         return $items;
     }
 }

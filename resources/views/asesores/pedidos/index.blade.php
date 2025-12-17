@@ -542,25 +542,49 @@
                     " onmouseover="this.style.boxShadow='0 4px 12px rgba(0, 0, 0, 0.1)'; this.style.transform='translateY(-2px)'" onmouseout="this.style.boxShadow='0 2px 4px rgba(0, 0, 0, 0.05)'; this.style.transform='translateY(0)'">
                     
                     <!-- Acciones -->
-                    <button class="btn-acciones-dropdown" data-menu-id="menu-{{ $pedido->numero_pedido }}" data-pedido="{{ $pedido->numero_pedido }}" data-estado="{{ $pedido->estado }}" data-motivo="{{ $pedido->motivo_anulacion ?? '' }}" data-usuario="{{ $pedido->usuario_anulacion ?? '' }}" data-fecha="{{ $pedido->fecha_anulacion ? \Carbon\Carbon::parse($pedido->fecha_anulacion)->format('d/m/Y h:i A') : '' }}" style="
-                        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-                        color: white;
-                        border: none;
-                        padding: 0.5rem 0.75rem;
-                        border-radius: 6px;
-                        cursor: pointer;
-                        font-weight: 600;
-                        font-size: 0.75rem;
-                        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        gap: 0.4rem;
-                        box-shadow: 0 4px 6px rgba(16, 185, 129, 0.25);
-                        letter-spacing: 0.2px;
-                    " onmouseover="this.style.boxShadow='0 8px 12px rgba(16, 185, 129, 0.4)'; this.style.transform='translateY(-2px)'; this.style.background='linear-gradient(135deg, #059669 0%, #047857 100%)'" onmouseout="this.style.boxShadow='0 4px 6px rgba(16, 185, 129, 0.25)'; this.style.transform='translateY(0)'; this.style.background='linear-gradient(135deg, #10b981 0%, #059669 100%)'">
-                        <i class="fas fa-eye" style="font-size: 0.8rem;"></i> Ver
-                    </button>
+                    <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
+                        <!-- Botón Ver (con dropdown) -->
+                        <button class="btn-ver-dropdown" data-menu-id="menu-ver-{{ $pedido->numero_pedido }}" data-pedido="{{ $pedido->numero_pedido }}" title="Ver Opciones" style="
+                            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+                            color: white;
+                            border: none;
+                            padding: 0.5rem;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-size: 1rem;
+                            transition: all 0.3s ease;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            width: 36px;
+                            height: 36px;
+                            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+                        " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(37, 99, 235, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(37, 99, 235, 0.3)'">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        
+                        <!-- Botón Anular (solo si no está anulado) -->
+                        @if($pedido->estado !== 'Anulada')
+                        <button onclick="confirmarAnularPedido({{ $pedido->numero_pedido }})" title="Anular Pedido" style="
+                            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                            color: white;
+                            border: none;
+                            padding: 0.5rem;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-size: 1rem;
+                            transition: all 0.3s ease;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            width: 36px;
+                            height: 36px;
+                            box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+                        " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(245, 158, 11, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(245, 158, 11, 0.3)'">
+                            <i class="fas fa-ban"></i>
+                        </button>
+                        @endif
+                    </div>
 
                     <!-- Estado -->
                     <div>
@@ -1166,10 +1190,13 @@
 <script src="{{ asset('js/asesores/pedidos.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-modal.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-dropdown-simple.js') }}"></script>
+<script src="{{ asset('js/asesores/pedidos-anular.js') }}"></script>
 <!-- Modal Manager para renderizar detalles del pedido (igual que órdenes) -->
 <script src="{{ asset('js/orders js/order-detail-modal-manager.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-table-filters.js') }}"></script>
+<!-- Image Gallery para mostrar fotos en el modal -->
+<script src="{{ asset('js/orders-scripts/image-gallery-zoom.js') }}"></script>
 <!-- MODULAR ORDER TRACKING (SOLID Architecture) -->
 <script src="{{ asset('js/order-tracking/modules/dateUtils.js') }}"></script>
 <script src="{{ asset('js/order-tracking/modules/holidayManager.js') }}"></script>

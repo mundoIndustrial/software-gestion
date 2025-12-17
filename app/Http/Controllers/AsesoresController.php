@@ -925,6 +925,63 @@ class AsesoresController extends Controller
     }
 
     /**
+     * Anular pedido con novedad
+     */
+    public function anularPedido(Request $request, $id)
+    {
+        $request->validate([
+            'novedad' => 'required|string|min:10|max:500',
+        ], [
+            'novedad.required' => 'La novedad es obligatoria',
+            'novedad.min' => 'La novedad debe tener al menos 10 caracteres',
+            'novedad.max' => 'La novedad no puede exceder 500 caracteres',
+        ]);
+
+        // Buscar por numero_pedido en lugar de id
+        $pedido = PedidoProduccion::where('numero_pedido', $id)->firstOrFail();
+
+        // Verificar que el pedido pertenece al asesor autenticado
+        if ($pedido->asesor_id !== Auth::id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No tienes permiso para anular este pedido',
+            ], 403);
+        }
+
+        // Formatear la novedad con nombre y fecha
+        $nombreUsuario = auth()->user()->name;
+        $fechaHora = now()->format('d-m-Y h:i:s A');
+        $nuevaNovedad = "[{$nombreUsuario} - {$fechaHora}] {$request->novedad}";
+        
+        // Agregar la novedad al campo novedades existente
+        $novedadesActuales = $pedido->novedades ?? '';
+        $novedadesActualizadas = trim($novedadesActuales) !== '' 
+            ? $novedadesActuales . "\n" . $nuevaNovedad 
+            : $nuevaNovedad;
+
+        // Actualizar estado y novedades
+        $pedido->update([
+            'estado' => 'Anulada',
+            'novedades' => $novedadesActualizadas,
+        ]);
+
+        // Disparar evento para actualización en tiempo real
+        event(new \App\Events\OrdenUpdated($pedido, 'updated', ['estado', 'novedades']));
+
+        // Log de auditoría
+        \Log::info("Pedido #{$pedido->numero_pedido} anulado por asesor " . auth()->user()->name, [
+            'novedad' => $request->novedad,
+            'fecha' => now(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Pedido anulado correctamente',
+            'pedido' => $pedido,
+        ]);
+    }
+
+    /**
      * Mostrar inventario de telas
      */
     public function inventarioTelas()

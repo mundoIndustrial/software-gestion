@@ -334,6 +334,7 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     Route::get('/pedidos/next-pedido', [App\Http\Controllers\AsesoresController::class, 'getNextPedido'])->name('next-pedido');
     Route::post('/pedidos', [App\Http\Controllers\AsesoresController::class, 'store'])->name('pedidos.store');
     Route::post('/pedidos/confirm', [App\Http\Controllers\AsesoresController::class, 'confirm'])->name('pedidos.confirm');
+    Route::post('/pedidos/{id}/anular', [App\Http\Controllers\AsesoresController::class, 'anularPedido'])->name('pedidos.anular');
     Route::get('/pedidos/{pedido}', [App\Http\Controllers\AsesoresController::class, 'show'])->name('pedidos.show');
     Route::get('/pedidos/{pedido}/edit', [App\Http\Controllers\AsesoresController::class, 'edit'])->name('pedidos.edit');
     Route::put('/pedidos/{pedido}', [App\Http\Controllers\AsesoresController::class, 'update'])->name('pedidos.update');
@@ -389,6 +390,7 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     Route::get('/cotizaciones/reflectivo/{id}/editar', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'getReflectivoForEdit'])->name('cotizaciones.reflectivo.edit');
     Route::get('/cotizaciones/{id}/editar-borrador', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'editBorrador'])->name('cotizaciones.edit-borrador');
     Route::delete('/cotizaciones/{id}/borrador', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'destroyBorrador'])->name('cotizaciones.destroy-borrador');
+    Route::post('/cotizaciones/{id}/anular', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'anularCotizacion'])->name('cotizaciones.anular');
     Route::delete('/cotizaciones/{id}', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'destroy'])->name('cotizaciones.destroy');
     
     // ========================================

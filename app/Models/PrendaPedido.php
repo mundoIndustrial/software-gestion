@@ -96,11 +96,77 @@ class PrendaPedido extends Model
     }
 
     /**
+     * Relación: Una prenda tiene muchas fotos
+     */
+    public function fotos(): HasMany
+    {
+        return $this->hasMany(PrendaFotoPedido::class, 'prenda_pedido_id');
+    }
+
+    /**
+     * Relación: Una prenda tiene muchas fotos de logo
+     */
+    public function fotosLogo(): HasMany
+    {
+        return $this->hasMany(PrendaFotoLogoPedido::class, 'prenda_pedido_id');
+    }
+
+    /**
      * Relación: Una prenda tiene muchas fotos de tela
      */
     public function fotosTela(): HasMany
     {
         return $this->hasMany(PrendaFotoTelaPedido::class, 'prenda_pedido_id');
+    }
+
+    /**
+     * Recalcular cantidad_total del pedido cuando se crea o actualiza una prenda
+     * TAMBIÉN: Calcular cantidad como suma de todas las tallas en cantidad_talla
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        // ANTES de guardar: calcular cantidad desde cantidad_talla
+        static::saving(function ($prenda) {
+            if (!empty($prenda->cantidad_talla) && is_array($prenda->cantidad_talla)) {
+                // Sumar todas las cantidades de todas las tallas
+                $prenda->cantidad = array_sum($prenda->cantidad_talla);
+            }
+        });
+
+        // Cuando se crea una prenda, recalcular cantidad_total del pedido
+        static::created(function ($prenda) {
+            if ($prenda->numero_pedido) {
+                $cantidadTotal = static::where('numero_pedido', $prenda->numero_pedido)
+                    ->sum('cantidad');
+                
+                PedidoProduccion::where('numero_pedido', $prenda->numero_pedido)
+                    ->update(['cantidad_total' => $cantidadTotal]);
+            }
+        });
+
+        // Cuando se actualiza una prenda, recalcular cantidad_total del pedido
+        static::updated(function ($prenda) {
+            if ($prenda->numero_pedido) {
+                $cantidadTotal = static::where('numero_pedido', $prenda->numero_pedido)
+                    ->sum('cantidad');
+                
+                PedidoProduccion::where('numero_pedido', $prenda->numero_pedido)
+                    ->update(['cantidad_total' => $cantidadTotal]);
+            }
+        });
+
+        // Cuando se elimina una prenda, recalcular cantidad_total del pedido
+        static::deleted(function ($prenda) {
+            if ($prenda->numero_pedido) {
+                $cantidadTotal = static::where('numero_pedido', $prenda->numero_pedido)
+                    ->sum('cantidad');
+                
+                PedidoProduccion::where('numero_pedido', $prenda->numero_pedido)
+                    ->update(['cantidad_total' => $cantidadTotal]);
+            }
+        });
     }
 
     /**

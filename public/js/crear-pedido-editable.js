@@ -290,20 +290,28 @@ document.addEventListener('DOMContentLoaded', function() {
             if (fotoPrincipal) {
                 fotosHtml += `
                     <div style="width: 100%; display: flex; flex-direction: column; gap: 0.5rem;">
-                        <div>
+                        <div style="position: relative; display: inline-block;">
                             <img src="${fotoPrincipal}" alt="${prenda.nombre_producto}" 
                                  class="prenda-foto-principal" 
                                  style="width: 100%; height: 200px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 1px solid #d0d0d0; transition: all 0.2s;"
                                  onclick="abrirModalImagen('${fotoPrincipal}', '${prenda.nombre_producto}')">
+                            <button type="button"
+                                    onclick="eliminarImagenPrenda(this)"
+                                    style="position: absolute; top: 5px; right: 5px; background: #dc3545; color: white; border: none; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="Eliminar imagen">×</button>
                         </div>
                 `;
                 if (fotosAdicionales.length > 0) {
                     fotosHtml += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 0.4rem;">';
                     fotosAdicionales.forEach(foto => {
                         fotosHtml += `
-                            <img src="${foto}" alt="Foto adicional prenda" 
-                                 style="width: 100%; height: 100px; object-fit: cover; cursor: pointer; border: 1px solid #d0d0d0; border-radius: 4px; transition: all 0.2s;"
-                                 onclick="abrirModalImagen('${foto}', '${prenda.nombre_producto}')">
+                            <div style="position: relative; display: inline-block; width: 100%;">
+                                <img src="${foto}" alt="Foto adicional prenda" 
+                                     style="width: 100%; height: 100px; object-fit: cover; cursor: pointer; border: 1px solid #d0d0d0; border-radius: 4px; transition: all 0.2s;"
+                                     onclick="abrirModalImagen('${foto}', '${prenda.nombre_producto}')">
+                                <button type="button"
+                                        onclick="eliminarImagenPrenda(this)"
+                                        style="position: absolute; top: 2px; right: 2px; background: #dc3545; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="Eliminar imagen">×</button>
+                            </div>
                         `;
                     });
                     fotosHtml += '</div>';
@@ -321,9 +329,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     const fotoUrl = telaFoto.url || telaFoto.ruta_webp || telaFoto.ruta_original;
                     if (fotoUrl) {
                         fotosTelasHtml += `
-                            <img src="${fotoUrl}" alt="Foto de tela" 
-                                 style="width: 100%; height: 120px; object-fit: cover; cursor: pointer; border: 1px solid #d0d0d0; border-radius: 4px; transition: all 0.2s;"
-                                 onclick="abrirModalImagen('${fotoUrl}', 'Foto de tela')">
+                            <div style="position: relative; display: inline-block; width: 100%;">
+                                <img src="${fotoUrl}" alt="Foto de tela" 
+                                     style="width: 100%; height: 120px; object-fit: cover; cursor: pointer; border: 1px solid #d0d0d0; border-radius: 4px; transition: all 0.2s;"
+                                     onclick="abrirModalImagen('${fotoUrl}', 'Foto de tela')">
+                                <button type="button"
+                                        onclick="eliminarImagenTela(this)"
+                                        style="position: absolute; top: 2px; right: 2px; background: #dc3545; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="Eliminar imagen">×</button>
+                            </div>
                         `;
                     }
                 });
@@ -365,15 +378,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             ${telasHtml}
                             ${variacionesHtml}
                             ${tallasHtml}
-
-                            <div class="prenda-resumen">
-                                <strong>📊 Resumen:</strong><br>
-                                <small>
-                                    Tallas: ${tallas.length > 0 ? tallas.join(', ') : 'N/A'}<br>
-                                    Fotos de prenda: ${fotos.length}<br>
-                                    Fotos de telas: ${telaFotos.length}
-                                </small>
-                            </div>
                         </div>
 
                         <div class="prenda-fotos-section">
@@ -526,7 +530,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 logoCotizacion.fotos.forEach(logo => {
                     const logoUrl = logo.url || logo.ruta_webp || logo.ruta_original;
                     if (logoUrl) {
-                        html += `<img src="${logoUrl}" alt="Logo" style="width: 100%; height: 150px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 1px solid #d0d0d0; transition: transform 0.2s;" onclick="abrirModalImagen('${logoUrl}', 'Logo de cotización')">`;
+                        html += `<div style="position: relative; display: inline-block; width: 100%;">
+                            <img src="${logoUrl}" alt="Logo" style="width: 100%; height: 150px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 1px solid #d0d0d0; transition: transform 0.2s;" onclick="abrirModalImagen('${logoUrl}', 'Logo de cotización')">
+                            <button type="button"
+                                    onclick="eliminarImagenLogo(this)"
+                                    style="position: absolute; top: 5px; right: 5px; background: #dc3545; color: white; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 1rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="Eliminar imagen">×</button>
+                        </div>`;
                     }
                 });
                 html += `</div></div>`;
@@ -545,24 +554,45 @@ document.addEventListener('DOMContentLoaded', function() {
     // ============================================================
     
     window.eliminarPrendaDelPedido = function(index) {
-        if (confirm('¿Estás seguro de que quieres eliminar esta prenda del pedido?')) {
-            prendasEliminadas.add(index);
-            console.log('Prenda eliminada:', index);
-            renderizarPrendasEditables(prendasCargadas);
-            
-            // Mostrar notificación
-            Swal.fire({
-                icon: 'success',
-                title: 'Prenda eliminada',
-                text: 'La prenda ha sido eliminada del pedido',
-                timer: 2000,
-                showConfirmButton: false
-            });
-        }
+        Swal.fire({
+            title: 'Eliminar prenda',
+            text: '¿Estás seguro de que quieres eliminar esta prenda del pedido?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                prendasEliminadas.add(index);
+                console.log('Prenda eliminada:', index);
+                renderizarPrendasEditables(prendasCargadas);
+                
+                // Mostrar notificación
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Prenda eliminada',
+                    text: 'La prenda ha sido eliminada del pedido',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }
+        });
     };
 
     window.eliminarVariacionDePrenda = function(prendaIndex, variacionIndex) {
-        if (confirm('¿Estás seguro de que quieres eliminar esta variación?')) {
+        Swal.fire({
+            title: 'Eliminar variación',
+            text: '¿Estás seguro de que quieres eliminar esta variación?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
             // Encontrar la fila de variación y eliminarla
             const filaVariacion = document.querySelector(`tr[data-variacion="${variacionIndex}"][data-prenda="${prendaIndex}"]`);
             if (filaVariacion) {
@@ -579,10 +609,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
         }
+        });
     };
 
     window.eliminarTecnicaDeBordado = function(tecnicaIndex) {
-        if (confirm('¿Estás seguro de que quieres eliminar esta técnica?')) {
+        Swal.fire({
+            title: 'Eliminar técnica',
+            text: '¿Estás seguro de que quieres eliminar esta técnica?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
             const filaTecnica = document.querySelector(`tr[data-tecnica="${tecnicaIndex}"]`);
             if (filaTecnica) {
                 filaTecnica.remove();
@@ -597,10 +638,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
         }
+        });
     };
 
     window.eliminarUbicacionDeBordado = function(ubicacionIndex) {
-        if (confirm('¿Estás seguro de que quieres eliminar esta ubicación?')) {
+        Swal.fire({
+            title: 'Eliminar ubicación',
+            text: '¿Estás seguro de que quieres eliminar esta ubicación?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
             const filaUbicacion = document.querySelector(`tr[data-ubicacion="${ubicacionIndex}"]`);
             if (filaUbicacion) {
                 filaUbicacion.remove();
@@ -615,27 +667,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
         }
+        });
     };
 
     window.eliminarUbicacionItem = function(ubicacionIndex, itemIndex) {
-        if (confirm('¿Estás seguro de que quieres eliminar esta ubicación seleccionada?')) {
-            const filaUbicacion = document.querySelector(`tr[data-ubicacion="${ubicacionIndex}"]`);
-            if (filaUbicacion) {
-                const spans = filaUbicacion.querySelectorAll('span');
-                if (spans[itemIndex]) {
-                    spans[itemIndex].remove();
-                    console.log(`Ubicación seleccionada ${itemIndex} removida de ubicación ${ubicacionIndex}`);
-                    
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Ubicación removida',
-                        text: 'La ubicación seleccionada ha sido removida',
-                        timer: 1500,
-                        showConfirmButton: false
-                    });
+        Swal.fire({
+            title: 'Eliminar ubicación',
+            text: '¿Estás seguro de que quieres eliminar esta ubicación seleccionada?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const filaUbicacion = document.querySelector(`tr[data-ubicacion="${ubicacionIndex}"]`);
+                if (filaUbicacion) {
+                    const spans = filaUbicacion.querySelectorAll('span');
+                    if (spans[itemIndex]) {
+                        spans[itemIndex].remove();
+                        console.log(`Ubicación seleccionada ${itemIndex} removida de ubicación ${ubicacionIndex}`);
+                        
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Ubicación removida',
+                            text: 'La ubicación seleccionada ha sido removida',
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    }
                 }
             }
-        }
+        });
     };
 
     window.agregarUbicacionNueva = function(ubicacionIndex) {
@@ -678,7 +742,17 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.quitarTallaDelFormulario = function(prendaIndex, talla) {
-        if (confirm(`¿Quitar la talla ${talla} de la prenda ${prendaIndex + 1}?`)) {
+        Swal.fire({
+            title: 'Eliminar talla',
+            text: `¿Quitar la talla ${talla} de la prenda ${prendaIndex + 1}?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
             // Buscar el input de esa talla y eliminarlo
             const input = document.querySelector(`input[name="cantidades[${prendaIndex}][${talla}]"]`);
             if (input) {
@@ -686,9 +760,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (tallaItem) {
                     tallaItem.remove();
                     console.log(`Talla ${talla} removida de prenda ${prendaIndex}`);
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Talla eliminada',
+                        text: `La talla ${talla} ha sido removida`,
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
                 }
             }
         }
+        });
     };
 
     // ============================================================
@@ -743,6 +826,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
+            // Recopilar TODOS los datos editados de variaciones
+            const variacionesEditadas = {};
+            const inputsVariaciones = prendasCard.querySelectorAll('[data-field]');
+            inputsVariaciones.forEach(input => {
+                const field = input.getAttribute('data-field');
+                const value = input.value || '';
+                if (field && value) {
+                    variacionesEditadas[field] = value;
+                }
+            });
+
+            // Recopilar telas/colores editadas
+            const telasEditadas = [];
+            const telaCards = prendasCard.querySelectorAll('[data-prenda="' + index + '"]');
+            telaCards.forEach(card => {
+                const telaNombre = card.querySelector('[data-field="tela_nombre"]')?.value;
+                const telaColor = card.querySelector('[data-field="tela_color"]')?.value;
+                const telaRef = card.querySelector('[data-field="tela_ref"]')?.value;
+                
+                if (telaNombre || telaColor || telaRef) {
+                    telasEditadas.push({
+                        tela: telaNombre || prenda.tela,
+                        color: telaColor || prenda.color,
+                        referencia: telaRef || ''
+                    });
+                }
+            });
+
             // Obtener géneros seleccionados
             const generosSeleccionados = [];
             const generosCheckboxes = prendasCard.querySelectorAll('.genero-checkbox:checked');
@@ -755,15 +866,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 nombre_producto: nombreProducto,
                 descripcion: descripcion,
                 genero: generosSeleccionados.length > 0 ? generosSeleccionados : prenda.variantes?.genero,
-                manga: prenda.variantes?.manga,
-                broche: prenda.variantes?.broche,
-                tiene_bolsillos: prenda.variantes?.tiene_bolsillos,
-                tiene_reflectivo: prenda.variantes?.tiene_reflectivo,
-                manga_obs: prenda.variantes?.manga_obs,
-                bolsillos_obs: prenda.variantes?.bolsillos_obs,
-                broche_obs: prenda.variantes?.broche_obs,
-                reflectivo_obs: prenda.variantes?.reflectivo_obs,
+                manga: variacionesEditadas['tipo_manga'] || prenda.variantes?.tipo_manga || prenda.variantes?.manga,
+                broche: variacionesEditadas['tipo_broche'] || prenda.variantes?.tipo_broche || prenda.variantes?.broche,
+                tiene_bolsillos: variacionesEditadas['tiene_bolsillos'] === 'Sí' ? true : (prenda.variantes?.tiene_bolsillos || false),
+                tiene_reflectivo: variacionesEditadas['tiene_reflectivo'] === 'Sí' ? true : (prenda.variantes?.tiene_reflectivo || false),
+                manga_obs: variacionesEditadas['tipo_manga_obs'] || prenda.variantes?.obs_manga || '',
+                bolsillos_obs: variacionesEditadas['tiene_bolsillos_obs'] || prenda.variantes?.obs_bolsillos || '',
+                broche_obs: variacionesEditadas['tipo_broche_obs'] || prenda.variantes?.obs_broche || '',
+                reflectivo_obs: variacionesEditadas['tiene_reflectivo_obs'] || prenda.variantes?.obs_reflectivo || '',
                 observaciones: prenda.variantes?.observaciones,
+                telas_multiples: telasEditadas.length > 0 ? telasEditadas : prenda.telas_multiples,
                 cantidades: cantidadesPorTalla,
                 fotos: prenda.fotos || [],
                 telas: prenda.telaFotos || prenda.telas || [],
@@ -784,7 +896,11 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Prendas a enviar:', prendas);
 
         // Enviar al servidor
-        fetch(`{{ route('asesores.pedidos-produccion.crear-desde-cotizacion', ['cotizacionId' => ':cotizacionId']) }}`.replace(':cotizacionId', cotizacionId), {
+        const url = `/asesores/pedidos-produccion/crear-desde-cotizacion/${cotizacionId}`;
+        console.log('📤 URL completa:', url);
+        console.log('📤 cotizacionId:', cotizacionId);
+        
+        fetch(url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -806,7 +922,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     text: 'Pedido de producción creado exitosamente',
                     confirmButtonText: 'OK'
                 }).then(() => {
-                    window.location.href = data.redirect;
+                    // Redirigir a la lista de pedidos
+                    window.location.href = '/asesores/pedidos';
                 });
             } else {
                 Swal.fire({
@@ -829,4 +946,104 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     console.log('Script de formulario editable cargado correctamente');
+
+    /**
+     * Actualizar resumen de una prenda (tallas y fotos)
+     * DESHABILITADO: El resumen fue removido de la interfaz
+     */
+    window.actualizarResumenPrenda = function(prendasContainer) {
+        // Función disponible pero inactiva
+        console.log('actualizarResumenPrenda: Resumen removido de la interfaz');
+    };
 });
+
+// ============================================================
+// FUNCIONES GLOBALES PARA ELIMINAR IMÁGENES
+// ============================================================
+
+window.eliminarImagenPrenda = function(button) {
+    Swal.fire({
+        title: 'Eliminar imagen',
+        text: '¿Estás seguro de que quieres eliminar esta imagen? No se guardará en el pedido.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const contenedor = button.closest('div[style*="position: relative"]');
+            if (contenedor) {
+                contenedor.remove();
+                console.log('Imagen de prenda marcada para no guardar');
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Imagen eliminada',
+                    text: 'La imagen no se incluirá en el pedido',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            }
+        }
+    });
+};
+
+window.eliminarImagenTela = function(button) {
+    Swal.fire({
+        title: 'Eliminar imagen',
+        text: '¿Estás seguro de que quieres eliminar esta imagen? No se guardará en el pedido.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const contenedor = button.closest('div[style*="position: relative"]');
+            if (contenedor) {
+                contenedor.remove();
+                console.log('Imagen de tela marcada para no guardar');
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Imagen eliminada',
+                    text: 'La imagen no se incluirá en el pedido',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            }
+        }
+    });
+};
+
+window.eliminarImagenLogo = function(button) {
+    Swal.fire({
+        title: 'Eliminar imagen',
+        text: '¿Estás seguro de que quieres eliminar esta imagen? No se guardará en el pedido.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const contenedor = button.closest('div[style*="position: relative"]');
+            if (contenedor) {
+                contenedor.remove();
+                console.log('Imagen de logo marcada para no guardar');
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Imagen eliminada',
+                    text: 'La imagen no se incluirá en el pedido',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            }
+        }
+    });
+};
