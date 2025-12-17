@@ -14,10 +14,12 @@
                     @php
                         $columns = [
                             ['key' => 'acciones', 'label' => 'Acciones', 'flex' => '0 0 100px', 'justify' => 'flex-start'],
+                            ['key' => 'estado', 'label' => 'Estado', 'flex' => '0 0 150px', 'justify' => 'center'],
                             ['key' => 'numero', 'label' => 'Número', 'flex' => '0 0 140px', 'justify' => 'center'],
                             ['key' => 'fecha', 'label' => 'Fecha', 'flex' => '0 0 180px', 'justify' => 'center'],
                             ['key' => 'cliente', 'label' => 'Cliente', 'flex' => '0 0 200px', 'justify' => 'center'],
                             ['key' => 'asesora', 'label' => 'Asesora', 'flex' => '0 0 150px', 'justify' => 'center'],
+                            ['key' => 'novedades', 'label' => 'Novedades', 'flex' => '0 0 180px', 'justify' => 'center'],
                         ];
                     @endphp
                     
@@ -25,7 +27,7 @@
                         <div class="table-header-cell{{ $column['key'] === 'acciones' ? ' acciones-column' : '' }}" style="flex: {{ $column['flex'] }}; justify-content: {{ $column['justify'] }};">
                             <div class="th-wrapper" style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
                                 <span class="header-text">{{ $column['label'] }}</span>
-                                @if($column['key'] !== 'acciones')
+                                @if($column['key'] !== 'acciones' && $column['key'] !== 'estado' && $column['key'] !== 'novedades')
                                     <button type="button" class="btn-filter-column" data-filter-column="{{ $column['key'] }}" onclick="abrirFiltroColumna('{{ $column['key'] }}', obtenerValoresColumna('{{ $column['key'] }}'))" title="Filtrar {{ $column['label'] }}">
                                         <span class="material-symbols-rounded">filter_alt</span>
                                         <div class="filter-badge"></div>
@@ -50,7 +52,7 @@
                         @endphp
                         
                         @forelse($cotizacionesPaginadas as $cotizacion)
-                            <div class="table-row" data-cotizacion-id="{{ $cotizacion->id }}" data-numero="COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}" data-cliente="{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}" data-asesora="{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? '') }}" data-fecha="{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y') : '' }}">
+                            <div class="table-row" data-cotizacion-id="{{ $cotizacion->id }}" data-numero="{{ $cotizacion->numero_cotizacion ?? 'N/A' }}" data-cliente="{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}" data-asesora="{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? '') }}" data-fecha="{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y') : '' }}">
                                 <!-- Acciones -->
                                 <div class="table-cell acciones-column" style="flex: 0 0 100px; justify-content: center; position: relative;">
                                     <button class="action-view-btn" title="Ver opciones" data-cotizacion-id="{{ $cotizacion->id }}">
@@ -65,17 +67,35 @@
                                             <i class="fas fa-chart-bar"></i>
                                             <span>Ver Costos</span>
                                         </a>
-                                        <a href="#" class="action-menu-item" data-action="pdf" onclick="abrirModalPDF({{ $cotizacion->id }}); return false;">
+                                        <a href="/contador/cotizacion/{{ $cotizacion->id }}/pdf?tipo=prenda" class="action-menu-item" data-action="pdf" target="_blank">
                                             <i class="fas fa-file-pdf"></i>
                                             <span>Ver PDF</span>
                                         </a>
                                     </div>
                                 </div>
                                 
-                                <!-- Número -->
-                                <div class="table-cell" style="flex: 0 0 140px;" data-numero="COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}">
+                                <!-- Estado -->
+                                <div class="table-cell" style="flex: 0 0 150px;" data-estado="{{ $cotizacion->estado }}">
                                     <div class="cell-content" style="justify-content: center;">
-                                        <span style="font-weight: 600;">COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}</span>
+                                        @php
+                                            $estadoColors = [
+                                                'ENVIADA_CONTADOR' => ['bg' => '#fff3cd', 'color' => '#856404'],
+                                                'EN_CORRECCION' => ['bg' => '#f8d7da', 'color' => '#721c24'],
+                                                'APROBADA_CONTADOR' => ['bg' => '#d4edda', 'color' => '#155724'],
+                                                'RECHAZADA' => ['bg' => '#f8d7da', 'color' => '#721c24'],
+                                            ];
+                                            $colors = $estadoColors[$cotizacion->estado] ?? ['bg' => '#e3f2fd', 'color' => '#1e40af'];
+                                        @endphp
+                                        <span style="background: {{ $colors['bg'] }}; color: {{ $colors['color'] }}; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">
+                                            {{ str_replace('_', ' ', $cotizacion->estado) }}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Número -->
+                                <div class="table-cell" style="flex: 0 0 140px;" data-numero="{{ $cotizacion->numero_cotizacion ?? 'N/A' }}">
+                                    <div class="cell-content" style="justify-content: center;">
+                                        <span style="font-weight: 600;">{{ $cotizacion->numero_cotizacion ?? 'Por asignar' }}</span>
                                     </div>
                                 </div>
                                 
@@ -97,6 +117,13 @@
                                 <div class="table-cell" style="flex: 0 0 150px;" data-asesora="{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? '') }}">
                                     <div class="cell-content" style="justify-content: center;">
                                         <span>{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? '-') }}</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Novedades -->
+                                <div class="table-cell" style="flex: 0 0 180px;">
+                                    <div class="cell-content" style="justify-content: center;">
+                                        <span style="font-size: 0.85rem;">{{ $cotizacion->novedades ?? '-' }}</span>
                                     </div>
                                 </div>
                             </div>

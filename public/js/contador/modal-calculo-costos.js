@@ -32,6 +32,9 @@ function abrirModalCalculoCostos(cotizacionId, cliente) {
     window.cotizacionIdActual = cotizacionId;
     prendaActualIndex = 0;
     
+    // Limpiar memoria de costos al abrir el modal
+    costosTodasPrendas = {};
+    
     // Obtener las prendas de la cotización
     fetch(`/contador/cotizacion/${cotizacionId}`)
         .then(response => response.json())
@@ -323,77 +326,42 @@ function cargarItemsGuardados(cotizacionId) {
             if (data.success && data.costos && data.costos.length > 0) {
                 console.log('Costos cargados desde BD:', data.costos);
                 
-                // Obtener la prenda actual (tab activo)
+                // Obtener todos los tabs de prendas
                 const prendasTabs = document.querySelectorAll('#prendasTabs button');
-                let prendaActualNombre = '';
                 
-                prendasTabs.forEach((tab) => {
-                    if (tab.style.background.includes('3b82f6')) {
-                        prendaActualNombre = tab.textContent.trim();
+                // Cargar todos los costos en la memoria temporal
+                data.costos.forEach(costoPrenda => {
+                    // Buscar el índice de la prenda por nombre
+                    let prendaIndex = -1;
+                    prendasTabs.forEach((tab, idx) => {
+                        const nombreTab = tab.textContent.trim();
+                        if (nombreTab === costoPrenda.nombre_prenda || 
+                            nombreTab.includes(costoPrenda.nombre_prenda) ||
+                            costoPrenda.nombre_prenda.includes(nombreTab)) {
+                            prendaIndex = idx;
+                        }
+                    });
+                    
+                    if (prendaIndex !== -1 && costoPrenda.items) {
+                        // Parsear items si es string
+                        let items = costoPrenda.items;
+                        if (typeof items === 'string') {
+                            items = JSON.parse(items);
+                        }
+                        
+                        // Guardar en memoria temporal
+                        costosTodasPrendas[prendaIndex] = {
+                            nombre: costoPrenda.nombre_prenda,
+                            descripcion: '',
+                            items: items
+                        };
+                        
+                        console.log(`✓ Costos de BD cargados en memoria para prenda ${prendaIndex}:`, items);
                     }
                 });
                 
-                // Buscar los costos de la prenda actual
-                const costosPrenda = data.costos.find(costo => 
-                    costo.nombre_prenda === prendaActualNombre || 
-                    costo.nombre_prenda.includes(prendaActualNombre)
-                );
-                
-                if (costosPrenda && costosPrenda.items) {
-                    // Limpiar tabla
-                    const tablaPreciosBody = document.getElementById('tablaPreciosBody');
-                    tablaPreciosBody.innerHTML = '';
-                    
-                    // Parsear items si es string
-                    let items = costosPrenda.items;
-                    if (typeof items === 'string') {
-                        items = JSON.parse(items);
-                    }
-                    
-                    // Agregar cada item guardado
-                    items.forEach(item => {
-                        const row = document.createElement('div');
-                        row.style.cssText = `
-                            display: grid;
-                            grid-template-columns: 1fr 150px 80px;
-                            gap: 0;
-                            background: #f5f5f5;
-                            border-radius: 8px;
-                            align-items: center;
-                            overflow: hidden;
-                            border: 1px solid #e5e7eb;
-                            flex-shrink: 0;
-                            min-height: 50px;
-                        `;
-                        
-                        row.innerHTML = `
-                            <input type="text" 
-                                   placeholder="Ej: Corte, Confección, Bordado..."
-                                   value="${item.item || ''}"
-                                   style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; width: 100%; box-sizing: border-box; outline: none; color: #000;"
-                                   onchange="actualizarTotal()">
-                            <input type="number" 
-                                   placeholder="0.00"
-                                   value="${parseFloat(item.precio) || 0}"
-                                   step="0.01"
-                                   min="0"
-                                   style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; text-align: center; width: 100%; box-sizing: border-box; outline: none; color: #000;"
-                                   onchange="actualizarTotal()">
-                            <button onclick="eliminarFilaItem(this)" 
-                                    style="background: #ef4444; color: white; border: none; padding: 0.5rem 0.75rem; cursor: pointer; font-weight: 600; transition: all 0.2s; font-size: 1rem; width: 100%; height: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: center;"
-                                    onmouseover="this.style.background='#dc2626'"
-                                    onmouseout="this.style.background='#ef4444'"
-                                    title="Eliminar fila">
-                                🗑️
-                            </button>
-                        `;
-                        
-                        tablaPreciosBody.appendChild(row);
-                    });
-                    
-                    // Actualizar total
-                    actualizarTotal();
-                }
+                // Cargar los costos de la prenda actual (primera prenda)
+                cargarCostosPrendaDesdeMemoria(prendaActualIndex);
             }
         })
         .catch(error => {

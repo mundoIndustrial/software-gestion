@@ -369,9 +369,23 @@ function mostrarPrendaVisor(indice) {
                 
                 <!-- Sección de Imágenes -->
                 <div style="display: flex; flex-direction: column; gap: 0.75rem; justify-content: flex-start; align-items: center; min-width: 280px; padding: 0.5rem; margin-top: -5px;">
-                    ${prenda.fotos && prenda.fotos.length > 0 ? prenda.fotos.map((foto, idx) => `
-                        <img src="${foto}" alt="Prenda ${idx + 1}" style="width: 100%; height: 280px; max-width: 280px; border-radius: 4px; border: 1px solid #ddd; object-fit: contain; background: #f5f5f5;">
-                    `).join('') : '<div style="width: 100%; height: 280px; max-width: 280px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 0.75rem;">Sin imágenes</div>'}
+                    ${(() => {
+                        const totalImagenes = (prenda.fotos?.length || 0) + (prenda.tela_fotos?.length || 0);
+                        if (totalImagenes === 0) {
+                            return '<div style="width: 100%; height: 280px; max-width: 280px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 0.75rem;">Sin imágenes</div>';
+                        }
+                        const primeraImagen = prenda.fotos?.[0] || prenda.tela_fotos?.[0];
+                        return `
+                            <div style="position: relative; width: 100%; max-width: 280px; cursor: pointer;" onclick="abrirLightboxImagenes(${indice})">
+                                <img src="${primeraImagen}" alt="Prenda" style="width: 100%; height: 280px; border-radius: 4px; border: 1px solid #ddd; object-fit: contain; background: #f5f5f5;">
+                                ${totalImagenes > 1 ? `
+                                    <div style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; backdrop-filter: blur(4px);">
+                                        IMAGENES ( ${totalImagenes} )
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `;
+                    })()}
                 </div>
             </div>
         </div>

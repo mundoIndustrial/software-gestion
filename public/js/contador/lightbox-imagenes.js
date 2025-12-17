@@ -1,0 +1,123 @@
+/**
+ * Lightbox para visualizar imágenes de prendas con navegación
+ */
+
+let lightboxActual = {
+    prendaIndex: 0,
+    imagenIndex: 0,
+    imagenes: []
+};
+
+/**
+ * Abre el lightbox de imágenes para una prenda específica
+ */
+function abrirLightboxImagenes(prendaIndex) {
+    const prenda = visorCostosActual.prendas[prendaIndex];
+    
+    // Combinar fotos de prenda y fotos de tela
+    let todasLasImagenes = [];
+    
+    if (prenda.fotos && prenda.fotos.length > 0) {
+        todasLasImagenes = [...prenda.fotos];
+    }
+    
+    if (prenda.tela_fotos && prenda.tela_fotos.length > 0) {
+        todasLasImagenes = [...todasLasImagenes, ...prenda.tela_fotos];
+    }
+    
+    if (todasLasImagenes.length === 0) {
+        return;
+    }
+    
+    lightboxActual = {
+        prendaIndex: prendaIndex,
+        imagenIndex: 0,
+        imagenes: todasLasImagenes
+    };
+    
+    mostrarImagenLightbox();
+    
+    // Mostrar el lightbox
+    const lightbox = document.getElementById('lightboxImagenes');
+    if (lightbox) {
+        lightbox.style.display = 'flex';
+    }
+}
+
+/**
+ * Muestra la imagen actual en el lightbox
+ */
+function mostrarImagenLightbox() {
+    const imagen = document.getElementById('lightboxImagen');
+    const contador = document.getElementById('lightboxContador');
+    const btnAnterior = document.getElementById('lightboxAnterior');
+    const btnSiguiente = document.getElementById('lightboxSiguiente');
+    
+    if (!imagen) return;
+    
+    // Actualizar imagen
+    imagen.src = lightboxActual.imagenes[lightboxActual.imagenIndex];
+    
+    // Actualizar contador
+    if (contador) {
+        contador.textContent = `${lightboxActual.imagenIndex + 1} / ${lightboxActual.imagenes.length}`;
+    }
+    
+    // Mostrar/ocultar botones de navegación
+    if (btnAnterior) {
+        btnAnterior.style.display = lightboxActual.imagenIndex > 0 ? 'flex' : 'none';
+    }
+    if (btnSiguiente) {
+        btnSiguiente.style.display = lightboxActual.imagenIndex < lightboxActual.imagenes.length - 1 ? 'flex' : 'none';
+    }
+}
+
+/**
+ * Navega a la imagen anterior
+ */
+function lightboxImagenAnterior() {
+    if (lightboxActual.imagenIndex > 0) {
+        lightboxActual.imagenIndex--;
+        mostrarImagenLightbox();
+    }
+}
+
+/**
+ * Navega a la imagen siguiente
+ */
+function lightboxImagenSiguiente() {
+    if (lightboxActual.imagenIndex < lightboxActual.imagenes.length - 1) {
+        lightboxActual.imagenIndex++;
+        mostrarImagenLightbox();
+    }
+}
+
+/**
+ * Cierra el lightbox
+ */
+function cerrarLightboxImagenes() {
+    const lightbox = document.getElementById('lightboxImagenes');
+    if (lightbox) {
+        lightbox.style.display = 'none';
+    }
+    
+    lightboxActual = {
+        prendaIndex: 0,
+        imagenIndex: 0,
+        imagenes: []
+    };
+}
+
+// Event listeners para navegación con teclado
+document.addEventListener('keydown', function(event) {
+    const lightbox = document.getElementById('lightboxImagenes');
+    if (lightbox && lightbox.style.display === 'flex') {
+        if (event.key === 'Escape') {
+            cerrarLightboxImagenes();
+        } else if (event.key === 'ArrowLeft') {
+            lightboxImagenAnterior();
+        } else if (event.key === 'ArrowRight') {
+            lightboxImagenSiguiente();
+        }
+    }
+});

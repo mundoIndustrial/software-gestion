@@ -11,32 +11,15 @@
 
     <!-- Barra de Búsqueda en el Header -->
     <div class="nav-search">
-        <div style="position: relative; width: 300px;">
+        <div class="search-container">
             <input 
                 type="text" 
                 id="searchInput" 
                 placeholder="Buscar por número, cliente o asesora..." 
                 class="search-input"
-                style="
-                    width: 100%;
-                    padding: 8px 12px 8px 32px;
-                    border: 1px solid rgba(255,255,255,0.3);
-                    border-radius: 6px;
-                    font-size: 0.9rem;
-                    background: rgba(255,255,255,0.1);
-                    color: white;
-                    transition: all 0.2s ease;
-                "
                 oninput="aplicarBusquedaYFiltros()"
             >
-            <i class="fas fa-search" style="
-                position: absolute;
-                left: 10px;
-                top: 50%;
-                transform: translateY(-50%);
-                color: rgba(255,255,255,0.6);
-                font-size: 0.85rem;
-            "></i>
+            <i class="fas fa-search search-icon"></i>
         </div>
         <button 
             id="btnLimpiarFiltros"

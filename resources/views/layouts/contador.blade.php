@@ -71,63 +71,31 @@
     </div>
 </div>
 
-<!-- Modal PDF Fullscreen -->
-<div id="modalPDF" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 9999; padding: 0; margin: 0;">
-    <div style="position: absolute; top: 0; left: 0; right: 0; background: #1e5ba8; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; z-index: 10000;">
-        <h2 style="margin: 0; font-size: 1.3rem;">📄 Visualizar Cotización PDF</h2>
-        <div style="display: flex; gap: 1rem; align-items: center;">
-            <button onclick="descargarPDF()" style="padding: 0.75rem 1.5rem; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
-                <span class="material-symbols-rounded" style="font-size: 1.2rem;">download</span>
-                Descargar PDF
-            </button>
-            <button onclick="cerrarModalPDF()" style="padding: 0.75rem 1.5rem; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
-                <span class="material-symbols-rounded" style="font-size: 1.2rem;">close</span>
-                Cerrar
-            </button>
+
+<!-- Lightbox para Imágenes de Prendas -->
+<div id="lightboxImagenes" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 10000; justify-content: center; align-items: center;">
+    <button onclick="cerrarLightboxImagenes()" style="position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); border: none; color: white; font-size: 2rem; cursor: pointer; padding: 10px 20px; border-radius: 50%; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10002;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+        ×
+    </button>
+    
+    <button id="lightboxAnterior" onclick="lightboxImagenAnterior()" style="position: absolute; left: 20px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.2); border: none; color: white; font-size: 2rem; cursor: pointer; padding: 15px 20px; border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10002;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+        ‹
+    </button>
+    
+    <div style="max-width: 90%; max-height: 90%; display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+        <img id="lightboxImagen" src="" alt="Imagen de prenda" style="max-width: 100%; max-height: 85vh; object-fit: contain; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+        <div id="lightboxContador" style="color: white; font-size: 1.1rem; font-weight: 600; background: rgba(0,0,0,0.5); padding: 8px 20px; border-radius: 20px; backdrop-filter: blur(10px);">
+            1 / 1
         </div>
     </div>
-    <iframe id="pdfViewer" style="position: absolute; top: 60px; left: 0; right: 0; bottom: 0; width: 100%; height: calc(100% - 60px); border: none; background: white;"></iframe>
+    
+    <button id="lightboxSiguiente" onclick="lightboxImagenSiguiente()" style="position: absolute; right: 20px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.2); border: none; color: white; font-size: 2rem; cursor: pointer; padding: 15px 20px; border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10002;" onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+        ›
+    </button>
 </div>
 
 <!-- Script para Funciones Globales de Modales -->
 <script>
-    // Variable global para acceder desde otros scripts
-    window.cotizacionIdActualPDF = null;
-
-    function abrirModalPDF(cotizacionId) {
-        window.cotizacionIdActualPDF = cotizacionId;
-        const modalPDF = document.getElementById('modalPDF');
-        const pdfViewer = document.getElementById('pdfViewer');
-        
-        // Mostrar modal
-        modalPDF.style.display = 'block';
-        
-        // Cargar PDF en iframe con zoom 125%
-        pdfViewer.src = `/contador/cotizacion/${cotizacionId}/pdf#zoom=125`;
-    }
-
-    function cerrarModalPDF() {
-        const modalPDF = document.getElementById('modalPDF');
-        const pdfViewer = document.getElementById('pdfViewer');
-        
-        modalPDF.style.display = 'none';
-        pdfViewer.src = '';
-        window.cotizacionIdActualPDF = null;
-    }
-
-    function descargarPDF() {
-        if (window.cotizacionIdActualPDF) {
-            const link = document.createElement('a');
-            const url = `/contador/cotizacion/${window.cotizacionIdActualPDF}/pdf?descargar=1`;
-            link.href = url;
-            link.download = `Cotizacion_${window.cotizacionIdActualPDF}_${new Date().toISOString().split('T')[0]}.pdf`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-    }
-
-
     function cerrarVisorCostos() {
         document.getElementById('visorCostosModal').style.display = 'none';
     }
@@ -135,20 +103,6 @@
     function closeCotizacionModal() {
         document.getElementById('cotizacionModal').style.display = 'none';
     }
-
-    // Cerrar modal al presionar ESC
-    document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
-            cerrarModalPDF();
-        }
-    });
-
-    // Cerrar modal al hacer clic en el fondo
-    document.getElementById('modalPDF').addEventListener('click', function(event) {
-        if (event.target === this) {
-            cerrarModalPDF();
-        }
-    });
 </script>
 
 @endsection
@@ -166,6 +120,7 @@
     <script src="{{ asset('js/contador/notifications.js') }}"></script>
     <script src="{{ asset('js/contador/modal-calculo-costos.js') }}"></script>
     <script src="{{ asset('js/contador/visor-costos.js') }}"></script>
+    <script src="{{ asset('js/contador/lightbox-imagenes.js') }}"></script>
     <script src="{{ asset('js/contador/busqueda-header.js') }}"></script>
     <script>
         /**

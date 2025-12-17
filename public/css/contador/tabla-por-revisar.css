@@ -67,6 +67,7 @@ body.dark-theme {
   scrollbar-color: var(--primary) var(--surface-gray);
   position: relative;
   z-index: 1;
+  min-height: 390px;
   max-height: 390px;
 }
 
@@ -94,7 +95,7 @@ body.dark-theme {
   display: flex;
   flex-direction: column;
   font-size: 0.875rem;
-  min-width: 770px;
+  min-width: 1290px;
 }
 
 /* ===== HEADERS ===== */
@@ -110,6 +111,7 @@ body.dark-theme {
   padding: 0 20px;
   height: 70px;
   width: 100%;
+  min-width: 1290px;
   flex-shrink: 0;
   will-change: transform;
 }
@@ -146,16 +148,12 @@ body.dark-theme {
 
 /* ===== ROWS & CELLS ===== */
 .table-body { 
-  background: var(--surface-gray);
+  background: transparent;
   display: flex;
   flex-direction: column;
   gap: 12px;
   padding: 12px;
   width: 100%;
-}
-
-body.dark-theme .table-body {
-  background: #111827;
 }
 
 .table-row { 
@@ -173,6 +171,7 @@ body.dark-theme .table-body {
   position: relative;
   z-index: 1;
   width: 100%;
+  min-width: 1200px;
   flex-shrink: 0;
 }
 
@@ -401,6 +400,74 @@ body.dark-theme .action-menu-item {
 body.dark-theme .action-menu-item:hover {
   background: #374151;
   color: var(--primary);
+}
+
+/* ===== ACTION BUTTONS ===== */
+.actions-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.btn-view {
+  background: #e8f4f8;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+
+.btn-view:hover {
+  background: var(--primary);
+  color: var(--text-white);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-edit {
+  background: #fef3c7;
+  color: #f59e0b;
+  border: 1px solid #f59e0b;
+}
+
+.btn-edit:hover {
+  background: #f59e0b;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-success {
+  background: #d4edda;
+  color: #10b981;
+  border: 1px solid #10b981;
+}
+
+.btn-success:hover {
+  background: #10b981;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-action i {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ===== RESPONSIVE ===== */

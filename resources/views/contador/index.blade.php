@@ -81,18 +81,19 @@ document.addEventListener('click', function(event) {
                     @php
                         $columns = [
                             ['key' => 'acciones', 'label' => 'Acciones', 'flex' => '0 0 120px', 'justify' => 'flex-start'],
+                            ['key' => 'estado', 'label' => 'Estado', 'flex' => '0 0 150px', 'justify' => 'center'],
                             ['key' => 'numero', 'label' => 'Número', 'flex' => '0 0 140px', 'justify' => 'center'],
                             ['key' => 'fecha', 'label' => 'Fecha', 'flex' => '0 0 180px', 'justify' => 'center'],
                             ['key' => 'cliente', 'label' => 'Cliente', 'flex' => '0 0 200px', 'justify' => 'center'],
                             ['key' => 'asesora', 'label' => 'Asesora', 'flex' => '0 0 150px', 'justify' => 'center'],
+                            ['key' => 'novedades', 'label' => 'Novedades', 'flex' => '0 0 180px', 'justify' => 'center'],
                         ];
                     @endphp
-                    
-                    @foreach($columns as $column)
+                                        @foreach($columns as $column)
                         <div class="table-header-cell{{ $column['key'] === 'acciones' ? ' acciones-column' : '' }}" style="flex: {{ $column['flex'] }}; justify-content: {{ $column['justify'] }};">
                             <div class="th-wrapper" style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
                                 <span class="header-text">{{ $column['label'] }}</span>
-                                @if($column['key'] !== 'acciones')
+                                @if($column['key'] !== 'acciones' && $column['key'] !== 'estado' && $column['key'] !== 'novedades')
                                     <button type="button" class="btn-filter-column" data-filter-column="{{ $column['key'] }}" onclick="abrirFiltroColumna('{{ $column['key'] }}', obtenerValoresColumna('{{ $column['key'] }}'))" title="Filtrar {{ $column['label'] }}">
                                         <span class="material-symbols-rounded">filter_alt</span>
                                         <div class="filter-badge"></div>
@@ -116,7 +117,7 @@ document.addEventListener('click', function(event) {
                         @endphp
                         
                         @forelse($cotizacionesPaginadas as $cotizacion)
-                            <div class="table-row" data-cotizacion-id="{{ $cotizacion->id }}" data-numero="COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}" data-cliente="{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}" data-asesora="{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? '') }}" data-fecha="{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y') : '' }}">
+                            <div class="table-row" data-cotizacion-id="{{ $cotizacion->id }}" data-numero="{{ $cotizacion->numero_cotizacion ?? 'N/A' }}" data-cliente="{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}" data-asesora="{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? '') }}" data-fecha="{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y') : '' }}">
                                 <!-- Acciones -->
                                 <div class="table-cell acciones-column" style="flex: 0 0 120px; justify-content: center; position: relative;">
                                     <div class="actions-group">
@@ -132,7 +133,7 @@ document.addEventListener('click', function(event) {
                                                 <i class="fas fa-chart-bar"></i>
                                                 <span>Ver Costos</span>
                                             </a>
-                                            <a href="#" class="action-menu-item" data-action="pdf" onclick="abrirModalPDF({{ $cotizacion->id }}); return false;">
+                                            <a href="/contador/cotizacion/{{ $cotizacion->id }}/pdf?tipo=prenda" class="action-menu-item" data-action="pdf" target="_blank">
                                                 <i class="fas fa-file-pdf"></i>
                                                 <span>Ver PDF</span>
                                             </a>
@@ -146,10 +147,28 @@ document.addEventListener('click', function(event) {
                                     </div>
                                 </div>
                                 
-                                <!-- Número -->
-                                <div class="table-cell" style="flex: 0 0 140px;" data-numero="COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}">
+                                <!-- Estado -->
+                                <div class="table-cell" style="flex: 0 0 150px;" data-estado="{{ $cotizacion->estado }}">
                                     <div class="cell-content" style="justify-content: center;">
-                                        <span style="font-weight: 600;">COT-{{ str_pad($cotizacion->id, 5, '0', STR_PAD_LEFT) }}</span>
+                                        @php
+                                            $estadoColors = [
+                                                'ENVIADA_CONTADOR' => ['bg' => '#fff3cd', 'color' => '#856404'],
+                                                'EN_CORRECCION' => ['bg' => '#f8d7da', 'color' => '#721c24'],
+                                                'APROBADA_CONTADOR' => ['bg' => '#d4edda', 'color' => '#155724'],
+                                                'RECHAZADA' => ['bg' => '#f8d7da', 'color' => '#721c24'],
+                                            ];
+                                            $colors = $estadoColors[$cotizacion->estado] ?? ['bg' => '#e3f2fd', 'color' => '#1e40af'];
+                                        @endphp
+                                        <span style="background: {{ $colors['bg'] }}; color: {{ $colors['color'] }}; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">
+                                            {{ str_replace('_', ' ', $cotizacion->estado) }}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Número -->
+                                <div class="table-cell" style="flex: 0 0 140px;" data-numero="{{ $cotizacion->numero_cotizacion ?? 'N/A' }}">
+                                    <div class="cell-content" style="justify-content: center;">
+                                        <span style="font-weight: 600;">{{ $cotizacion->numero_cotizacion ?? 'Por asignar' }}</span>
                                     </div>
                                 </div>
                                 
@@ -171,6 +190,13 @@ document.addEventListener('click', function(event) {
                                 <div class="table-cell" style="flex: 0 0 150px;" data-asesora="{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? '') }}">
                                     <div class="cell-content" style="justify-content: center;">
                                         <span>{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? '-') }}</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Novedades -->
+                                <div class="table-cell" style="flex: 0 0 180px;">
+                                    <div class="cell-content" style="justify-content: center;">
+                                        <span style="font-size: 0.85rem;">{{ $cotizacion->novedades ?? '-' }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -222,20 +248,23 @@ document.addEventListener('click', function(event) {
 
 <!-- Modal de Cálculo de Costos por Prenda -->
 <div id="calculoCostosModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9997; justify-content: center; align-items: center; padding: 2rem; flex-direction: column;">
-    <div style="background: linear-gradient(135deg, #1a1f3a 0%, #0f1419 100%); border-radius: 12px; width: 100%; max-width: 700px; max-height: 95vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.5); border: 1px solid rgba(59, 130, 246, 0.3);">
+    <div style="background: linear-gradient(135deg, #1a1f3a 0%, #0f1419 100%); border-radius: 12px; width: 100%; max-width: 700px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.5); border: 1px solid rgba(59, 130, 246, 0.3); overflow: hidden;">
         
-        <!-- Tabs de Prendas con Scroll Horizontal -->
-        <div id="prendasTabs" style="display: flex; gap: 0.75rem; padding: 1.5rem 1.5rem 0 1.5rem; overflow-x: auto; overflow-y: hidden; flex-wrap: nowrap; min-height: 50px; align-items: center; border-bottom: 1px solid rgba(59, 130, 246, 0.3);">
-            <!-- Se llenará dinámicamente -->
-        </div>
+        <!-- Contenedor con scroll general -->
+        <div style="overflow-y: auto; overflow-x: hidden; flex: 1; display: flex; flex-direction: column;">
+            
+            <!-- Tabs de Prendas con Scroll Horizontal -->
+            <div id="prendasTabs" style="display: flex; gap: 0.75rem; padding: 1.5rem 1.5rem 0 1.5rem; overflow-x: auto; overflow-y: hidden; flex-wrap: nowrap; min-height: 50px; align-items: center; border-bottom: 1px solid rgba(59, 130, 246, 0.3); flex-shrink: 0;">
+                <!-- Se llenará dinámicamente -->
+            </div>
 
-        <!-- Descripción de Prenda -->
-        <div id="prendasDescripcion" style="padding: 1rem 1.5rem; color: #e5e7eb; font-size: 0.85rem; line-height: 1.6; text-transform: uppercase; letter-spacing: 0.3px; border-bottom: 1px solid rgba(59, 130, 246, 0.3); min-height: 80px;">
-            <!-- Se llenará dinámicamente -->
-        </div>
+            <!-- Descripción de Prenda -->
+            <div id="prendasDescripcion" style="padding: 1rem 1.5rem; color: #e5e7eb; font-size: 0.85rem; line-height: 1.6; text-transform: uppercase; letter-spacing: 0.3px; border-bottom: 1px solid rgba(59, 130, 246, 0.3); min-height: 80px; flex-shrink: 0;">
+                <!-- Se llenará dinámicamente -->
+            </div>
 
-        <!-- Tabla de Precios con Scroll Interno -->
-        <div style="padding: 1.5rem 1.5rem 0 1.5rem; display: flex; flex-direction: column; gap: 0; flex: 1; overflow: hidden;">
+            <!-- Tabla de Precios -->
+            <div style="padding: 1.5rem 1.5rem 0 1.5rem; display: flex; flex-direction: column; gap: 0;">
             <!-- Header de tabla -->
             <div style="display: grid; grid-template-columns: 1fr 150px 80px; gap: 0; padding: 1rem; color: white; font-weight: 700; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.3px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-radius: 12px 12px 0 0; border: 2px solid #3b82f6; border-bottom: none;">
                 <div style="padding-right: 1rem; border-right: 1px solid rgba(255,255,255,0.3);">Items a evaluar</div>
@@ -243,27 +272,10 @@ document.addEventListener('click', function(event) {
                 <div style="text-align: center; padding-left: 1rem;">Acción</div>
             </div>
 
-            <!-- Filas de tabla con scroll interno -->
-            <div id="tablaPreciosBody" style="display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; background: #1a1f3a; border: 2px solid #3b82f6; border-top: none; height: 310px; overflow-y: scroll; scrollbar-width: thin; scrollbar-color: #3b82f6 #1a1f3a;">
+            <!-- Filas de tabla -->
+            <div id="tablaPreciosBody" style="display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; background: #1a1f3a; border: 2px solid #3b82f6; border-top: none; min-height: 100px;">
                 <!-- Se llenará dinámicamente -->
             </div>
-            <style>
-                #tablaPreciosBody::-webkit-scrollbar {
-                    width: 10px;
-                }
-                #tablaPreciosBody::-webkit-scrollbar-track {
-                    background: #1a1f3a;
-                    border-radius: 4px;
-                }
-                #tablaPreciosBody::-webkit-scrollbar-thumb {
-                    background: #3b82f6;
-                    border-radius: 4px;
-                    border: 2px solid #1a1f3a;
-                }
-                #tablaPreciosBody::-webkit-scrollbar-thumb:hover {
-                    background: #2563eb;
-                }
-            </style>
 
             <!-- Botón Agregar -->
             <div style="padding: 1rem; text-align: center; background: #1a1f3a; border: 2px solid #3b82f6; border-top: none;">
@@ -286,8 +298,28 @@ document.addEventListener('click', function(event) {
                 </div>
             </div>
         </div>
+        </div>
     </div>
 </div>
+
+<style>
+    /* Estilos para el scrollbar general del modal de costos */
+    #calculoCostosModal > div > div:first-child::-webkit-scrollbar {
+        width: 10px;
+    }
+    #calculoCostosModal > div > div:first-child::-webkit-scrollbar-track {
+        background: #1a1f3a;
+        border-radius: 4px;
+    }
+    #calculoCostosModal > div > div:first-child::-webkit-scrollbar-thumb {
+        background: #3b82f6;
+        border-radius: 4px;
+        border: 2px solid #1a1f3a;
+    }
+    #calculoCostosModal > div > div:first-child::-webkit-scrollbar-thumb:hover {
+        background: #2563eb;
+    }
+</style>
 
 <!-- Modal de Cotización -->
 <div id="cotizacionModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; overflow-y: auto;">
@@ -299,77 +331,6 @@ document.addEventListener('click', function(event) {
     </div>
 </div>
 
-<!-- Modal PDF Fullscreen -->
-<div id="modalPDF" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 9999; padding: 0; margin: 0;">
-    <div style="position: absolute; top: 0; left: 0; right: 0; background: #1e5ba8; color: white; padding: 1rem; display: flex; justify-content: space-between; align-items: center; z-index: 10000;">
-        <h2 style="margin: 0; font-size: 1.3rem;">📄 Visualizar Cotización PDF</h2>
-        <div style="display: flex; gap: 1rem; align-items: center;">
-            <button onclick="descargarPDF()" style="padding: 0.75rem 1.5rem; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#10b981'">
-                <span class="material-symbols-rounded" style="font-size: 1.2rem;">download</span>
-                Descargar PDF
-            </button>
-            <button onclick="cerrarModalPDF()" style="padding: 0.75rem 1.5rem; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
-                <span class="material-symbols-rounded" style="font-size: 1.2rem;">close</span>
-                Cerrar
-            </button>
-        </div>
-    </div>
-    <iframe id="pdfViewer" style="position: absolute; top: 60px; left: 0; right: 0; bottom: 0; width: 100%; height: calc(100% - 60px); border: none; background: white;"></iframe>
-</div>
-
-<!-- Script para Modal PDF -->
-<script>
-    // Variable global para acceder desde otros scripts
-    window.cotizacionIdActualPDF = null;
-
-    function abrirModalPDF(cotizacionId) {
-        window.cotizacionIdActualPDF = cotizacionId;
-        const modalPDF = document.getElementById('modalPDF');
-        const pdfViewer = document.getElementById('pdfViewer');
-        
-        // Mostrar modal
-        modalPDF.style.display = 'block';
-        
-        // Cargar PDF en iframe con zoom 125%
-        pdfViewer.src = `/contador/cotizacion/${cotizacionId}/pdf#zoom=125`;
-    }
-
-    function cerrarModalPDF() {
-        const modalPDF = document.getElementById('modalPDF');
-        const pdfViewer = document.getElementById('pdfViewer');
-        
-        modalPDF.style.display = 'none';
-        pdfViewer.src = '';
-        window.cotizacionIdActualPDF = null;
-    }
-
-    function descargarPDF() {
-        if (window.cotizacionIdActualPDF) {
-            const link = document.createElement('a');
-            const url = `/contador/cotizacion/${window.cotizacionIdActualPDF}/pdf?descargar=1`;
-            link.href = url;
-            link.download = `Cotizacion_${window.cotizacionIdActualPDF}_${new Date().toISOString().split('T')[0]}.pdf`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-    }
-
-    // Cerrar modal al presionar ESC
-    document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
-            cerrarModalPDF();
-        }
-    });
-
-        // Cerrar modal al hacer clic en el fondo
-    document.getElementById('modalPDF').addEventListener('click', function(event) {
-        if (event.target === this) {
-            cerrarModalPDF();
-        }
-    });
-
-</script>
 
 <!-- Script de Tabla de Cotizaciones -->
 <script src="{{ asset('js/contador/tabla-cotizaciones.js') }}"></script>

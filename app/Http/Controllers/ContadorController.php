@@ -442,10 +442,10 @@ class ContadorController extends Controller
     public function obtenerCostos($id)
     {
         try {
-            $cotizacion = Cotizacion::with(['prendas.fotos'])->findOrFail($id);
+            $cotizacion = Cotizacion::with(['prendas.fotos', 'prendas.telaFotos'])->findOrFail($id);
             
             // Obtener costos de la cotización desde la tabla costos_prendas con la relación prenda
-            $costosCotizacion = CostoPrenda::with('prenda.fotos')
+            $costosCotizacion = CostoPrenda::with('prenda.fotos', 'prenda.telaFotos')
                 ->where('cotizacion_id', $id)
                 ->get();
             
@@ -608,6 +608,14 @@ class ContadorController extends Controller
                         ->toArray();
                 }
                 
+                // Obtener fotos de las telas
+                $telaFotos = [];
+                if ($prenda->telaFotos && $prenda->telaFotos->count() > 0) {
+                    $telaFotos = $prenda->telaFotos->map(function($foto) {
+                        return $foto->url; // Usar el accessor del modelo
+                    })->toArray();
+                }
+                
                 $prendas[] = [
                     'id' => $prenda->id,
                     'nombre_producto' => $prenda->nombre_producto ?: $costoPrenda->nombre_prenda,
@@ -618,7 +626,8 @@ class ContadorController extends Controller
                     'manga_nombre' => $manga_nombre,
                     'costo_total' => $costoTotal,
                     'items' => $items,
-                    'fotos' => $fotos
+                    'fotos' => $fotos,
+                    'tela_fotos' => $telaFotos
                 ];
             }
             
