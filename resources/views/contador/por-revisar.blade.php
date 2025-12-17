@@ -145,136 +145,22 @@
     </div>
 </section>
 
-<!-- Modal de Cotización -->
-<div id="cotizacionModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; overflow-y: auto;">
-    <div class="modal-content" style="background: white; border-radius: 12px; margin: 2rem auto; max-width: 1000px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-        <button onclick="cerrarModalCotizacion()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; z-index: 10001;">
-            <span class="material-symbols-rounded">close</span>
-        </button>
-        <div id="cotizacionContent" style="padding: 2rem;"></div>
-    </div>
-</div>
-
-<!-- Modal de Visor de Costos -->
-<div id="visorCostosModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9998; justify-content: center; align-items: center; padding: 2rem; overflow: hidden;">
-    <div class="modal-content" id="visorCostosModalContent" style="width: 90%; max-width: 800px; height: auto; overflow: visible; background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); display: flex; flex-direction: column;">
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid #e0e6ed;">
-            <h2 id="visorCostosTitle" style="margin: 0; font-size: 1.3rem; color: #2c3e50;"></h2>
-            <button onclick="cerrarVisorCostos()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #7f8c8d;">
-                <span class="material-symbols-rounded">close</span>
-            </button>
-        </div>
-        <div id="visorCostosContent" style="overflow-y: auto; flex: 1; padding: 1.5rem;"></div>
-    </div>
-</div>
-
-<!-- Modal PDF -->
-<div id="modalPDF" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center; padding: 2rem;">
-    <div style="width: 95%; height: 90vh; background: white; border-radius: 12px; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid #e0e6ed;">
-            <h2 style="margin: 0; color: #2c3e50;">Vista Previa de PDF</h2>
-            <div style="display: flex; gap: 1rem;">
-                <button onclick="descargarPDF()" style="padding: 0.75rem 1.5rem; background: #1e5ba8; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
-                    <span class="material-symbols-rounded" style="vertical-align: middle; margin-right: 0.5rem;">download</span>
-                    Descargar
-                </button>
-                <button onclick="cerrarModalPDF()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">
-                    <span class="material-symbols-rounded">close</span>
-                </button>
-            </div>
-        </div>
-        <iframe id="pdfViewer" style="flex: 1; border: none;"></iframe>
-    </div>
-</div>
-
 <script>
-// Funciones para modales
 function openCotizacionModal(cotizacionId) {
     const modal = document.getElementById('cotizacionModal');
-    const content = document.getElementById('cotizacionContent');
+    const content = document.getElementById('modalBody');
     
     fetch(`/contador/cotizacion/${cotizacionId}`)
         .then(response => response.text())
         .then(html => {
             content.innerHTML = html;
             modal.style.display = 'flex';
-            modal.style.justifyContent = 'center';
-            modal.style.alignItems = 'flex-start';
-            modal.style.paddingTop = '2rem';
         })
         .catch(error => {
             console.error('Error:', error);
             alert('Error al cargar la cotización');
         });
 }
-
-function cerrarModalCotizacion() {
-    document.getElementById('cotizacionModal').style.display = 'none';
-}
-
-function abrirModalVisorCostos(cotizacionId, cliente) {
-    window.cotizacionIdActual = cotizacionId;
-    document.getElementById('visorCostosTitle').textContent = `Costos - ${cliente}`;
-    
-    fetch(`/contador/cotizacion/${cotizacionId}/costos`)
-        .then(response => response.text())
-        .then(html => {
-            document.getElementById('visorCostosContent').innerHTML = html;
-            document.getElementById('visorCostosModal').style.display = 'flex';
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error al cargar los costos');
-        });
-}
-
-function cerrarVisorCostos() {
-    document.getElementById('visorCostosModal').style.display = 'none';
-}
-
-function abrirModalPDF(cotizacionId) {
-    window.cotizacionIdActualPDF = cotizacionId;
-    const modalPDF = document.getElementById('modalPDF');
-    const pdfViewer = document.getElementById('pdfViewer');
-    
-    modalPDF.style.display = 'flex';
-    pdfViewer.src = `/contador/cotizacion/${cotizacionId}/pdf#zoom=125`;
-}
-
-function cerrarModalPDF() {
-    const modalPDF = document.getElementById('modalPDF');
-    const pdfViewer = document.getElementById('pdfViewer');
-    
-    modalPDF.style.display = 'none';
-    pdfViewer.src = '';
-    window.cotizacionIdActualPDF = null;
-}
-
-function descargarPDF() {
-    if (window.cotizacionIdActualPDF) {
-        const link = document.createElement('a');
-        const url = `/contador/cotizacion/${window.cotizacionIdActualPDF}/pdf?descargar=1`;
-        link.href = url;
-        link.download = `Cotizacion_${window.cotizacionIdActualPDF}_${new Date().toISOString().split('T')[0]}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
-}
-
-// Cerrar modal al presionar ESC
-document.addEventListener('keydown', function(event) {
-    if (event.key === 'Escape') {
-        cerrarModalPDF();
-    }
-});
-
-// Cerrar modal al hacer clic en el fondo
-document.getElementById('modalPDF').addEventListener('click', function(event) {
-    if (event.target === this) {
-        cerrarModalPDF();
-    }
-});
 </script>
 
 <!-- Script de Tabla de Cotizaciones -->

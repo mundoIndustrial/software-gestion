@@ -216,10 +216,15 @@ function visorCostosProximo() {
  */
 function generarTabsPrendas() {
     const tabsContainer = document.getElementById('visorCostosTabsContainer');
-    if (!tabsContainer) return;
+    if (!tabsContainer) {
+        console.error('visorCostosTabsContainer no encontrado');
+        return;
+    }
     
-    // Solo generar si no existen los tabs
-    if (tabsContainer.children.length > 0) return;
+    // Limpiar tabs existentes antes de generar nuevos
+    tabsContainer.innerHTML = '';
+    
+    console.log('Generando tabs para', visorCostosActual.prendas.length, 'prendas');
     
     visorCostosActual.prendas.forEach((prenda, idx) => {
         const tab = document.createElement('button');
@@ -235,16 +240,18 @@ function generarTabsPrendas() {
         
         tab.textContent = nombrePrenda;
         tab.style.cssText = `
-            padding: 10px 20px;
-            background: #374151;
-            color: #d1d5db;
+            padding: 12px 24px;
+            background: ${idx === 0 ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : '#6b7280'};
+            color: white;
             border: none;
             border-radius: 8px 8px 0 0;
             cursor: pointer;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 0.95rem;
             transition: all 0.3s;
             white-space: nowrap;
+            text-transform: lowercase;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         `;
         
         tab.onclick = () => mostrarPrendaVisor(idx);

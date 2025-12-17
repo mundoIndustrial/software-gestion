@@ -4,8 +4,23 @@
  * Descripción: Gestiona el modal para calcular costos por prenda en cotizaciones
  */
 
+// Agregar estilos CSS para z-index alto en SweetAlert
+if (!document.getElementById('swal-high-z-index-style')) {
+    const style = document.createElement('style');
+    style.id = 'swal-high-z-index-style';
+    style.textContent = `
+        .swal-high-z-index {
+            z-index: 10000 !important;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
 // Variable global para rastrear la prenda actual
 let prendaActualIndex = 0;
+
+// Almacenamiento temporal de costos de todas las prendas
+let costosTodasPrendas = {};
 
 /**
  * Abre el modal de cálculo de costos
@@ -86,7 +101,11 @@ function abrirModalCalculoCostos(cotizacionId, cliente) {
  * @param {array} prendas - Array de prendas
  */
 function cambiarPrendaTab(prendaId, prendas) {
+    // Guardar los costos de la prenda actual antes de cambiar
+    guardarCostosPrendaActual();
+    
     // Guardar el índice de la prenda actual
+    const prendaAnteriorIndex = prendaActualIndex;
     prendaActualIndex = prendas.findIndex(p => p.id === prendaId);
     
     // Actualizar descripción
@@ -107,6 +126,102 @@ function cambiarPrendaTab(prendaId, prendas) {
     
     // Limpiar tabla
     limpiarTablaPrecios();
+    
+    // Cargar costos guardados de esta prenda si existen
+    cargarCostosPrendaDesdeMemoria(prendaActualIndex);
+}
+
+/**
+ * Guarda los costos de la prenda actual en memoria temporal
+ */
+function guardarCostosPrendaActual() {
+    const body = document.getElementById('tablaPreciosBody');
+    const rows = body.querySelectorAll('div[style*="grid-template-columns"]');
+    
+    const items = [];
+    rows.forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        if (inputs.length >= 2) {
+            const item = inputs[0].value.trim();
+            const precio = parseFloat(inputs[1].value) || 0;
+            
+            if (item && precio > 0) {
+                items.push({ item, precio });
+            }
+        }
+    });
+    
+    // Guardar en el objeto global si hay items
+    if (items.length > 0) {
+        const prendasTabs = document.querySelectorAll('#prendasTabs button');
+        const nombrePrenda = prendasTabs[prendaActualIndex]?.textContent.trim() || `Prenda ${prendaActualIndex}`;
+        const descripcion = document.getElementById('prendasDescripcion').textContent.trim();
+        
+        costosTodasPrendas[prendaActualIndex] = {
+            nombre: nombrePrenda,
+            descripcion: descripcion,
+            items: items
+        };
+        
+        console.log(`✓ Costos guardados en memoria para prenda ${prendaActualIndex}:`, items);
+    } else {
+        // Si no hay items, eliminar de la memoria
+        delete costosTodasPrendas[prendaActualIndex];
+    }
+}
+
+/**
+ * Carga los costos de una prenda desde la memoria temporal
+ */
+function cargarCostosPrendaDesdeMemoria(prendaIndex) {
+    if (costosTodasPrendas[prendaIndex]) {
+        const costos = costosTodasPrendas[prendaIndex];
+        const body = document.getElementById('tablaPreciosBody');
+        body.innerHTML = '';
+        
+        costos.items.forEach(item => {
+            const row = document.createElement('div');
+            row.style.cssText = `
+                display: grid;
+                grid-template-columns: 1fr 150px 80px;
+                gap: 0;
+                background: #f5f5f5;
+                border-radius: 8px;
+                align-items: center;
+                overflow: hidden;
+                border: 1px solid #e5e7eb;
+                flex-shrink: 0;
+                min-height: 50px;
+            `;
+            
+            row.innerHTML = `
+                <input type="text" 
+                       placeholder="Ej: Corte, Confección, Bordado..."
+                       value="${item.item || ''}"
+                       style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; width: 100%; box-sizing: border-box; outline: none; color: #000;"
+                       onchange="actualizarTotal()">
+                <input type="number" 
+                       placeholder="0.00"
+                       value="${parseFloat(item.precio) || 0}"
+                       step="0.01"
+                       min="0"
+                       style="padding: 0.75rem 1rem; border: none; border-right: 1px solid #e5e7eb; font-size: 0.9rem; background: white; text-align: center; width: 100%; box-sizing: border-box; outline: none; color: #000;"
+                       onchange="actualizarTotal()">
+                <button onclick="eliminarFilaItem(this)" 
+                        style="padding: 0.75rem; background: transparent; border: none; cursor: pointer; color: #ef4444; font-size: 1.2rem; transition: all 0.2s; width: 100%; height: 100%;"
+                        onmouseover="this.style.background='#fee2e2'"
+                        onmouseout="this.style.background='transparent'"
+                        title="Eliminar item">
+                    ×
+                </button>
+            `;
+            
+            body.appendChild(row);
+        });
+        
+        actualizarTotal();
+        console.log(`✓ Costos cargados desde memoria para prenda ${prendaIndex}`);
+    }
 }
 
 /**
@@ -337,7 +452,10 @@ function guardarCalculoCostos() {
             `,
             icon: 'warning',
             confirmButtonColor: '#f59e0b',
-            confirmButtonText: 'Entendido'
+            confirmButtonText: 'Entendido',
+            customClass: {
+                container: 'swal-high-z-index'
+            }
         });
         return;
     }
@@ -358,32 +476,13 @@ function guardarCalculoCostos() {
     
     prendaDescripcion = prendasDescripcion.textContent.trim();
     
-    // Preparar datos para enviar en la estructura esperada por el controlador
-    // Guardar costos de la prenda actual usando el índice guardado
-    const costos = {};
+    // Guardar los costos de la prenda actual antes de enviar
+    guardarCostosPrendaActual();
     
-    console.log('Prenda actual index:', prendaActualIndex);
-    console.log('Items a guardar:', items);
-    console.log('Descripción:', prendaDescripcion);
-    
-    // Si hay items, guardar la prenda actual
-    if (items.length > 0) {
-        const nombrePrenda = prendasTabs[prendaActualIndex]?.textContent.trim() || 'Prenda sin nombre';
-        
-        costos[prendaActualIndex] = {
-            nombre: nombrePrenda,
-            descripcion: prendaDescripcion,
-            items: items
-        };
-        
-        console.log(`✓ Guardando prenda ${prendaActualIndex}: ${nombrePrenda} con ${items.length} items`);
-    }
-    
-    console.log('Costos a enviar:', costos);
-    console.log('¿Costos vacío?', Object.keys(costos).length === 0);
+    console.log('Costos de todas las prendas en memoria:', costosTodasPrendas);
     
     // Validar que haya costos para guardar
-    if (Object.keys(costos).length === 0) {
+    if (Object.keys(costosTodasPrendas).length === 0) {
         console.error('No hay costos para guardar - objeto vacío');
         Swal.fire({
             title: '⚠️ Sin Costos',
@@ -396,12 +495,15 @@ function guardarCalculoCostos() {
             `,
             icon: 'warning',
             confirmButtonColor: '#f59e0b',
-            confirmButtonText: 'Entendido'
+            confirmButtonText: 'Entendido',
+            customClass: {
+                container: 'swal-high-z-index'
+            }
         });
         return;
     }
     
-    // Enviar al servidor
+    // Enviar al servidor todos los costos guardados
     fetch('/contador/costos/guardar', {
         method: 'POST',
         headers: {
@@ -410,13 +512,13 @@ function guardarCalculoCostos() {
         },
         body: JSON.stringify({
             cotizacion_id: window.cotizacionIdActual,
-            costos: costos
+            costos: costosTodasPrendas
         })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            console.log('Costos guardados en BD:', costos);
+            console.log('Costos guardados en BD:', costosTodasPrendas);
             
             // Mostrar modal de éxito
             Swal.fire({
@@ -436,7 +538,12 @@ function guardarCalculoCostos() {
                 icon: 'success',
                 confirmButtonColor: '#10b981',
                 confirmButtonText: 'Entendido',
+                customClass: {
+                    container: 'swal-high-z-index'
+                },
                 didClose: () => {
+                    // Limpiar memoria de costos
+                    costosTodasPrendas = {};
                     cerrarModalCalculoCostos();
                 }
             });
@@ -452,7 +559,10 @@ function guardarCalculoCostos() {
                 `,
                 icon: 'error',
                 confirmButtonColor: '#ef4444',
-                confirmButtonText: 'Entendido'
+                confirmButtonText: 'Entendido',
+                customClass: {
+                    container: 'swal-high-z-index'
+                }
             });
         }
     })
@@ -470,7 +580,10 @@ function guardarCalculoCostos() {
             `,
             icon: 'error',
             confirmButtonColor: '#ef4444',
-            confirmButtonText: 'Entendido'
+            confirmButtonText: 'Entendido',
+            customClass: {
+                container: 'swal-high-z-index'
+            }
         });
     });
 }

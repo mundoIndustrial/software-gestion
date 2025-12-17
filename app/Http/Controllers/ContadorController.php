@@ -222,10 +222,18 @@ class ContadorController extends Controller
                         'descripcion' => $prenda->descripcion ?? null,
                         'descripcion_formateada' => $descripcionFormateada,
                         'detalles_proceso' => $prenda->descripcion ?? null,
-                        // Fotos de la prenda - URLs completas (asset)
-                        'fotos' => $prenda->fotos ? $prenda->fotos->map(function($foto) {
-                            return asset($foto->ruta_webp ?? $foto->url);
-                        })->toArray() : [],
+                        // Fotos de la prenda - URLs completas - excluir logos
+                        'fotos' => $prenda->fotos ? $prenda->fotos
+                            ->filter(function($foto) {
+                                // Excluir fotos que contengan 'logo' o 'logos' en la ruta
+                                $ruta = $foto->ruta_webp ?? $foto->ruta_original ?? '';
+                                return !str_contains(strtolower($ruta), 'logo');
+                            })
+                            ->map(function($foto) {
+                                return $foto->url; // Usar el accessor del modelo
+                            })
+                            ->values()
+                            ->toArray() : [],
                         // Telas asociadas - URLs de imagen
                         'telas' => $prenda->telas ? $prenda->telas->map(function($tela) {
                             return [
@@ -233,12 +241,12 @@ class ContadorController extends Controller
                                 'color' => $tela->color ?? null,
                                 'nombre_tela' => $tela->tela->nombre ?? null,
                                 'referencia' => $tela->tela->referencia ?? null,
-                                'url_imagen' => asset($tela->ruta_webp ?? $tela->url_imagen),
+                                'url_imagen' => $tela->url_imagen ?? '', // Usar directamente el campo
                             ];
                         })->toArray() : [],
-                        // Fotos de telas - URLs completas (asset)
+                        // Fotos de telas - URLs completas
                         'tela_fotos' => $prenda->telaFotos ? $prenda->telaFotos->map(function($foto) {
-                            return asset($foto->ruta_webp ?? $foto->url ?? null);
+                            return $foto->url; // Usar el accessor del modelo
                         })->toArray() : [],
                         // Tallas
                         'tallas' => $prenda->tallas ? $prenda->tallas->map(function($talla) {
@@ -434,10 +442,12 @@ class ContadorController extends Controller
     public function obtenerCostos($id)
     {
         try {
-            $cotizacion = Cotizacion::with('prendasCotizaciones')->findOrFail($id);
+            $cotizacion = Cotizacion::with(['prendas.fotos'])->findOrFail($id);
             
-            // Obtener costos de la cotización desde la tabla costos_prendas
-            $costosCotizacion = CostoPrenda::where('cotizacion_id', $id)->get();
+            // Obtener costos de la cotización desde la tabla costos_prendas con la relación prenda
+            $costosCotizacion = CostoPrenda::with('prenda.fotos')
+                ->where('cotizacion_id', $id)
+                ->get();
             
             if ($costosCotizacion->isEmpty()) {
                 return response()->json([
@@ -471,11 +481,8 @@ class ContadorController extends Controller
                     }
                 }
                 
-                // Obtener la prenda correspondiente buscando por nombre
-                $prenda = $cotizacion->prendasCotizaciones()
-                    ->where('nombre_producto', $costoPrenda->nombre_prenda)
-                    ->orWhere('nombre_producto', 'LIKE', '%' . $costoPrenda->nombre_prenda . '%')
-                    ->first();
+                // Obtener la prenda usando la relación directa
+                $prenda = $costoPrenda->prenda;
                 
                 // Si no encuentra prenda, crear una estructura mínima
                 if (!$prenda) {
@@ -507,7 +514,7 @@ class ContadorController extends Controller
                     continue;
                 }
                 
-                $productoIndex = $cotizacion->prendasCotizaciones()->pluck('id')->search($prenda->id) ?? 0;
+                $productoIndex = $cotizacion->prendas->pluck('id')->search($prenda->id) ?? 0;
                 
                 // Obtener información de variantes
                 $color = '';
@@ -585,16 +592,20 @@ class ContadorController extends Controller
                     $descripcion = DescripcionPrendaHelper::generarDescripcion($datosFormato);
                 }
                 
-                // Obtener fotos de la prenda
+                // Obtener fotos de la prenda (excluir fotos de logos)
                 $fotos = [];
-                if ($prenda->fotos) {
-                    $fotosArray = is_string($prenda->fotos) 
-                        ? json_decode($prenda->fotos, true) 
-                        : $prenda->fotos;
-                    
-                    if (is_array($fotosArray)) {
-                        $fotos = $fotosArray;
-                    }
+                if ($prenda->fotos && $prenda->fotos->count() > 0) {
+                    $fotos = $prenda->fotos
+                        ->filter(function($foto) {
+                            // Excluir fotos que contengan 'logo' o 'logos' en la ruta
+                            $ruta = $foto->ruta_webp ?? $foto->ruta_original ?? '';
+                            return !str_contains(strtolower($ruta), 'logo');
+                        })
+                        ->map(function($foto) {
+                            return $foto->url; // Usar el accessor del modelo
+                        })
+                        ->values()
+                        ->toArray();
                 }
                 
                 $prendas[] = [
