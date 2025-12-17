@@ -1,0 +1,579 @@
+/* ============================================
+   MODAL EDITAR PEDIDO - DISEÑO MODERNO
+   ============================================ */
+
+/* Modal Overlay */
+#modalEditarPedido.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease;
+}
+
+/* Modal Content */
+#modalEditarPedido .modal-content {
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    width: 95%;
+    max-width: 1400px;
+    max-height: 95vh;
+    overflow: hidden;
+    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    flex-direction: column;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100px) scale(0.95);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/* ============================================
+   MODAL HEADER - DISEÑO PROFESIONAL
+   ============================================ */
+
+#modalEditarPedido .modal-header {
+    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    padding: 2rem;
+    border-bottom: 3px solid #1e3a8a;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+#modalEditarPedido .modal-header h2 {
+    margin: 0;
+    color: #ffffff;
+    font-size: 1.75rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+#modalEditarPedido .modal-header h2 .material-symbols-rounded {
+    font-size: 2rem;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.5rem;
+    border-radius: 8px;
+}
+
+#modalEditarPedido .btn-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #ffffff;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+#modalEditarPedido .btn-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* ============================================
+   MODAL BODY
+   ============================================ */
+
+#modalEditarPedido .modal-body {
+    padding: 2rem;
+    overflow-y: auto;
+    flex: 1;
+    background: #f8fafc;
+}
+
+/* Form Groups */
+#modalEditarPedido .form-group {
+    margin-bottom: 1.5rem;
+}
+
+#modalEditarPedido .form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+    font-size: 0.875rem;
+}
+
+#modalEditarPedido .form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e0e6ed;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.875rem;
+    resize: vertical;
+    transition: all 0.3s ease;
+}
+
+#modalEditarPedido .form-control:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+#modalEditarPedido .form-control:read-only {
+    background-color: #f8f9fa;
+    cursor: not-allowed;
+}
+
+/* ============================================
+   PRENDA CARDS - DISEÑO MODERNO
+   ============================================ */
+
+.prenda-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 0;
+    margin-bottom: 2rem;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.prenda-card:hover {
+    border-color: #1e40af;
+    box-shadow: 0 8px 24px rgba(30, 64, 175, 0.15);
+    transform: translateY(-2px);
+}
+
+.prenda-card h4 {
+    margin: 0;
+    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    color: #ffffff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-bottom: 3px solid #1e3a8a;
+}
+
+.prenda-card h4 .material-symbols-rounded {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.4rem;
+    border-radius: 6px;
+    font-size: 1.5rem;
+}
+
+.prenda-card-body {
+    padding: 1.5rem;
+}
+
+/* Image Management */
+.foto-item {
+    position: relative;
+    display: inline-block;
+    margin: 0.5rem;
+}
+
+.foto-item img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid #e0e6ed;
+    transition: all 0.3s ease;
+}
+
+.foto-item:hover img {
+    border-color: #3498db;
+    transform: scale(1.05);
+}
+
+.foto-item button {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    line-height: 1;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.foto-item button:hover {
+    background: #c0392b;
+    transform: scale(1.1);
+}
+
+.foto-preview {
+    position: relative;
+    display: inline-block;
+    margin: 0.5rem;
+}
+
+.foto-preview img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid #3498db;
+}
+
+/* ============================================
+   FORM ACTIONS - BOTONES DE ACCIÓN
+   ============================================ */
+
+#modalEditarPedido .form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+    padding: 1.75rem 2rem;
+    background: #ffffff;
+    border-top: 3px solid #e2e8f0;
+    flex-shrink: 0;
+}
+
+#modalEditarPedido .btn {
+    padding: 0.875rem 2rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#modalEditarPedido .btn-secondary {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 2px solid #e2e8f0;
+}
+
+#modalEditarPedido .btn-secondary:hover {
+    background: #e2e8f0;
+    color: #475569;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+#modalEditarPedido .btn[type="submit"] {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: 2px solid #059669;
+}
+
+#modalEditarPedido .btn[type="submit"]:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+#modalEditarPedido .btn[type="submit"]:disabled {
+    background: #94a3b8;
+    border-color: #94a3b8;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Grid Layouts */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+/* ============================================
+   TALLAS GRID - DISEÑO DE BADGES
+   ============================================ */
+
+.tallas-section {
+    margin-bottom: 1.5rem !important;
+}
+
+.tallas-label {
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+    color: #1e40af !important;
+    margin-bottom: 0.75rem !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+}
+
+.tallas-label .material-symbols-rounded {
+    vertical-align: middle;
+    font-size: 1.2rem;
+}
+
+.tallas-grid {
+    display: grid !important;
+    grid-template-columns: repeat(6, 1fr) !important;
+    gap: 0.75rem !important;
+    width: 100% !important;
+}
+
+@media (max-width: 1199px) {
+    .tallas-grid {
+        grid-template-columns: repeat(5, 1fr) !important;
+    }
+}
+
+@media (max-width: 991px) {
+    .tallas-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+    }
+}
+
+@media (max-width: 767px) {
+    .tallas-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .tallas-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+.talla-item {
+    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    color: white;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    box-shadow: 0 2px 8px rgba(30, 64, 175, 0.3);
+    transition: all 0.3s ease;
+    min-width: 0;
+}
+
+.talla-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.4);
+}
+
+.talla-item label {
+    margin: 0 !important;
+    color: white !important;
+    font-weight: 700 !important;
+    min-width: 30px;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.talla-item input[type="number"] {
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: #1e40af;
+    font-weight: 700;
+    text-align: center;
+    width: 100%;
+    max-width: 70px;
+    padding: 0.4rem 0.5rem;
+    border-radius: 6px;
+    flex-shrink: 1;
+    min-width: 50px;
+}
+
+.talla-item input[type="number"]:focus {
+    background: white;
+    border-color: #1e3a8a;
+    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.2);
+    outline: none;
+}
+
+.fotos-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+/* ============================================
+   SECTION HEADERS
+   ============================================ */
+
+.section-header {
+    margin: 0 0 1.5rem 0;
+    color: #1e40af;
+    font-size: 1.15rem;
+    font-weight: 700;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.section-header .material-symbols-rounded {
+    vertical-align: middle;
+    font-size: 1.75rem;
+    color: #3b82f6;
+    background: #eff6ff;
+    padding: 0.4rem;
+    border-radius: 6px;
+}
+
+/* ============================================
+   INFO SECTION - INFORMACIÓN DEL PEDIDO
+   ============================================ */
+
+.info-section {
+    background: #ffffff;
+    padding: 1.75rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Checkboxes */
+#modalEditarPedido input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #3498db;
+}
+
+#modalEditarPedido label:has(input[type="checkbox"]) {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+/* File Input */
+#modalEditarPedido input[type="file"] {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+}
+
+#modalEditarPedido input[type="file"]::file-selector-button {
+    padding: 0.5rem 1rem;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    margin-right: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+#modalEditarPedido input[type="file"]::file-selector-button:hover {
+    background: #2980b9;
+}
+
+/* Small Text */
+#modalEditarPedido small {
+    color: #7f8c8d;
+    font-size: 0.75rem;
+    display: block;
+    margin-top: 0.25rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    #modalEditarPedido .modal-content {
+        width: 98%;
+        max-height: 98vh;
+    }
+
+    #modalEditarPedido .modal-body {
+        padding: 1rem;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .prenda-card {
+        padding: 1rem;
+    }
+
+    .foto-item img,
+    .foto-preview img {
+        width: 80px;
+        height: 80px;
+    }
+
+    #modalEditarPedido .form-actions {
+        flex-direction: column;
+    }
+
+    #modalEditarPedido .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    #modalEditarPedido .modal-header h2 {
+        font-size: 1.2rem;
+    }
+
+    .tallas-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .foto-item img,
+    .foto-preview img {
+        width: 60px;
+        height: 60px;
+    }
+}

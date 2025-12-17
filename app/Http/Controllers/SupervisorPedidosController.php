@@ -708,4 +708,349 @@ class SupervisorPedidosController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Obtener datos completos del pedido para edición
+     * GET /supervisor-pedidos/{id}/editar
+     */
+    public function edit($id)
+    {
+        try {
+            $orden = PedidoProduccion::with([
+                'prendas' => function($query) {
+                    $query->with([
+                        'color',
+                        'tela',
+                        'tipoManga',
+                        'tipoBroche',
+                        'fotos',
+                        'fotosLogo',
+                        'fotosTela'
+                    ]);
+                },
+                'asesora'
+            ])->findOrFail($id);
+
+            // Preparar datos de prendas con todas las relaciones
+            $prendasData = $orden->prendas->map(function($prenda) {
+                // Convertir IDs de tallas a nombres de tallas
+                $cantidadTallaConNombres = [];
+                
+                // Asegurar que cantidad_talla sea un array
+                $cantidadTalla = $prenda->cantidad_talla;
+                if (is_string($cantidadTalla)) {
+                    $cantidadTalla = json_decode($cantidadTalla, true) ?? [];
+                }
+                
+                if ($cantidadTalla && is_array($cantidadTalla)) {
+                    foreach ($cantidadTalla as $tallaId => $cantidad) {
+                        if ($cantidad > 0) {
+                            // Buscar el nombre de la talla por ID
+                            $talla = \App\Models\Talla::find($tallaId);
+                            $nombreTalla = $talla ? $talla->nombre : $tallaId;
+                            $cantidadTallaConNombres[$nombreTalla] = $cantidad;
+                        }
+                    }
+                }
+                
+                // Parsear descripcion_variaciones en campos individuales
+                $variaciones = [
+                    'obs_manga' => '',
+                    'obs_bolsillos' => '',
+                    'obs_broche' => '',
+                    'obs_reflectivo' => ''
+                ];
+                
+                if ($prenda->descripcion_variaciones) {
+                    // Parsear el texto de variaciones
+                    $texto = $prenda->descripcion_variaciones;
+                    
+                    // Extraer Manga
+                    if (preg_match('/Manga:\s*([^|]+)/', $texto, $matches)) {
+                        $variaciones['obs_manga'] = trim($matches[1]);
+                    }
+                    
+                    // Extraer Bolsillos
+                    if (preg_match('/Bolsillos:\s*([^|]+)/', $texto, $matches)) {
+                        $variaciones['obs_bolsillos'] = trim($matches[1]);
+                    }
+                    
+                    // Extraer Broche
+                    if (preg_match('/Broche:\s*([^|]+)/', $texto, $matches)) {
+                        $variaciones['obs_broche'] = trim($matches[1]);
+                    }
+                    
+                    // Extraer Reflectivo
+                    if (preg_match('/Reflectivo:\s*(.+)$/', $texto, $matches)) {
+                        $variaciones['obs_reflectivo'] = trim($matches[1]);
+                    }
+                }
+                
+                return [
+                    'id' => $prenda->id,
+                    'nombre_prenda' => $prenda->nombre_prenda,
+                    'cantidad' => $prenda->cantidad,
+                    'descripcion' => $prenda->descripcion,
+                    'obs_manga' => $variaciones['obs_manga'],
+                    'obs_bolsillos' => $variaciones['obs_bolsillos'],
+                    'obs_broche' => $variaciones['obs_broche'],
+                    'obs_reflectivo' => $variaciones['obs_reflectivo'],
+                    'cantidad_talla' => $cantidadTallaConNombres,
+                    'color_id' => $prenda->color_id,
+                    'color_nombre' => $prenda->color?->nombre ?? null,
+                    'tela_id' => $prenda->tela_id,
+                    'tela_nombre' => $prenda->tela?->nombre ?? null,
+                    'tipo_manga_id' => $prenda->tipo_manga_id,
+                    'tipo_manga_nombre' => $prenda->tipoManga?->nombre ?? null,
+                    'tipo_broche_id' => $prenda->tipo_broche_id,
+                    'tipo_broche_nombre' => $prenda->tipoBroche?->nombre ?? null,
+                    'tiene_bolsillos' => $prenda->tiene_bolsillos,
+                    'tiene_reflectivo' => $prenda->tiene_reflectivo,
+                    'fotos' => $prenda->fotos->map(function($foto) {
+                        return [
+                            'id' => $foto->id,
+                            'ruta' => $foto->ruta_foto,
+                            'url' => Storage::url($foto->ruta_foto)
+                        ];
+                    }),
+                    'fotos_logo' => $prenda->fotosLogo->map(function($foto) {
+                        return [
+                            'id' => $foto->id,
+                            'ruta' => $foto->ruta_foto,
+                            'url' => Storage::url($foto->ruta_foto)
+                        ];
+                    }),
+                    'fotos_tela' => $prenda->fotosTela->map(function($foto) {
+                        return [
+                            'id' => $foto->id,
+                            'ruta' => $foto->ruta_foto,
+                            'url' => Storage::url($foto->ruta_foto)
+                        ];
+                    })
+                ];
+            });
+
+            // Obtener listas de colores y telas disponibles
+            $colores = \App\Models\ColorPrenda::orderBy('nombre')->get(['id', 'nombre']);
+            $telas = \App\Models\TelaPrenda::orderBy('nombre')->get(['id', 'nombre']);
+
+            return response()->json([
+                'success' => true,
+                'orden' => [
+                    'id' => $orden->id,
+                    'numero_pedido' => $orden->numero_pedido,
+                    'cliente' => $orden->cliente,
+                    'cliente_id' => $orden->cliente_id,
+                    'asesor_id' => $orden->asesor_id,
+                    'asesora_nombre' => $orden->asesora?->name ?? 'N/A',
+                    'forma_de_pago' => $orden->forma_de_pago,
+                    'estado' => $orden->estado,
+                    'novedades' => $orden->novedades,
+                    'dia_de_entrega' => $orden->dia_de_entrega,
+                    'fecha_de_creacion_de_orden' => $orden->fecha_de_creacion_de_orden?->format('Y-m-d'),
+                    'fecha_estimada_de_entrega' => $orden->fecha_estimada_de_entrega?->format('Y-m-d'),
+                    'prendas' => $prendasData
+                ],
+                'colores' => $colores,
+                'telas' => $telas
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener datos para edición', [
+                'error' => $e->getMessage(),
+                'orden_id' => $id
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener datos del pedido: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Actualizar pedido completo
+     * PUT /supervisor-pedidos/{id}/actualizar
+     */
+    public function update(Request $request, $id)
+    {
+        try {
+            $orden = PedidoProduccion::with('prendas')->findOrFail($id);
+
+            // Validar datos básicos del pedido
+            $validated = $request->validate([
+                'cliente' => 'required|string|max:255',
+                'forma_de_pago' => 'nullable|string|max:255',
+                'novedades' => 'nullable|string',
+                'dia_de_entrega' => 'nullable|integer|min:1',
+                'prendas' => 'required|array|min:1',
+                'prendas.*.id' => 'required|exists:prendas_pedido,id',
+                'prendas.*.nombre_prenda' => 'required|string|max:255',
+                'prendas.*.descripcion' => 'nullable|string',
+                'prendas.*.obs_manga' => 'nullable|string',
+                'prendas.*.obs_bolsillos' => 'nullable|string',
+                'prendas.*.obs_broche' => 'nullable|string',
+                'prendas.*.obs_reflectivo' => 'nullable|string',
+                'prendas.*.cantidad_talla' => 'nullable|array',
+                'prendas.*.color_id' => 'nullable|exists:colores_prenda,id',
+                'prendas.*.tela_id' => 'nullable|exists:telas_prenda,id',
+                'prendas.*.tipo_manga_id' => 'nullable|exists:tipos_manga,id',
+                'prendas.*.tipo_broche_id' => 'nullable|exists:tipos_broche,id',
+                'prendas.*.tiene_bolsillos' => 'nullable|boolean',
+                'prendas.*.tiene_reflectivo' => 'nullable|boolean',
+                'prendas.*.nuevas_fotos' => 'nullable|array',
+                'prendas.*.nuevas_fotos.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
+                'prendas.*.nuevas_fotos_logo' => 'nullable|array',
+                'prendas.*.nuevas_fotos_logo.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
+                'prendas.*.nuevas_fotos_tela' => 'nullable|array',
+                'prendas.*.nuevas_fotos_tela.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
+            ]);
+
+            \DB::beginTransaction();
+
+            // Actualizar datos del pedido
+            $orden->update([
+                'cliente' => $validated['cliente'],
+                'forma_de_pago' => $validated['forma_de_pago'] ?? $orden->forma_de_pago,
+                'novedades' => $validated['novedades'] ?? $orden->novedades,
+                'dia_de_entrega' => $validated['dia_de_entrega'] ?? $orden->dia_de_entrega,
+            ]);
+
+            // Actualizar cada prenda
+            foreach ($validated['prendas'] as $index => $prendaData) {
+                $prenda = PrendaPedido::findOrFail($prendaData['id']);
+                
+                // Reconstruir descripcion_variaciones desde los campos individuales
+                $variacionesTexto = [];
+                
+                if (!empty($prendaData['obs_manga'])) {
+                    $variacionesTexto[] = "Manga: " . $prendaData['obs_manga'];
+                }
+                
+                if (!empty($prendaData['obs_bolsillos'])) {
+                    $variacionesTexto[] = "Bolsillos: " . $prendaData['obs_bolsillos'];
+                }
+                
+                if (!empty($prendaData['obs_broche'])) {
+                    $variacionesTexto[] = "Broche: " . $prendaData['obs_broche'];
+                }
+                
+                if (!empty($prendaData['obs_reflectivo'])) {
+                    $variacionesTexto[] = "Reflectivo: " . $prendaData['obs_reflectivo'];
+                }
+                
+                $descripcionVariaciones = !empty($variacionesTexto) ? implode(' | ', $variacionesTexto) : null;
+                
+                $prenda->update([
+                    'nombre_prenda' => $prendaData['nombre_prenda'],
+                    'descripcion' => $prendaData['descripcion'] ?? $prenda->descripcion,
+                    'descripcion_variaciones' => $descripcionVariaciones,
+                    'cantidad_talla' => $prendaData['cantidad_talla'] ?? $prenda->cantidad_talla,
+                    'color_id' => $prendaData['color_id'] ?? $prenda->color_id,
+                    'tela_id' => $prendaData['tela_id'] ?? $prenda->tela_id,
+                    'tipo_manga_id' => $prendaData['tipo_manga_id'] ?? $prenda->tipo_manga_id,
+                    'tipo_broche_id' => $prendaData['tipo_broche_id'] ?? $prenda->tipo_broche_id,
+                    'tiene_bolsillos' => $prendaData['tiene_bolsillos'] ?? false,
+                    'tiene_reflectivo' => $prendaData['tiene_reflectivo'] ?? false,
+                ]);
+
+                // Guardar nuevas fotos de prenda
+                if ($request->hasFile("prendas.{$index}.nuevas_fotos")) {
+                    foreach ($request->file("prendas.{$index}.nuevas_fotos") as $foto) {
+                        $path = $foto->store('pedidos/prendas', 'public');
+                        $prenda->fotos()->create(['ruta_foto' => $path]);
+                    }
+                }
+
+                // Guardar nuevas fotos de logo
+                if ($request->hasFile("prendas.{$index}.nuevas_fotos_logo")) {
+                    foreach ($request->file("prendas.{$index}.nuevas_fotos_logo") as $foto) {
+                        $path = $foto->store('pedidos/logos', 'public');
+                        $prenda->fotosLogo()->create(['ruta_foto' => $path]);
+                    }
+                }
+
+                // Guardar nuevas fotos de tela
+                if ($request->hasFile("prendas.{$index}.nuevas_fotos_tela")) {
+                    foreach ($request->file("prendas.{$index}.nuevas_fotos_tela") as $foto) {
+                        $path = $foto->store('pedidos/telas', 'public');
+                        $prenda->fotosTela()->create(['ruta_foto' => $path]);
+                    }
+                }
+            }
+
+            \DB::commit();
+
+            \Log::info("Pedido #{$orden->numero_pedido} actualizado por " . auth()->user()->name);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pedido actualizado correctamente',
+                'orden' => $orden->fresh('prendas')
+            ]);
+
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            \Log::error('Error al actualizar pedido', [
+                'error' => $e->getMessage(),
+                'orden_id' => $id
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar el pedido: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Eliminar imagen de prenda
+     * DELETE /supervisor-pedidos/imagen/{tipo}/{id}
+     */
+    public function deleteImage($tipo, $id)
+    {
+        try {
+            $modelClass = match($tipo) {
+                'prenda' => \App\Models\PrendaFotoPedido::class,
+                'logo' => \App\Models\PrendaFotoLogoPedido::class,
+                'tela' => \App\Models\PrendaFotoTelaPedido::class,
+                default => null
+            };
+
+            if (!$modelClass) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tipo de imagen no válido'
+                ], 400);
+            }
+
+            $foto = $modelClass::findOrFail($id);
+            
+            // Eliminar archivo físico
+            if (Storage::disk('public')->exists($foto->ruta_foto)) {
+                Storage::disk('public')->delete($foto->ruta_foto);
+            }
+
+            // Eliminar registro
+            $foto->delete();
+
+            \Log::info("Imagen {$tipo} eliminada", ['id' => $id]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Imagen eliminada correctamente'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error al eliminar imagen', [
+                'error' => $e->getMessage(),
+                'tipo' => $tipo,
+                'id' => $id
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar la imagen: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

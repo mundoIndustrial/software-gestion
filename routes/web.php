@@ -592,6 +592,16 @@ Route::middleware(['auth', 'role:supervisor_pedidos,admin'])->prefix('supervisor
     
     // Obtener datos para comparación (pedido vs cotización)
     Route::get('/{id}/comparar', [App\Http\Controllers\SupervisorPedidosController::class, 'obtenerDatosComparacion'])->name('comparar');
+    
+    // Editar pedido
+    Route::get('/{id}/editar', [App\Http\Controllers\SupervisorPedidosController::class, 'edit'])->name('editar');
+    
+    // Actualizar pedido
+    Route::put('/{id}/actualizar', [App\Http\Controllers\SupervisorPedidosController::class, 'update'])->name('actualizar');
+    Route::post('/{id}/actualizar', [App\Http\Controllers\SupervisorPedidosController::class, 'update'])->name('actualizar.post');
+    
+    // Eliminar imagen de prenda
+    Route::delete('/imagen/{tipo}/{id}', [App\Http\Controllers\SupervisorPedidosController::class, 'deleteImage'])->name('imagen.eliminar');
 });
 
 // ========================================

@@ -1,0 +1,331 @@
+/**
+ * =====================================================
+ * MODAL EDITAR PEDIDO - FUNCIONALIDAD
+ * =====================================================
+ */
+
+function abrirModalEditar(ordenId, numeroOrden) {
+    document.getElementById('editarNumeroOrden').textContent = '#' + numeroOrden;
+    document.getElementById('editarOrdenId').value = ordenId;
+    document.getElementById('modalEditarPedido').style.display = 'flex';
+    cargarDatosPedido(ordenId);
+}
+
+function cerrarModalEditar() {
+    document.getElementById('modalEditarPedido').style.display = 'none';
+    document.getElementById('formEditarPedido').reset();
+    document.getElementById('prendasContainer').innerHTML = '';
+}
+
+let coloresDisponibles = [];
+let telasDisponibles = [];
+
+function cargarDatosPedido(ordenId) {
+    fetch(`/supervisor-pedidos/${ordenId}/editar`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const orden = data.orden;
+                coloresDisponibles = data.colores || [];
+                telasDisponibles = data.telas || [];
+                
+                document.getElementById('editarCliente').value = orden.cliente || '';
+                document.getElementById('editarFormaPago').value = orden.forma_de_pago || '';
+                document.getElementById('editarDiaEntrega').value = orden.dia_de_entrega || '';
+                document.getElementById('editarNovedades').value = orden.novedades || '';
+                cargarPrendas(orden.prendas);
+            } else {
+                alert('Error al cargar datos del pedido: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cargar datos del pedido');
+        });
+}
+
+function cargarPrendas(prendas) {
+    const container = document.getElementById('prendasContainer');
+    container.innerHTML = `
+        <h3 style="margin: 0 0 1.5rem 0; color: #2c3e50; font-size: 1.1rem; border-bottom: 2px solid #e0e6ed; padding-bottom: 0.75rem;">
+            <span class="material-symbols-rounded" style="vertical-align: middle; margin-right: 0.5rem;">checkroom</span>
+            Prendas del Pedido
+        </h3>
+    `;
+    
+    prendas.forEach((prenda, index) => {
+        const prendaHtml = crearPrendaHTML(prenda, index);
+        container.insertAdjacentHTML('beforeend', prendaHtml);
+    });
+}
+
+function crearPrendaHTML(prenda, index) {
+    const tallasHtml = prenda.cantidad_talla ? Object.entries(prenda.cantidad_talla)
+        .filter(([talla, cantidad]) => cantidad > 0) // Solo mostrar tallas con cantidad mayor a 0
+        .sort((a, b) => {
+            // Ordenar tallas: XS, S, M, L, XL, XXL, XXXL, luego numéricas
+            const orden = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+            const indexA = orden.indexOf(a[0]);
+            const indexB = orden.indexOf(b[0]);
+            if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+            if (indexA !== -1) return -1;
+            if (indexB !== -1) return 1;
+            return a[0].localeCompare(b[0], undefined, {numeric: true});
+        })
+        .map(([talla, cantidad]) => `
+        <div class="talla-item">
+            <label>${talla}:</label>
+            <input type="number" name="prendas[${index}][cantidad_talla][${talla}]" value="${cantidad}" min="1" required>
+        </div>
+    `).join('') : '';
+
+    const fotosHtml = prenda.fotos ? prenda.fotos.map(foto => `
+        <div class="foto-item">
+            <img src="${foto.url}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #e0e6ed;">
+            <button type="button" onclick="eliminarImagen('prenda', ${foto.id}, this)" 
+                    style="position: absolute; top: -8px; right: -8px; background: #e74c3c; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1;">×</button>
+        </div>
+    `).join('') : '';
+
+    const fotosLogoHtml = prenda.fotos_logo ? prenda.fotos_logo.map(foto => `
+        <div class="foto-item">
+            <img src="${foto.url}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #e0e6ed;">
+            <button type="button" onclick="eliminarImagen('logo', ${foto.id}, this)" 
+                    style="position: absolute; top: -8px; right: -8px; background: #e74c3c; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1;">×</button>
+        </div>
+    `).join('') : '';
+
+    const fotosTelaHtml = prenda.fotos_tela ? prenda.fotos_tela.map(foto => `
+        <div class="foto-item">
+            <img src="${foto.url}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #e0e6ed;">
+            <button type="button" onclick="eliminarImagen('tela', ${foto.id}, this)" 
+                    style="position: absolute; top: -8px; right: -8px; background: #e74c3c; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; line-height: 1;">×</button>
+        </div>
+    `).join('') : '';
+
+    return `
+        <div class="prenda-card">
+            <h4>
+                <span class="material-symbols-rounded">checkroom</span>
+                Prenda ${index + 1}: ${prenda.nombre_prenda || 'Sin nombre'}
+            </h4>
+            <div class="prenda-card-body">
+                <input type="hidden" name="prendas[${index}][id]" value="${prenda.id}">
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                    <div class="form-group">
+                        <label>Nombre de Prenda *</label>
+                        <input type="text" name="prendas[${index}][nombre_prenda]" value="${prenda.nombre_prenda || ''}" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Color</label>
+                        <select name="prendas[${index}][color_id]" class="form-control">
+                            <option value="">Seleccionar color</option>
+                            ${coloresDisponibles.map(color => `
+                                <option value="${color.id}" ${prenda.color_id == color.id ? 'selected' : ''}>
+                                    ${color.nombre}
+                                </option>
+                            `).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Tela</label>
+                        <select name="prendas[${index}][tela_id]" class="form-control">
+                            <option value="">Seleccionar tela</option>
+                            ${telasDisponibles.map(tela => `
+                                <option value="${tela.id}" ${prenda.tela_id == tela.id ? 'selected' : ''}>
+                                    ${tela.nombre}
+                                </option>
+                            `).join('')}
+                        </select>
+                    </div>
+                </div>
+                
+                
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Descripción</label>
+                    <textarea name="prendas[${index}][descripcion]" class="form-control" rows="3">${prenda.descripcion || ''}</textarea>
+                </div>
+                
+                <div class="variaciones-section" style="margin-top: 1rem; padding: 1rem; background: #f5f5f5; border-radius: 0.5rem; border-left: 4px solid #1e40af;">
+                    <strong style="display: block; margin-bottom: 1rem; color: #333333; font-size: 1rem;">📋 Variaciones de la Prenda:</strong>
+                    <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #d0d0d0; border-radius: 4px; overflow: hidden; font-size: 0.9rem;">
+                        <thead>
+                            <tr style="background: #f0f0f0; border-bottom: 2px solid #d0d0d0;">
+                                <th style="padding: 0.75rem; text-align: left; font-weight: 600; border-right: 1px solid #d0d0d0; width: 120px;">Tipo</th>
+                                <th style="padding: 0.75rem; text-align: left; font-weight: 600; border-right: 1px solid #d0d0d0; width: 150px;">Valor</th>
+                                <th style="padding: 0.75rem; text-align: left; font-weight: 600;">Observaciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td style="padding: 0.75rem; border-right: 1px solid #d0d0d0; font-weight: 500;">Manga</td>
+                                <td style="padding: 0.75rem; border-right: 1px solid #d0d0d0;">
+                                    <input type="text" value="${prenda.tipo_manga_nombre || 'N/A'}" readonly style="width: 100%; padding: 0.5rem; border: 1px solid #d0d0d0; border-radius: 4px; background: #f9f9f9; font-size: 0.875rem;">
+                                </td>
+                                <td style="padding: 0.75rem;">
+                                    <textarea name="prendas[${index}][obs_manga]" style="width: 100%; padding: 0.5rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.875rem; resize: vertical; min-height: 60px;" placeholder="Ej: manga prueba">${prenda.obs_manga || ''}</textarea>
+                                </td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td style="padding: 0.75rem; border-right: 1px solid #d0d0d0; font-weight: 500;">Cierre</td>
+                                <td style="padding: 0.75rem; border-right: 1px solid #d0d0d0;">
+                                    <input type="text" value="${prenda.tipo_broche_nombre || 'Botón'}" readonly style="width: 100%; padding: 0.5rem; border: 1px solid #d0d0d0; border-radius: 4px; background: #f9f9f9; font-size: 0.875rem;">
+                                </td>
+                                <td style="padding: 0.75rem;">
+                                    <textarea name="prendas[${index}][obs_broche]" style="width: 100%; padding: 0.5rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.875rem; resize: vertical; min-height: 60px;" placeholder="Ej: prueba boton">${prenda.obs_broche || ''}</textarea>
+                                </td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td style="padding: 0.75rem; border-right: 1px solid #d0d0d0; font-weight: 500;">Bolsillos</td>
+                                <td style="padding: 0.75rem; border-right: 1px solid #d0d0d0; text-align: center;">
+                                    <input type="checkbox" name="prendas[${index}][tiene_bolsillos]" value="1" ${prenda.tiene_bolsillos ? 'checked' : ''} style="width: 20px; height: 20px; cursor: pointer; accent-color: #1e40af;">
+                                </td>
+                                <td style="padding: 0.75rem;">
+                                    <textarea name="prendas[${index}][obs_bolsillos]" style="width: 100%; padding: 0.5rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.875rem; resize: vertical; min-height: 60px;" placeholder="Ej: LLEVA BOLSILLOS CON TAPA BOTON Y OJAL">${prenda.obs_bolsillos || ''}</textarea>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 0.75rem; border-right: 1px solid #d0d0d0; font-weight: 500;">Reflectivo</td>
+                                <td style="padding: 0.75rem; border-right: 1px solid #d0d0d0; text-align: center;">
+                                    <input type="checkbox" name="prendas[${index}][tiene_reflectivo]" value="1" ${prenda.tiene_reflectivo ? 'checked' : ''} style="width: 20px; height: 20px; cursor: pointer; accent-color: #1e40af;">
+                                </td>
+                                <td style="padding: 0.75rem;">
+                                    <textarea name="prendas[${index}][obs_reflectivo]" style="width: 100%; padding: 0.5rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.875rem; resize: vertical; min-height: 60px;" placeholder="Ej: CON REFLECTIVO GRIS 2\\" DE 25 CICLOS EN H">${prenda.obs_reflectivo || ''}</textarea>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                ${tallasHtml ? `<div class="form-group tallas-section">
+                    <label class="tallas-label">
+                        <span class="material-symbols-rounded">straighten</span>
+                        Tallas (Talla : Cantidad)
+                    </label>
+                    <div class="tallas-grid">${tallasHtml}</div>
+                </div>` : ''}
+                
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Fotos de Prenda</label>
+                    <div id="fotos-prenda-${index}" class="fotos-container">${fotosHtml}</div>
+                    <input type="file" name="prendas[${index}][nuevas_fotos][]" class="form-control" multiple accept="image/*" onchange="previsualizarImagenes(this, 'fotos-prenda-${index}')">
+                    <small>Puedes seleccionar múltiples imágenes</small>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label>Fotos de Logo</label>
+                    <div id="fotos-logo-${index}" class="fotos-container">${fotosLogoHtml}</div>
+                    <input type="file" name="prendas[${index}][nuevas_fotos_logo][]" class="form-control" multiple accept="image/*" onchange="previsualizarImagenes(this, 'fotos-logo-${index}')">
+                    <small>Puedes seleccionar múltiples imágenes</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Fotos de Tela</label>
+                    <div id="fotos-tela-${index}" class="fotos-container">${fotosTelaHtml}</div>
+                    <input type="file" name="prendas[${index}][nuevas_fotos_tela][]" class="form-control" multiple accept="image/*" onchange="previsualizarImagenes(this, 'fotos-tela-${index}')">
+                    <small>Puedes seleccionar múltiples imágenes</small>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function previsualizarImagenes(input, containerId) {
+    const container = document.getElementById(containerId);
+    const files = input.files;
+    
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const preview = document.createElement('div');
+            preview.className = 'foto-preview';
+            preview.style.cssText = 'position: relative; display: inline-block; margin: 0.5rem;';
+            preview.innerHTML = `
+                <img src="${e.target.result}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 2px solid #3498db;">
+                <div style="position: absolute; top: -8px; right: -8px; background: #3498db; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px;">NEW</div>
+            `;
+            container.appendChild(preview);
+        };
+        
+        reader.readAsDataURL(file);
+    }
+}
+
+function eliminarImagen(tipo, id, button) {
+    if (!confirm('¿Estás seguro de eliminar esta imagen?')) {
+        return;
+    }
+
+    fetch(`/supervisor-pedidos/imagen/${tipo}/${id}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            button.closest('.foto-item').remove();
+            alert('Imagen eliminada correctamente');
+        } else {
+            alert('Error al eliminar imagen: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error al eliminar la imagen');
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const formEditarPedido = document.getElementById('formEditarPedido');
+    if (formEditarPedido) {
+        formEditarPedido.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const ordenId = document.getElementById('editarOrdenId').value;
+            const formData = new FormData(this);
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="material-symbols-rounded">hourglass_empty</span> Guardando...';
+
+            fetch(`/supervisor-pedidos/${ordenId}/actualizar`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Pedido actualizado correctamente');
+                    cerrarModalEditar();
+                    location.reload();
+                } else {
+                    alert('Error al actualizar pedido: ' + data.message);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al actualizar el pedido');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
+        });
+    }
+
+    const modalEditarPedido = document.getElementById('modalEditarPedido');
+    if (modalEditarPedido) {
+        modalEditarPedido.addEventListener('click', function(e) {
+            if (e.target === this) cerrarModalEditar();
+        });
+    }
+});
