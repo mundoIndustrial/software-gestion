@@ -349,8 +349,9 @@ function cargarBorrador(cotizacion) {
                                 // Mapeo de IDs a valores del select
                                 let valorGenero = '';
                                 if (variantes.genero_id === 4 || variantes.genero_id === '4') {
-                                    // 4 = Ambos
-                                    valorGenero = 'ambos';
+                                    // 4 = Ambos (ya no disponible, se ignora)
+                                    console.log('⚠️ Género "Ambos" ya no está disponible - selecciona manualmente');
+                                    valorGenero = '';
                                 } else if (variantes.genero_id === 1 || variantes.genero_id === '1') {
                                     valorGenero = 'dama';
                                 } else if (variantes.genero_id === 2 || variantes.genero_id === '2') {

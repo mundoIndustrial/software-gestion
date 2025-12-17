@@ -149,8 +149,8 @@
                     @foreach($reflectivo->fotos as $foto)
                         @if($foto->ruta_original)
                             <div style="border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
-                                <a href="{{ asset('storage/' . $foto->ruta_original) }}" target="_blank" style="display: block;">
-                                    <img src="{{ asset('storage/' . $foto->ruta_original) }}" alt="Reflectivo" style="width: 100%; height: 200px; object-fit: cover; display: block;">
+                                <a href="{{ $foto->url }}" target="_blank" style="display: block;">
+                                    <img src="{{ $foto->url }}" alt="Reflectivo" style="width: 100%; height: 200px; object-fit: cover; display: block;">
                                 </a>
                             </div>
                         @endif
@@ -176,8 +176,8 @@
                         @endphp
                         @if($rutaImagen)
                             <div style="border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
-                                <a href="{{ asset('storage/' . $rutaImagen) }}" target="_blank" style="display: block;">
-                                    <img src="{{ asset('storage/' . $rutaImagen) }}" alt="Imagen" style="width: 100%; height: 200px; object-fit: cover; display: block;">
+                                <a href="{{ str_starts_with($rutaImagen, 'http') ? $rutaImagen : '/storage/' . $rutaImagen }}" target="_blank" style="display: block;">
+                                    <img src="{{ str_starts_with($rutaImagen, 'http') ? $rutaImagen : '/storage/' . $rutaImagen }}" alt="Imagen" style="width: 100%; height: 200px; object-fit: cover; display: block;">
                                 </a>
                             </div>
                         @endif

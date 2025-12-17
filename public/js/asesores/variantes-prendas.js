@@ -301,7 +301,6 @@ function crearSelectorVariantes(inputElement, tipoPrenda, variaciones) {
                         <option value="1">Dama</option>
                         <option value="2">Caballero</option>
                         <option value="3">Unisex</option>
-                        <option value="4">Ambos (Dama + Caballero)</option>
                     </select>
                 </div>
                 

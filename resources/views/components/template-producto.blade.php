@@ -322,7 +322,6 @@
                                 <option value="">Selecciona género</option>
                                 <option value="dama">Dama</option>
                                 <option value="caballero">Caballero</option>
-                                <option value="ambos">Ambos (Dama y Caballero)</option>
                             </select>
                             
                             <select class="talla-modo-select" style="padding: 0.6rem 0.8rem; border: 2px solid #0066cc; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; color: #0066cc; font-weight: 600; max-width: 200px; display: none;">

@@ -106,8 +106,8 @@ class ImagenProcesadorService
                 'size' => Storage::disk('public')->size($rutaRelativa)
             ]);
             
-            // Retornar ruta relativa (sin URL completa para portabilidad)
-            return "storage/{$rutaRelativa}";
+            // Retornar ruta relativa SIN prefijo 'storage/' para evitar duplicación
+            return $rutaRelativa;
             
         } catch (\Exception $e) {
             \Log::error('❌ Error al procesar imagen', [

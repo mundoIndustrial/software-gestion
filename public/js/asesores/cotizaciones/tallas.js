@@ -28,8 +28,6 @@ function actualizarGeneroSeleccionado(select) {
         generoId = '1';
     } else if (generoValue === 'caballero') {
         generoId = '2';
-    } else if (generoValue === 'ambos') {
-        generoId = '4'; // o null, según la BD
     }
     
     generoInput.value = generoId;

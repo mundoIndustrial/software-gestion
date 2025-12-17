@@ -10,6 +10,7 @@ use App\Models\Cotizacion;
 use App\Models\VariantePrenda;
 use App\Models\PrendaCotizacionFriendly;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -35,6 +36,30 @@ class PedidosProduccionController extends Controller
             ->get();
 
         return view('asesores.pedidos.crear-desde-cotizacion', compact('cotizaciones'));
+    }
+
+    /**
+     * Mostrar formulario EDITABLE para crear pedido desde cotización
+     * 
+     * @return \Illuminate\View\View
+     */
+    public function crearFormEditable()
+    {
+        // Solo permitir crear pedidos de cotizaciones APROBADAS
+        $cotizaciones = Cotizacion::where('asesor_id', Auth::id())
+            ->whereIn('estado', ['APROBADA_COTIZACIONES', 'APROBADO_PARA_PEDIDO'])
+            ->with([
+                'asesor',
+                'cliente',
+                'prendasCotizaciones.variantes.color',
+                'prendasCotizaciones.variantes.tela',
+                'prendasCotizaciones.variantes.tipoManga',
+                'prendasCotizaciones.variantes.tipoBroche'
+            ])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('asesores.pedidos.crear-desde-cotizacion-editable', compact('cotizaciones'));
     }
 
     /**
@@ -445,4 +470,166 @@ class PedidosProduccionController extends Controller
         // Retornar con saltos de línea entre cada elemento
         return implode("\n", $lineas);
     }
+
+    /**
+     * Obtener datos COMPLETOS de una cotización con todas sus prendas e información (para AJAX)
+     * 
+     * @param int $cotizacionId
+     * @return JsonResponse
+     */
+    public function obtenerDatosCotizacion(int $cotizacionId): JsonResponse
+    {
+        try {
+            $cotizacion = Cotizacion::with([
+                'cliente',
+                'asesor',
+                // Prendas y sus relaciones completas
+                'prendas.variantes.manga',
+                'prendas.variantes.broche',
+                'prendas.variantes.genero',
+                'prendas.tallas',
+                'prendas.fotos',
+                'prendas.telas',
+                'prendas.telaFotos',
+                // Logo - solo fotos es relación, el resto son campos JSON
+                'logoCotizacion.fotos',
+                // Reflectivo
+                'reflectivo',
+            ])->findOrFail($cotizacionId);
+
+            // Verificar que pertenezca al asesor actual
+            if ($cotizacion->asesor_id !== Auth::id()) {
+                return response()->json([
+                    'error' => 'No tienes permiso para acceder a esta cotización'
+                ], 403);
+            }
+
+            return response()->json([
+                'id' => $cotizacion->id,
+                'numero' => $cotizacion->numero_cotizacion,
+                'cliente' => $cotizacion->cliente ? $cotizacion->cliente->nombre : '',
+                'asesora' => $cotizacion->asesor ? $cotizacion->asesor->name : Auth::user()->name,
+                'forma_pago' => $cotizacion->forma_pago ?? '',
+                'tipo_venta' => $cotizacion->tipo_venta ?? '',
+                'especificaciones' => $cotizacion->especificaciones ?? [],
+                'observaciones_generales' => $cotizacion->observaciones_generales ?? [],
+                'ubicaciones' => $cotizacion->ubicaciones ?? [],
+                
+                // Prendas con TODA la información
+                'prendas' => $cotizacion->prendas->map(function($prenda) {
+                    // Obtener primera variante
+                    $primerVariante = $prenda->variantes->first();
+                    
+                    // Construir variantes con información completa
+                    $variantes = [];
+                    if ($primerVariante) {
+                        $variantes = [
+                            'id' => $primerVariante->id,
+                            'prenda_cot_id' => $primerVariante->prenda_cot_id,
+                            'tipo_prenda' => $primerVariante->tipo_prenda,
+                            'es_jean_pantalon' => $primerVariante->es_jean_pantalon,
+                            'tipo_jean_pantalon' => $primerVariante->tipo_jean_pantalon,
+                            'genero_id' => $primerVariante->genero_id,
+                            'genero_nombre' => $primerVariante->genero ? $primerVariante->genero->nombre : null,
+                            'color' => $primerVariante->color,
+                            'tipo_manga_id' => $primerVariante->tipo_manga_id,
+                            'tipo_manga' => $primerVariante->manga ? $primerVariante->manga->nombre : null,
+                            'obs_manga' => $primerVariante->obs_manga,
+                            'tipo_broche_id' => $primerVariante->tipo_broche_id,
+                            'tipo_broche' => $primerVariante->broche ? $primerVariante->broche->nombre : null,
+                            'obs_broche' => $primerVariante->obs_broche,
+                            'tiene_bolsillos' => $primerVariante->tiene_bolsillos,
+                            'obs_bolsillos' => $primerVariante->obs_bolsillos,
+                            'aplica_manga' => $primerVariante->aplica_manga,
+                            'aplica_broche' => $primerVariante->aplica_broche,
+                            'tiene_reflectivo' => $primerVariante->tiene_reflectivo,
+                            'obs_reflectivo' => $primerVariante->obs_reflectivo,
+                            'descripcion_adicional' => $primerVariante->descripcion_adicional,
+                            'telas_multiples' => is_array($primerVariante->telas_multiples) ? $primerVariante->telas_multiples : (is_string($primerVariante->telas_multiples) ? json_decode($primerVariante->telas_multiples, true) : []),
+                            'created_at' => $primerVariante->created_at,
+                            'updated_at' => $primerVariante->updated_at,
+                        ];
+                    }
+                    
+                    // Obtener tallas
+                    $tallas = $prenda->tallas->pluck('talla')->toArray();
+                    
+                    // Obtener fotos de prenda con URLs completas
+                    $fotos = $prenda->fotos->map(function($foto) {
+                        // El campo 'url' puede contener la ruta relativa o completa
+                        return '/storage/' . ltrim($foto->ruta_webp, '/');
+                    })->toArray();
+                    
+                    // Obtener telas
+                    $telas = $prenda->telas->map(function($tela) {
+                        return [
+                            'id' => $tela->id,
+                            'color' => $tela->color,
+                            'nombre_tela' => $tela->nombre_tela,
+                            'referencia' => $tela->referencia,
+                            'url_imagen' => $tela->url_imagen,
+                        ];
+                    })->toArray();
+                    
+                    // Obtener fotos de telas con URLs correctas
+                    $telaFotos = $prenda->telaFotos->map(function($telaFoto) {
+                        return [
+                            'id' => $telaFoto->id,
+                            'tela_id' => $telaFoto->tela_id,
+                            'url' => '/storage/' . ltrim($telaFoto->ruta_webp ?? $telaFoto->url, '/'),
+                            'ruta_original' => '/storage/' . ltrim($telaFoto->ruta_original, '/'),
+                            'ruta_webp' => '/storage/' . ltrim($telaFoto->ruta_webp, '/'),
+                        ];
+                    })->toArray();
+                    
+                    return [
+                        'id' => $prenda->id,
+                        'nombre_producto' => $prenda->nombre_producto,
+                        'descripcion' => $prenda->descripcion,
+                        'cantidad' => $prenda->cantidad,
+                        'tallas' => $tallas,
+                        'fotos' => $fotos,
+                        'variantes' => $variantes,
+                        'telas' => $telas,
+                        'telaFotos' => $telaFotos,
+                    ];
+                })->toArray(),
+                
+                // Logo información COMPLETA
+                'logo' => $cotizacion->logoCotizacion ? [
+                    'id' => $cotizacion->logoCotizacion->id,
+                    'descripcion' => $cotizacion->logoCotizacion->descripcion,
+                    'tipo_venta' => $cotizacion->logoCotizacion->tipo_venta,
+                    'imagenes' => is_array($cotizacion->logoCotizacion->imagenes) ? $cotizacion->logoCotizacion->imagenes : [],
+                    'tecnicas' => (is_array($cotizacion->logoCotizacion->tecnicas) ? $cotizacion->logoCotizacion->tecnicas : (is_string($cotizacion->logoCotizacion->tecnicas) ? json_decode($cotizacion->logoCotizacion->tecnicas, true) : [])) ?? [],
+                    'observaciones_tecnicas' => $cotizacion->logoCotizacion->observaciones_tecnicas,
+                    'ubicaciones' => (is_array($cotizacion->logoCotizacion->ubicaciones) ? $cotizacion->logoCotizacion->ubicaciones : (is_string($cotizacion->logoCotizacion->ubicaciones) ? json_decode($cotizacion->logoCotizacion->ubicaciones, true) : [])) ?? [],
+                    'observaciones_generales' => (is_array($cotizacion->logoCotizacion->observaciones_generales) ? $cotizacion->logoCotizacion->observaciones_generales : (is_string($cotizacion->logoCotizacion->observaciones_generales) ? json_decode($cotizacion->logoCotizacion->observaciones_generales, true) : [])) ?? [],
+                    'fotos' => $cotizacion->logoCotizacion->fotos->map(function($foto) {
+                        return [
+                            'id' => $foto->id,
+                            'url' => '/storage/' . ltrim($foto->ruta_webp, '/'),
+                            'ruta_original' => '/storage/' . ltrim($foto->ruta_original, '/'),
+                            'ruta_webp' => '/storage/' . ltrim($foto->ruta_webp, '/'),
+                        ];
+                    })->toArray(),
+                ] : null,
+                
+                // Reflectivo INFORMACIÓN COMPLETA
+                'reflectivo' => $cotizacion->reflectivo ? [
+                    'id' => $cotizacion->reflectivo->id,
+                    'ubicacion' => $cotizacion->reflectivo->ubicacion,
+                    'descripcion' => $cotizacion->reflectivo->descripcion,
+                    'observaciones' => $cotizacion->reflectivo->observaciones,
+                ] : null,
+            ]);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'trace' => config('app.debug') ? $e->getTraceAsString() : null
+            ], 500);
+        }
+    }
 }
+

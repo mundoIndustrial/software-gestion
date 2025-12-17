@@ -80,17 +80,17 @@
                 margin-bottom: 2rem;
             ">
                 @php
-                    $fotosArray = $logo->fotos->map(fn($f) => '/storage/' . $f->ruta_webp)->toArray();
+                    $fotosArray = $logo->fotos->map(fn($f) => $f->url)->toArray();
                     $fotosJson = json_encode($fotosArray);
                 @endphp
                 @foreach($logo->fotos as $index => $foto)
                     <div style="border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 6px 16px rgba(0, 0, 0, 0.15)'" onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.1)'">
-                        <img src="/storage/{{ $foto->ruta_webp }}" alt="Logo" 
+                        <img src="{{ $foto->url }}" alt="Logo" 
                              width="300" height="150"
                              style="width: 100%; height: 150px; object-fit: cover; cursor: pointer; transition: transform 0.3s ease;"
                              onmouseover="this.style.transform='scale(1.05)'"
                              onmouseout="this.style.transform=''"
-                             onclick="abrirModalImagen('/storage/{{ $foto->ruta_webp }}', 'Logo - Imagen {{ $index + 1 }}', {{ $fotosJson }}, {{ $index }})">
+                             onclick="abrirModalImagen('{{ $foto->url }}', 'Logo - Imagen {{ $index + 1 }}', {{ $fotosJson }}, {{ $index }})">
                     </div>
                 @endforeach
             </div>

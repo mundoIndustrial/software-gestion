@@ -95,17 +95,19 @@ final class ImagenAlmacenador
             $contenido = $imagen->toWebp(self::CALIDAD_WEBP);
             Storage::disk('public')->put($rutaRelativa, $contenido);
 
-            $rutaCompleta = "storage/{$rutaRelativa}";
+            // Retornar ruta SIN el prefijo 'storage/' - se agregará en la vista
+            // Esto previene URLs duplicadas como /storage/storage/cotizaciones/...
+            $rutaGuardada = $rutaRelativa;
 
             Log::info('ImagenAlmacenador: Imagen guardada exitosamente', [
                 'cotizacion_id' => $cotizacionId,
                 'prenda_id' => $prendaId,
                 'tipo' => $tipo,
-                'ruta' => $rutaCompleta,
+                'ruta_guardada' => $rutaGuardada,
                 'tamaño' => Storage::disk('public')->size($rutaRelativa),
             ]);
 
-            return $rutaCompleta;
+            return $rutaGuardada;
         } catch (\Exception $e) {
             Log::error('ImagenAlmacenador: Error al guardar imagen', [
                 'cotizacion_id' => $cotizacionId,

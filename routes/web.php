@@ -394,7 +394,8 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     // ========================================
     // PEDIDOS DE PRODUCCIÓN - Gestión de pedidos desde cotizaciones
     // ========================================
-    Route::get('/pedidos-produccion/crear', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'crearForm'])->name('pedidos-produccion.crear');
+    Route::get('/pedidos-produccion/crear', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'crearFormEditable'])->name('pedidos-produccion.crear');
+    Route::get('/pedidos-produccion/obtener-datos-cotizacion/{cotizacion_id}', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'obtenerDatosCotizacion'])->name('pedidos-produccion.obtener-datos-cotizacion');
     Route::get('/pedidos-produccion', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'index'])->name('pedidos-produccion.index');
     Route::get('/pedidos-produccion/{id}', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'show'])->name('pedidos-produccion.show');
     Route::get('/pedidos-produccion/{id}/plantilla', [App\Http\Controllers\Asesores\PedidosProduccionController::class, 'plantilla'])->name('pedidos-produccion.plantilla');

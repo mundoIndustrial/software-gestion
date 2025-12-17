@@ -34,4 +34,9 @@ Route::middleware(['auth', 'role:asesor'])->group(function () {
         [PedidoProduccionController::class, 'obtenerDatosCotizacion'])
         ->name('cotizaciones.obtener-datos');
 
+    // Ruta adicional para obtener datos de cotización (para compatibilidad)
+    Route::get('/obtener-datos-cotizacion/{cotizacion_id}',
+        [PedidoProduccionController::class, 'obtenerDatosCotizacion'])
+        ->name('obtener-datos-cotizacion');
+
 });

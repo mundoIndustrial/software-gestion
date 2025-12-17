@@ -164,8 +164,8 @@ class ProcesarImagenesCotizacionService
         
         @file_put_contents($rutaPublica, $contenidoWebP);
 
-        // Retornar ruta relativa para que Laravel la resuelva correctamente
-        return "/storage/{$rutaCompleta}";
+        // Retornar ruta relativa SIN prefijo 'storage/' para evitar URLs duplicadas
+        return $rutaCompleta;
     }
 
     /**

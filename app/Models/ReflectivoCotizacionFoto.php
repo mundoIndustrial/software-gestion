@@ -38,6 +38,7 @@ class ReflectivoCotizacionFoto extends Model
 
     /**
      * Accessor: Obtener URL de la imagen (usa WebP si existe, sino original)
+     * Las rutas se guardan sin prefijo 'storage/', así que aquí se agrega
      */
     public function getUrlAttribute(): string
     {
@@ -49,9 +50,13 @@ class ReflectivoCotizacionFoto extends Model
         if (str_starts_with($ruta, 'http')) {
             return $ruta;
         }
-        // Si comienza con /storage/, asegurarse que es accesible
+        // Si ya comienza con /storage/, es accesible
         if (str_starts_with($ruta, '/storage/')) {
             return $ruta;
+        }
+        // Si comienza con 'storage/', agregable /
+        if (str_starts_with($ruta, 'storage/')) {
+            return '/' . $ruta;
         }
         // Si es una ruta relativa, agregar /storage/
         return '/storage/' . ltrim($ruta, '/');

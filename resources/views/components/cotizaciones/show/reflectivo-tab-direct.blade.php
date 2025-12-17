@@ -120,17 +120,17 @@
                                 <h4 style="color: #1e40af; font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Imágenes Reflectivo ({{ $reflectivo->fotos->count() }})</h4>
                                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1.5rem;">
                                     @php
-                                        $fotosArray = $reflectivo->fotos->map(fn($f) => asset('storage/' . $f->ruta_original))->toArray();
+                                        $fotosArray = $reflectivo->fotos->map(fn($f) => $f->url)->toArray();
                                         $fotosJson = json_encode($fotosArray);
                                     @endphp
                                     @foreach($reflectivo->fotos as $fotoIndex => $foto)
                                         @if($foto->ruta_original)
                                             <div style="border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 6px 16px rgba(0, 0, 0, 0.15)'" onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.1)'">
-                                                <img src="{{ asset('storage/' . $foto->ruta_original) }}" alt="Reflectivo" 
+                                                <img src="{{ $foto->url }}" alt="Reflectivo" 
                                                      style="width: 100%; height: 150px; object-fit: cover; cursor: pointer; transition: transform 0.3s ease;"
                                                      onmouseover="this.style.transform='scale(1.05)'"
                                                      onmouseout="this.style.transform=''"
-                                                     onclick="abrirModalImagen('{{ asset('storage/' . $foto->ruta_original) }}', 'Reflectivo - Imagen {{ $fotoIndex + 1 }}', {{ $fotosJson }}, {{ $fotoIndex }})">
+                                                     onclick="abrirModalImagen('{{ $foto->url }}', 'Reflectivo - Imagen {{ $fotoIndex + 1 }}', {{ $fotosJson }}, {{ $fotoIndex }})">
                                             </div>
                                         @endif
                                     @endforeach
