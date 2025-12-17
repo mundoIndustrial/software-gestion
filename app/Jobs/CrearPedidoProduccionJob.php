@@ -3,9 +3,11 @@
 namespace App\Jobs;
 
 use App\Models\PedidoProduccion;
+use App\Models\Cotizacion;
 use App\DTOs\CrearPedidoProduccionDTO;
 use App\DTOs\PrendaCreacionDTO;
 use App\Services\Pedidos\PrendaProcessorService;
+use App\Services\Pedidos\EnriquecerDatosService;
 use App\Application\Services\PedidoPrendaService;
 use App\Application\Services\PedidoLogoService;
 use App\Application\Services\CopiarImagenesCotizacionAPedidoService;
@@ -30,14 +32,31 @@ class CrearPedidoProduccionJob
         PrendaProcessorService $prendaProcessor,
         PedidoPrendaService $prendaService,
         PedidoLogoService $logoService,
-        CopiarImagenesCotizacionAPedidoService $copiarImagenesService
+        CopiarImagenesCotizacionAPedidoService $copiarImagenesService,
+        EnriquecerDatosService $enriquecerService
     ): PedidoProduccion {
+        \Log::info('🟢 [CrearPedidoProduccionJob] ===== INICIO JOB HANDLE =====');
+        \Log::info('🟢 [CrearPedidoProduccionJob] Servicios inyectados correctamente');
+        
         // Usar transacción para garantizar atomicidad
-        return DB::transaction(function () use ($prendaProcessor, $prendaService, $logoService, $copiarImagenesService) {
-            \Log::info('🔍 [CrearPedidoProduccionJob] Iniciando creación de pedido', [
+        return DB::transaction(function () use ($prendaProcessor, $prendaService, $logoService, $copiarImagenesService, $enriquecerService) {
+            \Log::info('� [CrearPedidoProduccionJob] Dentro de transacción DB');
+            \Log::info('🟢 [CrearPedidoProduccionJob] Datos del DTO', [
                 'dto_forma_de_pago' => $this->dto->formaDePago,
                 'dto_cliente' => $this->dto->cliente,
                 'dto_cotizacion_id' => $this->dto->cotizacionId,
+                'prendas_recibidas' => count($this->prendas),
+            ]);
+
+            // ✅ ENRIQUECER PRENDAS DEL FRONTEND CON IDs FALTANTES
+            $prendasEnriquecidas = $enriquecerService->enriquecerPrendas($this->prendas);
+            
+            \Log::info('🔍 [CrearPedidoProduccionJob] Prendas enriquecidas', [
+                'total_prendas' => count($prendasEnriquecidas),
+                'primera_prenda_tela_id' => $prendasEnriquecidas[0]['tela_id'] ?? null,
+                'primera_prenda_color_id' => $prendasEnriquecidas[0]['color_id'] ?? null,
+                'primera_prenda_tipo_manga_id' => $prendasEnriquecidas[0]['tipo_manga_id'] ?? null,
+                'primera_prenda_tipo_broche_id' => $prendasEnriquecidas[0]['tipo_broche_id'] ?? null,
             ]);
 
             // Obtener y incrementar número de pedido de forma segura
@@ -85,27 +104,27 @@ class CrearPedidoProduccionJob
                 'forma_de_pago_guardada' => $pedido->forma_de_pago,
             ]);
 
+            // ✅ USAR PRENDAS ENRIQUECIDAS CON IDs CORRECTOS
             // Guardar prendas en tablas normalizadas (DDD)
-            // Convertir DTOs a arrays antes de guardar - CONVERSIÓN EXPLÍCITA
-            if (!empty($this->prendas)) {
-                $prendasArray = [];
-                foreach ($this->prendas as $prenda) {
-                    if ($prenda instanceof PrendaCreacionDTO) {
-                        $prendasArray[] = $prenda->toArray();
-                    } elseif (is_object($prenda) && method_exists($prenda, 'toArray')) {
-                        $prendasArray[] = $prenda->toArray();
-                    } else {
-                        $prendasArray[] = $prenda;
-                    }
-                }
-                $prendaService->guardarPrendasEnPedido($pedido, $prendasArray);
+            if (!empty($prendasEnriquecidas)) {
+                \Log::info('🟢 [CrearPedidoProduccionJob] Guardando prendas en pedido', [
+                    'total_prendas' => count($prendasEnriquecidas),
+                    'primera_prenda_tela_id' => $prendasEnriquecidas[0]['tela_id'] ?? null,
+                    'primera_prenda_color_id' => $prendasEnriquecidas[0]['color_id'] ?? null,
+                    'primera_prenda_fotos' => count($prendasEnriquecidas[0]['fotos'] ?? []),
+                    'primera_prenda_telas' => count($prendasEnriquecidas[0]['telas'] ?? []),
+                ]);
+                $prendaService->guardarPrendasEnPedido($pedido, $prendasEnriquecidas);
+                \Log::info('✅ [CrearPedidoProduccionJob] Prendas guardadas exitosamente');
             }
 
-            // Copiar imágenes de la cotización al pedido
-            $copiarImagenesService->copiarImagenesCotizacionAPedido(
-                $this->dto->cotizacionId,
-                $pedido->id
-            );
+        // ⏭️ NO COPIAR IMÁGENES DE COTIZACIÓN AUTOMÁTICAMENTE
+        // Las fotos se guardarán a través del endpoint separado guardarFotosPedido()
+        // De esta forma respetamos exactamente lo que el usuario seleccionó/eliminó
+        
+        \Log::info('⏭️ [CrearPedidoProduccionJob] NO copiando imágenes de cotización');
+        \Log::info('⏭️ [CrearPedidoProduccionJob] Las fotos serán guardadas a través de endpoint /pedidos/guardar-fotos');
+        \Log::info('⏭️ [CrearPedidoProduccionJob] Esto garantiza respetar las fotos que el usuario eliminó');
 
             // Guardar logo si existe (DDD)
             if (!empty($this->dto->logo)) {

@@ -25,34 +25,51 @@ class PedidoProduccionCreatorService
      */
     public function crear(CrearPedidoProduccionDTO $dto, int $asesorId): ?PedidoProduccion
     {
-        \Log::info('🔍 [PedidoProduccionCreatorService] Iniciando creación de pedido', [
+        \Log::info('🔵 [PedidoProduccionCreatorService] ===== INICIO SERVICIO CREAR =====');
+        \Log::info('🔵 [PedidoProduccionCreatorService] Datos recibidos', [
             'dto_forma_de_pago' => $dto->formaDePago,
             'dto_cliente' => $dto->cliente,
             'dto_cotizacion_id' => $dto->cotizacionId,
+            'asesor_id' => $asesorId,
         ]);
 
         // Validar DTO
         if (!$dto->esValido()) {
+            \Log::error('❌ [PedidoProduccionCreatorService] DTO no válido');
             throw new \InvalidArgumentException('Datos inválidos para crear pedido');
         }
+
+        \Log::info('✅ [PedidoProduccionCreatorService] DTO validado correctamente');
 
         // Obtener prendas válidas
         $prendas = $dto->prendasValidas();
         if (empty($prendas)) {
+            \Log::error('❌ [PedidoProduccionCreatorService] No hay prendas válidas');
             throw new \InvalidArgumentException('No hay prendas con cantidades válidas');
         }
 
-        \Log::info('🔍 [PedidoProduccionCreatorService] Despachando Job', [
-            'forma_de_pago_antes_job' => $dto->formaDePago,
-            'prendas_validas' => count($prendas),
+        \Log::info('🔵 [PedidoProduccionCreatorService] Prendas válidas obtenidas', [
+            'total_prendas' => count($prendas),
         ]);
 
-        // Ejecutar el Job de forma sincrónica para garantizar número secuencial
-        // y retornar el pedido creado inmediatamente
-        $pedido = Bus::dispatchSync(new CrearPedidoProduccionJob($dto, $asesorId, $prendas));
+        \Log::info('🔵 [PedidoProduccionCreatorService] Ejecutando Job directamente');
 
-        \Log::info('✅ [PedidoProduccionCreatorService] Pedido creado desde servicio', [
+        // Ejecutar el Job directamente (sin cola) para garantizar ejecución inmediata
+        $job = new CrearPedidoProduccionJob($dto, $asesorId, $prendas);
+        
+        \Log::info('🔵 [PedidoProduccionCreatorService] Job instanciado, llamando a handle()');
+        
+        $pedido = $job->handle(
+            app(\App\Services\Pedidos\PrendaProcessorService::class),
+            app(\App\Application\Services\PedidoPrendaService::class),
+            app(\App\Application\Services\PedidoLogoService::class),
+            app(\App\Application\Services\CopiarImagenesCotizacionAPedidoService::class),
+            app(\App\Services\Pedidos\EnriquecerDatosService::class)
+        );
+
+        \Log::info('✅ [PedidoProduccionCreatorService] Job ejecutado, pedido retornado', [
             'pedido_id' => $pedido?->id,
+            'numero_pedido' => $pedido?->numero_pedido,
             'forma_de_pago_guardada' => $pedido?->forma_de_pago,
         ]);
 

@@ -25,12 +25,21 @@ class CopiarImagenesCotizacionAPedidoService
      */
     public function copiarImagenesCotizacionAPedido(int $cotizacionId, int $pedidoId): void
     {
+        \Log::info('🖼️ [CopiarImagenes] Iniciando copia de imágenes', [
+            'cotizacion_id' => $cotizacionId,
+            'pedido_id' => $pedidoId
+        ]);
+
         try {
             // Obtener todas las prendas de la cotización con sus fotos
             $prendasCotizacion = PrendaCot::where('cotizacion_id', $cotizacionId)
                 ->with(['fotos', 'telaFotos'])
                 ->orderBy('id')
                 ->get();
+
+            \Log::info('🖼️ [CopiarImagenes] Prendas de cotización encontradas', [
+                'total_prendas_cot' => $prendasCotizacion->count()
+            ]);
 
             // Obtener logos de la cotización
             $logoCotizacion = \App\Models\LogoCotizacion::where('cotizacion_id', $cotizacionId)

@@ -177,83 +177,116 @@ function renderPrendasPage() {
     
     let descripcionHTML = '';
     
-    if (esCotizacion) {
-        // Usar plantilla de cotización
+    // SIEMPRE generar descripción dinámica (sin importar si es cotización o no)
+    {
+        // Generar descripción dinámica para pedidos
         prendasActuales.forEach((prenda, index) => {
-            descripcionHTML += `<strong>PRENDA ${prenda.numero}: ${prenda.nombre}</strong><br>
-${prenda.atributos}<br>
-<strong>DESCRIPCION:</strong> ${prenda.descripcion}`;
+            console.log('🔍 [PRENDA] Datos de prenda:', prenda);
+            console.log('🔍 [PRENDA] Color:', prenda.color);
+            console.log('🔍 [PRENDA] Tela:', prenda.tela);
+            console.log('🔍 [PRENDA] Tipo manga:', prenda.tipo_manga);
+            console.log('🔍 [PRENDA] Cantidad talla:', prenda.cantidad_talla);
             
-            // Agregar detalles si existen
-            if (prenda.detalles && prenda.detalles.length > 0) {
-                prenda.detalles.forEach(detalle => {
-                    descripcionHTML += `<br>&nbsp;&nbsp;&nbsp;. <strong style="color: #666;">${detalle.tipo}:</strong> ${detalle.valor}`;
-                });
+            let html = '';
+            
+            // 1. Nombre de la prenda
+            html += `<strong>PRENDA ${prenda.numero}: ${prenda.nombre.toUpperCase()}</strong><br>`;
+            
+            // 2. Línea de atributos: Color | Tela | Manga (con observación de manga si existe)
+            const atributos = [];
+            if (prenda.color) {
+                atributos.push(`<strong>Color:</strong> ${prenda.color.toUpperCase()}`);
+            }
+            if (prenda.tela) {
+                let telaTexto = prenda.tela.toUpperCase();
+                if (prenda.tela_referencia) {
+                    telaTexto += ` REF:${prenda.tela_referencia.toUpperCase()}`;
+                }
+                atributos.push(`<strong>Tela:</strong> ${telaTexto}`);
+            }
+            if (prenda.tipo_manga) {
+                let mangaTexto = prenda.tipo_manga.toUpperCase();
+                // Agregar observación de manga si existe en descripcion_variaciones
+                if (prenda.descripcion_variaciones) {
+                    const mangaMatch = prenda.descripcion_variaciones.match(/Manga:\s*(.+?)(?:\s*\||$)/i);
+                    if (mangaMatch) {
+                        const observacionManga = mangaMatch[1].trim().toUpperCase();
+                        // Solo agregar si es diferente al tipo de manga
+                        if (observacionManga !== mangaTexto) {
+                            mangaTexto += ` (${observacionManga})`;
+                        }
+                    }
+                }
+                atributos.push(`<strong>Manga:</strong> ${mangaTexto}`);
             }
             
-            descripcionHTML += `<br><strong>Tallas:</strong> <span style="color: red; font-weight: bold;">${prenda.tallas}</span>`;
-            
-            // Agregar línea separadora solo entre prendas mostradas
-            if (index < prendasActuales.length - 1) {
-                descripcionHTML += `<br><hr style="border: none; border-top: 2px solid #ccc; margin: 16px 0;">`;
-            }
-        });
-    } else {
-        // Usar formato formateado para pedidos sin cotización
-        // La descripción está guardada en formato multi-línea correcto
-        prendasActuales.forEach((prenda, index) => {
-            // La descripción en prendas_pedido.descripcion tiene el formato COMPLETO:
-            // PRENDA X: [tipo]
-            // Color: ... | Tela: ... | Manga: ...
-            // DESCRIPCION: ...
-            //    . Reflectivo: ...
-            //    . Bolsillos: ...
-            // Tallas: ...
-            
-            // Obtener descripción y convertir a string
-            let descripcionRaw = prenda.descripcion || '-';
-            
-            // Si es string, usarlo directamente. Si es objeto (parseado), convertir a string
-            if (typeof descripcionRaw === 'object') {
-                descripcionRaw = JSON.stringify(descripcionRaw);
+            if (atributos.length > 0) {
+                html += atributos.join(' | ') + '<br>';
             }
             
-            // Dividir por saltos de línea reales
-            const lineas = descripcionRaw.split(/\r?\n/);
-            let descripcionFormateada = '';
-            
-            lineas.forEach((linea) => {
-                if (!linea || !linea.trim()) {
-                    // Línea vacía
-                    descripcionFormateada += '';
-                    return;
+            // 3. DESCRIPCION con viñetas (sin manga, solo reflectivo, bolsillos y broche si existe)
+            if (prenda.descripcion_variaciones) {
+                const descripcionVar = prenda.descripcion_variaciones;
+                const partes = [];
+                
+                // Reflectivo
+                const reflectivoMatch = descripcionVar.match(/Reflectivo:\s*(.+?)(?:\s*\||$)/i);
+                if (reflectivoMatch) {
+                    partes.push(`<strong style="margin-left: 1.5em;">•</strong> <strong style="color: #000;">Reflectivo:</strong> ${reflectivoMatch[1].trim().toUpperCase()}`);
                 }
                 
-                // Escapar caracteres HTML pero preservar espacios
-                let html = String(linea)
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;');
+                // Bolsillos
+                const bolsillosMatch = descripcionVar.match(/Bolsillos:\s*(.+?)(?:\s*\||$)/i);
+                if (bolsillosMatch) {
+                    partes.push(`<strong style="margin-left: 1.5em;">•</strong> <strong style="color: #000;">Bolsillos:</strong> ${bolsillosMatch[1].trim().toUpperCase()}`);
+                }
                 
-                // Aplicar formatos
-                // Negritas para títulos principales
-                html = html.replace(/^(PRENDA \d+:.*?)$/i, '<strong>$1</strong>');
-                html = html.replace(/^(DESCRIPCION:)(.*)$/i, '<strong>$1</strong>$2');
-                html = html.replace(/^(Tallas:)(.*)$/i, '<strong style="color: #d32f2f;">$1</strong>$2');
+                // Broche/Botón - SOLO si existe tipo_broche en los datos (label dinámico según el tipo)
+                if (prenda.tipo_broche) {
+                    const brocheMatch = descripcionVar.match(/Broche:\s*(.+?)(?:\s*\||$)/i);
+                    if (brocheMatch) {
+                        // Usar el tipo_broche como label (ej: "Botón", "Broche", etc.)
+                        const tipoLabel = prenda.tipo_broche.toUpperCase();
+                        const observacion = brocheMatch[1].trim().toUpperCase();
+                        partes.push(`<strong style="margin-left: 1.5em;">•</strong> <strong style="color: #000;">${tipoLabel}:</strong> ${observacion}`);
+                    }
+                }
                 
-                // Negritas para atributos de línea 2
-                html = html.replace(/^(Color:)/i, '<strong>$1</strong>');
-                html = html.replace(/\s\|\s(Tela:)/i, ' | <strong>$1</strong>');
-                html = html.replace(/\s\|\s(Manga:)/i, ' | <strong>$1</strong>');
+                // NO incluir manga aquí - ya está en la línea principal
                 
-                // Transformar bullets (   .) a formato visual
-                html = html.replace(/^(\s+)\./, '<span style="margin-left: 1.5em;">•</span>');
-                
-                descripcionFormateada += html + '<br>';
-            });
+                if (partes.length > 0) {
+                    html += '<strong>DESCRIPCION:</strong><br>';
+                    html += partes.join('<br>') + '<br>';
+                }
+            } else if (prenda.descripcion && prenda.descripcion !== '-') {
+                // Fallback: usar descripción guardada si no hay descripcion_variaciones
+                html += `<strong>DESCRIPCION:</strong> ${prenda.descripcion.toUpperCase()}<br>`;
+            }
             
-            descripcionHTML += `<div class="prenda-item" style="margin-bottom: 20px; line-height: 1.6; font-size: 0.95rem; color: #333;">
-                ${descripcionFormateada}
+            // 4. Tallas
+            if (prenda.cantidad_talla && prenda.cantidad_talla !== '-') {
+                try {
+                    const tallas = typeof prenda.cantidad_talla === 'string' 
+                        ? JSON.parse(prenda.cantidad_talla) 
+                        : prenda.cantidad_talla;
+                    
+                    const tallasFormateadas = [];
+                    for (const [talla, cantidad] of Object.entries(tallas)) {
+                        if (cantidad > 0) {
+                            tallasFormateadas.push(`${talla}: ${cantidad}`);
+                        }
+                    }
+                    
+                    if (tallasFormateadas.length > 0) {
+                        html += `<strong>Tallas:</strong> <span style="color: #d32f2f; font-weight: bold;">${tallasFormateadas.join(', ')}</span>`;
+                    }
+                } catch (e) {
+                    html += `<strong>Tallas:</strong> <span style="color: #d32f2f; font-weight: bold;">${prenda.cantidad_talla}</span>`;
+                }
+            }
+            
+            descripcionHTML += `<div class="prenda-item" style="margin-bottom: 16px; line-height: 1.4; font-size: 0.75rem; color: #333;">
+                ${html}
             </div>`;
             
             // Agregar separador solo entre prendas mostradas

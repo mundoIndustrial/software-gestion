@@ -86,11 +86,30 @@ class PedidoPrendaService
             );
         }
 
+        // 🔍 LOG: Ver qué datos llegan
+        \Log::info('🔍 [PedidoPrendaService] Datos recibidos para guardar prenda', [
+            'nombre_producto' => $prendaData['nombre_producto'] ?? null,
+            'tela_id' => $prendaData['tela_id'] ?? null,
+            'color_id' => $prendaData['color_id'] ?? null,
+            'tipo_manga_id' => $prendaData['tipo_manga_id'] ?? null,
+            'tipo_broche_id' => $prendaData['tipo_broche_id'] ?? null,
+        ]);
+
         // Construir array de datos para el formatter legacy
         $datosParaFormatter = $this->construirDatosParaFormatter($prendaData, $index);
         
         // Generar descripción en formato legacy
         $descripcionFormateada = DescripcionPrendaLegacyFormatter::generar($datosParaFormatter);
+        
+        // 🔍 LOG: Antes de guardar
+        \Log::info('✅ [PedidoPrendaService] Guardando prenda con IDs', [
+            'numero_pedido' => $pedido->numero_pedido,
+            'nombre_prenda' => $prendaData['nombre_producto'] ?? 'Sin nombre',
+            'tela_id' => $prendaData['tela_id'] ?? null,
+            'color_id' => $prendaData['color_id'] ?? null,
+            'tipo_manga_id' => $prendaData['tipo_manga_id'] ?? null,
+            'tipo_broche_id' => $prendaData['tipo_broche_id'] ?? null,
+        ]);
         
         // Crear prenda principal usando PrendaPedido (tabla correcta)
         $prenda = PrendaPedido::create([
@@ -109,6 +128,16 @@ class PedidoPrendaService
             'tipo_broche_id' => $prendaData['tipo_broche_id'] ?? null,
             'tiene_bolsillos' => $prendaData['tiene_bolsillos'] ?? false,
             'tiene_reflectivo' => $prendaData['tiene_reflectivo'] ?? false,
+        ]);
+
+        // 🔍 LOG: Después de guardar
+        \Log::info('✅ [PedidoPrendaService] Prenda guardada exitosamente', [
+            'prenda_id' => $prenda->id,
+            'numero_pedido' => $prenda->numero_pedido,
+            'tela_id_guardado' => $prenda->tela_id,
+            'color_id_guardado' => $prenda->color_id,
+            'tipo_manga_id_guardado' => $prenda->tipo_manga_id,
+            'tipo_broche_id_guardado' => $prenda->tipo_broche_id,
         ]);
 
         // 2. Guardar fotos de la prenda (copiar URLs de cotización)

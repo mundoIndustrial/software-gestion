@@ -313,28 +313,92 @@ class RegistroOrdenQueryController extends Controller
         }
         
         // Obtener prendas formateadas para el modal
+        \Log::info('🔍 [getOrderDetails] Obteniendo prendas para pedido', [
+            'pedido' => $pedido,
+            'es_cotizacion' => $esCotizacion,
+        ]);
+        
         try {
-            if ($esCotizacion) {
-                // Usar plantilla para cotizaciones
-                $templateService = new \App\Services\PrendaCotizacionTemplateService();
-                $orderArray['prendas'] = $templateService->generarPlantillaPrendas($pedido);
-            } else {
-                // Usar formato simple para pedidos sin cotización
-                $prendas = \DB::table('prendas_pedido')
-                    ->where('numero_pedido', $pedido)
+            // SIEMPRE cargar prendas con relaciones para generar descripción dinámica
+            // (sin importar si es cotización o no)
+            {
+                // Cargar prendas SIN eager loading para evitar conflictos de modelos
+                $prendas = \App\Models\PrendaPedido::where('numero_pedido', $pedido)
                     ->orderBy('id', 'asc')
-                    ->get(['nombre_prenda', 'descripcion', 'cantidad_talla']);
+                    ->get();
 
-                // Formatear prendas con enumeración
+                // Formatear prendas con todos los datos necesarios
                 $prendasFormato = [];
                 foreach ($prendas as $index => $prenda) {
+                    // Obtener datos de relaciones de forma segura
+                    $colorNombre = null;
+                    $telaNombre = null;
+                    $telaReferencia = null;
+                    $tipoMangaNombre = null;
+                    $tipoBrocheNombre = null;
+                    
+                    try {
+                        if ($prenda->color_id) {
+                            $color = \App\Models\ColorPrenda::find($prenda->color_id);
+                            $colorNombre = $color ? $color->nombre : null;
+                        }
+                    } catch (\Exception $e) {
+                        \Log::warning('Error obteniendo color', ['error' => $e->getMessage()]);
+                    }
+                    
+                    try {
+                        if ($prenda->tela_id) {
+                            $tela = \App\Models\TelaPrenda::find($prenda->tela_id);
+                            if ($tela) {
+                                $telaNombre = $tela->nombre;
+                                $telaReferencia = $tela->referencia;
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        \Log::warning('Error obteniendo tela', ['error' => $e->getMessage()]);
+                    }
+                    
+                    try {
+                        if ($prenda->tipo_manga_id) {
+                            $tipoManga = \App\Models\TipoManga::find($prenda->tipo_manga_id);
+                            $tipoMangaNombre = $tipoManga ? $tipoManga->nombre : null;
+                        }
+                    } catch (\Exception $e) {
+                        \Log::warning('Error obteniendo manga', ['error' => $e->getMessage()]);
+                    }
+                    
+                    try {
+                        if ($prenda->tipo_broche_id) {
+                            $tipoBroche = \App\Models\TipoBroche::find($prenda->tipo_broche_id);
+                            $tipoBrocheNombre = $tipoBroche ? $tipoBroche->nombre : null;
+                        }
+                    } catch (\Exception $e) {
+                        \Log::warning('Error obteniendo broche', ['error' => $e->getMessage()]);
+                    }
+                    
                     $prendasFormato[] = [
                         'numero' => $index + 1,
                         'nombre' => $prenda->nombre_prenda ?? '-',
                         'descripcion' => $prenda->descripcion ?? '-',
-                        'cantidad_talla' => $prenda->cantidad_talla ?? '-'
+                        'descripcion_variaciones' => $prenda->descripcion_variaciones ?? '',
+                        'cantidad_talla' => $prenda->cantidad_talla ?? '-',
+                        // Agregar datos de relaciones para generar descripción dinámica
+                        'color' => $colorNombre,
+                        'tela' => $telaNombre,
+                        'tela_referencia' => $telaReferencia,
+                        'tipo_manga' => $tipoMangaNombre,
+                        'tipo_broche' => $tipoBrocheNombre,
+                        'tiene_bolsillos' => $prenda->tiene_bolsillos ?? 0,
+                        'tiene_reflectivo' => $prenda->tiene_reflectivo ?? 0,
                     ];
                 }
+                
+                \Log::info('📋 [getOrderDetails] Prendas formateadas', [
+                    'pedido' => $pedido,
+                    'total_prendas' => count($prendasFormato),
+                    'primera_prenda' => $prendasFormato[0] ?? null,
+                ]);
+                
                 $orderArray['prendas'] = $prendasFormato;
             }
         } catch (\Exception $e) {
@@ -388,8 +452,17 @@ class RegistroOrdenQueryController extends Controller
         try {
             $images = [];
 
+            \Log::info('🖼️ [getOrderImages] Iniciando búsqueda de imágenes', [
+                'pedido' => $pedido
+            ]);
+
             // Obtener desde PedidoProduccion
             $pedidoProduccion = PedidoProduccion::where('numero_pedido', $pedido)->first();
+            
+            \Log::info('🖼️ [getOrderImages] Pedido encontrado', [
+                'pedido_id' => $pedidoProduccion?->id,
+                'cotizacion_id' => $pedidoProduccion?->cotizacion_id
+            ]);
 
             // Helper para normalizar rutas a URL públicas
             $normalize = function ($ruta) {
@@ -434,12 +507,21 @@ class RegistroOrdenQueryController extends Controller
             try {
                 $prendaIds = \DB::table('prendas_pedido')->where('numero_pedido', $pedido)->pluck('id')->toArray();
 
+                \Log::info('🖼️ [getOrderImages] IDs de prendas encontradas', [
+                    'prenda_ids' => $prendaIds,
+                    'total_prendas' => count($prendaIds)
+                ]);
+
                 if (!empty($prendaIds)) {
                     // Fotos de prenda
                     $fotosPrenda = \DB::table('prenda_fotos_pedido')
                         ->whereIn('prenda_pedido_id', $prendaIds)
                         ->orderBy('orden', 'asc')
                         ->get(['ruta_webp', 'ruta_original', 'ruta_miniatura', 'prenda_pedido_id', 'orden']);
+
+                    \Log::info('🖼️ [getOrderImages] Fotos de prenda encontradas', [
+                        'total_fotos_prenda' => $fotosPrenda->count()
+                    ]);
 
                     foreach ($fotosPrenda as $fp) {
                         $ruta = $fp->ruta_webp ?? $fp->ruta_original ?? $fp->ruta_miniatura ?? null;
@@ -460,6 +542,10 @@ class RegistroOrdenQueryController extends Controller
                         ->orderBy('orden', 'asc')
                         ->get(['ruta_webp', 'ruta_original', 'ruta_miniatura', 'prenda_pedido_id', 'orden']);
 
+                    \Log::info('🖼️ [getOrderImages] Fotos de tela encontradas', [
+                        'total_fotos_tela' => $fotosTela->count()
+                    ]);
+
                     foreach ($fotosTela as $ft) {
                         $ruta = $ft->ruta_webp ?? $ft->ruta_original ?? $ft->ruta_miniatura ?? null;
                         $url = $normalize($ruta);
@@ -478,6 +564,10 @@ class RegistroOrdenQueryController extends Controller
                         ->whereIn('prenda_pedido_id', $prendaIds)
                         ->orderBy('orden', 'asc')
                         ->get(['ruta_webp', 'ruta_original', 'ruta_miniatura', 'prenda_pedido_id', 'orden']);
+
+                    \Log::info('🖼️ [getOrderImages] Fotos de logo encontradas', [
+                        'total_fotos_logo' => $fotosLogo->count()
+                    ]);
 
                     foreach ($fotosLogo as $fl) {
                         $ruta = $fl->ruta_webp ?? $fl->ruta_original ?? $fl->ruta_miniatura ?? null;
@@ -504,6 +594,11 @@ class RegistroOrdenQueryController extends Controller
                 }
             }
             $images = array_values($unique);
+
+            \Log::info('🖼️ [getOrderImages] Resultado final', [
+                'total_images' => count($images),
+                'images' => $images
+            ]);
 
             return response()->json([
                 'success' => true,

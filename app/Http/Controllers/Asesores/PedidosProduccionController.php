@@ -302,6 +302,122 @@ class PedidosProduccionController extends Controller
                 'cantidad_total' => $cantidadTotalPedido
             ]);
 
+            // ✅ VERIFICAR SI HAY FOTOS EN EL FORMULARIO
+            $hayFotosEnFormulario = false;
+            foreach ($prendas as $prenda) {
+                if (!empty($prenda['fotos']) || !empty($prenda['telas']) || !empty($prenda['logos'])) {
+                    $hayFotosEnFormulario = true;
+                    break;
+                }
+            }
+            
+            if ($hayFotosEnFormulario) {
+                // GUARDAR SOLO LAS FOTOS QUE EL USUARIO ENVIÓ (respeta lo que eliminó)
+                \Log::info('📸 [PedidosProduccionController] Guardando fotos seleccionadas por el usuario', [
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'total_prendas' => count($prendas),
+                ]);
+
+                try {
+                    // Obtener prendas del pedido recién creadas
+                    $prendasPedido = PrendaPedido::where('numero_pedido', $pedido->numero_pedido)
+                        ->get();
+
+                    $indexPrenda = 0;
+                    foreach ($prendasPedido as $prendaPedido) {
+                        if (isset($prendas[$indexPrenda])) {
+                            $prendaFormulario = $prendas[$indexPrenda];
+
+                            // Guardar fotos de prenda
+                            if (!empty($prendaFormulario['fotos'])) {
+                                foreach ($prendaFormulario['fotos'] as $orden => $foto) {
+                                    DB::table('prenda_fotos_pedido')->insert([
+                                        'prenda_pedido_id' => $prendaPedido->id,
+                                        'ruta_original' => $foto['ruta_original'] ?? null,
+                                        'ruta_webp' => $foto['ruta_webp'] ?? null,
+                                        'ruta_miniatura' => $foto['ruta_miniatura'] ?? null,
+                                        'orden' => $orden + 1,
+                                        'ancho' => $foto['ancho'] ?? null,
+                                        'alto' => $foto['alto'] ?? null,
+                                        'tamaño' => $foto['tamaño'] ?? null,
+                                        'created_at' => now(),
+                                        'updated_at' => now(),
+                                    ]);
+                                }
+                                \Log::info('✅ Fotos de prenda guardadas', [
+                                    'prenda_id' => $prendaPedido->id,
+                                    'cantidad_fotos' => count($prendaFormulario['fotos']),
+                                ]);
+                            }
+
+                            // Guardar fotos de telas
+                            if (!empty($prendaFormulario['telas'])) {
+                                foreach ($prendaFormulario['telas'] as $tela) {
+                                    if (!empty($tela['fotos'])) {
+                                        foreach ($tela['fotos'] as $orden => $foto) {
+                                            DB::table('prenda_fotos_tela_pedido')->insert([
+                                                'prenda_pedido_id' => $prendaPedido->id,
+                                                'tela_id' => $tela['tela_id'] ?? null,
+                                                'color_id' => $tela['color_id'] ?? null,
+                                                'ruta_original' => $foto['ruta_original'] ?? $foto['url'] ?? null,
+                                                'ruta_webp' => $foto['ruta_webp'] ?? null,
+                                                'ruta_miniatura' => $foto['ruta_miniatura'] ?? null,
+                                                'orden' => $orden + 1,
+                                                'ancho' => $foto['ancho'] ?? null,
+                                                'alto' => $foto['alto'] ?? null,
+                                                'tamaño' => $foto['tamaño'] ?? null,
+                                                'created_at' => now(),
+                                                'updated_at' => now(),
+                                            ]);
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Guardar fotos de logos/bordados
+                            if (!empty($prendaFormulario['logos'])) {
+                                foreach ($prendaFormulario['logos'] as $orden => $logo) {
+                                    DB::table('prenda_fotos_logo_pedido')->insert([
+                                        'prenda_pedido_id' => $prendaPedido->id,
+                                        'ruta_original' => $logo['ruta_original'] ?? $logo['url'] ?? null,
+                                        'ruta_webp' => $logo['ruta_webp'] ?? null,
+                                        'ruta_miniatura' => $logo['ruta_miniatura'] ?? null,
+                                        'orden' => $orden + 1,
+                                        'ubicacion' => $logo['ubicacion'] ?? null,
+                                        'ancho' => $logo['ancho'] ?? null,
+                                        'alto' => $logo['alto'] ?? null,
+                                        'tamaño' => $logo['tamaño'] ?? null,
+                                        'created_at' => now(),
+                                        'updated_at' => now(),
+                                    ]);
+                                }
+                            }
+                        }
+                        $indexPrenda++;
+                    }
+
+                    \Log::info('✅ [PedidosProduccionController] Todas las fotos del usuario guardadas');
+                } catch (\Exception $e) {
+                    \Log::error('❌ [PedidosProduccionController] Error al guardar fotos del usuario', [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                }
+            } else {
+                // Si NO hay fotos del formulario, COPIAR de la cotización (fallback)
+                \Log::info('🖼️ [PedidosProduccionController] No hay fotos del formulario, copiando de cotización');
+                try {
+                    $copiarImagenesService = app(\App\Application\Services\CopiarImagenesCotizacionAPedidoService::class);
+                    $copiarImagenesService->copiarImagenesCotizacionAPedido($cotizacion->id, $pedido->id);
+                    \Log::info('✅ [PedidosProduccionController] Imágenes copiadas exitosamente');
+                } catch (\Exception $e) {
+                    \Log::error('❌ [PedidosProduccionController] Error al copiar imágenes', [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                }
+            }
+
             // NO cambiar el estado de la cotización para permitir crear múltiples pedidos
             // La cotización mantiene su estado actual (enviada, aceptada, etc.)
 
@@ -332,54 +448,140 @@ class PedidosProduccionController extends Controller
     private function heredarVariantesDePrenda($cotizacion, $prendaPedido, $index)
     {
         try {
-            // Obtener la prenda de cotización correspondiente
-            $prendasCotizacion = $cotizacion->prendasCotizaciones;
+            \Log::info('🔍 [heredarVariantes] Iniciando herencia de variantes', [
+                'cotizacion_id' => $cotizacion->id,
+                'prenda_pedido_id' => $prendaPedido->id,
+                'index' => $index,
+            ]);
+
+            // Obtener prendas de cotización desde la tabla correcta
+            $prendasCot = \App\Models\PrendaCot::where('cotizacion_id', $cotizacion->id)
+                ->orderBy('id')
+                ->get();
             
-            if (!isset($prendasCotizacion[$index])) {
+            if (!isset($prendasCot[$index])) {
                 \Log::warning('⚠️ No se encontró prenda de cotización en índice', [
                     'index' => $index,
-                    'total_prendas' => count($prendasCotizacion)
+                    'total_prendas_cot' => $prendasCot->count()
                 ]);
                 return;
             }
             
-            $prendaCotizacion = $prendasCotizacion[$index];
+            $prendaCot = $prendasCot[$index];
             
-            // Obtener variantes de la prenda de cotización
-            $variantes = VariantePrenda::where('prenda_cotizacion_id', $prendaCotizacion->id)->get();
+            \Log::info('🔍 [heredarVariantes] Prenda de cotización encontrada', [
+                'prenda_cot_id' => $prendaCot->id,
+                'nombre' => $prendaCot->nombre_producto,
+            ]);
+            
+            // Obtener variantes de la tabla prenda_variantes_cot
+            $variantes = \DB::table('prenda_variantes_cot')
+                ->where('prenda_cot_id', $prendaCot->id)
+                ->get();
+            
+            \Log::info('🔍 [heredarVariantes] Variantes encontradas', [
+                'total_variantes' => $variantes->count(),
+            ]);
             
             if ($variantes->isEmpty()) {
-                \Log::info('ℹ️ Sin variantes para heredar', [
-                    'prenda_cotizacion_id' => $prendaCotizacion->id
+                \Log::info('ℹ️ Sin variantes en prenda_variantes_cot, intentando con prenda directa');
+                
+                // Si no hay variantes, usar los datos de la prenda directamente
+                $prendaPedido->update([
+                    'color_id' => $prendaCot->color_id,
+                    'tela_id' => $prendaCot->tela_id,
+                    'tipo_manga_id' => $prendaCot->tipo_manga_id,
+                    'tipo_broche_id' => $prendaCot->tipo_broche_id,
+                    'tiene_bolsillos' => $prendaCot->tiene_bolsillos ?? 0,
+                    'tiene_reflectivo' => $prendaCot->tiene_reflectivo ?? 0,
                 ]);
+                
+                \Log::info('✅ Datos heredados desde prenda_cot directamente', [
+                    'color_id' => $prendaCot->color_id,
+                    'tela_id' => $prendaCot->tela_id,
+                    'tipo_manga_id' => $prendaCot->tipo_manga_id,
+                    'tipo_broche_id' => $prendaCot->tipo_broche_id,
+                ]);
+                
                 return;
             }
             
-            // Copiar cada variante al pedido
-            foreach ($variantes as $variante) {
-                // Actualizar prenda del pedido con datos de variantes
-                // NOTA: NO sobrescribir cantidad_talla, ya que tiene el mapeo correcto talla:cantidad
-                $prendaPedido->update([
-                    'color_id' => $variante->color_id,
-                    'tela_id' => $variante->tela_id,
-                    'tipo_manga_id' => $variante->tipo_manga_id,
-                    'tipo_broche_id' => $variante->tipo_broche_id,
-                    'tiene_bolsillos' => $variante->tiene_bolsillos,
-                    'tiene_reflectivo' => $variante->tiene_reflectivo,
-                    'descripcion_variaciones' => $variante->descripcion_adicional
-                ]);
+            // Copiar la primera variante
+            $variante = $variantes->first();
+            
+            $telaId = null;
+            $colorId = null;
+            
+            // 1. Buscar o crear COLOR usando el campo directo 'color' de la variante
+            if (!empty($variante->color)) {
+                $color = \DB::table('colores_prenda')
+                    ->where('nombre', 'LIKE', '%' . $variante->color . '%')
+                    ->first();
                 
-                \Log::info('✅ Variantes heredadas exitosamente', [
-                    'prenda_pedido_id' => $prendaPedido->id,
-                    'variante_original_id' => $variante->id,
-                    'color_id' => $variante->color_id,
-                    'tela_id' => $variante->tela_id,
-                    'tipo_manga_id' => $variante->tipo_manga_id,
-                    'tipo_broche_id' => $variante->tipo_broche_id,
-                    'tiene_bolsillos' => $variante->tiene_bolsillos,
-                    'tiene_reflectivo' => $variante->tiene_reflectivo
-                ]);
+                if (!$color) {
+                    $colorId = \DB::table('colores_prenda')->insertGetId([
+                        'nombre' => $variante->color,
+                        'activo' => 1,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    \Log::info('✅ Color creado', ['nombre' => $variante->color, 'id' => $colorId]);
+                } else {
+                    $colorId = $color->id;
+                }
             }
+            
+            // 2. Buscar o crear TELA usando telas_multiples JSON
+            if (!empty($variante->telas_multiples)) {
+                $telasMultiples = json_decode($variante->telas_multiples, true);
+                if (is_array($telasMultiples) && !empty($telasMultiples)) {
+                    $primeraTela = $telasMultiples[0];
+                    
+                    if (!empty($primeraTela['tela'])) {
+                        $tela = \DB::table('telas_prenda')
+                            ->where('nombre', 'LIKE', '%' . $primeraTela['tela'] . '%')
+                            ->first();
+                        
+                        if (!$tela) {
+                            $telaId = \DB::table('telas_prenda')->insertGetId([
+                                'nombre' => $primeraTela['tela'],
+                                'activo' => 1,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                            \Log::info('✅ Tela creada', ['nombre' => $primeraTela['tela'], 'id' => $telaId]);
+                        } else {
+                            $telaId = $tela->id;
+                        }
+                    }
+                }
+            }
+            
+            \Log::info('🔍 [heredarVariantes] IDs obtenidos/creados', [
+                'color_campo_directo' => $variante->color,
+                'color_id' => $colorId,
+                'tela_desde_json' => isset($telasMultiples) ? ($telasMultiples[0]['tela'] ?? null) : null,
+                'tela_id' => $telaId,
+            ]);
+            
+            $prendaPedido->update([
+                'color_id' => $colorId,
+                'tela_id' => $telaId,
+                'tipo_manga_id' => $variante->tipo_manga_id,
+                'tipo_broche_id' => $variante->tipo_broche_id,
+                'tiene_bolsillos' => $variante->tiene_bolsillos ?? 0,
+                'tiene_reflectivo' => $variante->tiene_reflectivo ?? 0,
+                'descripcion_variaciones' => $variante->descripcion_adicional ?? null,
+            ]);
+            
+            \Log::info('✅ Variantes heredadas exitosamente desde prenda_variantes_cot', [
+                'prenda_pedido_id' => $prendaPedido->id,
+                'color_id' => $colorId,
+                'tela_id' => $telaId,
+                'tipo_manga_id' => $variante->tipo_manga_id,
+                'tipo_broche_id' => $variante->tipo_broche_id,
+                'telas_multiples' => $variante->telas_multiples,
+            ]);
             
         } catch (\Exception $e) {
             \Log::error('❌ Error heredando variantes', [
@@ -406,6 +608,21 @@ class PedidosProduccionController extends Controller
      * Ejemplo: "MANGA CORTA CUELLO Y PUÑOS TELA PIQUE REF:123 AZUL MARINO DAMA MANGA CORTA CON BOLSILLO BOTON OBSERVACION"
      */
     private function construirDescripcionPrenda($numeroPrenda, $producto, $cantidadesPorTalla)
+    {
+        // SOLO guardar la descripción simple del producto
+        // La descripción completa se armará dinámicamente en el frontend
+        if (!empty($producto['descripcion'])) {
+            return strtoupper($producto['descripcion']);
+        }
+        
+        return '-';
+    }
+
+    /**
+     * FUNCIÓN OBSOLETA - Mantener por compatibilidad pero no se usa
+     * La descripción ahora se genera dinámicamente en el frontend
+     */
+    private function construirDescripcionPrendaCompleta($numeroPrenda, $producto, $cantidadesPorTalla)
     {
         $lineas = [];
         
@@ -678,5 +895,6 @@ class PedidosProduccionController extends Controller
             ], 500);
         }
     }
+
 }
 

@@ -288,11 +288,17 @@ document.addEventListener('DOMContentLoaded', function() {
             // Generar HTML de foto principal y adicionales de prendas (MINIATURAS RESPONSIVAS)
             let fotosHtml = '';
             if (fotoPrincipal) {
+                // Obtener el objeto foto completo del array
+                const fotoObjPrincipal = prenda.fotos && prenda.fotos[0] ? prenda.fotos[0] : { url: fotoPrincipal };
+                const fotoURLEncoded = encodeURIComponent(JSON.stringify(fotoObjPrincipal));
+                
                 fotosHtml += `
                     <div style="width: 100%; display: flex; flex-direction: column; gap: 0.5rem;">
                         <div style="position: relative; display: inline-block;">
                             <img src="${fotoPrincipal}" alt="${prenda.nombre_producto}" 
                                  class="prenda-foto-principal" 
+                                 data-foto-url="${fotoURLEncoded}"
+                                 data-prenda-index="${index}"
                                  style="width: 100%; height: 200px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 1px solid #d0d0d0; transition: all 0.2s;"
                                  onclick="abrirModalImagen('${fotoPrincipal}', '${prenda.nombre_producto}')">
                             <button type="button"
@@ -302,10 +308,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
                 if (fotosAdicionales.length > 0) {
                     fotosHtml += '<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 0.4rem;">';
-                    fotosAdicionales.forEach(foto => {
+                    fotosAdicionales.forEach((foto, idx) => {
+                        // Obtener el objeto foto completo
+                        const fotoObj = prenda.fotos && prenda.fotos[idx + 1] ? prenda.fotos[idx + 1] : { url: foto };
+                        const fotoURLEncoded2 = encodeURIComponent(JSON.stringify(fotoObj));
+                        
                         fotosHtml += `
                             <div style="position: relative; display: inline-block; width: 100%;">
                                 <img src="${foto}" alt="Foto adicional prenda" 
+                                     data-foto-url="${fotoURLEncoded2}"
+                                     data-prenda-index="${index}"
                                      style="width: 100%; height: 100px; object-fit: cover; cursor: pointer; border: 1px solid #d0d0d0; border-radius: 4px; transition: all 0.2s;"
                                      onclick="abrirModalImagen('${foto}', '${prenda.nombre_producto}')">
                                 <button type="button"
@@ -325,12 +337,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 fotosTelasHtml = '<div style="margin-top: 1rem; padding: 1rem; background: #f5f5f5; border-radius: 0.5rem; border-left: 4px solid #0066cc;">';
                 fotosTelasHtml += '<strong style="display: block; margin-bottom: 0.75rem; color: #333;">Fotos de Telas:</strong>';
                 fotosTelasHtml += '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 0.5rem;">';
-                telaFotos.forEach(telaFoto => {
+                telaFotos.forEach((telaFoto, idx) => {
                     const fotoUrl = telaFoto.url || telaFoto.ruta_webp || telaFoto.ruta_original;
                     if (fotoUrl) {
+                        const fotoURLEncoded = encodeURIComponent(JSON.stringify(telaFoto));
+                        
                         fotosTelasHtml += `
                             <div style="position: relative; display: inline-block; width: 100%;">
                                 <img src="${fotoUrl}" alt="Foto de tela" 
+                                     data-tela-foto-url="${fotoURLEncoded}"
+                                     data-prenda-index="${index}"
                                      style="width: 100%; height: 120px; object-fit: cover; cursor: pointer; border: 1px solid #d0d0d0; border-radius: 4px; transition: all 0.2s;"
                                      onclick="abrirModalImagen('${fotoUrl}', 'Foto de tela')">
                                 <button type="button"
@@ -861,6 +877,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 generosSeleccionados.push(checkbox.value);
             });
 
+            // ✅ RECOPILAR FOTOS QUE QUEDAN EN EL DOM (las no eliminadas por el usuario)
+            const fotosEnDOM = [];
+            const imagenesPrendaDOM = prendasCard.querySelectorAll('img[data-foto-url][data-prenda-index="' + index + '"]');
+            imagenesPrendaDOM.forEach(img => {
+                // Leer la foto completa del atributo data-foto-url (no usar índice)
+                const fotoJSON = img.getAttribute('data-foto-url');
+                if (fotoJSON) {
+                    try {
+                        const foto = JSON.parse(decodeURIComponent(fotoJSON));
+                        fotosEnDOM.push(foto);
+                    } catch (e) {
+                        console.error('Error parseando foto:', e);
+                    }
+                }
+            });
+
+            // ✅ RECOPILAR FOTOS DE TELAS QUE QUEDAN EN EL DOM
+            const fotosTelaEnDOM = [];
+            const imagenesTelaDOM = prendasCard.querySelectorAll('img[data-tela-foto-url][data-prenda-index="' + index + '"]');
+            imagenesTelaDOM.forEach(img => {
+                // Leer la foto completa del atributo data-tela-foto-url
+                const fotoJSON = img.getAttribute('data-tela-foto-url');
+                if (fotoJSON) {
+                    try {
+                        const foto = JSON.parse(decodeURIComponent(fotoJSON));
+                        fotosTelaEnDOM.push(foto);
+                    } catch (e) {
+                        console.error('Error parseando foto de tela:', e);
+                    }
+                }
+            });
+
+            console.log(`Prenda ${index}: Fotos restantes: ${fotosEnDOM.length}, Fotos tela: ${fotosTelaEnDOM.length}`);
+            console.log(`Prenda ${index}: Fotos tela originales: ${prenda.telaFotos?.length || 0}, Fotos tela restantes: ${fotosTelaEnDOM.length}`);
+
             prendas.push({
                 index: index,
                 nombre_producto: nombreProducto,
@@ -877,8 +928,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 observaciones: prenda.variantes?.observaciones,
                 telas_multiples: telasEditadas.length > 0 ? telasEditadas : prenda.telas_multiples,
                 cantidades: cantidadesPorTalla,
-                fotos: prenda.fotos || [],
-                telas: prenda.telaFotos || prenda.telas || [],
+                fotos: fotosEnDOM.length > 0 ? fotosEnDOM : prenda.fotos || [],
+                telas: fotosTelaEnDOM.length > 0 ? fotosTelaEnDOM : (prenda.telaFotos || prenda.telas || []),
                 logos: prenda.logos || []
             });
         });

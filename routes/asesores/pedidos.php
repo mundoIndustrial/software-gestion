@@ -44,4 +44,9 @@ Route::middleware(['auth', 'role:asesor'])->group(function () {
         [PedidoProduccionController::class, 'obtenerDatosCotizacion'])
         ->name('obtener-datos-cotizacion');
 
+    // Guardar fotos seleccionadas de un pedido
+    Route::post('/pedidos/guardar-fotos',
+        [PedidoProduccionController::class, 'guardarFotosPedido'])
+        ->name('pedidos.guardar-fotos');
+
 });
