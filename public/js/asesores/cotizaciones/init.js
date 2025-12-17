@@ -85,13 +85,13 @@
                 // Input/change para cambios
                 campo.addEventListener('input', () => {
                     console.log(`📝 Campo ${campoId} modificado, actualizando resumen...`);
-                    actualizarResumenFriendly();
+                    if (typeof actualizarResumenFriendly === 'function') actualizarResumenFriendly();
                 });
                 
                 // Change para inputs de fecha/select
                 campo.addEventListener('change', () => {
                     console.log(`📝 Campo ${campoId} cambiado, actualizando resumen...`);
-                    actualizarResumenFriendly();
+                    if (typeof actualizarResumenFriendly === 'function') actualizarResumenFriendly();
                 });
             }
         });
@@ -101,7 +101,7 @@
         if (tecnicasContainer) {
             const observer = new MutationObserver(() => {
                 console.log('🔄 Técnicas modificadas, actualizando resumen...');
-                actualizarResumenFriendly();
+                if (typeof actualizarResumenFriendly === 'function') actualizarResumenFriendly();
             });
             observer.observe(tecnicasContainer, { childList: true, subtree: true });
         }
@@ -111,7 +111,9 @@
         if (formSection) {
             const observer = new MutationObserver(() => {
                 console.log('🔄 Productos modificados, actualizando resumen...');
-                setTimeout(() => actualizarResumenFriendly(), 100);
+                setTimeout(() => {
+                    if (typeof actualizarResumenFriendly === 'function') actualizarResumenFriendly();
+                }, 100);
             });
             observer.observe(formSection, { childList: true, subtree: true });
         }

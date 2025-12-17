@@ -66,6 +66,7 @@
 <script src="{{ asset('js/asesores/cotizaciones/resumen-reflectivo.js') }}"></script>
 <script src="{{ asset('js/asesores/cotizaciones/guardado.js') }}"></script>
 <script src="{{ asset('js/asesores/cotizaciones/cargar-borrador.js') }}"></script>
+<script src="{{ asset('js/asesores/cotizaciones/imagen-borrador.js') }}"></script>
 
 <!-- 3. Módulos de variantes y búsqueda -->
 <script src="{{ asset('js/asesores/variantes-prendas.js') }}"></script>
@@ -84,7 +85,7 @@
 @if(isset($esEdicion) && $esEdicion && isset($cotizacion))
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const cotizacion = {!! json_encode($cotizacion) !!};
+        const cotizacion = {!! json_encode($cotizacion->toArray()) !!};
         console.log('📂 Datos de cotización recibidos:', cotizacion);
         console.log('📂 Cotización ID:', cotizacion.id);
         

@@ -222,8 +222,76 @@
     <i class="fas fa-times"></i> Limpiar Filtros
 </div>
 
+<!-- PDF se abre en nueva pestaña - Sin modal -->
+
 <script src="{{ asset('js/asesores/cotizaciones/filtros-embudo.js') }}"></script>
 <script src="{{ asset('js/asesores/cotizaciones-index.js') }}"></script>
+
+<script>
+    // Variables globales para PDF
+    window.cotizacionIdActualPDF = null;
+    window.tipoPDFActual = null;
+
+    // Toggle del menú PDF para cotizaciones combinadas
+    function toggleMenuPDF(cotizacionId, tipo) {
+        if (tipo === 'PL') {
+            // Para combinadas, mostrar menú
+            const menu = document.getElementById(`menu-pdf-${cotizacionId}`);
+            if (menu) {
+                menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+                // Cerrar otros menús
+                document.querySelectorAll('.menu-pdf').forEach(m => {
+                    if (m.id !== `menu-pdf-${cotizacionId}`) {
+                        m.style.display = 'none';
+                    }
+                });
+            }
+        } else if (tipo === 'RF') {
+            // Reflectivo: abrir PDF Prenda en nueva pestaña
+            abrirPDFEnPestana(cotizacionId, 'prenda');
+        } else if (tipo === 'L') {
+            // Logo: abrir PDF Logo en nueva pestaña
+            abrirPDFEnPestana(cotizacionId, 'logo');
+        }
+    }
+
+    // Abrir PDF en nueva pestaña
+    function abrirPDFEnPestana(cotizacionId, tipoPDF) {
+        const url = `/asesores/cotizacion/${cotizacionId}/pdf?tipo=${tipoPDF}`;
+        window.open(url, '_blank');
+    }
+
+    // Cerrar menú PDF al hacer clic fuera
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('button[onclick*="toggleMenuPDF"]') && !e.target.closest('.menu-pdf')) {
+            document.querySelectorAll('.menu-pdf').forEach(m => m.style.display = 'none');
+        }
+    });
+</script>
+
+<style>
+    .menu-pdf {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .menu-pdf a {
+        display: block;
+        padding: 10px 12px;
+        color: #374151;
+        text-decoration: none;
+        font-size: 0.85rem;
+        transition: background 0.2s;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .menu-pdf a:last-child {
+        border-bottom: none;
+    }
+    
+    .menu-pdf a:hover {
+        background: #f3f4f6;
+    }
+</style>
 
 @endsection
 

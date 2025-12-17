@@ -81,10 +81,10 @@
                                         @endif
                                     </td>
                                 @elseif($column['key'] === 'accion')
-                                    <td style="padding: 12px; text-align: center;">
+                                    <td style="padding: 12px; text-align: center; display: flex; gap: 5px; justify-content: center; flex-wrap: wrap;">
                                         @if($isBorrador)
                                             <a href="{{ route('asesores.cotizaciones.edit-borrador', $cot->id) }}" 
-                                                style="background: {{ $buttonColor }}; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600; margin-right: 5px;">
+                                                style="background: {{ $buttonColor }}; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600;">
                                                 Editar
                                             </a>
                                             <a href="#" onclick="eliminarBorrador({{ $cot->id }}); return false;" 
@@ -93,9 +93,51 @@
                                             </a>
                                         @else
                                             <a href="{{ route('asesores.cotizaciones.show', $cot->id) }}" 
-                                                style="background: {{ $buttonColor }}; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600; margin-right: 5px;">
+                                                style="background: {{ $buttonColor }}; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600;">
                                                 Ver
                                             </a>
+                                            <!-- Botón PDF con menú dinámico -->
+                                            <div style="position: relative; display: inline-block;">
+                                                @if($cot->tipo === 'PL')
+                                                    <!-- Combinada: mostrar botón con dropdown -->
+                                                    <button onclick="toggleMenuPDF({{ $cot->id }}, '{{ $cot->tipo }}')" 
+                                                        style="background: #10b981; color: white; padding: 6px 12px; border-radius: 4px; border: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                                        <i class="fas fa-file-pdf"></i>
+                                                        <span>PDF ▼</span>
+                                                    </button>
+                                                    <div id="menu-pdf-{{ $cot->id }}" class="menu-pdf" style="display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid #d1d5db; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; margin-top: 4px; min-width: 150px;">
+                                                    <a href="#" onclick="abrirPDFEnPestana({{ $cot->id }}, 'prenda'); return false;" 
+                                                        style="display: block; padding: 10px 12px; color: #374151; text-decoration: none; font-size: 0.85rem; border-bottom: 1px solid #e5e7eb; transition: background 0.2s;">
+                                                        📄 PDF Prenda
+                                                    </a>
+                                                    <a href="#" onclick="abrirPDFEnPestana({{ $cot->id }}, 'logo'); return false;" 
+                                                            style="display: block; padding: 10px 12px; color: #374151; text-decoration: none; font-size: 0.85rem; transition: background 0.2s;">
+                                                            🎨 PDF Logo
+                                                        </a>
+                                                    </div>
+                                                @elseif($cot->tipo === 'RF')
+                                                    <!-- Reflectivo: botón directo a PDF Prenda -->
+                                                    <button onclick="abrirPDFEnPestana({{ $cot->id }}, 'prenda')" 
+                                                        style="background: #10b981; color: white; padding: 6px 12px; border-radius: 4px; border: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                                        <i class="fas fa-file-pdf"></i>
+                                                        <span>PDF</span>
+                                                    </button>
+                                                @elseif($cot->tipo === 'L')
+                                                    <!-- Logo: botón directo a PDF Logo -->
+                                                    <button onclick="abrirPDFEnPestana({{ $cot->id }}, 'logo')" 
+                                                        style="background: #10b981; color: white; padding: 6px 12px; border-radius: 4px; border: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                                        <i class="fas fa-file-pdf"></i>
+                                                        <span>PDF</span>
+                                                    </button>
+                                                @else
+                                                    <!-- Otro tipo: PDF Prenda por defecto -->
+                                                    <button onclick="abrirPDFEnPestana({{ $cot->id }}, 'prenda')" 
+                                                        style="background: #10b981; color: white; padding: 6px 12px; border-radius: 4px; border: none; font-size: 0.8rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                                        <i class="fas fa-file-pdf"></i>
+                                                        <span>PDF</span>
+                                                    </button>
+                                                @endif
+                                            </div>
                                             <a href="#" onclick="eliminarCotizacion({{ $cot->id }}); return false;" 
                                                 style="background: #e74c3c; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 0.8rem; font-weight: 600;">
                                                 Eliminar

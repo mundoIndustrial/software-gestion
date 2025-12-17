@@ -182,15 +182,10 @@ function irAlPaso(paso) {
     if (paso === 4) {
         console.log('🎯 Navegando al PASO 4: REVISAR COTIZACIÓN');
         setTimeout(() => {
-            // Usar la función más completa si está disponible
-            if (typeof actualizarResumenCompleto === 'function') {
-                console.log('✅ Llamando a actualizarResumenCompleto()');
-                actualizarResumenCompleto();
-            } else if (typeof actualizarResumenFriendly === 'function') {
-                console.log('✅ Llamando a actualizarResumenFriendly()');
-                actualizarResumenFriendly();
-            }
-        }, 100);
+            // Actualizar el resumen dinámico del paso 4
+            console.log('✅ Llamando a actualizarResumenFriendly() para Paso 4');
+            actualizarResumenFriendly();
+        }, 200);
     }
 }
 
@@ -246,68 +241,361 @@ function actualizarResumenFriendly() {
         console.log('✅ Fecha actualizada:', fechaTexto);
     }
     
-    // 3. TIPO DE COTIZACIÓN
+    // 3. TIPO DE COTIZACIÓN (DINÁMICO según contenido)
     const resumenTipo = document.getElementById('resumen_tipo');
     if (resumenTipo) {
-        const tipoMap = {
-            'PL': 'Prenda - Logo',
-            'PB': 'Prenda - Bordado',
-            'P': 'Solo Prendas',
-            'L': 'Solo Logo'
-        };
-        const tipo = window.tipoCotizacionGlobal || 'PL';
-        resumenTipo.textContent = tipoMap[tipo] || tipo;
-        console.log('✅ Tipo actualizado:', tipo);
+        // Detectar qué hay en el formulario
+        const tienePrendas = document.querySelectorAll('.producto-card').length > 0;
+        const tieneLogo = document.getElementById('descripcion_logo')?.value?.trim() || false;
+        const tieneTecnicas = document.querySelectorAll('#tecnicas_seleccionadas .tecnica-badge').length > 0;
+        
+        let tipoDetectado = '';
+        if (tienePrendas && (tieneLogo || tieneTecnicas)) {
+            tipoDetectado = '🎯 Combinada';
+        } else if (tienePrendas) {
+            tipoDetectado = '👕 Solo Prendas';
+        } else if (tieneLogo || tieneTecnicas) {
+            tipoDetectado = '🎨 Solo Logo/Bordado';
+        } else {
+            tipoDetectado = '-';
+        }
+        
+        resumenTipo.textContent = tipoDetectado;
+        console.log('✅ Tipo actualizado (dinámico):', tipoDetectado);
     }
     
-    // 4. RESUMEN DE PRENDAS
+    // 4. RESUMEN DE PRENDAS (Solo si hay prendas)
     const resumenPrendas = document.getElementById('resumen_prendas');
+    const resumenPrendasContainer = resumenPrendas?.closest('div[style*="background"]');
     if (resumenPrendas) {
         const prendas = document.querySelectorAll('.producto-card');
         console.log('📦 Prendas encontradas:', prendas.length);
         
         if (prendas.length === 0) {
-            resumenPrendas.innerHTML = '<p style="color: #666;">No hay prendas agregadas</p>';
+            if (resumenPrendasContainer) resumenPrendasContainer.style.display = 'none';
+            resumenPrendas.innerHTML = '';
         } else {
+            if (resumenPrendasContainer) resumenPrendasContainer.style.display = 'block';
             resumenPrendas.innerHTML = '';
             prendas.forEach((prenda, index) => {
                 const nombre = prenda.querySelector('input[name*="nombre_producto"]')?.value || 'Sin nombre';
+                const descripcion = prenda.querySelector('textarea[name*="descripcion"]')?.value || '';
+                
+                // Obtener tallas desde guardadas primero, luego desde DOM
+                let tallasTexto = 'Sin tallas';
+                if (window.variacionesGuardadas && window.variacionesGuardadas[index]) {
+                    const varGuardadas = window.variacionesGuardadas[index];
+                    if (varGuardadas.tallas && varGuardadas.tallas.trim() !== '') {
+                        tallasTexto = varGuardadas.tallas;
+                        console.log('📏 Tallas desde guardadas:', tallasTexto);
+                    }
+                } 
+                
+                // Si aún no hay tallas, buscar en DOM
+                if (tallasTexto === 'Sin tallas') {
+                    const tallas = prenda.querySelectorAll('button[data-talla].active');
+                    if (tallas.length > 0) {
+                        tallasTexto = Array.from(tallas).map(t => t.textContent).join(', ');
+                        console.log('📏 Tallas desde DOM:', tallasTexto);
+                    }
+                }
+                
+                // Obtener variaciones desde window.variacionesGuardadas (si existe)
+                let variacionesHTML = '';
+                
+                if (window.variacionesGuardadas && window.variacionesGuardadas[index]) {
+                    const varGuardadas = window.variacionesGuardadas[index];
+                    console.log('🎨 Variaciones desde guardadas:', varGuardadas);
+                    
+                    // Construir HTML para variaciones CON observaciones
+                    let variacionesArray = [];
+                    
+                    if (varGuardadas.color) variacionesArray.push(`Color: ${varGuardadas.color}`);
+                    if (varGuardadas.tela) variacionesArray.push(`Tela: ${varGuardadas.tela}`);
+                    if (varGuardadas.referencia) variacionesArray.push(`Ref: ${varGuardadas.referencia}`);
+                    
+                    // Manga - solo mostrar si existe nombre
+                    if (varGuardadas.manga) {
+                        let mangaTexto = varGuardadas.manga;
+                        if (varGuardadas.obsManga) mangaTexto += ` (${varGuardadas.obsManga})`;
+                        variacionesArray.push(`Manga: ${mangaTexto}`);
+                    }
+                    
+                    // Bolsillos - sin el "Sí", ya está implícito
+                    if (varGuardadas.bolsillos) {
+                        let bolsillosTexto = 'Bolsillos';
+                        if (varGuardadas.obsBolsillos) bolsillosTexto += ` (${varGuardadas.obsBolsillos})`;
+                        variacionesArray.push(bolsillosTexto);
+                    }
+                    
+                    // Tipo de cierre (Botón, Broche, etc) - solo mostrar el nombre sin prefijo
+                    if (varGuardadas.broche) {
+                        let cierreTexto = varGuardadas.broche;
+                        if (varGuardadas.obsBroche) cierreTexto += ` (${varGuardadas.obsBroche})`;
+                        variacionesArray.push(cierreTexto);
+                    }
+                    
+                    // Reflectivo - sin el "Sí"
+                    if (varGuardadas.reflectivo) {
+                        let reflectivoTexto = 'Reflectivo';
+                        if (varGuardadas.obsReflectivo) reflectivoTexto += ` (${varGuardadas.obsReflectivo})`;
+                        variacionesArray.push(reflectivoTexto);
+                    }
+                    
+                    variacionesHTML = variacionesArray.join(' | ');
+                } else {
+                    // Si no hay datos guardados, buscar en el DOM
+                    let variacionesArray = [];
+                    
+                    const colorInputs = prenda.querySelectorAll('input[name*="color"]');
+                    if (colorInputs.length > 0) {
+                        colorInputs.forEach(inp => {
+                            if (inp.value) variacionesArray.push(`Color: ${inp.value}`);
+                        });
+                    }
+                    
+                    const telaSelects = prenda.querySelectorAll('select[name*="tela"]');
+                    if (telaSelects.length > 0) {
+                        telaSelects.forEach(sel => {
+                            if (sel.value) variacionesArray.push(`Tela: ${sel.value}`);
+                        });
+                    }
+                    
+                    const refInputs = prenda.querySelectorAll('input[name*="referencia"]');
+                    if (refInputs.length > 0) {
+                        refInputs.forEach(inp => {
+                            if (inp.value) variacionesArray.push(`Ref: ${inp.value}`);
+                        });
+                    }
+                    
+                    const mangaInputs = prenda.querySelectorAll('input[name*="tipo_manga"]:not([type="hidden"])');
+                    if (mangaInputs.length > 0) {
+                        mangaInputs.forEach(inp => {
+                            if (inp.value) variacionesArray.push(`Manga: ${inp.value}`);
+                        });
+                    }
+                    
+                    const brocheSelects = prenda.querySelectorAll('select[name*="tipo_broche"]');
+                    if (brocheSelects.length > 0) {
+                        brocheSelects.forEach(sel => {
+                            const selectedText = sel.options[sel.selectedIndex]?.text || '';
+                            if (selectedText && selectedText !== '-') variacionesArray.push(`Broche: ${selectedText}`);
+                        });
+                    }
+                    
+                    const bolsillosCheckbox = prenda.querySelector('input[name*="tiene_bolsillos"]');
+                    if (bolsillosCheckbox?.checked) variacionesArray.push('Bolsillos: Sí');
+                    
+                    const reflectivoCheckbox = prenda.querySelector('input[name*="tiene_reflectivo"]');
+                    if (reflectivoCheckbox?.checked) variacionesArray.push('Reflectivo: Sí');
+                    
+                    variacionesHTML = variacionesArray.join(' | ');
+                }
                 
                 const div = document.createElement('div');
-                div.style.cssText = 'padding: 10px; background: #fff; border-left: 4px solid #3498db; border-radius: 4px;';
-                div.innerHTML = `<strong>${nombre}</strong>`;
+                div.style.cssText = 'padding: 15px; background: #fff; border-left: 4px solid #3498db; border-radius: 4px; margin-bottom: 10px;';
+                
+                let html = `<div style="margin-bottom: 8px;">
+                    <strong style="font-size: 1.05rem; color: #0066cc;">👕 Prenda ${index + 1}: ${nombre}</strong>
+                </div>`;
+                
+                if (descripcion) {
+                    html += `<div style="margin-bottom: 6px; padding-left: 10px; border-left: 2px solid #95a5a6;">
+                        <small style="color: #666;"><strong>Descripción:</strong> ${descripcion}</small>
+                    </div>`;
+                }
+                
+                html += `<div style="margin-bottom: 6px; padding-left: 10px; border-left: 2px solid #95a5a6;">
+                    <small style="color: #666;"><strong>Tallas:</strong> ${tallasTexto}</small>
+                </div>`;
+                
+                if (variacionesHTML) {
+                    html += `<div style="padding-left: 10px; border-left: 2px solid #95a5a6;">
+                        <small style="color: #666;"><strong>Variaciones:</strong></small><br>
+                        <small style="color: #666; display: block; margin-top: 4px;">${variacionesHTML.split(' | ').map(v => `• ${v}`).join('<br>')}</small>
+                    </div>`;
+                }
+                
+                div.innerHTML = html;
                 resumenPrendas.appendChild(div);
             });
             console.log('✅ Prendas mostradas en resumen');
         }
     }
     
-    // 5. DESCRIPCIÓN DEL LOGO
+    // 5. DESCRIPCIÓN DEL LOGO (Solo si hay logo/bordado)
     const resumenLogDesc = document.getElementById('resumen_logo_desc');
-    if (resumenLogDesc) {
+    const resumenLogoContainer = resumenLogDesc?.closest('div[style*="background"]');
+    if (resumenLogDesc && resumenLogoContainer) {
         const descLogo = document.getElementById('descripcion_logo');
-        const texto = descLogo?.value || '-';
-        resumenLogDesc.textContent = texto;
-        console.log('✅ Descripción logo actualizada');
+        const tecnicas = document.querySelectorAll('#tecnicas_seleccionadas .tecnica-badge');
+        
+        if (!descLogo?.value?.trim() && tecnicas.length === 0) {
+            resumenLogoContainer.style.display = 'none';
+        } else {
+            resumenLogoContainer.style.display = 'block';
+            const texto = descLogo?.value || '-';
+            resumenLogDesc.textContent = texto;
+            console.log('✅ Descripción logo actualizada');
+        }
     }
     
-    // 6. TÉCNICAS
+    // 6. TÉCNICAS Y OBSERVACIÓN
     const resumenTecnicas = document.getElementById('resumen_tecnicas');
     if (resumenTecnicas) {
-        const tecnicas = document.querySelectorAll('#tecnicas_seleccionadas .tecnica-badge');
+        // Usar variable global si está disponible (desde cargar-borrador.js)
+        let tecnicasArray = window.tecnicasGuardadas || [];
+        
+        console.log('🎨 DEBUG Técnicas desde global:', {
+            tecnicasGuardadas: window.tecnicasGuardadas,
+            cantidad: tecnicasArray.length
+        });
+        
         resumenTecnicas.innerHTML = '';
         
-        if (tecnicas.length === 0) {
-            resumenTecnicas.innerHTML = '<span style="color: #666;">Ninguna</span>';
+        if (tecnicasArray.length === 0) {
+            resumenTecnicas.innerHTML = '<p style="margin: 0; font-size: 0.95rem; color: #999; padding: 8px 12px; background: #fff; border-left: 3px solid #3498db; border-radius: 4px;">No especificadas</p>';
         } else {
-            tecnicas.forEach(tecnica => {
-                const badge = document.createElement('span');
-                badge.style.cssText = 'background: #3498db; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.85rem;';
-                badge.textContent = tecnica.textContent || tecnica.innerText;
-                resumenTecnicas.appendChild(badge);
-            });
+            // Obtener observación de técnicas (desde global si existe)
+            let obsTecnicas = window.obsTecnicasGuardadas || '';
+            
+            // Si no está en global, intentar desde el formulario (Paso 3)
+            if (!obsTecnicas) {
+                const obsTecnicasInput = document.getElementById('observaciones_tecnicas');
+                obsTecnicas = obsTecnicasInput?.value?.trim() || '';
+            }
+            
+            // Crear texto con técnicas
+            let tecnicasTexto = tecnicasArray.join(', ');
+            
+            // Agregar observación si existe
+            if (obsTecnicas) {
+                tecnicasTexto += `<br><span style="font-size: 0.85rem; opacity: 0.8; display: block; margin-top: 4px;">Observación: ${obsTecnicas}</span>`;
+            }
+            
+            const p = document.createElement('p');
+            p.style.cssText = 'margin: 0; font-size: 0.95rem; color: #555; padding: 8px 12px; background: #fff; border-left: 3px solid #3498db; border-radius: 4px;';
+            p.innerHTML = tecnicasTexto;
+            resumenTecnicas.appendChild(p);
         }
         console.log('✅ Técnicas actualizado');
+    }
+    
+    // 6B. UBICACIONES EN LOGO
+    const resumenLogoUbicacionesContainer = document.getElementById('resumen_logo_ubicaciones_container');
+    const resumenLogoUbicaciones = document.getElementById('resumen_logo_ubicaciones');
+    if (resumenLogoUbicaciones && resumenLogoUbicacionesContainer) {
+        resumenLogoUbicaciones.innerHTML = '';
+        
+        // Usar variable global si está disponible (desde cargar-borrador.js)
+        let ubicacionesArray = window.ubicacionesGuardadas || [];
+        
+        console.log('📍 DEBUG Ubicaciones desde global:', {
+            ubicacionesGuardadas: window.ubicacionesGuardadas,
+            cantidad: ubicacionesArray.length
+        });
+        
+        if (ubicacionesArray.length === 0) {
+            resumenLogoUbicacionesContainer.style.display = 'none';
+        } else {
+            resumenLogoUbicacionesContainer.style.display = 'block';
+            
+            ubicacionesArray.forEach((ubicacion, idx) => {
+                const seccionNombre = ubicacion.seccion || 'Sección';
+                const ubicacionesTexto = (ubicacion.ubicaciones_seleccionadas || []).join(', ') || 'Sin ubicaciones';
+                const obs = ubicacion.observaciones ? ubicacion.observaciones : '';
+                
+                const divResumen = document.createElement('div');
+                divResumen.style.cssText = 'padding: 12px; background: #fff; border-left: 3px solid #3498db; border-radius: 4px; margin-bottom: 8px; font-size: 0.95rem;';
+                
+                let obsHTML = '';
+                if (obs) {
+                    obsHTML = `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ecf0f1; font-size: 0.85rem; color: #555;"><strong>Obs:</strong> ${obs}</div>`;
+                }
+                
+                divResumen.innerHTML = `
+                    <div style="font-weight: 600; margin-bottom: 4px; color: #0066cc;">${seccionNombre}</div>
+                    <div style="margin-left: 12px; color: #555;">${ubicacionesTexto}</div>
+                    ${obsHTML}
+                `;
+                resumenLogoUbicaciones.appendChild(divResumen);
+            });
+            console.log('✅ Ubicaciones en LOGO actualizadas');
+        }
+    }
+    
+    // 7. UBICACIONES
+    const resumenUbicacionesContainer = document.getElementById('resumen_ubicaciones_container');
+    const resumenUbicaciones = document.getElementById('resumen_ubicaciones');
+    if (resumenUbicaciones && resumenUbicacionesContainer) {
+        const ubicacionesElements = document.querySelectorAll('#ubicaciones_seleccionadas > div');
+        resumenUbicaciones.innerHTML = '';
+        
+        if (ubicacionesElements.length === 0) {
+            resumenUbicacionesContainer.style.display = 'none';
+        } else {
+            resumenUbicacionesContainer.style.display = 'block';
+            ubicacionesElements.forEach(ub => {
+                const seccion = ub.querySelector('strong')?.textContent || '';
+                const ubicaciones = Array.from(ub.querySelectorAll('span')).map(s => s.textContent).join(', ');
+                
+                const div = document.createElement('div');
+                div.style.cssText = 'padding: 10px; background: #fff; border-left: 4px solid #e74c3c; border-radius: 4px;';
+                div.innerHTML = `<strong>${seccion}</strong><br><small style="color: #666;">${ubicaciones}</small>`;
+                resumenUbicaciones.appendChild(div);
+            });
+            console.log('✅ Ubicaciones actualizadas');
+        }
+    }
+    
+    // 8. ESPECIFICACIONES
+    const resumenEspecificacionesContainer = document.getElementById('resumen_especificaciones_container');
+    const resumenEspecificaciones = document.getElementById('resumen_especificaciones');
+    if (resumenEspecificaciones && resumenEspecificacionesContainer && window.especificacionesSeleccionadas) {
+        resumenEspecificaciones.innerHTML = '';
+        const especKeys = Object.keys(window.especificacionesSeleccionadas || {});
+        
+        if (especKeys.length === 0) {
+            resumenEspecificacionesContainer.style.display = 'none';
+        } else {
+            resumenEspecificacionesContainer.style.display = 'block';
+            
+            // Crear tabla para especificaciones
+            let tableHTML = `
+                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                    <thead>
+                        <tr style="background: #3498db; color: white;">
+                            <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Categoría</th>
+                            <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Valor</th>
+                            <th style="padding: 10px; text-align: left; border: 1px solid #ddd;">Observación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            Object.entries(window.especificacionesSeleccionadas).forEach(([categoria, valores]) => {
+                if (Array.isArray(valores) && valores.length > 0) {
+                    const categoriaNombre = categoria.replace(/_/g, ' ').toUpperCase();
+                    valores.forEach((val, idx) => {
+                        tableHTML += `
+                            <tr style="border: 1px solid #ddd; ${idx % 2 === 0 ? 'background: #f9f9f9;' : ''}">
+                                <td style="padding: 10px; border: 1px solid #ddd;"><strong>${categoriaNombre}</strong></td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">${val.valor}</td>
+                                <td style="padding: 10px; border: 1px solid #ddd;">${val.observacion || '-'}</td>
+                            </tr>
+                        `;
+                    });
+                }
+            });
+            
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+            
+            resumenEspecificaciones.innerHTML = tableHTML;
+            console.log('✅ Especificaciones en tabla actualizadas');
+        }
     }
     
     console.log('✅ Resumen del paso 4 completamente actualizado');

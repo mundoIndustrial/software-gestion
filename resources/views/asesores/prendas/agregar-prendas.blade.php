@@ -28,7 +28,7 @@
                             placeholder="BUSCA O ESCRIBE (CAMISA, CAMISETA, POLO...)"
                             class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                             onkeyup="buscarPrendas(this); mostrarSelectorVariantes(this);"
-                            onchange="actualizarResumenFriendly(); mostrarSelectorVariantes(this);"
+                            onchange="if(typeof actualizarResumenFriendly === 'function') { actualizarResumenFriendly(); } mostrarSelectorVariantes(this);"
                         >
                         <div class="prenda-suggestions mt-2 space-y-1">
                             <div class="prenda-suggestion-item p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer rounded" onclick="seleccionarPrenda('👔 CAMISA', this)">👔 CAMISA</div>

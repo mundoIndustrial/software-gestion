@@ -19,6 +19,7 @@ final readonly class CrearCotizacionDTO
         public array $especificaciones = [],
         public bool $esBorrador = true,
         public string $estado = 'BORRADOR',
+        public ?int $numeroCotizacion = null,
     ) {
     }
 
@@ -43,6 +44,7 @@ final readonly class CrearCotizacionDTO
             especificaciones: $especificaciones,
             esBorrador: (bool) ($datos['es_borrador'] ?? true),
             estado: $datos['estado'] ?? 'BORRADOR',
+            numeroCotizacion: isset($datos['numero_cotizacion']) ? (int) $datos['numero_cotizacion'] : null,
         );
     }
 
@@ -61,6 +63,7 @@ final readonly class CrearCotizacionDTO
             'especificaciones' => $this->especificaciones,
             'es_borrador' => $this->esBorrador,
             'estado' => $this->estado,
+            'numero_cotizacion' => $this->numeroCotizacion,
         ];
     }
 }

@@ -581,7 +581,7 @@
             </div>
             
             <!-- Campos del Header en una fila -->
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; grid-column: 1 / -1;">
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; grid-column: 1 / -1;">
                 <!-- Cliente -->
                 <div>
                     <label style="display: block; color: rgba(255,255,255,0.8); font-size: 0.7rem; font-weight: 700; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.4px;">Cliente</label>
@@ -599,6 +599,17 @@
                     <label style="display: block; color: rgba(255,255,255,0.8); font-size: 0.7rem; font-weight: 700; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.4px;">Fecha</label>
                     <input type="date" id="header-fecha" value="{{ date('Y-m-d') }}" style="width: 100%; background: white; border: 2px solid transparent; padding: 0.6rem 0.75rem; border-radius: 6px; font-weight: 600; color: #1e40af; font-size: 0.9rem; transition: all 0.2s;">
                 </div>
+                
+                <!-- Tipo para Cotizar -->
+                <div>
+                    <label style="display: block; color: rgba(255,255,255,0.8); font-size: 0.7rem; font-weight: 700; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.4px;">Tipo para Cotizar</label>
+                    <select id="header-tipo-venta" style="width: 100%; background: white; border: 2px solid transparent; padding: 0.6rem 0.75rem; border-radius: 6px; font-weight: 600; color: #1e40af; font-size: 0.9rem; transition: all 0.2s; cursor: pointer;">
+                        <option value="">-- SELECCIONA --</option>
+                        <option value="M">M</option>
+                        <option value="D">D</option>
+                        <option value="X">X</option>
+                    </select>
+                </div>
             </div>
         </div>
     </div>
@@ -611,6 +622,7 @@
             <input type="text" id="cliente" name="cliente" style="display: none;">
             <input type="text" id="asesora" name="asesora" value="{{ auth()->user()->name }}" readonly style="display: none;">
             <input type="date" id="fecha" name="fecha" style="display: none;">
+            <input type="text" id="tipo_venta_reflectivo" name="tipo_venta_reflectivo" style="display: none;">
             <textarea id="especificaciones" name="especificaciones" style="display: none;"></textarea>
             <!-- CONTENEDOR DE PRENDAS -->
             <div id="prendas-contenedor">
@@ -1372,6 +1384,7 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
     formData.append('fecha', fecha);
     formData.append('action', action);
     formData.append('tipo', 'RF');
+    formData.append('tipo_venta_reflectivo', document.getElementById('header-tipo-venta').value);
     
     // DEBUG: Log de datos que se envían
     console.log('📦 DATOS QUE SE ENVIARÁN:');
@@ -1379,6 +1392,7 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
     console.log('   fecha:', fecha);
     console.log('   action:', action);
     console.log('   tipo:', 'RF');
+    console.log('   tipo_venta:', document.getElementById('header-tipo-venta').value);
     formData.append('prendas', JSON.stringify(prendas)); // Enviar como JSON string
     formData.append('especificaciones', document.getElementById('especificaciones').value || '');
     formData.append('descripcion_reflectivo', document.getElementById('descripcion_reflectivo')?.value || 'Reflectivo');
@@ -1598,6 +1612,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('📅 Cargando fecha:', fechaFormato);
                 document.getElementById('header-fecha').value = fechaFormato;
                 document.getElementById('fecha').value = fechaFormato;
+            }
+            
+            // Cargar tipo_venta
+            if (datosIniciales.tipo_venta) {
+                console.log('💰 Cargando tipo_venta desde cotizacion:', datosIniciales.tipo_venta);
+                document.getElementById('header-tipo-venta').value = datosIniciales.tipo_venta;
+                document.getElementById('tipo_venta_reflectivo').value = datosIniciales.tipo_venta;
+            }
+            
+            // También cargar desde reflectivo_cotizacion si existe (tiene prioridad)
+            if (datosIniciales.reflectivo_cotizacion && datosIniciales.reflectivo_cotizacion.tipo_venta) {
+                console.log('💰 Cargando tipo_venta desde reflectivo_cotizacion:', datosIniciales.reflectivo_cotizacion.tipo_venta);
+                document.getElementById('header-tipo-venta').value = datosIniciales.reflectivo_cotizacion.tipo_venta;
+                document.getElementById('tipo_venta_reflectivo').value = datosIniciales.reflectivo_cotizacion.tipo_venta;
             }
             
             // Cargar especificaciones

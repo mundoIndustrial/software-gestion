@@ -32,7 +32,7 @@
     </div>
 
     <div class="form-actions">
-        <button type="button" class="btn-next" onclick="irAlPaso(2)">
+        <button type="button" class="btn-next" onclick="if(typeof irAlPaso === 'function') irAlPaso(2)">
             SIGUIENTE <i class="fas fa-arrow-right"></i>
         </button>
     </div>

@@ -1,6 +1,29 @@
 {{-- Prendas Table Tab --}}
-<div id="tab-prendas" class="tab-content {{ (!$esLogo || $tienePrendas) && !$esLogo ? 'active' : '' }}">
+<div id="tab-prendas" class="tab-content {{ $tienePrendas ? 'active' : '' }}">
     @if($cotizacion->prendas && count($cotizacion->prendas) > 0)
+        {{-- Tipo Venta de Prendas --}}
+        @if($cotizacion->tipo_venta)
+            <div style="
+                margin-bottom: 2rem;
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+            ">
+                <span style="
+                    display: inline-block;
+                    padding: 0.5rem 1rem;
+                    border-radius: 6px;
+                    font-weight: 700;
+                    font-size: 0.85rem;
+                    background: linear-gradient(135deg, #0066cc, #0052a3);
+                    color: white;
+                    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+                ">
+                    <i class="fas fa-tag"></i> Tipo Venta: <strong>{{ $cotizacion->tipo_venta }}</strong>
+                </span>
+            </div>
+        @endif
+        
         <table style="
             width: 100%;
             border-collapse: collapse;

@@ -94,12 +94,14 @@ async function guardarCotizacion() {
     
     // Validar que tipo_venta esté seleccionado
     const tipoVentaSelect = document.getElementById('tipo_venta');
+    const tipoVentaPaso3Select = document.getElementById('tipo_venta_paso3');
     const tipoVenta = tipoVentaSelect ? tipoVentaSelect.value : '';
+    const tipoVentaPaso3 = tipoVentaPaso3Select ? tipoVentaPaso3Select.value : '';
     
     console.log('📋 Validación tipo_venta:', {
-        selectEncontrado: !!tipoVentaSelect,
-        valor: tipoVenta,
-        esValido: !!tipoVenta
+        paso2: tipoVenta,
+        paso3: tipoVentaPaso3,
+        esValidoPaso2: !!tipoVenta
     });
     
     if (!tipoVenta) {
@@ -140,12 +142,17 @@ async function guardarCotizacion() {
         const formData = new FormData();
         
         // Datos básicos
-        formData.append('es_borrador', '1'); // Marcar como borrador
+        formData.append('tipo', 'borrador');     // ← AGREGAR: Identificar acción GUARDAR
+        formData.append('accion', 'guardar');    // ← AGREGAR: Identificar acción GUARDAR
+        formData.append('es_borrador', '1');     // Marcar como borrador
         formData.append('cliente', datos.cliente);
         formData.append('tipo_venta', tipoVenta);
+        formData.append('tipo_venta_paso3', tipoVentaPaso3);  // Enviar PASO 3 independiente
         formData.append('tipo_cotizacion', window.tipoCotizacionGlobal || 'P');
         
         console.log('📝 Datos básicos agregados:', {
+            tipo: 'borrador',
+            accion: 'guardar',
             es_borrador: '1',
             cliente: datos.cliente,
             tipo_venta: tipoVenta,
@@ -391,7 +398,7 @@ async function guardarCotizacion() {
             });
             
             setTimeout(() => {
-                window.location.href = window.routes.cotizacionesIndex + '#borradores';
+                window.location.href = window.routes.cotizacionesIndex + '?tab=borradores';
             }, 2000);
         } else {
             // Construir mensaje de error detallado
@@ -653,7 +660,9 @@ async function procederEnviarCotizacion(datos) {
     
     // Obtener tipo de venta
     const tipoVentaSelect = document.getElementById('tipo_venta');
+    const tipoVentaPaso3Select = document.getElementById('tipo_venta_paso3');
     const tipoVentaValue = tipoVentaSelect ? tipoVentaSelect.value : '';
+    const tipoVentaPaso3Value = tipoVentaPaso3Select ? tipoVentaPaso3Select.value : '';
     
     // Obtener especificaciones (puede ser objeto o array)
     const especificaciones = window.especificacionesSeleccionadas || {};
@@ -677,9 +686,12 @@ async function procederEnviarCotizacion(datos) {
         const formData = new FormData();
         
         // Datos básicos
-        formData.append('tipo', 'enviada');
+        formData.append('tipo', 'enviada');           // ✅ Identificar acción ENVIAR
+        formData.append('accion', 'enviar');          // ← AGREGAR: Identificar acción ENVIAR
+        formData.append('es_borrador', '0');          // ← AGREGAR: Marcar que NO es borrador
         formData.append('cliente', datos.cliente);
         formData.append('tipo_venta', tipoVentaValue);
+        formData.append('tipo_venta_paso3', tipoVentaPaso3Value);  // Enviar PASO 3 independiente
         formData.append('tipo_cotizacion', window.tipoCotizacionGlobal || 'P');
         
         // Secciones de texto
@@ -742,42 +754,77 @@ async function procederEnviarCotizacion(datos) {
                     }
                 });
                 
-                // ✅ FOTOS (File objects o Base64 strings)
-                if (producto.fotos && Array.isArray(producto.fotos)) {
-                    producto.fotos.forEach((foto, fotoIndex) => {
-                        if (foto instanceof File) {
-                            formData.append(`prendas[${index}][fotos][]`, foto);
-                            console.log(`✅ Foto (File) agregada a FormData [${index}][${fotoIndex}]:`, foto.name);
-                        } else if (typeof foto === 'string') {
-                            formData.append(`prendas[${index}][fotos_base64]`, foto);
-                            console.log(`✅ Foto (Base64) agregada a FormData [${index}][${fotoIndex}]`);
+                // ✅ FOTOS DE PRENDA (File objects o rutas guardadas desde window.imagenesEnMemoria)
+                if (window.imagenesEnMemoria && window.imagenesEnMemoria.prendaConIndice) {
+                    const fotosDeEstaPrenda = window.imagenesEnMemoria.prendaConIndice.filter(p => p.prendaIndex === index);
+                    fotosDeEstaPrenda.forEach((item, fotoIndex) => {
+                        if (item.file instanceof File) {
+                            // Es un File object nuevo
+                            formData.append(`prendas[${index}][fotos][]`, item.file);
+                            console.log(`✅ Foto de prenda (File) agregada a FormData [${index}][${fotoIndex}]:`, item.file.name);
+                        } else if (typeof item.file === 'string' && item.esGuardada) {
+                            // Es una ruta de imagen guardada
+                            formData.append(`prendas[${index}][fotos_guardadas][]`, item.file);
+                            console.log(`✅ Foto de prenda (guardada) agregada a FormData [${index}][${fotoIndex}]:`, item.file);
                         }
                     });
                 }
                 
-                // ✅ TELAS (File objects o Base64 strings)
-                if (producto.telas && Array.isArray(producto.telas)) {
-                    producto.telas.forEach((tela, telaIndex) => {
-                        if (tela instanceof File) {
-                            formData.append(`prendas[${index}][telas][]`, tela);
-                            console.log(`✅ Tela (File) agregada a FormData [${index}][${telaIndex}]:`, tela.name);
-                        } else if (typeof tela === 'string') {
-                            formData.append(`prendas[${index}][telas_base64]`, tela);
-                            console.log(`✅ Tela (Base64) agregada a FormData [${index}][${telaIndex}]`);
+                // ✅ TELAS (File objects o rutas guardadas desde window.imagenesEnMemoria)
+                if (window.imagenesEnMemoria && window.imagenesEnMemoria.telaConIndice) {
+                    const telasDeEstaPrenda = window.imagenesEnMemoria.telaConIndice.filter(t => t.prendaIndex === index);
+                    telasDeEstaPrenda.forEach((item, telaIndex) => {
+                        if (item.file instanceof File) {
+                            // Es un File object nuevo
+                            formData.append(`prendas[${index}][telas][]`, item.file);
+                            console.log(`✅ Tela (File) agregada a FormData [${index}][${telaIndex}]:`, item.file.name);
+                        } else if (typeof item.file === 'string' && item.esGuardada) {
+                            // Es una ruta de imagen guardada
+                            formData.append(`prendas[${index}][telas_guardadas][]`, item.file);
+                            console.log(`✅ Tela (guardada) agregada a FormData [${index}][${telaIndex}]:`, item.file);
                         }
                     });
                 }
             });
         }
         
-        // ✅ LOGO - IMÁGENES (File objects)
-        if (datos.logo && datos.logo.imagenes && Array.isArray(datos.logo.imagenes)) {
-            datos.logo.imagenes.forEach((imagen, imagenIndex) => {
+        // ✅ LOGO - IMÁGENES (File objects desde imagenesEnMemoria + rutas guardadas desde DOM)
+        if (window.imagenesEnMemoria && window.imagenesEnMemoria.logo && Array.isArray(window.imagenesEnMemoria.logo)) {
+            console.log('📸 Procesando imágenes de logo desde memory:', window.imagenesEnMemoria.logo.length);
+            
+            window.imagenesEnMemoria.logo.forEach((imagen, imagenIndex) => {
                 if (imagen instanceof File) {
+                    // Es un File object nuevo
                     formData.append(`logo[imagenes][]`, imagen);
-                    console.log(`✅ Imagen de logo agregada a FormData [${imagenIndex}]:`, imagen.name);
+                    console.log(`✅ Imagen de logo (File) agregada a FormData [${imagenIndex}]:`, imagen.name);
+                } else if (imagen.esGuardada && imagen.fotoId) {
+                    // Es una imagen guardada en BD - enviar el ID para conservarla
+                    formData.append(`logo_fotos_existentes[]`, imagen.fotoId);
+                    console.log(`✅ ID de foto de logo existente agregado [${imagenIndex}]:`, imagen.fotoId);
                 }
             });
+        }
+        
+        // ✅ LOGO - FOTOS GUARDADAS EN BD DESDE DOM (por si acaso no estén en memory)
+        // Estas son las imágenes que ya están guardadas en BD y necesitan ser conservadas
+        const galeriaImagenes = document.getElementById('galeria_imagenes');
+        if (galeriaImagenes) {
+            const fotosExistentes = galeriaImagenes.querySelectorAll('img[data-foto-id]');
+            if (fotosExistentes.length > 0) {
+                console.log('📸 Encontradas imágenes existentes en galería:', fotosExistentes.length);
+                fotosExistentes.forEach((img, idx) => {
+                    const fotoId = img.getAttribute('data-foto-id');
+                    if (fotoId && fotoId.trim()) {
+                        // Enviar el ID para que el backend sepa cuál conservar
+                        formData.append(`logo_fotos_existentes[]`, fotoId);
+                        console.log(`✅ ID de foto existente agregado [${idx}]:`, fotoId);
+                    }
+                });
+            } else {
+                console.log('⚠️ No hay fotos existentes en la galería');
+            }
+        } else {
+            console.log('⚠️ No se encontró el elemento galeria_imagenes');
         }
         
         console.log('📤 FORMDATA A ENVIAR (ENVIAR):', {

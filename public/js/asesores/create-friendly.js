@@ -94,6 +94,12 @@ function validarPasoActual() {
 // Agregar producto
 function agregarProductoFriendly() {
     productosCount++;
+    
+    // Resetear variaciones guardadas si es necesario
+    if (!window.variacionesGuardadas) {
+        window.variacionesGuardadas = [];
+    }
+    
     const template = document.getElementById('productoTemplate');
     const clone = template.content.cloneNode(true);
 

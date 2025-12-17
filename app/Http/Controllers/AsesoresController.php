@@ -193,6 +193,48 @@ class AsesoresController extends Controller
     public function create(Request $request)
     {
         $tipo = $request->query('tipo', 'PB'); // Por defecto Prenda/Logo
+        $esEdicion = false;
+        $cotizacion = null;
+        
+        // Verificar si es edición de un borrador existente
+        if ($request->has('editar')) {
+            $cotizacionId = $request->query('editar');
+            $cotizacion = \App\Models\Cotizacion::with([
+                'cliente',
+                'prendas' => function($query) {
+                    $query->with(['fotos', 'telaFotos', 'tallas', 'variantes']);
+                },
+                'logoCotizacion.fotos',
+                'reflectivoCotizacion.fotos'
+            ])->findOrFail($cotizacionId);
+            
+            // Debug: verificar telaFotos
+            $prenda0 = $cotizacion->prendas->first();
+            \Log::info('DEBUG - Cotización cargada para edición DETALLE', [
+                'cotizacion_id' => $cotizacionId,
+                'prendas_count' => $cotizacion->prendas->count(),
+                'prenda_0_id' => $prenda0 ? $prenda0->id : null,
+                'prenda_0_telaFotos_count' => $prenda0 ? $prenda0->telaFotos->count() : 0,
+                'prenda_0_fotos_count' => $prenda0 ? $prenda0->fotos->count() : 0,
+                'prenda_0_tallas_count' => $prenda0 ? $prenda0->tallas->count() : 0,
+            ]);
+            
+            // Debug: convertir a array y verificar
+            $cotizacionArray = $cotizacion->toArray();
+            \Log::info('DEBUG - toArray() result', [
+                'tiene_prendas' => isset($cotizacionArray['prendas']) ? true : false,
+                'prendas_count_en_array' => isset($cotizacionArray['prendas']) ? count($cotizacionArray['prendas']) : 0,
+                'prenda_0_keys' => isset($cotizacionArray['prendas'][0]) ? array_keys($cotizacionArray['prendas'][0]) : [],
+                'prenda_0_tiene_tela_fotos' => isset($cotizacionArray['prendas'][0]['tela_fotos']) ? true : false,
+            ]);
+            
+            // Verificar que el usuario es propietario del borrador
+            if ($cotizacion->asesor_id !== \Auth::id() || !$cotizacion->es_borrador) {
+                abort(403, 'No tienes permiso para editar este borrador');
+            }
+            
+            $esEdicion = true;
+        }
         
         // Si es tipo Logo (B), redirigir a cotización de bordado
         if ($tipo === 'B') {
@@ -206,10 +248,10 @@ class AsesoresController extends Controller
         
         // Si es tipo Reflectivo (RF), mostrar vista de reflectivo
         if ($tipo === 'RF') {
-            return view('asesores.pedidos.create-reflectivo', compact('tipo'));
+            return view('asesores.pedidos.create-reflectivo', compact('tipo', 'esEdicion', 'cotizacion'));
         }
         
-        return view('asesores.pedidos.create-friendly', compact('tipo'));
+        return view('asesores.pedidos.create-friendly', compact('tipo', 'esEdicion', 'cotizacion'));
     }
 
     /**

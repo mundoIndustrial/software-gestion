@@ -17,7 +17,8 @@ class LogoCotizacion extends Model
         'tecnicas',
         'observaciones_tecnicas',
         'ubicaciones',
-        'observaciones_generales'
+        'observaciones_generales',
+        'tipo_venta'
     ];
 
     protected $casts = [

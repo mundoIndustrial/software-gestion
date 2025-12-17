@@ -14,7 +14,7 @@
                     <div class="form-col full" style="flex: 1;">
                         <label style="font-size: 0.65rem; font-weight: 600; display: flex; align-items: center; gap: 0.3rem; margin-bottom: 0.3rem;"><i class="fas fa-list"></i> SELECCIONA O ESCRIBE EL TIPO *</label>
                         <div class="prenda-search-container">
-                            <input type="text" name="productos_friendly[][nombre_producto]" class="prenda-search-input input-large" placeholder="BUSCA O ESCRIBE (CAMISA, CAMISETA, POLO...)" required onkeyup="buscarPrendas(this); mostrarSelectorVariantes(this);" onchange="actualizarResumenFriendly(); mostrarSelectorVariantes(this);">
+                            <input type="text" name="productos_friendly[][nombre_producto]" class="prenda-search-input input-large" placeholder="BUSCA O ESCRIBE (CAMISA, CAMISETA, POLO...)" required onkeyup="buscarPrendas(this); mostrarSelectorVariantes(this);" onchange="if(typeof actualizarResumenFriendly === 'function') { actualizarResumenFriendly(); } mostrarSelectorVariantes(this);">
                         </div>
                         <small class="help-text">PUEDES BUSCAR, SELECCIONAR O ESCRIBIR UNA PRENDA PERSONALIZADA</small>
                     </div>

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Helpers\DescripcionPrendaHelper;
+use App\Models\PrendaTelaFotoCot;
 
 class PrendaCot extends Model
 {
@@ -51,7 +52,7 @@ class PrendaCot extends Model
      */
     public function telaFotos(): HasMany
     {
-        return $this->hasMany(PrendaTelaFoto::class, 'prenda_cot_id');
+        return $this->hasMany(PrendaTelaFotoCot::class, 'prenda_cot_id');
     }
 
     /**

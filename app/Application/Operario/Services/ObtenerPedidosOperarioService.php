@@ -25,6 +25,11 @@ class ObtenerPedidosOperarioService
      */
     public function obtenerPedidosDelOperario(User $usuario): ObtenerPedidosOperarioDTO
     {
+        // Verificar si es el usuario especial "Costura-Reflectivo"
+        if (strtolower(trim($usuario->name)) === 'costura-reflectivo') {
+            return $this->obtenerPedidosCosturaReflectivo($usuario);
+        }
+
         // Obtener tipo de operario del usuario
         $tipoOperario = $this->obtenerTipoOperario($usuario);
         $areaOperario = $this->obtenerAreaOperario($tipoOperario);
@@ -46,6 +51,65 @@ class ObtenerPedidosOperarioService
             pedidosEnProceso: $pedidosEnProceso,
             pedidosCompletados: $pedidosCompletados
         );
+    }
+
+    /**
+     * Obtener pedidos especiales para Costura-Reflectivo
+     * 
+     * Filtra pedidos que:
+     * 1. Tengan área "Costura" EN pedidos_produccion
+     * 2. Y tengan proceso Costura con encargado "Ramiro"
+     */
+    private function obtenerPedidosCosturaReflectivo(User $usuario): ObtenerPedidosOperarioDTO
+    {
+        $pedidos = PedidoProduccion::where('area', 'Costura')
+            ->with(['prendas'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->filter(function ($pedido) {
+                // Verificar que tenga proceso Costura con Ramiro
+                return $this->tieneProcesoRamiro($pedido);
+            });
+
+        // Contar estados
+        $pedidosEnProceso = $pedidos->where('estado', 'En Ejecución')->count();
+        $pedidosCompletados = $pedidos->where('estado', 'Completada')->count();
+
+        return new ObtenerPedidosOperarioDTO(
+            operarioId: $usuario->id,
+            nombreOperario: $usuario->name,
+            tipoOperario: 'costurero-reflectivo',
+            areaOperario: 'Costura-Reflectivo',
+            pedidos: $this->formatearPedidos($pedidos),
+            totalPedidos: $pedidos->count(),
+            pedidosEnProceso: $pedidosEnProceso,
+            pedidosCompletados: $pedidosCompletados
+        );
+    }
+
+    /**
+     * Verificar si el pedido tiene proceso Costura asignado a Ramiro
+     * 
+     * Busca en procesos_prenda:
+     * - proceso = "Costura"
+     * - encargado = "Ramiro" (normalizado, sin importar mayúsculas)
+     */
+    private function tieneProcesoRamiro($pedido): bool
+    {
+        $procesos = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
+            ->where('proceso', 'Costura')
+            ->get();
+
+        foreach ($procesos as $proceso) {
+            if ($proceso->encargado) {
+                $encargadoNormalizado = strtolower(trim($proceso->encargado));
+                if ($encargadoNormalizado === 'ramiro') {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**

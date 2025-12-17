@@ -1,8 +1,23 @@
 <!-- PASO 3: LOGO -->
 <div class="form-step" data-step="3">
-    <div class="step-header">
-        <h2 style="font-size: 1rem !important; margin: 0 0 0.2rem 0 !important;">PASO 4: LOGO</h2>
-        <p style="font-size: 0.8rem !important; margin: 0 !important; color: #666 !important;">ESPECIFICA LOS DETALLES DE BORDADO Y ESTAMPADO</p>
+    <div class="step-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h2 style="font-size: 1rem !important; margin: 0 0 0.2rem 0 !important;">PASO 3: LOGO / BORDADO</h2>
+            <p style="font-size: 0.8rem !important; margin: 0 !important; color: #666 !important;">ESPECIFICA LOS DETALLES DE BORDADO Y ESTAMPADO</p>
+        </div>
+        
+        <!-- Selector de tipo de venta en la esquina derecha -->
+        <div style="display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #0066cc, #0052a3); border: 2px solid #0052a3; border-radius: 8px; padding: 0.8rem 1.2rem; box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);">
+            <label for="tipo_venta_paso3" style="font-weight: 700; font-size: 0.85rem; color: white; white-space: nowrap; display: flex; align-items: center; gap: 6px; margin: 0;">
+                <i class="fas fa-tag"></i> Tipo
+            </label>
+            <select id="tipo_venta_paso3" name="tipo_venta_paso3" style="padding: 0.5rem 0.6rem; border: 2px solid white; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; text-align: center; color: #0066cc; font-weight: 600; min-width: 80px;">
+                <option value="">Selecciona</option>
+                <option value="M">M</option>
+                <option value="D">D</option>
+                <option value="X">X</option>
+            </select>
+        </div>
     </div>
 
     <div class="form-section">
@@ -76,11 +91,20 @@
     </div>
 
     <div class="form-actions">
-        <button type="button" class="btn-prev" onclick="irAlPaso(2)">
+        <button type="button" class="btn-prev" onclick="if(typeof irAlPaso === 'function') irAlPaso(2)">
             <i class="fas fa-arrow-left"></i> ANTERIOR
         </button>
-        <button type="button" class="btn-next" onclick="irAlPaso(4)">
+        <button type="button" class="btn-next" onclick="if(typeof irAlPaso === 'function') irAlPaso(4)">
             REVISAR <i class="fas fa-arrow-right"></i>
         </button>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Los selectores de tipo_venta en PASO 2 y PASO 3 son independientes
+    // No se sincronizan automáticamente para permitir valores diferentes
+    console.log('✅ Selectores tipo_venta configurados como independientes');
+});
+</script>
+

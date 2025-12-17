@@ -8,7 +8,7 @@
     <div class="form-section">
         <!-- RESUMEN CLIENTE -->
         <div style="background: #f0f7ff; border: 2px solid #3498db; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-            <h3 style="margin: 0 0 10px 0; color: #0066cc;">📋 INFORMACIÓN DEL CLIENTE</h3>
+            <h3 style="margin: 0 0 15px 0; color: #0066cc; font-size: 1.1rem; font-weight: 700; letter-spacing: 0.5px;">INFORMACIÓN DEL CLIENTE</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
                 <div>
                     <p style="margin: 0; font-size: 0.9rem; color: #666;"><strong>Cliente:</strong></p>
@@ -31,20 +31,42 @@
 
         <!-- RESUMEN PRENDAS -->
         <div style="background: #f0f7ff; border: 2px solid #3498db; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-            <h3 style="margin: 0 0 10px 0; color: #0066cc;">👕 PRENDAS</h3>
+            <h3 style="margin: 0 0 15px 0; color: #0066cc; font-size: 1.1rem; font-weight: 700; letter-spacing: 0.5px;">PRENDAS</h3>
             <div id="resumen_prendas" style="display: grid; gap: 10px;"></div>
         </div>
 
-        <!-- RESUMEN LOGO/TÉCNICAS -->
+        <!-- RESUMEN UBICACIONES -->
+        <div style="background: #f0f7ff; border: 2px solid #3498db; border-radius: 8px; padding: 15px; margin-bottom: 20px; display: none;" id="resumen_ubicaciones_container">
+            <h3 style="margin: 0 0 15px 0; color: #0066cc; font-size: 1.1rem; font-weight: 700; letter-spacing: 0.5px;">UBICACIONES</h3>
+            <div id="resumen_ubicaciones" style="display: grid; gap: 10px;"></div>
+        </div>
+
+        <!-- RESUMEN ESPECIFICACIONES -->
+        <div style="background: #f0f7ff; border: 2px solid #3498db; border-radius: 8px; padding: 15px; margin-bottom: 20px; display: none;" id="resumen_especificaciones_container">
+            <h3 style="margin: 0 0 15px 0; color: #0066cc; font-size: 1.1rem; font-weight: 700; letter-spacing: 0.5px;">ESPECIFICACIONES</h3>
+            <div id="resumen_especificaciones" style="display: grid; gap: 10px;"></div>
+        </div>
+
+        <!-- RESUMEN LOGO/BORDADO/TÉCNICAS -->
         <div style="background: #f0f7ff; border: 2px solid #3498db; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-            <h3 style="margin: 0 0 10px 0; color: #0066cc;">🎨 LOGO/BORDADO/TÉCNICAS</h3>
-            <div>
-                <p style="margin: 0 0 10px 0; font-size: 0.9rem;"><strong>Descripción:</strong></p>
-                <p style="margin: 0; font-size: 0.9rem; color: #666;" id="resumen_logo_desc">-</p>
+            <h3 style="margin: 0 0 15px 0; color: #0066cc; font-size: 1.1rem; font-weight: 700; letter-spacing: 0.5px;">LOGO / BORDADO</h3>
+            
+            <!-- Descripción -->
+            <div style="margin-bottom: 15px;">
+                <p style="margin: 0 0 5px 0; font-size: 0.9rem;"><strong>Descripción:</strong></p>
+                <p style="margin: 0; font-size: 0.95rem; color: #555; padding: 8px 12px; background: #fff; border-left: 3px solid #3498db; border-radius: 4px;" id="resumen_logo_desc">-</p>
             </div>
-            <div style="margin-top: 10px;">
-                <p style="margin: 0 0 10px 0; font-size: 0.9rem;"><strong>Técnicas:</strong></p>
-                <div id="resumen_tecnicas" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+            
+            <!-- Técnicas -->
+            <div style="margin-bottom: 15px;">
+                <p style="margin: 0 0 8px 0; font-size: 0.9rem;"><strong>Técnicas:</strong></p>
+                <div id="resumen_tecnicas" style="display: flex; flex-wrap: wrap; gap: 8px; min-height: 30px; align-items: center;"></div>
+            </div>
+            
+            <!-- Ubicaciones -->
+            <div style="display: none;" id="resumen_logo_ubicaciones_container">
+                <p style="margin: 0 0 10px 0; font-size: 0.9rem;"><strong>Ubicaciones:</strong></p>
+                <div id="resumen_logo_ubicaciones" style="display: grid; gap: 10px;"></div>
             </div>
         </div>
 
@@ -52,7 +74,7 @@
     </div>
 
     <div class="form-actions">
-        <button type="button" class="btn-prev" onclick="irAlPaso(4)">
+        <button type="button" class="btn-prev" onclick="if(typeof irAlPaso === 'function') irAlPaso(4)">
             <i class="fas fa-arrow-left"></i> ANTERIOR
         </button>
         <div style="display: flex; gap: 10px;">

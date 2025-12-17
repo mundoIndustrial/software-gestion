@@ -1,6 +1,29 @@
 {{-- Logo/Bordado Tab --}}
-<div id="tab-bordado" class="tab-content {{ $esLogo ? 'active' : '' }}">
+<div id="tab-bordado" class="tab-content {{ !$esLogo || (isset($tienePrendas) && !$tienePrendas) ? 'active' : '' }}">
     @if($logo)
+        {{-- Tipo Venta del Logo --}}
+        @if($logo->tipo_venta)
+            <div style="
+                margin-bottom: 2rem;
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+            ">
+                <span style="
+                    display: inline-block;
+                    padding: 0.5rem 1rem;
+                    border-radius: 6px;
+                    font-weight: 700;
+                    font-size: 0.85rem;
+                    background: linear-gradient(135deg, #0066cc, #0052a3);
+                    color: white;
+                    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+                ">
+                    <i class="fas fa-tag"></i> Tipo Venta: <strong>{{ $logo->tipo_venta }}</strong>
+                </span>
+            </div>
+        @endif
+        
         {{-- Descripción del Logo --}}
         @if($logo->descripcion)
             <div style="

@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Events\PedidoCreado;
 use App\Listeners\NotificarSupervisoresPedidoCreado;
+use App\Listeners\CrearProcesosParaCotizacionReflectivo;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
 class EventServiceProvider extends ServiceProvider
@@ -16,6 +17,7 @@ class EventServiceProvider extends ServiceProvider
     protected $listen = [
         PedidoCreado::class => [
             NotificarSupervisoresPedidoCreado::class,
+            CrearProcesosParaCotizacionReflectivo::class,
         ],
     ];
 

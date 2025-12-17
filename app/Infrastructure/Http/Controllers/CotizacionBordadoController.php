@@ -239,6 +239,12 @@ class CotizacionBordadoController extends Controller
                     $datosActualizar['observaciones_generales'] = $observacionesGenerales;
                 }
                 
+                // Agregar tipo_venta_bordado si está disponible
+                $tipoVentaBordado = $request->input('tipo_venta_bordado') ?? $request->input('tipo_venta');
+                if (!empty($tipoVentaBordado)) {
+                    $datosActualizar['tipo_venta'] = $tipoVentaBordado;
+                }
+                
                 $logoCotizacion = \App\Models\LogoCotizacion::updateOrCreate(
                     ['cotizacion_id' => $id],  // Condición de búsqueda
                     $datosActualizar  // Solo actualizar campos con valor
@@ -475,6 +481,7 @@ class CotizacionBordadoController extends Controller
                         'ubicaciones' => $ubicaciones,  // El modelo aplicará json_encode automáticamente
                         'observaciones_generales' => $observacionesGenerales,  // El modelo aplicará json_encode automáticamente
                         'imagenes' => [],  // El modelo aplicará json_encode automáticamente
+                        'tipo_venta' => $request->input('tipo_venta_bordado') ?? $request->input('tipo_venta') ?? null,
                     ]
                 );
 

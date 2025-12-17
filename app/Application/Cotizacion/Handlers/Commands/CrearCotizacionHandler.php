@@ -55,12 +55,12 @@ final class CrearCotizacionHandler
                     $datos->especificaciones ?? []
                 );
             } else {
-                // Para enviadas, necesitamos un secuencial
-                $secuencial = $this->repository->countByUserId($usuarioId) + 1;
+                // Para enviadas, usar el número del DTO si existe, sino generar
+                $numeroCotizacion = $datos->numeroCotizacion ?? ($this->repository->countByUserId($usuarioId) + 1);
                 $cotizacion = Cotizacion::crearEnviada(
                     $usuarioId,
                     $tipo,
-                    $secuencial,
+                    $numeroCotizacion,
                     $datos->clienteId,
                     $datos->tipoVenta,
                     $datos->especificaciones ?? []

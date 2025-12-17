@@ -15,6 +15,7 @@ class ReflectivoCotizacion extends Model
         'cotizacion_id',
         'tipo_prenda',
         'descripcion',
+        'tipo_venta',
         'ubicacion',
         'imagenes',
         'observaciones_generales',

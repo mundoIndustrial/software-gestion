@@ -370,6 +370,15 @@ Route::middleware(['auth', 'role:asesor,admin'])->prefix('asesores')->name('ases
     // API endpoints para cotizaciones
     Route::post('/cotizaciones', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'store'])->name('cotizaciones.store');
     Route::put('/cotizaciones/{id}', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'update'])->name('cotizaciones.update');
+    
+    // Ruta para generar PDF de cotizaciones (prenda o logo)
+    Route::get('/cotizacion/{id}/pdf', [App\Http\Controllers\PDFCotizacionController::class, 'generarPDF'])->name('cotizacion.pdf');
+    
+    // Rutas para eliminar imágenes de borradores (ANTES de rutas dinámicas)
+    Route::delete('/cotizaciones/imagenes/prenda/{id}', [App\Infrastructure\Http\Controllers\Cotizaciones\ImagenBorradorController::class, 'borrarPrenda'])->name('cotizaciones.imagen.borrar-prenda');
+    Route::delete('/cotizaciones/imagenes/tela/{id}', [App\Infrastructure\Http\Controllers\Cotizaciones\ImagenBorradorController::class, 'borrarTela'])->name('cotizaciones.imagen.borrar-tela');
+    Route::delete('/cotizaciones/imagenes/logo/{id}', [App\Infrastructure\Http\Controllers\Cotizaciones\ImagenBorradorController::class, 'borrarLogo'])->name('cotizaciones.imagen.borrar-logo');
+    
     Route::get('/cotizaciones/{id}/ver', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'showView'])->name('cotizaciones.show');
     Route::get('/cotizaciones/{id}/editar', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'getForEdit'])->name('cotizaciones.get-for-edit');
     Route::get('/cotizaciones/{id}', [App\Infrastructure\Http\Controllers\CotizacionController::class, 'show'])->name('cotizaciones.api');

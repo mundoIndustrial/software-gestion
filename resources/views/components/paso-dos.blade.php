@@ -84,10 +84,10 @@
     </div>
 
     <div class="form-actions">
-        <button type="button" class="btn-prev" onclick="irAlPaso(1)">
+        <button type="button" class="btn-prev" onclick="if(typeof irAlPaso === 'function') irAlPaso(1)">
             <i class="fas fa-arrow-left"></i> ANTERIOR
         </button>
-        <button type="button" class="btn-next" onclick="irAlPaso(3)">
+        <button type="button" class="btn-next" onclick="if(typeof irAlPaso === 'function') irAlPaso(3)">
             SIGUIENTE <i class="fas fa-arrow-right"></i>
         </button>
     </div>

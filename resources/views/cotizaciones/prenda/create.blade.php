@@ -1183,6 +1183,7 @@ document.addEventListener('click', function(e) {
 <script src="{{ asset('js/asesores/cotizaciones/especificaciones.js') }}"></script>
 <script src="{{ asset('js/asesores/cotizaciones/guardado.js') }}"></script>
 <script src="{{ asset('js/asesores/cotizaciones/cargar-borrador.js') }}"></script>
+<script src="{{ asset('js/asesores/cotizaciones/imagen-borrador.js') }}"></script>
 <script src="{{ asset('js/asesores/variantes-prendas.js') }}"></script>
 <script src="{{ asset('js/asesores/color-tela-referencia.js') }}"></script>
 <script src="{{ asset('js/asesores/cotizaciones/integracion-variantes-inline.js') }}"></script>

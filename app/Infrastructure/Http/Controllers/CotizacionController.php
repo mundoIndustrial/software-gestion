@@ -486,11 +486,42 @@ final class CotizacionController extends Controller
             
             $estado = $esBorrador ? 'BORRADOR' : 'ENVIADA_CONTADOR';
 
+            // Generar número de cotización si es envío (no borrador)
+            $numeroCotizacion = null;
+            if (!$esBorrador) {
+                // Obtener el último número de cotización y sumar 1
+                $ultimaCotizacion = \App\Models\Cotizacion::whereNotNull('numero_cotizacion')
+                    ->orderBy('numero_cotizacion', 'desc')
+                    ->first();
+                
+                // Extraer el número secuencial de COT-XXXXX o usar 0 si no existe
+                $ultimoSecuencial = 0;
+                if ($ultimaCotizacion) {
+                    // Extraer el número de la cadena "COT-XXXXX"
+                    if (preg_match('/COT-(\d+)/', $ultimaCotizacion->numero_cotizacion, $matches)) {
+                        $ultimoSecuencial = (int)$matches[1];
+                    }
+                }
+                
+                $nuevoSecuencial = $ultimoSecuencial + 1;
+                // ⚠️ IMPORTANTE: Pasar el secuencial (entero), NO el formato COT-XXXXX
+                // El handler/entity lo formateará correctamente
+                $numeroCotizacion = $nuevoSecuencial;
+                
+                Log::info('CotizacionController@store: Generando número de cotización', [
+                    'ultimo_cotizacion_id' => $ultimaCotizacion?->id,
+                    'ultimo_numero' => $ultimaCotizacion?->numero_cotizacion,
+                    'ultimo_secuencial' => $ultimoSecuencial,
+                    'nuevo_secuencial' => $nuevoSecuencial,
+                ]);
+            }
+
             Log::info('CotizacionController@store: Lógica aplicada', [
                 'accion' => $accion,
                 'es_borrador_recibido' => $request->input('es_borrador'),
                 'es_borrador_final' => $esBorrador,
                 'estado' => $estado,
+                'numero_cotizacion' => $numeroCotizacion,
                 'cliente_id' => $clienteId,
             ]);
 
@@ -504,6 +535,7 @@ final class CotizacionController extends Controller
                 'especificaciones' => $request->input('especificaciones', []),
                 'es_borrador' => $esBorrador,
                 'estado' => $estado,
+                'numero_cotizacion' => $numeroCotizacion,
             ]);
 
             $comando = CrearCotizacionCommand::crear($dto);
@@ -562,11 +594,27 @@ final class CotizacionController extends Controller
             }
 
             // Actualizar datos básicos
-            $cotizacion->update([
+            $datosActualizar = [
                 'cliente_id' => $clienteId,
                 'tipo_venta' => $request->input('tipo_venta'),
-                'especificaciones' => json_encode($request->input('especificaciones', [])),
-            ]);
+            ];
+            
+            // Solo actualizar especificaciones si se envían nuevas, si no mantener las existentes
+            $especificacionesNuevas = $request->input('especificaciones', []);
+            
+            // Decodificar si viene como string JSON
+            if (is_string($especificacionesNuevas)) {
+                $especificacionesNuevas = json_decode($especificacionesNuevas, true) ?? [];
+            }
+            
+            if (!empty($especificacionesNuevas)) {
+                $datosActualizar['especificaciones'] = json_encode($especificacionesNuevas);
+                Log::info('Actualizando especificaciones', ['count' => count($especificacionesNuevas)]);
+            } else {
+                Log::info('No se enviaron especificaciones nuevas, manteniendo las existentes');
+            }
+            
+            $cotizacion->update($datosActualizar);
 
             // Eliminar fotos específicamente marcadas para eliminar
             $fotosAEliminar = $request->input('fotos_a_eliminar', []);
@@ -817,6 +865,34 @@ final class CotizacionController extends Controller
                         }
                     }
                 }
+                
+                // Procesar fotos guardadas (rutas desde el frontend)
+                $fotosGuardadas = $request->input("prendas.{$index}.fotos_guardadas") ?? [];
+                if (!is_array($fotosGuardadas)) {
+                    $fotosGuardadas = [];
+                }
+                
+                if (!empty($fotosGuardadas)) {
+                    $orden = count($fotosArchivos) + 1; // Continuar con el orden
+                    foreach ($fotosGuardadas as $rutaGuardada) {
+                        if ($rutaGuardada && is_string($rutaGuardada)) {
+                            // Limpiar ruta: remover /storage/ del principio si existe
+                            $rutaLimpia = $rutaGuardada;
+                            if (strpos($rutaLimpia, '/storage/') === 0) {
+                                $rutaLimpia = substr($rutaLimpia, 9); // Remover "/storage/" (9 caracteres)
+                            }
+                            
+                            $prendaModel->fotos()->create([
+                                'ruta_original' => $rutaLimpia,
+                                'ruta_webp' => $rutaLimpia,
+                                'orden' => $orden,
+                            ]);
+                            $orden++;
+                            
+                            Log::info('Foto de prenda guardada (ruta existente)', ['prenda_id' => $prendaModel->id, 'ruta' => $rutaGuardada, 'orden' => $orden - 1]);
+                        }
+                    }
+                }
 
                 // Procesar imágenes de telas
                 // FormData envía múltiples archivos con [] al final: prendas[0][telas][]
@@ -860,6 +936,34 @@ final class CotizacionController extends Controller
                             $orden++;
 
                             Log::info('Foto de tela guardada', ['prenda_id' => $prendaModel->id, 'ruta' => $ruta, 'orden' => $orden - 1]);
+                        }
+                    }
+                }
+                
+                // Procesar telas guardadas (rutas desde el frontend)
+                $telasGuardadas = $request->input("prendas.{$index}.telas_guardadas") ?? [];
+                if (!is_array($telasGuardadas)) {
+                    $telasGuardadas = [];
+                }
+                
+                if (!empty($telasGuardadas)) {
+                    $orden = count($telasArchivos) + 1; // Continuar con el orden
+                    foreach ($telasGuardadas as $rutaGuardada) {
+                        if ($rutaGuardada && is_string($rutaGuardada)) {
+                            // Limpiar ruta: remover /storage/ del principio si existe
+                            $rutaLimpia = $rutaGuardada;
+                            if (strpos($rutaLimpia, '/storage/') === 0) {
+                                $rutaLimpia = substr($rutaLimpia, 9); // Remover "/storage/" (9 caracteres)
+                            }
+                            
+                            $prendaModel->telaFotos()->create([
+                                'ruta_original' => $rutaLimpia,
+                                'ruta_webp' => $rutaLimpia,
+                                'orden' => $orden,
+                            ]);
+                            $orden++;
+                            
+                            Log::info('Foto de tela guardada (ruta existente)', ['prenda_id' => $prendaModel->id, 'ruta' => $rutaGuardada, 'orden' => $orden - 1]);
                         }
                     }
                 }
@@ -923,6 +1027,7 @@ final class CotizacionController extends Controller
                     'observaciones_tecnicas' => $logoObservacionesTecnicas ?: null,
                     'ubicaciones' => is_array($logoUbicaciones) ? json_encode($logoUbicaciones) : $logoUbicaciones,
                     'observaciones_generales' => is_array($logoObservacionesGenerales) ? json_encode($logoObservacionesGenerales) : $logoObservacionesGenerales,
+                    'tipo_venta' => $request->input('tipo_venta_paso3') ?? $request->input('tipo_venta') ?? null,
                 ]
             );
             
@@ -987,6 +1092,67 @@ final class CotizacionController extends Controller
                 }
             } else {
                 Log::info('DEBUG - No hay archivos de logo para guardar');
+            }
+            
+            // Procesar IDs de fotos de logo existentes (logo_fotos_existentes[])
+            // Estas son las fotos que ya están en BD y que el usuario quiere conservar/copiar
+            $fotoLogosExistentes = $request->input('logo_fotos_existentes', []);
+            if (!is_array($fotoLogosExistentes)) {
+                $fotoLogosExistentes = [];
+            }
+            
+            if (!empty($fotoLogosExistentes)) {
+                // Deduplicar IDs
+                $fotoLogosExistentes = array_unique($fotoLogosExistentes);
+                $orden = 1;
+                
+                foreach ($fotoLogosExistentes as $fotoIdExistente) {
+                    if ($fotoIdExistente && is_string($fotoIdExistente)) {
+                        // Buscar la foto existente
+                        $fotoExistente = \App\Models\LogoFotoCot::findOrFail($fotoIdExistente);
+                        
+                        // Limpiar rutas: remover /storage/ del principio si existe
+                        $rutaOriginal = $fotoExistente->ruta_original;
+                        if (strpos($rutaOriginal, '/storage/') === 0) {
+                            $rutaOriginal = substr($rutaOriginal, 9); // Remover "/storage/" (9 caracteres)
+                        }
+                        
+                        $rutaWebp = $fotoExistente->ruta_webp;
+                        if (strpos($rutaWebp, '/storage/') === 0) {
+                            $rutaWebp = substr($rutaWebp, 9); // Remover "/storage/" (9 caracteres)
+                        }
+                        
+                        // Crear nuevo registro con la misma ruta en la nueva cotización
+                        try {
+                            $fotoCopiadaCreada = $logoCotizacion->fotos()->create([
+                                'ruta_original' => $rutaOriginal,
+                                'ruta_webp' => $rutaWebp,
+                                'orden' => $orden,
+                            ]);
+                            
+                            Log::info('✅ Foto de logo reutilizada (copiada)', [
+                                'nuevo_foto_id' => $fotoCopiadaCreada->id,
+                                'foto_original_id' => $fotoIdExistente,
+                                'logo_cotizacion_id' => $logoCotizacion->id,
+                                'ruta' => $fotoExistente->ruta_webp,
+                                'orden' => $orden
+                            ]);
+                            
+                            $orden++;
+                        } catch (\Exception $e) {
+                            Log::warning('⚠️ Error al reutilizar foto de logo', [
+                                'foto_id' => $fotoIdExistente,
+                                'error' => $e->getMessage()
+                            ]);
+                        }
+                    }
+                }
+                
+                Log::info('Fotos de logo existentes reutilizadas:', [
+                    'count' => count($fotoLogosExistentes),
+                    'ids' => $fotoLogosExistentes,
+                    'fotos_creadas' => $orden - 1
+                ]);
             }
 
             // Procesar PASO 4: REFLECTIVO
@@ -1242,6 +1408,7 @@ final class CotizacionController extends Controller
                 'fecha' => 'required|date',
                 'action' => 'required|in:borrador,enviar',
                 'tipo' => 'required|in:RF',
+                'tipo_venta_reflectivo' => 'nullable|in:M,D,X',
                 'prendas' => 'required|string', // Ahora acepta string JSON
                 'especificaciones' => 'nullable|string',
                 'descripcion_reflectivo' => 'required|string',
@@ -1277,7 +1444,7 @@ final class CotizacionController extends Controller
                     'cliente_id' => $cliente->id,
                     'numero_cotizacion' => !$esBorrador ? $this->generarNumeroCotizacion() : null,
                     'tipo_cotizacion_id' => $this->obtenerTipoCotizacionId('RF'),
-                    'tipo_venta' => 'M', // Default para reflectivo
+                    'tipo_venta' => $validated['tipo_venta_reflectivo'] ?? 'M',
                     'fecha_inicio' => $validated['fecha'],
                     'especificaciones' => $validated['especificaciones'] ?? '',
                     'es_borrador' => $esBorrador,
@@ -1325,6 +1492,7 @@ final class CotizacionController extends Controller
                 $reflectivo = \App\Models\ReflectivoCotizacion::create([
                     'cotizacion_id' => $cotizacion->id,
                     'descripcion' => $validated['descripcion_reflectivo'],
+                    'tipo_venta' => $validated['tipo_venta_reflectivo'] ?? null,
                     'ubicacion' => json_encode($ubicacionesArray),
                     'observaciones_generales' => json_encode($observacionesArray),
                     'imagenes' => json_encode([]),
@@ -1431,6 +1599,7 @@ final class CotizacionController extends Controller
                 'fecha' => 'required|date',
                 'action' => 'required|in:borrador,enviar',
                 'tipo' => 'required|in:RF',
+                'tipo_venta_reflectivo' => 'nullable|in:M,D,X',
                 'prendas' => 'nullable|array|min:1',
                 'especificaciones' => 'nullable|string',
                 'descripcion_reflectivo' => 'required|string',
@@ -1490,6 +1659,7 @@ final class CotizacionController extends Controller
                     'numero_cotizacion' => !$esBorrador && !$cotizacion->numero_cotizacion ? $this->generarNumeroCotizacion() : $cotizacion->numero_cotizacion,
                     'fecha_envio' => !$esBorrador && !$cotizacion->fecha_envio ? \Carbon\Carbon::now('America/Bogota') : $cotizacion->fecha_envio,
                     'especificaciones' => json_encode($especificacionesArray),
+                    'tipo_venta' => $validated['tipo_venta_reflectivo'] ?? $cotizacion->tipo_venta ?? 'M',
                 ]);
 
                 Log::info('✅ Cotización RF actualizada', ['cotizacion_id' => $cotizacion->id]);
@@ -1553,6 +1723,7 @@ final class CotizacionController extends Controller
                 if ($reflectivo->id) {
                     $reflectivo->update([
                         'descripcion' => $validated['descripcion_reflectivo'],
+                        'tipo_venta' => $validated['tipo_venta_reflectivo'] ?? $reflectivo->tipo_venta,
                         'ubicacion' => json_encode($ubicaciones),
                         'observaciones_generales' => json_encode($observaciones),
                     ]);
@@ -1565,6 +1736,7 @@ final class CotizacionController extends Controller
                     $reflectivo = \App\Models\ReflectivoCotizacion::create([
                         'cotizacion_id' => $cotizacion->id,
                         'descripcion' => $validated['descripcion_reflectivo'],
+                        'tipo_venta' => $validated['tipo_venta_reflectivo'] ?? null,
                         'ubicacion' => json_encode($ubicaciones),
                         'observaciones_generales' => json_encode($observaciones),
                         'imagenes' => json_encode([]),
