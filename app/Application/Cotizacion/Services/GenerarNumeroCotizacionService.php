@@ -26,12 +26,12 @@ final class GenerarNumeroCotizacionService
      * Usa una secuencia GLOBAL única con SELECT FOR UPDATE para garantizar
      * números únicos y consecutivos sin race conditions entre todos los asesores
      *
-     * @param UserId $usuarioId
+     * @param UserId|int $usuarioId
      * @return int Número único y consecutivo (global)
      */
-    public function generarProxNumeroCotizacion(UserId $usuarioId): int
+    public function generarProxNumeroCotizacion(UserId|int $usuarioId): int
     {
-        $usuarioIdValue = $usuarioId->valor();
+        $usuarioIdValue = $usuarioId instanceof UserId ? $usuarioId->valor() : $usuarioId;
         $intentos = 5;
         $ultimoError = null;
 
@@ -119,10 +119,10 @@ final class GenerarNumeroCotizacionService
     /**
      * Generar número de cotización completo (entero + formato)
      *
-     * @param UserId $usuarioId
+     * @param UserId|int $usuarioId
      * @return string Número formateado
      */
-    public function generarNumeroCotizacionFormateado(UserId $usuarioId): string
+    public function generarNumeroCotizacionFormateado(UserId|int $usuarioId): string
     {
         $numero = $this->generarProxNumeroCotizacion($usuarioId);
         return $this->formatearNumero($numero);

@@ -79,7 +79,8 @@ class TestCrearPedidoReflectivo extends Command
 
             $this->line("✅ Pedido creado: {$pedido->numero_pedido}");
 
-            // Crear prendas
+            // Crear prendas y guardar sus IDs
+            $prendasGuardadas = [];
             foreach ($prendas as $prenda) {
                 $prendaPedido = PrendaPedido::create([
                     'numero_pedido' => $pedido->numero_pedido,
@@ -89,17 +90,21 @@ class TestCrearPedidoReflectivo extends Command
                     'cantidad_talla' => json_encode($prenda['cantidades']),
                 ]);
                 
+                $prendasGuardadas[] = $prendaPedido;
                 $this->line("✅ Prenda creada: {$prenda['nombre_producto']}");
             }
 
-            // Crear proceso inicial
-            ProcesoPrenda::create([
-                'numero_pedido' => $pedido->numero_pedido,
-                'proceso' => 'Creación Orden',
-                'estado_proceso' => 'Completado',
-                'fecha_inicio' => now(),
-                'fecha_fin' => now(),
-            ]);
+            // Crear proceso inicial para cada prenda
+            foreach ($prendasGuardadas as $prendaPedido) {
+                ProcesoPrenda::create([
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'prenda_pedido_id' => $prendaPedido->id,
+                    'proceso' => 'Creación Orden',
+                    'estado_proceso' => 'Completado',
+                    'fecha_inicio' => now(),
+                    'fecha_fin' => now(),
+                ]);
+            }
 
             \DB::commit();
             

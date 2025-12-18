@@ -72,7 +72,7 @@ class PedidosProduccionController extends Controller
         })
         ->with([
             'prendas' => function ($q) {
-                $q->with(['color', 'tela', 'tipoManga']);
+                $q->with(['color', 'tela', 'tipoManga', 'procesos']);
             }
         ]);
 
@@ -143,7 +143,8 @@ class PedidosProduccionController extends Controller
      */
     public function crearDesdeCotizacion($cotizacionId)
     {
-        $cotizacion = Cotizacion::findOrFail($cotizacionId);
+        $cotizacion = Cotizacion::with('tipoCotizacion')
+            ->findOrFail($cotizacionId);
         
         if ($cotizacion->asesor_id !== Auth::id()) {
             abort(403);
@@ -192,6 +193,15 @@ class PedidosProduccionController extends Controller
                 'from_spec' => $especificaciones['forma_pago'] ?? 'none'
             ]);
             
+            // Determinar el área basado en el tipo de cotización
+            $tipoCotizacion = strtolower(trim($cotizacion->tipoCotizacion?->nombre ?? ''));
+            $area = ($tipoCotizacion === 'reflectivo') ? 'Costura' : null;
+            
+            \Log::info('🎯 Determinando área del pedido', [
+                'tipo_cotizacion' => $tipoCotizacion,
+                'area_asignada' => $area,
+            ]);
+            
             $pedido = PedidoProduccion::create([
                 'cotizacion_id' => $cotizacion->id,
                 'numero_cotizacion' => $numeroCotizacion,
@@ -199,6 +209,7 @@ class PedidosProduccionController extends Controller
                 'cliente' => $cotizacion->cliente->nombre ?? 'Sin nombre',
                 'asesor_id' => auth()->id(),
                 'forma_de_pago' => $formaPago,
+                'area' => $area,
                 'estado' => 'Pendiente',
                 'fecha_de_creacion_de_orden' => now(),
             ]);
@@ -280,14 +291,19 @@ class PedidosProduccionController extends Controller
                         'tiene_reflectivo' => ($prenda['tiene_reflectivo'] ?? false) ? 1 : 0,
                     ]);
 
-                    // Crear proceso inicial para cada prenda
-                    ProcesoPrenda::create([
-                        'numero_pedido' => $pedido->numero_pedido,
-                        'proceso' => 'Creación Orden',
-                        'estado_proceso' => 'Completado',
-                        'fecha_inicio' => now(),
-                        'fecha_fin' => now(),
-                    ]);
+                    // Crear proceso inicial para cada prenda (SOLO si NO es reflectivo)
+                    // Para reflectivo, se crea en crearProcesosParaReflectivo()
+                    $tipoCotizacion = strtolower(trim($cotizacion->tipoCotizacion?->nombre ?? ''));
+                    if ($tipoCotizacion !== 'reflectivo') {
+                        ProcesoPrenda::create([
+                            'numero_pedido' => $pedido->numero_pedido,
+                            'prenda_pedido_id' => $prendaPedido->id,
+                            'proceso' => 'Creación Orden',
+                            'estado_proceso' => 'Completado',
+                            'fecha_inicio' => now(),
+                            'fecha_fin' => now(),
+                        ]);
+                    }
                     
                     // HEREDAR VARIANTES DE LA COTIZACIÓN
                     $this->heredarVariantesDePrenda($cotizacion, $prendaPedido, $index);
@@ -1244,17 +1260,46 @@ class PedidosProduccionController extends Controller
                 return;
             }
 
+            // Obtener nombre de la asesora logueada
+            $asesoraLogueada = Auth::user()->name ?? 'Sin Asesora';
+
             foreach ($prendas as $prenda) {
+                \Log::info('🔍 Procesando prenda', [
+                    'prenda_pedido_id' => $prenda->id,
+                    'nombre_prenda' => $prenda->nombre_prenda,
+                ]);
+
                 // Verificar si ya existen procesos para esta prenda
-                $procesosExistentes = ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
-                    ->where('nombre_prenda', $prenda->nombre_prenda)
+                $procesosExistentes = ProcesoPrenda::where('prenda_pedido_id', $prenda->id)
                     ->pluck('proceso')
                     ->toArray();
 
                 \Log::info('🔍 Procesos existentes para prenda', [
+                    'prenda_pedido_id' => $prenda->id,
                     'nombre_prenda' => $prenda->nombre_prenda,
                     'procesos' => $procesosExistentes,
                 ]);
+
+                // Crear proceso de Creación de Orden asignado a la asesora logueada
+                if (!in_array('Creación de Orden', $procesosExistentes)) {
+                    $procsCreacion = ProcesoPrenda::create([
+                        'numero_pedido' => $pedido->numero_pedido,
+                        'prenda_pedido_id' => $prenda->id,
+                        'proceso' => 'Creación de Orden',
+                        'encargado' => $asesoraLogueada,
+                        'estado_proceso' => 'En Progreso',
+                        'fecha_inicio' => now(),
+                        'observaciones' => 'Proceso de creación asignado automáticamente a la asesora para cotización reflectivo',
+                    ]);
+
+                    \Log::info('✅ Proceso Creación de Orden creado para prenda', [
+                        'numero_pedido' => $pedido->numero_pedido,
+                        'prenda_pedido_id' => $prenda->id,
+                        'nombre_prenda' => $prenda->nombre_prenda,
+                        'encargado' => $asesoraLogueada,
+                        'proceso_id' => $procsCreacion->id,
+                    ]);
+                }
 
                 // NO crear duplicados si ya existe Costura
                 if (in_array('Costura', $procesosExistentes)) {
@@ -1263,21 +1308,22 @@ class PedidosProduccionController extends Controller
                 }
 
                 // Crear proceso Costura con Ramiro
-                $nuevoProceso = ProcesoPrenda::create([
+                $procsCostura = ProcesoPrenda::create([
                     'numero_pedido' => $pedido->numero_pedido,
-                    'nombre_prenda' => $prenda->nombre_prenda,
+                    'prenda_pedido_id' => $prenda->id,
                     'proceso' => 'Costura',
                     'encargado' => 'Ramiro',
-                    'estado_proceso' => 'En Ejecución',
+                    'estado_proceso' => 'En Progreso',
                     'fecha_inicio' => now(),
                     'observaciones' => 'Asignado automáticamente a Ramiro para cotización reflectivo',
                 ]);
 
                 \Log::info('✅ Proceso Costura creado para prenda', [
                     'numero_pedido' => $pedido->numero_pedido,
+                    'prenda_pedido_id' => $prenda->id,
                     'nombre_prenda' => $prenda->nombre_prenda,
                     'encargado' => 'Ramiro',
-                    'proceso_id' => $nuevoProceso->id,
+                    'proceso_id' => $procsCostura->id,
                 ]);
             }
 

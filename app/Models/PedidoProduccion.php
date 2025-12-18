@@ -271,12 +271,66 @@ class PedidoProduccion extends Model
         // Este método asume que los procesos ya fueron cargados via eager loading
         // Procesa los datos en memoria sin queries adicionales
         
-        $ultimoProceso = $this->prendas
+        $procesos = $this->prendas
             ->flatMap(fn($prenda) => $prenda->procesos)
-            ->sortByDesc('created_at')
-            ->first();
-
-        return $ultimoProceso?->proceso ?? 'Creación Orden';
+            ->unique('proceso');
+        
+        if ($procesos->isEmpty()) {
+            return 'Pendiente';
+        }
+        
+        // Orden de prioridad de estados y procesos
+        $estadosPrioritarios = ['En Progreso', 'En Progreso', 'Pendiente'];
+        $procesosPrioritarios = [
+            'Despacho',
+            'Insumos y Telas',
+            'Costura',
+            'Corte',
+            'Control Calidad',
+            'Creación de Orden',
+            'tcc'
+        ];
+        
+        // Prioridad 1: Buscar proceso "En Progreso" (que sea uno de los principales)
+        foreach ($procesosPrioritarios as $nombreProceso) {
+            $proceso = $procesos
+                ->where('estado_proceso', 'En Progreso')
+                ->where('proceso', $nombreProceso)
+                ->first();
+            
+            if ($proceso) {
+                return $proceso->proceso;
+            }
+        }
+        
+        // Prioridad 2: Buscar proceso "Pendiente" (que sea uno de los principales)
+        foreach ($procesosPrioritarios as $nombreProceso) {
+            $proceso = $procesos
+                ->where('estado_proceso', 'Pendiente')
+                ->where('proceso', $nombreProceso)
+                ->first();
+            
+            if ($proceso) {
+                return $proceso->proceso;
+            }
+        }
+        
+        // Prioridad 3: Buscar cualquier proceso que NO esté completado
+        foreach ($procesosPrioritarios as $nombreProceso) {
+            $proceso = $procesos
+                ->where('proceso', $nombreProceso)
+                ->whereNotIn('estado_proceso', ['Completado', 'Pausado'])
+                ->first();
+            
+            if ($proceso) {
+                return $proceso->proceso;
+            }
+        }
+        
+        // Prioridad 4: El último proceso creado
+        $ultimoProceso = $procesos->sortByDesc('created_at')->first();
+        
+        return $ultimoProceso?->proceso ?? 'Pendiente';
     }
 
     /**

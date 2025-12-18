@@ -21,8 +21,14 @@ class ProcesoPrendaObserver
      */
     public function updated(ProcesoPrenda $procesoPrenda): void
     {
-        // Si cambió la fecha/hora, podría afectar el orden, así que actualizar
-        if ($procesoPrenda->isDirty('created_at')) {
+        // Si cambió estado_proceso, created_at, fecha_inicio o fecha_fin, actualizar el área
+        if ($procesoPrenda->isDirty(['estado_proceso', 'created_at', 'fecha_inicio', 'fecha_fin', 'proceso'])) {
+            \Log::info('🔄 [Observer] Cambio detectado en proceso', [
+                'proceso_id' => $procesoPrenda->id,
+                'numero_pedido' => $procesoPrenda->numero_pedido,
+                'campos_modificados' => $procesoPrenda->getDirty(),
+            ]);
+            
             $this->actualizarAreaPedido($procesoPrenda);
         }
     }
@@ -38,39 +44,113 @@ class ProcesoPrendaObserver
     }
 
     /**
-     * Actualizar el área del pedido al último proceso
+     * Actualizar el área del pedido basado en el proceso actual activo
      */
     private function actualizarAreaPedido(ProcesoPrenda $procesoPrenda): void
     {
         try {
-            // Obtener la prenda relacionada
-            $prenda = $procesoPrenda->prenda;
+            $numeroPedido = $procesoPrenda->numero_pedido;
             
-            if (!$prenda) {
+            if (!$numeroPedido) {
                 return;
             }
 
-            // Obtener el pedido relacionado
-            $pedido = $prenda->pedidoProduccion;
+            // Obtener el pedido
+            $pedido = PedidoProduccion::where('numero_pedido', $numeroPedido)->first();
             
             if (!$pedido) {
                 return;
             }
 
-            // Obtener el último proceso de TODAS las prendas del pedido, ordenado por fecha más reciente
-            $ultimoProceso = ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
-                ->orderBy('created_at', 'desc')
-                ->first();
+            \Log::info('🔍 [Observer] Actualizando área del pedido', [
+                'numero_pedido' => $numeroPedido,
+                'area_actual' => $pedido->area,
+            ]);
 
+            // Obtener todos los procesos del pedido
+            $procesos = ProcesoPrenda::where('numero_pedido', $numeroPedido)
+                ->get();
+
+            if ($procesos->isEmpty()) {
+                return;
+            }
+
+            // Orden de prioridad de procesos
+            $procesosPrioritarios = [
+                'Despacho',
+                'Insumos y Telas',
+                'Costura',
+                'Corte',
+                'Control Calidad',
+                'Creación de Orden',
+                'tcc'
+            ];
+
+            // Prioridad 1: Buscar proceso "En Progreso"
+            foreach ($procesosPrioritarios as $nombreProceso) {
+                $proceso = $procesos
+                    ->where('estado_proceso', 'En Progreso')
+                    ->where('proceso', $nombreProceso)
+                    ->first();
+                
+                if ($proceso) {
+                    $pedido->update([
+                        'area' => $proceso->proceso,
+                        'fecha_ultimo_proceso' => $proceso->fecha_fin ?? $proceso->created_at
+                    ]);
+                    
+                    \Log::info('✅ [Observer] Área actualizada (En Progreso)', [
+                        'numero_pedido' => $numeroPedido,
+                        'area_nueva' => $proceso->proceso,
+                        'estado_proceso' => $proceso->estado_proceso,
+                    ]);
+                    
+                    return;
+                }
+            }
+
+            // Prioridad 2: Buscar proceso "Pendiente"
+            foreach ($procesosPrioritarios as $nombreProceso) {
+                $proceso = $procesos
+                    ->where('estado_proceso', 'Pendiente')
+                    ->where('proceso', $nombreProceso)
+                    ->first();
+                
+                if ($proceso) {
+                    $pedido->update([
+                        'area' => $proceso->proceso,
+                        'fecha_ultimo_proceso' => $proceso->fecha_fin ?? $proceso->created_at
+                    ]);
+                    
+                    \Log::info('✅ [Observer] Área actualizada (Pendiente)', [
+                        'numero_pedido' => $numeroPedido,
+                        'area_nueva' => $proceso->proceso,
+                        'estado_proceso' => $proceso->estado_proceso,
+                    ]);
+                    
+                    return;
+                }
+            }
+
+            // Prioridad 3: Último proceso creado
+            $ultimoProceso = $procesos->sortByDesc('created_at')->first();
+            
             if ($ultimoProceso) {
-                // Actualizar el área y la fecha del último proceso del pedido
                 $pedido->update([
                     'area' => $ultimoProceso->proceso,
                     'fecha_ultimo_proceso' => $ultimoProceso->fecha_fin ?? $ultimoProceso->created_at
                 ]);
+                
+                \Log::info('✅ [Observer] Área actualizada (Último proceso)', [
+                    'numero_pedido' => $numeroPedido,
+                    'area_nueva' => $ultimoProceso->proceso,
+                    'estado_proceso' => $ultimoProceso->estado_proceso,
+                ]);
             }
         } catch (\Exception $e) {
-            \Log::error('Error actualizando área del pedido: ' . $e->getMessage());
+            \Log::error('❌ Error actualizando área del pedido: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
         }
     }
 

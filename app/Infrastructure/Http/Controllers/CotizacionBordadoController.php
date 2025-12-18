@@ -407,7 +407,7 @@ class CotizacionBordadoController extends Controller
                 // Determinar si es borrador o enviada
                 $action = $request->input('action') ?? $request->input('accion');
                 $esBorrador = $action === 'borrador';
-                $estado = $esBorrador ? 'BORRADOR' : 'ENVIADA';
+                $estado = $esBorrador ? 'BORRADOR' : 'ENVIADA_CONTADOR';
 
                 // Obtener o crear cliente
                 $clienteId = $request->input('cliente_id');

@@ -504,9 +504,8 @@ class OrdenController extends Controller
                 'observaciones' => 'nullable|string',
             ]);
 
-            // Buscar el proceso
-            $proceso = DB::table('procesos_prenda')
-                ->where('id', $id)
+            // Buscar el proceso usando el modelo (para que dispare Observer)
+            $proceso = \App\Models\ProcesoPrenda::where('id', $id)
                 ->where('numero_pedido', $validated['numero_pedido'])
                 ->first();
 
@@ -517,17 +516,21 @@ class OrdenController extends Controller
                 ], 404);
             }
 
-            // Actualizar
-            DB::table('procesos_prenda')
-                ->where('id', $id)
-                ->update([
-                    'proceso' => $validated['proceso'],
-                    'fecha_inicio' => $validated['fecha_inicio'],
-                    'encargado' => $validated['encargado'],
-                    'estado_proceso' => $validated['estado_proceso'],
-                    'observaciones' => $validated['observaciones'] ?? null,
-                    'updated_at' => now(),
-                ]);
+            // Actualizar usando el modelo (dispara Observer)
+            $proceso->update([
+                'proceso' => $validated['proceso'],
+                'fecha_inicio' => $validated['fecha_inicio'],
+                'encargado' => $validated['encargado'],
+                'estado_proceso' => $validated['estado_proceso'],
+                'observaciones' => $validated['observaciones'] ?? null,
+            ]);
+
+            \Log::info('✅ Proceso actualizado correctamente', [
+                'proceso_id' => $id,
+                'numero_pedido' => $validated['numero_pedido'],
+                'nuevo_estado' => $validated['estado_proceso'],
+                'nuevo_proceso' => $validated['proceso'],
+            ]);
 
             return response()->json([
                 'success' => true,
