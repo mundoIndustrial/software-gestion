@@ -191,7 +191,28 @@ class CotizacionPrendaController extends Controller
      */
     public function edit($id)
     {
-        $cotizacion = Cotizacion::findOrFail($id);
+        $cotizacion = Cotizacion::with([
+            'cliente',
+            'prendas.fotos',
+            'prendas.telaFotos',
+            'prendas.tallas',
+            'prendas.variantes.genero',
+            'prendas.variantes.manga',
+            'prendas.variantes.broche',
+            'logoCotizacion.fotos'
+        ])->findOrFail($id);
+        
+        // Verificar que el usuario es propietario
+        if ($cotizacion->asesor_id !== Auth::id()) {
+            abort(403, 'No tienes permiso para editar esta cotización');
+        }
+        
+        Log::info('CotizacionPrendaController@edit: Cotización cargada para editar', [
+            'cotizacion_id' => $cotizacion->id,
+            'prendas_count' => $cotizacion->prendas ? count($cotizacion->prendas) : 0,
+            'es_borrador' => $cotizacion->es_borrador,
+        ]);
+        
         return view('cotizaciones.prenda.create', ['cotizacion' => $cotizacion]);
     }
 

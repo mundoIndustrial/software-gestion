@@ -1156,6 +1156,12 @@ document.addEventListener('click', function(e) {
     window.routes.guardarCotizacion = '{{ route("asesores.cotizaciones.guardar") }}';
     window.routes.cotizacionesIndex = '{{ route("asesores.cotizaciones.index") }}';
     window.tipoCotizacionGlobal = 'P'; // Prenda
+    
+    @if(isset($cotizacion))
+    // Datos de cotización para edición
+    window.cotizacionParaEditar = {!! json_encode($cotizacion->toArray()) !!};
+    console.log('📋 Cotización cargada para editar:', window.cotizacionParaEditar);
+    @endif
 </script>
 
 <!-- Módulos SOLID - Orden de dependencias -->
@@ -1194,6 +1200,19 @@ document.addEventListener('click', function(e) {
         if (sidebar) {
             sidebar.classList.remove('collapsed');
             console.log('✓ Sidebar expandido');
+        }
+        
+        // Cargar datos de cotización si estamos editando
+        if (window.cotizacionParaEditar) {
+            console.log('🔄 Detectada cotización para editar, cargando datos...');
+            setTimeout(() => {
+                if (typeof cargarBorrador === 'function') {
+                    cargarBorrador(window.cotizacionParaEditar);
+                    console.log('✅ Datos de cotización cargados en el formulario');
+                } else {
+                    console.error('❌ Función cargarBorrador no disponible');
+                }
+            }, 500);
         }
     });
 </script>

@@ -185,44 +185,60 @@ function cargarBorrador(cotizacion) {
             // Esperar más tiempo y con reintentos
             const intentarCargar = (intento = 0) => {
                 const productosCards = document.querySelectorAll('.producto-card');
-                const ultimoProducto = productosCards[productosCards.length - 1];
                 
-                console.log(`⏳ Intento ${intento}: ${productosCards.length} productos encontrados`);
+                console.log(`⏳ Intento ${intento}: ${productosCards.length} productos encontrados, buscando índice ${prendaIndexActual}`);
                 
-                if (ultimoProducto) {
-                    // Nombre del producto
-                    const inputNombre = ultimoProducto.querySelector('input[name*="nombre_producto"]');
-                    console.log('🔍 Buscando input nombre:', {
-                        encontrado: !!inputNombre,
-                        selector: 'input[name*="nombre_producto"]'
-                    });
-                    
-                    if (inputNombre) {
-                        // Soportar ambos campos: nombre_producto y nombre
-                        const nombreValue = prenda.nombre_producto || prenda.nombre || '';
-                        inputNombre.value = nombreValue;
-                        inputNombre.dispatchEvent(new Event('input', { bubbles: true }));
-                        inputNombre.dispatchEvent(new Event('change', { bubbles: true }));
-                        console.log('✅ Nombre cargado:', nombreValue, 'Valor actual:', inputNombre.value);
-                    } else if (intento < 5) {
-                        console.log('⏳ Input nombre no encontrado, reintentando...');
+                // IMPORTANTE: Usar el producto correspondiente al índice, NO el último
+                const productoActual = productosCards[prendaIndexActual];
+                
+                if (!productoActual) {
+                    if (intento < 5) {
+                        console.log(`⏳ Producto en índice ${prendaIndexActual} no encontrado, reintentando...`);
                         setTimeout(() => intentarCargar(intento + 1), 200);
                         return;
+                    } else {
+                        console.error(`❌ No se pudo encontrar el producto en índice ${prendaIndexActual} después de ${intento} intentos`);
+                        return;
                     }
-                    
-                    // Descripción
-                    const textareaDesc = ultimoProducto.querySelector('textarea[name*="descripcion"]');
-                    console.log('🔍 Buscando textarea descripción:', {
-                        encontrado: !!textareaDesc,
-                        selector: 'textarea[name*="descripcion"]'
-                    });
-                    
-                    if (textareaDesc) {
-                        textareaDesc.value = prenda.descripcion || '';
-                        textareaDesc.dispatchEvent(new Event('input', { bubbles: true }));
-                        textareaDesc.dispatchEvent(new Event('change', { bubbles: true }));
-                        console.log('✅ Descripción cargada:', prenda.descripcion, 'Valor actual:', textareaDesc.value);
-                    }
+                }
+                
+                console.log(`✅ Producto encontrado en índice ${prendaIndexActual}`);
+                
+                // Nombre del producto
+                const inputNombre = productoActual.querySelector('input[name*="nombre_producto"]');
+                console.log('🔍 Buscando input nombre:', {
+                    encontrado: !!inputNombre,
+                    selector: 'input[name*="nombre_producto"]',
+                    indice: prendaIndexActual
+                });
+                
+                if (inputNombre) {
+                    // Soportar ambos campos: nombre_producto y nombre
+                    const nombreValue = prenda.nombre_producto || prenda.nombre || '';
+                    inputNombre.value = nombreValue;
+                    inputNombre.dispatchEvent(new Event('input', { bubbles: true }));
+                    inputNombre.dispatchEvent(new Event('change', { bubbles: true }));
+                    console.log(`✅ Nombre cargado en producto ${prendaIndexActual}:`, nombreValue, 'Valor actual:', inputNombre.value);
+                } else if (intento < 5) {
+                    console.log('⏳ Input nombre no encontrado, reintentando...');
+                    setTimeout(() => intentarCargar(intento + 1), 200);
+                    return;
+                }
+                
+                // Descripción
+                const textareaDesc = productoActual.querySelector('textarea[name*="descripcion"]');
+                console.log('🔍 Buscando textarea descripción:', {
+                    encontrado: !!textareaDesc,
+                    selector: 'textarea[name*="descripcion"]',
+                    indice: prendaIndexActual
+                });
+                
+                if (textareaDesc) {
+                    textareaDesc.value = prenda.descripcion || '';
+                    textareaDesc.dispatchEvent(new Event('input', { bubbles: true }));
+                    textareaDesc.dispatchEvent(new Event('change', { bubbles: true }));
+                    console.log(`✅ Descripción cargada en producto ${prendaIndexActual}:`, prenda.descripcion, 'Valor actual:', textareaDesc.value);
+                }
                     
                     // Tallas - buscar en los botones de talla
                     // Soportar múltiples formatos: array strings, array objects con .talla, objeto con .prendas_tallas[]
@@ -255,7 +271,7 @@ function cargarBorrador(cotizacion) {
                         console.log('📏 Tallas a cargar:', tallasValores);
                         
                         // Seleccionar tipo de talla
-                        const tipoSelect = ultimoProducto.querySelector('.talla-tipo-select');
+                        const tipoSelect = productoActual.querySelector('.talla-tipo-select');
                         if (tipoSelect) {
                             tipoSelect.value = tipoTalla;
                             tipoSelect.dispatchEvent(new Event('change', { bubbles: true }));
@@ -269,7 +285,7 @@ function cargarBorrador(cotizacion) {
                             console.log('⏳ Esperando botones de talla...');
                             
                             // Verificar que los botones existan
-                            const botonesExistentes = ultimoProducto.querySelectorAll('.talla-btn');
+                            const botonesExistentes = productoActual.querySelectorAll('.talla-btn');
                             console.log('📏 Botones encontrados:', botonesExistentes.length);
                             
                             // Si es número, detectar género
@@ -278,7 +294,7 @@ function cargarBorrador(cotizacion) {
                                 const esGenero = tallasValores.some(t => tallasDama.includes(t));
                                 const genero = esGenero ? 'dama' : 'caballero';
                                 
-                                const generoSelect = ultimoProducto.querySelector('.talla-genero-select');
+                                const generoSelect = productoActual.querySelector('.talla-genero-select');
                                 if (generoSelect) {
                                     generoSelect.value = genero;
                                     generoSelect.dispatchEvent(new Event('change', { bubbles: true }));
@@ -293,7 +309,7 @@ function cargarBorrador(cotizacion) {
                                 // Hacer clic en los botones de talla
                                 let tallasActivadas = 0;
                                 tallasValores.forEach(tallaValor => {
-                                    const tallaBtn = ultimoProducto.querySelector(`.talla-btn[data-talla="${tallaValor}"]`);
+                                    const tallaBtn = productoActual.querySelector(`.talla-btn[data-talla="${tallaValor}"]`);
                                     if (tallaBtn) {
                                         tallaBtn.click();
                                         tallasActivadas++;
@@ -301,7 +317,7 @@ function cargarBorrador(cotizacion) {
                                     } else {
                                         console.log('⚠️ Botón de talla no encontrado:', tallaValor);
                                         // Debug: mostrar botones disponibles
-                                        const botonesDisponibles = ultimoProducto.querySelectorAll('.talla-btn');
+                                        const botonesDisponibles = productoActual.querySelectorAll('.talla-btn');
                                         console.log('📏 Botones disponibles:', Array.from(botonesDisponibles).map(b => b.dataset.talla));
                                     }
                                 });
@@ -310,7 +326,7 @@ function cargarBorrador(cotizacion) {
                                 
                                 // Hacer clic en "Agregar Tallas"
                                 setTimeout(() => {
-                                    const btnAgregarTallas = ultimoProducto.querySelector('button[onclick*="agregarTallasSeleccionadas"]');
+                                    const btnAgregarTallas = productoActual.querySelector('button[onclick*="agregarTallasSeleccionadas"]');
                                     if (btnAgregarTallas) {
                                         btnAgregarTallas.click();
                                         console.log('✅ Botón "Agregar Tallas" clickeado');
@@ -347,7 +363,7 @@ function cargarBorrador(cotizacion) {
                         
                         // Cargar género en el selector de TALLAS A COTIZAR
                         if (variantes.genero_id !== undefined && variantes.genero_id !== null) {
-                            const generoSelect = ultimoProducto.querySelector('.talla-genero-select');
+                            const generoSelect = productoActual.querySelector('.talla-genero-select');
                             if (generoSelect) {
                                 // Mapeo de IDs a valores del select
                                 let valorGenero = '';
@@ -377,7 +393,7 @@ function cargarBorrador(cotizacion) {
                         
                         // Color
                         if (variantes.color) {
-                            const colorInput = ultimoProducto.querySelector('.color-input');
+                            const colorInput = productoActual.querySelector('.color-input');
                             if (colorInput) {
                                 colorInput.value = variantes.color;
                                 colorInput.dispatchEvent(new Event('input', { bubbles: true }));
@@ -389,7 +405,7 @@ function cargarBorrador(cotizacion) {
                         if (variantes.telas_multiples && Array.isArray(variantes.telas_multiples) && variantes.telas_multiples.length > 0) {
                             const primeraTela = variantes.telas_multiples[0];
                             if (primeraTela.tela) {
-                                const telaSelect = ultimoProducto.querySelector('.tela-input');
+                                const telaSelect = productoActual.querySelector('.tela-input');
                                 if (telaSelect) {
                                     telaSelect.value = primeraTela.tela;
                                     telaSelect.dispatchEvent(new Event('change', { bubbles: true }));
@@ -406,7 +422,7 @@ function cargarBorrador(cotizacion) {
                             
                             // Referencia
                             if (primeraTela.referencia) {
-                                const refInput = ultimoProducto.querySelector('.referencia-input');
+                                const refInput = productoActual.querySelector('.referencia-input');
                                 if (refInput) {
                                     refInput.value = primeraTela.referencia;
                                     refInput.dispatchEvent(new Event('input', { bubbles: true }));
@@ -421,7 +437,7 @@ function cargarBorrador(cotizacion) {
                         
                         // Manga - Checkbox y Select
                         if (variantes.tipo_manga_id) {
-                            const mangaCheckbox = ultimoProducto.querySelector('input[name*="aplica_manga"]');
+                            const mangaCheckbox = productoActual.querySelector('input[name*="aplica_manga"]');
                             if (mangaCheckbox) {
                                 mangaCheckbox.checked = true;
                                 mangaCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
@@ -430,7 +446,7 @@ function cargarBorrador(cotizacion) {
                             
                             setTimeout(() => {
                                 // Buscar el input de manga
-                                const mangaInput = ultimoProducto.querySelector('.manga-input');
+                                const mangaInput = productoActual.querySelector('.manga-input');
                                 
                                 if (mangaInput) {
                                     // Mapeo de IDs a nombres
@@ -447,7 +463,7 @@ function cargarBorrador(cotizacion) {
                                         seleccionarManga(variantes.tipo_manga_id, nombreManga, mangaInput);
                                     } else {
                                         // Fallback manual
-                                        const mangaIdInput = ultimoProducto.querySelector('.manga-id-input');
+                                        const mangaIdInput = productoActual.querySelector('.manga-id-input');
                                         if (mangaIdInput) {
                                             mangaIdInput.value = variantes.tipo_manga_id;
                                         }
@@ -461,7 +477,7 @@ function cargarBorrador(cotizacion) {
                         
                         // Observación de Manga
                         if (variantes.obs_manga) {
-                            const mangaObs = ultimoProducto.querySelector('input[name*="obs_manga"]');
+                            const mangaObs = productoActual.querySelector('input[name*="obs_manga"]');
                             if (mangaObs) {
                                 mangaObs.value = variantes.obs_manga;
                                 mangaObs.dispatchEvent(new Event('input', { bubbles: true }));
@@ -471,7 +487,7 @@ function cargarBorrador(cotizacion) {
                         
                         // Bolsillos - Checkbox
                         if (variantes.tiene_bolsillos) {
-                            const bolsillosCheckbox = ultimoProducto.querySelector('input[name*="aplica_bolsillos"]');
+                            const bolsillosCheckbox = productoActual.querySelector('input[name*="aplica_bolsillos"]');
                             if (bolsillosCheckbox) {
                                 bolsillosCheckbox.checked = true;
                                 bolsillosCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
@@ -481,7 +497,7 @@ function cargarBorrador(cotizacion) {
                         
                         // Observación de Bolsillos
                         if (variantes.obs_bolsillos) {
-                            const bolsillosObs = ultimoProducto.querySelector('input[name*="obs_bolsillos"]');
+                            const bolsillosObs = productoActual.querySelector('input[name*="obs_bolsillos"]');
                             if (bolsillosObs) {
                                 bolsillosObs.value = variantes.obs_bolsillos;
                                 bolsillosObs.dispatchEvent(new Event('input', { bubbles: true }));
@@ -491,7 +507,7 @@ function cargarBorrador(cotizacion) {
                         
                         // Broche - Checkbox y Select
                         if (variantes.tipo_broche_id) {
-                            const brocheCheckbox = ultimoProducto.querySelector('input[name*="aplica_broche"]');
+                            const brocheCheckbox = productoActual.querySelector('input[name*="aplica_broche"]');
                             if (brocheCheckbox) {
                                 brocheCheckbox.checked = true;
                                 brocheCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
@@ -499,7 +515,7 @@ function cargarBorrador(cotizacion) {
                             }
                             
                             setTimeout(() => {
-                                const brocheSelect = ultimoProducto.querySelector('select[name*="tipo_broche_id"]');
+                                const brocheSelect = productoActual.querySelector('select[name*="tipo_broche_id"]');
                                 if (brocheSelect) {
                                     brocheSelect.value = variantes.tipo_broche_id;
                                     brocheSelect.dispatchEvent(new Event('change', { bubbles: true }));
@@ -510,7 +526,7 @@ function cargarBorrador(cotizacion) {
                         
                         // Observación de Broche
                         if (variantes.obs_broche) {
-                            const brocheObs = ultimoProducto.querySelector('input[name*="obs_broche"]');
+                            const brocheObs = productoActual.querySelector('input[name*="obs_broche"]');
                             if (brocheObs) {
                                 brocheObs.value = variantes.obs_broche;
                                 brocheObs.dispatchEvent(new Event('input', { bubbles: true }));
@@ -520,7 +536,7 @@ function cargarBorrador(cotizacion) {
                         
                         // Reflectivo - Checkbox
                         if (variantes.tiene_reflectivo) {
-                            const reflectivoCheckbox = ultimoProducto.querySelector('input[name*="aplica_reflectivo"]');
+                            const reflectivoCheckbox = productoActual.querySelector('input[name*="aplica_reflectivo"]');
                             if (reflectivoCheckbox) {
                                 reflectivoCheckbox.checked = true;
                                 reflectivoCheckbox.dispatchEvent(new Event('change', { bubbles: true }));
@@ -530,7 +546,7 @@ function cargarBorrador(cotizacion) {
                         
                         // Observación de Reflectivo
                         if (variantes.obs_reflectivo) {
-                            const reflectivoObs = ultimoProducto.querySelector('input[name*="obs_reflectivo"]');
+                            const reflectivoObs = productoActual.querySelector('input[name*="obs_reflectivo"]');
                             if (reflectivoObs) {
                                 reflectivoObs.value = variantes.obs_reflectivo;
                                 reflectivoObs.dispatchEvent(new Event('input', { bubbles: true }));
@@ -574,7 +590,7 @@ function cargarBorrador(cotizacion) {
                         // Obtener nombre de broche si existe - buscar en el select del DOM
                         let nombreBroche = '';
                         if (variantes.tipo_broche_id) {
-                            const brocheSelect = ultimoProducto?.querySelector('select[name*="tipo_broche"]');
+                            const brocheSelect = productoActual?.querySelector('select[name*="tipo_broche"]');
                             if (brocheSelect) {
                                 const opcionBroche = brocheSelect.querySelector(`option[value="${variantes.tipo_broche_id}"]`);
                                 if (opcionBroche) {
@@ -615,25 +631,20 @@ function cargarBorrador(cotizacion) {
                         console.log('📸 Cargando', prenda.fotos.length, 'fotos de prenda');
                         
                         setTimeout(() => {
-                            const fotosContainer = ultimoProducto.querySelector('.fotos-preview');
+                            const fotosContainer = productoActual.querySelector('.fotos-preview');
                             if (fotosContainer) {
                                 prenda.fotos.forEach((foto, idx) => {
-                                    // Crear elemento de foto
                                     const fotoDiv = document.createElement('div');
                                     fotoDiv.style.cssText = 'position: relative; border-radius: 6px; overflow: hidden; background: #f0f0f0;';
                                     
                                     const rutaFoto = foto.ruta_webp || foto.ruta_original || foto.url;
-                                    // Corregir ruta: si ya tiene /storage, no agregar de nuevo
                                     let urlFoto = rutaFoto;
                                     if (rutaFoto.startsWith('http')) {
-                                        // Ya es URL completa
                                         urlFoto = rutaFoto;
                                     } else if (!rutaFoto.startsWith('/storage')) {
-                                        // No tiene /storage, agregarlo
                                         urlFoto = '/storage/' + (rutaFoto.startsWith('/') ? rutaFoto.substring(1) : rutaFoto);
                                     }
                                     
-                                    // Si tiene ID, agregar botón de borrado con endpoint
                                     const btnBorrar = foto.id 
                                         ? `<button type="button" onclick="borrarImagenPrenda(${foto.id}, this)" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 14px;" title="Eliminar imagen">✕</button>`
                                         : `<button type="button" onclick="this.closest('div').remove()" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 14px;" title="Eliminar imagen">✕</button>`;
@@ -645,7 +656,6 @@ function cargarBorrador(cotizacion) {
                                     
                                     fotosContainer.appendChild(fotoDiv);
                                     
-                                    // 📌 IMPORTANTE: Agregar a window.imagenesEnMemoria para que se envíe al hacer click en ENVIAR
                                     if (foto.id && window.imagenesEnMemoria && window.imagenesEnMemoria.prendaConIndice) {
                                         window.imagenesEnMemoria.prendaConIndice.push({
                                             prendaIndex: prendaIndexActual,
@@ -669,9 +679,8 @@ function cargarBorrador(cotizacion) {
                         console.log('🧵 Cargando', prenda.tela_fotos.length, 'fotos de telas');
                         
                         setTimeout(() => {
-                            const telasContainer = ultimoProducto.querySelector('.foto-tela-preview');
+                            const telasContainer = productoActual.querySelector('.foto-tela-preview');
                             if (telasContainer) {
-                                // Limpiar contenedor antes de agregar nuevas fotos
                                 telasContainer.innerHTML = '';
                                 
                                 prenda.tela_fotos.forEach((foto, idx) => {
@@ -679,17 +688,13 @@ function cargarBorrador(cotizacion) {
                                     fotoDiv.style.cssText = 'position: relative; border-radius: 6px; overflow: hidden; background: #f0f0f0;';
                                     
                                     const rutaFoto = foto.ruta_webp || foto.ruta_original || foto.url;
-                                    // Corregir ruta: si ya tiene /storage, no agregar de nuevo
                                     let urlFoto = rutaFoto;
                                     if (rutaFoto.startsWith('http')) {
-                                        // Ya es URL completa
                                         urlFoto = rutaFoto;
                                     } else if (!rutaFoto.startsWith('/storage')) {
-                                        // No tiene /storage, agregarlo
                                         urlFoto = '/storage/' + (rutaFoto.startsWith('/') ? rutaFoto.substring(1) : rutaFoto);
                                     }
                                     
-                                    // Si tiene ID, agregar botón de borrado con endpoint
                                     const btnBorrar = foto.id 
                                         ? `<button type="button" onclick="borrarImagenTela(${foto.id}, this)" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 14px;" title="Eliminar imagen de tela">✕</button>`
                                         : `<button type="button" onclick="this.closest('div').remove()" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 14px;" title="Eliminar imagen de tela">✕</button>`;
@@ -701,7 +706,6 @@ function cargarBorrador(cotizacion) {
                                     
                                     telasContainer.appendChild(fotoDiv);
                                     
-                                    // 📌 IMPORTANTE: Agregar a window.imagenesEnMemoria para que se envíe al hacer click en ENVIAR
                                     if (foto.id && window.imagenesEnMemoria && window.imagenesEnMemoria.telaConIndice) {
                                         window.imagenesEnMemoria.telaConIndice.push({
                                             prendaIndex: prendaIndexActual,
@@ -718,21 +722,10 @@ function cargarBorrador(cotizacion) {
                                 console.log('⚠️ Contenedor .foto-tela-preview no encontrado');
                             }
                         }, 500);
-                    } else {
-                        console.log('⚠️ No hay fotos de telas disponibles o prenda.telaFotos no existe');
                     }
-                } else if (intento < 5) {
-                    console.log('⏳ Producto card no encontrado, reintentando...');
-                    setTimeout(() => intentarCargar(intento + 1), 200);
-                }
             };
             
             setTimeout(() => intentarCargar(), 500);
-            
-            // TODO: Agregar carga de fotos de prenda y telas (implementar después cuando sea necesario)
-            // Esto requeriría una API para recuperar fotos o guardarlas en memoria
-            console.log('📸 Fotos de prenda:', prenda.fotos ? prenda.fotos.length : 0);
-            console.log('🧵 Fotos de telas:', prenda.tela_fotos ? prenda.tela_fotos.length : 0);
         });
     } else {
         console.log('⚠️ No hay prendas/productos para cargar o están en formato no soportado:', {prendas, tipo: typeof prendas});
