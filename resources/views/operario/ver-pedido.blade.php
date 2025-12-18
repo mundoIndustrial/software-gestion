@@ -1227,8 +1227,9 @@
             return;
         }
         
-        const apiUrl = '/operario/api/pedido/' + numeroPedido;
-        console.log('📝 URL API:', apiUrl);
+        // ✅ USAR EL MISMO ENDPOINT QUE ASESORES: /registros/{numeroPedido}
+        const apiUrl = '/registros/' + numeroPedido;
+        console.log('📝 URL API (mismo que asesores):', apiUrl);
         
         fetch(apiUrl)
             .then(function(response) {
@@ -1240,23 +1241,25 @@
             })
             .then(function(data) {
                 console.log('✅ Datos del API recibidos:', data);
+                console.log('🔍 DEBUG - data.descripcion_prendas:', data.descripcion_prendas);
                 console.log('🔍 DEBUG - data.prendas:', data.prendas);
-                console.log('🔍 DEBUG - data.prendas[0]:', data.prendas?.[0]);
+                console.log('🔍 DEBUG - data.prendas?.length:', data.prendas?.length);
                 
+                // ✅ USAR LOS DATOS DIRECTAMENTE DEL CONTROLADOR (igual que asesores)
                 const pedidoData = {
-                    fecha: data.fecha_creacion || new Date().toISOString().split('T')[0],
+                    fecha: data.fecha_de_creacion_de_orden || data.fecha_creacion || new Date().toISOString().split('T')[0],
                     asesora: data.asesora || 'N/A',
-                    formaPago: data.forma_pago || 'N/A',
-                    prenda: data.descripcion_prendas || 'N/A',
+                    formaPago: data.forma_de_pago || 'N/A',
                     cliente: data.cliente || 'N/A',
                     numeroPedido: data.numero_pedido || numeroPedido,
-                    encargado: data.encargado || 'N/A',
-                    prendasEntregadas: (data.cantidad || 0) + '/' + (data.cantidad || 0),
-                    descripcion: data.descripcion_prendas || 'N/A',
+                    encargado: data.encargado_orden || 'N/A',
+                    prendasEntregadas: (data.total_entregado || 0) + '/' + (data.cantidad_total || data.cantidad || 0),
+                    descripcion: data.descripcion_prendas || '',
                     prendas: data.prendas || []
                 };
                 
                 console.log('📦 Datos reformateados:', pedidoData);
+                console.log('📋 descripcion_prendas disponible:', !!pedidoData.descripcion);
                 
                 if (window.llenarReciboCosturaMobile) {
                     console.log('🎨 Llamando a llenarReciboCosturaMobile...');
@@ -1266,9 +1269,37 @@
                     console.error('❌ Función llenarReciboCosturaMobile NO encontrada');
                 }
                 
-                // ===== CARGAR FOTOS =====
-                console.log('📸 Fotos disponibles en API:', data.fotos);
-                llenarFotos(data.fotos || []);
+                // ===== CARGAR FOTOS DESDE ENDPOINT DE IMÁGENES (igual que asesores) =====
+                console.log('📸 Cargando fotos desde /registros/' + numeroPedido + '/images');
+                fetch('/registros/' + numeroPedido + '/images')
+                    .then(function(response) {
+                        if (!response.ok) {
+                            throw new Error('Error al cargar imágenes: ' + response.status);
+                        }
+                        return response.json();
+                    })
+                    .then(function(imageData) {
+                        console.log('📸 Datos de imágenes recibidos:', imageData);
+                        
+                        // Extraer todas las URLs de imágenes de todas las prendas
+                        const todasLasFotos = [];
+                        if (imageData.prendas && imageData.prendas.length > 0) {
+                            imageData.prendas.forEach(function(prenda) {
+                                if (prenda.imagenes && prenda.imagenes.length > 0) {
+                                    prenda.imagenes.forEach(function(imagen) {
+                                        todasLasFotos.push(imagen.url);
+                                    });
+                                }
+                            });
+                        }
+                        
+                        console.log('📸 Total de fotos extraídas:', todasLasFotos.length);
+                        llenarFotos(todasLasFotos);
+                    })
+                    .catch(function(error) {
+                        console.error('❌ Error al cargar imágenes:', error);
+                        llenarFotos([]);
+                    });
             })
             .catch(function(error) {
                 console.error('❌ Error en fetch:', error);

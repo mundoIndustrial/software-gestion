@@ -229,8 +229,8 @@
     left: auto;
     right: auto;
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+    justify-content: center;
+    align-items: center;
     flex-direction: row;
     gap: 8px;
     margin-top: 6px;

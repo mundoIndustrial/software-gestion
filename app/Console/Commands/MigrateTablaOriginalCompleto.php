@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
 use App\Models\ProcesoPrenda;
@@ -189,80 +190,43 @@ class MigrateTablaOriginalCompleto extends Command
             // Desactivar checks de integridad referencial
             DB::statement('SET FOREIGN_KEY_CHECKS=0');
             
-            // Obtener números de pedidos CON cotizacion_id (ESTOS NO SE TOCAN)
-            $numerosPedidosConCotizacion = DB::table('pedidos_produccion')
-                ->whereNotNull('cotizacion_id')
-                ->pluck('numero_pedido')
-                ->toArray();
+            // ELIMINAR TODO - Limpieza completa
+            $this->warn("   ⚠️  LIMPIANDO TODOS LOS DATOS EXISTENTES...");
             
-            $this->line("   ⚠️  Pedidos con cotizacion_id encontrados: " . count($numerosPedidosConCotizacion) . " (NO serán tocados)");
-            
-            // ORDEN IMPORTANTE: Primero eliminar PROCESOS, luego PRENDAS, luego PEDIDOS
-            
-            // 1. Eliminar procesos SOLO de pedidos SIN cotizacion_id
+            // 1. Eliminar TODOS los procesos
             try {
-                if (!empty($numerosPedidosConCotizacion)) {
-                    $countProc = DB::table('procesos_prenda')
-                        ->whereNotIn('numero_pedido', $numerosPedidosConCotizacion)
-                        ->count();
-                    DB::table('procesos_prenda')
-                        ->whereNotIn('numero_pedido', $numerosPedidosConCotizacion)
-                        ->delete();
-                    $this->line("   ✓ Procesos eliminados: $countProc");
-                } else {
-                    $countProc = DB::table('procesos_prenda')->count();
-                    DB::table('procesos_prenda')->truncate();
-                    $this->line("   ✓ Procesos eliminados: $countProc");
-                }
+                $countProc = DB::table('procesos_prenda')->count();
+                DB::table('procesos_prenda')->truncate();
+                $this->line("   ✓ Procesos eliminados: $countProc");
             } catch (\Exception $e) {
                 $this->line("   ⚠️  Error eliminando procesos: " . $e->getMessage());
             }
             
-            // 2. Eliminar prendas SOLO de pedidos SIN cotizacion_id
-            $idsConCotizacion = DB::table('pedidos_produccion')
-                ->whereNotNull('cotizacion_id')
-                ->pluck('id')
-                ->toArray();
-            
+            // 1b. Eliminar historial de procesos
             try {
-                // Obtener numeros_pedido de pedidos con cotizacion
-                $numerosPedidosConCotizacion = DB::table('pedidos_produccion')
-                    ->whereNotNull('cotizacion_id')
-                    ->pluck('numero_pedido')
-                    ->toArray();
-                
-                if (!empty($numerosPedidosConCotizacion)) {
-                    $countPren = DB::table('prendas_pedido')
-                        ->whereNotIn('numero_pedido', $numerosPedidosConCotizacion)
-                        ->count();
-                    DB::table('prendas_pedido')
-                        ->whereNotIn('numero_pedido', $numerosPedidosConCotizacion)
-                        ->delete();
-                    $this->line("   ✓ Prendas eliminadas: $countPren");
-                } else {
-                    $countPren = DB::table('prendas_pedido')->count();
-                    DB::table('prendas_pedido')->truncate();
-                    $this->line("   ✓ Prendas eliminadas: $countPren");
+                if (Schema::hasTable('procesos_historial')) {
+                    $countHist = DB::table('procesos_historial')->count();
+                    DB::table('procesos_historial')->truncate();
+                    $this->line("   ✓ Historial de procesos eliminado: $countHist");
                 }
+            } catch (\Exception $e) {
+                $this->line("   ⚠️  Error eliminando historial: " . $e->getMessage());
+            }
+            
+            // 2. Eliminar TODAS las prendas
+            try {
+                $countPren = DB::table('prendas_pedido')->count();
+                DB::table('prendas_pedido')->truncate();
+                $this->line("   ✓ Prendas eliminadas: $countPren");
             } catch (\Exception $e) {
                 $this->line("   ⚠️  Error eliminando prendas: " . $e->getMessage());
             }
             
-            // 3. Eliminar pedidos SOLO si NO tienen cotizacion_id
+            // 3. Eliminar TODOS los pedidos
             try {
-                if (!empty($idsConCotizacion)) {
-                    $countPed = DB::table('pedidos_produccion')
-                        ->whereNull('cotizacion_id')
-                        ->count();
-                    DB::table('pedidos_produccion')
-                        ->whereNull('cotizacion_id')
-                        ->delete();
-                    $this->line("   ✓ Pedidos eliminados (sin cotizacion): $countPed");
-                } else {
-                    $countPed = DB::table('pedidos_produccion')->count();
-                    DB::table('pedidos_produccion')->truncate();
-                    $this->line("   ✓ Pedidos eliminados: $countPed");
-                }
+                $countPed = DB::table('pedidos_produccion')->count();
+                DB::table('pedidos_produccion')->truncate();
+                $this->line("   ✓ Pedidos eliminados: $countPed");
             } catch (\Exception $e) {
                 $this->line("   ⚠️  Error eliminando pedidos: " . $e->getMessage());
             }
@@ -270,7 +234,7 @@ class MigrateTablaOriginalCompleto extends Command
             // Reactivar checks de integridad referencial
             DB::statement('SET FOREIGN_KEY_CHECKS=1');
         } else {
-            $this->line("   [DRY-RUN] Se limpiarían procesos, prendas y pedidos (excepto los con cotizacion_id)");
+            $this->line("   [DRY-RUN] Se limpiarían TODOS los procesos, prendas y pedidos");
         }
         $this->newLine();
     }
@@ -387,26 +351,12 @@ class MigrateTablaOriginalCompleto extends Command
         $bar = $this->output->createProgressBar($pedidosOriginales->count());
         $bar->start();
 
-        $pedidosSaltados = 0;
-
         foreach ($pedidosOriginales as $pedidoOrig) {
             try {
-                // VERIFICAR: ¿Este pedido YA tiene cotizacion_id?
-                $pedidoExistente = PedidoProduccion::where('numero_pedido', $pedidoOrig->numero_pedido)->first();
-                
-                if ($pedidoExistente && $pedidoExistente->cotizacion_id !== null) {
-                    // ⚠️ SALTAR: Este pedido ya tiene cotizacion_id, no tocarlo
-                    $pedidosSaltados++;
-                    $bar->advance();
-                    continue;
-                }
-
                 $asesorId = $this->mapeoAsesoras[$pedidoOrig->asesora] ?? null;
                 $clienteId = $this->mapeoClientes[$pedidoOrig->cliente] ?? null;
 
                 if (!$dryRun) {
-                    // Los pedidos SIN cotizacion_id fueron eliminados en limpiarDatos()
-                    // Así que siempre CREAMOS nuevos aquí
                     PedidoProduccion::create([
                         'numero_pedido' => $pedidoOrig->numero_pedido,
                         'asesor_id' => $asesorId,
@@ -432,10 +382,7 @@ class MigrateTablaOriginalCompleto extends Command
 
         $bar->finish();
         $this->newLine();
-        $this->line("   Pedidos migrados: {$this->stats['pedidos_migrados']}");
-        if ($pedidosSaltados > 0) {
-            $this->line("   ⚠️  Pedidos saltados (con cotizacion_id): {$pedidosSaltados}");
-        }
+        $this->line("   ✅ Pedidos migrados: {$this->stats['pedidos_migrados']}");
         $this->newLine();
     }
 
@@ -466,7 +413,6 @@ class MigrateTablaOriginalCompleto extends Command
             try {
                 // VALIDAR: ¿Tiene nombre_prenda?
                 if (empty(trim($prenda->nombre_prenda ?? ''))) {
-                    // ⚠️ SALTAR: Prenda sin nombre
                     $prendasSaltadas++;
                     $bar->advance();
                     continue;
@@ -475,14 +421,6 @@ class MigrateTablaOriginalCompleto extends Command
                 $pedido = PedidoProduccion::where('numero_pedido', $prenda->pedido)->first();
                 
                 if (!$pedido) {
-                    $bar->advance();
-                    continue;
-                }
-
-                // VERIFICAR: ¿Este pedido tiene cotizacion_id?
-                if ($pedido->cotizacion_id !== null) {
-                    // ⚠️ SALTAR: Este pedido tiene cotizacion_id
-                    $prendasSaltadas++;
                     $bar->advance();
                     continue;
                 }
@@ -565,18 +503,8 @@ class MigrateTablaOriginalCompleto extends Command
         $bar = $this->output->createProgressBar($pedidos->count());
         $bar->start();
 
-        $procesos_saltados = 0;
-
         foreach ($pedidos as $pedido) {
             try {
-                // VERIFICAR: ¿Este pedido tiene cotizacion_id?
-                if ($pedido->cotizacion_id !== null) {
-                    // ⚠️ SALTAR: Este pedido tiene cotizacion_id
-                    $procesos_saltados++;
-                    $bar->advance();
-                    continue;
-                }
-
                 $pedidoOriginal = DB::table('tabla_original')
                     ->where('pedido', $pedido->numero_pedido)
                     ->first();
@@ -644,10 +572,7 @@ class MigrateTablaOriginalCompleto extends Command
 
         $bar->finish();
         $this->newLine();
-        $this->line("   Procesos migrados: {$this->stats['procesos_migrados']}");
-        if ($procesos_saltados > 0) {
-            $this->line("   ⚠️  Procesos saltados (pedido con cotizacion_id): {$procesos_saltados}");
-        }
+        $this->line("   ✅ Procesos migrados: {$this->stats['procesos_migrados']}");
         $this->newLine();
     }
 

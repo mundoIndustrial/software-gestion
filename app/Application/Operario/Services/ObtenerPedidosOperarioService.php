@@ -59,17 +59,74 @@ class ObtenerPedidosOperarioService
      * Filtra pedidos que:
      * 1. Tengan área "Costura" EN pedidos_produccion
      * 2. Y tengan proceso Costura con encargado "Ramiro"
+     * 3. Y estén en estado "En Ejecución" (campo estado del pedido)
      */
     private function obtenerPedidosCosturaReflectivo(User $usuario): ObtenerPedidosOperarioDTO
     {
+        \Log::info('=== INICIO obtenerPedidosCosturaReflectivo ===');
+        
         $pedidos = PedidoProduccion::where('area', 'Costura')
+            ->where('estado', 'En Ejecución')
             ->with(['prendas'])
+            ->orderBy('fecha_de_creacion_de_orden', 'desc')
             ->orderBy('created_at', 'desc')
-            ->get()
-            ->filter(function ($pedido) {
-                // Verificar que tenga proceso Costura con Ramiro
-                return $this->tieneProcesoRamiro($pedido);
-            });
+            ->get();
+        
+        \Log::info('Pedidos ANTES del filtro Ramiro:', [
+            'total' => $pedidos->count(),
+            'pedidos' => $pedidos->map(fn($p) => [
+                'numero' => $p->numero_pedido,
+                'fecha_orden' => $p->fecha_de_creacion_de_orden?->format('Y-m-d H:i:s'),
+                'created_at' => $p->created_at?->format('Y-m-d H:i:s'),
+            ])->toArray()
+        ]);
+        
+        $pedidos = $pedidos->filter(function ($pedido) {
+            // Verificar que tenga proceso Costura con Ramiro
+            return $this->tieneProcesoRamiro($pedido);
+        });
+        
+        \Log::info('Pedidos DESPUÉS del filtro Ramiro (antes de sortByDesc):', [
+            'total' => $pedidos->count(),
+            'pedidos' => $pedidos->map(fn($p) => [
+                'numero' => $p->numero_pedido,
+                'fecha_orden' => $p->fecha_de_creacion_de_orden?->format('Y-m-d H:i:s'),
+                'created_at' => $p->created_at?->format('Y-m-d H:i:s'),
+            ])->toArray()
+        ]);
+        
+        $pedidos = $pedidos->sortByDesc(function ($pedido) {
+            // Obtener fecha de inicio del proceso en Costura (sin filtrar por estado)
+            $procesoArea = \App\Models\ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
+                ->where('proceso', 'Costura')
+                ->where('encargado', 'Ramiro')
+                ->orderBy('fecha_inicio', 'desc')
+                ->first();
+            
+            $fechaOrden = $procesoArea?->fecha_inicio ?? $pedido->fecha_de_creacion_de_orden ?? $pedido->created_at;
+            
+            \Log::info("Ordenando pedido {$pedido->numero_pedido}: fecha_inicio = " . ($procesoArea?->fecha_inicio?->format('Y-m-d H:i:s') ?? 'null') . ", usando: " . ($fechaOrden ? $fechaOrden->format('Y-m-d H:i:s') : 'null'));
+            
+            return $fechaOrden;
+        })->values();
+        
+        \Log::info('Pedidos DESPUÉS de sortByDesc:', [
+            'total' => $pedidos->count(),
+            'pedidos' => $pedidos->map(function($p) {
+                $procesoArea = \App\Models\ProcesoPrenda::where('numero_pedido', $p->numero_pedido)
+                    ->where('proceso', 'Costura')
+                    ->where('encargado', 'Ramiro')
+                    ->orderBy('fecha_inicio', 'desc')
+                    ->first();
+                
+                return [
+                    'numero' => $p->numero_pedido,
+                    'fecha_orden' => $p->fecha_de_creacion_de_orden?->format('Y-m-d H:i:s'),
+                    'fecha_inicio_proceso' => $procesoArea?->fecha_inicio?->format('Y-m-d H:i:s'),
+                    'created_at' => $p->created_at?->format('Y-m-d H:i:s'),
+                ];
+            })->toArray()
+        ]);
 
         // Contar estados
         $pedidosEnProceso = $pedidos->where('estado', 'En Ejecución')->count();
@@ -234,8 +291,9 @@ class ObtenerPedidosOperarioService
                 'asesora' => $pedido->asesora?->name ?? 'Sin asesora',
                 'forma_pago' => $pedido->forma_de_pago,
                 'novedades' => $pedido->novedades ?? '-',
+                'created_at' => $pedido->created_at,
             ];
-        })->toArray();
+        })->values()->toArray();
     }
 
     /**
