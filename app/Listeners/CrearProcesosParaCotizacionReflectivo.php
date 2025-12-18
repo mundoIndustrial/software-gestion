@@ -11,8 +11,8 @@ use Illuminate\Support\Facades\Log;
  * Listener: CrearProcesosParaCotizacionReflectivo
  * 
  * Cuando se crea un pedido desde una cotización tipo REFLECTIVO:
- * - Crea automáticamente el proceso "creacion_de_orden"
- * - Crea automáticamente el proceso "costura" con encargado "Ramiro"
+ * - Crea automáticamente el proceso "creacion_de_orden" (estado: Pendiente)
+ * - Crea automáticamente el proceso "Costura" asignado a Ramiro (estado: En Ejecución)
  * - El pedido salta la fase de INSUMOS y va directo a COSTURA
  */
 class CrearProcesosParaCotizacionReflectivo
@@ -90,8 +90,8 @@ class CrearProcesosParaCotizacionReflectivo
     /**
      * Crear procesos automáticamente para pedido REFLECTIVO
      * 
-     * 1. Crea proceso "creacion_de_orden"
-     * 2. Crea proceso "costura" con encargado "Ramiro"
+     * 1. Crea proceso "creacion_de_orden" (estado: Pendiente)
+     * 2. Crea proceso "Costura" asignado a Ramiro (estado: En Ejecución)
      */
     private function crearProcesosReflectivo($pedido): void
     {
@@ -129,9 +129,8 @@ class CrearProcesosParaCotizacionReflectivo
                     'nombre_prenda' => $prenda->nombre_prenda,
                     'proceso' => 'creacion_de_orden',
                     'encargado' => null,
-                    'estado_proceso' => 'Completado',
+                    'estado_proceso' => 'Pendiente',
                     'fecha_inicio' => now(),
-                    'fecha_final' => now(),
                     'observaciones' => 'Proceso automático para cotización reflectivo',
                 ]);
 

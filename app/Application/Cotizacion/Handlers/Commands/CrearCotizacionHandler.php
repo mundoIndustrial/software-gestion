@@ -4,6 +4,7 @@ namespace App\Application\Cotizacion\Handlers\Commands;
 
 use App\Application\Cotizacion\Commands\CrearCotizacionCommand;
 use App\Application\Cotizacion\DTOs\CotizacionDTO;
+use App\Application\Cotizacion\Services\GenerarNumeroCotizacionService;
 use App\Application\Services\CotizacionPrendaService;
 use App\Domain\Cotizacion\Entities\Cotizacion;
 use App\Domain\Cotizacion\Repositories\CotizacionRepositoryInterface;
@@ -17,12 +18,14 @@ use Illuminate\Support\Facades\Log;
  * CrearCotizacionHandler - Handler para crear cotización
  *
  * Orquesta la creación de una nueva cotización y guarda prendas en tablas normalizadas
+ * Maneja la generación de números únicos y consecutivos con protección ante concurrencia
  */
 final class CrearCotizacionHandler
 {
     public function __construct(
         private readonly CotizacionRepositoryInterface $repository,
-        private readonly CotizacionPrendaService $prendaService
+        private readonly CotizacionPrendaService $prendaService,
+        private readonly GenerarNumeroCotizacionService $generarNumeroCotizacionService
     ) {
     }
 
@@ -56,8 +59,14 @@ final class CrearCotizacionHandler
                     $datos->especificaciones ?? []
                 );
             } else {
-                // Para enviadas, usar el número del DTO si existe, sino generar
-                $numeroCotizacion = $datos->numeroCotizacion ?? ($this->repository->countByUserId($usuarioId) + 1);
+                // Para enviadas, generar número único con lock
+                // Esto evita race conditions cuando dos asesores crean simultáneamente
+                if (!$datos->numeroCotizacion) {
+                    $numeroCotizacion = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId);
+                } else {
+                    $numeroCotizacion = $datos->numeroCotizacion;
+                }
+
                 $cotizacion = Cotizacion::crearEnviada(
                     $usuarioId,
                     $tipo,

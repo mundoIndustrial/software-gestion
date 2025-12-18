@@ -26,6 +26,14 @@ class AppServiceProvider extends ServiceProvider
             OperarioRepository::class,
             OperarioRepositoryImpl::class
         );
+
+        // Registrar el servicio de generación de números de cotización
+        $this->app->singleton(
+            \App\Application\Cotizacion\Services\GenerarNumeroCotizacionService::class,
+            function ($app) {
+                return new \App\Application\Cotizacion\Services\GenerarNumeroCotizacionService();
+            }
+        );
     }
 
     /**
