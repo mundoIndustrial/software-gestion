@@ -5,6 +5,7 @@ namespace App\Infrastructure\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Cotizacion;
 use App\Models\NumeroSecuencia;
+use App\Application\Cotizacion\Services\GenerarNumeroCotizacionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -12,6 +13,11 @@ use Illuminate\Support\Facades\DB;
 
 class CotizacionPrendaController extends Controller
 {
+    public function __construct(
+        private readonly GenerarNumeroCotizacionService $generarNumeroCotizacionService
+    ) {
+    }
+
     /**
      * Mostrar formulario de crear cotización de prenda
      */
@@ -52,7 +58,8 @@ class CotizacionPrendaController extends Controller
                 // Generar número SINCRONICAMENTE si se envía
                 $numeroCotizacion = null;
                 if (!$esBorrador) {
-                    $numeroCotizacion = $this->generarNumeroCotizacion('cotizaciones_prenda');
+                    $usuarioId = Auth::id();
+                    $numeroCotizacion = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId);
                     Log::info('✅ Número generado sincronicamente', [
                         'numero' => $numeroCotizacion
                     ]);
@@ -145,39 +152,7 @@ class CotizacionPrendaController extends Controller
      * @param string $tipo tipo de secuencia (cotizaciones_prenda, cotizaciones_bordado, etc)
      * @return string número generado
      */
-    private function generarNumeroCotizacion($tipo = 'cotizaciones_prenda')
-    {
-        // Usar secuencia universal para TODAS las cotizaciones
-        $secuencia = DB::table('numero_secuencias')
-            ->lockForUpdate()
-            ->where('tipo', 'cotizaciones_universal')
-            ->first();
-
-        if (!$secuencia) {
-            throw new \Exception("Secuencia universal 'cotizaciones_universal' no encontrada en numero_secuencias");
-        }
-
-        // Obtener próximo número
-        $siguiente = $secuencia->siguiente;
-
-        // Incrementar y guardar
-        DB::table('numero_secuencias')
-            ->where('tipo', 'cotizaciones_universal')
-            ->update(['siguiente' => $siguiente + 1]);
-
-        // Generar formato: COT-000001
-        $numero = 'COT-' . str_pad($siguiente, 6, '0', STR_PAD_LEFT);
-
-        Log::debug('🔐 Número generado con lock universal', [
-            'tipo_recibido' => $tipo,
-            'numero' => $numero,
-            'secuencia_anterior' => $siguiente,
-            'secuencia_nueva' => $siguiente + 1
-        ]);
-
-        return $numero;
-    }
-
+    
     /**
      * Listar cotizaciones de prenda
      */

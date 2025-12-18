@@ -3,6 +3,7 @@
 namespace App\Infrastructure\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Application\Cotizacion\Services\GenerarNumeroCotizacionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +14,11 @@ use App\Models\NumeroSecuencia;
 
 class CotizacionBordadoController extends Controller
 {
+    public function __construct(
+        private readonly GenerarNumeroCotizacionService $generarNumeroCotizacionService
+    ) {
+    }
+
     /**
      * Mostrar formulario de crear cotización de bordado
      */
@@ -150,7 +156,8 @@ class CotizacionBordadoController extends Controller
                 // Si es envío, generar número y cambiar estado
                 $numeroCotizacion = null;
                 if ($esEnvio) {
-                    $numeroCotizacion = $this->generarNumeroCotizacion('cotizaciones_bordado');
+                    $usuarioId = Auth::id();
+                    $numeroCotizacion = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId);
                     Log::info('✅ Número generado para envío', ['numero' => $numeroCotizacion, 'cotizacion_id' => $id]);
                 }
 
@@ -424,7 +431,8 @@ class CotizacionBordadoController extends Controller
                 // Generar número SINCRONICAMENTE si se envía
                 $numeroCotizacion = null;
                 if (!$esBorrador) {
-                    $numeroCotizacion = $this->generarNumeroCotizacion('cotizaciones_bordado');
+                    $usuarioId = Auth::id();
+                    $numeroCotizacion = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId);
                     Log::info('✅ Número generado sincronicamente', [
                         'numero' => $numeroCotizacion
                     ]);
@@ -650,36 +658,7 @@ class CotizacionBordadoController extends Controller
      * @param string $tipo tipo de secuencia (cotizaciones_prenda, cotizaciones_bordado, etc)
      * @return string número generado
      */
-    private function generarNumeroCotizacion($tipo = 'cotizaciones_bordado')
-    {
-        // Usar secuencia universal para TODAS las cotizaciones
-        $secuencia = DB::table('numero_secuencias')
-            ->lockForUpdate()
-            ->where('tipo', 'cotizaciones_universal')
-            ->first();
-
-        if (!$secuencia) {
-            throw new \Exception("Secuencia universal 'cotizaciones_universal' no encontrada en numero_secuencias");
-        }
-
-        $siguiente = $secuencia->siguiente;
-        
-        DB::table('numero_secuencias')
-            ->where('tipo', 'cotizaciones_universal')
-            ->update(['siguiente' => $siguiente + 1]);
-
-        $numero = 'COT-' . str_pad($siguiente, 6, '0', STR_PAD_LEFT);
-
-        Log::debug('🔐 Número generado con lock universal', [
-            'tipo_recibido' => $tipo,
-            'numero' => $numero,
-            'secuencia_anterior' => $siguiente,
-            'secuencia_nueva' => $siguiente + 1
-        ]);
-
-        return $numero;
-    }
-
+    
     /**
      * Listar cotizaciones de bordado
      */

@@ -1510,7 +1510,8 @@ final class CotizacionController extends Controller
                 $estado = $esBorrador ? 'BORRADOR' : 'ENVIADA_CONTADOR';
 
                 // Generar número de cotización SIEMPRE (para poder identificar el borrador luego)
-                $numeroCotizacion = $this->generarNumeroCotizacion();
+                $usuarioId = Auth::id();
+                $numeroCotizacion = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId);
 
                 // Crear cotización base sin prendas (tipo RF = Reflectivo)
                 $cotizacion = \App\Models\Cotizacion::create([
@@ -1865,7 +1866,7 @@ final class CotizacionController extends Controller
                     'fecha_inicio' => $validated['fecha'],
                     'es_borrador' => $esBorrador,
                     'estado' => $estado,
-                    'numero_cotizacion' => !$esBorrador && !$cotizacion->numero_cotizacion ? $this->generarNumeroCotizacion() : $cotizacion->numero_cotizacion,
+                    'numero_cotizacion' => !$esBorrador && !$cotizacion->numero_cotizacion ? $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado(Auth::id()) : $cotizacion->numero_cotizacion,
                     'fecha_envio' => !$esBorrador && !$cotizacion->fecha_envio ? \Carbon\Carbon::now('America/Bogota') : $cotizacion->fecha_envio,
                     'especificaciones' => $especificacionesArray,
                     'tipo_venta' => $validated['tipo_venta_reflectivo'] ?? $cotizacion->tipo_venta ?? 'M',
@@ -2083,39 +2084,7 @@ final class CotizacionController extends Controller
     /**
      * Generar número de cotización único usando secuencia universal
      */
-    private function generarNumeroCotizacion(): string
-    {
-        // ✅ CORRECTO: USA LOCK para evitar race conditions y consigue número universal
-        $secuencia = \Illuminate\Support\Facades\DB::table('numero_secuencias')
-            ->lockForUpdate()
-            ->where('tipo', 'cotizaciones_universal')
-            ->first();
-
-        if (!$secuencia) {
-            throw new \Exception("Secuencia universal 'cotizaciones_universal' no encontrada en numero_secuencias. Ejecuta: INSERT INTO numero_secuencias (tipo, siguiente) VALUES ('cotizaciones_universal', 1)");
-        }
-
-        $siguiente = $secuencia->siguiente;
-        
-        // ✅ CORRECTO: Actualiza de forma atómica
-        \Illuminate\Support\Facades\DB::table('numero_secuencias')
-            ->where('tipo', 'cotizaciones_universal')
-            ->update(['siguiente' => $siguiente + 1]);
-
-        // ✅ CORRECTO: Usa padding de 6 dígitos para formato consistente COT-000001
-        $numero = 'COT-' . str_pad($siguiente, 6, '0', STR_PAD_LEFT);
-
-        Log::debug('🔐 Número cotización RF generado con lock universal', [
-            'tipo' => 'RF',
-            'numero' => $numero,
-            'secuencia_anterior' => $siguiente,
-            'secuencia_nueva' => $siguiente + 1,
-            'asesor_id' => Auth::id()
-        ]);
-
-        return $numero;
-    }
-
+    
     /**
      * Obtener ID de tipo de cotización por código
      */
