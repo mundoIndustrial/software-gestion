@@ -18,6 +18,7 @@ class PrendaCot extends Model
         'descripcion',
         'cantidad',
         'texto_personalizado_tallas',
+        'genero',  // ✅ AGREGAR GÉNERO
     ];
 
     protected $casts = [
@@ -70,6 +71,14 @@ class PrendaCot extends Model
     public function variantes(): HasMany
     {
         return $this->hasMany(PrendaVarianteCot::class, 'prenda_cot_id');
+    }
+
+    /**
+     * Relación: Una prenda puede tener información de reflectivo
+     */
+    public function reflectivo(): HasMany
+    {
+        return $this->hasMany(ReflectivoCotizacion::class, 'prenda_cot_id');
     }
 
     /**

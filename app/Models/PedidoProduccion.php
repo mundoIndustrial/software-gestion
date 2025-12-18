@@ -71,9 +71,24 @@ class PedidoProduccion extends Model
 
         // Disparar evento cuando se crea un pedido
         static::created(function ($model) {
+            \Log::info('🎯 [PedidoProduccion.boot] Hook created disparado', [
+                'pedido_id' => $model->id,
+                'numero_pedido' => $model->numero_pedido,
+            ]);
+            
             $asesor = $model->asesora;
+            
             if ($asesor) {
+                \Log::info('📤 [PedidoProduccion.boot] Disparando evento PedidoCreado', [
+                    'pedido_id' => $model->id,
+                    'asesor_id' => $asesor->id,
+                ]);
                 event(new PedidoCreado($model, $asesor));
+            } else {
+                \Log::warn('⚠️ [PedidoProduccion.boot] Asesor no encontrado para pedido', [
+                    'pedido_id' => $model->id,
+                    'asesor_id' => $model->asesor_id,
+                ]);
             }
         });
 

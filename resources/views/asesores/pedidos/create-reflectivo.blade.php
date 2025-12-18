@@ -1232,6 +1232,93 @@ function abrirModalEspecificaciones() {
                         }
                     });
                 }
+                
+                // Procesar SE HA VENDIDO
+                if (datos.se_ha_vendido && Array.isArray(datos.se_ha_vendido)) {
+                    console.log('📊 Procesando se_ha_vendido:', datos.se_ha_vendido);
+                    const tbodyVendido = document.querySelector('#tbody_vendido');
+                    if (tbodyVendido) {
+                        datos.se_ha_vendido.forEach((vendido) => {
+                            const firstRow = tbodyVendido.querySelector('tr');
+                            if (firstRow) {
+                                const valorInput = firstRow.querySelector('input[name*="vendido_item"]');
+                                const checkbox = firstRow.querySelector('input[type="checkbox"][name*="vendido"]');
+                                const obsInput = firstRow.querySelector('input[name*="vendido_obs"]');
+                                
+                                if (valorInput) {
+                                    valorInput.value = vendido.valor;
+                                    console.log(`  ✓ Valor se_ha_vendido cargado: "${vendido.valor}"`);
+                                }
+                                if (checkbox) {
+                                    checkbox.checked = true;
+                                    console.log(`  ✓ Checkbox se_ha_vendido marcado`);
+                                }
+                                if (obsInput) {
+                                    obsInput.value = vendido.observacion || '';
+                                    console.log(`  ✓ Observación se_ha_vendido cargada: "${vendido.observacion}"`);
+                                }
+                            }
+                        });
+                    }
+                }
+                
+                // Procesar ÚLTIMA VENTA
+                if (datos.ultima_venta && Array.isArray(datos.ultima_venta)) {
+                    console.log('💰 Procesando ultima_venta:', datos.ultima_venta);
+                    const tbodyUltimaVenta = document.querySelector('#tbody_ultima_venta');
+                    if (tbodyUltimaVenta) {
+                        datos.ultima_venta.forEach((ultimaVenta) => {
+                            const firstRow = tbodyUltimaVenta.querySelector('tr');
+                            if (firstRow) {
+                                const valorInput = firstRow.querySelector('input[name*="ultima_venta_item"]');
+                                const checkbox = firstRow.querySelector('input[type="checkbox"][name*="ultima_venta"]');
+                                const obsInput = firstRow.querySelector('input[name*="ultima_venta_obs"]');
+                                
+                                if (valorInput) {
+                                    valorInput.value = ultimaVenta.valor;
+                                    console.log(`  ✓ Valor ultima_venta cargado: "${ultimaVenta.valor}"`);
+                                }
+                                if (checkbox) {
+                                    checkbox.checked = true;
+                                    console.log(`  ✓ Checkbox ultima_venta marcado`);
+                                }
+                                if (obsInput) {
+                                    obsInput.value = ultimaVenta.observacion || '';
+                                    console.log(`  ✓ Observación ultima_venta cargada: "${ultimaVenta.observacion}"`);
+                                }
+                            }
+                        });
+                    }
+                }
+                
+                // Procesar FLETE
+                if (datos.flete && Array.isArray(datos.flete)) {
+                    console.log('🚚 Procesando flete:', datos.flete);
+                    const tbodyFlete = document.querySelector('#tbody_flete');
+                    if (tbodyFlete) {
+                        datos.flete.forEach((flete) => {
+                            const firstRow = tbodyFlete.querySelector('tr');
+                            if (firstRow) {
+                                const valorInput = firstRow.querySelector('input[name*="flete_item"]');
+                                const checkbox = firstRow.querySelector('input[type="checkbox"][name*="flete"]');
+                                const obsInput = firstRow.querySelector('input[name*="flete_obs"]');
+                                
+                                if (valorInput) {
+                                    valorInput.value = flete.valor;
+                                    console.log(`  ✓ Valor flete cargado: "${flete.valor}"`);
+                                }
+                                if (checkbox) {
+                                    checkbox.checked = true;
+                                    console.log(`  ✓ Checkbox flete marcado`);
+                                }
+                                if (obsInput) {
+                                    obsInput.value = flete.observacion || '';
+                                    console.log(`  ✓ Observación flete cargada: "${flete.observacion}"`);
+                                }
+                            }
+                        });
+                    }
+                }
             } else {
                 // FORMATO 2: Estructura tabla_orden[field] (anterior)
                 console.log('📋 Detectado FORMATO ANTERIOR - tabla_orden[field]');
@@ -1358,13 +1445,13 @@ function guardarEspecificacionesReflectivo() {
     
     // PROCESAR SE HA VENDIDO
     console.log('📊 Procesando SE HA VENDIDO...');
-    const tbodySeHaVendido = modal.querySelector('#tbody_se_ha_vendido');
+    const tbodySeHaVendido = modal.querySelector('#tbody_vendido');
     if (tbodySeHaVendido) {
         const rows = tbodySeHaVendido.querySelectorAll('tr');
         rows.forEach(row => {
-            const valorInput = row.querySelector('input[name*="se_ha_vendido_item"]');
-            const checkbox = row.querySelector('input[type="checkbox"][name*="se_ha_vendido"]');
-            const obsInput = row.querySelector('input[name*="se_ha_vendido_obs"]');
+            const valorInput = row.querySelector('input[name*="vendido_item"]');
+            const checkbox = row.querySelector('input[type="checkbox"][name*="tabla_orden[vendido]"]');
+            const obsInput = row.querySelector('input[name*="vendido_obs"]');
             
             if (valorInput && valorInput.value.trim() && checkbox && checkbox.checked) {
                 especificaciones.se_ha_vendido.push({
@@ -1619,29 +1706,59 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
         return;
     }
 
-    // Recopilar prendas del DOM
+    // ✅ RECOPILAR PRENDAS CON SUS TALLAS Y UBICACIONES (POR PRENDA)
     const prendas = [];
-    document.querySelectorAll('.producto-card').forEach((card) => {
-        const tipoPrenda = card.querySelector('input[name="productos_reflectivo[][tipo_prenda]"]')?.value.trim() || '';
-        const descripcion = card.querySelector('textarea[name="productos_reflectivo[][descripcion]"]')?.value.trim() || '';
+    document.querySelectorAll('.producto-card').forEach((prenda, index) => {
+        const tipo = prenda.querySelector('[name*="tipo_prenda"]')?.value || '';
+        const descripcion = prenda.querySelector('[name*="descripcion"]')?.value || '';
         
-        // Recopilar tallas de esta prenda
-        const tallasHidden = card.querySelector('.tallas-hidden-reflectivo');
-        const tallas = tallasHidden ? tallasHidden.value.split(',').map(t => t.trim()).filter(t => t) : [];
+        // ✅ RECOPILAR GÉNERO DE ESTA PRENDA
+        const genero = prenda.querySelector('.talla-genero-select-reflectivo')?.value || '';
         
-        console.log('📦 PRENDA RECOPILADA:', {
-            tipo: tipoPrenda,
-            descripcion: descripcion,
-            tallas: tallas,
-            tallasHiddenValue: tallasHidden?.value
+        // ✅ RECOPILAR TALLAS Y CANTIDADES
+        const tallas = [];
+        const cantidades = {};
+        prenda.querySelectorAll('.talla-seleccionada').forEach(tallaDiv => {
+            const tallaText = tallaDiv.textContent.trim();
+            if (tallaText) {
+                tallas.push(tallaText);
+                cantidades[tallaText] = 1; // Valor por defecto
+            }
         });
-        
-        if (tipoPrenda) {
-            prendas.push({
-                tipo: tipoPrenda,
-                descripcion: descripcion,
-                tallas: tallas
+
+        // ✅ RECOPILAR UBICACIONES DE ESTA PRENDA ESPECÍFICA
+        const ubicacionesDePrenda = [];
+        const ubicacionesContainer = prenda.querySelector('.ubicaciones-agregadas-reflectivo');
+        if (ubicacionesContainer) {
+            ubicacionesContainer.querySelectorAll('.ubicacion-item-reflectivo').forEach((item) => {
+                const nombreSpan = item.querySelector('.ubicacion-nombre-reflectivo');
+                const descripcionP = item.querySelector('.ubicacion-descripcion-reflectivo');
+                
+                if (nombreSpan && descripcionP) {
+                    const ubicacionText = nombreSpan.textContent.trim();
+                    const descripcionUbi = descripcionP.textContent.trim();
+                    
+                    if (ubicacionText && ubicacionText !== 'Sin descripción adicional') {
+                        ubicacionesDePrenda.push({
+                            ubicacion: ubicacionText,
+                            descripcion: descripcionUbi
+                        });
+                    }
+                }
             });
+        }
+
+        if (tipo.trim()) {
+            prendas.push({
+                tipo: tipo,
+                descripcion: descripcion,
+                tallas: tallas,
+                genero: genero,  // ✅ AGREGAR GÉNERO
+                cantidades: cantidades,  // ✅ AGREGAR CANTIDADES POR TALLA
+                ubicaciones: ubicacionesDePrenda  // ✅ Ubicaciones específicas de esta prenda
+            });
+            
+            console.log(`✅ Prenda ${index + 1}: ${tipo} - ${ubicacionesDePrenda.length} ubicaciones`);
         }
     });
 
@@ -1650,34 +1767,8 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
         return;
     }
 
-    // Recopilar ubicaciones del DOM usando las clases CSS
-    const ubicaciones = [];
-    const ubicacionesContainer = document.querySelector('.ubicaciones-agregadas-reflectivo');
-    if (ubicacionesContainer) {
-        // Buscar todos los items de ubicación usando la clase CSS
-        ubicacionesContainer.querySelectorAll('.ubicacion-item-reflectivo').forEach((item) => {
-            const nombreSpan = item.querySelector('.ubicacion-nombre-reflectivo');
-            const descripcionP = item.querySelector('.ubicacion-descripcion-reflectivo');
-            
-            if (nombreSpan && descripcionP) {
-                const ubicacionText = nombreSpan.textContent.trim();
-                const descripcion = descripcionP.textContent.trim();
-                
-                console.log('🔍 RECOPILANDO - Ubicación encontrada:', {
-                    ubicacion: ubicacionText,
-                    descripcion: descripcion
-                });
-                
-                if (ubicacionText && ubicacionText !== 'Sin descripción adicional') {
-                    ubicaciones.push({
-                        ubicacion: ubicacionText,
-                        descripcion: descripcion
-                    });
-                }
-            }
-        });
-        console.log('📦 Total de ubicaciones recopiladas:', ubicaciones.length);
-    }
+    // ✅ Las ubicaciones ya están incluidas en cada objeto de prenda
+    // Ya no necesitamos recopilarlas por separado
 
     const submitButton = e.submitter;
     const action = submitButton ? submitButton.value : 'borrador';
@@ -1701,24 +1792,26 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
     console.log('   tipo_venta:', document.getElementById('header-tipo-venta').value);
     console.log('   prendas completas:', JSON.stringify(prendas, null, 2));
     
-    formData.append('prendas', JSON.stringify(prendas)); // Enviar como JSON string
+    formData.append('prendas', JSON.stringify(prendas)); // ✅ Enviar prendas con ubicaciones incluidas
     formData.append('especificaciones', document.getElementById('especificaciones').value || '');
     formData.append('descripcion_reflectivo', document.getElementById('descripcion_reflectivo')?.value || 'Reflectivo');
-    formData.append('ubicaciones_reflectivo', JSON.stringify(ubicaciones)); // Enviar ubicaciones recopiladas
     formData.append('observaciones_generales', JSON.stringify([]));
 
-    // DEBUG: Log de ubicaciones que se van a enviar
-    console.log('🚀 ENVIAR FORMULARIO - Ubicaciones que se enviarán:');
-    console.log('   Cantidad:', ubicaciones.length);
-    console.log('   Data:', JSON.stringify(ubicaciones, null, 2));
-    console.log('   FormData value:', formData.get('ubicaciones_reflectivo'));
+    // DEBUG: Log de prendas con ubicaciones
+    console.log('🚀 ENVIAR FORMULARIO - Prendas con ubicaciones:');
+    prendas.forEach((p, i) => {
+        console.log(`   Prenda ${i + 1}: ${p.tipo} - ${p.ubicaciones.length} ubicaciones`);
+    });
 
-    // Agregar imágenes por prenda (si las hay)
-    document.querySelectorAll('.input-file-reflectivo').forEach((input, index) => {
-        if (input.files.length > 0) {
+    // ✅ AGREGAR IMÁGENES POR PRENDA CON SU ÍNDICE
+    document.querySelectorAll('.producto-card').forEach((prenda, prendaIndex) => {
+        const input = prenda.querySelector('.input-file-reflectivo');
+        if (input && input.files.length > 0) {
             Array.from(input.files).forEach((file) => {
-                formData.append('imagenes_reflectivo[]', file);
+                // Agregar imagen con índice de prenda
+                formData.append(`imagenes_reflectivo_prenda_${prendaIndex}[]`, file);
             });
+            console.log(`📸 Prenda ${prendaIndex}: ${input.files.length} imágenes agregadas`);
         }
     });
 
@@ -1746,10 +1839,11 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
                 fecha: fecha,
                 action: action,
                 tipo: 'RF',
+                tipo_venta_reflectivo: document.getElementById('header-tipo-venta').value,
                 prendas: prendas.length > 0 ? prendas : null,
                 especificaciones: document.getElementById('especificaciones').value || '',
                 descripcion_reflectivo: document.getElementById('descripcion_reflectivo')?.value || 'Reflectivo',
-                ubicaciones_reflectivo: ubicaciones.length > 0 ? ubicaciones : [],
+                // ✅ Ya no enviamos ubicaciones_reflectivo porque están incluidas en cada prenda
                 observaciones_generales: [],
                 imagenes_a_eliminar: fotosEliminadas.length > 0 ? fotosEliminadas : null
             };
@@ -2010,6 +2104,48 @@ document.addEventListener('DOMContentLoaded', function() {
                         console.log('    ✓ Descripción:', prenda.descripcion);
                     }
                     
+                    // ✅ CARGAR GÉNERO DE LA PRENDA
+                    const generoSelect = clone.querySelector('.talla-genero-select-reflectivo');
+                    if (generoSelect && prenda.genero) {
+                        generoSelect.value = prenda.genero;
+                        console.log('    ✓ Género:', prenda.genero);
+                    }
+                    
+                    // ✅ CARGAR TALLAS DE LA PRENDA
+                    if (prenda.tallas && prenda.tallas.length > 0) {
+                        console.log('    ✓ Tallas:', prenda.tallas);
+                        const prendaCard = clone;
+                        const tallasAgregadas = prendaCard.querySelector('.tallas-agregadas-reflectivo');
+                        const tallasHidden = prendaCard.querySelector('.tallas-hidden-reflectivo');
+                        const tallasSection = prendaCard.querySelector('.tallas-section-reflectivo');
+                        
+                        if (tallasAgregadas) {
+                            // Limpiar tallas previas si existen
+                            tallasAgregadas.innerHTML = '';
+                            
+                            // Agregar cada talla como tag
+                            prenda.tallas.forEach(talla => {
+                                const tag = document.createElement('div');
+                                tag.style.cssText = 'background: #0066cc; color: white; padding: 6px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600;';
+                                tag.innerHTML = `
+                                    <span>${talla}</span>
+                                    <button type="button" onclick="this.closest('div').remove(); actualizarTallasHiddenReflectivo(this.closest('.producto-card'))" style="background: none; border: none; color: white; cursor: pointer; font-size: 1rem; padding: 0; line-height: 1;">✕</button>
+                                `;
+                                tallasAgregadas.appendChild(tag);
+                            });
+                            
+                            // Actualizar hidden input
+                            if (tallasHidden) {
+                                tallasHidden.value = prenda.tallas.join(', ');
+                            }
+                            
+                            // Mostrar sección
+                            if (tallasSection) {
+                                tallasSection.style.display = 'block';
+                            }
+                        }
+                    }
+                    
                     // Cargar fotos
                     if (prenda.fotos && prenda.fotos.length > 0) {
                         console.log('    ✓ Fotos:', prenda.fotos.length);
@@ -2028,6 +2164,69 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     
                     contenedor.appendChild(clone);
+                    
+                    // ✅ CARGAR UBICACIONES DE ESTA PRENDA (después de agregar al DOM)
+                    if (prenda.reflectivo && prenda.reflectivo.ubicacion) {
+                        console.log('📍 Cargando ubicaciones para prenda', index + 1);
+                        const prendaCard = contenedor.lastElementChild;
+                        const ubicacionesContainer = prendaCard.querySelector('.ubicaciones-agregadas-reflectivo');
+                        
+                        if (ubicacionesContainer) {
+                            const ubicaciones = Array.isArray(prenda.reflectivo.ubicacion) 
+                                ? prenda.reflectivo.ubicacion 
+                                : (typeof prenda.reflectivo.ubicacion === 'string' ? JSON.parse(prenda.reflectivo.ubicacion) : []);
+                            
+                            ubicaciones.forEach(ubi => {
+                                if (ubi && ubi.ubicacion) {
+                                    const item = document.createElement('div');
+                                    item.className = 'ubicacion-item-reflectivo';
+                                    item.style.cssText = 'background: white; border: 2px solid #0ea5e9; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; width: 100%; box-shadow: 0 2px 4px rgba(14, 165, 233, 0.15); position: relative;';
+                                    
+                                    const header = document.createElement('div');
+                                    header.className = 'ubicacion-header-reflectivo';
+                                    header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; cursor: pointer;';
+                                    header.innerHTML = `
+                                        <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1;">
+                                            <span style="color: #0ea5e9; font-weight: 700; font-size: 1rem;">📍</span>
+                                            <span class="ubicacion-nombre-reflectivo" style="font-weight: 700; color: #1e40af; font-size: 0.95rem;">${ubi.ubicacion}</span>
+                                        </div>
+                                        <span style="color: #0ea5e9; font-size: 1.2rem; transition: transform 0.3s ease;" class="ubicacion-toggle">▼</span>
+                                    `;
+                                    
+                                    const body = document.createElement('div');
+                                    body.className = 'ubicacion-body-reflectivo';
+                                    body.style.cssText = 'display: block; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e2e8f0;';
+                                    body.innerHTML = `
+                                        <p style="margin: 0 0 0.5rem 0; color: #64748b; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px;">Descripción:</p>
+                                        <p class="ubicacion-descripcion-reflectivo" style="margin: 0; color: #334155; font-size: 0.9rem; line-height: 1.5;">${ubi.descripcion || 'Sin descripción adicional'}</p>
+                                    `;
+                                    
+                                    const deleteBtn = document.createElement('button');
+                                    deleteBtn.type = 'button';
+                                    deleteBtn.style.cssText = 'position: absolute; top: 0.5rem; right: 0.5rem; background: #ef4444; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: bold;';
+                                    deleteBtn.textContent = '×';
+                                    deleteBtn.onclick = (e) => {
+                                        e.stopPropagation();
+                                        item.remove();
+                                    };
+                                    
+                                    item.appendChild(header);
+                                    header.appendChild(deleteBtn);
+                                    item.appendChild(body);
+                                    
+                                    let expanded = true;
+                                    header.addEventListener('click', () => {
+                                        expanded = !expanded;
+                                        body.style.display = expanded ? 'block' : 'none';
+                                        header.querySelector('.ubicacion-toggle').style.transform = expanded ? 'rotate(0deg)' : 'rotate(-90deg)';
+                                    });
+                                    
+                                    ubicacionesContainer.appendChild(item);
+                                }
+                            });
+                            console.log('    ✓ Ubicaciones cargadas:', ubicaciones.length);
+                        }
+                    }
                 });
                 console.log('✅ Prendas cargadas correctamente');
             } else {
@@ -2085,86 +2284,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            // Cargar ubicación del reflectivo (si existe)
-            if (reflectivo && reflectivo.ubicacion) {
-                console.log('📍 REFLECTIVO - Cargando ubicación');
-                console.log('   Type:', typeof reflectivo.ubicacion);
-                console.log('   Value:', reflectivo.ubicacion);
-                try {
-                    const ubicacionData = typeof reflectivo.ubicacion === 'string' 
-                        ? JSON.parse(reflectivo.ubicacion)
-                        : reflectivo.ubicacion;
-                    
-                    console.log('   Después de parsear:', ubicacionData);
-                    console.log('   Es Array?:', Array.isArray(ubicacionData));
-                    console.log('   Length:', Array.isArray(ubicacionData) ? ubicacionData.length : 'N/A');
-                    
-                    if (Array.isArray(ubicacionData) && ubicacionData.length > 0) {
-                        const contenedor = document.querySelector('.ubicaciones-agregadas-reflectivo');
-                        if (!contenedor) {
-                            console.warn('⚠️ Contenedor .ubicaciones-agregadas-reflectivo no encontrado');
-                        } else {
-                            ubicacionData.forEach(ubi => {
-                                if (ubi && ubi.ubicacion) {
-                                    // Crear elemento con la MISMA estructura que guardarUbicacionReflectivo()
-                                    const item = document.createElement('div');
-                                    item.className = 'ubicacion-item-reflectivo'; // USE CLASS
-                                    item.style.cssText = 'background: white; border: 2px solid #0ea5e9; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem; width: 100%; box-shadow: 0 2px 4px rgba(14, 165, 233, 0.15); position: relative;';
-                                    
-                                    const header = document.createElement('div');
-                                    header.className = 'ubicacion-header-reflectivo'; // USE CLASS
-                                    header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; cursor: pointer;';
-                                    header.innerHTML = `
-                                        <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1;">
-                                            <span style="color: #0ea5e9; font-weight: 700; font-size: 1rem;">📍</span>
-                                            <span class="ubicacion-nombre-reflectivo" style="font-weight: 700; color: #1e40af; font-size: 0.95rem;">${ubi.ubicacion}</span>
-                                        </div>
-                                        <span style="color: #0ea5e9; font-size: 1.2rem; transition: transform 0.3s ease;" class="ubicacion-toggle">▼</span>
-                                    `;
-                                    
-                                    const body = document.createElement('div');
-                                    body.className = 'ubicacion-body-reflectivo'; // USE CLASS
-                                    body.style.cssText = 'display: block; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e2e8f0;';
-                                    body.innerHTML = `
-                                        <p style="margin: 0 0 0.5rem 0; color: #64748b; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px;">Descripción:</p>
-                                        <p class="ubicacion-descripcion-reflectivo" style="margin: 0; color: #334155; font-size: 0.9rem; line-height: 1.5;">${ubi.descripcion || 'Sin descripción adicional'}</p>
-                                    `;
-                                    
-                                    const deleteBtn = document.createElement('button');
-                                    deleteBtn.type = 'button';
-                                    deleteBtn.style.cssText = 'position: absolute; top: 0.5rem; right: 0.5rem; background: #ef4444; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: bold;';
-                                    deleteBtn.textContent = '×';
-                                    deleteBtn.onclick = (e) => {
-                                        e.stopPropagation();
-                                        item.remove();
-                                    };
-                                    
-                                    item.appendChild(header);
-                                    header.appendChild(deleteBtn);
-                                    item.appendChild(body);
-                                    
-                                    // Toggle para expandir/contraer
-                                    let expanded = true;
-                                    header.addEventListener('click', () => {
-                                        expanded = !expanded;
-                                        body.style.display = expanded ? 'block' : 'none';
-                                        header.querySelector('.ubicacion-toggle').style.transform = expanded ? 'rotate(0deg)' : 'rotate(-90deg)';
-                                    });
-                                    
-                                    contenedor.appendChild(item);
-                                }
-                            });
-                            console.log('    ✓ Ubicaciones cargadas:', ubicacionData.length);
-                        }
-                    } else {
-                        console.log('   ℹ️ ubicacionData está vacío o no es array');
-                    }
-                } catch (e) {
-                    console.warn('⚠️ Error al cargar ubicación:', e);
-                }
-            } else {
-                console.log('ℹ️ No hay ubicación en reflectivo');
-            }
+            // ✅ NO CARGAR UBICACIÓN GLOBAL - Ya se cargan por PRENDA (línea ~2108)
+            // Las ubicaciones deben cargarse dentro del contexto de cada prenda, no globalmente
+            // Esto previene duplicación en la primera prenda
+            console.log('ℹ️ Ubicaciones cargadas por prenda (no globalmente para evitar duplicaciones)');
         } catch (e) {
             console.error('❌ Error cargando datos iniciales:', e);
             console.error('Stack:', e.stack);

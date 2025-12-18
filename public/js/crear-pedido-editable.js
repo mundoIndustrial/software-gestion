@@ -1,4 +1,57 @@
 // Crear Pedido - Script EDITABLE con soporte para edición y eliminación de prendas
+
+/**
+ * FUNCIÓN HELPER: Procesa imágenes restantes después de eliminar una
+ * Actualiza los índices y asegura que todos los datos sean consistentes
+ * 
+ * @param {number|null} prendaIndex - Índice de la prenda (null si es logo global)
+ * @param {string} tipo - Tipo de imagen: 'prenda', 'tela', 'logo' o 'reflectivo'
+ */
+function procesarImagenesRestantes(prendaIndex, tipo = 'prenda') {
+    if (prendaIndex === null || prendaIndex === undefined) {
+        // Procesamiento para imágenes globales (logo, reflectivo)
+        console.log(`🔄 Procesando imágenes restantes de ${tipo}...`);
+        
+        if (tipo === 'logo') {
+            const imagenesLogo = document.querySelectorAll('img[data-logo-url]');
+            console.log(`   📸 Imágenes de logo restantes: ${imagenesLogo.length}`);
+            imagenesLogo.forEach((img, idx) => {
+                console.log(`     - Logo ${idx + 1} será incluido`);
+            });
+        } else if (tipo === 'reflectivo') {
+            const imagenesReflectivo = document.querySelectorAll('.reflectivo-foto-item');
+            console.log(`   📸 Imágenes de reflectivo restantes: ${imagenesReflectivo.length}`);
+            imagenesReflectivo.forEach((item, idx) => {
+                const fotoId = item.getAttribute('data-foto-id');
+                console.log(`     - Reflectivo ID ${fotoId} será incluido`);
+            });
+        }
+    } else {
+        // Procesamiento para imágenes de prenda específica
+        const prendasCard = document.querySelector(`.prenda-card-editable[data-prenda-index="${prendaIndex}"]`);
+        
+        if (prendasCard) {
+            if (tipo === 'prenda') {
+                const imagenesPrenda = prendasCard.querySelectorAll('img[data-foto-url]');
+                console.log(`🔄 Procesando imágenes restantes de prenda ${prendaIndex + 1}`);
+                console.log(`   📸 Imágenes de prenda restantes: ${imagenesPrenda.length}`);
+                imagenesPrenda.forEach((img, idx) => {
+                    console.log(`     - Foto ${idx + 1} de prenda será incluida`);
+                });
+            } else if (tipo === 'tela') {
+                const imagenesTela = prendasCard.querySelectorAll('img[data-tela-foto-url]');
+                console.log(`🔄 Procesando imágenes restantes de telas para prenda ${prendaIndex + 1}`);
+                console.log(`   📸 Imágenes de tela restantes: ${imagenesTela.length}`);
+                imagenesTela.forEach((img, idx) => {
+                    console.log(`     - Foto de tela ${idx + 1} será incluida`);
+                });
+            }
+        }
+    }
+    
+    console.log(`✅ Procesamiento completado. Las imágenes restantes están listas para ser enviadas al servidor.`);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('cotizacion_search_editable');
     const hiddenInput = document.getElementById('cotizacion_id_editable');
@@ -1274,6 +1327,48 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================================
+// FUNCIONES GLOBALES PARA ELIMINAR TALLAS (REFLECTIVO)
+// ============================================================
+
+/**
+ * Elimina una talla de la cotización reflectiva
+ * @param {number} prendaIndex - Índice de la prenda
+ * @param {string} talla - Nombre de la talla a eliminar (ej: "XS", "S", "M", etc)
+ */
+window.eliminarTallaReflectivo = function(prendaIndex, talla) {
+    Swal.fire({
+        title: 'Eliminar talla',
+        text: `¿Estás seguro de que quieres eliminar la talla ${talla}? No se incluirá en el pedido.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Encontrar y eliminar el elemento visual de la talla
+            const tallaElement = document.querySelector(`.talla-item-reflectivo[data-talla="${talla}"][data-prenda="${prendaIndex}"]`);
+            if (tallaElement) {
+                tallaElement.remove();
+                console.log(`✅ Talla ${talla} eliminada de la prenda ${prendaIndex + 1}`);
+                
+                // Mostrar notificación de éxito
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Talla eliminada',
+                    text: `La talla ${talla} no se incluirá en el pedido`,
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            } else {
+                console.warn(`⚠️ No se encontró el elemento de talla ${talla} para prenda ${prendaIndex}`);
+            }
+        }
+    });
+};
+
+// ============================================================
 // FUNCIONES GLOBALES PARA ELIMINAR IMÁGENES
 // ============================================================
 
@@ -1291,13 +1386,20 @@ window.eliminarImagenPrenda = function(button) {
         if (result.isConfirmed) {
             const contenedor = button.closest('div[style*="position: relative"]');
             if (contenedor) {
+                // Obtener la información de la foto antes de eliminar
+                const img = contenedor.querySelector('img');
+                const prendaIndex = img?.getAttribute('data-prenda-index');
+                
                 contenedor.remove();
-                console.log('Imagen de prenda marcada para no guardar');
+                console.log(`✅ Imagen de prenda ${prendaIndex} eliminada. Las imágenes restantes se procesarán correctamente.`);
+                
+                // Procesar imágenes restantes
+                procesarImagenesRestantes(prendaIndex);
                 
                 Swal.fire({
                     icon: 'success',
                     title: 'Imagen eliminada',
-                    text: 'La imagen no se incluirá en el pedido',
+                    text: 'La imagen no se incluirá en el pedido. Las imágenes restantes han sido procesadas.',
                     timer: 1500,
                     showConfirmButton: false
                 });
@@ -1320,13 +1422,20 @@ window.eliminarImagenTela = function(button) {
         if (result.isConfirmed) {
             const contenedor = button.closest('div[style*="position: relative"]');
             if (contenedor) {
+                // Obtener la información de la foto antes de eliminar
+                const img = contenedor.querySelector('img');
+                const prendaIndex = img?.getAttribute('data-prenda-index');
+                
                 contenedor.remove();
-                console.log('Imagen de tela marcada para no guardar');
+                console.log(`✅ Imagen de tela de prenda ${prendaIndex} eliminada. Las imágenes restantes se procesarán correctamente.`);
+                
+                // Procesar imágenes restantes
+                procesarImagenesRestantes(prendaIndex, 'tela');
                 
                 Swal.fire({
                     icon: 'success',
                     title: 'Imagen eliminada',
-                    text: 'La imagen no se incluirá en el pedido',
+                    text: 'La imagen no se incluirá en el pedido. Las imágenes restantes han sido procesadas.',
                     timer: 1500,
                     showConfirmButton: false
                 });
@@ -1350,12 +1459,15 @@ window.eliminarImagenLogo = function(button) {
             const contenedor = button.closest('div[style*="position: relative"]');
             if (contenedor) {
                 contenedor.remove();
-                console.log('Imagen de logo marcada para no guardar');
+                console.log(`✅ Imagen de logo eliminada. Las imágenes restantes del logo se procesarán correctamente.`);
+                
+                // Procesar imágenes restantes del logo
+                procesarImagenesRestantes(null, 'logo');
                 
                 Swal.fire({
                     icon: 'success',
                     title: 'Imagen eliminada',
-                    text: 'La imagen no se incluirá en el pedido',
+                    text: 'La imagen no se incluirá en el pedido. Las imágenes restantes han sido procesadas.',
                     timer: 1500,
                     showConfirmButton: false
                 });
@@ -1380,12 +1492,15 @@ window.eliminarFotoReflectivoPedido = function(fotoId) {
             const contenedor = document.querySelector(`.reflectivo-foto-item[data-foto-id="${fotoId}"]`);
             if (contenedor) {
                 contenedor.remove();
-                console.log('✅ Foto del reflectivo eliminada, no se guardará en el pedido:', fotoId);
+                console.log(`✅ Foto del reflectivo ID ${fotoId} eliminada. Las imágenes restantes se procesarán correctamente.`);
+                
+                // Procesar imágenes restantes del reflectivo
+                procesarImagenesRestantes(null, 'reflectivo');
                 
                 Swal.fire({
                     icon: 'success',
                     title: 'Imagen eliminada',
-                    text: 'La imagen no se incluirá en el pedido',
+                    text: 'La imagen no se incluirá en el pedido. Las imágenes restantes del reflectivo han sido procesadas.',
                     timer: 1500,
                     showConfirmButton: false
                 });

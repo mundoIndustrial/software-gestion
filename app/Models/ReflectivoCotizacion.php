@@ -13,6 +13,7 @@ class ReflectivoCotizacion extends Model
 
     protected $fillable = [
         'cotizacion_id',
+        'prenda_cot_id',
         'tipo_prenda',
         'descripcion',
         'tipo_venta',
@@ -39,7 +40,15 @@ class ReflectivoCotizacion extends Model
     }
 
     /**
-     * Relación: Un reflectivo tiene muchas fotos
+     * Relación: Un reflectivo pertenece a una prenda específica
+     */
+    public function prenda()
+    {
+        return $this->belongsTo(PrendaCot::class, 'prenda_cot_id');
+    }
+
+    /**
+     * Relación: Un reflectivo puede tener múltiples fotos
      */
     public function fotos()
     {

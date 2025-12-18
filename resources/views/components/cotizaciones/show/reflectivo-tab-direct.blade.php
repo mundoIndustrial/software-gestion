@@ -74,115 +74,167 @@
                             </div>
                         </div>
                         
-                        {{-- Especificaciones --}}
+                        {{-- Ubicaciones del Reflectivo --}}
+                        @php
+                            // Obtener ubicaciones del reflectivo de ESTA prenda específica
+                            $reflectivoPrenda = $prenda->reflectivo ? $prenda->reflectivo->first() : null;
+                            $ubicacionesPrenda = [];
+                            if ($reflectivoPrenda && $reflectivoPrenda->ubicacion) {
+                                $ubicacionesPrenda = is_string($reflectivoPrenda->ubicacion) 
+                                    ? json_decode($reflectivoPrenda->ubicacion, true) ?? [] 
+                                    : ($reflectivoPrenda->ubicacion ?? []);
+                            }
+                        @endphp
+                        @if(!empty($ubicacionesPrenda))
+                            <div style="margin-bottom: 2rem;">
+                                <h4 style="color: #1e40af; font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Ubicaciones del Reflectivo</h4>
+                                <div style="display: grid; gap: 1rem;">
+                                    @foreach($ubicacionesPrenda as $ubi)
+                                        @if(isset($ubi['ubicacion']))
+                                            <div style="background: white; border: 2px solid #0ea5e9; border-radius: 8px; padding: 1rem;">
+                                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                                    <span style="color: #0ea5e9; font-weight: 700; font-size: 1rem;">📍</span>
+                                                    <span style="font-weight: 700; color: #1e40af; font-size: 0.95rem;">{{ $ubi['ubicacion'] }}</span>
+                                                </div>
+                                                @if(!empty($ubi['descripcion']))
+                                                    <p style="margin: 0; color: #64748b; font-size: 0.9rem; padding-left: 1.5rem;">{{ $ubi['descripcion'] }}</p>
+                                                @endif
+                                            </div>
+                                        @endif
+                                    @endforeach
+                                </div>
+                            </div>
+                        @else
+                            <div style="margin-bottom: 2rem;">
+                                <h4 style="color: #1e40af; font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Ubicaciones del Reflectivo</h4>
+                                <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem;">
+                                    <p style="color: #94a3b8; font-size: 0.9rem; margin: 0; font-style: italic;">Sin ubicaciones definidas</p>
+                                </div>
+                            </div>
+                        @endif
+                        
+                        {{-- Fotos del Reflectivo --}}
+                        @php
+                            $fotosPrenda = $reflectivoPrenda && $reflectivoPrenda->fotos ? $reflectivoPrenda->fotos : collect();
+                        @endphp
+                        @if($fotosPrenda->count() > 0)
+                            <div style="margin-bottom: 2rem;">
+                                <h4 style="color: #1e40af; font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Fotos del Reflectivo</h4>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+                                    @foreach($fotosPrenda as $foto)
+                                        <div style="position: relative; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                            <img src="{{ asset('storage/' . $foto->ruta_original) }}" 
+                                                 alt="Foto reflectivo" 
+                                                 style="width: 100%; height: 200px; object-fit: cover;">
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @else
+                            <div style="margin-bottom: 2rem;">
+                                <h4 style="color: #1e40af; font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Fotos del Reflectivo</h4>
+                                <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem;">
+                                    <p style="color: #94a3b8; font-size: 0.9rem; margin: 0; font-style: italic;">Sin fotos</p>
+                                </div>
+                            </div>
+                        @endif
+                        
+                        {{-- Especificaciones (al final) --}}
                         @if(!empty($especificaciones))
                             <div style="margin-bottom: 2rem;">
                                 <h4 style="color: #1e40af; font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Especificaciones</h4>
                                 <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem; overflow-x: auto;">
+                                    @php
+                                        $categoriasInfo = [
+                                            'disponibilidad' => ['emoji' => '📦', 'label' => 'DISPONIBILIDAD'],
+                                            'forma_pago' => ['emoji' => '💳', 'label' => 'FORMA DE PAGO'],
+                                            'regimen' => ['emoji' => '🏛️', 'label' => 'RÉGIMEN'],
+                                            'se_ha_vendido' => ['emoji' => '📊', 'label' => 'SE HA VENDIDO'],
+                                            'ultima_venta' => ['emoji' => '💰', 'label' => 'ÚLTIMA VENTA'],
+                                            'flete' => ['emoji' => '🚚', 'label' => 'FLETE DE ENVÍO']
+                                        ];
+                                    @endphp
                                     <table style="width: 100%; border-collapse: collapse;">
                                         <thead>
-                                            <tr style="background: #f0f0f0; border-bottom: 2px solid #ddd;">
-                                                <th style="padding: 10px; text-align: left; font-weight: 600; color: #333;">Concepto</th>
-                                                <th style="padding: 10px; text-align: center; font-weight: 600; color: #333;">Aplica</th>
-                                                <th style="padding: 10px; text-align: left; font-weight: 600; color: #333;">Observaciones</th>
+                                            <tr style="background: #1e40af; border-bottom: 2px solid #1e40af;">
+                                                <th style="padding: 10px; text-align: left; font-weight: 600; color: white;">Valor</th>
+                                                <th style="padding: 10px; text-align: left; font-weight: 600; color: white;">Observaciones</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @foreach($especificaciones as $clave => $valor)
-                                                @php
-                                                    if (preg_match('/tabla_orden\[([^\]]+)\]/', $clave, $matches)) {
-                                                        $nombreCampo = $matches[1];
-                                                        if (strpos($nombreCampo, '_obs') !== false) continue;
-                                                        $nombreCategoria = $categoriasMap[$nombreCampo] ?? ucfirst(str_replace('_', ' ', $nombreCampo));
-                                                        $esSeleccionado = ($valor === '1' || $valor === true) ? '✓' : '✗';
-                                                        $claveObs = 'tabla_orden[' . $nombreCampo . '_obs]';
-                                                        $observacion = $especificaciones[$claveObs] ?? '';
-                                                    } else {
-                                                        continue;
-                                                    }
-                                                @endphp
-                                                <tr style="border-bottom: 1px solid #eee;">
-                                                    <td style="padding: 10px; color: #333;">{{ $nombreCategoria }}</td>
-                                                    <td style="padding: 10px; text-align: center; font-weight: 600; color: {{ $esSeleccionado === '✓' ? '#10b981' : '#999' }};">{{ $esSeleccionado }}</td>
-                                                    <td style="padding: 10px; color: #666;">{{ $observacion }}</td>
-                                                </tr>
+                                            @foreach($categoriasInfo as $categoriaKey => $info)
+                                                @if(isset($especificaciones[$categoriaKey]) && !empty($especificaciones[$categoriaKey]))
+                                                    <tr style="border-bottom: 1px solid #e2e8f0;">
+                                                        <td colspan="2" style="font-weight: 600; background: #1e40af; padding: 10px; color: white;">
+                                                            <span style="font-size: 1rem; margin-right: 8px;">{{ $info['emoji'] }}</span>
+                                                            <span>{{ $info['label'] }}</span>
+                                                        </td>
+                                                    </tr>
+                                                    @foreach($especificaciones[$categoriaKey] as $item)
+                                                        <tr style="border-bottom: 1px solid #e2e8f0;">
+                                                            <td style="padding: 10px; color: #333; font-weight: 500;">
+                                                                @if(is_array($item) && isset($item['valor']))
+                                                                    {{ $item['valor'] ?? '-' }}
+                                                                @else
+                                                                    {{ $item ?? '-' }}
+                                                                @endif
+                                                            </td>
+                                                            <td style="padding: 10px; color: #64748b; font-size: 0.9rem;">
+                                                                @if(is_array($item) && isset($item['observacion']) && !empty($item['observacion']))
+                                                                    {{ $item['observacion'] }}
+                                                                @else
+                                                                    Sin observaciones
+                                                                @endif
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                @endif
                                             @endforeach
                                         </tbody>
                                     </table>
                                 </div>
                             </div>
-                        @endif
-                        
-                        {{-- Ubicaciones del Reflectivo --}}
-                        @if(!empty($ubicacionesReflectivo))
+                        @else
                             <div style="margin-bottom: 2rem;">
-                                <h4 style="color: #1e40af; font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Ubicaciones del Reflectivo</h4>
-                                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
-                                    @foreach($ubicacionesReflectivo as $ubicacion)
-                                        <div style="border: 1px solid #e2e8f0; border-left: 4px solid #0ea5e9; border-radius: 8px; padding: 1rem; background: white;">
-                                            <h5 style="color: #1e40af; font-weight: 600; margin-bottom: 0.5rem; margin: 0 0 0.5rem 0;">
-                                                {{ $ubicacion['ubicacion'] ?? $ubicacion }}
-                                            </h5>
-                                            @if(is_array($ubicacion) && isset($ubicacion['descripcion']))
-                                                <p style="color: #64748b; font-size: 0.9rem; margin: 0;">{{ $ubicacion['descripcion'] }}</p>
-                                            @endif
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        @endif
-                        
-                        {{-- Imágenes del Reflectivo --}}
-                        @if($reflectivo && $reflectivo->fotos && count($reflectivo->fotos) > 0)
-                            <div style="margin-bottom: 2rem;">
-                                <h4 style="color: #1e40af; font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Imágenes Reflectivo ({{ $reflectivo->fotos->count() }})</h4>
-                                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1.5rem;">
-                                    @php
-                                        $fotosArray = $reflectivo->fotos->map(fn($f) => $f->url)->toArray();
-                                        $fotosJson = json_encode($fotosArray);
-                                    @endphp
-                                    @foreach($reflectivo->fotos as $fotoIndex => $foto)
-                                        @if($foto->ruta_original)
-                                            <div style="border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 6px 16px rgba(0, 0, 0, 0.15)'" onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.1)'">
-                                                <img src="{{ $foto->url }}" alt="Reflectivo" 
-                                                     style="width: 100%; height: 150px; object-fit: cover; cursor: pointer; transition: transform 0.3s ease;"
-                                                     onmouseover="this.style.transform='scale(1.05)'"
-                                                     onmouseout="this.style.transform=''"
-                                                     onclick="abrirModalImagen('{{ $foto->url }}', 'Reflectivo - Imagen {{ $fotoIndex + 1 }}', {{ $fotosJson }}, {{ $fotoIndex }})">
-                                            </div>
-                                        @endif
-                                    @endforeach
+                                <h4 style="color: #1e40af; font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">Especificaciones</h4>
+                                <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1.5rem;">
+                                    <p style="color: #94a3b8; font-size: 0.9rem; margin: 0; font-style: italic;">Sin especificaciones</p>
                                 </div>
                             </div>
                         @endif
                     </div>
                 @endforeach
             </div>
+        @else
+            <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 1.5rem; text-align: center;">
+                <p style="color: #92400e; margin: 0; font-weight: 500;">No hay prendas registradas en esta cotización</p>
+            </div>
         @endif
-
     @else
-        <div style="text-align: center; padding: 3rem; color: #94a3b8;">
-            <p style="font-size: 1.1rem;">No hay información de reflectivo disponible</p>
+        <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px; padding: 1.5rem; text-align: center;">
+            <p style="color: #92400e; margin: 0; font-weight: 500;">No hay información de reflectivo disponible</p>
         </div>
     @endif
 </div>
 
 <script>
 function mostrarPrendaReflectivo(index) {
-    // Ocultar todos los tabs
+    // Ocultar todos los contenidos
     document.querySelectorAll('[id^="content-prenda-"]').forEach(el => {
         el.style.display = 'none';
     });
     
-    // Desmarcar todos los botones
-    document.querySelectorAll('[id^="tab-prenda-"]').forEach(btn => {
-        btn.style.background = '#f1f5f9';
-        btn.style.color = '#64748b';
+    // Remover estilo activo de todos los tabs
+    document.querySelectorAll('[id^="tab-prenda-"]').forEach(el => {
+        el.style.background = '#f1f5f9';
+        el.style.color = '#64748b';
     });
     
-    // Mostrar tab seleccionado
+    // Mostrar el contenido seleccionado
     document.getElementById('content-prenda-' + index).style.display = 'block';
-    document.getElementById('tab-prenda-' + index).style.background = '#1e40af';
-    document.getElementById('tab-prenda-' + index).style.color = 'white';
+    
+    // Activar el tab seleccionado
+    const tab = document.getElementById('tab-prenda-' + index);
+    tab.style.background = '#1e40af';
+    tab.style.color = 'white';
 }
-</script>

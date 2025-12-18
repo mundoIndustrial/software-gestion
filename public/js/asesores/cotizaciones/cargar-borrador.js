@@ -174,8 +174,11 @@ function cargarBorrador(cotizacion) {
         prendas.forEach((prenda, index) => {
             console.log(`📦 Prenda ${index}:`, prenda);
             
+            // ✅ CAPTURAR EL ÍNDICE EN UNA CONSTANTE PARA EVITAR PROBLEMAS DE CLOSURE
+            const prendaIndexActual = index;
+            
             // Agregar un nuevo producto solo si no es el primero (el primero ya existe)
-            if (index > 0) {
+            if (prendaIndexActual > 0) {
                 agregarProductoFriendly();
             }
             
@@ -645,12 +648,12 @@ function cargarBorrador(cotizacion) {
                                     // 📌 IMPORTANTE: Agregar a window.imagenesEnMemoria para que se envíe al hacer click en ENVIAR
                                     if (foto.id && window.imagenesEnMemoria && window.imagenesEnMemoria.prendaConIndice) {
                                         window.imagenesEnMemoria.prendaConIndice.push({
-                                            prendaIndex: index,
+                                            prendaIndex: prendaIndexActual,
                                             file: urlFoto,  // Ruta de la imagen guardada
                                             esGuardada: true,
                                             fotoId: foto.id
                                         });
-                                        console.log('✅ Foto de prenda agregada a imagenesEnMemoria ID:', foto.id);
+                                        console.log('✅ Foto de prenda agregada a imagenesEnMemoria ID:', foto.id, 'Index:', prendaIndexActual);
                                     }
                                     
                                     console.log('✅ Foto de prenda cargada:', urlFoto, 'ID:', foto.id);
@@ -701,12 +704,12 @@ function cargarBorrador(cotizacion) {
                                     // 📌 IMPORTANTE: Agregar a window.imagenesEnMemoria para que se envíe al hacer click en ENVIAR
                                     if (foto.id && window.imagenesEnMemoria && window.imagenesEnMemoria.telaConIndice) {
                                         window.imagenesEnMemoria.telaConIndice.push({
-                                            prendaIndex: index,
+                                            prendaIndex: prendaIndexActual,
                                             file: urlFoto,  // Ruta de la imagen guardada
                                             esGuardada: true,
                                             fotoId: foto.id
                                         });
-                                        console.log('✅ Foto de tela agregada a imagenesEnMemoria ID:', foto.id);
+                                        console.log('✅ Foto de tela agregada a imagenesEnMemoria ID:', foto.id, 'Index:', prendaIndexActual);
                                     }
                                     
                                     console.log('✅ Foto de tela cargada:', urlFoto, 'ID:', foto.id);

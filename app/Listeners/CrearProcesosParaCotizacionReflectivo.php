@@ -5,8 +5,6 @@ namespace App\Listeners;
 use App\Events\PedidoCreado;
 use App\Models\ProcesoPrenda;
 use App\Models\PrendaPedido;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -17,9 +15,8 @@ use Illuminate\Support\Facades\Log;
  * - Crea automáticamente el proceso "costura" con encargado "Ramiro"
  * - El pedido salta la fase de INSUMOS y va directo a COSTURA
  */
-class CrearProcesosParaCotizacionReflectivo implements ShouldQueue
+class CrearProcesosParaCotizacionReflectivo
 {
-    use InteractsWithQueue;
 
     /**
      * Handle the event.
@@ -28,6 +25,11 @@ class CrearProcesosParaCotizacionReflectivo implements ShouldQueue
     {
         try {
             $pedido = $event->pedido;
+
+            Log::info('🎯 [CrearProcesosParaCotizacionReflectivo] Listener iniciado', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+            ]);
 
             // Obtener cotización del pedido
             $cotizacion = $pedido->cotizacion;
@@ -53,6 +55,7 @@ class CrearProcesosParaCotizacionReflectivo implements ShouldQueue
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
                 'cotizacion_id' => $cotizacion->id,
+                'cotizacion_tipo' => $cotizacion->tipoCotizacion?->nombre,
             ]);
 
             // Crear procesos automáticamente
@@ -94,37 +97,69 @@ class CrearProcesosParaCotizacionReflectivo implements ShouldQueue
     {
         $numeroPedido = $pedido->numero_pedido;
 
+        Log::info('🔍 Buscando prendas para pedido reflectivo', [
+            'numero_pedido' => $numeroPedido,
+        ]);
+
         // Obtener prendas del pedido
         $prendas = PrendaPedido::where('numero_pedido', $numeroPedido)->get();
 
+        Log::info('📋 Prendas encontradas', [
+            'numero_pedido' => $numeroPedido,
+            'cantidad' => $prendas->count(),
+        ]);
+
+        if ($prendas->isEmpty()) {
+            Log::warn('⚠️ No hay prendas en el pedido reflectivo', [
+                'numero_pedido' => $numeroPedido,
+            ]);
+            return;
+        }
+
         foreach ($prendas as $prenda) {
-            // Proceso 1: Creación de Orden
-            ProcesoPrenda::create([
+            Log::info('➕ Creando procesos para prenda', [
                 'numero_pedido' => $numeroPedido,
                 'nombre_prenda' => $prenda->nombre_prenda,
-                'proceso' => 'creacion_de_orden',
-                'encargado' => null,
-                'estado_proceso' => 'Completado',
-                'fecha_inicio' => now(),
-                'fecha_final' => now(),
-                'observaciones' => 'Proceso automático para cotización reflectivo',
             ]);
 
-            // Proceso 2: Costura (con Ramiro como encargado)
-            ProcesoPrenda::create([
-                'numero_pedido' => $numeroPedido,
-                'nombre_prenda' => $prenda->nombre_prenda,
-                'proceso' => 'Costura',
-                'encargado' => 'Ramiro',
-                'estado_proceso' => 'En Ejecución',
-                'fecha_inicio' => now(),
-                'observaciones' => 'Asignado automáticamente a Ramiro para cotización reflectivo',
-            ]);
+            try {
+                // Proceso 1: Creación de Orden
+                ProcesoPrenda::create([
+                    'numero_pedido' => $numeroPedido,
+                    'nombre_prenda' => $prenda->nombre_prenda,
+                    'proceso' => 'creacion_de_orden',
+                    'encargado' => null,
+                    'estado_proceso' => 'Completado',
+                    'fecha_inicio' => now(),
+                    'fecha_final' => now(),
+                    'observaciones' => 'Proceso automático para cotización reflectivo',
+                ]);
 
-            Log::info('✅ Procesos creados para prenda', [
-                'numero_pedido' => $numeroPedido,
-                'nombre_prenda' => $prenda->nombre_prenda,
-            ]);
+                Log::info('✅ Proceso creacion_de_orden creado');
+
+                // Proceso 2: Costura (con Ramiro como encargado)
+                ProcesoPrenda::create([
+                    'numero_pedido' => $numeroPedido,
+                    'nombre_prenda' => $prenda->nombre_prenda,
+                    'proceso' => 'Costura',
+                    'encargado' => 'Ramiro',
+                    'estado_proceso' => 'En Ejecución',
+                    'fecha_inicio' => now(),
+                    'observaciones' => 'Asignado automáticamente a Ramiro para cotización reflectivo',
+                ]);
+
+                Log::info('✅ Proceso Costura creado con Ramiro', [
+                    'numero_pedido' => $numeroPedido,
+                    'nombre_prenda' => $prenda->nombre_prenda,
+                ]);
+
+            } catch (\Exception $e) {
+                Log::error('❌ Error creando procesos para prenda', [
+                    'error' => $e->getMessage(),
+                    'numero_pedido' => $numeroPedido,
+                    'nombre_prenda' => $prenda->nombre_prenda,
+                ]);
+            }
         }
     }
 }

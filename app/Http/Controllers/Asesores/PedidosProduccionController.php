@@ -302,6 +302,15 @@ class PedidosProduccionController extends Controller
                 'cantidad_total' => $cantidadTotalPedido
             ]);
 
+            // ✅ CREAR PROCESOS AUTOMÁTICAMENTE PARA COTIZACIONES REFLECTIVO
+            \Log::info('📞 Llamando a crearProcesosParaReflectivo', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+                'cotizacion_id' => $cotizacion->id,
+                'tipo_cotizacion' => $cotizacion->tipoCotizacion?->nombre,
+            ]);
+            $this->crearProcesosParaReflectivo($pedido, $cotizacion);
+
             // ✅ PROCESAR FOTOS DEL REFLECTIVO SI EXISTEN
             $reflectivoFotosIds = request()->input('reflectivo_fotos_ids', []);
             if (!empty($reflectivoFotosIds)) {
@@ -699,12 +708,50 @@ class PedidosProduccionController extends Controller
     }
 
     /**
-     * Generar número de pedido único
+     * Generar número de pedido único usando secuencia centralizada
+     * Patrón: PEP-XXXXXX (6 dígitos)
+     * Usa DB lock para prevenir race conditions
      */
     private function generarNumeroPedido()
     {
-        $ultimoPedido = PedidoProduccion::max('numero_pedido') ?? 0;
-        return $ultimoPedido + 1;
+        try {
+            $secuencia = \DB::table('numero_secuencias')
+                ->lockForUpdate()
+                ->where('tipo', 'pedidos_produccion_universal')
+                ->first();
+
+            if (!$secuencia) {
+                \Log::warning('Secuencia pedidos_produccion_universal NO ENCONTRADA. Usando fallback.');
+                $ultimoPedido = PedidoProduccion::max('numero_pedido') ?? 0;
+                return 'PEP-' . str_pad($ultimoPedido + 1, 6, '0', STR_PAD_LEFT);
+            }
+
+            $siguiente = $secuencia->siguiente;
+            
+            // Incrementar la secuencia
+            \DB::table('numero_secuencias')
+                ->where('tipo', 'pedidos_produccion_universal')
+                ->update([
+                    'siguiente' => $siguiente + 1,
+                    'updated_at' => now(),
+                ]);
+
+            $numeroPedido = 'PEP-' . str_pad($siguiente, 6, '0', STR_PAD_LEFT);
+            
+            \Log::info('Número de pedido generado', [
+                'numero' => $numeroPedido,
+                'secuencia_anterior' => $siguiente,
+                'secuencia_nueva' => $siguiente + 1,
+            ]);
+
+            return $numeroPedido;
+        } catch (\Exception $e) {
+            \Log::error('Error generando número de pedido', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
     }
 
     /**
@@ -1142,6 +1189,107 @@ class PedidosProduccionController extends Controller
 
         return $convertidas;
 
+    }
+
+    /**
+     * Crear procesos automáticamente para cotizaciones REFLECTIVO
+     * 
+     * Crea:
+     * 1. Proceso "Creación Orden" (Completado)
+     * 2. Proceso "Costura" asignado a Ramiro (En Ejecución)
+     */
+    private function crearProcesosParaReflectivo(PedidoProduccion $pedido, Cotizacion $cotizacion): void
+    {
+        try {
+            // Verificar si es cotización tipo REFLECTIVO
+            if (!$cotizacion->tipoCotizacion) {
+                \Log::info('⏭️ No hay tipo de cotización asociado');
+                return;
+            }
+
+            $tipoCotizacion = strtolower(trim($cotizacion->tipoCotizacion->nombre ?? ''));
+            
+            \Log::info('🔍 Verificando tipo de cotización', [
+                'tipo_encontrado' => $tipoCotizacion,
+                'es_reflectivo' => ($tipoCotizacion === 'reflectivo' ? 'SI' : 'NO'),
+            ]);
+
+            if ($tipoCotizacion !== 'reflectivo') {
+                \Log::info('⏭️ Cotización no es de tipo REFLECTIVO', [
+                    'tipo_actual' => $tipoCotizacion,
+                ]);
+                return;
+            }
+
+            \Log::info('🎯 CREAR PROCESOS PARA COTIZACIÓN REFLECTIVO', [
+                'pedido_id' => $pedido->id,
+                'numero_pedido' => $pedido->numero_pedido,
+                'cotizacion_id' => $cotizacion->id,
+            ]);
+
+            // Obtener prendas del pedido
+            $prendas = PrendaPedido::where('numero_pedido', $pedido->numero_pedido)->get();
+
+            \Log::info('📋 Prendas encontradas', [
+                'numero_pedido' => $pedido->numero_pedido,
+                'cantidad' => $prendas->count(),
+            ]);
+
+            if ($prendas->isEmpty()) {
+                \Log::warn('⚠️ No hay prendas en el pedido', [
+                    'numero_pedido' => $pedido->numero_pedido,
+                ]);
+                return;
+            }
+
+            foreach ($prendas as $prenda) {
+                // Verificar si ya existen procesos para esta prenda
+                $procesosExistentes = ProcesoPrenda::where('numero_pedido', $pedido->numero_pedido)
+                    ->where('nombre_prenda', $prenda->nombre_prenda)
+                    ->pluck('proceso')
+                    ->toArray();
+
+                \Log::info('🔍 Procesos existentes para prenda', [
+                    'nombre_prenda' => $prenda->nombre_prenda,
+                    'procesos' => $procesosExistentes,
+                ]);
+
+                // NO crear duplicados si ya existe Costura
+                if (in_array('Costura', $procesosExistentes)) {
+                    \Log::info('✅ Proceso Costura ya existe, omitiendo');
+                    continue;
+                }
+
+                // Crear proceso Costura con Ramiro
+                $nuevoProceso = ProcesoPrenda::create([
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'nombre_prenda' => $prenda->nombre_prenda,
+                    'proceso' => 'Costura',
+                    'encargado' => 'Ramiro',
+                    'estado_proceso' => 'En Ejecución',
+                    'fecha_inicio' => now(),
+                    'observaciones' => 'Asignado automáticamente a Ramiro para cotización reflectivo',
+                ]);
+
+                \Log::info('✅ Proceso Costura creado para prenda', [
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'nombre_prenda' => $prenda->nombre_prenda,
+                    'encargado' => 'Ramiro',
+                    'proceso_id' => $nuevoProceso->id,
+                ]);
+            }
+
+            \Log::info('✅ Procesos de cotización reflectivo completados', [
+                'numero_pedido' => $pedido->numero_pedido,
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('❌ Error al crear procesos para cotización reflectivo', [
+                'error' => $e->getMessage(),
+                'numero_pedido' => $pedido->numero_pedido,
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
     }
 
 }
