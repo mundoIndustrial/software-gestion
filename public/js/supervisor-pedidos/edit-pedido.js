@@ -4,7 +4,86 @@
  * =====================================================
  */
 
+/**
+ * Mostrar toast notification
+ */
+function showToast(message, type = 'success') {
+    // Remover toast anterior si existe
+    const existingToast = document.querySelector('.toast-notification');
+    if (existingToast) {
+        existingToast.remove();
+    }
+
+    const toast = document.createElement('div');
+    toast.className = 'toast-notification';
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 16px 24px;
+        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+        color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 14px;
+        font-weight: 500;
+        animation: slideIn 0.3s ease-out;
+        max-width: 400px;
+    `;
+
+    const icon = type === 'success' ? 'check_circle' : type === 'error' ? 'error' : 'info';
+    toast.innerHTML = `
+        <span class="material-symbols-rounded" style="font-size: 20px;">${icon}</span>
+        <span>${message}</span>
+    `;
+
+    document.body.appendChild(toast);
+
+    // Agregar animación
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+    `;
+    if (!document.querySelector('style[data-toast-styles]')) {
+        style.setAttribute('data-toast-styles', 'true');
+        document.head.appendChild(style);
+    }
+
+    // Auto-remover después de 4 segundos
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+
+// Variable para rastrear si se eliminaron imágenes
+let imagenesEliminadas = false;
+
 function abrirModalEditar(ordenId, numeroOrden) {
+    imagenesEliminadas = false; // Resetear al abrir modal
     document.getElementById('editarNumeroOrden').textContent = '#' + numeroOrden;
     document.getElementById('editarOrdenId').value = ordenId;
     document.getElementById('modalEditarPedido').style.display = 'flex';
@@ -15,6 +94,11 @@ function cerrarModalEditar() {
     document.getElementById('modalEditarPedido').style.display = 'none';
     document.getElementById('formEditarPedido').reset();
     document.getElementById('prendasContainer').innerHTML = '';
+    
+    // Si se eliminaron imágenes, recargar la página para actualizar todos los modales
+    if (imagenesEliminadas) {
+        location.reload();
+    }
 }
 
 let coloresDisponibles = [];
@@ -40,7 +124,7 @@ function cargarDatosPedido(ordenId) {
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error al cargar datos del pedido');
+            showToast('Error al cargar datos del pedido', 'error');
         });
 }
 
@@ -270,14 +354,21 @@ function eliminarImagen(tipo, id, button) {
     .then(data => {
         if (data.success) {
             button.closest('.foto-item').remove();
-            alert('Imagen eliminada correctamente');
+            showToast('Imagen eliminada correctamente', 'success');
+            imagenesEliminadas = true; // Marcar que se eliminó una imagen
+            
+            // Recargar los datos del pedido en el modal de edición
+            const ordenId = document.getElementById('editarOrdenId').value;
+            if (ordenId) {
+                cargarDatosPedido(ordenId);
+            }
         } else {
-            alert('Error al eliminar imagen: ' + data.message);
+            showToast('Error al eliminar imagen: ' + data.message, 'error');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error al eliminar la imagen');
+        showToast('Error al eliminar la imagen', 'error');
     });
 }
 
@@ -362,18 +453,20 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('Pedido actualizado correctamente');
-                    cerrarModalEditar();
-                    location.reload();
+                    showToast('Pedido actualizado correctamente', 'success');
+                    setTimeout(() => {
+                        cerrarModalEditar();
+                        location.reload();
+                    }, 1000);
                 } else {
-                    alert('Error al actualizar pedido: ' + data.message);
+                    showToast('Error al actualizar pedido: ' + data.message, 'error');
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = originalText;
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error al actualizar el pedido');
+                showToast('Error al actualizar el pedido', 'error');
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;
             });

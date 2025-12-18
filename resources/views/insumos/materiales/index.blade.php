@@ -2266,8 +2266,8 @@
      * Envía el pedido a producción
      */
     function cambiarEstadoPedido(numeroPedido, estadoActual) {
-        // Si el estado es "No iniciado", enviar a producción (En Ejecución)
-        if (estadoActual.toLowerCase() === 'no iniciado') {
+        // Si el estado es "Pendiente", enviar a producción (No iniciado)
+        if (estadoActual.toLowerCase() === 'pendiente') {
             // Guardar el número de pedido en una variable global
             window.pedidoParaProduccion = numeroPedido;
             
@@ -2294,7 +2294,7 @@
         const numeroPedido = window.pedidoParaProduccion;
         if (!numeroPedido) return;
         
-        const proximoEstado = 'En Ejecución';
+        const proximoEstado = 'No iniciado';
         
         // Enviar petición al servidor
         fetch(`/insumos/materiales/${numeroPedido}/cambiar-estado`, {

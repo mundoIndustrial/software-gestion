@@ -2084,7 +2084,34 @@ final class CotizacionController extends Controller
     /**
      * Generar número de cotización único usando secuencia universal
      */
-    
+    private function generarNumeroCotizacion(): string
+    {
+        // Usar secuencia universal para TODAS las cotizaciones
+        $secuencia = DB::table('numero_secuencias')
+            ->where('nombre', 'cotizaciones_universal')
+            ->first();
+        
+        if (!$secuencia) {
+            // Fallback si no existe la secuencia
+            $mes = date('m');
+            $anio = date('y');
+            $contador = \App\Models\Cotizacion::where('numero_cotizacion', 'like', "COT-{$anio}{$mes}-%")
+                ->count() + 1;
+            return sprintf('COT-%s%s-%04d', $anio, $mes, $contador);
+        }
+        
+        // Incrementar el contador
+        $nuevoNumero = $secuencia->numero_actual + 1;
+        DB::table('numero_secuencias')
+            ->where('nombre', 'cotizaciones_universal')
+            ->update(['numero_actual' => $nuevoNumero]);
+        
+        // Generar número con formato
+        $mes = date('m');
+        $anio = date('y');
+        return sprintf('COT-%s%s-%04d', $anio, $mes, $nuevoNumero);
+    }
+
     /**
      * Obtener ID de tipo de cotización por código
      */

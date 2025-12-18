@@ -189,7 +189,7 @@
                                         </div>
 
                                         <!-- Aprobar Orden (Enviar a Producción) -->
-                                        @if($orden->estado === 'PENDIENTE_SUPERVISOR' && !$orden->aprobado_por_supervisor_en && (request('aprobacion') === 'pendiente' || !request()->filled('estado')))
+                                        @if(request('aprobacion') === 'pendiente')
                                             <button class="btn-accion btn-aprobar" 
                                                     title="Aprobar orden"
                                                     onclick="aprobarOrden({{ $orden->id }}, '{{ $orden->numero_pedido }}')">

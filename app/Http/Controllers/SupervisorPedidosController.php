@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\PedidoProduccion;
+use App\Models\PrendaPedido;
 use App\Models\TablaOriginal;
 use App\Events\OrdenUpdated;
 use Illuminate\Http\Request;
@@ -140,12 +141,11 @@ class SupervisorPedidosController extends Controller
         // FILTRO DE APROBACIÓN: Mostrar solo órdenes según su estado de aprobación
         if ($request->filled('aprobacion')) {
             if ($request->aprobacion === 'pendiente') {
-                // Órdenes PENDIENTES: Estado "PENDIENTE_SUPERVISOR" y sin aprobado_por_supervisor_en
-                $query->where('estado', 'PENDIENTE_SUPERVISOR')
-                      ->whereNull('aprobado_por_supervisor_en');
+                // Órdenes PENDIENTES: solo las que tienen estado 'PENDIENTE_SUPERVISOR'
+                $query->where('estado', 'PENDIENTE_SUPERVISOR');
             } elseif ($request->aprobacion === 'aprobadas') {
-                // Órdenes ya aprobadas (con aprobado_por_supervisor_en)
-                $query->whereNotNull('aprobado_por_supervisor_en');
+                // Órdenes aprobadas/anuladas: solo las que tienen estado 'Pendiente' o 'Anulada'
+                $query->whereIn('estado', ['Pendiente', 'Anulada']);
             }
         } else {
             // Por defecto, mostrar TODAS las órdenes (sin filtro de aprobación)
@@ -270,7 +270,7 @@ class SupervisorPedidosController extends Controller
     public function aprobarOrden($id)
     {
         try {
-            $orden = PedidoProduccion::findOrFail($id);
+            $orden = PedidoProduccion::with('cotizacion.tipoCotizacion')->findOrFail($id);
 
             // Verificar que la orden esté en estado "PENDIENTE_SUPERVISOR"
             if ($orden->estado !== 'PENDIENTE_SUPERVISOR') {
@@ -280,22 +280,44 @@ class SupervisorPedidosController extends Controller
                 ], 422);
             }
 
-            // Marcar orden como aprobada por el supervisor
-            // IMPORTANTE: Solo se registra aprobado_por_supervisor_en, SIN cambiar el estado
-            // El cambio de estado a "En Ejecución" lo hace otro rol (ej: supervisor de producción)
-            $orden->update([
-                'aprobado_por_supervisor_en' => now(),
-            ]);
+            // Verificar si el pedido está relacionado con una cotización de tipo Reflectivo (RF)
+            $esReflectivo = false;
+            if ($orden->cotizacion && $orden->cotizacion->tipoCotizacion) {
+                $esReflectivo = ($orden->cotizacion->tipoCotizacion->codigo === 'RF');
+            }
 
-            // Log de auditoría
-            \Log::info("Orden #{$orden->numero_pedido} aprobada por " . auth()->user()->name, [
-                'fecha_aprobacion' => now(),
-            ]);
+            // Determinar estado y área según el tipo de cotización
+            if ($esReflectivo) {
+                // Para pedidos reflectivos: estado "No iniciado" y área "Reflectivo"
+                $orden->update([
+                    'aprobado_por_supervisor_en' => now(),
+                    'estado' => 'No iniciado',
+                    'area' => 'Reflectivo',
+                ]);
+                
+                \Log::info("Orden REFLECTIVO #{$orden->numero_pedido} aprobada por " . auth()->user()->name, [
+                    'fecha_aprobacion' => now(),
+                    'estado' => 'No iniciado',
+                    'area' => 'Reflectivo',
+                ]);
+            } else {
+                // Para pedidos normales: estado "Pendiente"
+                $orden->update([
+                    'aprobado_por_supervisor_en' => now(),
+                    'estado' => 'Pendiente',
+                ]);
+                
+                \Log::info("Orden #{$orden->numero_pedido} aprobada por " . auth()->user()->name, [
+                    'fecha_aprobacion' => now(),
+                    'estado' => 'Pendiente',
+                ]);
+            }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Orden aprobada correctamente. Pendiente de envío a producción.',
+                'message' => 'Orden aprobada correctamente.' . ($esReflectivo ? ' Enviada a área Reflectivo.' : ' Pendiente de envío a producción.'),
                 'orden' => $orden,
+                'es_reflectivo' => $esReflectivo,
             ]);
 
         } catch (\Exception $e) {
@@ -346,7 +368,10 @@ class SupervisorPedidosController extends Controller
                     'tela',
                     'tipoManga',
                     'tipoBroche',
-                    'procesos'
+                    'procesos',
+                    'fotos',
+                    'fotosLogo',
+                    'fotosTela'
                 ]);
             },
             'cotizacion' => function ($query) {
@@ -374,20 +399,14 @@ class SupervisorPedidosController extends Controller
         $ordenArray['descripcion_prendas'] = $descripcionPrendas;
         $ordenArray['cantidad_total'] = $cantidadTotal;
         
-        // Calcular total entregado (similar a RegistroOrdenController)
+        // Calcular total de prendas del pedido
         $totalCantidad = \DB::table('prendas_pedido')
             ->where('numero_pedido', $orden->numero_pedido)
             ->sum('cantidad');
 
-        $totalEntregado = 0;
-        try {
-            $totalEntregado = \DB::table('procesos_prenda')
-                ->where('numero_pedido', $orden->numero_pedido)
-                ->sum('cantidad_completada');
-        } catch (\Exception $e) {
-            \Log::warning('Error al calcular totalEntregado', ['error' => $e->getMessage()]);
-            $totalEntregado = 0;
-        }
+        // El total entregado se calcula basado en el estado del pedido
+        // Si está en estado "Entregado", el total entregado es igual al total de cantidad
+        $totalEntregado = ($orden->estado === 'Entregado') ? $totalCantidad : 0;
 
         $ordenArray['total_cantidad'] = $totalCantidad;
         $ordenArray['total_entregado'] = $totalEntregado;
@@ -615,17 +634,14 @@ class SupervisorPedidosController extends Controller
     public function ordenesPendientesCount()
     {
         try {
-            // Contar órdenes pendientes de aprobación
-            // (sin aprobado_por_supervisor_en, no anuladas y con cotización)
-            $count = PedidoProduccion::whereNull('aprobado_por_supervisor_en')
-                ->whereNotNull('cotizacion_id')
-                ->where('estado', '!=', 'Anulada')
+            // Contar órdenes con estado 'PENDIENTE_SUPERVISOR'
+            $count = PedidoProduccion::where('estado', 'PENDIENTE_SUPERVISOR')
                 ->count();
 
             return response()->json([
                 'success' => true,
                 'count' => $count,
-                'message' => $count > 0 ? "Hay $count orden(es) pendiente(s) de aprobación" : 'No hay órdenes pendientes'
+                'message' => $count > 0 ? "Hay $count orden(es) pendiente(s)" : 'No hay órdenes pendientes'
             ]);
         } catch (\Exception $e) {
             \Log::error('Error al obtener contador de órdenes pendientes', [
@@ -811,21 +827,21 @@ class SupervisorPedidosController extends Controller
                         return [
                             'id' => $foto->id,
                             'ruta' => $foto->ruta_foto,
-                            'url' => Storage::url($foto->ruta_foto)
+                            'url' => $foto->url // Usar el accessor del modelo
                         ];
                     }),
                     'fotos_logo' => $prenda->fotosLogo->map(function($foto) {
                         return [
                             'id' => $foto->id,
                             'ruta' => $foto->ruta_foto,
-                            'url' => Storage::url($foto->ruta_foto)
+                            'url' => $foto->url // Usar el accessor del modelo
                         ];
                     }),
                     'fotos_tela' => $prenda->fotosTela->map(function($foto) {
                         return [
                             'id' => $foto->id,
                             'ruta' => $foto->ruta_foto,
-                            'url' => Storage::url($foto->ruta_foto)
+                            'url' => $foto->url // Usar el accessor del modelo
                         ];
                     })
                 ];
@@ -978,7 +994,10 @@ class SupervisorPedidosController extends Controller
                 if ($request->hasFile("prendas.{$index}.nuevas_fotos")) {
                     foreach ($request->file("prendas.{$index}.nuevas_fotos") as $foto) {
                         $path = $foto->store('pedidos/prendas', 'public');
-                        $prenda->fotos()->create(['ruta_foto' => $path]);
+                        $prenda->fotos()->create([
+                            'ruta_original' => $path,
+                            'ruta_webp' => $path
+                        ]);
                     }
                 }
 
@@ -986,7 +1005,10 @@ class SupervisorPedidosController extends Controller
                 if ($request->hasFile("prendas.{$index}.nuevas_fotos_logo")) {
                     foreach ($request->file("prendas.{$index}.nuevas_fotos_logo") as $foto) {
                         $path = $foto->store('pedidos/logos', 'public');
-                        $prenda->fotosLogo()->create(['ruta_foto' => $path]);
+                        $prenda->fotosLogo()->create([
+                            'ruta_original' => $path,
+                            'ruta_webp' => $path
+                        ]);
                     }
                 }
 
@@ -994,7 +1016,10 @@ class SupervisorPedidosController extends Controller
                 if ($request->hasFile("prendas.{$index}.nuevas_fotos_tela")) {
                     foreach ($request->file("prendas.{$index}.nuevas_fotos_tela") as $foto) {
                         $path = $foto->store('pedidos/telas', 'public');
-                        $prenda->fotosTela()->create(['ruta_foto' => $path]);
+                        $prenda->fotosTela()->create([
+                            'ruta_original' => $path,
+                            'ruta_webp' => $path
+                        ]);
                     }
                 }
             }
@@ -1059,9 +1084,12 @@ class SupervisorPedidosController extends Controller
 
             $foto = $modelClass::findOrFail($id);
             
-            // Eliminar archivo físico
-            if (Storage::disk('public')->exists($foto->ruta_foto)) {
-                Storage::disk('public')->delete($foto->ruta_foto);
+            // Eliminar archivos físicos (tanto original como webp si existen)
+            if (isset($foto->ruta_original) && Storage::disk('public')->exists($foto->ruta_original)) {
+                Storage::disk('public')->delete($foto->ruta_original);
+            }
+            if (isset($foto->ruta_webp) && $foto->ruta_webp !== $foto->ruta_original && Storage::disk('public')->exists($foto->ruta_webp)) {
+                Storage::disk('public')->delete($foto->ruta_webp);
             }
 
             // Eliminar registro
