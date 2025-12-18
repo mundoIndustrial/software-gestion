@@ -14,6 +14,11 @@ class Cotizacion extends Model
 
     protected $table = 'cotizaciones';
 
+    public function aprobaciones()
+    {
+        return $this->hasMany(CotizacionAprobacion::class);
+    }
+
     protected $fillable = [
         'asesor_id',
         'cliente_id',
@@ -25,6 +30,7 @@ class Cotizacion extends Model
         'fecha_enviado_a_aprobador',
         'es_borrador',
         'estado',
+        'novedades',
         'especificaciones',
         'imagenes',
         'tecnicas',

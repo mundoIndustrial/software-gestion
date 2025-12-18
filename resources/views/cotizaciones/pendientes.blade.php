@@ -19,6 +19,7 @@
                         $columns = [
                             ['key' => 'acciones', 'label' => 'Acciones', 'flex' => '0 0 120px', 'justify' => 'flex-start'],
                             ['key' => 'estado', 'label' => 'Estado', 'flex' => '0 0 150px', 'justify' => 'center'],
+                            ['key' => 'aprobaciones', 'label' => 'Aprobaciones', 'flex' => '0 0 140px', 'justify' => 'center'],
                             ['key' => 'numero', 'label' => 'Número', 'flex' => '0 0 140px', 'justify' => 'center'],
                             ['key' => 'fecha', 'label' => 'Fecha', 'flex' => '0 0 180px', 'justify' => 'center'],
                             ['key' => 'cliente', 'label' => 'Cliente', 'flex' => '0 0 200px', 'justify' => 'center'],
@@ -82,9 +83,42 @@
                                 <!-- Estado -->
                                 <div class="table-cell" style="flex: 0 0 150px;">
                                     <div class="cell-content" style="justify-content: center;">
-                                        <span style="background: #fff3cd; color: #856404; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">
-                                            PENDIENTE
+                                        @php
+                                            $estadoLabel = match($cotizacion->estado) {
+                                                'BORRADOR' => ['text' => 'Borrador', 'bg' => '#e5e7eb', 'color' => '#374151'],
+                                                'ENVIADA_CONTADOR' => ['text' => 'Enviada a Contador', 'bg' => '#dbeafe', 'color' => '#1e40af'],
+                                                'APROBADA_CONTADOR' => ['text' => 'Aprobada por Contador', 'bg' => '#d1fae5', 'color' => '#065f46'],
+                                                'APROBADA_COTIZACIONES' => ['text' => 'Aprobada por Aprobador', 'bg' => '#d1fae5', 'color' => '#065f46'],
+                                                'APROBADO_PARA_PEDIDO' => ['text' => 'Aprobada para Pedido', 'bg' => '#d1fae5', 'color' => '#065f46'],
+                                                'EN_CORRECCION' => ['text' => 'En Corrección', 'bg' => '#fef3c7', 'color' => '#92400e'],
+                                                'CONVERTIDA_PEDIDO' => ['text' => 'Convertida a Pedido', 'bg' => '#e0e7ff', 'color' => '#3730a3'],
+                                                'FINALIZADA' => ['text' => 'Finalizada', 'bg' => '#f3f4f6', 'color' => '#1f2937'],
+                                                default => ['text' => $cotizacion->estado, 'bg' => '#fff3cd', 'color' => '#856404']
+                                            };
+                                        @endphp
+                                        <span style="background: {{ $estadoLabel['bg'] }}; color: {{ $estadoLabel['color'] }}; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">
+                                            {{ $estadoLabel['text'] }}
                                         </span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Aprobaciones -->
+                                <div class="table-cell" style="flex: 0 0 140px;">
+                                    <div class="cell-content" style="justify-content: center; flex-direction: column; gap: 4px;">
+                                        @php
+                                            $aprobacionesCount = $cotizacion->aprobaciones->count();
+                                            $yaAprobo = $cotizacion->aprobaciones->where('usuario_id', auth()->id())->count() > 0;
+                                            $porcentaje = $totalAprobadores > 0 ? ($aprobacionesCount / $totalAprobadores) * 100 : 0;
+                                        @endphp
+                                        <div style="display: flex; align-items: center; gap: 6px;">
+                                            <span style="font-weight: 600; font-size: 0.9rem;">{{ $aprobacionesCount }}/{{ $totalAprobadores }}</span>
+                                            @if($yaAprobo)
+                                                <span style="color: #10b981; font-size: 0.75rem;" title="Ya aprobaste esta cotización">✓</span>
+                                            @endif
+                                        </div>
+                                        <div style="width: 100%; background: #e5e7eb; height: 4px; border-radius: 2px; overflow: hidden;">
+                                            <div style="width: {{ $porcentaje }}%; background: {{ $porcentaje >= 100 ? '#10b981' : '#3b82f6' }}; height: 100%;"></div>
+                                        </div>
                                     </div>
                                 </div>
                                 
@@ -165,8 +199,8 @@
 <div id="modal-corregir-cotizacion" class="modal-overlay" onclick="if(event.target === this) cerrarModalCorregir();" style="z-index: 9999; background: rgba(0, 0, 0, 0.7);">
     <div class="modal-content" style="max-width: 600px;">
         <!-- Header del Modal -->
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 24px; border-bottom: 1px solid #e5e7eb; background: linear-gradient(to right, #3b82f6, #1e40af);">
-            <h2 style="margin: 0; color: white; font-size: 1.5rem; font-weight: bold;">Enviar al Contador</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 24px; border-bottom: 1px solid #e5e7eb; background: linear-gradient(to right, #ef4444, #dc2626);">
+            <h2 style="margin: 0; color: white; font-size: 1.5rem; font-weight: bold;">Enviar a Corrección</h2>
             <button onclick="cerrarModalCorregir()" style="background: none; border: none; color: white; cursor: pointer; font-size: 1.5rem;">
                 <span class="material-symbols-rounded">close</span>
             </button>
@@ -174,6 +208,12 @@
 
         <!-- Contenido del Modal -->
         <div style="padding: 24px;">
+            <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 12px; margin-bottom: 20px; border-radius: 4px;">
+                <p style="margin: 0; color: #991b1b; font-size: 0.875rem;">
+                    <strong>⚠️ Atención:</strong> Al enviar a corrección, se eliminarán todas las aprobaciones registradas y la cotización volverá al contador para revisión.
+                </p>
+            </div>
+            
             <form id="form-corregir-cotizacion">
                 <div style="margin-bottom: 20px;">
                     <label style="display: block; color: #374151; font-weight: bold; margin-bottom: 8px;">Observaciones para el Contador</label>
@@ -184,8 +224,8 @@
                     <button type="button" onclick="cerrarModalCorregir()" style="background: #e5e7eb; color: #374151; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
                         Cancelar
                     </button>
-                    <button type="submit" style="background: #3b82f6; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
-                        Enviar a Contador
+                    <button type="submit" style="background: #ef4444; color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                        Enviar a Corrección
                     </button>
                 </div>
             </form>
@@ -553,9 +593,18 @@ function enviarCorreccion(cotizacionId) {
     })
     .then(data => {
         cerrarModalCorregir();
-        Swal.fire('Éxito', 'Cotización reenviada a la asesora con observaciones', 'success').then(() => {
-            location.reload();
-        });
+        if (data.success) {
+            Swal.fire({
+                title: 'Enviada a Corrección',
+                html: `<p>${data.message}</p><p class="mt-2 text-sm text-gray-600">La cotización ha sido enviada al contador para revisión. Todas las aprobaciones previas han sido eliminadas.</p>`,
+                icon: 'success',
+                confirmButtonColor: '#10b981'
+            }).then(() => {
+                location.reload();
+            });
+        } else {
+            Swal.fire('Error', data.message, 'error');
+        }
     })
     .catch(error => {
         console.error('Error:', error);
@@ -587,9 +636,31 @@ function aprobarCotizacionAprobador(cotizacionId) {
                 return response.json();
             })
             .then(data => {
-                Swal.fire('Éxito', 'Cotización aprobada correctamente', 'success').then(() => {
-                    location.reload();
-                });
+                if (data.success) {
+                    let mensaje = data.message;
+                    
+                    if (data.aprobacion_completa) {
+                        Swal.fire({
+                            title: '¡Aprobación Completa!',
+                            html: `<p>${mensaje}</p><p class="mt-2 text-sm text-gray-600">La cotización ha cambiado a estado <strong>APROBADA POR APROBADOR</strong></p>`,
+                            icon: 'success',
+                            confirmButtonColor: '#10b981'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Aprobación Registrada',
+                            html: `<p>${mensaje}</p><p class="mt-2 text-sm text-gray-600">Aprobaciones: ${data.aprobaciones_actuales}/${data.total_aprobadores}</p>`,
+                            icon: 'info',
+                            confirmButtonColor: '#3b82f6'
+                        }).then(() => {
+                            location.reload();
+                        });
+                    }
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
             })
             .catch(error => {
                 console.error('Error:', error);

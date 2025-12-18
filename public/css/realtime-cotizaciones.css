@@ -1,0 +1,184 @@
+/**
+ * Real-time notifications and animations for quotations
+ */
+
+/* Real-time notification toast */
+.realtime-notification {
+    position: fixed;
+    top: 20px;
+    right: -400px;
+    width: 350px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    z-index: 10000;
+    transition: right 0.3s ease-in-out;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+.realtime-notification.show {
+    right: 20px;
+}
+
+.realtime-notification .notification-content strong {
+    display: block;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.realtime-notification .notification-content p {
+    margin: 0;
+    font-size: 0.875rem;
+    opacity: 0.95;
+}
+
+/* Row animations for updated quotations */
+@keyframes rowUpdate {
+    0% {
+        background-color: rgba(59, 130, 246, 0.1);
+    }
+    50% {
+        background-color: rgba(59, 130, 246, 0.3);
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+
+.table-row.row-updated {
+    animation: rowUpdate 2s ease-in-out;
+}
+
+/* New row animation */
+@keyframes rowNew {
+    0% {
+        opacity: 0;
+        transform: translateY(-20px);
+        background-color: rgba(34, 197, 94, 0.2);
+    }
+    50% {
+        background-color: rgba(34, 197, 94, 0.3);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+        background-color: transparent;
+    }
+}
+
+.table-row.row-new {
+    animation: rowNew 1s ease-out;
+}
+
+/* Removed row animation */
+@keyframes rowRemove {
+    0% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(100px);
+    }
+}
+
+.table-row.row-removed {
+    animation: rowRemove 0.5s ease-in forwards;
+}
+
+/* Pulse animation for status badge */
+@keyframes statusPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.table-cell[data-estado] span {
+    transition: all 0.3s ease;
+}
+
+.table-row.row-updated .table-cell[data-estado] span {
+    animation: statusPulse 0.6s ease-in-out;
+}
+
+/* Real-time indicator */
+.realtime-indicator {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #10b981;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    z-index: 9999;
+}
+
+.realtime-indicator::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: white;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.3;
+    }
+}
+
+.realtime-indicator.disconnected {
+    background: #ef4444;
+}
+
+/* Loading spinner for real-time updates */
+.realtime-loading {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .realtime-notification {
+        width: calc(100% - 40px);
+        right: -100%;
+    }
+    
+    .realtime-notification.show {
+        right: 20px;
+    }
+    
+    .realtime-indicator {
+        bottom: 10px;
+        right: 10px;
+        padding: 0.4rem 0.8rem;
+        font-size: 0.7rem;
+    }
+}

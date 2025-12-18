@@ -298,8 +298,8 @@ final class CotizacionesViewController extends Controller
     public function cotizacionesPendientesAprobadorCount()
     {
         try {
-            // Contar cotizaciones en estado ENVIADO A APROBADOR
-            $count = \App\Models\Cotizacion::where('estado', 'ENVIADO A APROBADOR')
+            // Contar cotizaciones en estado APROBADA_CONTADOR
+            $count = \App\Models\Cotizacion::where('estado', 'APROBADA_CONTADOR')
                 ->count();
 
             return response()->json([

@@ -3,8 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cotizacion;
+use App\Models\CotizacionAprobacion;
+use App\Models\User;
+use App\Models\Role;
+use App\Events\CotizacionEstadoCambiado;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class CotizacionEstadoController extends Controller
 {
@@ -91,26 +96,80 @@ class CotizacionEstadoController extends Controller
                 ], 422);
             }
 
-            $estadoAnterior = $cotizacion->estado;
+            // Verificar si el usuario ya aprobó esta cotización
+            $yaAprobo = CotizacionAprobacion::where('cotizacion_id', $cotizacion->id)
+                ->where('usuario_id', auth()->id())
+                ->exists();
 
-            // Actualizar estado a APROBADA_POR_APROBADOR
-            $cotizacion->update([
-                'estado' => 'APROBADA_POR_APROBADOR'
-            ]);
+            if ($yaAprobo) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ya has aprobado esta cotización'
+                ], 422);
+            }
 
-            Log::info('Cotización aprobada por aprobador', [
+            DB::beginTransaction();
+
+            // Registrar la aprobación del usuario actual
+            CotizacionAprobacion::create([
                 'cotizacion_id' => $cotizacion->id,
-                'estado_anterior' => $estadoAnterior,
-                'nuevo_estado' => 'APROBADA_POR_APROBADOR'
+                'usuario_id' => auth()->id(),
+                'fecha_aprobacion' => now()
             ]);
+
+            // Contar cuántos usuarios tienen el rol aprobador_cotizaciones
+            $rolAprobador = Role::where('name', 'aprobador_cotizaciones')->first();
+            $totalAprobadores = $rolAprobador 
+                ? User::whereJsonContains('roles_ids', $rolAprobador->id)->count()
+                : 0;
+
+            // Contar cuántas aprobaciones tiene esta cotización
+            $aprobacionesActuales = CotizacionAprobacion::where('cotizacion_id', $cotizacion->id)->count();
+
+            $estadoAnterior = $cotizacion->estado;
+            $mensaje = '';
+
+            // Si todos los aprobadores han aprobado, cambiar estado
+            if ($aprobacionesActuales >= $totalAprobadores) {
+                $cotizacion->update([
+                    'estado' => 'APROBADA_POR_APROBADOR'
+                ]);
+
+                $mensaje = 'Cotización aprobada completamente. Todos los aprobadores han dado su visto bueno.';
+
+                Log::info('Cotización aprobada por todos los aprobadores', [
+                    'cotizacion_id' => $cotizacion->id,
+                    'estado_anterior' => $estadoAnterior,
+                    'nuevo_estado' => 'APROBADA_POR_APROBADOR',
+                    'total_aprobadores' => $totalAprobadores,
+                    'aprobaciones' => $aprobacionesActuales
+                ]);
+            } else {
+                $mensaje = "Tu aprobación ha sido registrada. Faltan " . ($totalAprobadores - $aprobacionesActuales) . " aprobación(es) más.";
+
+                Log::info('Aprobación individual registrada', [
+                    'cotizacion_id' => $cotizacion->id,
+                    'usuario_id' => auth()->id(),
+                    'aprobaciones_actuales' => $aprobacionesActuales,
+                    'total_aprobadores' => $totalAprobadores,
+                    'faltan' => $totalAprobadores - $aprobacionesActuales
+                ]);
+            }
+
+            DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Cotización aprobada por aprobador exitosamente',
-                'cotizacion' => $cotizacion
+                'message' => $mensaje,
+                'cotizacion' => $cotizacion->fresh(),
+                'aprobaciones_actuales' => $aprobacionesActuales,
+                'total_aprobadores' => $totalAprobadores,
+                'aprobacion_completa' => $aprobacionesActuales >= $totalAprobadores
             ]);
 
         } catch (\Exception $e) {
+            DB::rollBack();
+            
             Log::error('Error al confirmar cotización', [
                 'cotizacion_id' => $cotizacion->id,
                 'error' => $e->getMessage(),
@@ -180,38 +239,59 @@ class CotizacionEstadoController extends Controller
         try {
             Log::info('Rechazando cotización y enviando a corrección', [
                 'cotizacion_id' => $cotizacion->id,
-                'usuario_id' => auth()->id()
+                'usuario_id' => auth()->id(),
+                'estado_actual' => $cotizacion->estado
             ]);
 
-            // Validar que la cotización esté en estado ENVIADO A APROBADOR
-            if ($cotizacion->estado !== 'ENVIADO A APROBADOR') {
+            // Validar que la cotización esté en estados válidos para rechazar
+            $estadosValidos = ['ENVIADO A APROBADOR', 'APROBADA_CONTADOR'];
+            if (!in_array($cotizacion->estado, $estadosValidos)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'La cotización no puede ser rechazada desde su estado actual: ' . $cotizacion->estado
                 ], 422);
             }
 
+            DB::beginTransaction();
+
             // Obtener observaciones
             $observaciones = $request->input('observaciones', '');
 
-            // Actualizar estado a EN_CORRECCION
+            // Si había aprobaciones pendientes, eliminarlas (un rechazo anula las aprobaciones)
+            $aprobacionesEliminadas = CotizacionAprobacion::where('cotizacion_id', $cotizacion->id)->count();
+            if ($aprobacionesEliminadas > 0) {
+                CotizacionAprobacion::where('cotizacion_id', $cotizacion->id)->delete();
+                
+                Log::info('Aprobaciones eliminadas por rechazo', [
+                    'cotizacion_id' => $cotizacion->id,
+                    'cantidad_eliminadas' => $aprobacionesEliminadas
+                ]);
+            }
+
+            // Actualizar estado a EN_CORRECCION y guardar observaciones en novedades
             $cotizacion->update([
-                'estado' => 'EN_CORRECCION'
+                'estado' => 'EN_CORRECCION',
+                'novedades' => $observaciones
             ]);
+
+            DB::commit();
 
             Log::info('Cotización enviada a corrección', [
                 'cotizacion_id' => $cotizacion->id,
                 'nuevo_estado' => 'EN_CORRECCION',
-                'observaciones' => $observaciones
+                'observaciones' => $observaciones,
+                'aprobaciones_eliminadas' => $aprobacionesEliminadas
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Cotización reenviada a la asesora con observaciones',
-                'cotizacion' => $cotizacion
+                'message' => 'Cotización enviada al contador para corrección',
+                'cotizacion' => $cotizacion->fresh()
             ]);
 
         } catch (\Exception $e) {
+            DB::rollBack();
+            
             Log::error('Error al rechazar cotización', [
                 'cotizacion_id' => $cotizacion->id,
                 'error' => $e->getMessage(),
@@ -221,6 +301,71 @@ class CotizacionEstadoController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al rechazar la cotización: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Aprobar cotización final desde contador (APROBADA_POR_APROBADOR -> APROBADO_PARA_PEDIDO)
+     * Solo se puede aprobar si la cotización está en estado APROBADA_POR_APROBADOR
+     */
+    public function aprobarParaPedido(Cotizacion $cotizacion)
+    {
+        try {
+            Log::info('Aprobando cotización para pedido desde contador', [
+                'cotizacion_id' => $cotizacion->id,
+                'estado_actual' => $cotizacion->estado,
+                'usuario_id' => auth()->id()
+            ]);
+
+            // Validar que la cotización esté en estado APROBADA_POR_APROBADOR
+            if ($cotizacion->estado !== 'APROBADA_POR_APROBADOR') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La cotización debe estar en estado APROBADA_POR_APROBADOR para poder aprobarla para pedido. Estado actual: ' . $cotizacion->estado
+                ], 422);
+            }
+
+            // Guardar estado anterior para el evento
+            $estadoAnterior = $cotizacion->estado;
+
+            // Actualizar estado a APROBADO_PARA_PEDIDO
+            $cotizacion->update([
+                'estado' => 'APROBADO_PARA_PEDIDO',
+                'fecha_aprobada_para_pedido' => now()
+            ]);
+
+            Log::info('Cotización aprobada para pedido', [
+                'cotizacion_id' => $cotizacion->id,
+                'nuevo_estado' => 'APROBADO_PARA_PEDIDO',
+                'estado_anterior' => $estadoAnterior
+            ]);
+
+            // Disparar evento de broadcast en tiempo real
+            broadcast(new CotizacionEstadoCambiado(
+                $cotizacion->id,
+                'APROBADO_PARA_PEDIDO',
+                $estadoAnterior,
+                $cotizacion->asesor_id,
+                $cotizacion->toArray()
+            ))->toOthers();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cotización aprobada para pedido exitosamente',
+                'cotizacion' => $cotizacion->fresh()
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error al aprobar cotización para pedido', [
+                'cotizacion_id' => $cotizacion->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al aprobar la cotización para pedido: ' . $e->getMessage()
             ], 500);
         }
     }

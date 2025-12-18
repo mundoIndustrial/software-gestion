@@ -9,6 +9,7 @@ use App\Domain\Cotizacion\Entities\Cotizacion;
 use App\Domain\Cotizacion\Repositories\CotizacionRepositoryInterface;
 use App\Domain\Cotizacion\ValueObjects\TipoCotizacion;
 use App\Domain\Shared\ValueObjects\UserId;
+use App\Events\CotizacionCreada;
 use App\Models\Cotizacion as CotizacionModel;
 use Illuminate\Support\Facades\Log;
 
@@ -102,6 +103,14 @@ final class CrearCotizacionHandler
             $cotizacionArray['cliente_id'] = $datos->clienteId;
             $cotizacionArray['tipo_venta'] = $datos->tipoVenta;
             $cotizacionArray['especificaciones'] = $datos->especificaciones;
+
+            // Disparar evento de broadcast en tiempo real
+            broadcast(new CotizacionCreada(
+                $cotizacionModel->id,
+                $datos->usuarioId,
+                $cotizacionModel->estado,
+                $cotizacionArray
+            ))->toOthers();
 
             return CotizacionDTO::desdeArray($cotizacionArray);
         } catch (\Exception $e) {

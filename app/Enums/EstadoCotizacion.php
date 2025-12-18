@@ -9,6 +9,7 @@ enum EstadoCotizacion: string
     case APROBADA_CONTADOR = 'APROBADA_CONTADOR';
     case EN_CORRECCION = 'EN_CORRECCION';
     case APROBADA_COTIZACIONES = 'APROBADA_COTIZACIONES';
+    case APROBADO_PARA_PEDIDO = 'APROBADO_PARA_PEDIDO';
     case CONVERTIDA_PEDIDO = 'CONVERTIDA_PEDIDO';
     case FINALIZADA = 'FINALIZADA';
 
@@ -23,6 +24,7 @@ enum EstadoCotizacion: string
             self::APROBADA_CONTADOR => 'Aprobada por Contador',
             self::EN_CORRECCION => 'En Corrección',
             self::APROBADA_COTIZACIONES => 'Aprobada por Aprobador',
+            self::APROBADO_PARA_PEDIDO => 'Aprobado para Pedido',
             self::CONVERTIDA_PEDIDO => 'Convertida a Pedido',
             self::FINALIZADA => 'Finalizada',
         };
@@ -39,6 +41,7 @@ enum EstadoCotizacion: string
             self::APROBADA_CONTADOR => 'yellow',
             self::EN_CORRECCION => 'orange',
             self::APROBADA_COTIZACIONES => 'green',
+            self::APROBADO_PARA_PEDIDO => 'teal',
             self::CONVERTIDA_PEDIDO => 'purple',
             self::FINALIZADA => 'dark-green',
         };
@@ -55,6 +58,7 @@ enum EstadoCotizacion: string
             self::APROBADA_CONTADOR => 'check-circle',
             self::EN_CORRECCION => 'edit',
             self::APROBADA_COTIZACIONES => 'check-double',
+            self::APROBADO_PARA_PEDIDO => 'clipboard-check',
             self::CONVERTIDA_PEDIDO => 'exchange',
             self::FINALIZADA => 'flag-checkered',
         };
@@ -70,7 +74,8 @@ enum EstadoCotizacion: string
             self::ENVIADA_CONTADOR => [self::APROBADA_CONTADOR->value],
             self::APROBADA_CONTADOR => [self::APROBADA_COTIZACIONES->value, self::EN_CORRECCION->value],
             self::EN_CORRECCION => [self::APROBADA_CONTADOR->value],
-            self::APROBADA_COTIZACIONES => [self::CONVERTIDA_PEDIDO->value],
+            self::APROBADA_COTIZACIONES => [self::APROBADO_PARA_PEDIDO->value, self::CONVERTIDA_PEDIDO->value],
+            self::APROBADO_PARA_PEDIDO => [self::CONVERTIDA_PEDIDO->value],
             self::CONVERTIDA_PEDIDO => [self::FINALIZADA->value],
             self::FINALIZADA => [],
         };

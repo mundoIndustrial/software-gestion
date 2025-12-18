@@ -7,6 +7,7 @@ use App\Models\PrendaCotizacionFriendly;
 use App\Models\CostoPrenda;
 use App\Services\ImagenCotizacionService;
 use App\Helpers\DescripcionPrendaHelper;
+use App\Events\CotizacionEstadoCambiado;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Storage;
@@ -451,9 +452,21 @@ class ContadorController extends Controller
                 'estado' => 'required|in:ENVIADA_CONTADOR,APROBADA_COTIZACIONES,FINALIZADA'
             ]);
             
+            // Guardar estado anterior
+            $estadoAnterior = $cotizacion->estado;
+            
             // Actualizar el estado
             $cotizacion->estado = $request->input('estado');
             $cotizacion->save();
+            
+            // Disparar evento de broadcast en tiempo real
+            broadcast(new CotizacionEstadoCambiado(
+                $cotizacion->id,
+                $cotizacion->estado,
+                $estadoAnterior,
+                $cotizacion->asesor_id,
+                $cotizacion->toArray()
+            ))->toOthers();
             
             return response()->json([
                 'success' => true,

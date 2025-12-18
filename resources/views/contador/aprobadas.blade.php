@@ -142,9 +142,15 @@ document.addEventListener('click', function(event) {
                                     <button class="btn-action btn-edit btn-editar-costos" data-cotizacion-id="{{ $cotizacion->id }}" data-cliente="{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}" title="Editar Costos">
                                         <i class="fas fa-edit"></i>
                                     </button>
-                                    <button class="btn-action btn-success" onclick="aprobarAlAprobador({{ $cotizacion->id }})" title="Aprobar Cotización">
-                                        <i class="fas fa-check-circle"></i>
-                                    </button>
+                                    @if($cotizacion->estado === 'APROBADA_POR_APROBADOR')
+                                        <button class="btn-action btn-success" onclick="aprobarCotizacionEnLinea({{ $cotizacion->id }}, '{{ $cotizacion->estado }}')" title="Aprobar para Pedido">
+                                            <i class="fas fa-check-circle"></i>
+                                        </button>
+                                    @else
+                                        <button class="btn-action btn-success" onclick="aprobarAlAprobador({{ $cotizacion->id }})" title="Aprobar Cotización">
+                                            <i class="fas fa-check-circle"></i>
+                                        </button>
+                                    @endif
                                 </div>
                                 
                                 <!-- Estado -->
@@ -155,7 +161,9 @@ document.addEventListener('click', function(event) {
                                                 'ENVIADA_CONTADOR' => ['bg' => '#fff3cd', 'color' => '#856404'],
                                                 'EN_CORRECCION' => ['bg' => '#f8d7da', 'color' => '#721c24'],
                                                 'APROBADA_CONTADOR' => ['bg' => '#d4edda', 'color' => '#155724'],
+                                                'APROBADA_COTIZACIONES' => ['bg' => '#d1fae5', 'color' => '#065f46'],
                                                 'APROBADA_POR_APROBADOR' => ['bg' => '#cfe2ff', 'color' => '#084298'],
+                                                'APROBADO_PARA_PEDIDO' => ['bg' => '#ccfbf1', 'color' => '#115e59'],
                                                 'RECHAZADA' => ['bg' => '#f8d7da', 'color' => '#721c24'],
                                             ];
                                             $colors = $estadoColors[$cotizacion->estado] ?? ['bg' => '#e3f2fd', 'color' => '#1e40af'];

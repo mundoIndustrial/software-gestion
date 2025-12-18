@@ -37,6 +37,7 @@
 
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/contador/tabla-index.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/realtime-cotizaciones.css') }}?v={{ time() }}">
 @endpush
 
 <script>
@@ -324,5 +325,8 @@ document.addEventListener('click', function(event) {
 
 <!-- Script de Cotizaciones -->
 <script src="{{ asset('js/contador/cotizacion.js') }}"></script>
+
+<!-- Script de Real-time -->
+<script src="{{ asset('js/realtime-cotizaciones.js') }}?v={{ time() }}"></script>
 
 @endsection

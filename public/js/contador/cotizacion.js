@@ -384,19 +384,31 @@ function eliminarCotizacion(cotizacionId, cliente) {
 /**
  * Aprueba la cotización directamente desde la tabla (sin abrir modal)
  * @param {number} cotizacionId - ID de la cotización
+ * @param {string} estadoActual - Estado actual de la cotización (opcional)
  */
-function aprobarCotizacionEnLinea(cotizacionId) {
+function aprobarCotizacionEnLinea(cotizacionId, estadoActual = null) {
+    // Determinar el mensaje y la ruta según el estado
+    let mensaje = '¿Estás seguro de que deseas aprobar esta cotización?';
+    let infoAdicional = 'La cotización será enviada al área de Aprobación de Cotizaciones';
+    let ruta = `/cotizaciones/${cotizacionId}/aprobar-contador`;
+    
+    // Si el estado es APROBADA_POR_APROBADOR, usar la ruta para aprobar para pedido
+    if (estadoActual === 'APROBADA_POR_APROBADOR') {
+        infoAdicional = 'La cotización cambiará a estado APROBADO PARA PEDIDO';
+        ruta = `/cotizaciones/${cotizacionId}/aprobar-para-pedido`;
+    }
+    
     // Mostrar confirmación
     Swal.fire({
         title: '¿Aprobar cotización?',
         html: `
             <div style="text-align: left; margin: 1rem 0;">
                 <p style="margin: 0 0 0.75rem 0; font-size: 0.95rem; color: #4b5563;">
-                    ¿Estás seguro de que deseas aprobar esta cotización?
+                    ${mensaje}
                 </p>
                 <div style="background: #dbeafe; border-left: 4px solid #3b82f6; padding: 0.75rem; border-radius: 4px; margin: 0.75rem 0;">
                     <p style="margin: 0; font-size: 0.85rem; color: #1e40af; font-weight: 600;">
-                        ℹ️ La cotización será enviada al área de Aprobación de Cotizaciones
+                        ℹ️ ${infoAdicional}
                     </p>
                 </div>
             </div>
@@ -423,7 +435,7 @@ function aprobarCotizacionEnLinea(cotizacionId) {
             });
 
             // Enviar solicitud de aprobación
-            fetch(`/cotizaciones/${cotizacionId}/aprobar-contador`, {
+            fetch(ruta, {
                 method: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,

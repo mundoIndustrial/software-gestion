@@ -9,6 +9,7 @@ use App\Domain\Cotizacion\Specifications\EsPropietarioSpecification;
 use App\Domain\Cotizacion\ValueObjects\CotizacionId;
 use App\Domain\Cotizacion\ValueObjects\EstadoCotizacion;
 use App\Domain\Shared\ValueObjects\UserId;
+use App\Events\CotizacionEstadoCambiado;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -54,6 +55,9 @@ final class CambiarEstadoCotizacionHandler
                 throw new \DomainException("Estado inválido: {$comando->nuevoEstado}");
             }
 
+            // Guardar estado anterior
+            $estadoAnterior = $cotizacion->estado()->value;
+
             // Cambiar estado
             $cotizacion->cambiarEstado($nuevoEstado);
 
@@ -65,8 +69,20 @@ final class CambiarEstadoCotizacionHandler
                 'nuevo_estado' => $nuevoEstado->value,
             ]);
 
+            // Obtener datos completos de la cotización para el broadcast
+            $cotizacionArray = $cotizacion->toArray();
+            
+            // Disparar evento de broadcast en tiempo real
+            broadcast(new CotizacionEstadoCambiado(
+                $comando->cotizacionId,
+                $nuevoEstado->value,
+                $estadoAnterior,
+                $comando->usuarioId,
+                $cotizacionArray
+            ))->toOthers();
+
             // Retornar DTO
-            return CotizacionDTO::desdeArray($cotizacion->toArray());
+            return CotizacionDTO::desdeArray($cotizacionArray);
         } catch (\Exception $e) {
             Log::error('CambiarEstadoCotizacionHandler: Error al cambiar estado', [
                 'error' => $e->getMessage(),

@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="{{ asset('css/cotizaciones/filtros-embudo.css') }}?v={{ time() }}" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="{{ asset('css/asesores/cotizaciones-tabs.css') }}?v={{ time() }}" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="{{ asset('css/asesores/cotizaciones-index.css') }}?v={{ time() }}" media="print" onload="this.media='all'">
+<link rel="stylesheet" href="{{ asset('css/realtime-cotizaciones.css') }}?v={{ time() }}">
 <noscript>
     <link rel="stylesheet" href="{{ asset('css/cotizaciones/filtros-embudo.css') }}?v={{ time() }}">
     <link rel="stylesheet" href="{{ asset('css/asesores/cotizaciones-tabs.css') }}?v={{ time() }}">
@@ -228,6 +229,7 @@
 <script src="{{ asset('js/asesores/cotizaciones/filtros-embudo.js') }}"></script>
 <script src="{{ asset('js/asesores/cotizaciones-index.js') }}"></script>
 <script src="{{ asset('js/asesores/cotizaciones-anular.js') }}"></script>
+<script src="{{ asset('js/realtime-cotizaciones.js') }}?v={{ time() }}"></script>
 
 <script>
     // Variables globales para PDF

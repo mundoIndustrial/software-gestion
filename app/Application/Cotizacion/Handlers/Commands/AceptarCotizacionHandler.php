@@ -8,6 +8,7 @@ use App\Domain\Cotizacion\Repositories\CotizacionRepositoryInterface;
 use App\Domain\Cotizacion\Specifications\EsPropietarioSpecification;
 use App\Domain\Cotizacion\ValueObjects\CotizacionId;
 use App\Domain\Shared\ValueObjects\UserId;
+use App\Events\CotizacionAprobada;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -57,8 +58,20 @@ final class AceptarCotizacionHandler
                 'eventos' => count($cotizacion->eventos()),
             ]);
 
+            // Obtener datos completos de la cotización para el broadcast
+            $cotizacionArray = $cotizacion->toArray();
+            
+            // Disparar evento de broadcast en tiempo real
+            broadcast(new CotizacionAprobada(
+                $comando->cotizacionId,
+                $cotizacion->asesorId()->valor(),
+                $comando->usuarioId,
+                $cotizacion->estado()->value,
+                $cotizacionArray
+            ))->toOthers();
+
             // Retornar DTO
-            return CotizacionDTO::desdeArray($cotizacion->toArray());
+            return CotizacionDTO::desdeArray($cotizacionArray);
         } catch (\Exception $e) {
             Log::error('AceptarCotizacionHandler: Error al aceptar', [
                 'error' => $e->getMessage(),

@@ -252,12 +252,19 @@ Route::middleware(['auth'])->group(function () {
             abort(403, 'No tienes permiso para acceder a esta sección.');
         }
         
-        // Obtener cotizaciones pendientes de aprobación (estado ENVIADO A APROBADOR)
-        $cotizaciones = \App\Models\Cotizacion::where('estado', 'ENVIADO A APROBADOR')
+        // Obtener cotizaciones pendientes de aprobación (estado APROBADA_CONTADOR)
+        $cotizaciones = \App\Models\Cotizacion::where('estado', 'APROBADA_CONTADOR')
+            ->with(['aprobaciones.usuario'])
             ->orderBy('created_at', 'desc')
             ->get();
         
-        return view('cotizaciones.pendientes', compact('cotizaciones'));
+        // Obtener total de aprobadores
+        $rolAprobador = \App\Models\Role::where('name', 'aprobador_cotizaciones')->first();
+        $totalAprobadores = $rolAprobador 
+            ? \App\Models\User::whereJsonContains('roles_ids', $rolAprobador->id)->count()
+            : 0;
+        
+        return view('cotizaciones.pendientes', compact('cotizaciones', 'totalAprobadores'));
     })->name('cotizaciones.pendientes');
 
     // Obtener datos de cotización para modal (AJAX)
@@ -625,6 +632,9 @@ Route::middleware(['auth', 'verified'])->name('cotizaciones.estado.')->group(fun
     
     // Contador: Aprobar cotización
     Route::post('/cotizaciones/{cotizacion}/aprobar-contador', [App\Http\Controllers\CotizacionEstadoController::class, 'aprobarContador'])->name('aprobar-contador');
+    
+    // Contador: Aprobar cotización para pedido (APROBADA_COTIZACIONES -> APROBADO_PARA_PEDIDO)
+    Route::post('/cotizaciones/{cotizacion}/aprobar-para-pedido', [App\Http\Controllers\CotizacionEstadoController::class, 'aprobarParaPedido'])->name('aprobar-para-pedido');
     
     // Aprobador de Cotizaciones: Aprobar cotización
     Route::post('/cotizaciones/{cotizacion}/aprobar-aprobador', [App\Http\Controllers\CotizacionEstadoController::class, 'aprobarAprobador'])->name('aprobar-aprobador');
