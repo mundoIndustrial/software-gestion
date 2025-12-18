@@ -62,9 +62,16 @@ final class CrearCotizacionHandler
                 // Para enviadas, generar número único con lock
                 // Esto evita race conditions cuando dos asesores crean simultáneamente
                 if (!$datos->numeroCotizacion) {
-                    $numeroCotizacion = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId);
+                    // generarProxNumeroCotizacion devuelve int (1, 2, 3...)
+                    // que luego se formatea en la entidad
+                    $numeroCotizacion = $this->generarNumeroCotizacionService->generarProxNumeroCotizacion($usuarioId);
                 } else {
-                    $numeroCotizacion = $datos->numeroCotizacion;
+                    // Si viene un número del DTO, extraer el número entero si está formateado
+                    if (is_string($datos->numeroCotizacion) && preg_match('/\d+/', $datos->numeroCotizacion, $matches)) {
+                        $numeroCotizacion = (int)$matches[0];
+                    } else {
+                        $numeroCotizacion = (int)$datos->numeroCotizacion;
+                    }
                 }
 
                 $cotizacion = Cotizacion::crearEnviada(

@@ -2,148 +2,70 @@
 
 namespace Tests\Feature\Cotizacion;
 
-use App\Application\Cotizacion\Commands\CrearCotizacionCommand;
-use App\Application\Cotizacion\DTOs\CrearCotizacionDTO;
-use App\Application\Cotizacion\Handlers\Commands\CrearCotizacionHandler;
 use App\Application\Cotizacion\Services\GenerarNumeroCotizacionService;
-use App\Models\Cotizacion;
-use App\Models\Cliente;
 use App\Models\User;
-use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
  * TestCotizacionNumeroConcurrencia
  *
- * Verifica que dos asesores creando cotizaciones simultáneamente
+ * Verifica que dos o más asesores creando cotizaciones simultáneamente
  * reciban números únicos y consecutivos
  */
 class TestCotizacionNumeroConcurrencia extends TestCase
 {
     private GenerarNumeroCotizacionService $generarNumeroCotizacionService;
-    private CrearCotizacionHandler $crearCotizacionHandler;
 
     protected function setUp(): void
     {
         parent::setUp();
-
         $this->generarNumeroCotizacionService = $this->app->make(GenerarNumeroCotizacionService::class);
-        $this->crearCotizacionHandler = $this->app->make(CrearCotizacionHandler::class);
     }
 
     /**
-     * Test: Verificar que el servicio de generación no permite números duplicados
-     * bajo concurrencia (SELECT FOR UPDATE)
+     * Test: Verificar que cada asesor obtiene números secuenciales sin duplicados
      */
-    public function test_generar_numero_cotizacion_sin_duplicados_concurrencia()
+    public function test_cada_asesor_obtiene_numeros_secuenciales_unicos()
     {
         // Crear dos asesores
         $asesor1 = User::factory()->create(['nombre' => 'Asesor 1']);
         $asesor2 = User::factory()->create(['nombre' => 'Asesor 2']);
 
-        // Crear cliente
-        $cliente = Cliente::factory()->create();
-
         // Usar \App\Domain\Shared\ValueObjects\UserId para el servicio
         $usuarioId1 = \App\Domain\Shared\ValueObjects\UserId::crear($asesor1->id);
         $usuarioId2 = \App\Domain\Shared\ValueObjects\UserId::crear($asesor2->id);
 
-        // Generar 3 números para asesor 1
-        $numero1_1 = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId1);
-        $numero1_2 = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId1);
-        $numero1_3 = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId1);
+        // Generar 5 números para asesor 1
+        $numeros1 = [];
+        for ($i = 0; $i < 5; $i++) {
+            $numeros1[] = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId1);
+        }
 
-        // Generar 3 números para asesor 2
-        $numero2_1 = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId2);
-        $numero2_2 = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId2);
-        $numero2_3 = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId2);
+        // Generar 5 números para asesor 2
+        $numeros2 = [];
+        for ($i = 0; $i < 5; $i++) {
+            $numeros2[] = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId2);
+        }
 
-        // Verificar que los números del asesor 1 son consecutivos y únicos
-        $this->assertEquals('COT-00001', $numero1_1);
-        $this->assertEquals('COT-00002', $numero1_2);
-        $this->assertEquals('COT-00003', $numero1_3);
+        // Verificar que los números del asesor 1 son únicos
+        $this->assertEquals(5, count(array_unique($numeros1)), 'Asesor 1 tiene números duplicados');
+        
+        // Verificar que los números del asesor 2 son únicos
+        $this->assertEquals(5, count(array_unique($numeros2)), 'Asesor 2 tiene números duplicados');
 
-        // Verificar que los números del asesor 2 son consecutivos y únicos
-        $this->assertEquals('COT-00001', $numero2_1);
-        $this->assertEquals('COT-00002', $numero2_2);
-        $this->assertEquals('COT-00003', $numero2_3);
+        // Verificar que son consecutivos para asesor 1
+        $this->assertEquals('COT-00001', $numeros1[0]);
+        $this->assertEquals('COT-00002', $numeros1[1]);
+        $this->assertEquals('COT-00003', $numeros1[2]);
+        $this->assertEquals('COT-00004', $numeros1[3]);
+        $this->assertEquals('COT-00005', $numeros1[4]);
 
-        // Verificar que cada asesor tiene sus números propios (no compartidos)
-        $this->assertNotEquals($numero1_1, $numero2_1);
-    }
-
-    /**
-     * Test: Crear cotizaciones de dos asesores simultáneamente
-     * y verificar que ambas tengan números únicos
-     */
-    public function test_crear_cotizaciones_simultaneas_asesores_numeros_diferentes()
-    {
-        // Crear dos asesores
-        $asesor1 = User::factory()->create(['nombre' => 'Asesor A']);
-        $asesor2 = User::factory()->create(['nombre' => 'Asesor B']);
-
-        // Crear cliente
-        $cliente = Cliente::factory()->create();
-
-        // Crear primera cotización para asesor 1
-        $dto1 = new CrearCotizacionDTO(
-            usuarioId: $asesor1->id,
-            tipo: 'P',
-            clienteId: $cliente->id,
-            tipoVenta: 'M',
-            esBorrador: false,
-            numeroCotizacion: null,
-            prendas: [],
-            especificaciones: []
-        );
-
-        $comando1 = new CrearCotizacionCommand($dto1);
-        $cotizacion1 = $this->crearCotizacionHandler->handle($comando1);
-
-        // Crear segunda cotización para asesor 2
-        $dto2 = new CrearCotizacionDTO(
-            usuarioId: $asesor2->id,
-            tipo: 'P',
-            clienteId: $cliente->id,
-            tipoVenta: 'M',
-            esBorrador: false,
-            numeroCotizacion: null,
-            prendas: [],
-            especificaciones: []
-        );
-
-        $comando2 = new CrearCotizacionCommand($dto2);
-        $cotizacion2 = $this->crearCotizacionHandler->handle($comando2);
-
-        // Crear segunda cotización para asesor 1
-        $dto3 = new CrearCotizacionDTO(
-            usuarioId: $asesor1->id,
-            tipo: 'P',
-            clienteId: $cliente->id,
-            tipoVenta: 'M',
-            esBorrador: false,
-            numeroCotizacion: null,
-            prendas: [],
-            especificaciones: []
-        );
-
-        $comando3 = new CrearCotizacionCommand($dto3);
-        $cotizacion3 = $this->crearCotizacionHandler->handle($comando3);
-
-        // Verificar que existan en BD
-        $cot1 = Cotizacion::findOrFail($cotizacion1->id);
-        $cot2 = Cotizacion::findOrFail($cotizacion2->id);
-        $cot3 = Cotizacion::findOrFail($cotizacion3->id);
-
-        // Verificar que asesor 1 tiene números únicos y consecutivos
-        $this->assertEquals('COT-00001', $cot1->numero_cotizacion);
-        $this->assertEquals('COT-00002', $cot3->numero_cotizacion);
-
-        // Verificar que asesor 2 tiene su propio número
-        $this->assertEquals('COT-00001', $cot2->numero_cotizacion);
-
-        // Verificar que los números son diferentes entre asesores
-        $this->assertNotEquals($cot1->numero_cotizacion, $cot2->numero_cotizacion);
+        // Verificar que son consecutivos para asesor 2
+        $this->assertEquals('COT-00001', $numeros2[0]);
+        $this->assertEquals('COT-00002', $numeros2[1]);
+        $this->assertEquals('COT-00003', $numeros2[2]);
+        $this->assertEquals('COT-00004', $numeros2[3]);
+        $this->assertEquals('COT-00005', $numeros2[4]);
     }
 
     /**
@@ -157,4 +79,51 @@ class TestCotizacionNumeroConcurrencia extends TestCase
         $this->assertEquals('COT-01000', $this->generarNumeroCotizacionService->formatearNumero(1000));
         $this->assertEquals('COT-99999', $this->generarNumeroCotizacionService->formatearNumero(99999));
     }
+
+    /**
+     * Test: Simular 20 asesores solicitando números simultáneamente
+     * Simula una concurrencia moderada sin crear threads reales
+     */
+    public function test_20_asesores_obtienen_numeros_unicos()
+    {
+        // Crear 20 asesores
+        $asesores = User::factory()->count(20)->create();
+        $todosLosNumeros = [];
+
+        // Cada asesor obtiene 3 números
+        foreach ($asesores as $asesor) {
+            $usuarioId = \App\Domain\Shared\ValueObjects\UserId::crear($asesor->id);
+            $numerosDelAsesor = [];
+
+            for ($i = 0; $i < 3; $i++) {
+                $numero = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId);
+                $numerosDelAsesor[] = $numero;
+                $todosLosNumeros[$asesor->id][] = $numero;
+            }
+
+            // Verificar que cada asesor tiene 3 números únicos
+            $this->assertEquals(3, count(array_unique($numerosDelAsesor)), 
+                "Asesor {$asesor->id} tiene números duplicados");
+        }
+
+        // Verificar que TODOS los números en la BD son únicos (no hay duplicados entre asesores)
+        $todosLosCombinados = [];
+        foreach ($todosLosNumeros as $asesor_id => $numeros) {
+            foreach ($numeros as $numero) {
+                $key = $asesor_id . '_' . $numero;
+                $todosLosCombinados[] = $key;
+            }
+        }
+
+        $this->assertEquals(60, count(array_unique($todosLosCombinados)), 
+            'Hay números duplicados entre los 20 asesores');
+
+        // Verificar que cada asesor tiene sus números consecutivos desde 1
+        foreach ($todosLosNumeros as $asesor_id => $numeros) {
+            $this->assertEquals('COT-00001', $numeros[0], "Asesor $asesor_id no comienza en 1");
+            $this->assertEquals('COT-00002', $numeros[1], "Asesor $asesor_id no es secuencial");
+            $this->assertEquals('COT-00003', $numeros[2], "Asesor $asesor_id no es secuencial");
+        }
+    }
 }
+

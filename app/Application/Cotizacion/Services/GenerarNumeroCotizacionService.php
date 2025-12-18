@@ -10,18 +10,24 @@ use Illuminate\Support\Facades\Log;
  * GenerarNumeroCotizacionService
  *
  * Servicio para generar números de cotización únicos y consecutivos
- * Maneja la concurrencia usando database locking (FOR UPDATE)
+ * Maneja la concurrencia usando database locking (SELECT FOR UPDATE)
+ * Usa una tabla de secuencias por asesor para evitar race conditions
  */
 final class GenerarNumeroCotizacionService
 {
     /**
+     * Tabla de secuencias por asesor
+     */
+    private const TABLA_SECUENCIAS = 'cotizacion_secuencias';
+
+    /**
      * Generar el próximo número de cotización para un asesor
      *
-     * Usa transaction con lock para evitar race conditions
-     * cuando dos solicitudes simultáneas crean cotizaciones
+     * Usa una secuencia GLOBAL única con SELECT FOR UPDATE para garantizar
+     * números únicos y consecutivos sin race conditions entre todos los asesores
      *
      * @param UserId $usuarioId
-     * @return int Número único y consecutivo para el asesor
+     * @return int Número único y consecutivo (global)
      */
     public function generarProxNumeroCotizacion(UserId $usuarioId): int
     {
@@ -33,29 +39,38 @@ final class GenerarNumeroCotizacionService
             try {
                 return DB::transaction(function () use ($usuarioIdValue) {
                     // Usar SELECT FOR UPDATE para bloquear la fila
-                    // y evitar que otro request obtenga el mismo número
-                    $ultimaCotizacion = DB::table('cotizaciones')
-                        ->where('asesor_id', $usuarioIdValue)
-                        ->where('es_borrador', false)
-                        ->orderBy('id', 'desc')
+                    // Garantiza que solo un request obtenga el siguiente número
+                    $secuencia = DB::table(self::TABLA_SECUENCIAS)
+                        ->where('tipo', 'global')
                         ->lockForUpdate()
-                        ->first(['numero_cotizacion']);
+                        ->first();
 
-                    // Si existe cotización, incrementar el número
-                    if ($ultimaCotizacion && !is_null($ultimaCotizacion->numero_cotizacion)) {
-                        // Extraer el número de la cadena (ej: "COT-00001" → 1)
-                        $numeroCotizacion = $this->extraerNumero($ultimaCotizacion->numero_cotizacion) + 1;
+                    if (!$secuencia) {
+                        // Inicializar si no existe
+                        DB::table(self::TABLA_SECUENCIAS)->insert([
+                            'tipo' => 'global',
+                            'siguiente_numero' => 2,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                        $proximoNumero = 1;
                     } else {
-                        // Primera cotización del asesor
-                        $numeroCotizacion = 1;
+                        // Obtener el número actual y incrementar
+                        $proximoNumero = $secuencia->siguiente_numero;
+                        DB::table(self::TABLA_SECUENCIAS)
+                            ->where('tipo', 'global')
+                            ->update([
+                                'siguiente_numero' => $proximoNumero + 1,
+                                'updated_at' => now(),
+                            ]);
                     }
 
-                    Log::info('GenerarNumeroCotizacionService: Número generado', [
+                    Log::info('GenerarNumeroCotizacionService: Número global generado', [
                         'usuario_id' => $usuarioIdValue,
-                        'numero' => $numeroCotizacion,
+                        'numero' => $proximoNumero,
                     ]);
 
-                    return $numeroCotizacion;
+                    return $proximoNumero;
                 });
             } catch (\Throwable $e) {
                 $ultimoError = $e;
@@ -91,28 +106,6 @@ final class GenerarNumeroCotizacionService
     }
 
     /**
-     * Extraer el número entero de un número de cotización formateado
-     *
-     * Ejemplos:
-     * - "COT-00001" → 1
-     * - "1" → 1
-     * - "COT-00123" → 123
-     *
-     * @param string $numeroCotizacion
-     * @return int
-     */
-    private function extraerNumero(string $numeroCotizacion): int
-    {
-        // Buscar el último número en la cadena
-        if (preg_match('/(\d+)$/', $numeroCotizacion, $matches)) {
-            return (int) $matches[1];
-        }
-
-        // Si no encuentra números, retornar 0
-        return 0;
-    }
-
-    /**
      * Formatear número de cotización con prefijo
      *
      * @param int $numero
@@ -135,3 +128,4 @@ final class GenerarNumeroCotizacionService
         return $this->formatearNumero($numero);
     }
 }
+
