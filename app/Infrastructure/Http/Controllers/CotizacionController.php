@@ -20,6 +20,7 @@ use App\Application\Cotizacion\Handlers\Queries\ObtenerCotizacionHandler;
 use App\Application\Cotizacion\Queries\ListarCotizacionesQuery;
 use App\Application\Cotizacion\Queries\ObtenerCotizacionQuery;
 use App\Application\Cotizacion\Services\ObtenerOCrearClienteService;
+use App\Application\Cotizacion\Services\GenerarNumeroCotizacionService;
 use App\Application\Services\ProcesarImagenesCotizacionService;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
@@ -46,6 +47,7 @@ final class CotizacionController extends Controller
         private readonly AceptarCotizacionHandler $aceptarHandler,
         private readonly SubirImagenCotizacionHandler $subirImagenHandler,
         private readonly ObtenerOCrearClienteService $obtenerOCrearClienteService,
+        private readonly GenerarNumeroCotizacionService $generarNumeroCotizacionService,
         private readonly ProcesarImagenesCotizacionService $procesarImagenesService,
         private readonly \App\Application\Services\EliminarImagenesCotizacionService $eliminarImagenesService,
     ) {
@@ -528,30 +530,13 @@ final class CotizacionController extends Controller
             // Generar número de cotización si es envío (no borrador)
             $numeroCotizacion = null;
             if (!$esBorrador) {
-                // Obtener el último número de cotización y sumar 1
-                $ultimaCotizacion = \App\Models\Cotizacion::whereNotNull('numero_cotizacion')
-                    ->orderBy('numero_cotizacion', 'desc')
-                    ->first();
+                // Usar el servicio de generación segura de números (con database locks)
+                $usuarioId = \App\Domain\Shared\ValueObjects\UserId::crear(Auth::id());
+                $numeroCotizacion = $this->generarNumeroCotizacionService->generarProxNumeroCotizacion($usuarioId);
                 
-                // Extraer el número secuencial de COT-XXXXX o usar 0 si no existe
-                $ultimoSecuencial = 0;
-                if ($ultimaCotizacion) {
-                    // Extraer el número de la cadena "COT-XXXXX"
-                    if (preg_match('/COT-(\d+)/', $ultimaCotizacion->numero_cotizacion, $matches)) {
-                        $ultimoSecuencial = (int)$matches[1];
-                    }
-                }
-                
-                $nuevoSecuencial = $ultimoSecuencial + 1;
-                // ⚠️ IMPORTANTE: Pasar el secuencial (entero), NO el formato COT-XXXXX
-                // El handler/entity lo formateará correctamente
-                $numeroCotizacion = $nuevoSecuencial;
-                
-                Log::info('CotizacionController@store: Generando número de cotización', [
-                    'ultimo_cotizacion_id' => $ultimaCotizacion?->id,
-                    'ultimo_numero' => $ultimaCotizacion?->numero_cotizacion,
-                    'ultimo_secuencial' => $ultimoSecuencial,
-                    'nuevo_secuencial' => $nuevoSecuencial,
+                Log::info('CotizacionController@store: Número de cotización generado con servicio seguro', [
+                    'usuario_id' => Auth::id(),
+                    'numero_secuencial' => $numeroCotizacion,
                 ]);
             }
 
