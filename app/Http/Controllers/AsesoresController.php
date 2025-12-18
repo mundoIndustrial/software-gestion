@@ -262,6 +262,8 @@ class AsesoresController extends Controller
         // Soportar ambos formatos: productos y productos_friendly
         $productosKey = $request->has('productos') ? 'productos' : 'productos_friendly';
         
+        // Validar de forma flexible: no validar archivos de telas aquí
+        // Se validarán después en procesarFotosTelas
         $validated = $request->validate([
             'cliente' => 'required|string|max:255',
             'forma_de_pago' => 'nullable|string|max:69',
@@ -277,6 +279,11 @@ class AsesoresController extends Controller
             $productosKey.'.*.cantidad' => 'required|integer|min:1',
             $productosKey.'.*.ref_hilo' => 'nullable|string',
             $productosKey.'.*.precio_unitario' => 'nullable|numeric|min:0',
+            // ✅ Validaciones para múltiples telas por prenda (SIN validar archivos aquí)
+            $productosKey.'.*.telas' => 'nullable|array',
+            $productosKey.'.*.telas.*.tela_id' => 'nullable|integer',
+            $productosKey.'.*.telas.*.color_id' => 'nullable|integer',
+            $productosKey.'.*.telas.*.referencia' => 'nullable|string',
             // Validaciones para datos del logo
             'logo.descripcion' => 'nullable|string',
             'logo.observaciones_tecnicas' => 'nullable|string',
@@ -301,6 +308,10 @@ class AsesoresController extends Controller
                 'estado' => 'Pendiente',
             ]);
 
+            // ✅ PROCESAR FOTOS DE TELAS ANTES DE GUARDAR
+            // Procesar archivos de fotos de telas y convertirlos a rutas
+            $productosConTelasProcessadas = $this->procesarFotosTelas($request, $validated[$productosKey]);
+
             // ✅ Guardar prendas COMPLETAS usando PedidoPrendaService
             // Este servicio guarda toda la información de las prendas:
             // - Nombre, cantidad, descripción
@@ -309,7 +320,7 @@ class AsesoresController extends Controller
             // - Fotos de prendas, logos y telas
             // - Descripción formateada en formato legacy
             $pedidoPrendaService = new PedidoPrendaService();
-            $pedidoPrendaService->guardarPrendasEnPedido($pedidoBorrador, $validated[$productosKey]);
+            $pedidoPrendaService->guardarPrendasEnPedido($pedidoBorrador, $productosConTelasProcessadas);
 
             // ✅ GUARDAR LOGO Y SUS IMÁGENES (PASO 3)
             if (!empty($request->get('logo.descripcion')) || $request->hasFile('logo.imagenes')) {
@@ -362,6 +373,118 @@ class AsesoresController extends Controller
                 'message' => 'Error al guardar el pedido: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Procesar fotos de telas: guardar archivos en storage y retornar rutas
+     */
+    private function procesarFotosTelas(Request $request, array $productos): array
+    {
+        $productosProcessados = [];
+        $allFiles = $request->allFiles();
+
+        \Log::info('📁 Archivos recibidos en request:', [
+            'total_archivos' => count($allFiles),
+            'archivos_keys' => array_keys($allFiles),
+        ]);
+
+        foreach ($productos as $productoIndex => $producto) {
+            $productosProcessados[$productoIndex] = $producto;
+
+            // Procesar telas múltiples si existen
+            if (!empty($producto['telas']) && is_array($producto['telas'])) {
+                $telasProcessadas = [];
+
+                foreach ($producto['telas'] as $telaIndex => $tela) {
+                    $telasProcessadas[$telaIndex] = $tela;
+                    $fotosProcessadas = [];
+
+                    // Buscar archivos de fotos para esta tela específica
+                    // El nombre del input será: productos_friendly[0][telas][0][fotos][]
+                    $fotosKey = "productos_friendly.{$productoIndex}.telas.{$telaIndex}.fotos";
+                    
+                    // Intentar obtener archivos de diferentes formas
+                    $archivos = [];
+                    
+                    // Método 1: Usando allFiles()
+                    if (!empty($allFiles[$fotosKey])) {
+                        $archivos = $allFiles[$fotosKey];
+                    }
+                    // Método 2: Usando hasFile() y file()
+                    elseif ($request->hasFile($fotosKey)) {
+                        $archivos = $request->file($fotosKey);
+                    }
+                    
+                    if (is_array($archivos) && !empty($archivos)) {
+                        \Log::info('✅ Procesando fotos de tela', [
+                            'producto_index' => $productoIndex,
+                            'tela_index' => $telaIndex,
+                            'fotos_key' => $fotosKey,
+                            'cantidad_fotos' => count($archivos),
+                        ]);
+
+                        foreach ($archivos as $fotoIndex => $archivoFoto) {
+                            if ($archivoFoto && $archivoFoto->isValid()) {
+                                try {
+                                    // Guardar en storage
+                                    $rutaGuardada = $archivoFoto->store('telas/pedidos', 'public');
+                                    
+                                    \Log::info('✅ Foto de tela guardada en storage', [
+                                        'producto_index' => $productoIndex,
+                                        'tela_index' => $telaIndex,
+                                        'ruta_guardada' => $rutaGuardada,
+                                        'nombre_archivo' => $archivoFoto->getClientOriginalName(),
+                                        'tamaño' => $archivoFoto->getSize(),
+                                    ]);
+
+                                    // Agregar ruta a la lista
+                                    $fotosProcessadas[] = [
+                                        'ruta_original' => Storage::url($rutaGuardada),
+                                        'ruta_webp' => null,
+                                        'ruta_miniatura' => null,
+                                        'ancho' => null,
+                                        'alto' => null,
+                                        'tamaño' => $archivoFoto->getSize(),
+                                    ];
+                                } catch (\Exception $e) {
+                                    \Log::error('❌ Error guardando foto de tela', [
+                                        'error' => $e->getMessage(),
+                                        'archivo' => $archivoFoto->getClientOriginalName(),
+                                    ]);
+                                }
+                            }
+                        }
+                    } else {
+                        \Log::info('ℹ️ Sin archivos para esta tela', [
+                            'fotos_key' => $fotosKey,
+                            'es_array' => is_array($archivos),
+                            'cantidad' => count($archivos ?? []),
+                        ]);
+                    }
+
+                    // Guardar fotos procesadas en la tela
+                    if (!empty($fotosProcessadas)) {
+                        $telasProcessadas[$telaIndex]['fotos'] = $fotosProcessadas;
+                        \Log::info('✅ Fotos procesadas guardadas en tela', [
+                            'tela_index' => $telaIndex,
+                            'cantidad_fotos' => count($fotosProcessadas),
+                        ]);
+                    }
+                }
+
+                // Guardar telas procesadas en el producto
+                $productosProcessados[$productoIndex]['telas'] = $telasProcessadas;
+            }
+        }
+
+        \Log::info('✅ Procesamiento de fotos de telas completado', [
+            'productos_con_fotos' => count(array_filter($productosProcessados, function($p) {
+                return !empty($p['telas']) && is_array($p['telas']) && 
+                       count(array_filter($p['telas'], fn($t) => !empty($t['fotos']))) > 0;
+            })),
+        ]);
+
+        return $productosProcessados;
     }
 
     /**

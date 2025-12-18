@@ -1,5 +1,13 @@
 {{-- Prendas Table Tab --}}
-<div id="tab-prendas" class="tab-content {{ $tienePrendas ? 'active' : '' }}">
+@php
+    $idLogo = \App\Models\TipoCotizacion::getIdPorCodigo('L');
+    $idCombinada = \App\Models\TipoCotizacion::getIdPorCodigo('PL');
+    $tabActivoPorDefecto = 'prendas';
+    if ($cotizacion->tipo_cotizacion_id === $idLogo || $cotizacion->tipo_cotizacion_id === $idCombinada) {
+        $tabActivoPorDefecto = 'bordado';
+    }
+@endphp
+<div id="tab-prendas" class="tab-content {{ $tabActivoPorDefecto === 'prendas' ? 'active' : '' }}">
     @if($cotizacion->prendas && count($cotizacion->prendas) > 0)
         {{-- Tipo Venta de Prendas --}}
         @if($cotizacion->tipo_venta)

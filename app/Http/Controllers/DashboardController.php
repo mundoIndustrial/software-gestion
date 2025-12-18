@@ -53,6 +53,10 @@ class DashboardController extends Controller
             if ($roleName === 'cortador' || $roleName === 'costurero') {
                 return redirect()->route('operario.dashboard');
             }
+
+            if ($roleName === 'visualizador_cotizaciones_logo') {
+                return redirect()->route('visualizador-logo.dashboard');
+            }
         }
 
         return view('dashboard');

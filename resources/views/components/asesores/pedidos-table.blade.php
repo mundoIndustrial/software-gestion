@@ -61,6 +61,14 @@
                                 </button>
                             </div>
                         </th>
+                        <th class="th-filterable">
+                            <div class="th-content">
+                                <span>Cantidad Total</span>
+                                <button class="btn-filter" onclick="abrirFiltroModal('cantidad_total', this)" title="Filtrar">
+                                    <span class="material-symbols-rounded">tune</span>
+                                </button>
+                            </div>
+                        </th>
                         <th style="text-align: center;">Acciones</th>
                     </tr>
                 </thead>
@@ -90,6 +98,25 @@
                             <td class="fecha-estimada">
                                 {{ $pedido->fecha_estimada_entrega ? \Carbon\Carbon::parse($pedido->fecha_estimada_entrega)->format('d/m/Y') : '-' }}
                             </td>
+                            <td class="cantidad-total" style="text-align: center; font-weight: bold;">
+                                {{ $pedido->cantidad_total ?? 0 }}
+                            </td>
+                            <script>
+                                console.log('📦 [Pedido {{ $pedido->id }}]', {
+                                    numero_pedido: {{ $pedido->numero_pedido }},
+                                    cliente: '{{ $pedido->cliente }}',
+                                    cantidad_total_db: {{ $pedido->cantidad_total ?? 'null' }},
+                                    prendas_count: {{ $pedido->prendas->count() }},
+                                    prendas: {!! json_encode($pedido->prendas->map(function($p) {
+                                        return [
+                                            'id' => $p->id,
+                                            'nombre' => $p->nombre_prenda,
+                                            'cantidad_atributo' => $p->cantidad,
+                                            'cantidad_talla' => $p->cantidad_talla
+                                        ];
+                                    })->all()) !!}
+                                });
+                            </script>
                             <td class="acciones">
                                 <div class="pedidos-actions">
                                     <!-- Botón de Acciones con Dropdown -->

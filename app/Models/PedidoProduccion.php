@@ -51,7 +51,6 @@ class PedidoProduccion extends Model
 
     protected $appends = [
         'descripcion_prendas',
-        'cantidad_total',
     ];
 
     protected static function boot()
@@ -85,7 +84,7 @@ class PedidoProduccion extends Model
                 ]);
                 event(new PedidoCreado($model, $asesor));
             } else {
-                \Log::warn('⚠️ [PedidoProduccion.boot] Asesor no encontrado para pedido', [
+                \Log::warning('⚠️ [PedidoProduccion.boot] Asesor no encontrado para pedido', [
                     'pedido_id' => $model->id,
                     'asesor_id' => $model->asesor_id,
                 ]);

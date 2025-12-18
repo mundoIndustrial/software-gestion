@@ -40,8 +40,30 @@ class PedidoProduccionController extends Controller
     public function index(): View
     {
         $pedidos = PedidoProduccion::where('asesor_id', auth()->id())
+            ->with('prendas', 'asesora')
             ->orderBy('created_at', 'desc')
             ->paginate(20);
+
+        // LOG: Verificar datos enviados a la vista
+        \Log::info('📋 [PedidoProduccionController] Pedidos para mostrar', [
+            'total_pedidos' => $pedidos->total(),
+            'prendas_totales' => $pedidos->sum(function($p) { return $p->prendas->count(); }),
+            'muestras' => $pedidos->take(3)->map(function($pedido) {
+                return [
+                    'id' => $pedido->id,
+                    'numero_pedido' => $pedido->numero_pedido,
+                    'cantidad_total_db' => $pedido->cantidad_total,
+                    'prendas_count' => $pedido->prendas->count(),
+                    'prendas' => $pedido->prendas->map(function($prenda) {
+                        return [
+                            'nombre' => $prenda->nombre_prenda,
+                            'cantidad_acceso' => $prenda->cantidad,
+                            'cantidad_talla' => $prenda->cantidad_talla,
+                        ];
+                    })->all()
+                ];
+            })->all()
+        ]);
 
         return view('asesores.pedidos.index', [
             'pedidos' => $pedidos,

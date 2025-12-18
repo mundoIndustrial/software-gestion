@@ -764,8 +764,8 @@
 
                     <!-- Cantidad -->
                     <div style="color: #374151; font-weight: 600; font-size: 0.875rem; text-align: center;">
-                        @if($pedido->prendas->first())
-                            <span style="white-space: nowrap;">{{ $pedido->prendas->first()->cantidad }} <small style="color: #9ca3af;">und</small></span>
+                        @if($pedido->prendas->count() > 0)
+                            <span style="white-space: nowrap;">{{ $pedido->prendas->sum('cantidad') }} <small style="color: #9ca3af;">und</small></span>
                         @else
                             <span style="color: #d1d5db;">-</span>
                         @endif

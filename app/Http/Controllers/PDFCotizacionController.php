@@ -28,6 +28,7 @@ class PDFCotizacionController extends Controller
             $cotizacion = Cotizacion::with([
                 'usuario:id,name',
                 'cliente:id,nombre',
+                'tipoCotizacion:id,codigo,nombre',
                 'prendas' => function($query) {
                     $query->select('id', 'cotizacion_id', 'nombre_producto', 'descripcion', 'texto_personalizado_tallas');
                 },
@@ -54,6 +55,26 @@ class PDFCotizacionController extends Controller
             // Validar que el tipo sea válido
             if (!in_array($tipoPDF, ['prenda', 'logo'])) {
                 $tipoPDF = 'prenda';
+            }
+            
+            // ✅ VALIDACIÓN DE PERMISOS PARA VISUALIZADOR DE COTIZACIONES LOGO
+            $user = auth()->user();
+            if ($user && $user->hasRole('visualizador_cotizaciones_logo')) {
+                // El visualizador solo puede ver PDFs de logo
+                if ($tipoPDF !== 'logo') {
+                    abort(403, 'No tienes permiso para ver PDFs de prenda. Solo puedes ver PDFs de logo.');
+                }
+                
+                // Verificar que la cotización sea tipo Logo (L) o Combinada (PL/C)
+                $tiposCodigos = ['L', 'PL', 'C'];
+                if (!in_array($cotizacion->tipoCotizacion->codigo ?? '', $tiposCodigos)) {
+                    abort(403, 'No tienes permiso para ver esta cotización.');
+                }
+                
+                // Verificar que tenga información de logo
+                if (!$cotizacion->logoCotizacion) {
+                    abort(404, 'Esta cotización no tiene información de logo disponible.');
+                }
             }
             
             // Generar HTML del PDF según el tipo
@@ -283,26 +304,49 @@ class PDFCotizacionController extends Controller
                 <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">';
             
             foreach ($logo->fotos as $imagen) {
-                // ✅ Usar rutas directas del modelo en lugar del accessor
+                // Obtener la ruta de la imagen
                 $rutaImagen = $imagen->ruta_webp ?? $imagen->ruta_original ?? null;
                 
                 if ($rutaImagen) {
-                    // Normalizar ruta para asegurar que tenga /storage/
-                    if (!str_starts_with($rutaImagen, '/')) {
-                        $rutaImagen = '/' . $rutaImagen;
-                    }
-                    if (!str_starts_with($rutaImagen, '/storage/')) {
-                        if (str_starts_with($rutaImagen, '/logo/') || str_starts_with($rutaImagen, '/cotizaciones/')) {
-                            $rutaImagen = '/storage' . $rutaImagen;
-                        }
+                    // Limpiar la ruta
+                    $rutaLimpia = ltrim($rutaImagen, '/');
+                    
+                    // Si la ruta ya tiene 'storage/' al inicio, quitarlo
+                    if (str_starts_with($rutaLimpia, 'storage/')) {
+                        $rutaLimpia = substr($rutaLimpia, 8);
                     }
                     
-                    // Convertir a ruta absoluta del sistema
-                    $rutaAbsoluta = public_path($rutaImagen);
+                    // Construir ruta absoluta
+                    $rutaAbsoluta = storage_path('app/public/' . $rutaLimpia);
+                    
+                    // Log para debug
+                    \Log::info('PDF Logo - Procesando imagen', [
+                        'ruta_bd' => $rutaImagen,
+                        'ruta_limpia' => $rutaLimpia,
+                        'ruta_absoluta' => $rutaAbsoluta,
+                        'existe' => file_exists($rutaAbsoluta)
+                    ]);
                     
                     // Solo agregar imagen si el archivo existe
                     if (file_exists($rutaAbsoluta)) {
                         $html .= '<img src="' . $rutaAbsoluta . '" alt="Logo" style="width: 140px; height: 140px; border: 1px solid #ccc; object-fit: contain; background: #fff; padding: 5px;">';
+                    } else {
+                        // Intentar con public_path como alternativa
+                        $rutaAlternativa = public_path('storage/' . $rutaLimpia);
+                        \Log::info('PDF Logo - Intentando ruta alternativa', [
+                            'ruta_alternativa' => $rutaAlternativa,
+                            'existe' => file_exists($rutaAlternativa)
+                        ]);
+                        
+                        if (file_exists($rutaAlternativa)) {
+                            $html .= '<img src="' . $rutaAlternativa . '" alt="Logo" style="width: 140px; height: 140px; border: 1px solid #ccc; object-fit: contain; background: #fff; padding: 5px;">';
+                        } else {
+                            \Log::warning('Imagen de logo no encontrada en PDF', [
+                                'ruta_bd' => $rutaImagen,
+                                'ruta_storage' => $rutaAbsoluta,
+                                'ruta_public' => $rutaAlternativa
+                            ]);
+                        }
                     }
                 }
             }

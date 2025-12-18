@@ -494,4 +494,60 @@ class OperarioController extends Controller
         }
     }
 
+    /**
+     * Obtener datos completos del pedido en formato JSON
+     * Para la visualización móvil order-detail-modal-mobile
+     */
+    public function obtenerPedidoJson($numeroPedido)
+    {
+        try {
+            $usuario = Auth::user();
+            
+            // Obtener los datos del operario incluyendo el pedido específico
+            $datosOperario = $this->obtenerPedidosService->obtenerPedidosDelOperario($usuario);
+            
+            // Buscar el pedido específico
+            $pedido = collect($datosOperario->pedidos)
+                ->firstWhere('numero_pedido', $numeroPedido);
+            
+            if (!$pedido) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pedido no encontrado'
+                ], 404);
+            }
+            
+            // Obtener las fotos del pedido
+            $fotos = $this->obtenerFotosPedido($numeroPedido);
+            
+            // Construir respuesta con todos los datos necesarios
+            return response()->json([
+                'success' => true,
+                'numero_pedido' => $pedido['numero_pedido'] ?? $numeroPedido,
+                'fecha_creacion' => $pedido['fecha_creacion'] ?? $pedido['created_at'] ?? now()->toDateString(),
+                'asesora' => $pedido['asesora_nombre'] ?? $pedido['asesora'] ?? 'N/A',
+                'cliente' => $pedido['cliente_nombre'] ?? $pedido['cliente'] ?? 'N/A',
+                'forma_pago' => $pedido['forma_pago'] ?? $pedido['forma_de_pago'] ?? 'N/A',
+                'encargado' => $pedido['asesora_nombre'] ?? $pedido['asesora'] ?? 'N/A',
+                'cantidad' => $pedido['cantidad_total'] ?? $pedido['cantidad'] ?? 0,
+                'cantidad_total' => $pedido['cantidad_total'] ?? $pedido['cantidad'] ?? 0,
+                'total_entregado' => $pedido['total_entregado'] ?? 0,
+                'descripcion_prendas' => $pedido['descripcion_prendas'] ?? 'N/A',
+                'prendas' => $pedido['prendas'] ?? [],
+                'fotos' => $fotos
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error("Error al obtener pedido JSON: " . $e->getMessage(), [
+                'numero_pedido' => $numeroPedido,
+                'exception' => $e
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener los datos del pedido: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
 }

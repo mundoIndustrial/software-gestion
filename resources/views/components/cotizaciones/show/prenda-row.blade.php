@@ -6,10 +6,27 @@
     <td style="padding: 1.2rem; font-size: 1.05rem;">
         <div style="color: #64748b; font-size: 0.9rem; line-height: 1.6;">
             <p style="margin: 0 0 8px 0; color: #475569; font-size: 0.95rem;">{{ $prenda->descripcion ?? '-' }}</p>
-            @if($prenda->genero)
+            @php
+                // Verificar si hay tallas numéricas (Dama/Caballero)
+                $tieneGenero = false;
+                $generoMostrar = null;
+                if ($prenda->tallas && $prenda->tallas->count() > 0) {
+                    $primeraTalla = $prenda->tallas->first()->talla ?? '';
+                    // Si la talla es numérica, mostrar género
+                    if (is_numeric($primeraTalla)) {
+                        $tieneGenero = true;
+                        // Obtener género de la variante
+                        $variante = $prenda->variantes->first();
+                        if ($variante && $variante->genero_id) {
+                            $generoMostrar = $variante->genero_id == 1 ? 'DAMA' : 'CABALLERO';
+                        }
+                    }
+                }
+            @endphp
+            @if($tieneGenero && $generoMostrar)
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
                     <span style="font-size: 0.85rem; font-weight: 600; color: #64748b;">Género:</span>
-                    <span style="font-size: 0.9rem; color: #1e293b; background: #f0f4f8; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">{{ $prenda->genero }}</span>
+                    <span style="font-size: 0.9rem; color: #1e293b; background: #f0f4f8; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">{{ $generoMostrar }}</span>
                 </div>
             @endif
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">

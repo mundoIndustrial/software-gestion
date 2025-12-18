@@ -95,12 +95,12 @@
                                 </tr>
                             </thead>
                             <tbody class="telas-tbody">
-                                <tr style="border-bottom: 1px solid #ddd;" class="fila-tela">
+                                <tr style="border-bottom: 1px solid #ddd;" class="fila-tela" data-tela-index="0">
                                     <td style="padding: 14px; border-right: 1px solid #ddd;">
                                         <div style="position: relative;">
                                             <label for="color-input" class="sr-only">Color</label>
                                             <input type="text" id="color-input" class="color-input" placeholder="Color..." style="width: 100%; padding: 12px; border: 2px solid #0066cc; border-radius: 4px; font-size: 0.95rem; box-sizing: border-box; min-height: 44px;" onkeyup="buscarColor(this)" onkeypress="if(event.key==='Enter') crearColorDesdeInput(this)" aria-label="Selecciona o escribe un color">
-                                            <input type="hidden" name="productos_friendly[][variantes][color_id]" class="color-id-input" value="">
+                                            <input type="hidden" name="productos_friendly[][telas][0][color_id]" class="color-id-input" value="">
                                             <div class="color-suggestions" style="position: absolute; background: white; border: 1px solid #ddd; border-radius: 4px; max-height: 150px; overflow-y: auto; z-index: 1000; min-width: 100%; display: none; margin-top: 2px; top: 100%;"></div>
                                         </div>
                                     </td>
@@ -108,17 +108,17 @@
                                         <div style="position: relative;">
                                             <label for="tela-input" class="sr-only">Tela</label>
                                             <input type="text" id="tela-input" class="tela-input" placeholder="Tela..." style="width: 100%; padding: 12px; border: 2px solid #0066cc; border-radius: 4px; font-size: 0.95rem; box-sizing: border-box; min-height: 44px;" onkeyup="buscarTela(this)" onkeypress="if(event.key==='Enter') crearTelaDesdeInput(this)" aria-label="Selecciona o escribe el tipo de tela">
-                                            <input type="hidden" name="productos_friendly[][variantes][tela_id]" class="tela-id-input" value="">
+                                            <input type="hidden" name="productos_friendly[][telas][0][tela_id]" class="tela-id-input" value="">
                                             <div class="tela-suggestions" style="position: absolute; background: white; border: 1px solid #ddd; border-radius: 4px; max-height: 150px; overflow-y: auto; z-index: 1000; min-width: 100%; display: none; margin-top: 2px; top: 100%;"></div>
                                         </div>
                                     </td>
                                     <td style="padding: 14px; border-right: 1px solid #ddd;">
                                         <label for="referencia-input" class="sr-only">Referencia</label>
-                                        <input type="text" id="referencia-input" name="productos_friendly[][variantes][referencia]" class="referencia-input" placeholder="Ref..." style="width: 100%; padding: 12px; border: 2px solid #0066cc; border-radius: 4px; font-size: 0.95rem; box-sizing: border-box; min-height: 44px;" aria-label="Referencia del producto">
+                                        <input type="text" id="referencia-input" name="productos_friendly[][telas][0][referencia]" class="referencia-input" placeholder="Ref..." style="width: 100%; padding: 12px; border: 2px solid #0066cc; border-radius: 4px; font-size: 0.95rem; box-sizing: border-box; min-height: 44px;" aria-label="Referencia del producto">
                                     </td>
                                     <td style="padding: 14px; text-align: center; border-right: 1px solid #ddd;">
                                         <label style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px; padding: 8px; border: 2px dashed #0066cc; border-radius: 6px; cursor: pointer; text-align: center; background: #f0f7ff;" ondrop="manejarDrop(event, this)" ondragover="event.preventDefault(); this.style.background='#e8f4f8';" ondragleave="this.style.background='#f0f7ff'">
-                                            <input type="file" name="productos_friendly[][telas][]" class="input-file-tela" accept="image/*" multiple onchange="agregarFotoTela(this)" style="display: none;">
+                                            <input type="file" name="productos_friendly[][telas][0][fotos][]" class="input-file-tela" accept="image/*" multiple onchange="agregarFotoTela(this)" style="display: none;">
                                             <div class="drop-zone-content" style="font-size: 0.8rem;">
                                                 <i class="fas fa-cloud-upload-alt" style="font-size: 1.2rem; color: #0066cc; margin-bottom: 4px;"></i>
                                                 <p style="margin: 4px 0; color: #0066cc; font-weight: 600; font-size: 0.8rem;">CLIC</p>

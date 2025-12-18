@@ -39,6 +39,61 @@ class PrendaPedido extends Model
     ];
 
     /**
+     * ACCESSOR: cantidad siempre devuelve la suma de cantidad_talla
+     * Esto hace que sea DINÁMICO y siempre refleje la suma correcta
+     */
+    public function getCantidadAttribute()
+    {
+        // Usar el cast 'array' de Laravel en lugar de acceder a attributes directamente
+        $cantidadesTalla = $this->cantidad_talla ?? [];
+        
+        \Log::debug('📊 [PrendaPedido.getCantidadAttribute] Accediendo a cantidad', [
+            'prenda_id' => $this->id,
+            'nombre' => $this->nombre_prenda,
+            'cantidad_talla_raw' => $cantidadesTalla,
+            'es_array' => is_array($cantidadesTalla),
+            'es_string' => is_string($cantidadesTalla),
+        ]);
+        
+        // Si aún es string (doble encoding), decodificar hasta obtener array
+        while (is_string($cantidadesTalla)) {
+            $decoded = json_decode($cantidadesTalla, true);
+            if ($decoded === null) {
+                break;
+            }
+            $cantidadesTalla = $decoded;
+            \Log::debug('📊 [PrendaPedido.getCantidadAttribute] Decodificado de JSON', [
+                'resultado' => $cantidadesTalla,
+                'es_array' => is_array($cantidadesTalla),
+            ]);
+        }
+        
+        // Asegurar que sea array
+        if (!is_array($cantidadesTalla)) {
+            $cantidadesTalla = [];
+        }
+        
+        // Devolver suma de todas las tallas
+        $suma = array_sum($cantidadesTalla);
+        
+        \Log::debug('📊 [PrendaPedido.getCantidadAttribute] Suma calculada', [
+            'suma' => $suma,
+            'tallas' => $cantidadesTalla,
+        ]);
+        
+        return $suma;
+    }
+
+    /**
+     * MUTADOR: Permite asignar cantidad, pero no se usa porque el accessor siempre devuelve la suma
+     */
+    public function setCantidadAttribute($value)
+    {
+        // Permitir asignar, pero será ignorado cuando se acceda (el accessor devuelve la suma)
+        $this->attributes['cantidad'] = $value;
+    }
+
+    /**
      * Relación: Una prenda pertenece a un pedido (via numero_pedido)
      */
     public function pedido(): BelongsTo
@@ -121,25 +176,22 @@ class PrendaPedido extends Model
 
     /**
      * Recalcular cantidad_total del pedido cuando se crea o actualiza una prenda
-     * TAMBIÉN: Calcular cantidad como suma de todas las tallas en cantidad_talla
+     * NOTA: cantidad es DINÁMICO y se calcula desde cantidad_talla via accessor
      */
     protected static function boot()
     {
         parent::boot();
 
-        // ANTES de guardar: calcular cantidad desde cantidad_talla
-        static::saving(function ($prenda) {
-            if (!empty($prenda->cantidad_talla) && is_array($prenda->cantidad_talla)) {
-                // Sumar todas las cantidades de todas las tallas
-                $prenda->cantidad = array_sum($prenda->cantidad_talla);
-            }
-        });
-
         // Cuando se crea una prenda, recalcular cantidad_total del pedido
         static::created(function ($prenda) {
             if ($prenda->numero_pedido) {
-                $cantidadTotal = static::where('numero_pedido', $prenda->numero_pedido)
-                    ->sum('cantidad');
+                // Obtener todas las prendas del pedido
+                $prendas = static::where('numero_pedido', $prenda->numero_pedido)->get();
+                
+                // Calcular suma total (cada prenda->cantidad usa el accessor dinámico)
+                $cantidadTotal = $prendas->sum(function($p) {
+                    return $p->cantidad; // Esto usa el accessor getCantidadAttribute()
+                });
                 
                 PedidoProduccion::where('numero_pedido', $prenda->numero_pedido)
                     ->update(['cantidad_total' => $cantidadTotal]);
@@ -149,8 +201,13 @@ class PrendaPedido extends Model
         // Cuando se actualiza una prenda, recalcular cantidad_total del pedido
         static::updated(function ($prenda) {
             if ($prenda->numero_pedido) {
-                $cantidadTotal = static::where('numero_pedido', $prenda->numero_pedido)
-                    ->sum('cantidad');
+                // Obtener todas las prendas del pedido
+                $prendas = static::where('numero_pedido', $prenda->numero_pedido)->get();
+                
+                // Calcular suma total
+                $cantidadTotal = $prendas->sum(function($p) {
+                    return $p->cantidad; // Esto usa el accessor getCantidadAttribute()
+                });
                 
                 PedidoProduccion::where('numero_pedido', $prenda->numero_pedido)
                     ->update(['cantidad_total' => $cantidadTotal]);

@@ -926,76 +926,92 @@ final class CotizacionController extends Controller
                     }
                 }
 
-                // Procesar imágenes de telas
-                // FormData envía múltiples archivos con [] al final: prendas[0][telas][]
-                $telasArchivos = $request->file("prendas.{$index}.telas") ?? [];
-                
-                // Si no encuentra, buscar con [] al final
-                if (empty($telasArchivos)) {
-                    $telasArchivos = $request->file("prendas.{$index}.telas.0") ?? [];
+                // Procesar imágenes de telas - NUEVA LÓGICA
+                // Obtener telas_multiples del JSON de variantes para asociar color_id y tela_id
+                $variante = $prendaModel->variantes->first();
+                $telasMultiples = [];
+                if ($variante && $variante->telas_multiples) {
+                    $telasMultiples = is_array($variante->telas_multiples) 
+                        ? $variante->telas_multiples 
+                        : json_decode($variante->telas_multiples, true);
                 }
                 
-                // Si aún no encuentra, buscar en allFiles
-                if (empty($telasArchivos)) {
-                    $allFiles = $request->allFiles();
-                    $telasArchivos = $allFiles["prendas.{$index}.telas"] ?? [];
-                }
+                Log::info('🧵 Telas multiples de variante:', [
+                    'prenda_id' => $prendaModel->id,
+                    'telas_count' => count($telasMultiples),
+                    'telas' => $telasMultiples,
+                ]);
                 
-                // Normalizar a array (puede ser un UploadedFile único o un array)
-                if ($telasArchivos instanceof \Illuminate\Http\UploadedFile) {
-                    $telasArchivos = [$telasArchivos];
-                } elseif (!is_array($telasArchivos)) {
-                    $telasArchivos = [];
-                }
-                
-                Log::info('Telas encontradas', ['key' => "productos.{$index}.telas", 'count' => count($telasArchivos)]);
+                // Acceder a la estructura anidada: prendas[index][telas][telaIndex][fotos][]
+                $allFiles = $request->allFiles();
+                if (isset($allFiles['prendas']) && is_array($allFiles['prendas']) && isset($allFiles['prendas'][$index])) {
+                    $prendaFiles = $allFiles['prendas'][$index];
+                    
+                    if (isset($prendaFiles['telas']) && is_array($prendaFiles['telas'])) {
+                        foreach ($prendaFiles['telas'] as $telaIndex => $telaData) {
+                            if (isset($telaData['fotos']) && is_array($telaData['fotos'])) {
+                                Log::info('🖼️ Encontrado grupo de fotos de tela', [
+                                    'prenda_index' => $index,
+                                    'tela_index' => $telaIndex,
+                                    'cantidad_archivos' => count($telaData['fotos']),
+                                ]);
 
-                if (!empty($telasArchivos)) {
-                    $orden = 1;
-                    foreach ($telasArchivos as $foto) {
-                        if ($foto instanceof \Illuminate\Http\UploadedFile) {
-                            $ruta = $this->procesarImagenesService->procesarImagenTela(
-                                $foto,
-                                $cotizacionId,
-                                $prendaModel->id
-                            );
+                                // Obtener info de tela del JSON telas_multiples (solo para logging)
+                                $telaInfo = null;
+                                foreach ($telasMultiples as $tm) {
+                                    if (isset($tm['indice']) && $tm['indice'] == $telaIndex) {
+                                        $telaInfo = $tm;
+                                        break;
+                                    }
+                                }
+                                
+                                if (!$telaInfo) {
+                                    Log::warning('⚠️ No se encontró info de tela en telas_multiples', [
+                                        'tela_index' => $telaIndex,
+                                    ]);
+                                    $telaInfo = []; // Continuar de todas formas
+                                }
 
-                            $prendaModel->telaFotos()->create([
-                                'ruta_original' => $ruta,
-                                'ruta_webp' => $ruta,
-                                'orden' => $orden,
-                            ]);
-                            $orden++;
+                                foreach ($telaData['fotos'] as $fotoIndex => $archivoFoto) {
+                                    if ($archivoFoto && $archivoFoto->isValid()) {
+                                        try {
+                                            $ruta = $this->procesarImagenesService->procesarImagenTela(
+                                                $archivoFoto,
+                                                $cotizacionId,
+                                                $prendaModel->id
+                                            );
 
-                            Log::info('Foto de tela guardada', ['prenda_id' => $prendaModel->id, 'ruta' => $ruta, 'orden' => $orden - 1]);
-                        }
-                    }
-                }
-                
-                // Procesar telas guardadas (rutas desde el frontend)
-                $telasGuardadas = $request->input("prendas.{$index}.telas_guardadas") ?? [];
-                if (!is_array($telasGuardadas)) {
-                    $telasGuardadas = [];
-                }
-                
-                if (!empty($telasGuardadas)) {
-                    $orden = count($telasArchivos) + 1; // Continuar con el orden
-                    foreach ($telasGuardadas as $rutaGuardada) {
-                        if ($rutaGuardada && is_string($rutaGuardada)) {
-                            // Limpiar ruta: remover /storage/ del principio si existe
-                            $rutaLimpia = $rutaGuardada;
-                            if (strpos($rutaLimpia, '/storage/') === 0) {
-                                $rutaLimpia = substr($rutaLimpia, 9); // Remover "/storage/" (9 caracteres)
+                                            // Guardar foto de tela (sin color_id, tela_id, referencia porque están en telas_multiples JSON)
+                                            \DB::table('prenda_tela_fotos_cot')->insert([
+                                                'prenda_cot_id' => $prendaModel->id,
+                                                'ruta_original' => $ruta,
+                                                'ruta_webp' => $ruta,
+                                                'ruta_miniatura' => null,
+                                                'orden' => $fotoIndex + 1,
+                                                'ancho' => null,
+                                                'alto' => null,
+                                                'tamaño' => null,
+                                                'created_at' => now(),
+                                                'updated_at' => now(),
+                                            ]);
+
+                                            Log::info('✅ Foto de tela guardada en BD', [
+                                                'prenda_id' => $prendaModel->id,
+                                                'tela_index' => $telaIndex,
+                                                'color' => $telaInfo['color'] ?? '',
+                                                'tela' => $telaInfo['tela'] ?? '',
+                                                'referencia' => $telaInfo['referencia'] ?? '',
+                                                'ruta' => $ruta,
+                                            ]);
+                                        } catch (\Exception $e) {
+                                            Log::error('❌ Error guardando foto de tela', [
+                                                'error' => $e->getMessage(),
+                                                'archivo' => $archivoFoto->getClientOriginalName(),
+                                            ]);
+                                        }
+                                    }
+                                }
                             }
-                            
-                            $prendaModel->telaFotos()->create([
-                                'ruta_original' => $rutaLimpia,
-                                'ruta_webp' => $rutaLimpia,
-                                'orden' => $orden,
-                            ]);
-                            $orden++;
-                            
-                            Log::info('Foto de tela guardada (ruta existente)', ['prenda_id' => $prendaModel->id, 'ruta' => $rutaGuardada, 'orden' => $orden - 1]);
                         }
                     }
                 }

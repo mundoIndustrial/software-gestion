@@ -284,6 +284,13 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // ========================================
+// RUTA DE PDF COMPARTIDA (Accesible para asesores, contador, visualizador_cotizaciones_logo y admin)
+// ========================================
+Route::middleware(['auth'])->group(function () {
+    Route::get('/cotizacion/{id}/pdf', [App\Http\Controllers\PDFCotizacionController::class, 'generarPDF'])->name('cotizacion.pdf');
+});
+
+// ========================================
 // RUTAS PARA CONTADOR (MÓDULO INDEPENDIENTE)
 // ========================================
 // Admin puede acceder a contador además del rol contador
@@ -332,6 +339,7 @@ Route::middleware(['auth', 'operario-access'])->prefix('operario')->name('operar
     Route::get('/mis-pedidos', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'misPedidos'])->name('mis-pedidos');
     Route::get('/pedido/{numeroPedido}', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'verPedido'])->name('ver-pedido');
     Route::get('/api/pedidos', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'obtenerPedidosJson'])->name('api.pedidos');
+    Route::get('/api/pedido/{numeroPedido}', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'obtenerPedidoJson'])->name('api.pedido');
     Route::get('/api/novedades/{numeroPedido}', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'obtenerNovedades'])->name('api.novedades');
     Route::post('/buscar', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'buscarPedido'])->name('buscar');
     Route::post('/reportar-pendiente', [App\Infrastructure\Http\Controllers\Operario\OperarioController::class, 'reportarPendiente'])->name('reportar-pendiente');
@@ -511,6 +519,26 @@ Route::middleware(['auth', 'role:supervisor_asesores,admin'])->prefix('superviso
     Route::get('/perfil', [App\Http\Controllers\SupervisorAsesoresController::class, 'profileIndex'])->name('profile.index');
     Route::get('/perfil/stats', [App\Http\Controllers\SupervisorAsesoresController::class, 'profileStats'])->name('profile.stats');
     Route::post('/perfil/password-update', [App\Http\Controllers\SupervisorAsesoresController::class, 'profilePasswordUpdate'])->name('profile.password-update');
+});
+
+// ========================================
+// RUTAS PARA VISUALIZADOR DE COTIZACIONES LOGO
+// ========================================
+Route::middleware(['auth', 'role:visualizador_cotizaciones_logo,admin'])->prefix('visualizador-logo')->name('visualizador-logo.')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [App\Http\Controllers\VisualizadorLogoController::class, 'dashboard'])->name('dashboard');
+    
+    // Cotizaciones
+    Route::get('/cotizaciones', [App\Http\Controllers\VisualizadorLogoController::class, 'getCotizaciones'])->name('cotizaciones');
+    Route::get('/cotizaciones/{id}', [App\Http\Controllers\VisualizadorLogoController::class, 'verCotizacion'])->name('cotizaciones.ver');
+    
+    // Estadísticas
+    Route::get('/estadisticas', [App\Http\Controllers\VisualizadorLogoController::class, 'getEstadisticas'])->name('estadisticas');
+    
+    // PDF de Logo - Solo puede ver PDFs de logo
+    Route::get('/cotizaciones/{id}/pdf-logo', function($id) {
+        return redirect()->route('pdf.cotizacion', ['cotizacionId' => $id, 'tipo' => 'logo']);
+    })->name('cotizaciones.pdf-logo');
 });
 
 // ========== DEBUG ROUTES PARA OPTIMIZACIÓN DE /registros ==========

@@ -10,11 +10,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class CotizacionPrendaController extends Controller
 {
     public function __construct(
-        private readonly GenerarNumeroCotizacionService $generarNumeroCotizacionService
+        private readonly GenerarNumeroCotizacionService $generarNumeroCotizacionService,
+        private readonly \App\Application\Services\CotizacionPrendaService $cotizacionPrendaService
     ) {
     }
 
@@ -91,6 +93,16 @@ class CotizacionPrendaController extends Controller
                     'cliente_id' => $clienteId,
                 ]);
 
+                // Guardar productos en tablas normalizadas (prendas_cot, variantes, tallas, etc.)
+                $productos = $request->input('prendas', []);
+                if (!empty($productos)) {
+                    $this->cotizacionPrendaService->guardarProductosEnCotizacion($cotizacion, $productos);
+                    Log::info('✅ Productos guardados en tablas normalizadas', [
+                        'cotizacion_id' => $cotizacion->id,
+                        'productos_count' => count($productos)
+                    ]);
+                }
+
                 // OPTIMIZACIÓN: Si se envía, aún encolamos el job pero ahora el número YA EXISTE
                 // El job puede usarlo directamente sin generar otro
                 if (!$esBorrador) {
@@ -107,7 +119,9 @@ class CotizacionPrendaController extends Controller
                 }
 
                 // Procesar imágenes si existen
-                if ($request->hasFile('prendas')) {
+                // Verificar si hay archivos en el request (prendas, telas, logo, etc.)
+                $allFiles = $request->allFiles();
+                if (!empty($allFiles)) {
                     $this->procesarImagenesCotizacion($request, $cotizacion->id);
                 }
 
@@ -277,7 +291,248 @@ class CotizacionPrendaController extends Controller
      */
     private function procesarImagenesCotizacion(Request $request, $cotizacionId)
     {
-        // Implementar procesamiento de imágenes si es necesario
-        Log::info('Procesando imágenes para cotización', ['cotizacion_id' => $cotizacionId]);
+        Log::info('🖼️ Iniciando procesamiento de imágenes para cotización', ['cotizacion_id' => $cotizacionId]);
+        
+        // Obtener cotización
+        $cotizacion = Cotizacion::findOrFail($cotizacionId);
+
+        // Debug: Ver todos los archivos recibidos
+        $allFiles = $request->allFiles();
+        \Log::info('📁 DEBUG allFiles():', [
+            'keys' => array_keys($allFiles),
+            'count' => count($allFiles),
+        ]);
+
+        // Laravel agrupa los archivos bajo 'prendas', necesitamos acceder a la estructura anidada
+        $prendasData = $request->file('prendas', []);
+        
+        \Log::info('📁 Estructura de prendas recibida:', [
+            'tiene_prendas' => !empty($prendasData),
+            'tipo' => gettype($prendasData),
+            'es_array' => is_array($prendasData),
+            'count' => is_array($prendasData) ? count($prendasData) : 0,
+            'prendasData_keys' => is_array($prendasData) ? array_keys($prendasData) : 'no es array',
+        ]);
+
+        if (!is_array($prendasData) || empty($prendasData)) {
+            Log::info('⚠️ No hay archivos de prendas para procesar');
+            
+            // Intentar acceder de otra forma
+            \Log::info('🔍 Intentando acceder a archivos de otra forma...');
+            if (isset($allFiles['prendas'])) {
+                \Log::info('✅ Encontrado en allFiles[prendas]', [
+                    'tipo' => gettype($allFiles['prendas']),
+                    'es_array' => is_array($allFiles['prendas']),
+                ]);
+                $prendasData = $allFiles['prendas'];
+            } else {
+                \Log::info('❌ No encontrado en allFiles[prendas]');
+                return;
+            }
+        }
+
+        // Procesar cada prenda
+        foreach ($prendasData as $prendaIndex => $prendaFiles) {
+            \Log::info('📦 Procesando archivos de prenda', [
+                'prenda_index' => $prendaIndex,
+                'keys' => is_array($prendaFiles) ? array_keys($prendaFiles) : 'no es array',
+            ]);
+
+            // 1. Procesar fotos de PRENDA: prendas[{index}][fotos][]
+            if (isset($prendaFiles['fotos']) && is_array($prendaFiles['fotos'])) {
+                \Log::info('📸 Encontrado grupo de fotos de PRENDA', [
+                    'prenda_index' => $prendaIndex,
+                    'cantidad_archivos' => count($prendaFiles['fotos']),
+                ]);
+
+                foreach ($prendaFiles['fotos'] as $fotoIndex => $archivoFoto) {
+                    if ($archivoFoto && $archivoFoto->isValid()) {
+                        try {
+                            // Guardar en storage
+                            $nombreOriginal = pathinfo($archivoFoto->getClientOriginalName(), PATHINFO_FILENAME);
+                            $extension = $archivoFoto->getClientOriginalExtension();
+                            $nombreArchivo = $nombreOriginal . '_prenda_' . time() . '_' . substr(md5(uniqid()), 0, 4) . '.' . $extension;
+                            $rutaGuardada = $archivoFoto->storeAs('cotizaciones/' . $cotizacionId . '/prendas', $nombreArchivo, 'public');
+                            $rutaUrl = '/storage/' . $rutaGuardada;
+
+                            \Log::info('✅ Foto de prenda guardada en storage', [
+                                'prenda_index' => $prendaIndex,
+                                'ruta_guardada' => $rutaGuardada,
+                                'nombre_archivo' => $archivoFoto->getClientOriginalName(),
+                            ]);
+
+                            // Guardar en tabla prenda_fotos_cot
+                            $prendas = $cotizacion->prendas;
+                            if ($prendas && isset($prendas[$prendaIndex])) {
+                                $prenda = $prendas[$prendaIndex];
+                                
+                                DB::table('prenda_fotos_cot')->insert([
+                                    'prenda_cot_id' => $prenda->id,
+                                    'ruta_original' => $rutaUrl,
+                                    'ruta_webp' => $rutaUrl,
+                                    'ruta_miniatura' => null,
+                                    'orden' => $fotoIndex + 1,
+                                    'ancho' => null,
+                                    'alto' => null,
+                                    'tamaño' => $archivoFoto->getSize(),
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ]);
+
+                                \Log::info('✅ Foto de prenda guardada en BD', [
+                                    'prenda_id' => $prenda->id,
+                                ]);
+                            }
+                        } catch (\Exception $e) {
+                            \Log::error('❌ Error guardando foto de prenda', [
+                                'error' => $e->getMessage(),
+                                'archivo' => $archivoFoto->getClientOriginalName(),
+                            ]);
+                        }
+                    }
+                }
+            }
+            
+            // 2. Procesar fotos de TELAS: prendas[{index}][telas][{telaIndex}][fotos][]
+            if (isset($prendaFiles['telas']) && is_array($prendaFiles['telas'])) {
+                // Obtener la prenda para acceder a sus variantes
+                $prendas = $cotizacion->prendas;
+                if (!$prendas || !isset($prendas[$prendaIndex])) {
+                    \Log::warning('⚠️ Prenda no encontrada para procesar telas', ['prenda_index' => $prendaIndex]);
+                    continue;
+                }
+                
+                $prenda = $prendas[$prendaIndex];
+                
+                // Obtener telas_multiples del JSON de variantes
+                $variante = $prenda->variantes->first();
+                $telasMultiples = [];
+                if ($variante && $variante->telas_multiples) {
+                    $telasMultiples = is_array($variante->telas_multiples) 
+                        ? $variante->telas_multiples 
+                        : json_decode($variante->telas_multiples, true);
+                }
+                
+                \Log::info('🧵 Telas multiples de variante:', [
+                    'prenda_id' => $prenda->id,
+                    'telas_count' => count($telasMultiples),
+                    'telas' => $telasMultiples,
+                ]);
+                
+                foreach ($prendaFiles['telas'] as $telaIndex => $telaData) {
+                    if (isset($telaData['fotos']) && is_array($telaData['fotos'])) {
+                        \Log::info('🖼️ Encontrado grupo de fotos de tela', [
+                            'prenda_index' => $prendaIndex,
+                            'tela_index' => $telaIndex,
+                            'cantidad_archivos' => count($telaData['fotos']),
+                        ]);
+
+                        // Obtener color y tela del JSON telas_multiples
+                        $telaInfo = null;
+                        foreach ($telasMultiples as $tm) {
+                            if (isset($tm['indice']) && $tm['indice'] == $telaIndex) {
+                                $telaInfo = $tm;
+                                break;
+                            }
+                        }
+                        
+                        if (!$telaInfo) {
+                            \Log::warning('⚠️ No se encontró info de tela en telas_multiples', [
+                                'tela_index' => $telaIndex,
+                            ]);
+                            continue;
+                        }
+                        
+                        // Buscar o crear color
+                        $colorId = null;
+                        if (!empty($telaInfo['color'])) {
+                            $color = DB::table('colores_prenda')
+                                ->where('nombre', $telaInfo['color'])
+                                ->first();
+                            
+                            if (!$color) {
+                                $colorId = DB::table('colores_prenda')->insertGetId([
+                                    'nombre' => $telaInfo['color'],
+                                    'activo' => true,
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ]);
+                                \Log::info('✅ Color creado', ['color' => $telaInfo['color'], 'id' => $colorId]);
+                            } else {
+                                $colorId = $color->id;
+                            }
+                        }
+                        
+                        // Buscar o crear tela
+                        $telaId = null;
+                        if (!empty($telaInfo['tela'])) {
+                            $tela = DB::table('telas_prenda')
+                                ->where('nombre', $telaInfo['tela'])
+                                ->first();
+                            
+                            if (!$tela) {
+                                $telaId = DB::table('telas_prenda')->insertGetId([
+                                    'nombre' => $telaInfo['tela'],
+                                    'activo' => true,
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ]);
+                                \Log::info('✅ Tela creada', ['tela' => $telaInfo['tela'], 'id' => $telaId]);
+                            } else {
+                                $telaId = $tela->id;
+                            }
+                        }
+
+                        foreach ($telaData['fotos'] as $fotoIndex => $archivoFoto) {
+                            if ($archivoFoto && $archivoFoto->isValid()) {
+                                try {
+                                    // Guardar en storage
+                                    $rutaGuardada = $archivoFoto->store('telas/cotizaciones', 'public');
+                                    $rutaUrl = Storage::url($rutaGuardada);
+
+                                    \Log::info('✅ Foto de tela guardada en storage', [
+                                        'prenda_index' => $prendaIndex,
+                                        'tela_index' => $telaIndex,
+                                        'ruta_guardada' => $rutaGuardada,
+                                        'nombre_archivo' => $archivoFoto->getClientOriginalName(),
+                                    ]);
+
+                                    // Guardar en tabla prenda_tela_fotos_cot con color_id y tela_id
+                                    DB::table('prenda_tela_fotos_cot')->insert([
+                                        'prenda_cot_id' => $prenda->id,
+                                        'color_id' => $colorId,
+                                        'tela_id' => $telaId,
+                                        'referencia' => $telaInfo['referencia'] ?? '',
+                                        'ruta_original' => $rutaUrl,
+                                        'ruta_webp' => null,
+                                        'ruta_miniatura' => null,
+                                        'orden' => $fotoIndex + 1,
+                                        'ancho' => null,
+                                        'alto' => null,
+                                        'tamaño' => $archivoFoto->getSize(),
+                                        'created_at' => now(),
+                                        'updated_at' => now(),
+                                    ]);
+
+                                    \Log::info('✅ Foto de tela guardada en BD', [
+                                        'prenda_id' => $prenda->id,
+                                        'color_id' => $colorId,
+                                        'tela_id' => $telaId,
+                                        'referencia' => $telaInfo['referencia'] ?? '',
+                                    ]);
+                                } catch (\Exception $e) {
+                                    \Log::error('❌ Error guardando foto de tela', [
+                                        'error' => $e->getMessage(),
+                                        'archivo' => $archivoFoto->getClientOriginalName(),
+                                    ]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Log::info('✅ Procesamiento de imágenes completado', ['cotizacion_id' => $cotizacionId]);
     }
 }

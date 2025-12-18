@@ -296,4 +296,73 @@ class CotizacionPrendaService
 
         return $productos;
     }
+
+    /**
+     * Guardar prenda con múltiples telas, referencias, colores e imágenes
+     * Método diseñado para tests y uso directo
+     */
+    public function guardarPrendaConTelas(Cotizacion $cotizacion, array $prendaData): \App\Models\PrendaCot
+    {
+        $nombre = $prendaData['nombre_producto'] ?? 'Sin nombre';
+        
+        // 1. Guardar prenda principal
+        $prenda = $cotizacion->prendas()->create([
+            'nombre_producto' => $nombre,
+            'descripcion' => $prendaData['descripcion'] ?? '',
+            'cantidad' => $prendaData['cantidad'] ?? 1,
+        ]);
+        
+        Log::info("✅ Prenda creada con telas", [
+            'prenda_id' => $prenda->id,
+            'nombre' => $nombre
+        ]);
+
+        // 2. Guardar variante
+        $variantes = $prendaData['variantes'] ?? [];
+        if (!empty($variantes)) {
+            $prenda->variantes()->create([
+                'genero_id' => $variantes['genero_id'] ?? null,
+                'color' => $variantes['color'] ?? null,
+                'tipo_prenda' => $variantes['tipo_prenda'] ?? null,
+            ]);
+        }
+
+        // 3. Guardar telas y sus fotos
+        $telas = $prendaData['telas'] ?? [];
+        foreach ($telas as $telaIndex => $telaData) {
+            // Guardar foto de tela en prenda_tela_fotos_cot
+            // Nota: Guardamos directamente en PrendaTelaFotoCot con referencia y color
+            $telaFotos = $telaData['fotos'] ?? [];
+            if (!empty($telaFotos)) {
+                foreach ($telaFotos as $telaFoto) {
+                    \App\Models\PrendaTelaFotoCot::create([
+                        'prenda_cot_id' => $prenda->id,
+                        'referencia' => $telaData['referencia'] ?? '',
+                        'color_id' => $telaData['color_id'] ?? null,
+                        'tela_id' => $telaData['tela_id'] ?? null,
+                        'ruta_original' => $telaFoto['ruta_original'] ?? '',
+                        'ruta_webp' => $telaFoto['ruta_webp'] ?? $telaFoto['ruta_original'] ?? '',
+                        'ruta_miniatura' => $telaFoto['ruta_miniatura'] ?? null,
+                        'orden' => $telaFoto['orden'] ?? 1,
+                        'ancho' => $telaFoto['ancho'] ?? null,
+                        'alto' => $telaFoto['alto'] ?? null,
+                        'tamaño' => $telaFoto['tamaño'] ?? null,
+                    ]);
+                    
+                    Log::info("✅ Foto de tela guardada", [
+                        'prenda_id' => $prenda->id,
+                        'referencia' => $telaData['referencia'] ?? '',
+                        'ruta' => $telaFoto['ruta_original'] ?? ''
+                    ]);
+                }
+            }
+        }
+
+        Log::info("✅ Prenda con múltiples telas guardada completamente", [
+            'prenda_id' => $prenda->id,
+            'total_telas' => count($telas)
+        ]);
+
+        return $prenda;
+    }
 }

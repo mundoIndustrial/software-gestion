@@ -470,6 +470,7 @@ class CotizacionBordadoController extends Controller
                     'tipo_venta' => $request->input('tipo_venta', 'M'),
                     'es_borrador' => $esBorrador,
                     'estado' => $estado,
+                    'fecha_envio' => !$esBorrador ? now() : null,
                     'especificaciones' => json_encode($request->input('especificaciones', [])),
                 ]);
 

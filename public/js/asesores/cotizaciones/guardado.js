@@ -770,20 +770,65 @@ async function procederEnviarCotizacion(datos) {
                     });
                 }
                 
-                // ✅ TELAS (File objects o rutas guardadas desde window.imagenesEnMemoria)
+                // ✅ TELAS (File objects desde window.telasSeleccionadas)
+                console.log(`🧵 Procesando telas para prenda ${index}...`);
+                
+                // Obtener el producto ID de esta prenda
+                const prendaCard = document.querySelectorAll('.producto-card')[index];
+                if (prendaCard) {
+                    const productoId = prendaCard.dataset.productoId;
+                    console.log(`🧵 Producto ID: ${productoId}`);
+                    
+                    // Buscar telas en window.telasSeleccionadas
+                    if (window.telasSeleccionadas && window.telasSeleccionadas[productoId]) {
+                        const telasObj = window.telasSeleccionadas[productoId];
+                        console.log(`🧵 telasSeleccionadas encontrado para ${productoId}:`, telasObj);
+                        
+                        // Iterar sobre cada tela (los índices son las claves del objeto)
+                        for (let telaIdx in telasObj) {
+                            if (telasObj.hasOwnProperty(telaIdx) && Array.isArray(telasObj[telaIdx])) {
+                                const fotosDelaTela = telasObj[telaIdx];
+                                console.log(`🧵 Tela ${telaIdx}: ${fotosDelaTela.length} fotos`);
+                                
+                                // Agregar cada foto de esta tela al FormData
+                                fotosDelaTela.forEach((foto, fotoIdx) => {
+                                    console.log(`🔍 DEBUG Tela ${telaIdx} Foto ${fotoIdx + 1}:`, {
+                                        esFile: foto instanceof File,
+                                        tipo: typeof foto,
+                                        constructor: foto?.constructor?.name,
+                                        keys: Object.keys(foto || {}),
+                                        foto: foto
+                                    });
+                                    
+                                    if (foto instanceof File) {
+                                        formData.append(`prendas[${index}][telas][${telaIdx}][fotos][]`, foto);
+                                        console.log(`✅ Tela ${telaIdx} Foto ${fotoIdx + 1} agregada a FormData: ${foto.name}`);
+                                    } else {
+                                        console.error(`❌ Tela ${telaIdx} Foto ${fotoIdx + 1} NO ES File object:`, foto);
+                                    }
+                                });
+                            }
+                        }
+                    } else {
+                        console.log(`⚠️ No hay telas en window.telasSeleccionadas para ${productoId}`);
+                    }
+                }
+                
+                // FALLBACK: Buscar en window.imagenesEnMemoria.telaConIndice (compatibilidad)
                 if (window.imagenesEnMemoria && window.imagenesEnMemoria.telaConIndice) {
                     const telasDeEstaPrenda = window.imagenesEnMemoria.telaConIndice.filter(t => t.prendaIndex === index);
-                    telasDeEstaPrenda.forEach((item, telaIndex) => {
-                        if (item.file instanceof File) {
-                            // Es un File object nuevo
-                            formData.append(`prendas[${index}][telas][]`, item.file);
-                            console.log(`✅ Tela (File) agregada a FormData [${index}][${telaIndex}]:`, item.file.name);
-                        } else if (typeof item.file === 'string' && item.esGuardada) {
-                            // Es una ruta de imagen guardada
-                            formData.append(`prendas[${index}][telas_guardadas][]`, item.file);
-                            console.log(`✅ Tela (guardada) agregada a FormData [${index}][${telaIndex}]:`, item.file);
-                        }
-                    });
+                    if (telasDeEstaPrenda.length > 0) {
+                        console.log(`🧵 Usando fallback: imagenesEnMemoria.telaConIndice con ${telasDeEstaPrenda.length} telas`);
+                        telasDeEstaPrenda.forEach((item, telaIndex) => {
+                            if (item.file instanceof File) {
+                                formData.append(`prendas[${index}][telas][]`, item.file);
+                                console.log(`✅ Tela (File) agregada a FormData [${index}][${telaIndex}]:`, item.file.name);
+                            } else if (typeof item.file === 'string' && item.esGuardada) {
+                                formData.append(`prendas[${index}][telas_guardadas][]`, item.file);
+                                console.log(`✅ Tela (guardada) agregada a FormData [${index}][${telaIndex}]:`, item.file);
+                            }
+                        });
+                    }
                 }
             });
         }

@@ -1,5 +1,13 @@
 {{-- Logo/Bordado Tab --}}
-<div id="tab-bordado" class="tab-content {{ !$esLogo || (isset($tienePrendas) && !$tienePrendas) ? 'active' : '' }}">
+@php
+    $idLogo = \App\Models\TipoCotizacion::getIdPorCodigo('L');
+    $idCombinada = \App\Models\TipoCotizacion::getIdPorCodigo('PL');
+    $tabActivoPorDefecto = 'prendas';
+    if ($cotizacion->tipo_cotizacion_id === $idLogo || $cotizacion->tipo_cotizacion_id === $idCombinada) {
+        $tabActivoPorDefecto = 'bordado';
+    }
+@endphp
+<div id="tab-bordado" class="tab-content {{ $tabActivoPorDefecto === 'bordado' ? 'active' : '' }}">
     @if($logo)
         {{-- Tipo Venta del Logo --}}
         @if($logo->tipo_venta)

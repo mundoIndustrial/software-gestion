@@ -1,13 +1,10 @@
 {{-- Variante Details --}}
 <div style="font-size: 0.9rem;">
     @php
-        // Extraer tela y referencia de telas_multiples (ya decodificado por el modelo)
-        $tela = null;
-        $referencia = null;
+        // Extraer todas las telas de telas_multiples (ya decodificado por el modelo)
+        $telasMultiples = [];
         if ($variante->telas_multiples && is_array($variante->telas_multiples) && !empty($variante->telas_multiples)) {
-            $primeraTela = $variante->telas_multiples[0] ?? [];
-            $tela = $primeraTela['tela'] ?? null;
-            $referencia = $primeraTela['referencia'] ?? null;
+            $telasMultiples = $variante->telas_multiples;
         }
         
         // Extraer observaciones de descripcion_adicional
@@ -36,23 +33,40 @@
         <span style="color: #1e293b;">{{ $variante->color ?? '-' }}</span>
     </div>
 
-    {{-- Género --}}
-    <div style="margin-bottom: 8px;">
-        <span style="font-weight: 600; color: #0066cc;">Género:</span>
-        <span style="color: #1e293b;">{{ $variante->genero_nombre ?? '-' }}</span>
-    </div>
-
-    {{-- Tela --}}
-    <div style="margin-bottom: 8px;">
-        <span style="font-weight: 600; color: #0066cc;">Tela:</span>
-        <span style="color: #1e293b;">{{ $tela ?? '-' }}</span>
-    </div>
-
-    {{-- Referencia --}}
-    <div style="margin-bottom: 8px;">
-        <span style="font-weight: 600; color: #0066cc;">Referencia:</span>
-        <span style="color: #1e293b;">{{ $referencia ?? '-' }}</span>
-    </div>
+    {{-- Telas Múltiples --}}
+    @if(!empty($telasMultiples))
+        <div style="margin-bottom: 12px;">
+            <span style="font-weight: 600; color: #0066cc; display: block; margin-bottom: 8px;">Telas:</span>
+            @foreach($telasMultiples as $index => $telaData)
+                <div style="background: #f8fafc; padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid #0066cc;">
+                    <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                        <div>
+                            <span style="font-size: 0.85rem; color: #64748b;">Color:</span>
+                            <span style="color: #1e293b; font-weight: 500;">{{ $telaData['color'] ?? '-' }}</span>
+                        </div>
+                        <div>
+                            <span style="font-size: 0.85rem; color: #64748b;">Tela:</span>
+                            <span style="color: #1e293b; font-weight: 500;">{{ $telaData['tela'] ?? '-' }}</span>
+                        </div>
+                        <div>
+                            <span style="font-size: 0.85rem; color: #64748b;">Referencia:</span>
+                            <span style="color: #1e293b; font-weight: 500;">{{ $telaData['referencia'] ?? '-' }}</span>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    @else
+        {{-- Fallback si no hay telas_multiples --}}
+        <div style="margin-bottom: 8px;">
+            <span style="font-weight: 600; color: #0066cc;">Tela:</span>
+            <span style="color: #1e293b;">-</span>
+        </div>
+        <div style="margin-bottom: 8px;">
+            <span style="font-weight: 600; color: #0066cc;">Referencia:</span>
+            <span style="color: #1e293b;">-</span>
+        </div>
+    @endif
 
     {{-- Manga --}}
     @if($variante->tipo_manga_id)

@@ -299,19 +299,46 @@ class FormModule {
             console.log(`⚠️ No hay fotos para ${productoId}`);
         }
 
-        // Telas - Enviar archivos File directamente
-        if (window.telasSeleccionadas && window.telasSeleccionadas[productoId]) {
-            const telas = window.telasSeleccionadas[productoId];
-            console.log(`🧵 Telas encontradas para ${productoId}:`, telas.length);
-            telas.forEach((tela, telaIdx) => {
-                if (tela instanceof File) {
-                    formData.append(`productos[${index}][telas][${telaIdx}]`, tela, tela.name);
-                    console.log(`✅ Tela ${telaIdx + 1} agregada: ${tela.name}`);
-                }
+        // Telas - Procesar múltiples telas por prenda
+        // Capturar datos de cada fila de tela de la tabla
+        const tblasRows = card.querySelectorAll('.fila-tela');
+        console.log(`🧵 Filas de telas encontradas para ${productoId}:`, tblasRows.length);
+        
+        tblasRows.forEach((row, rowIdx) => {
+            const telaIndex = row.getAttribute('data-tela-index') || rowIdx;
+            const colorIdInput = row.querySelector(`input[name*="[${telaIndex}][color_id]"]`);
+            const telaIdInput = row.querySelector(`input[name*="[${telaIndex}][tela_id]"]`);
+            const referenciaInput = row.querySelector(`input[name*="[${telaIndex}][referencia]"]`);
+            
+            const colorId = colorIdInput ? colorIdInput.value : null;
+            const telaId = telaIdInput ? telaIdInput.value : null;
+            const referencia = referenciaInput ? referenciaInput.value : null;
+            
+            console.log(`🧵 Procesando fila de tela ${telaIndex}:`, {
+                colorId,
+                telaId,
+                referencia,
+                tieneFotos: !!(window.telasSeleccionadas && window.telasSeleccionadas[productoId] && window.telasSeleccionadas[productoId][telaIndex])
             });
-        } else {
-            console.log(`⚠️ No hay telas para ${productoId}`);
-        }
+            
+            // Guardar datos básicos de la tela
+            formData.append(`productos[${index}][telas][${telaIndex}][color_id]`, colorId || '');
+            formData.append(`productos[${index}][telas][${telaIndex}][tela_id]`, telaId || '');
+            formData.append(`productos[${index}][telas][${telaIndex}][referencia]`, referencia || '');
+            
+            // Agregar fotos de esta tela específica
+            if (window.telasSeleccionadas && window.telasSeleccionadas[productoId] && window.telasSeleccionadas[productoId][telaIndex]) {
+                const fotosDelaTela = window.telasSeleccionadas[productoId][telaIndex];
+                console.log(`📸 Fotos de tela ${telaIndex}:`, fotosDelaTela.length);
+                
+                fotosDelaTela.forEach((foto, fotoIdx) => {
+                    if (foto instanceof File) {
+                        formData.append(`productos[${index}][telas][${telaIndex}][fotos][${fotoIdx}]`, foto, foto.name);
+                        console.log(`✅ Foto ${fotoIdx + 1} de tela ${telaIndex} agregada: ${foto.name}`);
+                    }
+                });
+            }
+        });
 
         // Variantes
         const inputs = card.querySelectorAll('input[name*="variantes"], select[name*="variantes"], textarea[name*="variantes"]');

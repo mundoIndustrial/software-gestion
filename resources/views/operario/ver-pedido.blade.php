@@ -1227,7 +1227,7 @@
             return;
         }
         
-        const apiUrl = '/api/operario/pedido/' + numeroPedido;
+        const apiUrl = '/operario/api/pedido/' + numeroPedido;
         console.log('📝 URL API:', apiUrl);
         
         fetch(apiUrl)

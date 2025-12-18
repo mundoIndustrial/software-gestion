@@ -24,6 +24,15 @@
 
     // Mostrar tab de logo si es tipo logo O si tiene información de logo
     $mostrarTabLogo = $esLogo || ($logo && ($logo->descripcion || ($logo->fotos && $logo->fotos->count() > 0)));
+    
+    // Determinar qué tab debe estar activo por defecto
+    // Si es tipo Logo puro (L), el tab de Logo debe estar activo
+    // Si es Combinada (PL), el tab de Logo debe estar activo
+    // Si es Prenda pura (P), el tab de Prendas debe estar activo
+    $tabActivoPorDefecto = 'prendas';
+    if ($tipoCotizacionId === $idLogo || $tipoCotizacionId === $idCombinada) {
+        $tabActivoPorDefecto = 'bordado'; // Logo
+    }
 @endphp
 
 <div style="
@@ -38,7 +47,7 @@
     width: 100%;
 ">
     @if($esPrenda && $tienePrendas)
-        <button class="tab-button {{ !$mostrarTabLogo ? 'active' : '' }}" onclick="cambiarTab('prendas', this)" style="
+        <button class="tab-button {{ $tabActivoPorDefecto === 'prendas' ? 'active' : '' }}" onclick="cambiarTab('prendas', this)" style="
             padding: 1rem 1.5rem;
             background: none;
             border: none;
@@ -59,7 +68,7 @@
     @endif
     
     @if($mostrarTabLogo)
-        <button class="tab-button {{ $mostrarTabLogo ? 'active' : '' }}" onclick="cambiarTab('bordado', this)" style="
+        <button class="tab-button {{ $tabActivoPorDefecto === 'bordado' ? 'active' : '' }}" onclick="cambiarTab('bordado', this)" style="
             padding: 1rem 1.5rem;
             background: none;
             border: none;

@@ -106,6 +106,10 @@ class PedidoPrendaService
             ? $prendaData['descripcion'] 
             : $descripcionFormateada;
         
+        // Obtener la PRIMERA tela de múltiples telas para los campos principales
+        // (tela_id, color_id se guardan en la prenda para referencia rápida)
+        $primeraTela = $this->obtenerPrimeraTela($prendaData);
+        
         // 🔍 LOG: Antes de guardar
         \Log::info('✅ [PedidoPrendaService] Guardando prenda con IDs', [
             'numero_pedido' => $pedido->numero_pedido,
@@ -113,25 +117,27 @@ class PedidoPrendaService
             'descripcion_formulario' => $prendaData['descripcion'] ?? null,
             'descripcion_legacy' => $descripcionFormateada,
             'descripcion_final' => $descripcionFinal,
-            'tela_id' => $prendaData['tela_id'] ?? null,
-            'color_id' => $prendaData['color_id'] ?? null,
+            'tela_id_principal' => $primeraTela['tela_id'] ?? null,
+            'color_id_principal' => $primeraTela['color_id'] ?? null,
+            'total_telas' => !empty($prendaData['telas']) ? count($prendaData['telas']) : 0,
             'tipo_manga_id' => $prendaData['tipo_manga_id'] ?? null,
             'tipo_broche_id' => $prendaData['tipo_broche_id'] ?? null,
         ]);
         
         // Crear prenda principal usando PrendaPedido (tabla correcta)
+        // NOTA: 'cantidad' se calcula dinámicamente desde cantidad_talla via accessor
         $prenda = PrendaPedido::create([
             'numero_pedido' => $pedido->numero_pedido,
             'nombre_prenda' => $prendaData['nombre_producto'] ?? 'Sin nombre',
             'descripcion' => $descripcionFinal, // ✅ PRIORIZA DESCRIPCIÓN DEL FORMULARIO
-            'cantidad' => $prendaData['cantidad'] ?? 1,
+            'cantidad' => 0, // Será ignorado por el mutador, se calcula desde cantidad_talla
             'cantidad_talla' => is_array($prendaData['cantidades'] ?? null) 
                 ? json_encode($prendaData['cantidades']) 
                 : $prendaData['cantidades'],
             'descripcion_variaciones' => $this->armarDescripcionVariaciones($prendaData),
-            // Campos de variaciones
-            'color_id' => $prendaData['color_id'] ?? null,
-            'tela_id' => $prendaData['tela_id'] ?? null,
+            // Campos de variaciones (se asigna la PRIMERA tela como referencia)
+            'color_id' => $primeraTela['color_id'] ?? $prendaData['color_id'] ?? null,
+            'tela_id' => $primeraTela['tela_id'] ?? $prendaData['tela_id'] ?? null,
             'tipo_manga_id' => $prendaData['tipo_manga_id'] ?? null,
             'tipo_broche_id' => $prendaData['tipo_broche_id'] ?? null,
             'tiene_bolsillos' => $prendaData['tiene_bolsillos'] ?? false,
@@ -142,6 +148,8 @@ class PedidoPrendaService
         \Log::info('✅ [PedidoPrendaService] Prenda guardada exitosamente', [
             'prenda_id' => $prenda->id,
             'numero_pedido' => $prenda->numero_pedido,
+            'cantidad_dinamica' => $prenda->cantidad, // Ahora usa el accessor
+            'cantidad_talla_guardada' => $prenda->cantidad_talla,
             'tela_id_guardado' => $prenda->tela_id,
             'color_id_guardado' => $prenda->color_id,
             'tipo_manga_id_guardado' => $prenda->tipo_manga_id,
@@ -173,7 +181,28 @@ class PedidoPrendaService
      * Construir array de datos formateado para el DescripcionPrendaLegacyFormatter
      * Convierte los datos del frontend a la estructura esperada por el formatter
      */
-    private function construirDatosParaFormatter(array $prendaData, int $index = 1): array
+    private function obtenerPrimeraTela(array $prendaData): array
+    {
+        // Si hay un array de telas, obtener la primera
+        if (!empty($prendaData['telas']) && is_array($prendaData['telas'])) {
+            $primeraTela = reset($prendaData['telas']);
+            if (is_array($primeraTela)) {
+                return [
+                    'tela_id' => $primeraTela['tela_id'] ?? null,
+                    'color_id' => $primeraTela['color_id'] ?? null,
+                ];
+            }
+        }
+        
+        // Si no hay telas múltiples, usar los campos de variantes individuales
+        return [
+            'tela_id' => $prendaData['tela_id'] ?? null,
+            'color_id' => $prendaData['color_id'] ?? null,
+        ];
+    }
+
+    /**
+     * Construir array de datos formateado para el DescripcionPrendaLegacyFormatter
     {
         // Obtener relaciones si están disponibles, sino buscar en BD
         $color = '';

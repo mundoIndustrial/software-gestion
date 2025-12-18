@@ -664,14 +664,41 @@ function recopilarDatos() {
             }
         }
         
-        // Obtener telas de esta prenda (desde telaConIndice) - TODAS las telas, no solo 1
+        // Obtener telas de esta prenda (desde telasSeleccionadas o telaConIndice)
         let telas = [];
-        if (window.imagenesEnMemoria && window.imagenesEnMemoria.telaConIndice) {
+        
+        // OPCIÓN 1: Buscar en window.telasSeleccionadas (la estructura correcta)
+        if (window.telasSeleccionadas && window.telasSeleccionadas[productoId]) {
+            const telasObj = window.telasSeleccionadas[productoId];
+            console.log('🧵 DEBUG - telasSeleccionadas encontrado:', telasObj);
+            
+            // telasObj es un objeto con índices como claves: {'0': [files], '1': [files]}
+            for (let telaIdx in telasObj) {
+                if (telasObj.hasOwnProperty(telaIdx) && Array.isArray(telasObj[telaIdx])) {
+                    const fotosDelaTela = telasObj[telaIdx];
+                    console.log(`🧵 Tela ${telaIdx}: ${fotosDelaTela.length} fotos`);
+                    
+                    // Agregar cada foto con información de su índice de tela
+                    fotosDelaTela.forEach((foto, fotoIdx) => {
+                        if (foto instanceof File) {
+                            telas.push({
+                                telaIndex: parseInt(telaIdx),
+                                fotoIndex: fotoIdx,
+                                file: foto
+                            });
+                        }
+                    });
+                }
+            }
+            console.log(`✅ Telas desde telasSeleccionadas: ${telas.length} archivos`);
+        }
+        
+        // OPCIÓN 2: Fallback - Buscar en window.imagenesEnMemoria.telaConIndice (compatibilidad)
+        if (telas.length === 0 && window.imagenesEnMemoria && window.imagenesEnMemoria.telaConIndice) {
             const telasEncontradas = window.imagenesEnMemoria.telaConIndice.filter(t => t.prendaIndex === index);
             if (telasEncontradas.length > 0) {
-                // Guardar los archivos File completos
                 telas = telasEncontradas.map(t => t.file);
-                console.log(`🧵 Telas desde telaConIndice (índice ${index}):`, telas.length, 'archivos');
+                console.log(`🧵 Telas desde telaConIndice (fallback): ${telas.length} archivos`);
             }
         }
         

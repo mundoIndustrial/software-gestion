@@ -103,6 +103,12 @@ class MigrateTablaOriginalCompleto extends Command
             'encargado' => 'encargado_arreglos',
             'dias' => 'total_de_dias_arreglos',
         ],
+        'marras' => [
+            'proceso' => 'Marras',
+            'fecha' => 'marras',
+            'encargado' => 'encargados_marras',
+            'dias' => 'total_de_dias_marras',
+        ],
         'control_de_calidad' => [
             'proceso' => 'Control Calidad',
             'fecha' => 'control_de_calidad',
