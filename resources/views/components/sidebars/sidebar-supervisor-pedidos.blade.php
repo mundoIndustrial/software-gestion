@@ -26,13 +26,6 @@
                         <span class="badge-alert" id="ordenesPendientesCount">0</span>
                     </a>
                 </li>
-                <li class="menu-item">
-                    <a href="{{ route('supervisor-pedidos.index', ['aprobacion' => 'aprobadas']) }}"
-                       class="menu-link {{ request()->query('aprobacion') === 'aprobadas' ? 'active' : '' }}">
-                        <span class="material-symbols-rounded">verified</span>
-                        <span class="menu-label">Aprobadas/Anuladas</span>
-                    </a>
-                </li>
             </ul>
         </div>
 

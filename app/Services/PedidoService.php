@@ -8,6 +8,7 @@ use App\Models\PrendaPedido;
 use App\Models\ProcesoPrenda;
 use App\Models\VariantePrenda;
 use App\Exceptions\PedidoException;
+use App\Enums\EstadoPedido;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -96,7 +97,7 @@ class PedidoService
                 'cliente' => $cotizacion->cliente,
                 'asesor_id' => Auth::id(),
                 'forma_de_pago' => $cotizacion->especificaciones['forma_pago'] ?? null,
-                'estado' => 'No iniciado',
+                'estado' => EstadoPedido::PENDIENTE_SUPERVISOR->value,
                 'fecha_de_creacion_de_orden' => now(),
             ]);
 

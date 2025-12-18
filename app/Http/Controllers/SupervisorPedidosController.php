@@ -141,15 +141,15 @@ class SupervisorPedidosController extends Controller
         // FILTRO DE APROBACIÓN: Mostrar solo órdenes según su estado de aprobación
         if ($request->filled('aprobacion')) {
             if ($request->aprobacion === 'pendiente') {
-                // Órdenes PENDIENTES: solo las que tienen estado 'PENDIENTE_SUPERVISOR'
+                // Órdenes PENDIENTES DE SUPERVISOR: solo las que tienen estado 'PENDIENTE_SUPERVISOR'
                 $query->where('estado', 'PENDIENTE_SUPERVISOR');
             } elseif ($request->aprobacion === 'aprobadas') {
-                // Órdenes aprobadas/anuladas: solo las que tienen estado 'Pendiente' o 'Anulada'
-                $query->whereIn('estado', ['Pendiente', 'Anulada']);
+                // Órdenes aprobadas: las que ya fueron aprobadas (estado Pendiente o posteriores)
+                $query->whereIn('estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'Finalizada', 'Anulada']);
             }
         } else {
-            // Por defecto, mostrar TODAS las órdenes (sin filtro de aprobación)
-            // Esto incluye órdenes con y sin cotización
+            // Por defecto, mostrar solo órdenes en estado PENDIENTE_SUPERVISOR
+            $query->where('estado', 'PENDIENTE_SUPERVISOR');
         }
 
         // Búsqueda general por pedido o cliente
@@ -276,29 +276,38 @@ class SupervisorPedidosController extends Controller
             if ($orden->estado !== 'PENDIENTE_SUPERVISOR') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Solo se pueden aprobar órdenes en estado "Pendiente de Supervisor"'
+                    'message' => 'Solo se pueden aprobar órdenes en estado "PENDIENTE_SUPERVISOR"'
                 ], 422);
             }
 
-            // Verificar si el pedido está relacionado con una cotización de tipo Reflectivo (RF)
+            // Determinar si es una cotización de tipo reflectivo
             $esReflectivo = false;
             if ($orden->cotizacion && $orden->cotizacion->tipoCotizacion) {
-                $esReflectivo = ($orden->cotizacion->tipoCotizacion->codigo === 'RF');
+                $tipoCotizacion = strtolower(trim($orden->cotizacion->tipoCotizacion->nombre ?? ''));
+                $esReflectivo = ($tipoCotizacion === 'reflectivo');
             }
 
-            // Determinar estado y área según el tipo de cotización
+            // Actualizar estado según el tipo de cotización
             if ($esReflectivo) {
-                // Para pedidos reflectivos: estado "No iniciado" y área "Reflectivo"
+                // Para pedidos reflectivos: estado "En Ejecución" y área "Costura"
                 $orden->update([
                     'aprobado_por_supervisor_en' => now(),
-                    'estado' => 'No iniciado',
-                    'area' => 'Reflectivo',
+                    'estado' => 'En Ejecución',
+                    'area' => 'Costura',
                 ]);
                 
-                \Log::info("Orden REFLECTIVO #{$orden->numero_pedido} aprobada por " . auth()->user()->name, [
+                \Log::info("Orden REFLECTIVA #{$orden->numero_pedido} aprobada por supervisor " . auth()->user()->name, [
                     'fecha_aprobacion' => now(),
-                    'estado' => 'No iniciado',
-                    'area' => 'Reflectivo',
+                    'estado_anterior' => 'PENDIENTE_SUPERVISOR',
+                    'estado_nuevo' => 'En Ejecución',
+                    'area' => 'Costura',
+                    'tipo_cotizacion' => $orden->cotizacion->tipoCotizacion->nombre ?? 'N/A',
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Pedido reflectivo aprobado correctamente. Enviado directamente a Costura en estado "En Ejecución".',
+                    'orden' => $orden->fresh(),
                 ]);
             } else {
                 // Para pedidos normales: estado "Pendiente"
@@ -307,18 +316,18 @@ class SupervisorPedidosController extends Controller
                     'estado' => 'Pendiente',
                 ]);
                 
-                \Log::info("Orden #{$orden->numero_pedido} aprobada por " . auth()->user()->name, [
+                \Log::info("Orden #{$orden->numero_pedido} aprobada por supervisor " . auth()->user()->name, [
                     'fecha_aprobacion' => now(),
-                    'estado' => 'Pendiente',
+                    'estado_anterior' => 'PENDIENTE_SUPERVISOR',
+                    'estado_nuevo' => 'Pendiente',
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Pedido aprobado correctamente. Ahora está disponible para el módulo de insumos.',
+                    'orden' => $orden->fresh(),
                 ]);
             }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Orden aprobada correctamente.' . ($esReflectivo ? ' Enviada a área Reflectivo.' : ' Pendiente de envío a producción.'),
-                'orden' => $orden,
-                'es_reflectivo' => $esReflectivo,
-            ]);
 
         } catch (\Exception $e) {
             \Log::error('Error al aprobar orden: ' . $e->getMessage());
@@ -358,67 +367,123 @@ class SupervisorPedidosController extends Controller
 
     /**
      * Obtener datos de la orden en JSON
+     * EXACTAMENTE IGUAL que RegistroOrdenQueryController::show()
      */
     public function obtenerDatos($id)
     {
+        // Buscar por ID (supervisor usa ID, no numero_pedido)
         $orden = PedidoProduccion::with([
-            'prendas' => function ($query) {
-                $query->with([
-                    'color',
-                    'tela',
-                    'tipoManga',
-                    'tipoBroche',
-                    'procesos',
-                    'fotos',
-                    'fotosLogo',
-                    'fotosTela'
-                ]);
-            },
-            'cotizacion' => function ($query) {
-                $query->with([
-                    'prendasCotizaciones' => function ($q) {
-                        $q->with([
-                            'variantes' => function ($v) {
-                                $v->with(['color', 'tela', 'tipoManga']);
-                            }
-                        ]);
-                    }
-                ]);
-            },
-            'asesora' // Cargar relación con el usuario (asesora)
+            'asesora', 
+            'prendas',
+            'prendas.fotos',
+            'prendas.fotosLogo',
+            'prendas.fotosTela',
+            'cotizacion.tipoCotizacion'
         ])->findOrFail($id);
 
-        // Forzar la evaluación de atributos calculados ANTES de convertir a array
-        $descripcionPrendas = $orden->descripcion_prendas;
-        $cantidadTotal = $orden->cantidad_total;
-        
-        // Convertir a array para incluir atributos calculados
-        $ordenArray = $orden->toArray();
-        
-        // Asegurar que los atributos calculados estén en el array
-        $ordenArray['descripcion_prendas'] = $descripcionPrendas;
-        $ordenArray['cantidad_total'] = $cantidadTotal;
-        
-        // Calcular total de prendas del pedido
+        // Obtener estadísticas
         $totalCantidad = \DB::table('prendas_pedido')
             ->where('numero_pedido', $orden->numero_pedido)
             ->sum('cantidad');
 
-        // El total entregado se calcula basado en el estado del pedido
-        // Si está en estado "Entregado", el total entregado es igual al total de cantidad
         $totalEntregado = ($orden->estado === 'Entregado') ? $totalCantidad : 0;
 
-        $ordenArray['total_cantidad'] = $totalCantidad;
-        $ordenArray['total_entregado'] = $totalEntregado;
+        $orden->total_cantidad = $totalCantidad;
+        $orden->total_entregado = $totalEntregado;
+
+        // Convertir a array
+        $ordenArray = $orden->toArray();
         
-        // Agregar nombre de cliente
+        // Verificar si es una cotización
+        $esCotizacion = !empty($orden->cotizacion_id);
+        $ordenArray['es_cotizacion'] = $esCotizacion;
+        
+        // Agregar nombres en lugar de IDs
+        if ($orden->asesora) {
+            $ordenArray['asesor'] = $orden->asesora->name ?? '';
+            $ordenArray['asesora'] = $orden->asesora->name ?? '';
+            $ordenArray['asesora_nombre'] = $orden->asesora->name ?? '';
+        } else {
+            $ordenArray['asesor'] = '';
+            $ordenArray['asesora'] = '';
+            $ordenArray['asesora_nombre'] = '';
+        }
+        
+        // Cliente
         if (!empty($ordenArray['cliente'])) {
             $ordenArray['cliente_nombre'] = $ordenArray['cliente'];
         }
         
-        // Agregar nombre de asesora
-        if ($orden->asesora) {
-            $ordenArray['asesora_nombre'] = $orden->asesora->name;
+        // Construir descripción con tallas POR PRENDA (como en RegistroOrdenQueryController)
+        $ordenArray['descripcion_prendas'] = $this->buildDescripcionConTallas($orden);
+        
+        // Obtener prendas formateadas para el modal
+        $prendasFormato = [];
+        
+        if ($orden->prendas && $orden->prendas->count() > 0) {
+            foreach ($orden->prendas as $index => $prenda) {
+                $colorNombre = null;
+                $telaNombre = null;
+                $telaReferencia = null;
+                $tipoMangaNombre = null;
+                $tipoBrocheNombre = null;
+                
+                try {
+                    if ($prenda->color_id) {
+                        $color = \App\Models\ColorPrenda::find($prenda->color_id);
+                        $colorNombre = $color ? $color->nombre : null;
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('Error obteniendo color', ['error' => $e->getMessage()]);
+                }
+                
+                try {
+                    if ($prenda->tela_id) {
+                        $tela = \App\Models\TelaPrenda::find($prenda->tela_id);
+                        if ($tela) {
+                            $telaNombre = $tela->nombre;
+                            $telaReferencia = $tela->referencia;
+                        }
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('Error obteniendo tela', ['error' => $e->getMessage()]);
+                }
+                
+                try {
+                    if ($prenda->tipo_manga_id) {
+                        $tipoManga = \App\Models\TipoManga::find($prenda->tipo_manga_id);
+                        $tipoMangaNombre = $tipoManga ? $tipoManga->nombre : null;
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('Error obteniendo manga', ['error' => $e->getMessage()]);
+                }
+                
+                try {
+                    if ($prenda->tipo_broche_id) {
+                        $tipoBroche = \App\Models\TipoBroche::find($prenda->tipo_broche_id);
+                        $tipoBrocheNombre = $tipoBroche ? $tipoBroche->nombre : null;
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('Error obteniendo broche', ['error' => $e->getMessage()]);
+                }
+                
+                $prendasFormato[] = [
+                    'numero' => $index + 1,
+                    'nombre' => $prenda->nombre_prenda ?? '-',
+                    'descripcion' => $prenda->descripcion ?? '-',
+                    'descripcion_variaciones' => $prenda->descripcion_variaciones ?? '',
+                    'cantidad_talla' => $prenda->cantidad_talla ?? '-',
+                    'color' => $colorNombre,
+                    'tela' => $telaNombre,
+                    'tela_referencia' => $telaReferencia,
+                    'tipo_manga' => $tipoMangaNombre,
+                    'tipo_broche' => $tipoBrocheNombre,
+                    'tiene_bolsillos' => $prenda->tiene_bolsillos ?? 0,
+                    'tiene_reflectivo' => $prenda->tiene_reflectivo ?? 0,
+                ];
+            }
+            
+            $ordenArray['prendas'] = $prendasFormato;
         }
 
         return response()->json($ordenArray);
@@ -971,14 +1036,10 @@ class SupervisorPedidosController extends Controller
                     $variacionesTexto[] = "Broche: " . $prendaData['obs_broche'];
                 }
                 
-                if (!empty($prendaData['obs_reflectivo'])) {
-                    $variacionesTexto[] = "Reflectivo: " . $prendaData['obs_reflectivo'];
-                }
-                
-                $descripcionVariaciones = !empty($variacionesTexto) ? implode(' | ', $variacionesTexto) : null;
+                $descripcionVariaciones = implode(' | ', $variacionesTexto);
                 
                 $prenda->update([
-                    'nombre_prenda' => $prendaData['nombre_prenda'],
+                    'nombre_prenda' => $prendaData['nombre_prenda'] ?? $prenda->nombre_prenda,
                     'descripcion' => $prendaData['descripcion'] ?? $prenda->descripcion,
                     'descripcion_variaciones' => $descripcionVariaciones,
                     'cantidad_talla' => $prendaData['cantidad_talla'] ?? $prenda->cantidad_talla,
@@ -990,35 +1051,35 @@ class SupervisorPedidosController extends Controller
                     'tiene_reflectivo' => $prendaData['tiene_reflectivo'] ?? false,
                 ]);
 
-                // Guardar nuevas fotos de prenda
+                // Guardar nuevas fotos de prenda (convertir a webp)
                 if ($request->hasFile("prendas.{$index}.nuevas_fotos")) {
                     foreach ($request->file("prendas.{$index}.nuevas_fotos") as $foto) {
-                        $path = $foto->store('pedidos/prendas', 'public');
+                        $pathWebp = $this->guardarImagenComoWebp($foto, $orden->numero_pedido, 'prendas');
                         $prenda->fotos()->create([
-                            'ruta_original' => $path,
-                            'ruta_webp' => $path
+                            'ruta_original' => $pathWebp,
+                            'ruta_webp' => $pathWebp
                         ]);
                     }
                 }
 
-                // Guardar nuevas fotos de logo
+                // Guardar nuevas fotos de logo (convertir a webp)
                 if ($request->hasFile("prendas.{$index}.nuevas_fotos_logo")) {
                     foreach ($request->file("prendas.{$index}.nuevas_fotos_logo") as $foto) {
-                        $path = $foto->store('pedidos/logos', 'public');
+                        $pathWebp = $this->guardarImagenComoWebp($foto, $orden->numero_pedido, 'logos');
                         $prenda->fotosLogo()->create([
-                            'ruta_original' => $path,
-                            'ruta_webp' => $path
+                            'ruta_original' => $pathWebp,
+                            'ruta_webp' => $pathWebp
                         ]);
                     }
                 }
 
-                // Guardar nuevas fotos de tela
+                // Guardar nuevas fotos de tela (convertir a webp)
                 if ($request->hasFile("prendas.{$index}.nuevas_fotos_tela")) {
                     foreach ($request->file("prendas.{$index}.nuevas_fotos_tela") as $foto) {
-                        $path = $foto->store('pedidos/telas', 'public');
+                        $pathWebp = $this->guardarImagenComoWebp($foto, $orden->numero_pedido, 'telas');
                         $prenda->fotosTela()->create([
-                            'ruta_original' => $path,
-                            'ruta_webp' => $path
+                            'ruta_original' => $pathWebp,
+                            'ruta_webp' => $pathWebp
                         ]);
                     }
                 }
@@ -1084,18 +1145,33 @@ class SupervisorPedidosController extends Controller
 
             $foto = $modelClass::findOrFail($id);
             
+            \Log::info("🗑️ Iniciando eliminación de imagen {$tipo}", [
+                'id' => $id,
+                'ruta_original' => $foto->ruta_original ?? 'N/A',
+                'ruta_webp' => $foto->ruta_webp ?? 'N/A'
+            ]);
+            
             // Eliminar archivos físicos (tanto original como webp si existen)
+            $archivosEliminados = [];
+            
             if (isset($foto->ruta_original) && Storage::disk('public')->exists($foto->ruta_original)) {
                 Storage::disk('public')->delete($foto->ruta_original);
+                $archivosEliminados[] = $foto->ruta_original;
+                \Log::info("✅ Archivo original eliminado: {$foto->ruta_original}");
             }
+            
             if (isset($foto->ruta_webp) && $foto->ruta_webp !== $foto->ruta_original && Storage::disk('public')->exists($foto->ruta_webp)) {
                 Storage::disk('public')->delete($foto->ruta_webp);
+                $archivosEliminados[] = $foto->ruta_webp;
+                \Log::info("✅ Archivo webp eliminado: {$foto->ruta_webp}");
             }
 
-            // Eliminar registro
-            $foto->delete();
-
-            \Log::info("Imagen {$tipo} eliminada", ['id' => $id]);
+            // Eliminar registro de la base de datos permanentemente (forceDelete porque usa SoftDeletes)
+            $foto->forceDelete();
+            \Log::info("✅ Registro de BD eliminado permanentemente para imagen {$tipo}", [
+                'id' => $id,
+                'archivos_eliminados' => $archivosEliminados
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -1113,6 +1189,78 @@ class SupervisorPedidosController extends Controller
                 'success' => false,
                 'message' => 'Error al eliminar la imagen: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Construir descripción con tallas por prenda (igual que en módulo asesores)
+     * Usa el método generarDescripcionDetallada de cada prenda para obtener la descripción completa
+     * 
+     * @param PedidoProduccion $order
+     * @return string
+     */
+    private function buildDescripcionConTallas($order)
+    {
+        if (!$order->prendas || $order->prendas->isEmpty()) {
+            return '';
+        }
+
+        // Generar descripción detallada para TODAS las prendas usando el método del modelo
+        // Esto incluye automáticamente: Color, Tela, Manga, Reflectivo, Bolsillos, Broche y Tallas
+        $descripciones = $order->prendas->map(function($prenda, $index) {
+            return $prenda->generarDescripcionDetallada($index + 1);
+        })->toArray();
+
+        return implode("\n\n", $descripciones);
+    }
+
+    /**
+     * Guardar imagen como WebP en carpeta del pedido
+     * 
+     * @param \Illuminate\Http\UploadedFile $file
+     * @param string $numeroPedido ID del pedido
+     * @param string $tipo Tipo de imagen: 'prendas', 'logos', 'telas'
+     * @return string Ruta relativa del archivo guardado
+     */
+    private function guardarImagenComoWebp($file, $numeroPedido, $tipo)
+    {
+        try {
+            // Generar nombre único
+            $nombreUnico = time() . '_' . uniqid() . '.webp';
+            
+            // Construir ruta: storage/app/public/pedidos/{numeroPedido}/{tipo}
+            $carpetaRelativa = "pedidos/{$numeroPedido}/{$tipo}";
+            $rutaCompleta = storage_path("app/public/{$carpetaRelativa}");
+            
+            // Crear directorio si no existe
+            if (!\File::exists($rutaCompleta)) {
+                \File::makeDirectory($rutaCompleta, 0755, true);
+                \Log::info('📁 Carpeta creada', ['ruta' => $rutaCompleta]);
+            }
+            
+            // Usar Intervention Image para convertir a webp
+            $manager = \Intervention\Image\ImageManager::gd();
+            $imagen = $manager->read($file->getRealPath());
+            
+            // Guardar como webp con calidad 85
+            $rutaArchivo = $rutaCompleta . '/' . $nombreUnico;
+            $imagen->toWebp(85)->save($rutaArchivo);
+            
+            \Log::info('✅ Imagen guardada como webp', [
+                'nombre' => $nombreUnico,
+                'numero_pedido' => $numeroPedido,
+                'tipo' => $tipo,
+                'ruta_completa' => $rutaArchivo,
+                'ruta_relativa' => $carpetaRelativa . '/' . $nombreUnico
+            ]);
+            
+            // Retornar ruta relativa para la base de datos
+            return $carpetaRelativa . '/' . $nombreUnico;
+            
+        } catch (\Exception $e) {
+            \Log::error('❌ Error al convertir imagen a webp: ' . $e->getMessage());
+            // Fallback: guardar sin conversión en carpeta del pedido
+            return $file->store("pedidos/{$numeroPedido}/{$tipo}", 'public');
         }
     }
 }

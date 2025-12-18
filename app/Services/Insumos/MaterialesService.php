@@ -189,13 +189,32 @@ class MaterialesService
                 ];
             }
 
-            // Actualizar el estado
-            $orden->update(['estado' => $nuevoEstado]);
+            // Verificar que el pedido esté en estado Pendiente
+            if ($orden->estado !== 'Pendiente') {
+                return [
+                    'success' => false,
+                    'message' => 'Solo se pueden enviar a producción pedidos en estado Pendiente'
+                ];
+            }
+
+            // Actualizar el estado a "No iniciado" y área a "Corte"
+            $orden->update([
+                'estado' => 'No iniciado',
+                'area' => 'Corte'
+            ]);
+
+            \Log::info("Pedido #{$numeroPedido} enviado a producción", [
+                'estado_anterior' => 'Pendiente',
+                'estado_nuevo' => 'No iniciado',
+                'area' => 'Corte',
+                'usuario' => auth()->user()->name ?? 'Sistema'
+            ]);
 
             return [
                 'success' => true,
-                'message' => 'Estado actualizado correctamente',
-                'estado' => $nuevoEstado
+                'message' => 'Pedido enviado a producción correctamente',
+                'estado' => 'No iniciado',
+                'area' => 'Corte'
             ];
         } catch (\Exception $e) {
             \Log::error('Error al cambiar estado del pedido: ' . $e->getMessage());

@@ -11,6 +11,7 @@ use App\Services\Pedidos\EnriquecerDatosService;
 use App\Application\Services\PedidoPrendaService;
 use App\Application\Services\PedidoLogoService;
 use App\Application\Services\CopiarImagenesCotizacionAPedidoService;
+use App\Enums\EstadoPedido;
 use Illuminate\Bus\Queueable;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Support\Facades\DB;
@@ -120,7 +121,7 @@ class CrearPedidoProduccionJob
                 'descripcion' => $this->dto->descripcion,
                 'forma_de_pago' => $this->dto->formaDePago,
                 'prendas' => $prendasProcesadas,
-                'estado' => 'Pendiente',
+                'estado' => EstadoPedido::PENDIENTE_SUPERVISOR->value,
                 'fecha_de_creacion_de_orden' => now(),
             ]);
 

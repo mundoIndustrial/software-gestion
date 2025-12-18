@@ -119,135 +119,69 @@ window.openOrderDetailModal = async function openOrderDetailModal(ordenId) {
             prendasEntregadasValue.textContent = `${totalEntregado} de ${totalCantidad}`;
         }
         
-        // ✅ LLENAR DESCRIPCIÓN DE PRENDAS CON NAVEGACIÓN (EXACTO COMO EN ASESORES)
+        // ✅ LLENAR DESCRIPCIÓN DE PRENDAS - USAR LÓGICA DE order-detail-modal-manager.js
         const descripcionText = document.getElementById('descripcion-text');
         const prevArrow = document.getElementById('prev-arrow');
         const nextArrow = document.getElementById('next-arrow');
-        const arrowContainer = prevArrow?.parentElement;
         
         if (descripcionText && data.descripcion_prendas) {
-            // Parsear la descripción de prendas - NUEVO FORMATO CON ASTERISCOS
-            const prendas = data.descripcion_prendas.split(/(?=PRENDA\s+\d+:)/i).filter(p => p.trim());
+            console.log('📝 [DESCRIPCION COMPLETA]:\n' + data.descripcion_prendas);
             
-            // Función para formatear una prenda - ADAPTADA AL NUEVO FORMATO
-            function formatearPrenda(prendaText, index) {
-                // Parsear cada prenda
-                const prendaMatch = prendaText.match(/^PRENDA\s+(\d+):\s*(.+?)(?:\n|$)/i);
-                const prendaNum = prendaMatch ? prendaMatch[1] : (index + 1);
-                const prendaNombre = prendaMatch ? prendaMatch[2].trim() : '';
-                
-                // Buscar Color | Tela | Manga en una línea
-                const atributosMatch = prendaText.match(/Color:.*?\|.*?Tela:.*?(?:\|.*?Manga:.*?)?/i);
-                const atributosLinea = atributosMatch ? atributosMatch[0] : '';
-                
-                // Buscar DESCRIPCIÓN (para prendas sin variaciones)
-                const descMatch = prendaText.match(/DESCRIPCIÓN:\s*(.+?)(?=\n\*\*\*|$)/i);
-                const desc = descMatch ? descMatch[1].trim() : '';
-                
-                // Buscar Bolsillos
-                const bolsillosMatch = prendaText.match(/\*\*\*\s*Bolsillos:\s*\*\*\*([\s\S]*?)(?=\n\*\*\*|$)/i);
-                const bolsillos = bolsillosMatch ? bolsillosMatch[1].trim() : '';
-                
-                // Buscar Broche
-                const brocheMatch = prendaText.match(/\*\*\*\s*Broche:\s*\*\*\*([\s\S]*?)(?=\n\*\*\*|$)/i);
-                const broche = brocheMatch ? brocheMatch[1].trim() : '';
-                
-                // Buscar Reflectivo
-                const reflectivoMatch = prendaText.match(/\*\*\*\s*Reflectivo:\s*\*\*\*([\s\S]*?)(?=\n\*\*\*|$)/i);
-                const reflectivo = reflectivoMatch ? reflectivoMatch[1].trim() : '';
-                
-                // Buscar Otros detalles
-                const otrosMatch = prendaText.match(/\*\*\*\s*Otros detalles:\s*\*\*\*([\s\S]*?)(?=\n\*\*\*|$)/i);
-                const otros = otrosMatch ? otrosMatch[1].trim() : '';
-                
-                // Buscar Tallas
-                const tallasMatch = prendaText.match(/\*\*\*\s*TALLAS:\s*\*\*\*([\s\S]*?)$/i);
-                const tallas = tallasMatch ? tallasMatch[1].trim() : '';
-                
-                // Construir descripción con secciones
-                let descripcionLinea = '';
-                
-                const secciones = [];
-                if (desc && !bolsillos && !broche && !reflectivo && !otros) {
-                    // Si solo hay descripción simple, mostrarla
-                    descripcionLinea = `<strong>Descripción:</strong> ${desc}`;
-                } else {
-                    // Si hay variaciones, mostrarlas
-                    if (bolsillos) secciones.push(`<strong>Bolsillos:</strong> ${bolsillos}`);
-                    if (broche) secciones.push(`<strong>Broche:</strong> ${broche}`);
-                    if (reflectivo) secciones.push(`<strong>Reflectivo:</strong> ${reflectivo}`);
-                    if (otros) secciones.push(`<strong>Otros:</strong> ${otros}`);
+            // Dividir por "PRENDA " para obtener bloques individuales
+            let bloquesPrendas = [];
+            
+            if (data.descripcion_prendas.includes('PRENDA ')) {
+                const partes = data.descripcion_prendas.split('PRENDA ');
+                bloquesPrendas = partes
+                    .map((parte, idx) => {
+                        if (idx === 0 && !parte.trim()) return null;
+                        return (idx > 0 ? 'PRENDA ' : '') + parte.trim();
+                    })
+                    .filter(b => b && b.trim() !== '');
+            } else {
+                bloquesPrendas = data.descripcion_prendas
+                    .split('\n\n')
+                    .filter(b => b && b.trim() !== '');
+            }
+            
+            console.log('📊 [MODAL] Total bloques de prendas:', bloquesPrendas.length);
+            
+            // Formatear bloques con estilos (EXACTO COMO EN ASESORES)
+            const descripcionFormateada = bloquesPrendas
+                .map((bloque, bloqueIdx) => {
+                    const lineas = bloque.split('\n').map(l => l.trim()).filter(l => l !== '');
+                    const lineasProcesadas = [];
                     
-                    if (secciones.length > 0) {
-                        descripcionLinea = secciones.join(' | ');
+                    for (let i = 0; i < lineas.length; i++) {
+                        let linea = lineas[i];
+                        if (linea === '') continue;
+                        
+                        // NEGRILLA en títulos
+                        linea = linea.replace(/^(PRENDA \d+:)/g, '<strong>$1</strong>');
+                        linea = linea.replace(/(Color:|Tela:|Manga:|DESCRIPCION:)/g, '<strong>$1</strong>');
+                        
+                        // NEGRILLA en viñetas
+                        linea = linea.replace(/^(•\s+(Reflectivo:|Bolsillos:|BOTÓN:|BROCHE:|[A-Z]+:))/g, '<strong>$1</strong>');
+                        
+                        // ROJO en tallas
+                        if (/^Tallas?:/i.test(linea)) {
+                            linea = linea.replace(/^(Tallas?:)\s+(.+)$/i, '$1 <span style="color: #d32f2f; font-weight: bold;">$2</span>');
+                        }
+                        
+                        lineasProcesadas.push(linea);
                     }
-                }
-                
-                return `
-                    <div class="prenda-line">
-                        <span class="prenda-name"><strong>Prenda ${prendaNum}: ${prendaNombre}</strong></span>
-                        ${atributosLinea ? `<div>${atributosLinea}</div>` : ''}
-                        ${atributosLinea && descripcionLinea ? `<div style="height: 4px;"></div>` : ''}
-                        ${descripcionLinea ? `<div>${descripcionLinea}</div>` : ''}
-                        ${descripcionLinea && tallas ? `<div style="height: 4px;"></div>` : ''}
-                        ${tallas ? `<div><span class="prenda-tallas-label">Tallas:</span> <span class="prenda-tallas-value">${tallas}</span></div>` : ''}
-                    </div>
-                `;
-            }
-            
-            // Función para actualizar la descripción - COPIA EXACTA DE ASESORES
-            let currentIndex = 0;
-            function updateDescripcion() {
-                if (prendas.length <= 2) {
-                    // Si hay 2 o menos prendas, mostrar todas
-                    const html = prendas.map((p, i) => formatearPrenda(p, i)).join('');
-                    descripcionText.innerHTML = html;
-                    if (arrowContainer) arrowContainer.style.display = 'none';
-                } else {
-                    // Si hay más de 2 prendas, mostrar 2 a la vez con navegación
-                    let html = '';
-                    // Mostrar prendas desde currentIndex hasta currentIndex + 1
-                    html = formatearPrenda(prendas[currentIndex], currentIndex) + 
-                           (currentIndex + 1 < prendas.length ? formatearPrenda(prendas[currentIndex + 1], currentIndex + 1) : '');
                     
-                    descripcionText.innerHTML = html;
-                    if (arrowContainer) arrowContainer.style.display = 'flex';
-                    if (prevArrow) prevArrow.style.display = currentIndex > 0 ? 'inline-block' : 'none';
-                    if (nextArrow) nextArrow.style.display = currentIndex + 2 < prendas.length ? 'inline-block' : 'none';
-                }
-            }
+                    return lineasProcesadas.join('<br>');
+                })
+                .join('<br><br>');
             
-            // Actualizar descripción inicial
-            updateDescripcion();
+            descripcionText.innerHTML = `<div style="line-height: 1.8; font-size: 0.75rem; color: #333; word-break: break-word; overflow-wrap: break-word; max-width: 100%; margin: 0; padding: 0;">
+                ${descripcionFormateada}
+            </div>`;
             
-            // Remover listeners anteriores para evitar acumulación (COMO EN ASESORES)
-            if (prevArrow && prevArrow._prendasClickHandler) {
-                prevArrow.removeEventListener('click', prevArrow._prendasClickHandler);
-            }
-            if (nextArrow && nextArrow._prendasClickHandler) {
-                nextArrow.removeEventListener('click', nextArrow._prendasClickHandler);
-            }
-            
-            // Crear nuevos handlers para navegación (COMO EN ASESORES)
-            if (prevArrow) {
-                prevArrow._prendasClickHandler = () => {
-                    if (currentIndex > 0) {
-                        currentIndex--;
-                        updateDescripcion();
-                    }
-                };
-                prevArrow.addEventListener('click', prevArrow._prendasClickHandler);
-            }
-            
-            if (nextArrow) {
-                nextArrow._prendasClickHandler = () => {
-                    if (currentIndex + 2 < prendas.length) {
-                        currentIndex++;
-                        updateDescripcion();
-                    }
-                };
-                nextArrow.addEventListener('click', nextArrow._prendasClickHandler);
-            }
+            // Ocultar flechas de navegación (mostrar todas las prendas)
+            if (prevArrow) prevArrow.style.display = 'none';
+            if (nextArrow) nextArrow.style.display = 'none';
         }
         
         console.log('✅ [MODAL] Modal abierto completamente');

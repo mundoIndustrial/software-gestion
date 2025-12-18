@@ -308,10 +308,22 @@ class DescripcionPrendaHelper
         }
 
         // Extraer Tallas (sin duplicados)
-        if ($prenda->cantidad_talla && is_array($prenda->cantidad_talla)) {
-            foreach ($prenda->cantidad_talla as $talla => $cantidad) {
+        $cantidadTalla = $prenda->cantidad_talla;
+        
+        // Si es string JSON, decodificar
+        if (is_string($cantidadTalla)) {
+            $cantidadTalla = json_decode($cantidadTalla, true);
+        }
+        
+        if ($cantidadTalla && is_array($cantidadTalla)) {
+            foreach ($cantidadTalla as $talla => $cantidad) {
+                // Convertir la clave a string para evitar problemas con tallas numéricas
+                $tallaStr = (string)$talla;
+                
+                // Solo incluir si tiene cantidad > 0
+                // No filtrar nada - todas las tallas son válidas (XS, S, M, L, 32, 34, etc.)
                 if ($cantidad > 0) {
-                    $datos['tallas'][$talla] = $cantidad;
+                    $datos['tallas'][$tallaStr] = $cantidad;
                 }
             }
         }

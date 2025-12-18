@@ -7,6 +7,7 @@ use App\Models\PedidoProduccion;
 use App\Models\PrendaPedido;
 use App\Models\ProcesoPrenda;
 use App\Models\MaterialesOrdenInsumos;
+use App\Enums\EstadoPedido;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -305,7 +306,7 @@ class AsesoresController extends Controller
                 'cliente' => $validated['cliente'],
                 'asesor_id' => Auth::id(),
                 'forma_de_pago' => $validated['forma_de_pago'] ?? null,
-                'estado' => 'Pendiente',
+                'estado' => EstadoPedido::PENDIENTE_SUPERVISOR->value,
             ]);
 
             // ✅ PROCESAR FOTOS DE TELAS ANTES DE GUARDAR

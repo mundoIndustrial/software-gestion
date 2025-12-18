@@ -9,6 +9,7 @@ use App\Models\ProcesoPrenda;
 use App\Models\Cotizacion;
 use App\Models\VariantePrenda;
 use App\Models\PrendaCotizacionFriendly;
+use App\Enums\EstadoPedido;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
@@ -210,7 +211,7 @@ class PedidosProduccionController extends Controller
                 'asesor_id' => auth()->id(),
                 'forma_de_pago' => $formaPago,
                 'area' => $area,
-                'estado' => 'Pendiente',
+                'estado' => EstadoPedido::PENDIENTE_SUPERVISOR->value,
                 'fecha_de_creacion_de_orden' => now(),
             ]);
 

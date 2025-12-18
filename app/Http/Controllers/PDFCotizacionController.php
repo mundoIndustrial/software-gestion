@@ -198,13 +198,6 @@ class PDFCotizacionController extends Controller
         $html .= $this->generarPrendasHTML($cotizacion);
         $html .= '</div>';
         
-        // Reflectivo global (solo para cotizaciones antiguas)
-        if ($cotizacion->reflectivoCotizacion && $cotizacion->tipo !== 'RF') {
-            $html .= '<div class="content-wrapper">';
-            $html .= $this->generarReflectivoHTML($cotizacion);
-            $html .= '</div>';
-        }
-        
         // Tabla de especificaciones
         $html .= $this->generarTablaEspecificacionesHTML($cotizacion);
         

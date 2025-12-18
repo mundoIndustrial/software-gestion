@@ -50,7 +50,7 @@ class InsumosController extends Controller
             // Usar la misma query base que en materiales() - Filtrar por Estados y Áreas permitidas
             $query = PedidoProduccion::where(function($q) {
                 // Estados permitidos
-                $q->whereIn('estado', ['No iniciado', 'En Ejecución', 'Anulada']);
+                $q->whereIn('estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'Anulada']);
             })->where(function($q) {
                 // Áreas permitidas
                 $q->where('area', 'LIKE', '%Corte%')
@@ -66,7 +66,7 @@ class InsumosController extends Controller
                 
                 \Log::info('📝 FILTRO DESCRIPCIÓN ARMADA - Registros totales encontrados:', [
                     'total_registros' => $totalRegistros,
-                    'filtros_aplicados' => 'Estado (No iniciado, En Ejecución, Anulada) + Área (Corte, Creación de orden)'
+                    'filtros_aplicados' => 'Estado (Pendiente, No iniciado, En Ejecución, Anulada) + Área (Corte, Creación de orden)'
                 ]);
                 
                 $valores = [];
@@ -98,7 +98,7 @@ class InsumosController extends Controller
                 
                 \Log::info('📅 FILTRO FECHA - Registros totales encontrados:', [
                     'total_registros' => $totalRegistros,
-                    'filtros_aplicados' => 'Estado (No iniciado, En Ejecución, Entregado, Anulada)'
+                    'filtros_aplicados' => 'Estado (Pendiente, No iniciado, En Ejecución, Anulada)'
                 ]);
                 
                 $valores = $allRecords
@@ -222,11 +222,11 @@ class InsumosController extends Controller
         ]);
         
         // Construir query base - Filtrar por:
-        // - Estados: "No iniciado", "En Ejecución", "Anulada"
+        // - Estados: "Pendiente", "No iniciado", "En Ejecución", "Anulada"
         // - Áreas: "Corte", "Creación de Orden"
         $baseQuery = PedidoProduccion::where(function($q) {
             // Estados permitidos
-            $q->whereIn('estado', ['No iniciado', 'En Ejecución', 'Anulada']);
+            $q->whereIn('estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'Anulada']);
         })->where(function($q) {
             // Áreas permitidas
             $q->where('area', 'LIKE', '%Corte%')

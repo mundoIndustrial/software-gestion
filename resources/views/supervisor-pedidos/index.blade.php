@@ -53,31 +53,6 @@
         </form>
     </div>
 
-    <!-- Filtros Rápidos -->
-    <div class="filtros-rapidos-section">
-        <span class="filtros-rapidos-label">Filtrar por estado:</span>
-        <a href="{{ route('supervisor-pedidos.index', array_filter(array_merge(request()->query(), ['estado' => null]))) }}" class="btn-filtro-rapido {{ !request('estado') ? 'active' : '' }}">
-            <span class="material-symbols-rounded">home</span>
-            Todos
-        </a>
-        <a href="{{ route('supervisor-pedidos.index', array_merge(request()->query(), ['estado' => 'No iniciado'])) }}" class="btn-filtro-rapido {{ request('estado') === 'No iniciado' ? 'active' : '' }}">
-            <span class="material-symbols-rounded">schedule</span>
-            Pendientes
-        </a>
-        <a href="{{ route('supervisor-pedidos.index', array_merge(request()->query(), ['estado' => 'En Ejecución'])) }}" class="btn-filtro-rapido {{ request('estado') === 'En Ejecución' ? 'active' : '' }}">
-            <span class="material-symbols-rounded">build</span>
-            En ejecución
-        </a>
-        <a href="{{ route('supervisor-pedidos.index', array_merge(request()->query(), ['estado' => 'Entregado'])) }}" class="btn-filtro-rapido {{ request('estado') === 'Entregado' ? 'active' : '' }}">
-            <span class="material-symbols-rounded">check_circle</span>
-            Aprobados
-        </a>
-        <a href="{{ route('supervisor-pedidos.index', array_merge(request()->query(), ['estado' => 'Anulada'])) }}" class="btn-filtro-rapido {{ request('estado') === 'Anulada' ? 'active' : '' }}">
-            <span class="material-symbols-rounded">cancel</span>
-            Anulados
-        </a>
-    </div>
-
     <!-- Tabla de Órdenes -->
     <div class="tabla-section">
         <div class="tabla-header">
@@ -90,6 +65,7 @@
                 <table class="tabla-ordenes">
                     <thead>
                         <tr>
+                            <th style="text-align: center; white-space: normal;">ACCIONES</th>
                             <th>
                                 <div class="th-wrapper">
                                     <span>ID ORDEN</span>
@@ -146,27 +122,11 @@
                                     </button>
                                 </div>
                             </th>
-                            <th style="text-align: center; white-space: normal;">ACCIONES</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($ordenes as $orden)
                             <tr class="orden-row" data-orden-id="{{ $orden->id }}" data-estado="{{ $orden->estado }}">
-                                <td class="id-orden">
-                                    <strong>#{{ $orden->numero_pedido }}</strong>
-                                </td>
-                                <td class="cliente">{{ $orden->cliente }}</td>
-                                <td class="fecha">{{ \Carbon\Carbon::parse($orden->fecha_de_creacion_de_orden)->format('d/m/Y') }}</td>
-                                <td class="estado">
-                                    <span class="badge badge-{{ strtolower(str_replace(' ', '-', $orden->estado)) }}">
-                                        {{ $orden->estado }}
-                                    </span>
-                                </td>
-                                <td class="asesora">{{ $orden->asesora?->name ?? 'N/A' }}</td>
-                                <td class="forma-pago">{{ $orden->forma_de_pago ?? 'N/A' }}</td>
-                                <td class="fecha-estimada" data-fecha-estimada="{{ $orden->fecha_estimada_de_entrega ? $orden->fecha_estimada_de_entrega->format('d/m/Y') : 'N/A' }}">
-                                    {{ $orden->fecha_estimada_de_entrega ? $orden->fecha_estimada_de_entrega->format('d/m/Y') : 'N/A' }}
-                                </td>
                                 <td class="acciones">
                                     <div class="acciones-group">
                                         <!-- Ver Orden - Menu -->
@@ -213,6 +173,21 @@
                                             </button>
                                         @endif
                                     </div>
+                                </td>
+                                <td class="id-orden">
+                                    <strong>#{{ $orden->numero_pedido }}</strong>
+                                </td>
+                                <td class="cliente">{{ $orden->cliente }}</td>
+                                <td class="fecha">{{ \Carbon\Carbon::parse($orden->fecha_de_creacion_de_orden)->format('d/m/Y') }}</td>
+                                <td class="estado">
+                                    <span class="badge badge-{{ strtolower(str_replace(' ', '-', $orden->estado)) }}">
+                                        {{ $orden->estado }}
+                                    </span>
+                                </td>
+                                <td class="asesora">{{ $orden->asesora?->name ?? 'N/A' }}</td>
+                                <td class="forma-pago">{{ $orden->forma_de_pago ?? 'N/A' }}</td>
+                                <td class="fecha-estimada" data-fecha-estimada="{{ $orden->fecha_estimada_de_entrega ? $orden->fecha_estimada_de_entrega->format('d/m/Y') : 'N/A' }}">
+                                    {{ $orden->fecha_estimada_de_entrega ? $orden->fecha_estimada_de_entrega->format('d/m/Y') : 'N/A' }}
                                 </td>
                             </tr>
                         @endforeach

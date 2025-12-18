@@ -467,13 +467,16 @@
                                             >
                                                 <i class="fas fa-box text-lg"></i>
                                             </button>
-                                            <button 
-                                                class="btn-tooltip p-2 text-gray-600 hover:bg-gray-100 rounded transition"
-                                                onclick="cambiarEstadoPedido('{{ $orden->numero_pedido }}', '{{ $orden->estado }}')"
-                                                data-tooltip="Enviar a producción"
-                                            >
-                                                <i class="fas fa-paper-plane text-lg"></i>
-                                            </button>
+                                            {{-- Botón enviar a producción: solo visible para estado Pendiente --}}
+                                            @if($orden->estado === 'Pendiente')
+                                                <button 
+                                                    class="btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
+                                                    onclick="cambiarEstadoPedido('{{ $orden->numero_pedido }}', '{{ $orden->estado }}')"
+                                                    data-tooltip="Enviar a producción"
+                                                >
+                                                    <i class="fas fa-paper-plane text-lg"></i>
+                                                </button>
+                                            @endif
                                         @endif
                                     </div>
                                 </td>
