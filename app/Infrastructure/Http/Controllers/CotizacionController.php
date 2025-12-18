@@ -141,17 +141,20 @@ final class CotizacionController extends Controller
      */
     /**
      * Obtener cotización reflectivo para editar (borrador)
+     * 
+     * Estructura: Múltiples reflectivos (UNO POR PRENDA) + fotos de cada uno
      */
     public function getReflectivoForEdit(int $id): JsonResponse
     {
         try {
             Log::info('🔍 getReflectivoForEdit: INICIANDO', ['cotizacion_id' => $id, 'usuario_id' => Auth::id()]);
 
-            // Obtener cotización reflectivo con todas sus relaciones
+            // Obtener cotización reflectivo con TODAS las relaciones de prendas
             $cotizacion = \App\Models\Cotizacion::with([
                 'cliente',
-                'prendas',
-                'reflectivoCotizacion.fotos',
+                'prendas.tallas',           // ✅ Tallas de cada prenda
+                'prendas.variantes',        // ✅ Género y variantes
+                'prendas.reflectivo.fotos', // ✅ Reflectivo y fotos
             ])->findOrFail($id);
 
             Log::info('✅ Cotización cargada', ['cotizacion_id' => $cotizacion->id, 'asesor_id' => $cotizacion->asesor_id]);
@@ -168,67 +171,76 @@ final class CotizacionController extends Controller
                 return response()->json(['success' => false, 'message' => 'Solo se pueden editar borradores'], 403);
             }
 
-            // Procesar prendas para devolver con estructura apropiada
+            // ✅ PROCESAR PRENDAS CON SUS REFLECTIVOS Y TALLAS
             $prendasProcesadas = [];
             if ($cotizacion->prendas) {
                 foreach ($cotizacion->prendas as $prenda) {
+                    $reflectivo = $prenda->reflectivo->first();  // ✅ Obtener el primer (único) reflectivo
+                    $fotos = $reflectivo?->fotos ?? [];
+                    
+                    // Procesar tallas con sus cantidades
+                    $tallas = [];
+                    $cantidades = [];
+                    if ($prenda->tallas) {
+                        foreach ($prenda->tallas as $talla) {
+                            $tallas[] = $talla->talla;
+                            $cantidades[$talla->talla] = $talla->cantidad;
+                        }
+                    }
+
+                    // Obtener género de variantes
+                    $genero = null;
+                    $variantes = null;
+                    if ($prenda->variantes) {
+                        foreach ($prenda->variantes as $variante) {
+                            if ($variante->genero_id) {
+                                $generoObj = \App\Models\GeneroPrenda::find($variante->genero_id);
+                                $genero = $generoObj ? strtolower($generoObj->nombre) : null;
+                            }
+                        }
+                        $variantes = $prenda->variantes->toArray();
+                    }
+                    
+                    Log::info('📦 Prenda con reflectivo', [
+                        'prenda_id' => $prenda->id,
+                        'prenda_nombre' => $prenda->nombre_producto,
+                        'tallas_count' => count($tallas),
+                        'genero' => $genero,
+                        'reflectivo_id' => $reflectivo?->id,
+                        'fotos_count' => count($fotos),
+                    ]);
+
                     $prendasProcesadas[] = [
                         'id' => $prenda->id,
                         'tipo' => $prenda->nombre_producto,
                         'descripcion' => $prenda->descripcion ?? '',
+                        'tallas' => $tallas,                    // ✅ Array de tallas
+                        'cantidades' => $cantidades,           // ✅ Cantidades por talla
+                        'genero' => $genero,                   // ✅ Género (dama/caballero)
+                        'variantes' => $variantes,             // ✅ Todas las variantes
+                        'reflectivo' => $reflectivo ? [
+                            'id' => $reflectivo->id,
+                            'descripcion' => $reflectivo->descripcion,
+                            'tipo_venta' => $reflectivo->tipo_venta,
+                            'ubicacion' => $reflectivo->ubicacion,
+                            'observaciones_generales' => $reflectivo->observaciones_generales,
+                            'fotos' => $fotos->toArray(),  // ✅ Fotos de ESTA prenda
+                        ] : null,
                     ];
                 }
             }
 
-            // DEBUG DETALLADO DE REFLECTIVO
-            Log::info('🔍 DEBUG REFLECTIVO', [
-                'tiene_reflectivo' => $cotizacion->reflectivoCotizacion ? 'SÍ' : 'NO',
-                'reflectivo_id' => $cotizacion->reflectivoCotizacion?->id,
-                'reflectivo_cotizacion_id' => $cotizacion->reflectivoCotizacion?->cotizacion_id,
-            ]);
-
-            if ($cotizacion->reflectivoCotizacion) {
-                $fotos = $cotizacion->reflectivoCotizacion->fotos;
-                Log::info('🔍 DEBUG FOTOS', [
-                    'fotos_count' => $fotos ? count($fotos) : 0,
-                    'fotos_relation_existe' => $fotos ? 'SÍ' : 'NO',
-                ]);
-
-                if ($fotos && count($fotos) > 0) {
-                    foreach ($fotos as $idx => $foto) {
-                        Log::info("🔍 DEBUG FOTO {$idx}", [
-                            'foto_id' => $foto->id,
-                            'ruta_original' => $foto->ruta_original,
-                            'ruta_webp' => $foto->ruta_webp,
-                            'url_accessor' => $foto->url,
-                            'orden' => $foto->orden,
-                        ]);
-                    }
-                }
-            }
-
-            // Preparar fotos para respuesta
-            $fotosParaRespuesta = $cotizacion->reflectivoCotizacion?->fotos ? $cotizacion->reflectivoCotizacion->fotos->toArray() : [];
-            
-            Log::info('📸 FOTOS A DEVOLVER', [
-                'count' => count($fotosParaRespuesta),
-                'fotos_json' => json_encode($fotosParaRespuesta),
-            ]);
-
-            Log::info('CotizacionController@getReflectivoForEdit: Cotización RF cargada para editar', [
+            Log::info('✅ CotizacionController@getReflectivoForEdit: Cotización RF cargada para editar', [
                 'cotizacion_id' => $cotizacion->id,
-                'fotos_count' => $cotizacion->reflectivoCotizacion?->fotos ? $cotizacion->reflectivoCotizacion->fotos->count() : 0,
-                'es_borrador' => $cotizacion->es_borrador,
                 'prendas_count' => count($prendasProcesadas),
+                'prendas_con_reflectivo' => collect($prendasProcesadas)->filter(fn($p) => $p['reflectivo'] !== null)->count(),
             ]);
 
             return response()->json([
                 'success' => true,
                 'data' => [
                     'cotizacion' => $cotizacion->toArray(),
-                    'prendas' => $prendasProcesadas,
-                    'reflectivo' => $cotizacion->reflectivoCotizacion?->toArray(),
-                    'fotos' => $fotosParaRespuesta,
+                    'prendas' => $prendasProcesadas,  // ✅ Prendas con tallas, género y reflectivos
                 ],
             ]);
         } catch (\Exception $e) {
@@ -1539,8 +1551,18 @@ final class CotizacionController extends Controller
                 // ✅ PROCESAR PRENDAS Y CREAR UN REFLECTIVO POR CADA PRENDA
                 $imagenesGuardadas = [];
                 
+                Log::info('🔵 INICIANDO LOOP DE PRENDAS', [
+                    'prendas_totales' => count($prendas),
+                    'todos_campos_request' => array_keys($request->allFiles()),
+                ]);
+                
                 if (!empty($prendas)) {
                     foreach ($prendas as $prendaIndex => $prenda) {
+                        Log::info("🔵 PROCESANDO PRENDA {$prendaIndex}", [
+                            'prenda_tipo' => $prenda['tipo'] ?? 'N/A',
+                            'prenda_es_array' => is_array($prenda),
+                        ]);
+                        
                         // La prenda ya está decodificada como array
                         if (is_array($prenda)) {
                             // 1. Guardar prenda en prendas_cot
@@ -1570,15 +1592,34 @@ final class CotizacionController extends Controller
                                 ]);
                             }
 
-                            // 2b. ✅ GUARDAR GÉNERO DE LA PRENDA EN JSON si existe
+                            // 2b. ✅ GUARDAR GÉNERO EN prenda_variantes_cot SI EXISTE
                             if (!empty($prenda['genero'])) {
-                                $prendaCot->update([
-                                    'genero' => $prenda['genero']
-                                ]);
-                                Log::info('✅ Género guardado para prenda', [
-                                    'prenda_cot_id' => $prendaCot->id,
-                                    'genero' => $prenda['genero']
-                                ]);
+                                // Mapear valores del frontend a IDs de la tabla generos_prenda
+                                $generoId = null;
+                                if ($prenda['genero'] === 'dama') {
+                                    // Buscar género Dama en generos_prenda
+                                    $generoId = \DB::table('generos_prenda')
+                                        ->where(\DB::raw('LOWER(nombre)'), 'dama')
+                                        ->value('id');
+                                } elseif ($prenda['genero'] === 'caballero') {
+                                    // Buscar género Caballero en generos_prenda
+                                    $generoId = \DB::table('generos_prenda')
+                                        ->where(\DB::raw('LOWER(nombre)'), 'caballero')
+                                        ->value('id');
+                                }
+                                
+                                if ($generoId) {
+                                    // Crear o actualizar variante con el género
+                                    \App\Models\PrendaVarianteCot::updateOrCreate(
+                                        ['prenda_cot_id' => $prendaCot->id],
+                                        ['genero_id' => $generoId]
+                                    );
+                                    Log::info('✅ Género guardado en prenda_variantes_cot', [
+                                        'prenda_cot_id' => $prendaCot->id,
+                                        'genero' => $prenda['genero'],
+                                        'genero_id' => $generoId
+                                    ]);
+                                }
                             }
 
                             // 3. ✅ CREAR REFLECTIVO ESPECÍFICO PARA ESTA PRENDA
@@ -1612,11 +1653,37 @@ final class CotizacionController extends Controller
                             ]);
 
                             // 4. ✅ PROCESAR IMÁGENES DE ESTA PRENDA ESPECÍFICA
-                            // Las imágenes vienen con el nombre: imagenes_reflectivo_prenda_{index}[]
+                            // Las imágenes vienen con el nombre: imagenes_reflectivo_prenda_{index}[] o imagenes_reflectivo_prenda_{index}
                             $campoImagenes = "imagenes_reflectivo_prenda_{$prendaIndex}";
-                            if ($request->hasFile($campoImagenes)) {
+                            
+                            Log::info('🔍 BUSCANDO IMÁGENES', [
+                                'prenda_index' => $prendaIndex,
+                                'campo_esperado' => $campoImagenes,
+                                'todos_archivos' => array_keys($request->allFiles()),
+                                'has_file_sin_brackets' => $request->hasFile($campoImagenes) ? 'SÍ' : 'NO',
+                                'has_file_con_brackets' => $request->hasFile($campoImagenes . '[]') ? 'SÍ' : 'NO',
+                            ]);
+                            
+                            // Intentar obtener archivos con o sin []
+                            $archivos = $request->file($campoImagenes);
+                            if (!$archivos) {
+                                $archivos = $request->file($campoImagenes . '[]');
+                            }
+                            
+                            if ($archivos) {
+                                Log::info('✅ ENCONTRADAS IMÁGENES PARA PRENDA', [
+                                    'prenda_index' => $prendaIndex,
+                                    'campo' => $campoImagenes,
+                                    'cantidad' => is_array($archivos) ? count($archivos) : 1,
+                                ]);
+                                
+                                // Normalizar a array
+                                if (!is_array($archivos)) {
+                                    $archivos = [$archivos];
+                                }
+                                
                                 $orden = 1;
-                                foreach ($request->file($campoImagenes) as $archivo) {
+                                foreach ($archivos as $archivo) {
                                     if ($archivo && $archivo->isValid()) {
                                         // Guardar archivo
                                         $ruta = $archivo->store('cotizaciones/reflectivo', 'public');
@@ -1635,15 +1702,34 @@ final class CotizacionController extends Controller
                                             'ruta' => $ruta,
                                             'prenda_index' => $prendaIndex,
                                             'prenda_cot_id' => $prendaCot->id,
-                                            'reflectivo_id' => $reflectivo->id
+                                            'reflectivo_id' => $reflectivo->id,
+                                            'foto_id' => $foto->id,
                                         ]);
                                     }
                                 }
+                            } else {
+                                Log::info('⚠️ NO HAY IMÁGENES PARA ESTA PRENDA', [
+                                    'campo' => $campoImagenes,
+                                    'prenda_index' => $prendaIndex,
+                                    'todos_los_archivos' => json_encode(array_keys($request->allFiles())),
+                                ]);
                             }
+                        } else {
+                            Log::warning('❌ PRENDA NO ES ARRAY', [
+                                'prenda_index' => $prendaIndex,
+                                'prenda_type' => gettype($prenda),
+                                'prenda_value' => $prenda,
+                            ]);
                         }
                     }
                     $prendasCount = is_array($prendas) ? count($prendas) : 0;
-                    Log::info('✅ Prendas y reflectivos guardados', ['cotizacion_id' => $cotizacion->id, 'prendas_count' => $prendasCount]);
+                    Log::info('✅ LOOP COMPLETADO - Prendas y reflectivos guardados', [
+                        'cotizacion_id' => $cotizacion->id,
+                        'prendas_count' => $prendasCount,
+                        'imagenes_totales_guardadas' => count($imagenesGuardadas),
+                    ]);
+                } else {
+                    Log::warning('⚠️ NO HAY PRENDAS PARA PROCESAR');
                 }
 
                 DB::commit();
@@ -1709,6 +1795,17 @@ final class CotizacionController extends Controller
             // Validar que el usuario es propietario
             if ($cotizacion->asesor_id !== Auth::id()) {
                 return response()->json(['success' => false, 'message' => 'No tienes permiso'], 403);
+            }
+
+            // ✅ Decodificar JSON strings cuando vienen de FormData con _method=PUT
+            if ($request->has('prendas') && is_string($request->input('prendas'))) {
+                $request->merge(['prendas' => json_decode($request->input('prendas'), true)]);
+            }
+            if ($request->has('observaciones_generales') && is_string($request->input('observaciones_generales'))) {
+                $request->merge(['observaciones_generales' => json_decode($request->input('observaciones_generales'), true)]);
+            }
+            if ($request->has('imagenes_a_eliminar') && is_string($request->input('imagenes_a_eliminar'))) {
+                $request->merge(['imagenes_a_eliminar' => json_decode($request->input('imagenes_a_eliminar'), true)]);
             }
 
             // Validar datos
@@ -1793,7 +1890,32 @@ final class CotizacionController extends Controller
 
                 // ✅ ACTUALIZAR PRENDAS Y SUS REFLECTIVOS (NUEVO SISTEMA)
                 if (isset($validated['prendas']) && is_array($validated['prendas'])) {
-                    // 1. Eliminar prendas existentes (esto también eliminará reflectivos por CASCADE)
+                    // 1. ✅ PRESERVAR FOTOS EXISTENTES ANTES DE ELIMINAR
+                    $fotosExistentesPorPrenda = [];
+                    $prendasExistentes = \App\Models\PrendaCot::where('cotizacion_id', $cotizacion->id)
+                        ->with('reflectivo.fotos')
+                        ->get();
+                    
+                    foreach ($prendasExistentes as $index => $prendaExistente) {
+                        $reflectivoExistente = $prendaExistente->reflectivo ? $prendaExistente->reflectivo->first() : null;
+                        if ($reflectivoExistente && $reflectivoExistente->fotos && $reflectivoExistente->fotos->count() > 0) {
+                            // Guardar las fotos con su índice de prenda
+                            $fotosExistentesPorPrenda[$index] = $reflectivoExistente->fotos->map(function($foto) {
+                                return [
+                                    'ruta_original' => $foto->ruta_original,
+                                    'ruta_webp' => $foto->ruta_webp,
+                                    'orden' => $foto->orden,
+                                ];
+                            })->toArray();
+                            
+                            Log::info('💾 Preservando fotos de prenda', [
+                                'prenda_index' => $index,
+                                'fotos_count' => count($fotosExistentesPorPrenda[$index])
+                            ]);
+                        }
+                    }
+                    
+                    // 2. Eliminar prendas existentes (esto también eliminará reflectivos por CASCADE)
                     \App\Models\PrendaCot::where('cotizacion_id', $cotizacion->id)->delete();
                     
                     // 2. Decodificar prendas si vienen como JSON string
@@ -1831,11 +1953,25 @@ final class CotizacionController extends Controller
                                 }
                             }
 
-                            // Guardar género si existe
+                            // Guardar género si existe en prenda_variantes_cot
                             if (!empty($prenda['genero'])) {
-                                $prendaCot->update([
-                                    'genero' => $prenda['genero']
-                                ]);
+                                $generoId = null;
+                                if ($prenda['genero'] === 'dama') {
+                                    $generoId = \DB::table('generos_prenda')
+                                        ->where(\DB::raw('LOWER(nombre)'), 'dama')
+                                        ->value('id');
+                                } elseif ($prenda['genero'] === 'caballero') {
+                                    $generoId = \DB::table('generos_prenda')
+                                        ->where(\DB::raw('LOWER(nombre)'), 'caballero')
+                                        ->value('id');
+                                }
+                                
+                                if ($generoId) {
+                                    \App\Models\PrendaVarianteCot::updateOrCreate(
+                                        ['prenda_cot_id' => $prendaCot->id],
+                                        ['genero_id' => $generoId]
+                                    );
+                                }
                             }
 
                             // ✅ CREAR REFLECTIVO PARA ESTA PRENDA CON SUS UBICACIONES
@@ -1867,7 +2003,10 @@ final class CotizacionController extends Controller
 
                             // ✅ PROCESAR IMÁGENES DE ESTA PRENDA
                             $campoImagenes = "imagenes_reflectivo_prenda_{$prendaIndex}";
+                            $nuevasFotosGuardadas = false;
+                            
                             if ($request->hasFile($campoImagenes)) {
+                                // Hay nuevas fotos subidas - guardarlas
                                 $orden = 1;
                                 foreach ($request->file($campoImagenes) as $archivo) {
                                     if ($archivo && $archivo->isValid()) {
@@ -1880,12 +2019,29 @@ final class CotizacionController extends Controller
                                             'orden' => $orden++,
                                         ]);
 
-                                        Log::info('📸 Imagen actualizada para prenda', [
+                                        Log::info('📸 Nueva imagen guardada para prenda', [
                                             'prenda_index' => $prendaIndex,
                                             'reflectivo_id' => $reflectivo->id
                                         ]);
+                                        $nuevasFotosGuardadas = true;
                                     }
                                 }
+                            } elseif (isset($fotosExistentesPorPrenda[$prendaIndex])) {
+                                // No hay nuevas fotos - restaurar las fotos existentes
+                                foreach ($fotosExistentesPorPrenda[$prendaIndex] as $fotoData) {
+                                    \App\Models\ReflectivoCotizacionFoto::create([
+                                        'reflectivo_cotizacion_id' => $reflectivo->id,
+                                        'ruta_original' => $fotoData['ruta_original'],
+                                        'ruta_webp' => $fotoData['ruta_webp'],
+                                        'orden' => $fotoData['orden'],
+                                    ]);
+                                }
+                                
+                                Log::info('♻️ Fotos existentes restauradas para prenda', [
+                                    'prenda_index' => $prendaIndex,
+                                    'reflectivo_id' => $reflectivo->id,
+                                    'fotos_count' => count($fotosExistentesPorPrenda[$prendaIndex])
+                                ]);
                             }
                         }
                     }
@@ -2014,6 +2170,7 @@ final class CotizacionController extends Controller
                     'prendas',
                     'prendas.tallas',
                     'prendas.fotos',              // ✅ AGREGAR: Cargar fotos de prendas
+                    'prendas.variantes',          // ✅ Cargar variantes (para genero_id)
                     'prendas.reflectivo.fotos'    // ✅ Cargar reflectivo de cada prenda
                 ]);
                 
@@ -2030,6 +2187,24 @@ final class CotizacionController extends Controller
                     if ($prenda->tallas) {
                         foreach ($prenda->tallas as $talla) {
                             $prendasArray['cantidades'][$talla->talla] = (int)$talla->cantidad;
+                        }
+                    }
+                    
+                    // ✅ Incluir género desde prenda_variantes_cot
+                    $prendasArray['genero'] = null;
+                    if ($prenda->variantes && $prenda->variantes->count() > 0) {
+                        $variante = $prenda->variantes->first();
+                        // Obtener nombre del género por ID desde generos_prenda
+                        if ($variante->genero_id) {
+                            $generoNombre = \DB::table('generos_prenda')
+                                ->where('id', $variante->genero_id)
+                                ->value('nombre');
+                            
+                            if ($generoNombre) {
+                                // Convertir a minúsculas para compatibilidad con el select
+                                $generonombre = strtolower($generoNombre);
+                                $prendasArray['genero'] = $generonombre === 'dama' ? 'dama' : 'caballero';
+                            }
                         }
                     }
                     
@@ -2168,6 +2343,23 @@ final class CotizacionController extends Controller
                 $fotosEliminadas += \App\Models\PrendaTelaFotoCot::where('ruta_original', $ruta)
                     ->orWhere('ruta_webp', $ruta)
                     ->delete();
+            }
+            
+            // ✅ Buscar y eliminar de ReflectivoCotizacionFoto (fotos de reflectivo)
+            foreach ($rutasABuscar as $ruta) {
+                $fotosEliminadas += \App\Models\ReflectivoCotizacionFoto::where('ruta_original', $ruta)
+                    ->orWhere('ruta_webp', $ruta)
+                    ->delete();
+            }
+            
+            // También buscar por ID si se proporciona
+            $fotoId = $request->input('foto_id');
+            if ($fotoId) {
+                $fotoEliminada = \App\Models\ReflectivoCotizacionFoto::where('id', $fotoId)->delete();
+                if ($fotoEliminada) {
+                    $fotosEliminadas += $fotoEliminada;
+                    Log::info('Foto de reflectivo eliminada por ID', ['foto_id' => $fotoId]);
+                }
             }
             
             Log::info('Registros de foto eliminados de la base de datos', [

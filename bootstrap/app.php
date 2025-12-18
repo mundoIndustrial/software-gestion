@@ -24,6 +24,9 @@ return Application::configure(basePath: dirname(__DIR__))
         
         // Add security headers middleware globally
         $middleware->append(\App\Http\Middleware\SetSecurityHeaders::class);
+        
+        // ✅ Add memory cleanup middleware to prevent memory exhaustion
+        $middleware->append(\App\Http\Middleware\CleanupMemoryAfterRequest::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

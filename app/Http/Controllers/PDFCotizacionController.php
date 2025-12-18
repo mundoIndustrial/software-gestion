@@ -13,22 +13,39 @@ class PDFCotizacionController extends Controller
      */
     public function generarPDF($cotizacionId, Request $request)
     {
+        // ✅ Aumentar límite de memoria y tiempo para PDFs
+        $memoriaOriginal = ini_get('memory_limit');
+        $tiempoOriginal = ini_get('max_execution_time');
+        
+        ini_set('memory_limit', '256M');
+        ini_set('max_execution_time', '120'); // 2 minutos para PDFs complejos
+        
+        // ✅ Pequeña pausa para permitir que el sistema limpie memoria de requests anteriores
+        usleep(100000); // 0.1 segundos
+        
         try {
+            // ✅ Optimización: Cargar solo campos necesarios y limitar eager loading
             $cotizacion = Cotizacion::with([
-                'prendasCotizaciones',
-                'usuario',
-                'cliente',
-                'prendas.fotos',
-                'prendas.telaFotos',
-                'prendas.tallas',
-                'prendas.variantes',
-                'prendas.variantes.manga',
-                'prendas.variantes.broche',
-                'prendas.telas.tela',
+                'usuario:id,name',
+                'cliente:id,nombre',
+                'prendas' => function($query) {
+                    $query->select('id', 'cotizacion_id', 'nombre_producto', 'descripcion', 'texto_personalizado_tallas');
+                },
+                'prendas.fotos:id,prenda_cot_id,ruta_original,ruta_webp',
+                'prendas.telaFotos:id,prenda_cot_id,ruta_original,ruta_webp',
+                'prendas.tallas:id,prenda_cot_id,talla,cantidad',
+                'prendas.variantes:id,prenda_cot_id,color,tipo_manga_id,tipo_broche_id,tiene_reflectivo,obs_reflectivo,tiene_bolsillos,obs_bolsillos,aplica_manga,obs_manga,obs_broche',
+                'prendas.variantes.manga:id,nombre',
+                'prendas.variantes.broche:id,nombre',
+                'prendas.telas.tela:id,nombre,referencia',
+                'prendas.reflectivo' => function($query) {
+                    $query->select('id', 'cotizacion_id', 'prenda_cot_id', 'descripcion', 'ubicacion');
+                },
+                'prendas.reflectivo.fotos:id,reflectivo_cotizacion_id,ruta_original,ruta_webp',
                 'logoCotizacion',
-                'logoCotizacion.fotos',
-                'reflectivo',
-                'reflectivo.fotos'
+                'logoCotizacion.fotos:id,logo_cotizacion_id,ruta_original,ruta_webp',
+                'reflectivoCotizacion',
+                'reflectivoCotizacion.fotos:id,reflectivo_cotizacion_id,ruta_original,ruta_webp'
             ])->findOrFail($cotizacionId);
             
             // Obtener el tipo de PDF solicitado (prenda o logo)
@@ -46,50 +63,26 @@ class PDFCotizacionController extends Controller
                 $html = $this->generarHTML($cotizacion);
             }
             
-            // Crear PDF con mPDF
-            $mpdf = new Mpdf([
-                'mode' => 'utf-8',
-                'format' => 'A4',
-                'orientation' => 'P',
-                'margin_left' => 0,
-                'margin_right' => 0,
-                'margin_top' => 0,
-                'margin_bottom' => 10,
-                'margin_header' => 0,
-                'margin_footer' => 0,
-            ]);
-            
-            // Configurar propiedades del documento
-            $mpdf->SetTitle('Cotización #' . $cotizacion->id . ' - ' . ucfirst($tipoPDF));
-            $mpdf->SetAuthor('Mundo Industrial');
-            
-            // Escribir HTML
-            $mpdf->WriteHTML($html);
-            
             // Nombre del archivo
             $filename = 'Cotizacion_' . $cotizacion->id . '_' . ucfirst($tipoPDF) . '_' . date('Y-m-d') . '.pdf';
             
-            // Verificar si es una solicitud de descarga
-            $descargar = $request->query('descargar', false);
+            // ✅ Limpiar archivos temporales antiguos antes de generar nuevo PDF
+            PDFCotizacionHelper::limpiarTemporales();
             
-            if ($descargar) {
-                return response()->streamDownload(
-                    function () use ($mpdf) {
-                        echo $mpdf->Output('', 'S');
-                    },
-                    $filename,
-                    ['Content-Type' => 'application/pdf']
-                );
-            } else {
-                return response()->make(
-                    $mpdf->Output('', 'S'),
-                    200,
-                    [
-                        'Content-Type' => 'application/pdf',
-                        'Content-Disposition' => 'inline; filename="' . $filename . '"'
-                    ]
-                );
-            }
+            // ✅ Usar helper que gestiona memoria automáticamente
+            $pdfContent = PDFCotizacionHelper::generarPDFConLimpieza($html);
+            
+            // ✅ Liberar cotización de memoria
+            unset($cotizacion);
+            
+            // ✅ SIEMPRE forzar descarga para reducir memoria del navegador
+            return response()->streamDownload(
+                function () use ($pdfContent) {
+                    echo $pdfContent;
+                },
+                $filename,
+                ['Content-Type' => 'application/pdf']
+            );
             
         } catch (\Exception $e) {
             \Log::error('Error en generarPDF', [
@@ -98,10 +91,35 @@ class PDFCotizacionController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
+            // Limpiar memoria
+            gc_collect_cycles();
+            ini_set('memory_limit', $memoriaOriginal);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Error al generar PDF: ' . $e->getMessage()
             ], 500);
+        } finally {
+            // ✅ Siempre restaurar límites originales
+            ini_set('memory_limit', $memoriaOriginal);
+            ini_set('max_execution_time', $tiempoOriginal);
+            
+            // ✅ Forzar limpieza AGRESIVA de memoria después de cada PDF
+            if (function_exists('gc_collect_cycles')) {
+                gc_collect_cycles();
+                gc_collect_cycles(); // Ejecutar dos veces para asegurar limpieza completa
+            }
+            
+            if (function_exists('gc_mem_caches')) {
+                gc_mem_caches(); // Limpiar cachés de memoria
+            }
+            
+            // ✅ Limpiar todas las variables globales grandes
+            foreach ($GLOBALS as $key => $value) {
+                if (is_object($value) && $key !== 'app') {
+                    unset($GLOBALS[$key]);
+                }
+            }
         }
     }
     
@@ -154,13 +172,13 @@ class PDFCotizacionController extends Controller
         // Sección: Por favor para Cotizar con Tipo de Venta
         $html .= $this->generarSeccionCotizarHTML($cotizacion);
         
-        // Prendas
+        // Prendas (incluye reflectivo por prenda si es tipo RF)
         $html .= '<div class="content-wrapper">';
         $html .= $this->generarPrendasHTML($cotizacion);
         $html .= '</div>';
         
-        // Reflectivo (si existe)
-        if ($cotizacion->reflectivo) {
+        // Reflectivo global (solo para cotizaciones antiguas)
+        if ($cotizacion->reflectivoCotizacion && $cotizacion->tipo !== 'RF') {
             $html .= '<div class="content-wrapper">';
             $html .= $this->generarReflectivoHTML($cotizacion);
             $html .= '</div>';
@@ -265,25 +283,26 @@ class PDFCotizacionController extends Controller
                 <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">';
             
             foreach ($logo->fotos as $imagen) {
-                // Usar el accessor 'url' del modelo que maneja correctamente las rutas
-                $rutaImagen = $imagen->url;
+                // ✅ Usar rutas directas del modelo en lugar del accessor
+                $rutaImagen = $imagen->ruta_webp ?? $imagen->ruta_original ?? null;
                 
                 if ($rutaImagen) {
-                    // Si es una URL web (http/https), usarla directamente
-                    if (strpos($rutaImagen, 'http') === 0) {
-                        $html .= '<img src="' . htmlspecialchars($rutaImagen) . '" alt="Logo" style="width: 140px; height: 140px; border: 1px solid #ccc; object-fit: contain; background: #fff; padding: 5px;">';
-                    } else {
-                        // Es una ruta local (/storage/...)
-                        $rutaAbsoluta = public_path($rutaImagen);
-                        
-                        if (file_exists($rutaAbsoluta)) {
-                            // Si existe, usar la ruta absoluta para mPDF
-                            $html .= '<img src="' . $rutaAbsoluta . '" alt="Logo" style="width: 140px; height: 140px; border: 1px solid #ccc; object-fit: contain; background: #fff; padding: 5px;">';
-                        } else {
-                            // Si no existe localmente pero es una ruta /storage/, intentar usar la URL web
-                            $urlWeb = asset($rutaImagen);
-                            $html .= '<img src="' . htmlspecialchars($urlWeb) . '" alt="Logo" style="width: 140px; height: 140px; border: 1px solid #ccc; object-fit: contain; background: #fff; padding: 5px;">';
+                    // Normalizar ruta para asegurar que tenga /storage/
+                    if (!str_starts_with($rutaImagen, '/')) {
+                        $rutaImagen = '/' . $rutaImagen;
+                    }
+                    if (!str_starts_with($rutaImagen, '/storage/')) {
+                        if (str_starts_with($rutaImagen, '/logo/') || str_starts_with($rutaImagen, '/cotizaciones/')) {
+                            $rutaImagen = '/storage' . $rutaImagen;
                         }
+                    }
+                    
+                    // Convertir a ruta absoluta del sistema
+                    $rutaAbsoluta = public_path($rutaImagen);
+                    
+                    // Solo agregar imagen si el archivo existe
+                    if (file_exists($rutaAbsoluta)) {
+                        $html .= '<img src="' . $rutaAbsoluta . '" alt="Logo" style="width: 140px; height: 140px; border: 1px solid #ccc; object-fit: contain; background: #fff; padding: 5px;">';
                     }
                 }
             }
@@ -654,38 +673,60 @@ class PDFCotizacionController extends Controller
                 $html .= '<div style="font-size: 10px; font-weight: bold; margin-top: 8px; margin-bottom: 12px; color: #e74c3c;">Tallas: ' . $tallasTexto . '</div>';
             }
             
-            // IMÁGENES: Prenda y Tela - TODAS EN UNA SOLA LÍNEA
+            // ✅ INFORMACIÓN DE REFLECTIVO POR PRENDA (si existe)
+            $reflectivoPrenda = $prenda->reflectivo ? $prenda->reflectivo->first() : null;
+            if ($reflectivoPrenda) {
+                $html .= '<div style="margin-top: 10px; padding: 10px; background: #e3f2fd; border-left: 4px solid #2196f3; border-radius: 4px;">';
+                $html .= '<div style="font-size: 10px; font-weight: bold; color: #1976d2; margin-bottom: 6px;">📋 INFORMACIÓN DE REFLECTIVO</div>';
+                
+                // Descripción
+                if ($reflectivoPrenda->descripcion) {
+                    $html .= '<div style="font-size: 9px; margin-bottom: 4px; color: #333;"><strong>Descripción:</strong> ' . htmlspecialchars($reflectivoPrenda->descripcion) . '</div>';
+                }
+                
+                // Ubicaciones
+                $ubicacionesReflectivo = [];
+                if ($reflectivoPrenda->ubicacion) {
+                    $ubicacionesData = is_string($reflectivoPrenda->ubicacion) ? json_decode($reflectivoPrenda->ubicacion, true) : $reflectivoPrenda->ubicacion;
+                    if (is_array($ubicacionesData)) {
+                        $ubicacionesReflectivo = $ubicacionesData;
+                    }
+                }
+                
+                if (count($ubicacionesReflectivo) > 0) {
+                    $html .= '<div style="font-size: 9px; margin-bottom: 4px; color: #333;"><strong>Ubicaciones:</strong></div>';
+                    foreach ($ubicacionesReflectivo as $ubi) {
+                        if (is_array($ubi) && isset($ubi['ubicacion'])) {
+                            $html .= '<div style="font-size: 8px; margin-left: 15px; margin-bottom: 2px; color: #555;">• ' . htmlspecialchars($ubi['ubicacion']);
+                            if (!empty($ubi['descripcion'])) {
+                                $html .= ' - ' . htmlspecialchars($ubi['descripcion']);
+                            }
+                            $html .= '</div>';
+                        }
+                    }
+                }
+                
+                $html .= '</div>';
+            }
+            
+            // IMÁGENES: Prenda, Tela y Reflectivo - TODAS EN UNA SOLA LÍNEA
             $imagenesPrenda = $prenda->fotos ?? [];
             $imagenesTela = $prenda->telaFotos ?? [];
+            $imagenesReflectivo = $reflectivoPrenda && $reflectivoPrenda->fotos ? $reflectivoPrenda->fotos : [];
             
-            \Log::info('PDF: Procesando imágenes de prenda', [
-                'prenda_id' => $prenda->id,
-                'prenda_nombre' => $prenda->nombre_producto,
-                'total_fotos_prenda' => count($imagenesPrenda),
-                'total_fotos_tela' => count($imagenesTela)
-            ]);
+            // Logging removido para mejorar performance
             
             // Mostrar TODAS las imágenes en un solo flex container sin wrap
-            if (($imagenesPrenda && count($imagenesPrenda) > 0) || ($imagenesTela && count($imagenesTela) > 0)) {
-                $html .= '<div style="display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: nowrap; justify-content: center; overflow-x: auto;">';
+            if (($imagenesPrenda && count($imagenesPrenda) > 0) || ($imagenesTela && count($imagenesTela) > 0) || ($imagenesReflectivo && count($imagenesReflectivo) > 0)) {
+                $html .= '<div style="display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; justify-content: center;">';
                 
                 // Mostrar imágenes de prenda
                 foreach ($imagenesPrenda as $idx => $imagen) {
                     $rutaImagen = $imagen->ruta_webp ?? $imagen->ruta_original ?? null;
                     
-                    \Log::info('PDF: Procesando foto de prenda', [
-                        'prenda_id' => $prenda->id,
-                        'foto_idx' => $idx,
-                        'ruta_webp' => $imagen->ruta_webp,
-                        'ruta_original' => $imagen->ruta_original,
-                        'ruta_final' => $rutaImagen
-                    ]);
-                    
                     if ($rutaImagen) {
                         // Verificar si es una URL completa (http/https)
                         if (strpos($rutaImagen, 'http') === 0) {
-                            // Es una URL web, usarla directamente
-                            \Log::info('PDF: Foto es URL web', ['url' => $rutaImagen]);
                             $html .= '<img src="' . htmlspecialchars($rutaImagen) . '" alt="Prenda" style="width: 100px; height: 100px; border: 1px solid #ccc; object-fit: cover; flex-shrink: 0;">';
                         } else {
                             // Es una ruta local, asegurar que tenga /storage/
@@ -703,22 +744,10 @@ class PDFCotizacionController extends Controller
                                 $rutaAbsoluta = public_path($rutaImagen);
                             }
                             
-                            $existe = file_exists($rutaAbsoluta);
-                            \Log::info('PDF: Foto local', [
-                                'ruta_original_recibida' => $imagen->ruta_webp ?? $imagen->ruta_original,
-                                'ruta_procesada' => $rutaImagen,
-                                'ruta_absoluta' => $rutaAbsoluta,
-                                'existe' => $existe,
-                                'es_archivo' => is_file($rutaAbsoluta),
-                                'es_readable' => is_readable($rutaAbsoluta)
-                            ]);
-                            
-                            if ($existe) {
+                            if (file_exists($rutaAbsoluta)) {
                                 $html .= '<img src="' . $rutaAbsoluta . '" alt="Prenda" style="width: 100px; height: 100px; border: 1px solid #ccc; object-fit: cover; flex-shrink: 0;">';
                             }
                         }
-                    } else {
-                        \Log::warning('PDF: Foto sin ruta', ['prenda_id' => $prenda->id, 'foto_idx' => $idx]);
                     }
                 }
                 
@@ -726,19 +755,9 @@ class PDFCotizacionController extends Controller
                 foreach ($imagenesTela as $idx => $imagen) {
                     $rutaImagen = $imagen->ruta_webp ?? $imagen->ruta_original ?? null;
                     
-                    \Log::info('PDF: Procesando foto de tela', [
-                        'prenda_id' => $prenda->id,
-                        'tela_foto_idx' => $idx,
-                        'ruta_webp' => $imagen->ruta_webp,
-                        'ruta_original' => $imagen->ruta_original,
-                        'ruta_final' => $rutaImagen
-                    ]);
-                    
                     if ($rutaImagen) {
                         // Verificar si es una URL completa (http/https)
                         if (strpos($rutaImagen, 'http') === 0) {
-                            // Es una URL web, usarla directamente
-                            \Log::info('PDF: Foto de tela es URL web', ['url' => $rutaImagen]);
                             $html .= '<img src="' . htmlspecialchars($rutaImagen) . '" alt="Tela" style="width: 100px; height: 100px; border: 1px solid #ccc; object-fit: cover; flex-shrink: 0;">';
                         } else {
                             // Es una ruta local, asegurar que tenga /storage/
@@ -756,28 +775,45 @@ class PDFCotizacionController extends Controller
                                 $rutaAbsoluta = public_path($rutaImagen);
                             }
                             
-                            $existe = file_exists($rutaAbsoluta);
-                            \Log::info('PDF: Foto de tela local', [
-                                'ruta_original_recibida' => $imagen->ruta_webp ?? $imagen->ruta_original,
-                                'ruta_procesada' => $rutaImagen,
-                                'ruta_absoluta' => $rutaAbsoluta,
-                                'existe' => $existe,
-                                'es_archivo' => is_file($rutaAbsoluta),
-                                'es_readable' => is_readable($rutaAbsoluta)
-                            ]);
-                            
-                            if ($existe) {
+                            if (file_exists($rutaAbsoluta)) {
                                 $html .= '<img src="' . $rutaAbsoluta . '" alt="Tela" style="width: 100px; height: 100px; border: 1px solid #ccc; object-fit: cover; flex-shrink: 0;">';
                             }
                         }
-                    } else {
-                        \Log::warning('PDF: Foto de tela sin ruta', ['prenda_id' => $prenda->id, 'tela_foto_idx' => $idx]);
+                    }
+                }
+                
+                // ✅ Mostrar imágenes de reflectivo
+                foreach ($imagenesReflectivo as $idx => $imagen) {
+                    $rutaImagen = $imagen->ruta_webp ?? $imagen->ruta_original ?? null;
+                    
+                    if ($rutaImagen) {
+                        // Verificar si es una URL completa (http/https)
+                        if (strpos($rutaImagen, 'http') === 0) {
+                            $html .= '<img src="' . htmlspecialchars($rutaImagen) . '" alt="Reflectivo" style="width: 100px; height: 100px; border: 2px solid #2196f3; object-fit: cover; flex-shrink: 0;">';
+                        } else {
+                            // Es una ruta local, asegurar que tenga /storage/
+                            if (!str_starts_with($rutaImagen, '/')) {
+                                $rutaImagen = '/' . $rutaImagen;
+                            }
+                            if (!str_starts_with($rutaImagen, '/storage/')) {
+                                if (str_starts_with($rutaImagen, '/cotizaciones/')) {
+                                    $rutaImagen = '/storage' . $rutaImagen;
+                                }
+                            }
+                            
+                            $rutaAbsoluta = $rutaImagen;
+                            if (str_starts_with($rutaImagen, '/')) {
+                                $rutaAbsoluta = public_path($rutaImagen);
+                            }
+                            
+                            if (file_exists($rutaAbsoluta)) {
+                                $html .= '<img src="' . $rutaAbsoluta . '" alt="Reflectivo" style="width: 100px; height: 100px; border: 2px solid #2196f3; object-fit: cover; flex-shrink: 0;">';
+                            }
+                        }
                     }
                 }
                 
                 $html .= '</div>';
-            } else {
-                \Log::info('PDF: Prenda sin fotos', ['prenda_id' => $prenda->id, 'nombre' => $prenda->nombre_producto]);
             }
             
             $html .= '</div>';
@@ -931,12 +967,6 @@ class PDFCotizacionController extends Controller
         // IMÁGENES DE REFLECTIVO
         $imagenesReflectivo = $reflectivo->fotos ?? [];
         
-        \Log::info('PDF: Procesando imágenes de reflectivo', [
-            'cotizacion_id' => $cotizacion->id,
-            'reflectivo_id' => $reflectivo->id,
-            'total_fotos' => count($imagenesReflectivo)
-        ]);
-        
         if ($imagenesReflectivo && count($imagenesReflectivo) > 0) {
             $html .= '<div style="margin-top: 15px;">';
             $html .= '<div style="font-size: 10px; font-weight: bold; margin-bottom: 8px; color: #3498db;">Imágenes de Referencia:</div>';
@@ -945,20 +975,9 @@ class PDFCotizacionController extends Controller
             foreach ($imagenesReflectivo as $idx => $imagen) {
                 $rutaImagen = $imagen->ruta_webp ?? $imagen->ruta_original ?? null;
                 
-                \Log::info('PDF: Procesando foto de reflectivo', [
-                    'reflectivo_id' => $reflectivo->id,
-                    'foto_idx' => $idx,
-                    'foto_id' => $imagen->id,
-                    'ruta_webp' => $imagen->ruta_webp,
-                    'ruta_original' => $imagen->ruta_original,
-                    'ruta_final' => $rutaImagen
-                ]);
-                
                 if ($rutaImagen) {
                     // Verificar si es una URL completa (http/https)
                     if (strpos($rutaImagen, 'http') === 0) {
-                        // Es una URL web, usarla directamente
-                        \Log::info('PDF: Foto de reflectivo es URL web', ['url' => $rutaImagen]);
                         $html .= '<img src="' . htmlspecialchars($rutaImagen) . '" alt="Reflectivo" style="width: 120px; height: 120px; border: 2px solid #3498db; object-fit: cover; flex-shrink: 0; border-radius: 4px;">';
                     } else {
                         // Es una ruta local, asegurar que tenga /storage/
@@ -976,17 +995,7 @@ class PDFCotizacionController extends Controller
                             $rutaAbsoluta = public_path($rutaImagen);
                         }
                         
-                        $existe = file_exists($rutaAbsoluta);
-                        \Log::info('PDF: Foto de reflectivo local', [
-                            'ruta_original_recibida' => $imagen->ruta_webp ?? $imagen->ruta_original,
-                            'ruta_procesada' => $rutaImagen,
-                            'ruta_absoluta' => $rutaAbsoluta,
-                            'existe' => $existe,
-                            'es_archivo' => is_file($rutaAbsoluta),
-                            'es_readable' => is_readable($rutaAbsoluta)
-                        ]);
-                        
-                        if ($existe) {
+                        if (file_exists($rutaAbsoluta)) {
                             $html .= '<img src="' . $rutaAbsoluta . '" alt="Reflectivo" style="width: 120px; height: 120px; border: 2px solid #3498db; object-fit: cover; flex-shrink: 0; border-radius: 4px;">';
                         } else {
                             \Log::warning('PDF: Foto de reflectivo no existe', [
@@ -1007,11 +1016,6 @@ class PDFCotizacionController extends Controller
             
             $html .= '</div>';
             $html .= '</div>';
-        } else {
-            \Log::info('PDF: Reflectivo sin fotos', [
-                'reflectivo_id' => $reflectivo->id,
-                'tipo_prenda' => $reflectivo->tipo_prenda
-            ]);
         }
         
         $html .= '</div>';

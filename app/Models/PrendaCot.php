@@ -18,7 +18,6 @@ class PrendaCot extends Model
         'descripcion',
         'cantidad',
         'texto_personalizado_tallas',
-        'genero',  // ✅ AGREGAR GÉNERO
     ];
 
     protected $casts = [

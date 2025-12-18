@@ -933,6 +933,19 @@
         </div>
     </div>
 
+    <!-- MODAL DE CONFIRMACIÓN DE ELIMINACIÓN -->
+    <div id="modalConfirmarEliminar" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 10002; align-items: center; justify-content: center;">
+        <div style="background: white; border-radius: 16px; padding: 2.5rem; max-width: 450px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center; animation: slideIn 0.3s ease;">
+            <div style="font-size: 3.5rem; margin-bottom: 1.5rem; color: #ef4444;">⚠️</div>
+            <h2 style="margin: 0 0 1rem 0; font-size: 1.4rem; color: #1e293b; font-weight: 700;">¿Eliminar esta foto?</h2>
+            <p style="margin: 0 0 2rem 0; color: #64748b; font-size: 0.95rem; line-height: 1.6;">Esta acción no se puede deshacer. La foto será eliminada definitivamente de todos lados.</p>
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+                <button type="button" onclick="cerrarModalConfirmarEliminar()" style="padding: 0.75rem 1.5rem; background: #f1f5f9; border: 2px solid #cbd5e1; border-radius: 8px; cursor: pointer; font-weight: 600; color: #64748b; font-size: 0.95rem; transition: all 0.2s ease;">Cancelar</button>
+                <button type="button" id="btnConfirmarEliminar" style="padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border: none; border-radius: 8px; cursor: pointer; font-weight: 600; color: white; font-size: 0.95rem; transition: all 0.2s ease;">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL DE ÉXITO -->
     <div id="modalExito" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 10001; align-items: center; justify-content: center;">
         <div style="background: white; border-radius: 16px; padding: 3rem; max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center; animation: slideIn 0.3s ease;">
@@ -1570,24 +1583,73 @@ function agregarFotosAlProductoReflectivo(input) {
     
     if (previewCount + files.length > 3) {
         alert('Máximo 3 imágenes permitidas');
+        input.value = '';
         return;
     }
     
-    Array.from(files).forEach(file => {
+    // Obtener archivos existentes del input (si los hay)
+    const existingFiles = input._storedFiles || [];
+    const newFiles = Array.from(files);
+    
+    // Combinar archivos existentes con nuevos
+    const allFiles = [...existingFiles, ...newFiles];
+    
+    // Crear previews solo para los nuevos archivos
+    newFiles.forEach((file, index) => {
         if (file.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const div = document.createElement('div');
                 div.style.cssText = 'position: relative; border-radius: 6px; overflow: hidden; aspect-ratio: 1;';
+                div.setAttribute('data-file-index', existingFiles.length + index);
                 div.innerHTML = `
                     <img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">
-                    <button type="button" onclick="this.parentElement.remove()" style="position: absolute; top: 2px; right: 2px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center;">×</button>
+                    <button type="button" onclick="eliminarImagenReflectivo(this)" style="position: absolute; top: 2px; right: 2px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center;">×</button>
                 `;
                 preview.appendChild(div);
             };
             reader.readAsDataURL(file);
         }
     });
+    
+    // Guardar todos los archivos en el input usando DataTransfer
+    const dataTransfer = new DataTransfer();
+    allFiles.forEach(file => dataTransfer.items.add(file));
+    input.files = dataTransfer.files;
+    
+    // Almacenar referencia para futuras adiciones
+    input._storedFiles = allFiles;
+    
+    console.log(`📸 Archivos guardados en input: ${input.files.length}`);
+}
+
+function eliminarImagenReflectivo(button) {
+    const div = button.parentElement;
+    const fileIndex = parseInt(div.getAttribute('data-file-index'));
+    const preview = div.parentElement;
+    const input = preview.closest('.producto-section').querySelector('.input-file-reflectivo');
+    
+    // Obtener archivos actuales
+    const currentFiles = input._storedFiles || Array.from(input.files);
+    
+    // Eliminar el archivo del índice especificado
+    currentFiles.splice(fileIndex, 1);
+    
+    // Actualizar el input con los archivos restantes
+    const dataTransfer = new DataTransfer();
+    currentFiles.forEach(file => dataTransfer.items.add(file));
+    input.files = dataTransfer.files;
+    input._storedFiles = currentFiles;
+    
+    // Eliminar preview del DOM
+    div.remove();
+    
+    // Renumerar los índices de los divs restantes
+    preview.querySelectorAll('[data-file-index]').forEach((d, idx) => {
+        d.setAttribute('data-file-index', idx);
+    });
+    
+    console.log(`🗑️ Imagen eliminada. Archivos restantes: ${input.files.length}`);
 }
 
 function abrirModalUbicacion(button) {
@@ -1718,13 +1780,16 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
         // ✅ RECOPILAR TALLAS Y CANTIDADES
         const tallas = [];
         const cantidades = {};
-        prenda.querySelectorAll('.talla-seleccionada').forEach(tallaDiv => {
-            const tallaText = tallaDiv.textContent.trim();
-            if (tallaText) {
-                tallas.push(tallaText);
-                cantidades[tallaText] = 1; // Valor por defecto
-            }
-        });
+        const tallasContainer = prenda.querySelector('.tallas-agregadas-reflectivo');
+        if (tallasContainer) {
+            tallasContainer.querySelectorAll('div > span:first-child').forEach(span => {
+                const tallaText = span.textContent.trim();
+                if (tallaText) {
+                    tallas.push(tallaText);
+                    cantidades[tallaText] = 1; // Valor por defecto
+                }
+            });
+        }
 
         // ✅ RECOPILAR UBICACIONES DE ESTA PRENDA ESPECÍFICA
         const ubicacionesDePrenda = [];
@@ -1758,7 +1823,10 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
                 ubicaciones: ubicacionesDePrenda  // ✅ Ubicaciones específicas de esta prenda
             });
             
-            console.log(`✅ Prenda ${index + 1}: ${tipo} - ${ubicacionesDePrenda.length} ubicaciones`);
+            console.log(`✅ Prenda ${index + 1}: ${tipo}`);
+            console.log(`   📍 Ubicaciones: ${ubicacionesDePrenda.length}`);
+            console.log(`   👤 Género: ${genero || 'No especificado'}`);
+            console.log(`   📏 Tallas: ${tallas.length > 0 ? tallas.join(', ') : 'Ninguna'}`);
         }
     });
 
@@ -1804,14 +1872,21 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
     });
 
     // ✅ AGREGAR IMÁGENES POR PRENDA CON SU ÍNDICE
+    console.log('🔵 PROCESANDO IMÁGENES POR PRENDA:');
     document.querySelectorAll('.producto-card').forEach((prenda, prendaIndex) => {
         const input = prenda.querySelector('.input-file-reflectivo');
+        const filesLength = input?.files.length ?? 'N/A';
+        console.log('  Prenda ' + prendaIndex + ': input existe=' + !!input + ', files.length=' + filesLength);
         if (input && input.files.length > 0) {
-            Array.from(input.files).forEach((file) => {
+            Array.from(input.files).forEach((file, fileIdx) => {
                 // Agregar imagen con índice de prenda
-                formData.append(`imagenes_reflectivo_prenda_${prendaIndex}[]`, file);
+                const campoNombre = 'imagenes_reflectivo_prenda_' + prendaIndex + '[]';
+                formData.append(campoNombre, file);
+                console.log('    ✅ Imagen ' + (fileIdx + 1) + ': "' + file.name + '" → "' + campoNombre + '"');
             });
-            console.log(`📸 Prenda ${prendaIndex}: ${input.files.length} imágenes agregadas`);
+            console.log('📸 Prenda ' + prendaIndex + ': ' + input.files.length + ' imágenes agregadas');
+        } else {
+            console.log('⚠️ Prenda ' + prendaIndex + ': Sin imágenes');
         }
     });
 
@@ -1823,32 +1898,47 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
 
     try {
         // Determinar ruta y método según si es edición o creación
-        let url, metodo;
-        let bodyData;
+        let url, metodo, bodyData;
         
         if (window.esEdicion && window.cotizacionIdActual) {
-            // EDICIÓN: Usar PUT updateReflectivo con JSON
+            // EDICIÓN: Usar POST con _method=PUT para compatibilidad con FormData
             url = '/asesores/cotizaciones/reflectivo/' + window.cotizacionIdActual;
-            metodo = 'PUT';
+            metodo = 'POST'; // ✅ Cambiar a POST
             console.log('✏️ EDICIÓN - Enviando a:', url);
             
-            // Construir objeto JSON en lugar de FormData para PUT
-            bodyData = {
-                cliente: cliente,
-                asesora: document.getElementById('asesora').value,
-                fecha: fecha,
-                action: action,
-                tipo: 'RF',
-                tipo_venta_reflectivo: document.getElementById('header-tipo-venta').value,
-                prendas: prendas.length > 0 ? prendas : null,
-                especificaciones: document.getElementById('especificaciones').value || '',
-                descripcion_reflectivo: document.getElementById('descripcion_reflectivo')?.value || 'Reflectivo',
-                // ✅ Ya no enviamos ubicaciones_reflectivo porque están incluidas en cada prenda
-                observaciones_generales: [],
-                imagenes_a_eliminar: fotosEliminadas.length > 0 ? fotosEliminadas : null
-            };
+            // Limpiar FormData anterior y reconstruir con datos de edición
+            const editFormData = new FormData();
+            editFormData.append('_method', 'PUT'); // ✅ Simular PUT con POST
+            editFormData.append('cliente', cliente);
+            editFormData.append('asesora', document.getElementById('asesora').value);
+            editFormData.append('fecha', fecha);
+            editFormData.append('action', action);
+            editFormData.append('tipo', 'RF');
+            editFormData.append('tipo_venta_reflectivo', document.getElementById('header-tipo-venta').value);
+            editFormData.append('prendas', JSON.stringify(prendas.length > 0 ? prendas : []));
+            editFormData.append('especificaciones', document.getElementById('especificaciones').value || '');
+            editFormData.append('descripcion_reflectivo', document.getElementById('descripcion_reflectivo')?.value || 'Reflectivo');
+            editFormData.append('observaciones_generales', JSON.stringify([]));
             
-            console.log('📦 JSON a enviar:', JSON.stringify(bodyData, null, 2));
+            // ✅ AGREGAR IMÁGENES POR PRENDA (IGUAL QUE EN CREACIÓN)
+            document.querySelectorAll('.producto-card').forEach((prenda, prendaIndex) => {
+                const input = prenda.querySelector('.input-file-reflectivo');
+                if (input && input.files.length > 0) {
+                    Array.from(input.files).forEach((file) => {
+                        editFormData.append(`imagenes_reflectivo_prenda_${prendaIndex}[]`, file);
+                    });
+                    console.log(`📸 EDICIÓN Prenda ${prendaIndex}: ${input.files.length} imágenes agregadas`);
+                }
+            });
+            
+            // Agregar fotos eliminadas
+            if (fotosEliminadas.length > 0) {
+                console.log('🗑️ Fotos a eliminar:', fotosEliminadas);
+                editFormData.append('imagenes_a_eliminar', JSON.stringify(fotosEliminadas));
+            }
+            
+            bodyData = editFormData;
+            console.log('📦 FormData para edición construido');
         } else {
             // CREACIÓN: Usar POST storeReflectivo con FormData
             url = '/asesores/cotizaciones/reflectivo/guardar';
@@ -1858,12 +1948,11 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
         }
         
         const response = await fetch(url, {
-            method: metodo,
-            body: window.esEdicion ? JSON.stringify(bodyData) : bodyData,
+            method: metodo, // Siempre POST ahora
+            body: bodyData,
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
-                'Accept': 'application/json',
-                ...(window.esEdicion && { 'Content-Type': 'application/json' })
+                'Accept': 'application/json'
             }
         });
 
@@ -1970,7 +2059,7 @@ function cerrarModalExito() {
 }
 
 /**
- * Función para eliminar una foto del reflectivo
+ * Función para eliminar una foto del reflectivo INMEDIATAMENTE
  */
 function eliminarFotoReflectivo(event) {
     event.preventDefault();
@@ -1985,17 +2074,81 @@ function eliminarFotoReflectivo(event) {
         return;
     }
     
-    console.log('🗑️ Eliminando foto:', fotoId);
+    // Obtener la URL de la imagen para enviarla al backend
+    const img = contenedor.querySelector('img');
+    const fotoUrl = img ? img.src : '';
     
-    // Registrar en lista de fotos a eliminar
-    if (!fotosEliminadas.includes(fotoId)) {
-        fotosEliminadas.push(fotoId);
-        console.log('📋 Fotos a eliminar registradas:', fotosEliminadas);
+    console.log('🗑️ Solicitando eliminación de foto:', fotoId);
+    console.log('   URL:', fotoUrl);
+    
+    // Mostrar modal de confirmación
+    mostrarModalConfirmarEliminar(fotoId, fotoUrl, contenedor);
+}
+
+/**
+ * Mostrar modal de confirmación de eliminación
+ */
+function mostrarModalConfirmarEliminar(fotoId, fotoUrl, contenedor) {
+    const modal = document.getElementById('modalConfirmarEliminar');
+    const btnConfirmar = document.getElementById('btnConfirmarEliminar');
+    
+    if (!modal || !btnConfirmar) {
+        console.error('❌ Modal de confirmación no encontrado');
+        return;
     }
     
-    // Remover del DOM
-    contenedor.remove();
-    console.log('✅ Foto eliminada del DOM');
+    // Mostrar modal
+    modal.style.display = 'flex';
+    
+    // Configurar botón de confirmación
+    btnConfirmar.onclick = async function() {
+        // Cerrar modal
+        modal.style.display = 'none';
+        
+        // Proceder con la eliminación
+        try {
+            console.log('🗑️ Eliminando foto del servidor...');
+            
+            const response = await fetch('/asesores/fotos/eliminar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    foto_id: fotoId,
+                    ruta: fotoUrl,
+                    cotizacion_id: window.cotizacionIdActual || null
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                console.log('✅ Foto eliminada del servidor:', result);
+                // Remover del DOM
+                contenedor.remove();
+                console.log('✅ Foto eliminada del DOM');
+            } else {
+                console.error('❌ Error al eliminar foto:', result.message);
+                alert('Error al eliminar la foto: ' + result.message);
+            }
+        } catch (error) {
+            console.error('❌ Error de conexión al eliminar foto:', error);
+            alert('Error de conexión al eliminar la foto. Por favor, intenta de nuevo.');
+        }
+    };
+}
+
+/**
+ * Cerrar modal de confirmación de eliminación
+ */
+function cerrarModalConfirmarEliminar() {
+    const modal = document.getElementById('modalConfirmarEliminar');
+    if (modal) {
+        modal.style.display = 'none';
+    }
 }
 
 // Agregar PRENDA 1 por default al cargar la página
@@ -2107,6 +2260,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     // ✅ CARGAR GÉNERO DE LA PRENDA
                     const generoSelect = clone.querySelector('.talla-genero-select-reflectivo');
                     if (generoSelect && prenda.genero) {
+                        // Mostrar el select de género
+                        generoSelect.style.display = 'block';
                         generoSelect.value = prenda.genero;
                         console.log('    ✓ Género:', prenda.genero);
                     }
@@ -2146,24 +2301,39 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     }
                     
-                    // Cargar fotos
-                    if (prenda.fotos && prenda.fotos.length > 0) {
-                        console.log('    ✓ Fotos:', prenda.fotos.length);
-                        const fotosContainer = clone.querySelector('.fotos-preview-reflectivo');
-                        const fileInput = clone.querySelector('.input-file-reflectivo');
-                        
-                        prenda.fotos.forEach((foto) => {
-                            const imgDiv = document.createElement('div');
-                            imgDiv.style.position = 'relative';
-                            imgDiv.innerHTML = `
-                                <img src="${foto.url}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 4px;">
-                                <button type="button" class="btn-eliminar-foto" onclick="this.parentElement.remove()" style="position: absolute; top: 2px; right: 2px; background: red; color: white; border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 0.7rem;">✕</button>
-                            `;
-                            fotosContainer.appendChild(imgDiv);
-                        });
-                    }
-                    
+                    // Agregar el clone al DOM primero
                     contenedor.appendChild(clone);
+                    
+                    // ✅ CARGAR FOTOS - Después de agregar al DOM para evitar duplicación
+                    const fotosParaCargar = prenda.reflectivo?.fotos || prenda.fotos || [];
+                    if (fotosParaCargar && fotosParaCargar.length > 0) {
+                        console.log('    ✓ Fotos a cargar:', fotosParaCargar.length);
+                        // Buscar el contenedor en el DOM, no en el clone
+                        const prendaCard = contenedor.lastElementChild;
+                        const fotosContainer = prendaCard.querySelector('.fotos-preview-reflectivo');
+                        
+                        if (fotosContainer) {
+                            // ✅ LIMPIAR el contenedor antes de agregar fotos
+                            const fotosExistentes = fotosContainer.children.length;
+                            console.log('    📸 Fotos existentes en contenedor:', fotosExistentes);
+                            fotosContainer.innerHTML = '';
+                            
+                            fotosParaCargar.forEach((foto, idx) => {
+                                console.log(`    📷 Agregando foto ${idx + 1}:`, foto.id);
+                                const imgDiv = document.createElement('div');
+                                imgDiv.style.cssText = 'position: relative; border-radius: 6px; overflow: hidden; aspect-ratio: 1;';
+                                imgDiv.setAttribute('data-foto-id', foto.id);
+                                imgDiv.innerHTML = `
+                                    <img src="${foto.url}" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <button type="button" data-foto-id="${foto.id}" onclick="eliminarFotoReflectivo(event)" style="position: absolute; top: 2px; right: 2px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center;">×</button>
+                                `;
+                                fotosContainer.appendChild(imgDiv);
+                            });
+                            console.log('    ✅ Total fotos en contenedor después de cargar:', fotosContainer.children.length);
+                        }
+                    } else {
+                        console.log('    ⚠️ No hay fotos para esta prenda');
+                    }
                     
                     // ✅ CARGAR UBICACIONES DE ESTA PRENDA (después de agregar al DOM)
                     if (prenda.reflectivo && prenda.reflectivo.ubicacion) {
@@ -2234,45 +2404,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 agregarProductoPrenda();
             }
             
-            // Cargar fotos del reflectivo (si existe)
+            // ✅ FOTOS YA SE CARGAN POR PRENDA (líneas 2229-2258)
+            // No cargar fotos globalmente para evitar duplicación
             console.log('🔍 Buscando reflectivo en datosIniciales...');
             console.log('   reflectivo_cotizacion:', datosIniciales.reflectivo_cotizacion ? 'EXISTE' : 'NO');
             console.log('   reflectivo:', datosIniciales.reflectivo ? 'EXISTE' : 'NO');
             
-            // Intentar ambas formas: reflectivo_cotizacion o reflectivo
             const reflectivo = datosIniciales.reflectivo_cotizacion || datosIniciales.reflectivo;
-            
-            if (reflectivo && reflectivo.fotos && reflectivo.fotos.length > 0) {
-                console.log('📸 REFLECTIVO - Cargando', reflectivo.fotos.length, 'fotos');
-                const fotosContainer = document.querySelector('.fotos-preview-reflectivo');
-                
-                if (fotosContainer) {
-                    reflectivo.fotos.forEach((foto, index) => {
-                        console.log(`    ✓ Foto ${index + 1}:`, foto);
-                        const imgDiv = document.createElement('div');
-                        imgDiv.style.position = 'relative';
-                        imgDiv.setAttribute('data-foto-id', foto.id); // AGREGAR ID PARA RASTREAR ELIMINACIONES
-                        imgDiv.setAttribute('data-foto-nueva', 'false'); // Marcar como existente (no nueva)
-                        imgDiv.innerHTML = `
-                            <img src="${foto.url}" style="width: 100%; height: 100px; object-fit: cover; border-radius: 4px;">
-                            <button type="button" class="btn-eliminar-foto" data-foto-id="${foto.id}" onclick="eliminarFotoReflectivo(event)" style="position: absolute; top: 2px; right: 2px; background: red; color: white; border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer; font-size: 0.7rem;">✕</button>
-                        `;
-                        fotosContainer.appendChild(imgDiv);
-                    });
-                    console.log('✅ Fotos del reflectivo cargadas correctamente');
-                } else {
-                    console.warn('⚠️ Contenedor .fotos-preview-reflectivo no encontrado');
-                }
-            } else {
-                console.log('ℹ️ No hay fotos de reflectivo para cargar');
-                if (!reflectivo) {
-                    console.warn('  Reflectivo no encontrado en datosIniciales');
-                } else if (!reflectivo.fotos) {
-                    console.warn('  reflectivo.fotos no existe');
-                } else {
-                    console.warn('  reflectivo.fotos está vacío, length:', reflectivo.fotos.length);
-                }
-            }
+            console.log('ℹ️ Fotos cargadas por prenda (no globalmente para evitar duplicaciones)');
             
             // Cargar descripción del reflectivo (si existe)
             if (reflectivo && reflectivo.descripcion) {
