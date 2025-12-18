@@ -20,6 +20,8 @@
     @include('components.cotizaciones.header', [
         'title' => 'Cotizaciones',
         'subtitle' => 'Gestiona tus cotizaciones',
+        'searchUrl' => route('asesores.cotizaciones.index'),
+        'searchPlaceholder' => 'Buscar por cliente o número...',
         'actionButton' => [
             'url' => route('asesores.pedidos.create'),
             'label' => 'Registrar'
@@ -30,9 +32,8 @@
     @include('components.cotizaciones.filters', [
         'filters' => [
             ['code' => 'todas', 'label' => 'Todas', 'icon' => 'fas fa-list', 'active' => true],
-            ['code' => 'P', 'label' => 'Prenda', 'icon' => 'fas fa-shirt', 'active' => false],
-            ['code' => 'L', 'label' => 'Logo', 'icon' => 'fas fa-palette', 'active' => false],
             ['code' => 'PL', 'label' => 'Combinada', 'icon' => 'fas fa-layer-group', 'active' => false],
+            ['code' => 'L', 'label' => 'Logo', 'icon' => 'fas fa-palette', 'active' => false],
             ['code' => 'RF', 'label' => 'Reflectivo', 'icon' => 'fas fa-lightbulb', 'active' => false],
         ]
     ])
@@ -60,10 +61,10 @@
         <div id="seccion-prenda" class="seccion-tipo" style="display: none;">
             @include('components.cotizaciones.table', [
                 'sectionId' => 'prenda',
-                'title' => 'Prenda',
+                'title' => 'Combinada',
                 'cotizaciones' => $cotizacionesPrenda,
                 'pageParameterName' => $pageNameCotPrenda ?? 'page',
-                'emptyMessage' => 'No hay cotizaciones de prenda',
+                'emptyMessage' => 'No hay cotizaciones combinadas',
                 'columns' => [
                     ['key' => 'fecha', 'label' => 'Fecha', 'align' => 'left'],
                     ['key' => 'codigo', 'label' => 'Código', 'align' => 'left'],
@@ -152,10 +153,10 @@
         <div id="seccion-bor-prenda" class="seccion-tipo" style="display: none;">
             @include('components.cotizaciones.table', [
                 'sectionId' => 'bor-prenda',
-                'title' => 'Prenda',
+                'title' => 'Combinada',
                 'cotizaciones' => $borradorespPrenda,
                 'pageParameterName' => $pageNameBorPrenda ?? 'page',
-                'emptyMessage' => 'No hay borradores de prenda',
+                'emptyMessage' => 'No hay borradores combinados',
                 'columns' => [
                     ['key' => 'fecha', 'label' => 'Fecha', 'align' => 'left'],
                     ['key' => 'cliente', 'label' => 'Cliente', 'align' => 'left'],

@@ -241,8 +241,8 @@ class AsesoresController extends Controller
             return redirect()->route('asesores.cotizaciones-bordado.create');
         }
         
-        // Si es tipo Prenda (P), redirigir a cotización de prenda
-        if ($tipo === 'P') {
+        // Si es tipo Combinada (PL), redirigir a cotización combinada
+        if ($tipo === 'PL') {
             return redirect()->route('asesores.cotizaciones-prenda.create');
         }
         

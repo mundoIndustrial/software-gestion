@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Cotizacion;
 use App\Models\PedidoProduccion;
 use App\Models\Role;
+use App\Helpers\EstadoHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -102,7 +103,7 @@ class SupervisorAsesoresController extends Controller
             ->whereYear('created_at', now()->year)
             ->count();
             
-        // Total de pedidos de este mes (SIN filtro de asesores)
+        // Total de pedidos de este mes (SIN filtro de asesores - para contexto)
         $totalPedidosMes = PedidoProduccion::whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->count();
@@ -117,7 +118,7 @@ class SupervisorAsesoresController extends Controller
         // Datos para Gráficas
         // ============================================
         
-        // Gráfica de Tendencia (línea)
+        // Gráfica de Tendencia (línea) - SOLO datos de asesores
         $fecha_inicio = now()->subDays($dias);
         $labels = [];
         $cotizaciones_por_dia = [];
@@ -137,12 +138,13 @@ class SupervisorAsesoresController extends Controller
         }
 
         // Gráfica de Cotizaciones por Asesor (top 10)
-        $asesoresCotizaciones = PedidoProduccion::select('asesor_id', DB::raw('COUNT(*) as total'))
+        // Usar Cotizacion, no PedidoProduccion
+        $asesoresCotizaciones = Cotizacion::select('asesor_id', DB::raw('COUNT(*) as total'))
             ->whereIn('asesor_id', $asesoresIds)
             ->groupBy('asesor_id')
             ->orderBy('total', 'desc')
             ->limit(10)
-            ->with('asesora')
+            ->with('asesora:id,name')
             ->get();
             
         $asesores_labels = $asesoresCotizaciones->map(function($item) {
@@ -152,7 +154,9 @@ class SupervisorAsesoresController extends Controller
         $asesores_data = $asesoresCotizaciones->pluck('total')->toArray();
 
         // Gráfica de Estados (con filtros opcionales)
-        $estadosQuery = PedidoProduccion::select('estado', DB::raw('COUNT(*) as total'));
+        // Filtrar SIEMPRE por asesores del supervisor
+        $estadosQuery = PedidoProduccion::select('estado', DB::raw('COUNT(*) as total'))
+            ->whereIn('asesor_id', $asesoresIds);
         
         // Aplicar filtros si se solicita
         if ($estadosFilter) {
@@ -166,6 +170,10 @@ class SupervisorAsesoresController extends Controller
                 $estadosQuery->whereMonth('created_at', $mes)
                     ->whereYear('created_at', now()->year);
             }
+        } else {
+            // Si no hay filtros específicos, mostrar datos del mes actual
+            $estadosQuery->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year);
         }
         
         $estadosPedidos = $estadosQuery->groupBy('estado')->get();
@@ -258,7 +266,7 @@ class SupervisorAsesoresController extends Controller
         // Mostrar todas las cotizaciones en el tab de Cotizaciones
         // y solo las que tienen estado BORRADOR en el tab de Borradores
         $cotizacionesTodas = $this->paginate($cotizaciones, 15, 'page_cot_todas');
-        $cotizacionesPrenda = $this->paginate($cotizaciones->filter(fn($c) => ($c->tipo === 'P' || $c->tipo === null)), 15, 'page_cot_prenda');
+        $cotizacionesPrenda = $this->paginate($cotizaciones->filter(fn($c) => $c->tipo === 'PL'), 15, 'page_cot_prenda');
         $cotizacionesLogo = $this->paginate($cotizaciones->filter(fn($c) => $c->tipo === 'L'), 15, 'page_cot_logo');
         $cotizacionesPrendaBordado = $this->paginate($cotizaciones->filter(fn($c) => $c->tipo === 'PL'), 15, 'page_cot_pb');
         $cotizacionesReflectivo = $this->paginate($cotizaciones->filter(fn($c) => $c->tipo === 'RF'), 15, 'page_cot_rf');
@@ -266,7 +274,7 @@ class SupervisorAsesoresController extends Controller
         // Separar borradores por tipo (solo las que tienen es_borrador = 1)
         $borradoresCollection = $cotizaciones->filter(fn($c) => $c->es_borrador === true || $c->es_borrador === 1);
         $borradoresTodas = $this->paginate($borradoresCollection, 15, 'page_bor_todas');
-        $borradorespPrenda = $this->paginate($borradoresCollection->filter(fn($c) => ($c->tipo === 'P' || $c->tipo === null)), 15, 'page_bor_prenda');
+        $borradorespPrenda = $this->paginate($borradoresCollection->filter(fn($c) => $c->tipo === 'PL'), 15, 'page_bor_prenda');
         $borradoresLogo = $this->paginate($borradoresCollection->filter(fn($c) => $c->tipo === 'L'), 15, 'page_bor_logo');
         $borradorespPrendaBordado = $this->paginate($borradoresCollection->filter(fn($c) => $c->tipo === 'PL'), 15, 'page_bor_pb');
         $borradoresReflectivo = $this->paginate($borradoresCollection->filter(fn($c) => $c->tipo === 'RF'), 15, 'page_bor_rf');
@@ -830,21 +838,9 @@ class SupervisorAsesoresController extends Controller
 
         // Mapeo de códigos de tipo a nombres legibles
         $tiposMap = [
-            'P' => 'Prenda',
+            'PL' => 'Combinada',
             'L' => 'Logo',
-            'PL' => 'Prenda/Logo',
             'RF' => 'Reflectivo',
-        ];
-
-        // Mapeo de estados a nombres legibles
-        $estadosMap = [
-            'BORRADOR' => 'Borrador',
-            'ENVIADA_CONTADOR' => 'Enviada a Contador',
-            'APROBADA_CONTADOR' => 'Aprobada por Contador',
-            'ENVIADA_APROBADOR' => 'Enviada a Aprobador',
-            'APROBADA_APROBADOR' => 'Aprobada por Aprobador',
-            'ACEPTADA' => 'Aceptada',
-            'RECHAZADA' => 'Rechazada',
         ];
 
         $datos = [
@@ -869,14 +865,16 @@ class SupervisorAsesoresController extends Controller
                 ->values()
                 ->toArray(),
             'tipos' => $cotizacionesModelo->map(function($c) use ($tiposMap) {
-                $codigo = $c->tipoCotizacion?->codigo ?? $c->tipo ?? 'P';
-                return $tiposMap[$codigo] ?? 'Prenda';
+                $codigo = $c->tipoCotizacion?->codigo ?? $c->tipo ?? 'PL'; // Default a Combinada
+                return $tiposMap[$codigo] ?? $codigo;
             })
+                ->filter(fn($v) => $v !== null && $v !== '')
                 ->unique()
                 ->values()
                 ->toArray(),
             'estados' => $cotizacionesModelo->pluck('estado')
-                ->map(fn($e) => $estadosMap[$e] ?? $e)
+                ->map(fn($e) => EstadoHelper::labelCotizacion($e))
+                ->filter(fn($v) => $v !== null && $v !== '')
                 ->unique()
                 ->values()
                 ->toArray(),

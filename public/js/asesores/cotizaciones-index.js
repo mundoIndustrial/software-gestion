@@ -312,6 +312,53 @@ function eliminarCotizacion(id) {
 }
 
 /**
+ * Filtra las filas de la tabla actual en tiempo real
+ * @param {string} searchTerm - Término de búsqueda
+ */
+function filtrarTablaEnVista(searchTerm) {
+    const searchTermLower = searchTerm.toLowerCase();
+    const tables = document.querySelectorAll('table tbody');
+    
+    tables.forEach(tbody => {
+        const rows = tbody.querySelectorAll('tr');
+        let rowsVisibles = 0;
+        
+        rows.forEach(row => {
+            // Obtener el contenido de todas las celdas
+            const cells = row.querySelectorAll('td');
+            let rowText = '';
+            cells.forEach(cell => {
+                rowText += cell.textContent + ' ';
+            });
+            
+            // Comparar con término de búsqueda
+            const matches = rowText.toLowerCase().includes(searchTermLower);
+            row.style.display = matches ? '' : 'none';
+            
+            if (matches) rowsVisibles++;
+        });
+        
+        // Mostrar mensaje si no hay resultados
+        const parent = tbody.closest('div[id^="tab-contenedor-"]');
+        if (parent) {
+            let emptyMsg = parent.querySelector('.empty-message');
+            if (rowsVisibles === 0) {
+                if (!emptyMsg) {
+                    emptyMsg = document.createElement('div');
+                    emptyMsg.className = 'empty-message';
+                    emptyMsg.style.cssText = 'background: #f0f7ff; border: 2px dashed #3498db; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 30px;';
+                    emptyMsg.innerHTML = '<p style="margin: 0; color: #666;">🔍 No se encontraron resultados para: <strong>' + searchTerm + '</strong></p>';
+                    parent.insertBefore(emptyMsg, tbody.closest('div'));
+                }
+                emptyMsg.style.display = 'block';
+            } else if (emptyMsg) {
+                emptyMsg.style.display = 'none';
+            }
+        }
+    });
+}
+
+/**
  * Inicialización al cargar el DOM
  */
 document.addEventListener('DOMContentLoaded', () => {
@@ -332,6 +379,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const seccionTodas = document.getElementById('seccion-todas');
         if (seccionTodas) {
             seccionTodas.style.display = 'block';
+        }
+    }
+    
+    // Agregar listener para filtrado en tiempo real del buscador
+    const buscadorInput = document.getElementById('buscador');
+    if (buscadorInput) {
+        buscadorInput.addEventListener('input', function() {
+            filtrarTablaEnVista(this.value);
+        });
+        
+        // Si hay un término de búsqueda en la URL, mostrarlo en el input y filtrar
+        const searchParam = urlParams.get('search');
+        if (searchParam) {
+            buscadorInput.value = decodeURIComponent(searchParam);
+            // Nota: El filtrado servidor ya está aplicado, esto es solo para re-filtrar en la vista si es necesario
         }
     }
     

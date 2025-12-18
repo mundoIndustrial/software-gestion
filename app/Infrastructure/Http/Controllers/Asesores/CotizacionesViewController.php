@@ -23,10 +23,14 @@ final class CotizacionesViewController extends Controller
     /**
      * Mostrar vista de cotizaciones del usuario
      * GET /asesores/cotizaciones
+     * GET /asesores/cotizaciones?search=MINCIVIL
      */
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
         try {
+            // Obtener parámetro de búsqueda
+            $searchTerm = $request->query('search', '');
+            
             // Obtener cotizaciones directamente del modelo con relaciones
             $cotizacionesModelo = \App\Models\Cotizacion::where('asesor_id', Auth::id())
                 ->with([
@@ -45,13 +49,12 @@ final class CotizacionesViewController extends Controller
             $mapeoTipos = [
                 1 => 'PL',  // Combinada
                 2 => 'L',   // Logo
-                3 => 'P',   // Prenda
                 4 => 'RF',  // Reflectivo
             ];
 
             // Convertir modelos a objetos para la vista
             $cotizaciones = $cotizacionesModelo->map(function($cot) use ($mapeoTipos) {
-                $tipo = $mapeoTipos[$cot->tipo_cotizacion_id] ?? 'P';
+                $tipo = $mapeoTipos[$cot->tipo_cotizacion_id] ?? 'PL';
                 $obj = (object)[
                     'id' => $cot->id,
                     'numero_cotizacion' => $cot->numero_cotizacion,
@@ -69,9 +72,20 @@ final class CotizacionesViewController extends Controller
                 return $obj;
             });
 
+            // Aplicar filtro de búsqueda si existe
+            if (!empty($searchTerm)) {
+                $searchLower = strtolower($searchTerm);
+                $cotizaciones = $cotizaciones->filter(function($cot) use ($searchLower) {
+                    return 
+                        stripos($cot->cliente, $searchLower) !== false ||
+                        stripos($cot->numero_cotizacion, $searchLower) !== false;
+                });
+            }
+
             \Log::info('CotizacionesViewController: Cotizaciones obtenidas', [
                 'total' => $cotizaciones->count(),
                 'usuario_id' => Auth::id(),
+                'search_term' => $searchTerm,
                 'sample' => $cotizaciones->first() ? (array)$cotizaciones->first() : null,
                 'es_borrador_values' => $cotizaciones->pluck('es_borrador')->unique()->toArray(),
             ]);
@@ -82,7 +96,7 @@ final class CotizacionesViewController extends Controller
             // Mostrar solo cotizaciones enviadas en el tab de Cotizaciones
             // y solo las que tienen es_borrador = 1 en el tab de Borradores
             $cotizacionesTodas = $this->paginate($cotizacionesEnviadas, 15);
-            $cotizacionesPrenda = $this->paginate($cotizacionesEnviadas->filter(fn($c) => ($c->tipo === 'P' || $c->tipo === null)), 15);
+            $cotizacionesPrenda = $this->paginate($cotizacionesEnviadas->filter(fn($c) => $c->tipo === 'PL'), 15);
             $cotizacionesLogo = $this->paginate($cotizacionesEnviadas->filter(fn($c) => $c->tipo === 'L'), 15);
             $cotizacionesPrendaBordado = $this->paginate($cotizacionesEnviadas->filter(fn($c) => $c->tipo === 'PL'), 15);
             $cotizacionesReflectivo = $this->paginate($cotizacionesEnviadas->filter(fn($c) => $c->tipo === 'RF'), 15);
@@ -90,7 +104,7 @@ final class CotizacionesViewController extends Controller
             // Separar borradores por tipo (solo las que tienen es_borrador = 1)
             $borradoresCollection = $cotizaciones->filter(fn($c) => $c->es_borrador === true || $c->es_borrador === 1);
             $borradoresTodas = $this->paginate($borradoresCollection, 15);
-            $borradorespPrenda = $this->paginate($borradoresCollection->filter(fn($c) => ($c->tipo === 'P' || $c->tipo === null)), 15);
+            $borradorespPrenda = $this->paginate($borradoresCollection->filter(fn($c) => $c->tipo === 'PL'), 15);
             $borradoresLogo = $this->paginate($borradoresCollection->filter(fn($c) => $c->tipo === 'L'), 15);
             $borradorespPrendaBordado = $this->paginate($borradoresCollection->filter(fn($c) => $c->tipo === 'PL'), 15);
             $borradoresReflectivo = $this->paginate($borradoresCollection->filter(fn($c) => $c->tipo === 'RF'), 15);

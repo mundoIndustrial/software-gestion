@@ -14,10 +14,7 @@
             <div class="stat-content">
                 <h3>Cotizaciones Hoy</h3>
                 <p class="stat-value" id="cotizacionesHoy">0</p>
-                <span class="stat-trend">
-                    <i class="fas fa-arrow-up"></i>
-                    <span id="cotizacionesHoyTend">0%</span>
-                </span>
+                <span class="stat-label">Hoy</span>
             </div>
         </div>
 
@@ -28,10 +25,7 @@
             <div class="stat-content">
                 <h3>Pedidos Este Mes</h3>
                 <p class="stat-value" id="pedidosMes">0</p>
-                <span class="stat-trend">
-                    <i class="fas fa-arrow-up"></i>
-                    <span id="pedidosMesTend">0%</span>
-                </span>
+                <span class="stat-label">Este mes</span>
             </div>
         </div>
 
@@ -67,10 +61,7 @@
             <div class="stat-content">
                 <h3>Cotizaciones Este Mes</h3>
                 <p class="stat-value" id="cotizacionesMes">0</p>
-                <span class="stat-trend">
-                    <i class="fas fa-arrow-up"></i>
-                    <span id="cotizacionesMesTend">0%</span>
-                </span>
+                <span class="stat-label">Este mes</span>
             </div>
         </div>
 
@@ -81,10 +72,7 @@
             <div class="stat-content">
                 <h3>Total Pedidos Mes</h3>
                 <p class="stat-value" id="totalPedidosMes">0</p>
-                <span class="stat-trend">
-                    <i class="fas fa-arrow-up"></i>
-                    <span id="totalPedidosMesTend">0%</span>
-                </span>
+                <span class="stat-label">Sistema</span>
             </div>
         </div>
     </div>
@@ -94,23 +82,23 @@
         <!-- Gráfica de Tendencia -->
         <div class="chart-card" style="grid-column: span 2;">
             <div class="chart-header">
-                <h2>Tendencia de Cotizaciones y Pedidos</h2>
+                <h2 style="margin: 0; font-size: 1.2rem;">Tendencia de Cotizaciones y Pedidos</h2>
                 <div class="chart-actions">
-                    <button class="chart-btn active" data-period="7">7D</button>
-                    <button class="chart-btn" data-period="30">30D</button>
-                    <button class="chart-btn" data-period="90">90D</button>
+                    <button class="chart-btn active" data-period="7" style="padding: 0.5rem 1rem; margin: 0 0.25rem; border: 1px solid #ddd; background: #f0f0f0; border-radius: 4px; cursor: pointer; font-weight: 500;">7D</button>
+                    <button class="chart-btn" data-period="30" style="padding: 0.5rem 1rem; margin: 0 0.25rem; border: 1px solid #ddd; background: #f0f0f0; border-radius: 4px; cursor: pointer; font-weight: 500;">30D</button>
+                    <button class="chart-btn" data-period="90" style="padding: 0.5rem 1rem; margin: 0 0.25rem; border: 1px solid #ddd; background: #f0f0f0; border-radius: 4px; cursor: pointer; font-weight: 500;">90D</button>
                 </div>
             </div>
-            <div class="chart-body">
+            <div class="chart-body" style="height: 350px; position: relative; padding: 20px;">
                 <canvas id="tendenciaLineChart"></canvas>
             </div>
         </div>
 
         <!-- Gráfica de Estados -->
-        <div class="chart-card">
-            <div class="chart-header">
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 1rem; flex-wrap: wrap;">
-                    <h2 style="margin: 0; font-size: 1.1rem;">Pedidos por Estado</h2>
+        <div class="chart-card" style="padding: 1.5rem;">
+            <div class="chart-header" style="margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; gap: 1rem; flex-wrap: wrap;">
+                    <h2 style="margin: 0; font-size: 1.1rem; flex: 1; min-width: 200px;">Pedidos por Estado</h2>
                     <div class="filtros-estado" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                         <input type="date" id="filtroFechaDesde" style="padding: 0.4rem; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem;">
                         <span style="color: #666; font-size: 0.85rem;">a</span>
@@ -130,21 +118,21 @@
                             <option value="11">Noviembre</option>
                             <option value="12">Diciembre</option>
                         </select>
-                        <button id="btnLimpiarFiltros" style="padding: 0.4rem 0.8rem; background: #999; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">Limpiar</button>
+                        <button id="btnLimpiarFiltros" style="padding: 0.4rem 0.8rem; background: #999; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 500;">Limpiar</button>
                     </div>
                 </div>
             </div>
-            <div class="chart-body" style="height: 300px; display: flex; align-items: center; justify-content: center;">
+            <div class="chart-body" style="height: 300px; display: flex; align-items: center; justify-content: center; position: relative; padding: 20px;">
                 <canvas id="estadosPedidosChart"></canvas>
             </div>
         </div>
 
         <!-- Gráfica de Cotizaciones por Asesor -->
-        <div class="chart-card">
-            <div class="chart-header">
-                <h2>Cotizaciones por Asesor (Top 10)</h2>
+        <div class="chart-card" style="padding: 1.5rem;">
+            <div class="chart-header" style="margin-bottom: 1rem;">
+                <h2 style="margin: 0; font-size: 1.1rem;">Cotizaciones por Asesor (Top 10)</h2>
             </div>
-            <div class="chart-body" style="height: 300px;">
+            <div class="chart-body" style="height: 300px; display: flex; align-items: center; justify-content: center; position: relative; padding: 20px;">
                 <canvas id="cotizacionesAsesoresChart"></canvas>
             </div>
         </div>
@@ -153,6 +141,29 @@
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<style>
+    .chart-btn {
+        padding: 0.5rem 1rem !important;
+        margin: 0 0.25rem !important;
+        border: 1px solid #ddd !important;
+        background: #f0f0f0 !important;
+        border-radius: 4px !important;
+        cursor: pointer !important;
+        font-weight: 500 !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .chart-btn.active {
+        background: #667eea !important;
+        color: white !important;
+        border-color: #667eea !important;
+    }
+    
+    .chart-btn:hover {
+        background: #667eea !important;
+        color: white !important;
+    }
+</style>
 <script>
     let charts = {};
 
@@ -190,20 +201,11 @@
             .then(response => response.json())
             .then(data => {
                 document.getElementById('cotizacionesHoy').textContent = data.cotizaciones_hoy || 0;
-                document.getElementById('cotizacionesHoyTend').textContent = '0%';
-                
                 document.getElementById('pedidosMes').textContent = data.pedidos_mes || 0;
-                document.getElementById('pedidosMesTend').textContent = '0%';
-                
                 document.getElementById('asesoresActivos').textContent = data.total_asesores || 0;
-                
                 document.getElementById('pedidosPendientes').textContent = data.pedidos_pendientes || 0;
-
                 document.getElementById('cotizacionesMes').textContent = data.cotizaciones_mes || 0;
-                document.getElementById('cotizacionesMesTend').textContent = '0%';
-
                 document.getElementById('totalPedidosMes').textContent = data.total_pedidos_mes || 0;
-                document.getElementById('totalPedidosMesTend').textContent = '0%';
             })
             .catch(error => console.error('Error cargando estadísticas:', error));
     }
@@ -238,7 +240,9 @@
                         fill: true,
                         pointBackgroundColor: '#667eea',
                         pointBorderColor: '#fff',
-                        pointBorderWidth: 2
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
                     },
                     {
                         label: 'Pedidos',
@@ -249,7 +253,9 @@
                         fill: true,
                         pointBackgroundColor: '#f5576c',
                         pointBorderColor: '#fff',
-                        pointBorderWidth: 2
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
                     }
                 ]
             },
@@ -259,12 +265,45 @@
                 plugins: {
                     legend: {
                         display: true,
-                        labels: { color: 'var(--text-primary)' }
+                        position: 'top',
+                        labels: { 
+                            color: 'var(--text-primary)',
+                            padding: 15,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        borderColor: '#ddd',
+                        borderWidth: 1,
+                        padding: 10,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) label += ': ';
+                                label += context.parsed.y;
+                                return label;
+                            }
+                        }
                     }
                 },
                 scales: {
-                    y: { beginAtZero: true, ticks: { color: 'var(--text-secondary)' } },
-                    x: { ticks: { color: 'var(--text-secondary)' } }
+                    y: { 
+                        beginAtZero: true, 
+                        ticks: { color: 'var(--text-secondary)' },
+                        grace: 0.1,
+                        grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                    },
+                    x: { 
+                        ticks: { color: 'var(--text-secondary)' },
+                        grid: { display: false }
+                    }
                 }
             }
         });
@@ -284,18 +323,41 @@
                     label: 'Cotizaciones',
                     data: data.asesores_data || [],
                     backgroundColor: '#667eea',
-                    borderRadius: 5
+                    borderRadius: 5,
+                    borderSkipped: false
                 }]
             },
             options: {
                 indexAxis: 'y',
                 responsive: true,
+                maintainAspectRatio: true,
                 plugins: {
-                    legend: { display: false }
+                    legend: { 
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        padding: 10,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return 'Cotizaciones: ' + context.parsed.x;
+                            }
+                        }
+                    }
                 },
                 scales: {
-                    x: { beginAtZero: true, ticks: { color: 'var(--text-secondary)' } },
-                    y: { ticks: { color: 'var(--text-secondary)' } }
+                    x: { 
+                        beginAtZero: true, 
+                        ticks: { color: 'var(--text-secondary)' },
+                        grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                    },
+                    y: { 
+                        ticks: { color: 'var(--text-secondary)' },
+                        grid: { display: false }
+                    }
                 }
             }
         });
@@ -325,20 +387,47 @@
 
         const colores = ['#667eea', '#f5576c', '#f59e0b', '#10b981', '#06b6d4', '#8b5cf6'];
 
+        // Asegurar que tenemos datos
+        const labels = data.estados_labels || [];
+        const chartData = data.estados_data || [];
+
+        // Si no hay datos, mostrar mensaje
+        if (labels.length === 0 || chartData.reduce((a, b) => a + b, 0) === 0) {
+            const container = document.getElementById('estadosPedidosChart').parentElement;
+            container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 20px;">Sin datos para mostrar</p>';
+            return;
+        }
+
         charts.estados = new Chart(ctx, {
             type: 'doughnut',
             data: {
-                labels: data.estados_labels || [],
+                labels: labels,
                 datasets: [{
-                    data: data.estados_data || [],
-                    backgroundColor: colores.slice(0, (data.estados_data || []).length)
+                    data: chartData,
+                    backgroundColor: colores.slice(0, chartData.length),
+                    borderColor: '#fff',
+                    borderWidth: 2
                 }]
             },
             options: {
                 responsive: true,
+                maintainAspectRatio: true,
                 plugins: {
                     legend: {
-                        labels: { color: 'var(--text-primary)' }
+                        position: 'bottom',
+                        labels: { 
+                            color: 'var(--text-primary)',
+                            padding: 15,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        padding: 10,
+                        displayColors: false
                     }
                 }
             }

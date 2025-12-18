@@ -110,7 +110,7 @@ class CrearProcesosParaCotizacionReflectivo
         ]);
 
         if ($prendas->isEmpty()) {
-            Log::warn('⚠️ No hay prendas en el pedido reflectivo', [
+            Log::warning('⚠️ No hay prendas en el pedido reflectivo', [
                 'numero_pedido' => $numeroPedido,
             ]);
             return;

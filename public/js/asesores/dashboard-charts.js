@@ -16,9 +16,6 @@ async function loadDashboardData() {
     try {
         const data = await fetchAPI('/asesores/dashboard-data');
         
-        // Actualizar tendencias en las tarjetas
-        updateStatTrends(data.tendencia);
-        
         // Crear gráficas
         createOrdenesLineChart(data.ordenes_ultimos_30_dias);
         createAsesoresBarChart(data.ordenes_por_asesor);
@@ -29,30 +26,6 @@ async function loadDashboardData() {
         console.error('Error cargando datos del dashboard:', error);
         showToast('Error al cargar los datos del dashboard', 'error');
     }
-}
-
-// ========================================
-// ACTUALIZAR TENDENCIAS EN TARJETAS
-// ========================================
-function updateStatTrends(tendencia) {
-    const trendElements = document.querySelectorAll('.stat-trend');
-    trendElements.forEach(el => {
-        const span = el.querySelector('span');
-        if (span) {
-            span.textContent = `${Math.abs(tendencia).toFixed(1)}%`;
-        }
-        
-        const icon = el.querySelector('i');
-        if (icon) {
-            if (tendencia >= 0) {
-                icon.className = 'fas fa-arrow-up';
-                el.classList.remove('down');
-            } else {
-                icon.className = 'fas fa-arrow-down';
-                el.classList.add('down');
-            }
-        }
-    });
 }
 
 // ========================================
@@ -319,7 +292,7 @@ function updateComparison(actual, anterior, tendencia) {
     const resultPercentage = document.getElementById('resultPercentage');
     const resultLabel = document.getElementById('resultLabel');
     
-    resultPercentage.textContent = `${Math.abs(tendencia).toFixed(1)}%`;
+    resultPercentage.textContent = `${tendencia > 999 ? '+999' : Math.abs(tendencia).toFixed(1)}%`;
     
     if (tendencia >= 0) {
         resultIcon.innerHTML = '<i class="fas fa-arrow-up"></i>';

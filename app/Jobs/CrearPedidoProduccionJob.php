@@ -60,11 +60,32 @@ class CrearPedidoProduccionJob
             ]);
 
             // Obtener y incrementar número de pedido de forma segura
-            $numeroPedido = DB::table('numero_secuencias')
+            $secuenciaRow = DB::table('numero_secuencias')
                 ->where('tipo', 'pedido_produccion')
                 ->lockForUpdate()
-                ->first()
-                ->siguiente;
+                ->first();
+            
+            $numeroPedido = $secuenciaRow->siguiente;
+            
+            \Log::info('🔍 [CrearPedidoProduccionJob] Número obtenido de secuencia', [
+                'secuencia_row' => $secuenciaRow,
+                'numero_pedido_raw' => $numeroPedido,
+                'tipo_numero_pedido' => gettype($numeroPedido),
+                'es_string' => is_string($numeroPedido),
+                'es_int' => is_int($numeroPedido),
+            ]);
+            
+            // ✅ CRÍTICO: Asegurar que sea un entero, no string con prefijo
+            if (is_string($numeroPedido) && str_contains($numeroPedido, 'PEP-')) {
+                // Si viene con prefijo, extraer solo el número
+                $numeroPedido = (int) str_replace('PEP-', '', $numeroPedido);
+                \Log::warning('⚠️ [CrearPedidoProduccionJob] Número tenía prefijo PEP-, se extrajo solo el número', [
+                    'numero_limpio' => $numeroPedido
+                ]);
+            } else {
+                // Convertir a entero para asegurar
+                $numeroPedido = (int) $numeroPedido;
+            }
 
             // Incrementar para el próximo
             DB::table('numero_secuencias')
@@ -79,14 +100,19 @@ class CrearPedidoProduccionJob
 
             \Log::info('🔍 [CrearPedidoProduccionJob] Datos a guardar en PedidoProduccion', [
                 'numero_pedido' => $numeroPedido,
+                'tipo_numero_pedido' => gettype($numeroPedido),
                 'forma_de_pago' => $this->dto->formaDePago,
                 'cliente' => $this->dto->cliente,
                 'asesor_id' => $this->asesorId,
             ]);
 
+            // Obtener número de cotización
+            $cotizacion = Cotizacion::findOrFail($this->dto->cotizacionId);
+            
             // Crear pedido con número generado
             $pedido = PedidoProduccion::create([
                 'cotizacion_id' => $this->dto->cotizacionId,
+                'numero_cotizacion' => $cotizacion->numero_cotizacion,
                 'asesor_id' => $this->asesorId,
                 'numero_pedido' => $numeroPedido,
                 'cliente' => $this->dto->cliente,

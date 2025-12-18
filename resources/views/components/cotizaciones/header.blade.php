@@ -25,10 +25,10 @@
                 </svg>
                 <input type="text" id="buscador" 
                     placeholder="{{ $searchPlaceholder ?? 'Buscar por cliente...' }}" 
-                    onkeypress="if(event.key==='Enter') { window.location.href = '{{ $searchUrl ?? '#' }}?search=' + this.value; return false; }" 
+                    onkeypress="if(event.key==='Enter') { const searchValue = encodeURIComponent(this.value); window.location.href = '{{ $searchUrl ?? '#' }}?search=' + searchValue; return false; }" 
                     style="padding: 10px 12px 10px 35px; border: none; border-radius: 6px; width: 100%; font-size: 0.9rem; background: rgba(255,255,255,0.95); transition: all 0.3s;" 
                     onfocus="this.style.background='white'; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.1)'" 
-                    onblur="this.style.background='rgba(255,255,255,0.95)'; this.style.boxShadow='none'"">
+                    onblur="this.style.background='rgba(255,255,255,0.95)'; this.style.boxShadow='none'">
             </div>
             
             <!-- BOTÓN ACCIÓN -->
@@ -47,3 +47,15 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const searchParam = urlParams.get('search');
+        const buscadorInput = document.getElementById('buscador');
+        
+        if (searchParam && buscadorInput) {
+            buscadorInput.value = decodeURIComponent(searchParam);
+        }
+    });
+</script>

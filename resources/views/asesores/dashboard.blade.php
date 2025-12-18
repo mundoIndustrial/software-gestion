@@ -14,10 +14,7 @@
             <div class="stat-content">
                 <h3>Pedidos Hoy</h3>
                 <p class="stat-value">{{ $stats['pedidos_dia'] }}</p>
-                <span class="stat-trend">
-                    <i class="fas fa-arrow-up"></i>
-                    <span>0%</span>
-                </span>
+                <span class="stat-label">Hoy</span>
             </div>
         </div>
 
@@ -28,10 +25,7 @@
             <div class="stat-content">
                 <h3>Pedidos Este Mes</h3>
                 <p class="stat-value">{{ $stats['pedidos_mes'] }}</p>
-                <span class="stat-trend">
-                    <i class="fas fa-arrow-up"></i>
-                    <span>0%</span>
-                </span>
+                <span class="stat-label">Este mes</span>
             </div>
         </div>
 
@@ -42,10 +36,7 @@
             <div class="stat-content">
                 <h3>Pedidos Este Año</h3>
                 <p class="stat-value">{{ $stats['pedidos_anio'] }}</p>
-                <span class="stat-trend">
-                    <i class="fas fa-arrow-up"></i>
-                    <span>0%</span>
-                </span>
+                <span class="stat-label">Este año</span>
             </div>
         </div>
 

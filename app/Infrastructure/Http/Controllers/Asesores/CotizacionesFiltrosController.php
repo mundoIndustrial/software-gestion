@@ -4,6 +4,7 @@ namespace App\Infrastructure\Http\Controllers\Asesores;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cotizacion;
+use App\Helpers\EstadoHelper;
 use Illuminate\Support\Facades\Auth;
 
 class CotizacionesFiltrosController extends Controller
@@ -22,31 +23,21 @@ class CotizacionesFiltrosController extends Controller
 
         // Obtener cotizaciones del usuario con relación tipoCotizacion
         $cotizaciones = Cotizacion::where('asesor_id', $usuarioId)
-            ->with('tipoCotizacion')
+            ->with(['tipoCotizacion', 'cliente'])
             ->get();
 
         \Log::info('CotizacionesFiltrosController: Obteniendo valores de filtro', [
             'usuario_id' => $usuarioId,
             'total_cotizaciones' => $cotizaciones->count(),
             'cotizaciones_ids' => $cotizaciones->pluck('id')->toArray(),
+            'estados_en_bd' => $cotizaciones->pluck('estado')->unique()->toArray(),
         ]);
 
         // Mapeo de códigos a nombres legibles
         $tiposMap = [
-            'P' => 'Prenda',
+            'PL' => 'Combinada',
             'L' => 'Logo',
-            'PL' => 'Prenda/Logo',
-        ];
-
-        // Mapeo de estados a nombres legibles
-        $estadosMap = [
-            'BORRADOR' => 'Borrador',
-            'ENVIADA_CONTADOR' => 'Enviada a Contador',
-            'APROBADA_CONTADOR' => 'Aprobada por Contador',
-            'ENVIADA_APROBADOR' => 'Enviada a Aprobador',
-            'APROBADA_APROBADOR' => 'Aprobada por Aprobador',
-            'ACEPTADA' => 'Aceptada',
-            'RECHAZADA' => 'Rechazada',
+            'RF' => 'Reflectivo',
         ];
 
         $datos = [
@@ -60,16 +51,27 @@ class CotizacionesFiltrosController extends Controller
                 ->unique()
                 ->values()
                 ->toArray(),
-            'clientes' => $cotizaciones->pluck('cliente')
+            'clientes' => $cotizaciones->map(function($cot) {
+                    if (is_object($cot->cliente)) {
+                        return $cot->cliente->nombre ?? '';
+                    }
+                    return $cot->cliente ?? '';
+                })
+                ->filter()
                 ->unique()
                 ->values()
                 ->toArray(),
-            'tipos' => $cotizaciones->map(fn($c) => $tiposMap[$c->tipoCotizacion?->codigo ?? 'P'] ?? 'Prenda')
+            'tipos' => $cotizaciones->map(function($c) use ($tiposMap) {
+                    $codigo = $c->tipoCotizacion?->codigo ?? 'PL'; // Default a Combinada
+                    return $tiposMap[$codigo] ?? $codigo;
+                })
+                ->filter(fn($v) => $v !== null && $v !== '')
                 ->unique()
                 ->values()
                 ->toArray(),
             'estados' => $cotizaciones->pluck('estado')
-                ->map(fn($e) => $estadosMap[$e] ?? $e)
+                ->map(fn($e) => EstadoHelper::labelCotizacion($e))
+                ->filter(fn($v) => $v !== null && $v !== '')
                 ->unique()
                 ->values()
                 ->toArray(),

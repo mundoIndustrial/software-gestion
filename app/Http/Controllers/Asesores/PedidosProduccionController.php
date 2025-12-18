@@ -709,7 +709,7 @@ class PedidosProduccionController extends Controller
 
     /**
      * Generar número de pedido único usando secuencia centralizada
-     * Patrón: PEP-XXXXXX (6 dígitos)
+     * Retorna solo el número entero (sin prefijo PEP-)
      * Usa DB lock para prevenir race conditions
      */
     private function generarNumeroPedido()
@@ -723,7 +723,7 @@ class PedidosProduccionController extends Controller
             if (!$secuencia) {
                 \Log::warning('Secuencia pedidos_produccion_universal NO ENCONTRADA. Usando fallback.');
                 $ultimoPedido = PedidoProduccion::max('numero_pedido') ?? 0;
-                return 'PEP-' . str_pad($ultimoPedido + 1, 6, '0', STR_PAD_LEFT);
+                return (int) ($ultimoPedido + 1); // ✅ Retornar solo el número
             }
 
             $siguiente = $secuencia->siguiente;
@@ -736,10 +736,12 @@ class PedidosProduccionController extends Controller
                     'updated_at' => now(),
                 ]);
 
-            $numeroPedido = 'PEP-' . str_pad($siguiente, 6, '0', STR_PAD_LEFT);
+            // ✅ Retornar solo el número entero (sin prefijo PEP-)
+            $numeroPedido = (int) $siguiente;
             
             \Log::info('Número de pedido generado', [
                 'numero' => $numeroPedido,
+                'tipo' => gettype($numeroPedido),
                 'secuencia_anterior' => $siguiente,
                 'secuencia_nueva' => $siguiente + 1,
             ]);

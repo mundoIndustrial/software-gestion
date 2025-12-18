@@ -55,9 +55,7 @@
                                 @elseif($column['key'] === 'tipo')
                                     <td style="padding: 12px;" data-filter-column="tipo">
                                         <span style="background: #e3f2fd; color: #1e40af; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">
-                                            @if($cot->tipo === 'P')
-                                                Prenda
-                                            @elseif($cot->tipo === 'L')
+                                            @if($cot->tipo === 'L')
                                                 Logo
                                             @elseif($cot->tipo === 'PL')
                                                 Combinada
