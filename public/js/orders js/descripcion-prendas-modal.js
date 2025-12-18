@@ -116,7 +116,8 @@ function renderDescripcionPrendasEnModal(content) {
         .replace(/DESCRIPCION:/gi, '<strong>DESCRIPCION:</strong>')
         .replace(/Bolsillos:/gi, '<strong>Bolsillos:</strong>')
         .replace(/Reflectivo:/gi, '<strong>Reflectivo:</strong>')
-        .replace(/Tallas:/gi, '<strong style="color: #d32f2f;">Tallas:</strong>');
+        .replace(/Tallas:/gi, '<strong style="color: #d32f2f;">Tallas:</strong>')
+        .replace(/Talla:/gi, '<strong style="color: #d32f2f;">Talla:</strong>');
     
     console.log('✅ Descripción renderizada en modal');
 }

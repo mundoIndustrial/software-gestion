@@ -1024,6 +1024,72 @@
                 <div class="fotos-preview-reflectivo" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 0.75rem;"></div>
             </div>
 
+            <!-- TALLAS A COTIZAR -->
+            <div class="producto-section">
+                <div class="section-title"><i class="fas fa-ruler"></i> TALLAS A COTIZAR</div>
+                <div class="form-row">
+                    <div class="form-col full">
+                        <!-- Input oculto para guardar el género seleccionado -->
+                        <input type="hidden" name="productos_reflectivo[][variantes][genero_id]" class="genero-id-hidden-reflectivo" value="">
+                        
+                        <!-- Fila 1: Selectores de tipo, género y modo -->
+                        <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;">
+                            <select class="talla-tipo-select-reflectivo" onchange="actualizarSelectTallasReflectivo(this)" style="padding: 0.6rem 0.8rem; border: 2px solid #0066cc; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; color: #0066cc; font-weight: 600; max-width: 300px;">
+                                <option value="">Selecciona tipo de talla</option>
+                                <option value="letra">LETRAS (XS, S, M, L, XL...)</option>
+                                <option value="numero">NÚMEROS (DAMA/CABALLERO)</option>
+                            </select>
+                            
+                            <select class="talla-genero-select-reflectivo" style="padding: 0.6rem 0.8rem; border: 2px solid #0066cc; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; color: #0066cc; font-weight: 600; max-width: 200px; display: none;">
+                                <option value="">Selecciona género</option>
+                                <option value="dama">Dama</option>
+                                <option value="caballero">Caballero</option>
+                            </select>
+                            
+                            <select class="talla-modo-select-reflectivo" style="padding: 0.6rem 0.8rem; border: 2px solid #0066cc; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; color: #0066cc; font-weight: 600; max-width: 200px; display: none;">
+                                <option value="">Selecciona modo</option>
+                                <option value="manual">Manual</option>
+                                <option value="rango">Rango (Desde-Hasta)</option>
+                            </select>
+                            
+                            <!-- Selectores de rango (aparecen cuando se selecciona Rango) -->
+                            <div class="talla-rango-selectors-reflectivo" style="display: none; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
+                                <select class="talla-desde-reflectivo" style="padding: 0.6rem 0.8rem; border: 2px solid #0066cc; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; color: #0066cc; font-weight: 600; max-width: 150px;">
+                                    <option value="">Desde</option>
+                                </select>
+                                <span style="color: #0066cc; font-weight: 600;">hasta</span>
+                                <select class="talla-hasta-reflectivo" style="padding: 0.6rem 0.8rem; border: 2px solid #0066cc; border-radius: 6px; font-size: 0.85rem; cursor: pointer; background-color: white; color: #0066cc; font-weight: 600; max-width: 150px;">
+                                    <option value="">Hasta</option>
+                                </select>
+                                <button type="button" class="btn-agregar-rango-reflectivo" onclick="agregarTallasRangoReflectivo(this)" style="padding: 0.6rem 1rem; background: linear-gradient(135deg, #0066cc, #0052a3); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 1rem; white-space: nowrap;">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Fila 2: Botones de tallas (Modo Manual) -->
+                        <div class="talla-botones-reflectivo" style="display: none; margin-bottom: 1.5rem;">
+                            <p style="margin: 0 0 0.75rem 0; font-size: 0.85rem; font-weight: 600; color: #0066cc;">Selecciona tallas:</p>
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;">
+                                <div class="talla-botones-container-reflectivo" style="display: flex; flex-wrap: wrap; gap: 0.5rem; flex: 1;">
+                                </div>
+                                <button type="button" class="btn-agregar-tallas-seleccionadas-reflectivo" onclick="agregarTallasSeleccionadasReflectivo(this)" style="padding: 0.6rem 1rem; background: linear-gradient(135deg, #0066cc, #0052a3); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 1rem; white-space: nowrap; flex-shrink: 0;">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Fila 3: Tallas agregadas -->
+                        <div class="tallas-section-reflectivo" style="display: none; padding-top: 1rem; border-top: 1px solid #e0e0e0;">
+                            <p style="margin: 0 0 0.75rem 0; font-size: 0.85rem; font-weight: 600; color: #0066cc;">Tallas seleccionadas:</p>
+                            <div class="tallas-agregadas-reflectivo" style="display: flex; flex-wrap: wrap; gap: 0.5rem; min-height: 35px;">
+                            </div>
+                            <input type="hidden" name="productos_reflectivo[][tallas]" class="tallas-hidden-reflectivo" value="">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- UBICACIÓN -->
             <div class="producto-section">
                 <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="toggleSeccionReflectivo(this)">
@@ -1058,31 +1124,138 @@ function abrirModalEspecificaciones() {
     console.log('📋 Especificaciones guardadas en campo:', especificacionesGuardadas);
     
     // Si hay especificaciones guardadas, cargarlas en los checkboxes y observaciones
-    if (especificacionesGuardadas && especificacionesGuardadas !== '{}' && especificacionesGuardadas !== '[]') {
+    if (especificacionesGuardadas && especificacionesGuardadas !== '{}' && especificacionesGuardadas !== '[]' && especificacionesGuardadas !== '') {
         try {
             const datos = JSON.parse(especificacionesGuardadas);
             console.log('✅ Datos parseados:', datos);
+            console.log('📊 Estructura de datos:', Object.keys(datos));
             
-            // Cargar checkboxes
-            Object.keys(datos).forEach((key) => {
-                const element = document.querySelector(`[name="${key}"]`);
-                if (element) {
-                    if (element.type === 'checkbox') {
-                        element.checked = datos[key] === '1' || datos[key] === true;
-                        console.log(`  ✓ Checkbox ${key}: ${element.checked}`);
-                    } else {
-                        element.value = datos[key] || '';
-                        console.log(`  ✓ Input ${key}: ${element.value}`);
-                    }
+            // FORMATO 1: Estructura con forma_pago, disponibilidad, etc (desde cotizaciones.especificaciones)
+            // FORMATO 2: Estructura tabla_orden[field] (desde modal anterior)
+            
+            // Si tiene estructura de array (forma_pago, disponibilidad, etc)
+            if (datos.forma_pago || datos.disponibilidad || datos.regimen) {
+                console.log('📦 Detectado FORMATO COTIZACIONES - JSON estructurado');
+                
+                // Procesar FORMA_PAGO
+                if (datos.forma_pago && Array.isArray(datos.forma_pago)) {
+                    console.log('💳 Procesando forma_pago:', datos.forma_pago);
+                    datos.forma_pago.forEach((pago) => {
+                        // Normalizar el valor para buscar checkbox
+                        let valorNormalizado = pago.valor.toLowerCase();
+                        if (valorNormalizado === 'crédito' || valorNormalizado === 'credito') {
+                            valorNormalizado = 'credito';
+                        }
+                        
+                        const checkboxName = `tabla_orden[${valorNormalizado}]`;
+                        let checkbox = document.querySelector(`[name="${checkboxName}"]`);
+                        
+                        console.log(`  🔍 Buscando checkbox con nombre: "${checkboxName}" → ${checkbox ? 'ENCONTRADO' : 'NO ENCONTRADO'}`);
+                        
+                        if (checkbox) {
+                            checkbox.checked = true;
+                            console.log(`  ✓ Checkbox forma_pago "${pago.valor}" marcado`);
+                            
+                            // Cargar observación si existe
+                            if (pago.observacion) {
+                                let obsName;
+                                if (valorNormalizado === 'contado') {
+                                    obsName = 'tabla_orden[pago_contado_obs]';
+                                } else if (valorNormalizado === 'credito') {
+                                    obsName = 'tabla_orden[pago_credito_obs]';
+                                }
+                                
+                                const obsInput = document.querySelector(`[name="${obsName}"]`);
+                                if (obsInput) {
+                                    obsInput.value = pago.observacion;
+                                    console.log(`  ✓ Observación "${pago.valor}" cargada: "${pago.observacion}"`);
+                                }
+                            }
+                        }
+                    });
                 }
-            });
+                
+                // Procesar DISPONIBILIDAD
+                if (datos.disponibilidad && Array.isArray(datos.disponibilidad)) {
+                    console.log('📦 Procesando disponibilidad:', datos.disponibilidad);
+                    datos.disponibilidad.forEach((disp) => {
+                        const valorNormalizado = disp.valor.toLowerCase();
+                        const checkboxName = `tabla_orden[${valorNormalizado}]`;
+                        const checkbox = document.querySelector(`[name="${checkboxName}"]`);
+                        
+                        console.log(`  🔍 Buscando checkbox con nombre: "${checkboxName}" → ${checkbox ? 'ENCONTRADO' : 'NO ENCONTRADO'}`);
+                        
+                        if (checkbox) {
+                            checkbox.checked = true;
+                            console.log(`  ✓ Checkbox disponibilidad "${disp.valor}" marcado`);
+                            
+                            if (disp.observacion) {
+                                const obsName = `tabla_orden[${valorNormalizado}_obs]`;
+                                const obsInput = document.querySelector(`[name="${obsName}"]`);
+                                if (obsInput) {
+                                    obsInput.value = disp.observacion;
+                                    console.log(`  ✓ Observación "${disp.valor}" cargada: "${disp.observacion}"`);
+                                }
+                            }
+                        }
+                    });
+                }
+                
+                // Procesar RÉGIMEN
+                if (datos.regimen && Array.isArray(datos.regimen)) {
+                    console.log('🏢 Procesando régimen:', datos.regimen);
+                    datos.regimen.forEach((reg) => {
+                        const valorNormalizado = reg.valor.toLowerCase();
+                        const checkboxName = `tabla_orden[${valorNormalizado}]`;
+                        const checkbox = document.querySelector(`[name="${checkboxName}"]`);
+                        
+                        console.log(`  🔍 Buscando checkbox con nombre: "${checkboxName}" → ${checkbox ? 'ENCONTRADO' : 'NO ENCONTRADO'}`);
+                        
+                        if (checkbox) {
+                            checkbox.checked = true;
+                            console.log(`  ✓ Checkbox régimen "${reg.valor}" marcado`);
+                            
+                            if (reg.observacion) {
+                                let obsName;
+                                if (valorNormalizado === 'común' || valorNormalizado === 'comun') {
+                                    obsName = 'tabla_orden[regimen_comun_obs]';
+                                } else if (valorNormalizado === 'simplificado') {
+                                    obsName = 'tabla_orden[regimen_simp_obs]';
+                                }
+                                
+                                const obsInput = document.querySelector(`[name="${obsName}"]`);
+                                if (obsInput) {
+                                    obsInput.value = reg.observacion;
+                                    console.log(`  ✓ Observación régimen "${reg.valor}" cargada: "${reg.observacion}"`);
+                                }
+                            }
+                        }
+                    });
+                }
+            } else {
+                // FORMATO 2: Estructura tabla_orden[field] (anterior)
+                console.log('📋 Detectado FORMATO ANTERIOR - tabla_orden[field]');
+                
+                Object.keys(datos).forEach((key) => {
+                    const element = document.querySelector(`[name="${key}"]`);
+                    if (element) {
+                        if (element.type === 'checkbox') {
+                            element.checked = datos[key] === '1' || datos[key] === true;
+                            console.log(`  ✓ Checkbox ${key}: ${element.checked}`);
+                        } else {
+                            element.value = datos[key] || '';
+                            console.log(`  ✓ Input ${key}: ${element.value}`);
+                        }
+                    }
+                });
+            }
         } catch (e) {
             console.error('❌ Error al cargar especificaciones:', e);
         }
     } else {
         console.log('ℹ️ No hay especificaciones guardadas, limpiando checkboxes');
         // Limpiar todos los checkboxes si no hay especificaciones guardadas
-        document.querySelectorAll('[name^="reflectivo_"]').forEach((element) => {
+        document.querySelectorAll('[name^="tabla_orden"]').forEach((element) => {
             if (element.type === 'checkbox') {
                 element.checked = false;
             } else if (element.type === 'text') {
@@ -1106,30 +1279,150 @@ function cerrarModalEspecificaciones() {
 
 // FUNCIÓN PARA GUARDAR ESPECIFICACIONES
 function guardarEspecificacionesReflectivo() {
-    const especificaciones = {};
+    console.log('💾 Guardando especificaciones del modal...');
     
-    // Recopilar datos de checkboxes y observaciones del modal
-    // Buscar todos los inputs dentro del modal (checkboxes y text inputs)
+    // Estructura final en formato cotizaciones.especificaciones
+    const especificaciones = {
+        forma_pago: [],
+        disponibilidad: [],
+        regimen: [],
+        se_ha_vendido: [],
+        ultima_venta: [],
+        flete: []
+    };
+    
     const modal = document.getElementById('modalEspecificaciones');
-    if (modal) {
-        modal.querySelectorAll('input[type="checkbox"], input[type="text"]').forEach((element) => {
-            if (element.name) {
-                if (element.type === 'checkbox') {
-                    especificaciones[element.name] = element.checked ? '1' : '0';
-                } else if (element.type === 'text') {
-                    especificaciones[element.name] = element.value || '';
-                }
+    if (!modal) {
+        console.error('❌ Modal no encontrado');
+        return;
+    }
+    
+    // PROCESAR FORMA_PAGO
+    console.log('💳 Procesando FORMA_PAGO...');
+    const formaPagoCheckboxes = [
+        { checkbox: 'contado', label: 'Contado', obsField: 'pago_contado_obs' },
+        { checkbox: 'credito', label: 'Crédito', obsField: 'pago_credito_obs' }
+    ];
+    
+    formaPagoCheckboxes.forEach(item => {
+        const checkbox = modal.querySelector(`[name="tabla_orden[${item.checkbox}]"]`);
+        if (checkbox && checkbox.checked) {
+            const obsInput = modal.querySelector(`[name="tabla_orden[${item.obsField}]"]`);
+            especificaciones.forma_pago.push({
+                valor: item.label,
+                observacion: obsInput ? obsInput.value : ''
+            });
+            console.log(`  ✓ ${item.label} agregado`);
+        }
+    });
+    
+    // PROCESAR DISPONIBILIDAD
+    console.log('📦 Procesando DISPONIBILIDAD...');
+    const disponibilidadCheckboxes = [
+        { checkbox: 'bodega', label: 'Bodega', obsField: 'bodega_obs' },
+        { checkbox: 'cucuta', label: 'Cúcuta', obsField: 'cucuta_obs' },
+        { checkbox: 'lafayette', label: 'Lafayette', obsField: 'lafayette_obs' },
+        { checkbox: 'fabrica', label: 'Fábrica', obsField: 'fabrica_obs' }
+    ];
+    
+    disponibilidadCheckboxes.forEach(item => {
+        const checkbox = modal.querySelector(`[name="tabla_orden[${item.checkbox}]"]`);
+        if (checkbox && checkbox.checked) {
+            const obsInput = modal.querySelector(`[name="tabla_orden[${item.obsField}]"]`);
+            especificaciones.disponibilidad.push({
+                valor: item.label,
+                observacion: obsInput ? obsInput.value : ''
+            });
+            console.log(`  ✓ ${item.label} agregado`);
+        }
+    });
+    
+    // PROCESAR RÉGIMEN
+    console.log('🏢 Procesando RÉGIMEN...');
+    const regimenCheckboxes = [
+        { checkbox: 'comun', label: 'Común', obsField: 'regimen_comun_obs' },
+        { checkbox: 'simplificado', label: 'Simplificado', obsField: 'regimen_simp_obs' }
+    ];
+    
+    regimenCheckboxes.forEach(item => {
+        const checkbox = modal.querySelector(`[name="tabla_orden[${item.checkbox}]"]`);
+        if (checkbox && checkbox.checked) {
+            const obsInput = modal.querySelector(`[name="tabla_orden[${item.obsField}]"]`);
+            especificaciones.regimen.push({
+                valor: item.label,
+                observacion: obsInput ? obsInput.value : ''
+            });
+            console.log(`  ✓ ${item.label} agregado`);
+        }
+    });
+    
+    // PROCESAR SE HA VENDIDO
+    console.log('📊 Procesando SE HA VENDIDO...');
+    const tbodySeHaVendido = modal.querySelector('#tbody_se_ha_vendido');
+    if (tbodySeHaVendido) {
+        const rows = tbodySeHaVendido.querySelectorAll('tr');
+        rows.forEach(row => {
+            const valorInput = row.querySelector('input[name*="se_ha_vendido_item"]');
+            const checkbox = row.querySelector('input[type="checkbox"][name*="se_ha_vendido"]');
+            const obsInput = row.querySelector('input[name*="se_ha_vendido_obs"]');
+            
+            if (valorInput && valorInput.value.trim() && checkbox && checkbox.checked) {
+                especificaciones.se_ha_vendido.push({
+                    valor: valorInput.value.trim(),
+                    observacion: obsInput ? obsInput.value.trim() : ''
+                });
+                console.log(`  ✓ ${valorInput.value.trim()} agregado`);
             }
         });
     }
     
-    // Guardar como JSON en el campo oculto
+    // PROCESAR ÚLTIMA VENTA
+    console.log('💰 Procesando ÚLTIMA VENTA...');
+    const tbodyUltimaVenta = modal.querySelector('#tbody_ultima_venta');
+    if (tbodyUltimaVenta) {
+        const rows = tbodyUltimaVenta.querySelectorAll('tr');
+        rows.forEach(row => {
+            const valorInput = row.querySelector('input[name*="ultima_venta_item"]');
+            const checkbox = row.querySelector('input[type="checkbox"][name*="ultima_venta"]');
+            const obsInput = row.querySelector('input[name*="ultima_venta_obs"]');
+            
+            if (valorInput && valorInput.value.trim() && checkbox && checkbox.checked) {
+                especificaciones.ultima_venta.push({
+                    valor: valorInput.value.trim(),
+                    observacion: obsInput ? obsInput.value.trim() : ''
+                });
+                console.log(`  ✓ ${valorInput.value.trim()} agregado`);
+            }
+        });
+    }
+    
+    // PROCESAR FLETE
+    console.log('🚚 Procesando FLETE...');
+    const tbodyFlete = modal.querySelector('#tbody_flete');
+    if (tbodyFlete) {
+        const rows = tbodyFlete.querySelectorAll('tr');
+        rows.forEach(row => {
+            const valorInput = row.querySelector('input[name*="flete_item"]');
+            const checkbox = row.querySelector('input[type="checkbox"][name*="flete"]');
+            const obsInput = row.querySelector('input[name*="flete_obs"]');
+            
+            if (valorInput && valorInput.value.trim() && checkbox && checkbox.checked) {
+                especificaciones.flete.push({
+                    valor: valorInput.value.trim(),
+                    observacion: obsInput ? obsInput.value.trim() : ''
+                });
+                console.log(`  ✓ ${valorInput.value.trim()} agregado`);
+            }
+        });
+    }
+    
+    // Convertir a JSON string y guardar en campo oculto
     const especificacionesJSON = JSON.stringify(especificaciones);
     document.getElementById('especificaciones').value = especificacionesJSON;
     
-    console.log('💾 Especificaciones guardadas en campo oculto:', especificacionesJSON);
-    console.log('📋 Datos guardados:', especificaciones);
-    console.log('📊 Total de elementos capturados:', Object.keys(especificaciones).length);
+    console.log('✅ Especificaciones guardadas en campo oculto');
+    console.log('📊 Estructura final:', especificaciones);
+    console.log('📋 JSON guardado:', especificacionesJSON);
     
     cerrarModalEspecificaciones();
 }
@@ -1332,10 +1625,22 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
         const tipoPrenda = card.querySelector('input[name="productos_reflectivo[][tipo_prenda]"]')?.value.trim() || '';
         const descripcion = card.querySelector('textarea[name="productos_reflectivo[][descripcion]"]')?.value.trim() || '';
         
+        // Recopilar tallas de esta prenda
+        const tallasHidden = card.querySelector('.tallas-hidden-reflectivo');
+        const tallas = tallasHidden ? tallasHidden.value.split(',').map(t => t.trim()).filter(t => t) : [];
+        
+        console.log('📦 PRENDA RECOPILADA:', {
+            tipo: tipoPrenda,
+            descripcion: descripcion,
+            tallas: tallas,
+            tallasHiddenValue: tallasHidden?.value
+        });
+        
         if (tipoPrenda) {
             prendas.push({
                 tipo: tipoPrenda,
-                descripcion: descripcion
+                descripcion: descripcion,
+                tallas: tallas
             });
         }
     });
@@ -1387,12 +1692,15 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
     formData.append('tipo_venta_reflectivo', document.getElementById('header-tipo-venta').value);
     
     // DEBUG: Log de datos que se envían
+    // DEBUG: Log de datos que se envían
     console.log('📦 DATOS QUE SE ENVIARÁN:');
     console.log('   cliente:', cliente);
     console.log('   fecha:', fecha);
     console.log('   action:', action);
     console.log('   tipo:', 'RF');
     console.log('   tipo_venta:', document.getElementById('header-tipo-venta').value);
+    console.log('   prendas completas:', JSON.stringify(prendas, null, 2));
+    
     formData.append('prendas', JSON.stringify(prendas)); // Enviar como JSON string
     formData.append('especificaciones', document.getElementById('especificaciones').value || '');
     formData.append('descripcion_reflectivo', document.getElementById('descripcion_reflectivo')?.value || 'Reflectivo');
@@ -1469,25 +1777,33 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
 
         if (result.success) {
             // Mostrar modal de éxito
-            const titulo = action === 'borrador' ? 'Cotización guardada como borrador' : 'Cotización enviada al contador';
+            const titulo = action === 'borrador' ? 'Cotización guardada como borrador ✓' : 'Cotización enviada al contador ✓';
             const mensaje = action === 'borrador' 
                 ? 'Tu cotización ha sido guardada correctamente como borrador. Podrás seguir editándola cuando lo necesites.'
                 : 'Tu cotización ha sido enviada al contador para su revisión y aprobación.';
             
-            mostrarModalExito(titulo, mensaje, result.data?.cotizacion?.numero_cotizacion, action === 'enviar');
+            const numeroCot = result.data?.cotizacion?.numero_cotizacion || result.numero_cotizacion;
+            console.log('✅ Respuesta exitosa:', {
+                success: true,
+                action: action,
+                numeroCotizacion: numeroCot,
+                data: result.data
+            });
+            
+            mostrarModalExito(titulo, mensaje, numeroCot, action === 'enviar');
         } else {
             console.error('❌ Error en respuesta:', result);
             let mensajeError = result.message || 'Error al guardar';
             
             if (result.errors) {
-                console.log('📋 Campos con error:');
+                console.log('📋 Campos con error (errors):');
                 const errores = [];
                 for (const [campo, msgs] of Object.entries(result.errors)) {
                     const mensaje = Array.isArray(msgs) ? msgs[0] : msgs;
                     console.log(`   - ${campo}: ${mensaje}`);
                     errores.push(`${campo}: ${mensaje}`);
                 }
-                mensajeError += '\n\n' + errores.join('\n');
+                mensajeError = 'Errores de validación:\n' + errores.join('\n');
             } else if (result.errores) {
                 console.log('📋 Campos con error (errores):');
                 const errores = [];
@@ -1496,15 +1812,23 @@ document.getElementById('cotizacionReflectivoForm').addEventListener('submit', a
                     console.log(`   - ${campo}: ${mensaje}`);
                     errores.push(`${campo}: ${mensaje}`);
                 }
-                mensajeError += '\n\n' + errores.join('\n');
+                mensajeError = 'Errores:\n' + errores.join('\n');
             }
             
-            alert('❌ Error:\n' + mensajeError);
-            console.error('Errores detallados:', result);
+            console.error('❌ Error completo:', {
+                success: false,
+                message: result.message,
+                errors: result.errors,
+                errores: result.errores,
+                status: response.status
+            });
+            
+            // Mostrar error de forma más legible
+            alert(`❌ ${mensajeError}`);
         }
     } catch (error) {
-        alert('❌ Error de conexión: ' + error.message);
-        console.error('Error:', error);
+        console.error('❌ Error de conexión:', error);
+        alert(`❌ Error de conexión: ${error.message}\n\nVerifica la consola para más detalles.`);
     }
 });
 
@@ -1850,6 +2174,441 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('ℹ️ No hay datos iniciales, agregando prenda por defecto');
         agregarProductoPrenda();
     }
+
+    // ============ FUNCIONES PARA TALLAS EN REFLECTIVO ============
+
+    /**
+     * Actualiza el input oculto genero_id con el género seleccionado
+     */
+    window.actualizarGeneroSeleccionadoReflectivo = function(select) {
+        const productoSection = select.closest('.producto-section');
+        if (!productoSection) {
+            console.warn('⚠️ No se encontró .producto-section para actualizar genero_id');
+            return;
+        }
+        
+        const generoInput = productoSection.querySelector('.genero-id-hidden-reflectivo');
+        if (!generoInput) {
+            console.warn('⚠️ No se encontró .genero-id-hidden-reflectivo');
+            return;
+        }
+        
+        const generoValue = select.value;
+        console.log('🔵 Género seleccionado:', generoValue);
+        
+        // Mapear valores de género a IDs
+        let generoId = '';
+        if (generoValue === 'dama') {
+            generoId = '1';
+        } else if (generoValue === 'caballero') {
+            generoId = '2';
+        }
+        
+        generoInput.value = generoId;
+        console.log('✅ genero_id actualizado a:', generoId);
+    };
+
+    // Mapeos de tallas por tipo y género (copiado de tallas.js)
+    const TALLAS_LETRAS = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+    const TALLAS_NUMEROS_DAMA = ['2', '4', '6', '8', '10', '12', '14', '16', '18', '20', '22', '24', '26', '28'];
+    const TALLAS_NUMEROS_CABALLERO = ['30', '32', '34', '36', '38', '40', '42', '44', '46', '48', '50', '52', '54', '56'];
+
+    window.actualizarSelectTallasReflectivo = function(select) {
+        console.log('🔵 actualizarSelectTallasReflectivo() llamado');
+        
+        const container = select.closest('.producto-section');
+        const tallaBotones = container.querySelector('.talla-botones-reflectivo');
+        const botonesDiv = container.querySelector('.talla-botones-container-reflectivo');
+        const generoSelect = container.querySelector('.talla-genero-select-reflectivo');
+        const modoSelect = container.querySelector('.talla-modo-select-reflectivo');
+        const tallaRangoSelectors = container.querySelector('.talla-rango-selectors-reflectivo');
+        const tipo = select.value;
+        
+        console.log('📋 Tipo seleccionado:', tipo);
+        
+        // LIMPIAR COMPLETAMENTE TODO
+        botonesDiv.innerHTML = '';
+        tallaBotones.style.display = 'none';
+        tallaRangoSelectors.style.display = 'none';
+        modoSelect.style.display = 'none';
+        generoSelect.style.display = 'none';
+        generoSelect.value = '';
+        modoSelect.value = '';
+        
+        // Remover event listeners anteriores
+        if (modoSelect._handlerLetras) {
+            modoSelect.removeEventListener('change', modoSelect._handlerLetras);
+            modoSelect._handlerLetras = null;
+        }
+        if (modoSelect._handlerNumeros) {
+            modoSelect.removeEventListener('change', modoSelect._handlerNumeros);
+            modoSelect._handlerNumeros = null;
+        }
+        if (modoSelect._handler) {
+            modoSelect.removeEventListener('change', modoSelect._handler);
+            modoSelect._handler = null;
+        }
+        if (generoSelect._handlerLetras) {
+            generoSelect.removeEventListener('change', generoSelect._handlerLetras);
+            generoSelect._handlerLetras = null;
+        }
+        if (generoSelect._handler) {
+            generoSelect.removeEventListener('change', generoSelect._handler);
+            generoSelect._handler = null;
+        }
+        
+        if (tipo === 'letra') {
+            console.log('📝 Configurando LETRAS');
+            // LETRAS muestra género y modo
+            generoSelect.style.display = 'block';
+            modoSelect.style.display = 'block';
+            modoSelect.value = 'manual';
+            
+            // Event listener para modo
+            modoSelect._handlerLetras = function() {
+                console.log('📝 Modo cambiado para LETRAS:', this.value);
+                actualizarModoLetrasReflectivo(container, this.value);
+            };
+            modoSelect.addEventListener('change', modoSelect._handlerLetras);
+            
+            // Mostrar botones de LETRAS en manual
+            tallaBotones.style.display = 'block';
+            tallaRangoSelectors.style.display = 'none';
+            
+            TALLAS_LETRAS.forEach(talla => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = talla;
+                btn.className = 'talla-btn';
+                btn.dataset.talla = talla;
+                btn.style.cssText = 'padding: 0.5rem 1rem; background: white; color: #0066cc; border: 2px solid #0066cc; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s ease;';
+                btn.onmouseover = function() { if (!this.classList.contains('activo')) this.style.background = '#e6f0ff'; };
+                btn.onmouseout = function() { if (!this.classList.contains('activo')) this.style.background = 'white'; };
+                btn.onclick = function(e) {
+                    e.preventDefault();
+                    this.classList.toggle('activo');
+                    if (this.classList.contains('activo')) {
+                        this.style.background = '#0066cc';
+                        this.style.color = 'white';
+                    } else {
+                        this.style.background = 'white';
+                        this.style.color = '#0066cc';
+                    }
+                };
+                botonesDiv.appendChild(btn);
+            });
+            console.log('✅ Botones de LETRAS creados');
+            
+        } else if (tipo === 'numero') {
+            console.log('🔢 Configurando NÚMEROS');
+            generoSelect.style.display = 'block';
+            
+            generoSelect._handler = function() {
+                console.log('🔢 Género seleccionado (NÚMEROS):', this.value);
+                actualizarBotonesPorGeneroReflectivo(container, this.value);
+            };
+            generoSelect.addEventListener('change', generoSelect._handler);
+        }
+    };
+    
+    window.actualizarModoLetrasReflectivo = function(container, modo) {
+        const tallaBotones = container.querySelector('.talla-botones-reflectivo');
+        const tallaRangoSelectors = container.querySelector('.talla-rango-selectors-reflectivo');
+        const botonesDiv = container.querySelector('.talla-botones-container-reflectivo');
+        
+        botonesDiv.innerHTML = '';
+        
+        if (modo === 'manual') {
+            tallaBotones.style.display = 'block';
+            tallaRangoSelectors.style.display = 'none';
+            
+            TALLAS_LETRAS.forEach(talla => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = talla;
+                btn.className = 'talla-btn';
+                btn.dataset.talla = talla;
+                btn.style.cssText = 'padding: 0.5rem 1rem; background: white; color: #0066cc; border: 2px solid #0066cc; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s ease;';
+                btn.onmouseover = function() { if (!this.classList.contains('activo')) this.style.background = '#e6f0ff'; };
+                btn.onmouseout = function() { if (!this.classList.contains('activo')) this.style.background = 'white'; };
+                btn.onclick = function(e) {
+                    e.preventDefault();
+                    this.classList.toggle('activo');
+                    if (this.classList.contains('activo')) {
+                        this.style.background = '#0066cc';
+                        this.style.color = 'white';
+                    } else {
+                        this.style.background = 'white';
+                        this.style.color = '#0066cc';
+                    }
+                };
+                botonesDiv.appendChild(btn);
+            });
+        } else if (modo === 'rango') {
+            tallaBotones.style.display = 'none';
+            tallaRangoSelectors.style.display = 'flex';
+            actualizarSelectoresRangoLetrasReflectivo(container);
+        } else {
+            tallaBotones.style.display = 'none';
+            tallaRangoSelectors.style.display = 'none';
+        }
+    };
+    
+    window.actualizarSelectoresRangoLetrasReflectivo = function(container) {
+        const desdeSelect = container.querySelector('.talla-desde-reflectivo');
+        const hastaSelect = container.querySelector('.talla-hasta-reflectivo');
+        
+        desdeSelect.innerHTML = '<option value="">Desde</option>';
+        hastaSelect.innerHTML = '<option value="">Hasta</option>';
+        
+        TALLAS_LETRAS.forEach(talla => {
+            const optDesde = document.createElement('option');
+            optDesde.value = talla;
+            optDesde.textContent = talla;
+            desdeSelect.appendChild(optDesde);
+            
+            const optHasta = document.createElement('option');
+            optHasta.value = talla;
+            optHasta.textContent = talla;
+            hastaSelect.appendChild(optHasta);
+        });
+    };
+    
+    window.actualizarBotonesPorGeneroReflectivo = function(container, genero) {
+        console.log('🔢 actualizarBotonesPorGeneroReflectivo:', genero);
+        
+        if (!genero) {
+            container.querySelector('.talla-botones-reflectivo').style.display = 'none';
+            container.querySelector('.talla-rango-selectors-reflectivo').style.display = 'none';
+            container.querySelector('.talla-modo-select-reflectivo').style.display = 'none';
+            return;
+        }
+        
+        // Mostrar modo
+        const modoSelect = container.querySelector('.talla-modo-select-reflectivo');
+        modoSelect.style.display = 'block';
+        modoSelect.value = 'manual';
+        
+        // Remover event listener anterior
+        if (modoSelect._handlerNumeros) {
+            modoSelect.removeEventListener('change', modoSelect._handlerNumeros);
+        }
+        
+        // Agregar nuevo event listener
+        modoSelect._handlerNumeros = function() {
+            console.log('🔢 Modo cambiado para NÚMEROS:', this.value);
+            actualizarModoNumerosReflectivo(container, this.value, genero);
+        };
+        modoSelect.addEventListener('change', modoSelect._handlerNumeros);
+        
+        // Mostrar botones en manual
+        actualizarModoNumerosReflectivo(container, 'manual', genero);
+    };
+    
+    window.actualizarModoNumerosReflectivo = function(container, modo, genero) {
+        const tallaBotones = container.querySelector('.talla-botones-reflectivo');
+        const tallaRangoSelectors = container.querySelector('.talla-rango-selectors-reflectivo');
+        const botonesDiv = container.querySelector('.talla-botones-container-reflectivo');
+        
+        botonesDiv.innerHTML = '';
+        
+        const tallas = genero === 'dama' ? TALLAS_NUMEROS_DAMA : TALLAS_NUMEROS_CABALLERO;
+        
+        if (modo === 'manual') {
+            tallaBotones.style.display = 'block';
+            tallaRangoSelectors.style.display = 'none';
+            
+            tallas.forEach(talla => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = talla;
+                btn.className = 'talla-btn';
+                btn.dataset.talla = talla;
+                btn.style.cssText = 'padding: 0.5rem 1rem; background: white; color: #0066cc; border: 2px solid #0066cc; border-radius: 20px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.2s ease;';
+                btn.onmouseover = function() { if (!this.classList.contains('activo')) this.style.background = '#e6f0ff'; };
+                btn.onmouseout = function() { if (!this.classList.contains('activo')) this.style.background = 'white'; };
+                btn.onclick = function(e) {
+                    e.preventDefault();
+                    this.classList.toggle('activo');
+                    if (this.classList.contains('activo')) {
+                        this.style.background = '#0066cc';
+                        this.style.color = 'white';
+                    } else {
+                        this.style.background = 'white';
+                        this.style.color = '#0066cc';
+                    }
+                };
+                botonesDiv.appendChild(btn);
+            });
+        } else if (modo === 'rango') {
+            tallaBotones.style.display = 'none';
+            tallaRangoSelectors.style.display = 'flex';
+            actualizarSelectoresRangoNumerosReflectivo(container, tallas);
+        } else {
+            tallaBotones.style.display = 'none';
+            tallaRangoSelectors.style.display = 'none';
+        }
+    };
+    
+    window.actualizarSelectoresRangoNumerosReflectivo = function(container, tallas) {
+        const desdeSelect = container.querySelector('.talla-desde-reflectivo');
+        const hastaSelect = container.querySelector('.talla-hasta-reflectivo');
+        
+        desdeSelect.innerHTML = '<option value="">Desde</option>';
+        hastaSelect.innerHTML = '<option value="">Hasta</option>';
+        
+        tallas.forEach(talla => {
+            const optDesde = document.createElement('option');
+            optDesde.value = talla;
+            optDesde.textContent = talla;
+            desdeSelect.appendChild(optDesde);
+            
+            const optHasta = document.createElement('option');
+            optHasta.value = talla;
+            optHasta.textContent = talla;
+            hastaSelect.appendChild(optHasta);
+        });
+    };
+
+    window.agregarTallasSeleccionadasReflectivo = function(btn) {
+        const card = btn.closest('.producto-card');
+        const botonesActivos = card.querySelectorAll('.talla-btn.activo');
+        const tallasAgregadas = card.querySelector('.tallas-agregadas-reflectivo');
+        const tallasSection = card.querySelector('.tallas-section-reflectivo');
+        
+        if (botonesActivos.length === 0) {
+            alert('Por favor selecciona al menos una talla');
+            return;
+        }
+        
+        botonesActivos.forEach(boton => {
+            const talla = boton.dataset.talla;
+            
+            const existe = Array.from(tallasAgregadas.querySelectorAll('div')).some(tag =>
+                tag.querySelector('span').textContent === talla
+            );
+            
+            if (!existe) {
+                const tag = document.createElement('div');
+                tag.style.cssText = 'background: #0066cc; color: white; padding: 6px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600;';
+                tag.innerHTML = `
+                    <span>${talla}</span>
+                    <button type="button" onclick="this.closest('div').remove(); actualizarTallasHiddenReflectivo(this.closest('.producto-card'))" style="background: none; border: none; color: white; cursor: pointer; font-size: 1rem; padding: 0; line-height: 1;">✕</button>
+                `;
+                
+                tallasAgregadas.appendChild(tag);
+            }
+        });
+        
+        tallasSection.style.display = 'block';
+        actualizarTallasHiddenReflectivo(card);
+        
+        botonesActivos.forEach(boton => {
+            boton.classList.remove('activo');
+            boton.style.background = 'white';
+            boton.style.color = '#0066cc';
+        });
+    };
+
+    window.agregarTallasRangoReflectivo = function(btn) {
+        const card = btn.closest('.producto-card');
+        const tallaDesde = card.querySelector('.talla-desde-reflectivo').value;
+        const tallaHasta = card.querySelector('.talla-hasta-reflectivo').value;
+        const tallasAgregadas = card.querySelector('.tallas-agregadas-reflectivo');
+        const tallasSection = card.querySelector('.tallas-section-reflectivo');
+        const tipoSelect = card.querySelector('.talla-tipo-select-reflectivo');
+        const generoSelect = card.querySelector('.talla-genero-select-reflectivo');
+        
+        console.log('🔢 Agregando rango - Desde:', tallaDesde, 'Hasta:', tallaHasta);
+        console.log('📋 Tipo seleccionado:', tipoSelect.value);
+        console.log('👥 Género select value:', generoSelect.value);
+        
+        if (!tallaDesde || !tallaHasta) {
+            alert('Por favor selecciona un rango completo (Desde y Hasta)');
+            return;
+        }
+        
+        let tallas;
+        
+        if (tipoSelect.value === 'letra') {
+            console.log('📝 Usando LETRAS para rango');
+            tallas = TALLAS_LETRAS;
+        } else if (tipoSelect.value === 'numero') {
+            if (!generoSelect.value) {
+                alert('Por favor selecciona un género primero');
+                return;
+            }
+            console.log('🔢 Usando NÚMEROS para rango - Género:', generoSelect.value);
+            tallas = generoSelect.value === 'dama' ? TALLAS_NUMEROS_DAMA : TALLAS_NUMEROS_CABALLERO;
+        } else {
+            alert('Por favor selecciona un tipo de talla primero');
+            return;
+        }
+        
+        console.log('📋 Array de tallas a usar:', tallas);
+        console.log('🔍 Buscando en array:', tallaDesde, 'y', tallaHasta);
+        
+        const indexDesde = tallas.indexOf(tallaDesde);
+        const indexHasta = tallas.indexOf(tallaHasta);
+        
+        console.log('📍 Índices encontrados - Desde:', indexDesde, 'Hasta:', indexHasta);
+        
+        if (indexDesde === -1 || indexHasta === -1) {
+            console.error('❌ Tallas no encontradas en el array');
+            console.error('Disponibles:', tallas);
+            console.error('Buscando:', tallaDesde, tallaHasta);
+            alert('Las tallas seleccionadas no son válidas');
+            return;
+        }
+        
+        if (indexDesde > indexHasta) {
+            alert('La talla "Desde" no puede ser mayor que "Hasta"');
+            return;
+        }
+        
+        const tallasRango = tallas.slice(indexDesde, indexHasta + 1);
+        console.log('✅ Tallas en rango:', tallasRango);
+        
+        tallasRango.forEach(talla => {
+            const existe = Array.from(tallasAgregadas.querySelectorAll('div')).some(tag =>
+                tag.querySelector('span').textContent === talla
+            );
+            
+            if (!existe) {
+                const tag = document.createElement('div');
+                tag.style.cssText = 'background: #0066cc; color: white; padding: 6px 12px; border-radius: 20px; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600;';
+                tag.innerHTML = `
+                    <span>${talla}</span>
+                    <button type="button" onclick="this.closest('div').remove(); actualizarTallasHiddenReflectivo(this.closest('.producto-card'))" style="background: none; border: none; color: white; cursor: pointer; font-size: 1rem; padding: 0; line-height: 1;">✕</button>
+                `;
+                
+                tallasAgregadas.appendChild(tag);
+            }
+        });
+        
+        tallasSection.style.display = 'block';
+        actualizarTallasHiddenReflectivo(card);
+        console.log('✅ Rango agregado correctamente');
+    };
+
+    window.actualizarTallasHiddenReflectivo = function(container) {
+        if (!container) return;
+        
+        const tallasAgregadas = container.querySelector('.tallas-agregadas-reflectivo');
+        const tallasHidden = container.querySelector('.tallas-hidden-reflectivo');
+        
+        if (!tallasAgregadas || !tallasHidden) return;
+        
+        const tallas = [];
+        
+        tallasAgregadas.querySelectorAll('div > span:first-child').forEach(span => {
+            if (span.textContent) {
+                tallas.push(span.textContent);
+            }
+        });
+        
+        tallasHidden.value = tallas.join(', ');
+    };
 });
 </script>
 

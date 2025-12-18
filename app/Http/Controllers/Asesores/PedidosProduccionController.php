@@ -302,6 +302,47 @@ class PedidosProduccionController extends Controller
                 'cantidad_total' => $cantidadTotalPedido
             ]);
 
+            // ✅ PROCESAR FOTOS DEL REFLECTIVO SI EXISTEN
+            $reflectivoFotosIds = request()->input('reflectivo_fotos_ids', []);
+            if (!empty($reflectivoFotosIds)) {
+                \Log::info('📸 [PedidosProduccionController] Procesando fotos de reflectivo', [
+                    'fotos_ids' => $reflectivoFotosIds
+                ]);
+                
+                // Obtener el reflectivo de la cotización
+                $reflectivo = \App\Models\ReflectivoCotizacion::where('cotizacion_id', $cotizacion->id)->first();
+                
+                if ($reflectivo) {
+                    $fotosReflectivo = \App\Models\ReflectivoCotizacionFoto::whereIn('id', $reflectivoFotosIds)
+                        ->where('reflectivo_cotizacion_id', $reflectivo->id)
+                        ->get();
+                    
+                    \Log::info('📸 Fotos de reflectivo encontradas', [
+                        'cantidad' => $fotosReflectivo->count()
+                    ]);
+                    
+                    // Agregar las fotos del reflectivo a la primera prenda
+                    if ($fotosReflectivo->count() > 0 && !empty($prendas)) {
+                        if (!isset($prendas[0]['fotos'])) {
+                            $prendas[0]['fotos'] = [];
+                        }
+                        
+                        foreach ($fotosReflectivo as $foto) {
+                            $prendas[0]['fotos'][] = [
+                                'url' => '/storage/' . ltrim($foto->ruta_webp ?? $foto->ruta_original, '/'),
+                                'ruta_original' => $foto->ruta_original,
+                                'ruta_webp' => $foto->ruta_webp,
+                                'orden' => $foto->orden ?? 0,
+                            ];
+                        }
+                        
+                        \Log::info('✅ Fotos de reflectivo agregadas a prendas[0]', [
+                            'total_fotos_prenda_0' => count($prendas[0]['fotos'])
+                        ]);
+                    }
+                }
+            }
+
             // ✅ VERIFICAR SI HAY FOTOS EN EL FORMULARIO
             \Log::info('📸 [DEBUG] Verificando fotos en formulario', [
                 'total_prendas' => count($prendas),
@@ -674,13 +715,33 @@ class PedidosProduccionController extends Controller
      */
     private function construirDescripcionPrenda($numeroPrenda, $producto, $cantidadesPorTalla)
     {
-        // SOLO guardar la descripción simple del producto
-        // La descripción completa se armará dinámicamente en el frontend
+        $lineas = [];
+        
+        // 1. Descripción del producto (incluye ubicaciones del reflectivo si aplica)
         if (!empty($producto['descripcion'])) {
-            return strtoupper($producto['descripcion']);
+            $lineas[] = strtoupper($producto['descripcion']);
         }
         
-        return '-';
+        // 2. Tallas y cantidades
+        if (!empty($cantidadesPorTalla) && is_array($cantidadesPorTalla)) {
+            $tallasTexto = [];
+            foreach ($cantidadesPorTalla as $talla => $cantidad) {
+                if ($cantidad > 0) {
+                    $tallasTexto[] = "$talla: $cantidad";
+                }
+            }
+            if (!empty($tallasTexto)) {
+                $lineas[] = "TALLAS: " . implode(', ', $tallasTexto);
+            }
+        }
+        
+        // 3. Cantidad total
+        $cantidadTotal = array_sum($cantidadesPorTalla);
+        if ($cantidadTotal > 0) {
+            $lineas[] = "CANTIDAD TOTAL: $cantidadTotal";
+        }
+        
+        return !empty($lineas) ? implode("\n\n", $lineas) : '-';
     }
 
     /**
@@ -812,6 +873,7 @@ class PedidosProduccionController extends Controller
             $cotizacion = Cotizacion::with([
                 'cliente',
                 'asesor',
+                'tipoCotizacion',
                 // Prendas y sus relaciones completas
                 'prendas.variantes.manga',
                 'prendas.variantes.broche',
@@ -822,8 +884,8 @@ class PedidosProduccionController extends Controller
                 'prendas.telaFotos',
                 // Logo - solo fotos es relación, el resto son campos JSON
                 'logoCotizacion.fotos',
-                // Reflectivo
-                'reflectivo',
+                // Reflectivo con sus fotos
+                'reflectivo.fotos',
             ])->findOrFail($cotizacionId);
 
             // Verificar que pertenezca al asesor actual
@@ -833,14 +895,29 @@ class PedidosProduccionController extends Controller
                 ], 403);
             }
 
+            // Convertir especificaciones del formato antiguo al nuevo (si es necesario)
+            $especificacionesConvertidas = $this->convertirEspecificacionesAlFormatoNuevo(
+                $cotizacion->especificaciones ?? []
+            );
+
+            // Extraer forma de pago de las especificaciones
+            $formaPago = '';
+            if (!empty($especificacionesConvertidas['forma_pago']) && is_array($especificacionesConvertidas['forma_pago'])) {
+                if (count($especificacionesConvertidas['forma_pago']) > 0) {
+                    $formaPago = $especificacionesConvertidas['forma_pago'][0]['valor'] ?? '';
+                }
+            }
+
             return response()->json([
                 'id' => $cotizacion->id,
                 'numero' => $cotizacion->numero_cotizacion,
+                'tipo_cotizacion_id' => $cotizacion->tipo_cotizacion_id,
+                'tipo_cotizacion_codigo' => $cotizacion->tipoCotizacion ? $cotizacion->tipoCotizacion->codigo : null,
                 'cliente' => $cotizacion->cliente ? $cotizacion->cliente->nombre : '',
                 'asesora' => $cotizacion->asesor ? $cotizacion->asesor->name : Auth::user()->name,
-                'forma_pago' => $cotizacion->forma_pago ?? '',
+                'forma_pago' => $formaPago,
                 'tipo_venta' => $cotizacion->tipo_venta ?? '',
-                'especificaciones' => $cotizacion->especificaciones ?? [],
+                'especificaciones' => $especificacionesConvertidas,
                 'observaciones_generales' => $cotizacion->observaciones_generales ?? [],
                 'ubicaciones' => $cotizacion->ubicaciones ?? [],
                 
@@ -950,6 +1027,14 @@ class PedidosProduccionController extends Controller
                     'ubicacion' => $cotizacion->reflectivo->ubicacion,
                     'descripcion' => $cotizacion->reflectivo->descripcion,
                     'observaciones' => $cotizacion->reflectivo->observaciones,
+                    'fotos' => $cotizacion->reflectivo->fotos ? $cotizacion->reflectivo->fotos->map(function($foto) {
+                        return [
+                            'id' => $foto->id,
+                            'url' => '/storage/' . ltrim($foto->ruta_webp ?? $foto->url, '/'),
+                            'ruta_original' => '/storage/' . ltrim($foto->ruta_original, '/'),
+                            'ruta_webp' => '/storage/' . ltrim($foto->ruta_webp, '/'),
+                        ];
+                    })->toArray() : [],
                 ] : null,
             ]);
 
@@ -959,6 +1044,104 @@ class PedidosProduccionController extends Controller
                 'trace' => config('app.debug') ? $e->getTraceAsString() : null
             ], 500);
         }
+    }
+
+    /**
+     * Convierte especificaciones del formato antiguo (tabla_orden[field]) al nuevo (forma_pago, disponibilidad, etc)
+     */
+    private function convertirEspecificacionesAlFormatoNuevo($especificaciones)
+    {
+        if (!$especificaciones) {
+            return [];
+        }
+
+        // Si ya es un array con estructura forma_pago, no convertir
+        if (is_array($especificaciones) && isset($especificaciones['forma_pago'])) {
+            return $especificaciones;
+        }
+
+        // Si es string, parsear
+        if (is_string($especificaciones)) {
+            $datos = json_decode($especificaciones, true) ?? [];
+        } else {
+            $datos = $especificaciones;
+        }
+
+        // Si ya está en formato nuevo, devolver
+        if (isset($datos['forma_pago'])) {
+            return $datos;
+        }
+
+        // Convertir del formato antiguo tabla_orden[field]
+        $convertidas = [
+            'forma_pago' => [],
+            'disponibilidad' => [],
+            'regimen' => [],
+            'se_ha_vendido' => [],
+            'ultima_venta' => [],
+            'flete' => []
+        ];
+
+        // Mapeos de nombres para conversión
+        $mapeoFormaPago = [
+            'tabla_orden[contado]' => 'Contado',
+            'tabla_orden[credito]' => 'Crédito',
+        ];
+
+        $mapeoDisponibilidad = [
+            'tabla_orden[bodega]' => 'Bodega',
+            'tabla_orden[cucuta]' => 'Cúcuta',
+            'tabla_orden[lafayette]' => 'Lafayette',
+            'tabla_orden[fabrica]' => 'Fábrica',
+        ];
+
+        $mapeoRegimen = [
+            'tabla_orden[comun]' => 'Común',
+            'tabla_orden[simplificado]' => 'Simplificado',
+        ];
+
+        // Procesar FORMA_PAGO
+        foreach ($mapeoFormaPago as $clave => $etiqueta) {
+            if (isset($datos[$clave]) && ($datos[$clave] === '1' || $datos[$clave] === true)) {
+                $obsKey = str_replace(']', '_obs]', str_replace('[', '[pago_', $clave));
+                $convertidas['forma_pago'][] = [
+                    'valor' => $etiqueta,
+                    'observacion' => $datos[$obsKey] ?? ''
+                ];
+            }
+        }
+
+        // Procesar DISPONIBILIDAD
+        foreach ($mapeoDisponibilidad as $clave => $etiqueta) {
+            if (isset($datos[$clave]) && ($datos[$clave] === '1' || $datos[$clave] === true)) {
+                $obsKey = str_replace(']', '_obs]', $clave);
+                $convertidas['disponibilidad'][] = [
+                    'valor' => $etiqueta,
+                    'observacion' => $datos[$obsKey] ?? ''
+                ];
+            }
+        }
+
+        // Procesar RÉGIMEN
+        foreach ($mapeoRegimen as $clave => $etiqueta) {
+            if (isset($datos[$clave]) && ($datos[$clave] === '1' || $datos[$clave] === true)) {
+                $obsKey = str_replace(']', '_obs]', str_replace('[', '[regimen_', $clave));
+                $convertidas['regimen'][] = [
+                    'valor' => $etiqueta,
+                    'observacion' => $datos[$obsKey] ?? ''
+                ];
+            }
+        }
+
+        // Remover campos vacíos
+        foreach ($convertidas as $key => $value) {
+            if (empty($value)) {
+                unset($convertidas[$key]);
+            }
+        }
+
+        return $convertidas;
+
     }
 
 }

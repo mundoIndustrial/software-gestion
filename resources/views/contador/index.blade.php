@@ -80,7 +80,7 @@ document.addEventListener('click', function(event) {
                 <div style="display: flex; align-items: center; width: 100%; gap: 12px; padding: 14px 12px;">
                     @php
                         $columns = [
-                            ['key' => 'acciones', 'label' => 'Acciones', 'flex' => '0 0 120px', 'justify' => 'flex-start'],
+                            ['key' => 'acciones', 'label' => 'Acciones', 'flex' => '0 0 150px', 'justify' => 'flex-start'],
                             ['key' => 'estado', 'label' => 'Estado', 'flex' => '0 0 150px', 'justify' => 'center'],
                             ['key' => 'numero', 'label' => 'Número', 'flex' => '0 0 140px', 'justify' => 'center'],
                             ['key' => 'fecha', 'label' => 'Fecha', 'flex' => '0 0 180px', 'justify' => 'center'],
@@ -119,32 +119,30 @@ document.addEventListener('click', function(event) {
                         @forelse($cotizacionesPaginadas as $cotizacion)
                             <div class="table-row" data-cotizacion-id="{{ $cotizacion->id }}" data-numero="{{ $cotizacion->numero_cotizacion ?? 'N/A' }}" data-cliente="{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}" data-asesora="{{ $cotizacion->asesora ?? ($cotizacion->usuario->name ?? '') }}" data-fecha="{{ $cotizacion->created_at ? $cotizacion->created_at->format('d/m/Y') : '' }}" data-estado="{{ $cotizacion->estado }}" data-novedades="{{ $cotizacion->novedades ?? '-' }}">
                                 <!-- Acciones -->
-                                <div class="table-cell acciones-column" style="flex: 0 0 120px; justify-content: center; position: relative;">
-                                    <div class="actions-group">
-                                        <button class="action-view-btn" title="Ver opciones" data-cotizacion-id="{{ $cotizacion->id }}">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <div class="action-menu" data-cotizacion-id="{{ $cotizacion->id }}">
-                                            <a href="#" class="action-menu-item" data-action="cotizacion" onclick="openCotizacionModal({{ $cotizacion->id }}); return false;">
-                                                <i class="fas fa-file-alt"></i>
-                                                <span>Ver Cotización</span>
-                                            </a>
-                                            <a href="#" class="action-menu-item" data-action="costos" onclick="abrirModalVisorCostos({{ $cotizacion->id }}, '{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}'); return false;">
-                                                <i class="fas fa-chart-bar"></i>
-                                                <span>Ver Costos</span>
-                                            </a>
-                                            <a href="/contador/cotizacion/{{ $cotizacion->id }}/pdf?tipo=prenda" class="action-menu-item" data-action="pdf" target="_blank">
-                                                <i class="fas fa-file-pdf"></i>
-                                                <span>Ver PDF</span>
-                                            </a>
-                                        </div>
-                                        <button class="btn-action btn-edit btn-editar-costos" data-cotizacion-id="{{ $cotizacion->id }}" data-cliente="{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}" title="Editar Costos">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="btn-action btn-success" onclick="aprobarCotizacionEnLinea({{ $cotizacion->id }})" title="Aprobar Cotización">
-                                            <i class="fas fa-check-circle"></i>
-                                        </button>
+                                <div class="table-cell acciones-column" style="flex: 0 0 150px; justify-content: center; position: relative; display: flex; gap: 0.5rem;">
+                                    <button class="action-view-btn" title="Ver opciones" data-cotizacion-id="{{ $cotizacion->id }}">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <div class="action-menu" data-cotizacion-id="{{ $cotizacion->id }}">
+                                        <a href="#" class="action-menu-item" data-action="cotizacion" onclick="openCotizacionModal({{ $cotizacion->id }}); return false;">
+                                            <i class="fas fa-file-alt"></i>
+                                            <span>Ver Cotización</span>
+                                        </a>
+                                        <a href="#" class="action-menu-item" data-action="costos" onclick="abrirModalVisorCostos({{ $cotizacion->id }}, '{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}'); return false;">
+                                            <i class="fas fa-chart-bar"></i>
+                                            <span>Ver Costos</span>
+                                        </a>
+                                        <a href="/contador/cotizacion/{{ $cotizacion->id }}/pdf?tipo=prenda" class="action-menu-item" data-action="pdf" target="_blank">
+                                            <i class="fas fa-file-pdf"></i>
+                                            <span>Ver PDF</span>
+                                        </a>
                                     </div>
+                                    <button class="btn-action btn-edit btn-editar-costos" data-cotizacion-id="{{ $cotizacion->id }}" data-cliente="{{ is_object($cotizacion->cliente) ? $cotizacion->cliente->nombre : ($cotizacion->cliente ?? '') }}" title="Editar Costos">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn-action btn-success" onclick="aprobarCotizacionEnLinea({{ $cotizacion->id }})" title="Aprobar Cotización">
+                                        <i class="fas fa-check-circle"></i>
+                                    </button>
                                 </div>
                                 
                                 <!-- Estado -->
@@ -320,17 +318,6 @@ document.addEventListener('click', function(event) {
         background: #2563eb;
     }
 </style>
-
-<!-- Modal de Cotización -->
-<div id="cotizacionModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; overflow-y: auto;">
-    <div class="modal-content" style="background: white; border-radius: 12px; margin: 2rem auto; max-width: 1000px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-        <button onclick="cerrarModalCotizacion()" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; z-index: 10001;">
-            <span class="material-symbols-rounded">close</span>
-        </button>
-        <div id="cotizacionContent" style="padding: 2rem;"></div>
-    </div>
-</div>
-
 
 <!-- Script de Tabla de Cotizaciones -->
 <script src="{{ asset('js/contador/tabla-cotizaciones.js') }}"></script>

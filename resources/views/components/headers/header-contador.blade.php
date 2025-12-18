@@ -47,26 +47,6 @@
     </div>
 
     <div class="nav-right">
-        <!-- Notificaciones -->
-        <div class="notification-dropdown">
-            <button class="notification-btn" id="notificationBtn" aria-label="Notificaciones">
-                <span class="material-symbols-rounded">notifications</span>
-                <span class="notification-badge" id="notificationBadge">0</span>
-            </button>
-            <div class="notification-menu" id="notificationMenu">
-                <div class="notification-header">
-                    <h3>Notificaciones</h3>
-                    <button class="mark-all-read">Marcar todas</button>
-                </div>
-                <div class="notification-list" id="notificationList">
-                    <div class="notification-empty">
-                        <span class="material-symbols-rounded">notifications_off</span>
-                        <p>Sin notificaciones</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Perfil de Usuario -->
         <div class="user-dropdown">
             <button class="user-btn" id="userBtn">

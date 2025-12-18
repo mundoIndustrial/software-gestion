@@ -67,7 +67,10 @@
            style="display:flex;align-items:center;gap:0.5rem;"
            aria-label="Ver Cotizaciones Aprobadas">
           <span class="material-symbols-rounded" aria-hidden="true">verified</span>
-          <span class="menu-label">Cotizaciones Aprobadas</span>
+          <span class="menu-label">Aprobadas</span>
+          @if(isset($cotizacionesAprobadas) && $cotizacionesAprobadas->count() > 0)
+            <span class="badge-alert">{{ $cotizacionesAprobadas->count() }}</span>
+          @endif
         </a>
       </li>
     </ul>

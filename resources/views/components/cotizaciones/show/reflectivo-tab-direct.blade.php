@@ -46,6 +46,24 @@
                             @else
                                 <p style="color: #94a3b8; font-size: 0.9rem; margin: 0; font-style: italic;">Sin descripción</p>
                             @endif
+                            
+                            {{-- Tallas --}}
+                            @if($prenda->tallas && count($prenda->tallas) > 0)
+                                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #93c5fd;">
+                                    <p style="color: #1e40af; font-size: 0.9rem; font-weight: 600; margin: 0 0 0.5rem 0;">Tallas:</p>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                        @foreach($prenda->tallas as $talla)
+                                            <span style="background: #dbeafe; color: #1e40af; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                                                {{ $talla->talla }}
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @else
+                                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #93c5fd;">
+                                    <p style="color: #94a3b8; font-size: 0.85rem; margin: 0; font-style: italic;">Sin tallas definidas</p>
+                                </div>
+                            @endif
                         </div>
                         
                         {{-- Descripción del Reflectivo --}}

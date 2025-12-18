@@ -443,10 +443,19 @@ final class CotizacionController extends Controller
             $prendasRecibidas = $request->input('prendas', []);
             $especificacionesRecibidas = $request->input('especificaciones', []);
             
-            // Las especificaciones ya vienen con estructura {valor, observacion} desde el frontend
-            // No necesitamos procesar observaciones_check y observaciones_valor
-            if (!is_array($especificacionesRecibidas)) {
+            // Las especificaciones pueden venir como string JSON o array desde el frontend
+            if (is_string($especificacionesRecibidas)) {
+                $especificacionesRecibidas = json_decode($especificacionesRecibidas, true) ?? [];
+            } elseif (!is_array($especificacionesRecibidas)) {
                 $especificacionesRecibidas = [];
+            }
+            
+            // Asegurar que todas las categorías existan, incluso si están vacías
+            $categoriasRequeridas = ['forma_pago', 'disponibilidad', 'regimen', 'se_ha_vendido', 'ultima_venta', 'flete'];
+            foreach ($categoriasRequeridas as $categoria) {
+                if (!isset($especificacionesRecibidas[$categoria])) {
+                    $especificacionesRecibidas[$categoria] = [];
+                }
             }
             
             Log::info('CotizacionController@store: Datos recibidos', [
@@ -532,7 +541,7 @@ final class CotizacionController extends Controller
                 'prendas' => $request->input('prendas', []),
                 'logo' => $request->input('logo', []),
                 'tipo_venta' => $request->input('tipo_venta', 'M'),
-                'especificaciones' => $request->input('especificaciones', []),
+                'especificaciones' => $especificacionesRecibidas,
                 'es_borrador' => $esBorrador,
                 'estado' => $estado,
                 'numero_cotizacion' => $numeroCotizacion,
@@ -608,7 +617,15 @@ final class CotizacionController extends Controller
             }
             
             if (!empty($especificacionesNuevas)) {
-                $datosActualizar['especificaciones'] = json_encode($especificacionesNuevas);
+                // Asegurar que todas las categorías existan, incluso si están vacías
+                $categoriasRequeridas = ['forma_pago', 'disponibilidad', 'regimen', 'se_ha_vendido', 'ultima_venta', 'flete'];
+                foreach ($categoriasRequeridas as $categoria) {
+                    if (!isset($especificacionesNuevas[$categoria])) {
+                        $especificacionesNuevas[$categoria] = [];
+                    }
+                }
+                
+                $datosActualizar['especificaciones'] = $especificacionesNuevas;
                 Log::info('Actualizando especificaciones', ['count' => count($especificacionesNuevas)]);
             } else {
                 Log::info('No se enviaron especificaciones nuevas, manteniendo las existentes');
@@ -1419,6 +1436,14 @@ final class CotizacionController extends Controller
 
             // Decodificar prendas del JSON string
             $prendas = json_decode($validated['prendas'], true);
+            
+            Log::info('🔍 DEBUG storeReflectivo - Prendas recibidas:', [
+                'prendas_json' => $validated['prendas'],
+                'prendas_decoded' => $prendas,
+                'prendas_count' => is_array($prendas) ? count($prendas) : 0,
+                'first_prenda' => is_array($prendas) && count($prendas) > 0 ? $prendas[0] : null,
+            ]);
+            
             if (!is_array($prendas) || count($prendas) === 0) {
                 return response()->json([
                     'success' => false,
@@ -1426,6 +1451,37 @@ final class CotizacionController extends Controller
                     'errores' => ['prendas' => ['Array inválido o vacío']]
                 ], 422);
             }
+
+            // Decodificar especificaciones del JSON string
+            $especificaciones = [];
+            if (!empty($validated['especificaciones'])) {
+                if (is_string($validated['especificaciones'])) {
+                    $especificaciones = json_decode($validated['especificaciones'], true) ?? [];
+                } elseif (is_array($validated['especificaciones'])) {
+                    $especificaciones = $validated['especificaciones'];
+                }
+            }
+            
+            // Asegurar que todas las categorías existan, incluso si están vacías
+            $categoriasRequeridas = ['forma_pago', 'disponibilidad', 'regimen', 'se_ha_vendido', 'ultima_venta', 'flete'];
+            foreach ($categoriasRequeridas as $categoria) {
+                if (!isset($especificaciones[$categoria])) {
+                    $especificaciones[$categoria] = [];
+                }
+            }
+            
+            Log::info('🔍 DEBUG storeReflectivo - Especificaciones recibidas:', [
+                'especificaciones_raw' => $validated['especificaciones'] ?? null,
+                'especificaciones_decoded' => $especificaciones,
+                'especificaciones_count' => count($especificaciones),
+                'especificaciones_keys' => array_keys($especificaciones),
+                'forma_pago' => $especificaciones['forma_pago'] ?? 'NO EXISTE',
+                'disponibilidad' => $especificaciones['disponibilidad'] ?? 'NO EXISTE',
+                'regimen' => $especificaciones['regimen'] ?? 'NO EXISTE',
+                'se_ha_vendido' => $especificaciones['se_ha_vendido'] ?? 'NO EXISTE',
+                'ultima_venta' => $especificaciones['ultima_venta'] ?? 'NO EXISTE',
+                'flete' => $especificaciones['flete'] ?? 'NO EXISTE',
+            ]);
 
             DB::beginTransaction();
 
@@ -1438,34 +1494,58 @@ final class CotizacionController extends Controller
                 $esBorrador = ($validated['action'] === 'borrador');
                 $estado = $esBorrador ? 'BORRADOR' : 'ENVIADA_CONTADOR';
 
+                // Generar número de cotización SIEMPRE (para poder identificar el borrador luego)
+                $numeroCotizacion = $this->generarNumeroCotizacion();
+
                 // Crear cotización base sin prendas (tipo RF = Reflectivo)
                 $cotizacion = \App\Models\Cotizacion::create([
                     'asesor_id' => Auth::id(),
                     'cliente_id' => $cliente->id,
-                    'numero_cotizacion' => !$esBorrador ? $this->generarNumeroCotizacion() : null,
+                    'numero_cotizacion' => $numeroCotizacion,
                     'tipo_cotizacion_id' => $this->obtenerTipoCotizacionId('RF'),
                     'tipo_venta' => $validated['tipo_venta_reflectivo'] ?? 'M',
                     'fecha_inicio' => $validated['fecha'],
-                    'especificaciones' => $validated['especificaciones'] ?? '',
+                    'especificaciones' => $especificaciones,
                     'es_borrador' => $esBorrador,
                     'estado' => $estado,
                     'fecha_envio' => !$esBorrador ? \Carbon\Carbon::now('America/Bogota') : null,
                 ]);
 
-                Log::info('✅ Cotización RF creada', ['cotizacion_id' => $cotizacion->id]);
+                Log::info('✅ Cotización RF creada', [
+                    'cotizacion_id' => $cotizacion->id,
+                    'especificaciones_guardadas' => $cotizacion->especificaciones,
+                    'especificaciones_type' => gettype($cotizacion->especificaciones),
+                    'especificaciones_count' => is_array($cotizacion->especificaciones) ? count($cotizacion->especificaciones) : 0,
+                ]);
 
-                // Procesar prendas - ahora vienen como objetos {tipo, descripcion}
+                // Procesar prendas - ahora vienen como objetos {tipo, descripcion, tallas}
                 if (!empty($prendas)) {
                     foreach ($prendas as $prenda) {
                         // La prenda ya está decodificada como array
                         if (is_array($prenda)) {
                             // Guardar prenda en prendas_cot
-                            \App\Models\PrendaCot::create([
+                            $prendaCot = \App\Models\PrendaCot::create([
                                 'cotizacion_id' => $cotizacion->id,
                                 'nombre_producto' => $prenda['tipo'] ?? $prenda['nombre'] ?? 'Prenda',
                                 'cantidad' => 1,
                                 'descripcion' => $prenda['descripcion'] ?? '',
                             ]);
+
+                            // Guardar tallas en prenda_tallas_cot
+                            if (!empty($prenda['tallas']) && is_array($prenda['tallas'])) {
+                                foreach ($prenda['tallas'] as $talla) {
+                                    \App\Models\PrendaTallaCot::create([
+                                        'prenda_cot_id' => $prendaCot->id,
+                                        'talla' => $talla,
+                                        'cantidad' => 1,
+                                    ]);
+                                }
+                                Log::info('✅ Tallas guardadas para prenda', [
+                                    'prenda_cot_id' => $prendaCot->id,
+                                    'tallas_count' => count($prenda['tallas']),
+                                    'tallas' => $prenda['tallas']
+                                ]);
+                            }
                         }
                     }
                     $prendasCount = is_array($prendas) ? count($prendas) : 0;
@@ -1643,6 +1723,14 @@ final class CotizacionController extends Controller
                     
                     // Solo actualizar si hay especificaciones reales (no solo {} o [])
                     if (!empty($nuevasEspecificaciones) && $nuevasEspecificaciones !== []) {
+                        // Asegurar que todas las categorías existan, incluso si están vacías
+                        $categoriasRequeridas = ['forma_pago', 'disponibilidad', 'regimen', 'se_ha_vendido', 'ultima_venta', 'flete'];
+                        foreach ($categoriasRequeridas as $categoria) {
+                            if (!isset($nuevasEspecificaciones[$categoria])) {
+                                $nuevasEspecificaciones[$categoria] = [];
+                            }
+                        }
+                        
                         $especificacionesArray = $nuevasEspecificaciones;
                         Log::info('✅ Actualizando especificaciones con nuevos datos');
                     } else {
@@ -1658,7 +1746,7 @@ final class CotizacionController extends Controller
                     'estado' => $estado,
                     'numero_cotizacion' => !$esBorrador && !$cotizacion->numero_cotizacion ? $this->generarNumeroCotizacion() : $cotizacion->numero_cotizacion,
                     'fecha_envio' => !$esBorrador && !$cotizacion->fecha_envio ? \Carbon\Carbon::now('America/Bogota') : $cotizacion->fecha_envio,
-                    'especificaciones' => json_encode($especificacionesArray),
+                    'especificaciones' => $especificacionesArray,
                     'tipo_venta' => $validated['tipo_venta_reflectivo'] ?? $cotizacion->tipo_venta ?? 'M',
                 ]);
 
@@ -1871,30 +1959,21 @@ final class CotizacionController extends Controller
      */
     private function generarNumeroCotizacion(): string
     {
-        // Usar secuencia universal para TODAS las cotizaciones
-        $secuencia = DB::table('numero_secuencias')
-            ->where('nombre', 'cotizaciones_universal')
+        // Obtener el último número de cotización y sumar 1
+        $ultimaCotizacion = \App\Models\Cotizacion::whereNotNull('numero_cotizacion')
+            ->orderBy('numero_cotizacion', 'desc')
             ->first();
         
-        if (!$secuencia) {
-            // Fallback si no existe la secuencia
-            $mes = date('m');
-            $anio = date('y');
-            $contador = \App\Models\Cotizacion::where('numero_cotizacion', 'like', "COT-{$anio}{$mes}-%")
-                ->count() + 1;
-            return sprintf('COT-%s%s-%04d', $anio, $mes, $contador);
+        // Extraer el número secuencial de COT-XXXXX
+        $ultimoSecuencial = 0;
+        if ($ultimaCotizacion) {
+            if (preg_match('/COT-(\d+)/', $ultimaCotizacion->numero_cotizacion, $matches)) {
+                $ultimoSecuencial = (int)$matches[1];
+            }
         }
         
-        // Incrementar el contador
-        $nuevoNumero = $secuencia->numero_actual + 1;
-        DB::table('numero_secuencias')
-            ->where('nombre', 'cotizaciones_universal')
-            ->update(['numero_actual' => $nuevoNumero]);
-        
-        // Generar número con formato
-        $mes = date('m');
-        $anio = date('y');
-        return sprintf('COT-%s%s-%04d', $anio, $mes, $nuevoNumero);
+        $nuevoSecuencial = $ultimoSecuencial + 1;
+        return sprintf('COT-%d', $nuevoSecuencial);
     }
 
     /**
@@ -1930,16 +2009,28 @@ final class CotizacionController extends Controller
 
             // Si es Reflectivo (tipo 4), mostrar la vista
             if ($tipoCotizacionId === 4) {
-                // Cargar datos completos del reflectivo
-                $cotizacion->load(['cliente', 'prendas', 'reflectivoCotizacion.fotos']);
+                // Cargar datos completos del reflectivo CON TALLAS
+                $cotizacion->load([
+                    'cliente',
+                    'prendas',
+                    'prendas.tallas',
+                    'reflectivoCotizacion.fotos'
+                ]);
                 
                 // Preparar datos iniciales en formato JSON
+                $prendasConTallas = $cotizacion->prendas ? $cotizacion->prendas->map(function($prenda) {
+                    $prendasArray = $prenda->toArray();
+                    // Forzar inclusión de tallas
+                    $prendasArray['tallas'] = $prenda->tallas ? $prenda->tallas->toArray() : [];
+                    return $prendasArray;
+                })->toArray() : [];
+                
                 $datosIniciales = [
                     'id' => $cotizacion->id,
                     'cliente' => $cotizacion->cliente ? ['id' => $cotizacion->cliente->id, 'nombre' => $cotizacion->cliente->nombre] : null,
                     'fecha_inicio' => $cotizacion->fecha_inicio,
                     'especificaciones' => $cotizacion->especificaciones,
-                    'prendas' => $cotizacion->prendas ? $cotizacion->prendas->toArray() : [],
+                    'prendas' => $prendasConTallas,
                     'reflectivo_cotizacion' => $cotizacion->reflectivoCotizacion ? $cotizacion->reflectivoCotizacion->toArray() : null,
                     'reflectivo' => $cotizacion->reflectivoCotizacion ? $cotizacion->reflectivoCotizacion->toArray() : null,
                 ];

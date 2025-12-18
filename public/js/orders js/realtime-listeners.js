@@ -14,14 +14,20 @@ const RealtimeOrderHandler = {
     updateOrderRow(ordenData, changedFields) {
         console.log('🔄 RealtimeOrderHandler.updateOrderRow iniciado', {
             numeroPedido: ordenData.numero_pedido,
+            ordenId: ordenData.id,
             changedFields: changedFields
         });
 
-        // Buscar la fila por data-orden-id (estructura flexbox actual)
-        const row = document.querySelector(`.table-row[data-orden-id="${ordenData.numero_pedido}"]`);
+        // Buscar la fila por data-orden-id (puede ser ID o numero_pedido según la vista)
+        let row = document.querySelector(`[data-orden-id="${ordenData.numero_pedido}"]`);
+        
+        // Si no encuentra por numero_pedido, buscar por ID
+        if (!row) {
+            row = document.querySelector(`[data-orden-id="${ordenData.id}"]`);
+        }
         
         if (!row) {
-            console.warn(`⚠️ Fila no encontrada para pedido ${ordenData.numero_pedido}`);
+            console.warn(`⚠️ Fila no encontrada para pedido ${ordenData.numero_pedido} o ID ${ordenData.id}`);
             return;
         }
 
@@ -75,6 +81,38 @@ const RealtimeOrderHandler = {
                 dropdown.value = ordenData.dia_de_entrega || '';
                 console.log(`✅ Día de entrega actualizado: ${ordenData.dia_de_entrega}`);
             }
+        } else if (field === 'fecha_estimada_de_entrega') {
+            // 🆕 Actualizar fecha estimada en tiempo real
+            // Buscar en supervisor-pedidos (clase: fecha-estimada)
+            let fechaCell = row.querySelector('.fecha-estimada');
+            
+            // Si no está en supervisor-pedidos, buscar en orders/index (clase: fecha-estimada-cell)
+            if (!fechaCell) {
+                fechaCell = row.querySelector('.fecha-estimada-cell');
+            }
+            
+            if (fechaCell && ordenData.fecha_estimada_de_entrega !== undefined) {
+                const fechaFormato = ordenData.fecha_estimada_de_entrega 
+                    ? this._formatFecha(ordenData.fecha_estimada_de_entrega)
+                    : '-';
+                
+                // Para supervisor-pedidos (actualizar directamente la celda)
+                if (fechaCell.classList.contains('fecha-estimada')) {
+                    fechaCell.textContent = fechaFormato;
+                    fechaCell.setAttribute('data-fecha-estimada', fechaFormato);
+                }
+                
+                // Para orders/index (actualizar el span dentro)
+                if (fechaCell.classList.contains('fecha-estimada-cell')) {
+                    const span = fechaCell.querySelector('.fecha-estimada-span');
+                    if (span) {
+                        span.textContent = fechaFormato;
+                    }
+                    fechaCell.setAttribute('data-fecha-estimada', fechaFormato);
+                }
+                
+                console.log(`✅ Fecha estimada actualizada en tiempo real: ${fechaFormato}`);
+            }
         } else if (field === 'novedades') {
             // 🆕 Actualizar campo de novedades en tiempo real
             const btnEdit = row.querySelector('.btn-edit-novedades');
@@ -96,6 +134,25 @@ const RealtimeOrderHandler = {
                     console.log(`✅ Novedades actualizadas en tiempo real: ${ordenData.novedades ? 'Con contenido' : 'Vacío'}`);
                 }
             }
+        }
+    },
+
+    /**
+     * Formatear fecha a formato d/m/Y
+     */
+    _formatFecha(fecha) {
+        if (!fecha) return 'N/A';
+        
+        try {
+            // Si es string ISO, parsear
+            const date = typeof fecha === 'string' ? new Date(fecha) : fecha;
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        } catch (e) {
+            console.error('Error formateando fecha:', e);
+            return fecha;
         }
     },
 

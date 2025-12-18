@@ -101,10 +101,18 @@ class PedidoPrendaService
         // Generar descripción en formato legacy
         $descripcionFormateada = DescripcionPrendaLegacyFormatter::generar($datosParaFormatter);
         
+        // ✅ PRIORIZAR DESCRIPCIÓN DEL FORMULARIO (incluye ubicaciones del reflectivo)
+        $descripcionFinal = !empty($prendaData['descripcion']) 
+            ? $prendaData['descripcion'] 
+            : $descripcionFormateada;
+        
         // 🔍 LOG: Antes de guardar
         \Log::info('✅ [PedidoPrendaService] Guardando prenda con IDs', [
             'numero_pedido' => $pedido->numero_pedido,
             'nombre_prenda' => $prendaData['nombre_producto'] ?? 'Sin nombre',
+            'descripcion_formulario' => $prendaData['descripcion'] ?? null,
+            'descripcion_legacy' => $descripcionFormateada,
+            'descripcion_final' => $descripcionFinal,
             'tela_id' => $prendaData['tela_id'] ?? null,
             'color_id' => $prendaData['color_id'] ?? null,
             'tipo_manga_id' => $prendaData['tipo_manga_id'] ?? null,
@@ -115,7 +123,7 @@ class PedidoPrendaService
         $prenda = PrendaPedido::create([
             'numero_pedido' => $pedido->numero_pedido,
             'nombre_prenda' => $prendaData['nombre_producto'] ?? 'Sin nombre',
-            'descripcion' => $descripcionFormateada, // ✅ DESCRIPCIÓN EN FORMATO LEGACY
+            'descripcion' => $descripcionFinal, // ✅ PRIORIZA DESCRIPCIÓN DEL FORMULARIO
             'cantidad' => $prendaData['cantidad'] ?? 1,
             'cantidad_talla' => is_array($prendaData['cantidades'] ?? null) 
                 ? json_encode($prendaData['cantidades']) 
@@ -140,17 +148,22 @@ class PedidoPrendaService
             'tipo_broche_id_guardado' => $prenda->tipo_broche_id,
         ]);
 
-        // 2. Guardar fotos de la prenda (copiar URLs de cotización)
+        // 2. ✅ GUARDAR TALLAS CON CANTIDADES en prenda_tallas_ped
+        if (!empty($prendaData['cantidades'])) {
+            $this->guardarTallasPrenda($prenda, $prendaData['cantidades']);
+        }
+
+        // 3. Guardar fotos de la prenda (copiar URLs de cotización)
         if (!empty($prendaData['fotos'])) {
             $this->guardarFotosPrenda($prenda, $prendaData['fotos']);
         }
 
-        // 3. Guardar logos de la prenda (si existen)
+        // 4. Guardar logos de la prenda (si existen)
         if (!empty($prendaData['logos'])) {
             $this->guardarLogosPrenda($prenda, $prendaData['logos']);
         }
 
-        // 4. Guardar fotos de telas/colores (si existen)
+        // 5. Guardar fotos de telas/colores (si existen)
         if (!empty($prendaData['telas'])) {
             $this->guardarFotosTelas($prenda, $prendaData['telas']);
         }
@@ -495,6 +508,71 @@ class PedidoPrendaService
                 'prenda_cot_id' => $prendaCotId,
                 'cantidad' => $logosCot->count(),
             ]);
+        }
+    }
+
+    /**
+     * Guardar tallas con cantidades en prenda_tallas_ped
+     * Puede recibir:
+     * - Array asociativo: ['S' => 10, 'M' => 20, 'L' => 15]
+     * - String JSON: '{"S":10,"M":20,"L":15}'
+     * - String simple: 'S, M, L'
+     */
+    private function guardarTallasPrenda(PrendaPedido $prenda, mixed $cantidades): void
+    {
+        try {
+            $tallasCantidades = [];
+
+            // Parsear según el tipo de dato recibido
+            if (is_array($cantidades)) {
+                $tallasCantidades = $cantidades;
+            } elseif (is_string($cantidades)) {
+                // Intentar parsear como JSON
+                if (str_starts_with(trim($cantidades), '{') || str_starts_with(trim($cantidades), '[')) {
+                    $tallasCantidades = json_decode($cantidades, true) ?? [];
+                } else {
+                    // Si es una lista separada por comas, crear array con cantidad 1
+                    $tallas = array_map('trim', explode(',', $cantidades));
+                    $tallasCantidades = array_fill_keys($tallas, 1);
+                }
+            }
+
+            if (empty($tallasCantidades)) {
+                Log::info('ℹ️ [PedidoPrendaService::guardarTallasPrenda] No hay tallas para guardar', [
+                    'prenda_ped_id' => $prenda->id,
+                ]);
+                return;
+            }
+
+            // Guardar cada talla con su cantidad
+            $registros = [];
+            foreach ($tallasCantidades as $talla => $cantidad) {
+                if ($talla && $cantidad > 0) {
+                    $registros[] = [
+                        'prenda_ped_id' => $prenda->id,
+                        'talla' => (string)$talla,
+                        'cantidad' => (int)$cantidad,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
+            }
+
+            if (!empty($registros)) {
+                \App\Models\PrendaTalaPed::insert($registros);
+                
+                Log::info('✅ [PedidoPrendaService::guardarTallasPrenda] Tallas guardadas correctamente', [
+                    'prenda_ped_id' => $prenda->id,
+                    'total_tallas' => count($registros),
+                    'tallas' => array_keys($tallasCantidades),
+                ]);
+            }
+        } catch (\Exception $e) {
+            Log::error('❌ [PedidoPrendaService::guardarTallasPrenda] Error al guardar tallas', [
+                'prenda_ped_id' => $prenda->id,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
         }
     }
 }

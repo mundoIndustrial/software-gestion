@@ -2343,5 +2343,7 @@
 <!-- Scripts para el modal de órdenes -->
 <script src="{{ asset('js/orders js/order-detail-modal-manager.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos-detail-modal.js') }}"></script>
+<!-- Image Gallery para mostrar fotos en el modal -->
+<script src="{{ asset('js/orders-scripts/image-gallery-zoom.js') }}"></script>
 <script src="{{ asset('js/insumos/pagination.js') }}"></script>
 @endsection

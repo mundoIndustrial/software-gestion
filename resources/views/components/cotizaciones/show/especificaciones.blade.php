@@ -10,6 +10,16 @@
     ];
     
     $especificacionesData = $cotizacion->especificaciones;
+    
+    // DEBUG: Log para ver qué contiene especificaciones
+    \Log::info('Especificaciones en vista', [
+        'cotizacion_id' => $cotizacion->id,
+        'especificaciones_raw' => $especificacionesData,
+        'tipo' => gettype($especificacionesData),
+        'es_string' => is_string($especificacionesData),
+        'es_array' => is_array($especificacionesData)
+    ]);
+    
     if (is_string($especificacionesData)) {
         $especificacionesData = json_decode($especificacionesData, true) ?? [];
     } elseif (!is_array($especificacionesData)) {
@@ -20,6 +30,7 @@
     if($especificacionesData && is_array($especificacionesData)) {
         $especificacionesExisten = count($especificacionesData) > 0;
     }
+    
 @endphp
 
 @if($especificacionesExisten)

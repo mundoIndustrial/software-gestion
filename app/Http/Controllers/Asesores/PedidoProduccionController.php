@@ -89,6 +89,7 @@ class PedidoProduccionController extends Controller
                 'cotizacion_id' => 'required|integer|exists:cotizaciones,id',
                 'forma_de_pago' => 'nullable|string',
                 'prendas' => 'nullable|array',
+                'reflectivo_fotos_ids' => 'nullable|array',
             ]);
 
             \Log::info('🚀 [PedidoProduccionController] Validación exitosa', $validated);
@@ -217,6 +218,46 @@ class PedidoProduccionController extends Controller
                             'telas' => count($telasData[$indexPrenda]),
                             'logos' => count($logosData[$indexPrenda]),
                         ]);
+                    }
+
+                    // Si hay fotos de reflectivo seleccionadas, agregarlas a la primera prenda
+                    if (!empty($validated['reflectivo_fotos_ids'])) {
+                        \Log::info('📸 [PedidoProduccionController] Procesando fotos de reflectivo', [
+                            'fotos_ids' => $validated['reflectivo_fotos_ids']
+                        ]);
+                        
+                        // Obtener las fotos del reflectivo desde la BD
+                        $reflectivo = \App\Models\ReflectivoCotizacion::where('cotizacion_id', $validated['cotizacion_id'])->first();
+                        
+                        if ($reflectivo) {
+                            $fotosReflectivo = \App\Models\ReflectivoCotizacionFoto::whereIn('id', $validated['reflectivo_fotos_ids'])
+                                ->where('reflectivo_cotizacion_id', $reflectivo->id)
+                                ->get();
+                            
+                            \Log::info('📸 Fotos de reflectivo encontradas', [
+                                'cantidad' => $fotosReflectivo->count()
+                            ]);
+                            
+                            // Agregar las fotos del reflectivo a la primera prenda (índice 0)
+                            if ($fotosReflectivo->count() > 0) {
+                                if (!isset($fotosData[0])) {
+                                    $fotosData[0] = [];
+                                }
+                                
+                                foreach ($fotosReflectivo as $foto) {
+                                    $fotosData[0][] = [
+                                        'url' => '/storage/' . ltrim($foto->ruta_webp ?? $foto->ruta_original, '/'),
+                                        'ruta_original' => $foto->ruta_original,
+                                        'ruta_webp' => $foto->ruta_webp,
+                                        'orden' => $foto->orden ?? 0,
+                                    ];
+                                }
+                                
+                                \Log::info('✅ Fotos de reflectivo agregadas a fotosData[0]', [
+                                    'total_fotos_prenda_0' => count($fotosData[0])
+                                ]);
+                            }
+                        }
                     }
 
                     // Llamar a endpoint de guardado de fotos

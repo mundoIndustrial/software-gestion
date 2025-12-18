@@ -138,6 +138,14 @@
                                     </button>
                                 </div>
                             </th>
+                            <th>
+                                <div class="th-wrapper">
+                                    <span>FECHA ESTIMADA</span>
+                                    <button type="button" class="btn-filter-column" onclick="abrirModalFiltro('fecha-estimada')" title="Filtrar Fecha Estimada">
+                                        <span class="material-symbols-rounded" style="font-size: 1.2rem;">filter_alt</span>
+                                    </button>
+                                </div>
+                            </th>
                             <th style="text-align: center; white-space: normal;">ACCIONES</th>
                         </tr>
                     </thead>
@@ -156,6 +164,9 @@
                                 </td>
                                 <td class="asesora">{{ $orden->asesora?->name ?? 'N/A' }}</td>
                                 <td class="forma-pago">{{ $orden->forma_de_pago ?? 'N/A' }}</td>
+                                <td class="fecha-estimada" data-fecha-estimada="{{ $orden->fecha_estimada_de_entrega ? $orden->fecha_estimada_de_entrega->format('d/m/Y') : 'N/A' }}">
+                                    {{ $orden->fecha_estimada_de_entrega ? $orden->fecha_estimada_de_entrega->format('d/m/Y') : 'N/A' }}
+                                </td>
                                 <td class="acciones">
                                     <div class="acciones-group">
                                         <!-- Ver Orden - Menu -->
@@ -344,7 +355,19 @@
                         </div>
                         <div class="form-group">
                             <label for="editarDiaEntrega">Días de Entrega</label>
-                            <input type="number" id="editarDiaEntrega" name="dia_de_entrega" class="form-control" min="1">
+                            <div style="display: flex; gap: 0.75rem; align-items: flex-end;">
+                                <input type="number" id="editarDiaEntrega" name="dia_de_entrega" class="form-control" min="1" style="flex: 1;">
+                                <button type="button" class="btn" style="background: #3498db; color: white; padding: 0.5rem 1rem; white-space: nowrap; display: flex; align-items: center; gap: 0.5rem;" onclick="calcularFechaEstimada()">
+                                    <span class="material-symbols-rounded" style="font-size: 1.2rem;">event</span>
+                                    Calcular
+                                </button>
+                            </div>
+                            <!-- Campo oculto para enviar fecha estimada -->
+                            <input type="hidden" id="fechaEstimadaOculta" name="fecha_estimada_de_entrega" value="">
+                            <div id="fechaEstimadaContainer" style="margin-top: 0.75rem; display: none;">
+                                <label style="font-size: 0.9rem; color: #27ae60; font-weight: 600;">Fecha Estimada:</label>
+                                <div id="fechaEstimadaMostrada" style="padding: 0.5rem; background: #d5f4e6; border: 1px solid #27ae60; border-radius: 4px; color: #27ae60; font-weight: 500;">-</div>
+                            </div>
                         </div>
                     </div>
                     <div class="form-group" style="margin-top: 1rem;">

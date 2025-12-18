@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exceptions\RegistroOrdenPedidoNumberException;
 use Illuminate\Http\Request;
 use App\Models\PedidoProduccion;
+use App\Events\OrdenUpdated;
 use App\Services\RegistroOrdenValidationService;
 use App\Services\RegistroOrdenCreationService;
 use App\Services\RegistroOrdenUpdateService;
@@ -127,8 +128,20 @@ class RegistroOrdenController extends Controller
             // Ejecutar actualización delegada al servicio
             $response = $this->updateService->updateOrder($orden, $validatedData);
 
-            // Broadcast eventos
-            $this->updateService->broadcastOrderUpdated($orden, $validatedData);
+            // 🆕 Obtener la orden actualizada con todos los campos calculados
+            $ordenActualizada = $orden->fresh();
+            
+            // 🆕 Preparar campos que fueron realmente actualizados (incluyendo los calculados)
+            $changedFields = array_keys($validatedData);
+            
+            // 🆕 Si se actualizó dia_de_entrega, añadir fecha_estimada_de_entrega a los campos cambiados
+            if (in_array('dia_de_entrega', $changedFields) && !in_array('fecha_estimada_de_entrega', $changedFields)) {
+                $changedFields[] = 'fecha_estimada_de_entrega';
+            }
+            
+            // 🆕 Broadcast eventos con la orden actualizada y los campos reales
+            broadcast(new \App\Events\OrdenUpdated($ordenActualizada, 'updated', $changedFields));
+            \Log::info("Broadcast enviado para pedido {$ordenActualizada->numero_pedido} con campos:", $changedFields);
 
             return response()->json($response);
         });

@@ -130,6 +130,31 @@ class CotizacionPrendaService
                     Log::info("✅ Tallas guardadas", ['cantidad' => count($tallas)]);
                 }
 
+                // 4b. ✅ GUARDAR CANTIDADES POR TALLA en prenda_tallas_cot
+                // Recibe en formato: ['S' => 10, 'M' => 20, 'L' => 15]
+                $cantidades = $productoData['cantidades'] ?? [];
+                if (is_string($cantidades)) {
+                    $cantidades = json_decode($cantidades, true) ?? [];
+                }
+                if (!empty($cantidades) && is_array($cantidades)) {
+                    // Primero, limpiar tallas previas si existen
+                    $prenda->tallas()->delete();
+                    
+                    // Guardar las tallas con sus cantidades
+                    foreach ($cantidades as $talla => $cantidad) {
+                        if ($talla && $cantidad > 0) {
+                            $prenda->tallas()->create([
+                                'talla' => (string)$talla,
+                                'cantidad' => (int)$cantidad
+                            ]);
+                        }
+                    }
+                    Log::info("✅ Tallas con cantidades guardadas", [
+                        'cantidad_tallas' => count($cantidades),
+                        'tallas' => array_keys($cantidades)
+                    ]);
+                }
+
                 // 5. Guardar variantes en prenda_variantes_cot
                 // Las variantes vienen dentro de $productoData['variantes']
                 $variantes = $productoData['variantes'] ?? [];

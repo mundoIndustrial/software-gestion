@@ -25,7 +25,10 @@ class PDFCotizacionController extends Controller
                 'prendas.variantes.manga',
                 'prendas.variantes.broche',
                 'prendas.telas.tela',
-                'logoCotizacion.fotos'
+                'logoCotizacion',
+                'logoCotizacion.fotos',
+                'reflectivo',
+                'reflectivo.fotos'
             ])->findOrFail($cotizacionId);
             
             // Obtener el tipo de PDF solicitado (prenda o logo)
@@ -156,6 +159,13 @@ class PDFCotizacionController extends Controller
         $html .= $this->generarPrendasHTML($cotizacion);
         $html .= '</div>';
         
+        // Reflectivo (si existe)
+        if ($cotizacion->reflectivo) {
+            $html .= '<div class="content-wrapper">';
+            $html .= $this->generarReflectivoHTML($cotizacion);
+            $html .= '</div>';
+        }
+        
         // Tabla de especificaciones
         $html .= $this->generarTablaEspecificacionesHTML($cotizacion);
         
@@ -255,28 +265,24 @@ class PDFCotizacionController extends Controller
                 <div style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">';
             
             foreach ($logo->fotos as $imagen) {
-                $rutaImagen = $imagen->ruta_webp ?? $imagen->ruta_original ?? null;
+                // Usar el accessor 'url' del modelo que maneja correctamente las rutas
+                $rutaImagen = $imagen->url;
                 
                 if ($rutaImagen) {
-                    // Verificar si es una URL completa (http/https)
+                    // Si es una URL web (http/https), usarla directamente
                     if (strpos($rutaImagen, 'http') === 0) {
-                        // Es una URL web, usarla directamente
                         $html .= '<img src="' . htmlspecialchars($rutaImagen) . '" alt="Logo" style="width: 140px; height: 140px; border: 1px solid #ccc; object-fit: contain; background: #fff; padding: 5px;">';
                     } else {
-                        // Es una ruta local, asegurar que tenga /storage/
-                        if (!str_starts_with($rutaImagen, '/')) {
-                            $rutaImagen = '/' . $rutaImagen;
-                        }
-                        if (!str_starts_with($rutaImagen, '/storage/')) {
-                            if (str_starts_with($rutaImagen, '/cotizaciones/')) {
-                                $rutaImagen = '/storage' . $rutaImagen;
-                            }
-                        }
-                        
+                        // Es una ruta local (/storage/...)
                         $rutaAbsoluta = public_path($rutaImagen);
                         
                         if (file_exists($rutaAbsoluta)) {
+                            // Si existe, usar la ruta absoluta para mPDF
                             $html .= '<img src="' . $rutaAbsoluta . '" alt="Logo" style="width: 140px; height: 140px; border: 1px solid #ccc; object-fit: contain; background: #fff; padding: 5px;">';
+                        } else {
+                            // Si no existe localmente pero es una ruta /storage/, intentar usar la URL web
+                            $urlWeb = asset($rutaImagen);
+                            $html .= '<img src="' . htmlspecialchars($urlWeb) . '" alt="Logo" style="width: 140px; height: 140px; border: 1px solid #ccc; object-fit: contain; background: #fff; padding: 5px;">';
                         }
                     }
                 }
@@ -870,6 +876,145 @@ class PDFCotizacionController extends Controller
         $html .= '</tbody>
             </table>
         </div>';
+        
+        return $html;
+    }
+    
+    /**
+     * Genera el HTML de reflectivo con sus imágenes
+     */
+    private function generarReflectivoHTML($cotizacion)
+    {
+        $html = '';
+        
+        if (!$cotizacion->reflectivo) {
+            return $html;
+        }
+        
+        $reflectivo = $cotizacion->reflectivo;
+        
+        // Título de sección
+        $html .= '<div style="page-break-inside: avoid; margin-bottom: 25px; border: 2px solid #3498db; padding: 15px; background: #f8f9fa;">';
+        $html .= '<div style="font-size: 13px; font-weight: bold; margin-bottom: 10px; color: #3498db; text-transform: uppercase;">📋 INFORMACIÓN DE REFLECTIVO</div>';
+        
+        // Tipo de prenda
+        if ($reflectivo->tipo_prenda) {
+            $html .= '<div style="font-size: 11px; margin-bottom: 6px;"><strong>Tipo de Prenda:</strong> ' . htmlspecialchars($reflectivo->tipo_prenda) . '</div>';
+        }
+        
+        // Descripción
+        if ($reflectivo->descripcion) {
+            $html .= '<div style="font-size: 10px; margin-bottom: 8px; color: #333;"><strong>DESCRIPCIÓN:</strong> ' . htmlspecialchars($reflectivo->descripcion) . '</div>';
+        }
+        
+        // Tipo de venta
+        if ($reflectivo->tipo_venta) {
+            $html .= '<div style="font-size: 10px; margin-bottom: 6px;"><strong>Tipo de Venta:</strong> ' . htmlspecialchars($reflectivo->tipo_venta) . '</div>';
+        }
+        
+        // Ubicación
+        if ($reflectivo->ubicacion && is_array($reflectivo->ubicacion) && count($reflectivo->ubicacion) > 0) {
+            $ubicaciones = implode(', ', $reflectivo->ubicacion);
+            $html .= '<div style="font-size: 10px; margin-bottom: 6px;"><strong>Ubicación:</strong> ' . htmlspecialchars($ubicaciones) . '</div>';
+        }
+        
+        // Observaciones generales
+        if ($reflectivo->observaciones_generales && is_array($reflectivo->observaciones_generales) && count($reflectivo->observaciones_generales) > 0) {
+            $html .= '<div style="font-size: 10px; margin-top: 8px; margin-bottom: 8px;"><strong>Observaciones:</strong></div>';
+            foreach ($reflectivo->observaciones_generales as $obs) {
+                if (!empty($obs)) {
+                    $html .= '<div style="font-size: 9px; margin-left: 15px; margin-bottom: 3px; color: #555;">• ' . htmlspecialchars($obs) . '</div>';
+                }
+            }
+        }
+        
+        // IMÁGENES DE REFLECTIVO
+        $imagenesReflectivo = $reflectivo->fotos ?? [];
+        
+        \Log::info('PDF: Procesando imágenes de reflectivo', [
+            'cotizacion_id' => $cotizacion->id,
+            'reflectivo_id' => $reflectivo->id,
+            'total_fotos' => count($imagenesReflectivo)
+        ]);
+        
+        if ($imagenesReflectivo && count($imagenesReflectivo) > 0) {
+            $html .= '<div style="margin-top: 15px;">';
+            $html .= '<div style="font-size: 10px; font-weight: bold; margin-bottom: 8px; color: #3498db;">Imágenes de Referencia:</div>';
+            $html .= '<div style="display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; justify-content: flex-start;">';
+            
+            foreach ($imagenesReflectivo as $idx => $imagen) {
+                $rutaImagen = $imagen->ruta_webp ?? $imagen->ruta_original ?? null;
+                
+                \Log::info('PDF: Procesando foto de reflectivo', [
+                    'reflectivo_id' => $reflectivo->id,
+                    'foto_idx' => $idx,
+                    'foto_id' => $imagen->id,
+                    'ruta_webp' => $imagen->ruta_webp,
+                    'ruta_original' => $imagen->ruta_original,
+                    'ruta_final' => $rutaImagen
+                ]);
+                
+                if ($rutaImagen) {
+                    // Verificar si es una URL completa (http/https)
+                    if (strpos($rutaImagen, 'http') === 0) {
+                        // Es una URL web, usarla directamente
+                        \Log::info('PDF: Foto de reflectivo es URL web', ['url' => $rutaImagen]);
+                        $html .= '<img src="' . htmlspecialchars($rutaImagen) . '" alt="Reflectivo" style="width: 120px; height: 120px; border: 2px solid #3498db; object-fit: cover; flex-shrink: 0; border-radius: 4px;">';
+                    } else {
+                        // Es una ruta local, asegurar que tenga /storage/
+                        if (!str_starts_with($rutaImagen, '/')) {
+                            $rutaImagen = '/' . $rutaImagen;
+                        }
+                        if (!str_starts_with($rutaImagen, '/storage/')) {
+                            if (str_starts_with($rutaImagen, '/cotizaciones/') || str_starts_with($rutaImagen, '/reflectivo/')) {
+                                $rutaImagen = '/storage' . $rutaImagen;
+                            }
+                        }
+                        
+                        $rutaAbsoluta = $rutaImagen;
+                        if (str_starts_with($rutaImagen, '/')) {
+                            $rutaAbsoluta = public_path($rutaImagen);
+                        }
+                        
+                        $existe = file_exists($rutaAbsoluta);
+                        \Log::info('PDF: Foto de reflectivo local', [
+                            'ruta_original_recibida' => $imagen->ruta_webp ?? $imagen->ruta_original,
+                            'ruta_procesada' => $rutaImagen,
+                            'ruta_absoluta' => $rutaAbsoluta,
+                            'existe' => $existe,
+                            'es_archivo' => is_file($rutaAbsoluta),
+                            'es_readable' => is_readable($rutaAbsoluta)
+                        ]);
+                        
+                        if ($existe) {
+                            $html .= '<img src="' . $rutaAbsoluta . '" alt="Reflectivo" style="width: 120px; height: 120px; border: 2px solid #3498db; object-fit: cover; flex-shrink: 0; border-radius: 4px;">';
+                        } else {
+                            \Log::warning('PDF: Foto de reflectivo no existe', [
+                                'ruta_absoluta' => $rutaAbsoluta,
+                                'ruta_original' => $imagen->ruta_original,
+                                'ruta_webp' => $imagen->ruta_webp
+                            ]);
+                        }
+                    }
+                } else {
+                    \Log::warning('PDF: Foto de reflectivo sin ruta', [
+                        'reflectivo_id' => $reflectivo->id,
+                        'foto_idx' => $idx,
+                        'foto_id' => $imagen->id
+                    ]);
+                }
+            }
+            
+            $html .= '</div>';
+            $html .= '</div>';
+        } else {
+            \Log::info('PDF: Reflectivo sin fotos', [
+                'reflectivo_id' => $reflectivo->id,
+                'tipo_prenda' => $reflectivo->tipo_prenda
+            ]);
+        }
+        
+        $html .= '</div>';
         
         return $html;
     }

@@ -29,8 +29,8 @@ class CotizacionEstadoController extends Controller
                 ], 422);
             }
             
-            // Si ya está en ENVIADO A APROBADOR, no hacer nada
-            if ($cotizacion->estado === 'ENVIADO A APROBADOR') {
+            // Si ya está aprobada, no hacer nada
+            if ($cotizacion->estado === 'APROBADA_CONTADOR') {
                 return response()->json([
                     'success' => true,
                     'message' => 'La cotización ya ha sido aprobada',
@@ -38,15 +38,15 @@ class CotizacionEstadoController extends Controller
                 ]);
             }
 
-            // Actualizar estado a ENVIADO A APROBADOR
+            // Actualizar estado a APROBADA_CONTADOR
             $cotizacion->update([
-                'estado' => 'ENVIADO A APROBADOR',
-                'fecha_enviado_a_aprobador' => now()
+                'estado' => 'APROBADA_CONTADOR',
+                'fecha_aprobada_contador' => now()
             ]);
 
-            Log::info('Cotización aprobada y enviada a aprobador', [
+            Log::info('Cotización aprobada por contador', [
                 'cotizacion_id' => $cotizacion->id,
-                'nuevo_estado' => 'ENVIADO A APROBADOR',
+                'nuevo_estado' => 'APROBADA_CONTADOR',
                 'estado_anterior' => $cotizacion->getOriginal('estado')
             ]);
 
@@ -83,7 +83,7 @@ class CotizacionEstadoController extends Controller
             ]);
 
             // Validar que la cotización esté en estados válidos para aprobar
-            $estadosValidos = ['APROBADA', 'APROBADA_CONTADOR', 'ENVIADO A APROBADOR', 'ENVIADA A APROBADOR'];
+            $estadosValidos = ['APROBADA', 'APROBADA_CONTADOR', 'APROBADA_POR_APROBADOR', 'ENVIADO A APROBADOR', 'ENVIADA A APROBADOR'];
             if (!in_array($cotizacion->estado, $estadosValidos)) {
                 return response()->json([
                     'success' => false,
@@ -91,13 +91,17 @@ class CotizacionEstadoController extends Controller
                 ], 422);
             }
 
+            $estadoAnterior = $cotizacion->estado;
+
             // Actualizar estado a APROBADA_POR_APROBADOR
             $cotizacion->update([
                 'estado' => 'APROBADA_POR_APROBADOR'
             ]);
 
             Log::info('Cotización aprobada por aprobador', [
-                'cotizacion_id' => $cotizacion->id
+                'cotizacion_id' => $cotizacion->id,
+                'estado_anterior' => $estadoAnterior,
+                'nuevo_estado' => 'APROBADA_POR_APROBADOR'
             ]);
 
             return response()->json([

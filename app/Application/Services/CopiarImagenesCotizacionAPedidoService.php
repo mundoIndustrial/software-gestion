@@ -18,6 +18,101 @@ use Illuminate\Support\Facades\Log;
 class CopiarImagenesCotizacionAPedidoService
 {
     /**
+     * Copiar imágenes del reflectivo seleccionadas por el usuario
+     */
+    public function copiarImagenesReflectivo(int $cotizacionId, int $pedidoId, array $fotosIdsSeleccionadas): void
+    {
+        \Log::info('🖼️ [CopiarImagenes] Copiando imágenes de reflectivo', [
+            'cotizacion_id' => $cotizacionId,
+            'pedido_id' => $pedidoId,
+            'fotos_seleccionadas' => $fotosIdsSeleccionadas
+        ]);
+
+        try {
+            // Obtener el reflectivo de la cotización
+            $reflectivo = \App\Models\ReflectivoCotizacion::where('cotizacion_id', $cotizacionId)->first();
+            
+            if (!$reflectivo) {
+                \Log::info('No hay reflectivo en la cotización');
+                return;
+            }
+
+            \Log::info('🔍 Buscando fotos de reflectivo', [
+                'reflectivo_id' => $reflectivo->id,
+                'fotos_ids_seleccionadas' => $fotosIdsSeleccionadas
+            ]);
+
+            // Obtener las fotos seleccionadas
+            $fotosReflectivo = \App\Models\ReflectivoCotizacionFoto::whereIn('id', $fotosIdsSeleccionadas)
+                ->where('reflectivo_cotizacion_id', $reflectivo->id)
+                ->get();
+
+            \Log::info('🔍 Fotos encontradas', [
+                'cantidad' => $fotosReflectivo->count(),
+                'fotos' => $fotosReflectivo->toArray()
+            ]);
+
+            if ($fotosReflectivo->isEmpty()) {
+                \Log::warning('⚠️ No hay fotos de reflectivo para copiar', [
+                    'reflectivo_id' => $reflectivo->id,
+                    'ids_buscados' => $fotosIdsSeleccionadas
+                ]);
+                return;
+            }
+
+            // Obtener el pedido y su primera prenda
+            $pedido = \App\Models\PedidoProduccion::findOrFail($pedidoId);
+            $primeraPrenda = \App\Models\PrendaPedido::where('numero_pedido', $pedido->numero_pedido)
+                ->orderBy('id')
+                ->first();
+
+            if (!$primeraPrenda) {
+                \Log::warning('No hay prendas en el pedido para copiar imágenes de reflectivo');
+                return;
+            }
+
+            // Copiar las fotos seleccionadas a la primera prenda
+            $fotosCopiadas = 0;
+            foreach ($fotosReflectivo as $foto) {
+                \Log::info('📸 Copiando foto de reflectivo', [
+                    'foto_id' => $foto->id,
+                    'ruta_original' => $foto->ruta_original,
+                    'ruta_webp' => $foto->ruta_webp,
+                    'prenda_pedido_id' => $primeraPrenda->id
+                ]);
+
+                $fotoCreada = \App\Models\PrendaFotoPedido::create([
+                    'prenda_pedido_id' => $primeraPrenda->id,
+                    'ruta_original' => $foto->ruta_original,
+                    'ruta_webp' => $foto->ruta_webp,
+                    'ruta_miniatura' => null,
+                    'orden' => $foto->orden ?? 0,
+                    'ancho' => null,
+                    'alto' => null,
+                    'tamaño' => null,
+                ]);
+
+                \Log::info('✅ Foto copiada', [
+                    'prenda_foto_pedido_id' => $fotoCreada->id
+                ]);
+
+                $fotosCopiadas++;
+            }
+
+            \Log::info('✅ Imágenes de reflectivo copiadas exitosamente', [
+                'cantidad_fotos' => $fotosCopiadas,
+                'prenda_pedido_id' => $primeraPrenda->id
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('❌ Error al copiar imágenes de reflectivo', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    /**
      * Copiar todas las imágenes de una cotización a sus prendas de pedido
      * 
      * Estrategia: Copiar imágenes de TODAS las prendas de cotización a TODAS las prendas de pedido

@@ -17,45 +17,17 @@ function openCotizacionModal(cotizacionId) {
         .then(data => {
             console.log('Datos recibidos:', data);
 
-            // Construir HTML del modal con encabezado y contenido
-            let html = '';
-
-            // Encabezado con información de la cotización
+            // Actualizar header del modal con información de la cotización
             if (data.cotizacion) {
                 const cot = data.cotizacion;
-                html += `
-                    <div style="background: linear-gradient(135deg, #1e5ba8 0%, #1e3a8a 100%); color: white; padding: 1.5rem; border-radius: 8px 8px 0 0; margin: -2rem -2rem 1.5rem -2rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                            <div>
-                                <h2 style="margin: 0 0 0.5rem 0; font-size: 1.3rem; font-weight: 700;">MUNDO INDUSTRIAL</h2>
-                                <p style="margin: 0; font-size: 0.9rem; opacity: 0.9;">Cotización de Prendas</p>
-                            </div>
-                        </div>
-                        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; font-size: 0.9rem;">
-                            <div>
-                                <p style="margin: 0 0 0.25rem 0; opacity: 0.8; font-size: 0.8rem;">COTIZACIÓN #</p>
-                                <p style="margin: 0; font-weight: 700; font-size: 1rem;">${cot.numero_cotizacion || 'N/A'}</p>
-                            </div>
-                            <div>
-                                <p style="margin: 0 0 0.25rem 0; opacity: 0.8; font-size: 0.8rem;">TIPO:</p>
-                                <p style="margin: 0; font-weight: 700;">${cot.tipo_venta || 'N/A'}</p>
-                            </div>
-                            <div>
-                                <p style="margin: 0 0 0.25rem 0; opacity: 0.8; font-size: 0.8rem;">FECHA:</p>
-                                <p style="margin: 0; font-weight: 700;">${cot.created_at ? new Date(cot.created_at).toLocaleDateString('es-ES') : 'N/A'}</p>
-                            </div>
-                            <div>
-                                <p style="margin: 0 0 0.25rem 0; opacity: 0.8; font-size: 0.8rem;">CLIENTE:</p>
-                                <p style="margin: 0; font-weight: 700;">${cot.nombre_cliente || 'N/A'}</p>
-                            </div>
-                            <div>
-                                <p style="margin: 0 0 0.25rem 0; opacity: 0.8; font-size: 0.8rem;">ASESORA:</p>
-                                <p style="margin: 0; font-weight: 700;">${cot.asesora_nombre || 'N/A'}</p>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                document.getElementById('modalHeaderNumber').textContent = cot.numero_cotizacion || 'N/A';
+                document.getElementById('modalHeaderDate').textContent = cot.created_at ? new Date(cot.created_at).toLocaleDateString('es-ES') : 'N/A';
+                document.getElementById('modalHeaderClient').textContent = cot.nombre_cliente || 'N/A';
+                document.getElementById('modalHeaderAdvisor').textContent = cot.asesora_nombre || 'N/A';
             }
+
+            // Construir HTML del modal sin el encabezado (que ya está en el layout)
+            let html = '';
 
             // Contenedor de prendas
             html += '<div class="prendas-container" style="display: flex; flex-direction: column; gap: 1.5rem;">';
@@ -585,6 +557,134 @@ function cerrarImagenGrande() {
     if (modal) {
         modal.style.display = 'none';
     }
+}
+
+// Función para aprobar cotización al aprobador (desde vista aprobadas)
+function aprobarAlAprobador(cotizacionId) {
+    // Mostrar confirmación
+    Swal.fire({
+        title: '¿Enviar al Asesor?',
+        html: `
+            <div style="text-align: left; margin: 1rem 0;">
+                <p style="margin: 0 0 0.75rem 0; font-size: 0.95rem; color: #4b5563;">
+                    Esta es la aprobación final del proceso. La cotización será enviada de vuelta al asesor para que pueda proceder con la venta.
+                </p>
+                <div style="background: #dbeafe; border-left: 4px solid #3b82f6; padding: 0.75rem; border-radius: 4px; margin: 0.75rem 0;">
+                    <p style="margin: 0; font-size: 0.85rem; color: #1e40af; font-weight: 600;">
+                        ℹ️ Una vez aprobada, la cotización estará lista para presentarse al cliente
+                    </p>
+                </div>
+                <p style="margin: 0.75rem 0 0 0; font-size: 0.85rem; color: #666;">
+                    <strong>¿Estás seguro de que deseas proceder?</strong>
+                </p>
+            </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#10b981',
+        cancelButtonColor: '#d1d5db',
+        confirmButtonText: 'Sí, Enviar al Asesor',
+        cancelButtonText: 'Cancelar',
+        width: '500px'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Mostrar loading
+            Swal.fire({
+                title: 'Enviando al Asesor...',
+                html: 'Por favor espera mientras se procesa',
+                icon: 'info',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            // Enviar solicitud de aprobación al aprobador
+            fetch(`/cotizaciones/${cotizacionId}/aprobar-aprobador`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({})
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Encontrar la fila en la tabla de Aprobadas
+                        const filas = document.querySelectorAll('#aprobadas-section .table-row');
+
+                        filas.forEach(fila => {
+                            const rowId = fila.getAttribute('data-cotizacion-id');
+                            if (rowId == cotizacionId) {
+                                // Animar la desaparición de la fila
+                                fila.style.transition = 'all 0.3s ease-out';
+                                fila.style.opacity = '0';
+                                fila.style.transform = 'translateX(-20px)';
+
+                                setTimeout(() => {
+                                    fila.remove();
+
+                                    // Verificar si la tabla está vacía
+                                    const tbody = document.querySelector('#aprobadas-section .table-body');
+                                    if (tbody && tbody.children.length === 0) {
+                                        // Si está vacía, mostrar mensaje
+                                        tbody.innerHTML = '<div style="padding: 40px; text-align: center; color: #9ca3af;"><p>No hay cotizaciones aprobadas</p></div>';
+                                    }
+                                }, 300);
+                            }
+                        });
+
+                        Swal.fire({
+                            title: '✓ Aprobación Completada',
+                            html: `
+                            <div style="text-align: left; color: #4b5563;">
+                                <p style="margin: 0 0 0.75rem 0; font-size: 0.95rem;">
+                                    ✅ La cotización ha sido aprobada exitosamente.
+                                </p>
+                                <div style="background: #d1fae5; border-left: 4px solid #10b981; padding: 0.75rem; border-radius: 4px; margin: 0.75rem 0;">
+                                    <p style="margin: 0; font-size: 0.85rem; color: #065f46; font-weight: 600;">
+                                        📧 Se ha notificado al asesor
+                                    </p>
+                                </div>
+                                <p style="margin: 0.75rem 0 0 0; font-size: 0.85rem; color: #666;">
+                                    <strong>Estado actual:</strong> Lista para hacer pedido
+                                </p>
+                            </div>
+                        `,
+                            icon: 'success',
+                            confirmButtonColor: '#1e5ba8',
+                            confirmButtonText: 'Entendido'
+                        });
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: data.message || 'No se pudo enviar la cotización',
+                            icon: 'error',
+                            confirmButtonColor: '#ef4444'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        title: 'Error',
+                        text: error.message || 'Error al procesar la solicitud',
+                        icon: 'error',
+                        confirmButtonColor: '#ef4444'
+                    });
+                });
+        }
+    });
 }
 
 // Cerrar modal de imagen al hacer clic fuera

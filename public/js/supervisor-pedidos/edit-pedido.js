@@ -168,7 +168,7 @@ function crearPrendaHTML(prenda, index) {
                                 </td>
                             </tr>
                             <tr style="border-bottom: 1px solid #eee;">
-                                <td style="padding: 0.75rem; border-right: 1px solid #d0d0d0; font-weight: 500;">Cierre</td>
+                                <td style="padding: 0.75rem; border-right: 1px solid #d0d0d0; font-weight: 500;">${prenda.tipo_broche_nombre || 'Cierre'}</td>
                                 <td style="padding: 0.75rem; border-right: 1px solid #d0d0d0;">
                                     <input type="text" value="${prenda.tipo_broche_nombre || 'Botón'}" readonly style="width: 100%; padding: 0.5rem; border: 1px solid #d0d0d0; border-radius: 4px; background: #f9f9f9; font-size: 0.875rem;">
                                 </td>
@@ -281,7 +281,65 @@ function eliminarImagen(tipo, id, button) {
     });
 }
 
+function calcularFechaEstimada() {
+    const diaEntrega = document.getElementById('editarDiaEntrega').value;
+    const ordenId = document.getElementById('editarOrdenId').value;
+
+    if (!diaEntrega || diaEntrega <= 0) {
+        alert('Por favor ingresa un número válido de días de entrega');
+        return;
+    }
+
+    // Llamar al servidor para calcular la fecha estimada
+    fetch(`/api/registros/${ordenId}/calcular-fecha-estimada`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+        },
+        body: JSON.stringify({
+            dia_de_entrega: parseInt(diaEntrega)
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.fecha_estimada) {
+            // Mostrar la fecha estimada calculada
+            const container = document.getElementById('fechaEstimadaContainer');
+            const mostrada = document.getElementById('fechaEstimadaMostrada');
+            const fieldOculto = document.getElementById('fechaEstimadaOculta');
+            
+            container.style.display = 'block';
+            mostrada.textContent = data.fecha_estimada;
+            
+            // Guardar la fecha ISO en el campo oculto para enviar al servidor
+            fieldOculto.value = data.fecha_estimada_iso;
+            
+            console.log('✅ Fecha estimada calculada:', data.fecha_estimada);
+            console.log('📝 Campo oculto actualizado:', fieldOculto.value);
+        } else {
+            alert('Error al calcular la fecha estimada: ' + (data.message || 'Error desconocido'));
+        }
+    })
+    .catch(error => {
+        console.error('Error al calcular fecha estimada:', error);
+        alert('Error al calcular la fecha estimada');
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Listener para cambios en días de entrega - mostrar/ocultar la fecha si existe
+    const diaEntregaInput = document.getElementById('editarDiaEntrega');
+    if (diaEntregaInput) {
+        diaEntregaInput.addEventListener('change', function() {
+            // Al cambiar el valor, ocultar la fecha estimada calculada hasta que presione el botón
+            const container = document.getElementById('fechaEstimadaContainer');
+            if (container) {
+                container.style.display = 'none';
+            }
+        });
+    }
+
     const formEditarPedido = document.getElementById('formEditarPedido');
     if (formEditarPedido) {
         formEditarPedido.addEventListener('submit', function(e) {
@@ -329,3 +387,4 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+

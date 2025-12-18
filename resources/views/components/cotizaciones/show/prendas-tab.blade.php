@@ -48,12 +48,13 @@
                 @endforeach
             </tbody>
         </table>
-
-        @include('components.cotizaciones.show.especificaciones', ['cotizacion' => $cotizacion])
     @else
         <div style="text-align: center; padding: 3rem 2rem; color: #94a3b8; font-style: italic; font-size: 0.95rem;">
             <i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
             Sin prendas agregadas
         </div>
     @endif
+
+    {{-- Especificaciones siempre se muestran, independientemente de si hay prendas --}}
+    @include('components.cotizaciones.show.especificaciones', ['cotizacion' => $cotizacion])
 </div>

@@ -62,6 +62,127 @@
                 <div class="modern-table">
                     <div id="tablaOrdenesBody" class="table-body">
                         @forelse($ordenes as $orden)
+                            @php
+                                // Construir descripción con tallas POR PRENDA para el modal
+                                $descripcionConTallas = '';
+                                $descripcionBase = $orden->descripcion_prendas ?? '';
+                                
+                                // VERIFICAR SI ES COTIZACIÓN TIPO REFLECTIVO
+                                $esReflectivo = false;
+                                if ($orden->cotizacion && $orden->cotizacion->tipoCotizacion) {
+                                    $esReflectivo = ($orden->cotizacion->tipoCotizacion->codigo === 'RF');
+                                }
+                                
+                                if (!empty($descripcionBase) || ($esReflectivo && $orden->prendas && $orden->prendas->count() > 0)) {
+                                    if ($esReflectivo) {
+                                        // CASO REFLECTIVO: Usar descripción tal cual (ya contiene tallas y cantidad total)
+                                        $descripcionConTallas = '';
+                                        
+                                        if ($orden->prendas && $orden->prendas->count() > 0) {
+                                            foreach ($orden->prendas as $index => $prenda) {
+                                                if ($index > 0) {
+                                                    $descripcionConTallas .= "\n\n";
+                                                }
+                                                
+                                                // Agregar descripción de la prenda (ya tiene tallas incluidas)
+                                                if (!empty($prenda->descripcion)) {
+                                                    $descripcionConTallas .= $prenda->descripcion;
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        // CASO NORMAL: Parsear por "PRENDA X:"
+                                        if (strpos($descripcionBase, 'PRENDA ') !== false) {
+                                            $prendas = explode('PRENDA ', $descripcionBase);
+                                            $prendasCount = 0;
+                                            
+                                            foreach ($prendas as $index => $prendaBlock) {
+                                                if ($index === 0 && empty(trim($prendaBlock))) {
+                                                    continue;
+                                                }
+                                                
+                                                $prendaBlock = trim($prendaBlock);
+                                                if (empty($prendaBlock)) {
+                                                    continue;
+                                                }
+                                                
+                                                preg_match('/^(\d+):/', $prendaBlock, $matches);
+                                                $numPrenda = isset($matches[1]) ? intval($matches[1]) : ($prendasCount + 1);
+                                                
+                                                $descripcionConTallas .= "PRENDA " . $prendaBlock;
+                                                
+                                                if ($orden->prendas && $orden->prendas->count() > 0) {
+                                                    $prendaActual = $orden->prendas->where('numero_prenda', $numPrenda)->first();
+                                                    
+                                                    if (!$prendaActual && $prendasCount < $orden->prendas->count()) {
+                                                        $prendaActual = $orden->prendas[$prendasCount];
+                                                    }
+                                                    
+                                                    if ($prendaActual && $prendaActual->cantidad_talla) {
+                                                        try {
+                                                            $tallas = is_string($prendaActual->cantidad_talla) 
+                                                                ? json_decode($prendaActual->cantidad_talla, true) 
+                                                                : $prendaActual->cantidad_talla;
+                                                            
+                                                            if (is_array($tallas) && !empty($tallas)) {
+                                                                $tallasTexto = [];
+                                                                foreach ($tallas as $talla => $cantidad) {
+                                                                    if ($cantidad > 0) {
+                                                                        $tallasTexto[] = "$talla: $cantidad";
+                                                                    }
+                                                                }
+                                                                if (!empty($tallasTexto)) {
+                                                                    $descripcionConTallas .= "\nTalla: " . implode(', ', $tallasTexto);
+                                                                }
+                                                            }
+                                                        } catch (\Exception $e) {
+                                                            // Continuar sin tallas
+                                                        }
+                                                    }
+                                                }
+                                                
+                                                $prendasCount++;
+                                                if ($prendasCount < count($prendas)) {
+                                                    $descripcionConTallas .= "\n\n";
+                                                }
+                                            }
+                                        } else {
+                                            // Descripción sin formato PRENDA
+                                            $descripcionConTallas = $descripcionBase;
+                                            
+                                            if ($orden->prendas && $orden->prendas->count() > 0) {
+                                                $prendaActual = $orden->prendas->first();
+                                                
+                                                if ($prendaActual && $prendaActual->cantidad_talla) {
+                                                    try {
+                                                        $tallas = is_string($prendaActual->cantidad_talla) 
+                                                            ? json_decode($prendaActual->cantidad_talla, true) 
+                                                            : $prendaActual->cantidad_talla;
+                                                        
+                                                        if (is_array($tallas) && !empty($tallas)) {
+                                                            $tallasTexto = [];
+                                                            foreach ($tallas as $talla => $cantidad) {
+                                                                if ($cantidad > 0) {
+                                                                    $tallasTexto[] = "$talla: $cantidad";
+                                                                }
+                                                            }
+                                                            if (!empty($tallasTexto)) {
+                                                                $descripcionConTallas .= "\n\nTallas: " . implode(', ', $tallasTexto);
+                                                            }
+                                                        }
+                                                    } catch (\Exception $e) {
+                                                        // Continuar sin tallas
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                if (empty($descripcionConTallas)) {
+                                    $descripcionConTallas = $descripcionBase;
+                                }
+                            @endphp
                             <div class="table-row" data-orden-id="{{ $orden->numero_pedido }}">
                                 <!-- Acciones -->
                                 <div class="table-cell acciones-column" style="flex: 0 0 100px; justify-content: center; position: relative;">
@@ -138,7 +259,7 @@
                                 <!-- Descripción -->
                                 <div class="table-cell" style="flex: 10;">
                                     <div class="cell-content" style="justify-content: flex-start;">
-                                        <span style="color: #6b7280; font-size: 0.875rem; cursor: pointer; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="abrirModalCelda('Descripción', `{{ addslashes($orden->descripcion_prendas ?? '-') }}`)" title="Click para ver completo">
+                                        <span style="color: #6b7280; font-size: 0.875rem; cursor: pointer; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="abrirModalCelda('Descripción', {{ json_encode($descripcionConTallas) }})" title="Click para ver completo">
                                             @php
                                                 if ($orden->prendas && $orden->prendas->count() > 0) {
                                                     $prendasInfo = $orden->prendas->map(function($prenda) {
@@ -207,9 +328,9 @@
                                 </div>
                                 
                                 <!-- Fecha estimada entrega -->
-                                <div class="table-cell" style="flex: 0 0 180px;">
+                                <div class="table-cell fecha-estimada-cell" style="flex: 0 0 180px;" data-fecha-estimada="{{ $orden->fecha_estimada_de_entrega ? $orden->fecha_estimada_de_entrega->format('d/m/Y') : '-' }}">
                                     <div class="cell-content" style="justify-content: flex-start;">
-                                        <span>{{ $orden->fecha_estimada_de_entrega ? \Carbon\Carbon::parse($orden->fecha_estimada_de_entrega)->format('d/m/Y') : '-' }}</span>
+                                        <span class="fecha-estimada-span">{{ $orden->fecha_estimada_de_entrega ? \Carbon\Carbon::parse($orden->fecha_estimada_de_entrega)->format('d/m/Y') : '-' }}</span>
                                     </div>
                                 </div>
                                 
@@ -544,6 +665,7 @@
     <script src="{{ asset('js/orders js/orders-table-v2.js') }}?v={{ time() }}"></script>
     
     <!-- SCRIPTS COMPLEMENTARIOS (sin cambios) -->
+    <script src="{{ asset('js/asesores/pedidos-detail-modal.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/descripcion-prendas-modal.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/order-navigation.js') }}?v={{ time() }}"></script>
     <script src="{{ asset('js/orders js/pagination.js') }}?v={{ time() }}"></script>

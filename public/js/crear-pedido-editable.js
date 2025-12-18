@@ -89,6 +89,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     prendasCargadas = data.prendas || [];
                     prendasEliminadas.clear(); // Limpiar eliminadas
                     
+                    // Actualizar forma de pago con los datos completos del servidor
+                    if (data.forma_pago) {
+                        formaPagoInput.value = data.forma_pago;
+                        console.log('✅ Forma de pago actualizada:', data.forma_pago);
+                    }
+                    
                     // Mostrar información de logos si existe
                     if (data.logo && data.logo.fotos && data.logo.fotos.length > 0) {
                         console.log('Logos encontrados:', data.logo.fotos.length);
@@ -96,10 +102,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Mostrar especificaciones generales
                     if (data.especificaciones) {
-                        console.log('Especificaciones de cotización:', data.especificaciones);
+                        console.log('📋 Especificaciones de cotización:', data.especificaciones);
+                        console.log('📋 Tipo de especificaciones:', typeof data.especificaciones);
+                        console.log('📋 Es array?:', Array.isArray(data.especificaciones));
+                    } else {
+                        console.log('⚠️ No hay especificaciones en data');
                     }
                     
-                    renderizarPrendasEditables(prendasCargadas, data.logo, data.especificaciones);
+                    // Pasar tipo de cotización para renderizado diferente
+                    const tipoCotizacion = data.tipo_cotizacion_codigo || 'PL';
+                    const esReflectivo = tipoCotizacion === 'RF';
+                    
+                    renderizarPrendasEditables(prendasCargadas, data.logo, data.especificaciones, esReflectivo, data.reflectivo);
                 }
             })
             .catch(error => {
@@ -112,9 +126,178 @@ document.addEventListener('DOMContentLoaded', function() {
     // RENDERIZAR PRENDAS EDITABLES
     // ============================================================
     
-    function renderizarPrendasEditables(prendas, logoCotizacion = null, especificacionesCotizacion = null) {
+    function renderizarPrendasEditables(prendas, logoCotizacion = null, especificacionesCotizacion = null, esReflectivo = false, datosReflectivo = null) {
         if (!prendas || prendas.length === 0) {
             prendasContainer.innerHTML = '<p class="text-gray-500 text-center py-8">Esta cotización no tiene prendas</p>';
+            return;
+        }
+
+        // Si es REFLECTIVO, mostrar información completa y editable
+        if (esReflectivo) {
+            console.log('📦 RENDERIZANDO COTIZACIÓN TIPO REFLECTIVO');
+            console.log('📦 Datos reflectivo:', datosReflectivo);
+            
+            // Parsear ubicaciones del reflectivo
+            let ubicacionesReflectivo = [];
+            if (datosReflectivo && datosReflectivo.ubicacion) {
+                try {
+                    ubicacionesReflectivo = typeof datosReflectivo.ubicacion === 'string' 
+                        ? JSON.parse(datosReflectivo.ubicacion) 
+                        : datosReflectivo.ubicacion;
+                    console.log('📍 Ubicaciones parseadas:', ubicacionesReflectivo);
+                } catch (e) {
+                    console.error('Error parseando ubicaciones:', e);
+                    ubicacionesReflectivo = [];
+                }
+            }
+            
+            let html = '';
+            
+            // Renderizar cada prenda con su información de reflectivo
+            prendas.forEach((prenda, index) => {
+                console.log(`👕 Prenda ${index + 1}:`, prenda);
+                console.log(`   - Tallas:`, prenda.tallas);
+                console.log(`   - Tipo de tallas:`, typeof prenda.tallas);
+                
+                html += `
+                <div class="prenda-card-editable reflectivo-card" data-prenda-index="${index}" style="margin-bottom: 2rem; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;">
+                    <div style="background: linear-gradient(135deg, #1e40af 0%, #0ea5e9 100%); padding: 1.25rem; color: white;">
+                        <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600;">
+                            <i class="fas fa-tshirt" style="margin-right: 0.5rem;"></i>Prenda ${index + 1}
+                        </h3>
+                    </div>
+                    
+                    <div style="padding: 1.5rem;">
+                        <!-- Tipo de Prenda (Editable) -->
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #1e40af;">Tipo de Prenda:</label>
+                            <input type="text" 
+                                   name="reflectivo_tipo_prenda[${index}]" 
+                                   value="${prenda.nombre_producto || ''}"
+                                   placeholder="Ej: Camiseta, Pantalón, Chaqueta..."
+                                   style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem;">
+                        </div>
+                        
+                        <!-- Descripción del Reflectivo para esta prenda (Editable) -->
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #1e40af;">Descripción del Reflectivo:</label>
+                            <textarea name="reflectivo_descripcion[${index}]" 
+                                      placeholder="Describe el reflectivo para esta prenda (tipo, tamaño, color, ubicación, etc.)..."
+                                      style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; min-height: 100px; font-family: inherit;">${prenda.descripcion || ''}</textarea>
+                        </div>
+                        
+                        <!-- Ubicaciones del Reflectivo (Mostrar las que vienen de la cotización) -->
+                        ${ubicacionesReflectivo && ubicacionesReflectivo.length > 0 ? `
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.75rem; color: #1e40af;">
+                                <i class="fas fa-map-marker-alt" style="margin-right: 0.5rem;"></i>Ubicaciones del Reflectivo:
+                            </label>
+                            <div style="display: grid; gap: 0.75rem;">
+                                ${ubicacionesReflectivo.map((ubicacion, ubIdx) => {
+                                    const ubicacionNombre = ubicacion.ubicacion || ubicacion;
+                                    const ubicacionDesc = ubicacion.descripcion || '';
+                                    return `
+                                    <div style="border: 1px solid #e2e8f0; border-left: 4px solid #0ea5e9; border-radius: 8px; padding: 1rem; background: #f9fafb;">
+                                        <div style="margin-bottom: ${ubicacionDesc ? '0.5rem' : '0'};">
+                                            <input type="text" 
+                                                   name="reflectivo_ubicaciones[${index}][${ubIdx}][ubicacion]" 
+                                                   value="${ubicacionNombre}"
+                                                   placeholder="Ubicación (ej: Pecho, Espalda, Mangas...)"
+                                                   style="width: 100%; padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.9rem; font-weight: 600; color: #1e40af;">
+                                        </div>
+                                        ${ubicacionDesc ? `
+                                        <div>
+                                            <textarea name="reflectivo_ubicaciones[${index}][${ubIdx}][descripcion]" 
+                                                      placeholder="Descripción adicional..."
+                                                      style="width: 100%; padding: 0.6rem; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.9rem; min-height: 60px; font-family: inherit; color: #64748b;">${ubicacionDesc}</textarea>
+                                        </div>
+                                        ` : ''}
+                                    </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        <!-- Tallas (Editable con cantidades y botón eliminar) -->
+                        ${prenda.tallas && Array.isArray(prenda.tallas) && prenda.tallas.length > 0 ? `
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.75rem; color: #1e40af;">
+                                <i class="fas fa-ruler" style="margin-right: 0.5rem;"></i>Tallas y Cantidades:
+                            </label>
+                            <div id="tallas-container-${index}" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.75rem;">
+                                ${prenda.tallas.map((talla, tallaIdx) => {
+                                    console.log(`     Talla ${tallaIdx}:`, talla);
+                                    return `
+                                    <div class="talla-item-reflectivo" data-talla="${talla}" data-prenda="${index}" style="background: #f0f7ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 0.75rem; position: relative;">
+                                        <button type="button" 
+                                                onclick="eliminarTallaReflectivo(${index}, '${talla}')"
+                                                style="position: absolute; top: 4px; right: 4px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold; z-index: 10; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"
+                                                title="Eliminar talla">
+                                            ×
+                                        </button>
+                                        <label style="display: block; font-weight: 600; color: #1e40af; margin-bottom: 0.4rem; font-size: 0.85rem;">${talla}</label>
+                                        <input type="number" 
+                                               class="talla-cantidad"
+                                               data-talla="${talla}"
+                                               name="reflectivo_cantidades[${index}][${talla}]" 
+                                               min="0" 
+                                               value="0"
+                                               placeholder="0"
+                                               style="width: 100%; padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.9rem;">
+                                    </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                        ` : `<p style="color: #94a3b8; font-style: italic; margin-bottom: 1.5rem;">
+                            <i class="fas fa-exclamation-circle" style="margin-right: 0.5rem;"></i>Sin tallas definidas
+                            ${prenda.tallas ? ' (tallas: ' + JSON.stringify(prenda.tallas) + ')' : ''}
+                        </p>`}
+                    </div>
+                </div>
+                `;
+            });
+            
+            // Imágenes del Reflectivo (generales para toda la cotización)
+            if (datosReflectivo && datosReflectivo.fotos && datosReflectivo.fotos.length > 0) {
+                console.log('📸 Fotos del reflectivo encontradas:', datosReflectivo.fotos);
+                html += `
+                <div style="background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 1.5rem; margin-bottom: 2rem;">
+                    <h4 style="color: #1e40af; font-size: 1.1rem; font-weight: 600; margin: 0 0 1rem 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.75rem;">
+                        <i class="fas fa-images" style="margin-right: 0.5rem;"></i>Imágenes del Reflectivo (${datosReflectivo.fotos.length})
+                    </h4>
+                    <div id="reflectivo-fotos-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem;">
+                        ${datosReflectivo.fotos.map((foto, fotoIdx) => {
+                            const fotoUrl = foto.url || foto.ruta_webp || '/storage/' + foto.ruta_webp;
+                            const fotoId = foto.id || fotoIdx;
+                            return `
+                            <div class="reflectivo-foto-item" data-foto-id="${fotoId}" style="position: relative; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); transition: all 0.3s ease;" 
+                                 onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 6px 16px rgba(0, 0, 0, 0.15)'" 
+                                 onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 8px rgba(0, 0, 0, 0.1)'">
+                                <button type="button" 
+                                        onclick="eliminarFotoReflectivoPedido(${fotoId})"
+                                        style="position: absolute; top: 5px; right: 5px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: bold; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                                    ×
+                                </button>
+                                <img src="${fotoUrl}" 
+                                     alt="Reflectivo ${fotoIdx + 1}" 
+                                     style="width: 100%; height: 150px; object-fit: cover; cursor: pointer; transition: transform 0.3s ease;"
+                                     onmouseover="this.style.transform='scale(1.05)'"
+                                     onmouseout="this.style.transform=''"
+                                     onclick="abrirModalImagen('${fotoUrl}', 'Reflectivo - Imagen ${fotoIdx + 1}')">
+                                <input type="hidden" name="reflectivo_fotos_incluir[]" value="${fotoId}">
+                            </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+                `;
+            } else {
+                console.log('⚠️ No hay fotos del reflectivo o datosReflectivo es null');
+            }
+            
+            prendasContainer.innerHTML = html;
             return;
         }
 
@@ -187,7 +370,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             if (variantes.tipo_broche) {
                 variacionesArray.push({
-                    tipo: 'Cierre',
+                    tipo: variantes.tipo_broche,
                     valor: variantes.tipo_broche,
                     obs: variantes.obs_broche,
                     campo: 'tipo_broche'
@@ -225,15 +408,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 variacionesHtml += '<tbody>';
                 
                 variacionesArray.forEach((variacion, varIdx) => {
+                    let inputHtml = '';
+                    if (variacion.esCheckbox) {
+                        // Para campos booleanos, mostrar checkbox
+                        const isChecked = variacion.valor === true || variacion.valor === 'Sí' || variacion.valor === 1 ? 'checked' : '';
+                        inputHtml = `<input type="checkbox" 
+                                           ${isChecked}
+                                           data-field="${variacion.campo}" 
+                                           data-prenda="${index}"
+                                           data-variacion="${varIdx}"
+                                           style="width: 20px; height: 20px; cursor: pointer; accent-color: #0066cc;">`;
+                    } else {
+                        // Para campos de texto, mostrar input text
+                        inputHtml = `<input type="text" 
+                                           value="${variacion.valor}" 
+                                           data-field="${variacion.campo}" 
+                                           data-prenda="${index}"
+                                           data-variacion="${varIdx}"
+                                           style="width: 100%; padding: 0.4rem; border: 1px solid #ccc; border-radius: 3px; font-size: 0.85rem;">`;
+                    }
+                    
                     variacionesHtml += `<tr style="border-bottom: 1px solid #eee;" data-variacion="${varIdx}" data-prenda="${index}">
                         <td style="padding: 0.75rem; border-right: 1px solid #d0d0d0; font-weight: 500;">${variacion.tipo}</td>
-                        <td style="padding: 0.75rem; border-right: 1px solid #d0d0d0;">
-                            <input type="text" 
-                                   value="${variacion.valor}" 
-                                   data-field="${variacion.campo}" 
-                                   data-prenda="${index}"
-                                   data-variacion="${varIdx}"
-                                   style="width: 100%; padding: 0.4rem; border: 1px solid #ccc; border-radius: 3px; font-size: 0.85rem;">
+                        <td style="padding: 0.75rem; border-right: 1px solid #d0d0d0; text-align: center;">
+                            ${inputHtml}
                         </td>
                         <td style="padding: 0.75rem; border-right: 1px solid #d0d0d0;">
                             <textarea 
@@ -833,6 +1031,21 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log('📸 Fotos de logo globales encontradas:', fotosLogoGlobales.length);
         
+        // Recopilar fotos del reflectivo que quedan en el DOM (las no eliminadas)
+        const fotosReflectivoGlobales = [];
+        const fotosReflectivoInputs = document.querySelectorAll('input[name="reflectivo_fotos_incluir[]"]');
+        console.log('🔍 Inputs de fotos reflectivo encontrados:', fotosReflectivoInputs.length);
+        fotosReflectivoInputs.forEach(input => {
+            const fotoId = parseInt(input.value);
+            if (!isNaN(fotoId)) {
+                fotosReflectivoGlobales.push(fotoId);
+                console.log('  ✅ Foto ID agregada:', fotoId);
+            } else {
+                console.warn('  ⚠️ ID inválido:', input.value);
+            }
+        });
+        console.log('📸 Fotos de reflectivo seleccionadas (total):', fotosReflectivoGlobales);
+        
         prendasCargadas.forEach((prenda, index) => {
             // Saltar prendas eliminadas
             if (prendasEliminadas.has(index)) {
@@ -845,7 +1058,27 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Obtener valores editados
             const nombreProducto = prendasCard.querySelector(`.prenda-nombre`)?.value || prenda.nombre_producto;
-            const descripcion = prendasCard.querySelector(`.prenda-descripcion`)?.value || prenda.descripcion;
+            let descripcion = prendasCard.querySelector(`.prenda-descripcion`)?.value || prenda.descripcion;
+            
+            // Para cotizaciones reflectivas, recopilar descripción y ubicaciones
+            const descripcionReflectivoInput = prendasCard.querySelector(`textarea[name="reflectivo_descripcion[${index}]"]`);
+            if (descripcionReflectivoInput) {
+                descripcion = descripcionReflectivoInput.value || '';
+                
+                // Agregar ubicaciones a la descripción
+                const ubicacionesInputs = prendasCard.querySelectorAll(`input[name^="reflectivo_ubicaciones[${index}]"][name$="[ubicacion]"]`);
+                if (ubicacionesInputs.length > 0) {
+                    const ubicaciones = [];
+                    ubicacionesInputs.forEach(input => {
+                        if (input.value) {
+                            ubicaciones.push(input.value);
+                        }
+                    });
+                    if (ubicaciones.length > 0) {
+                        descripcion += '\n\nUbicaciones del reflectivo:\n' + ubicaciones.join(', ');
+                    }
+                }
+            }
             
             // Obtener cantidades por talla
             const cantidadesPorTalla = {};
@@ -869,8 +1102,16 @@ document.addEventListener('DOMContentLoaded', function() {
             const inputsVariaciones = prendasCard.querySelectorAll('[data-field]');
             inputsVariaciones.forEach(input => {
                 const field = input.getAttribute('data-field');
-                const value = input.value || '';
-                if (field && value) {
+                let value;
+                
+                // Distinguir entre checkbox e input text
+                if (input.type === 'checkbox') {
+                    value = input.checked ? 1 : 0;
+                } else {
+                    value = input.value || '';
+                }
+                
+                if (field && value !== '') {
                     variacionesEditadas[field] = value;
                 }
             });
@@ -972,6 +1213,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const url = `/asesores/pedidos-produccion/crear-desde-cotizacion/${cotizacionId}`;
         console.log('📤 URL completa:', url);
         console.log('📤 cotizacionId:', cotizacionId);
+        console.log('📤 Fotos reflectivo a enviar:', fotosReflectivoGlobales);
         
         fetch(url, {
             method: 'POST',
@@ -982,7 +1224,8 @@ document.addEventListener('DOMContentLoaded', function() {
             body: JSON.stringify({
                 cotizacion_id: cotizacionId,
                 forma_de_pago: formaPagoInput.value,
-                prendas: prendas
+                prendas: prendas,
+                reflectivo_fotos_ids: fotosReflectivoGlobales
             })
         })
         .then(response => response.json())
@@ -1120,3 +1363,47 @@ window.eliminarImagenLogo = function(button) {
         }
     });
 };
+
+// Función para eliminar fotos del reflectivo
+window.eliminarFotoReflectivoPedido = function(fotoId) {
+    Swal.fire({
+        title: 'Eliminar imagen',
+        text: '¿Estás seguro de que quieres eliminar esta imagen del reflectivo? No se guardará en el pedido.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const contenedor = document.querySelector(`.reflectivo-foto-item[data-foto-id="${fotoId}"]`);
+            if (contenedor) {
+                contenedor.remove();
+                console.log('✅ Foto del reflectivo eliminada, no se guardará en el pedido:', fotoId);
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Imagen eliminada',
+                    text: 'La imagen no se incluirá en el pedido',
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+            }
+        }
+    });
+};
+
+// Función para abrir modal de imagen (si no existe)
+if (typeof window.abrirModalImagen === 'undefined') {
+    window.abrirModalImagen = function(url, titulo) {
+        Swal.fire({
+            title: titulo || 'Imagen',
+            imageUrl: url,
+            imageAlt: titulo || 'Imagen',
+            width: '80%',
+            showCloseButton: true,
+            showConfirmButton: false
+        });
+    };
+}

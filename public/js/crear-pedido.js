@@ -112,8 +112,8 @@ document.addEventListener('DOMContentLoaded', function() {
         asesoraInput.value = asesora;
         formaPagoInput.value = formaPago || '';
 
-        // Cargar prendas de la cotización
-        fetch(`/asesores/cotizaciones/${id}`, {
+        // Cargar prendas de la cotización usando el endpoint correcto
+        fetch(`/asesores/pedidos-produccion/obtener-datos-cotizacion/${id}`, {
             headers: {
                 'Accept': 'application/json',
                 'X-Requested-With': 'XMLHttpRequest'
@@ -125,25 +125,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 return response.json();
             })
-            .then(response => {
-                console.log('📥 Datos de cotización recibidos:', response);
+            .then(data => {
+                console.log('📥 Datos de cotización recibidos:', data);
                 
-                // La respuesta tiene estructura {success: true, data: {...}}
-                const data = response.data || response;
-                
-                console.log('📊 Datos extraídos:', data);
-                
-                // Extraer forma_pago si existe
-                let formaPago = '';
-                if (data.especificaciones && Array.isArray(data.especificaciones.forma_pago)) {
-                    if (data.especificaciones.forma_pago.length > 0) {
-                        formaPago = data.especificaciones.forma_pago[0].valor || '';
-                    }
-                }
-                
-                if (formaPago) {
-                    console.log('✅ Forma de pago desde servidor:', formaPago);
-                    formaPagoInput.value = formaPago;
+                // Actualizar forma de pago con los datos del servidor
+                if (data.forma_pago) {
+                    console.log('✅ Forma de pago desde servidor:', data.forma_pago);
+                    formaPagoInput.value = data.forma_pago;
                 } else {
                     console.log('⚠️ No hay forma de pago en los datos');
                 }

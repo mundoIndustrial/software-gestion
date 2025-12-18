@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PedidoProduccion;
 use App\Models\TablaOriginal;
+use App\Events\OrdenUpdated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -882,6 +883,7 @@ class SupervisorPedidosController extends Controller
                 'forma_de_pago' => 'nullable|string|max:255',
                 'novedades' => 'nullable|string',
                 'dia_de_entrega' => 'nullable|integer|min:1',
+                'fecha_estimada_de_entrega' => 'nullable|string',
                 'prendas' => 'required|array|min:1',
                 'prendas.*.id' => 'required|exists:prendas_pedido,id',
                 'prendas.*.nombre_prenda' => 'required|string|max:255',
@@ -907,13 +909,32 @@ class SupervisorPedidosController extends Controller
 
             \DB::beginTransaction();
 
-            // Actualizar datos del pedido
-            $orden->update([
+            // Preparar datos a actualizar
+            $datosActualizar = [
                 'cliente' => $validated['cliente'],
                 'forma_de_pago' => $validated['forma_de_pago'] ?? $orden->forma_de_pago,
                 'novedades' => $validated['novedades'] ?? $orden->novedades,
                 'dia_de_entrega' => $validated['dia_de_entrega'] ?? $orden->dia_de_entrega,
-            ]);
+            ];
+
+            // Si se envió fecha_estimada_de_entrega desde el frontend (calculada)
+            if (!empty($validated['fecha_estimada_de_entrega'])) {
+                $datosActualizar['fecha_estimada_de_entrega'] = $validated['fecha_estimada_de_entrega'];
+                \Log::info("Fecha estimada recibida del frontend para pedido {$orden->numero_pedido}: {$validated['fecha_estimada_de_entrega']}");
+            }
+            // Si se está actualizando dia_de_entrega y no se envió fecha_estimada, calcularla
+            elseif (isset($validated['dia_de_entrega']) && $validated['dia_de_entrega'] !== null) {
+                $orden->dia_de_entrega = $validated['dia_de_entrega'];
+                $fechaEstimada = $orden->calcularFechaEstimada();
+                if ($fechaEstimada) {
+                    $datosActualizar['fecha_estimada_de_entrega'] = $fechaEstimada->format('Y-m-d H:i:s');
+                    \Log::info("Fecha estimada calculada para pedido {$orden->numero_pedido}: {$fechaEstimada->format('Y-m-d H:i:s')}");
+                }
+            }
+
+            // Actualizar datos del pedido
+            $orden->update($datosActualizar);
+            \Log::info("Pedido actualizado con datos:", $datosActualizar);
 
             // Actualizar cada prenda
             foreach ($validated['prendas'] as $index => $prendaData) {
@@ -979,6 +1000,19 @@ class SupervisorPedidosController extends Controller
             }
 
             \DB::commit();
+
+            // 🆕 Broadcast actualización en tiempo real
+            $changedFields = [];
+            if (!empty($validated['cliente'])) $changedFields[] = 'cliente';
+            if (!empty($validated['forma_de_pago'])) $changedFields[] = 'forma_de_pago';
+            if (!empty($validated['novedades'])) $changedFields[] = 'novedades';
+            if (!empty($validated['dia_de_entrega'])) $changedFields[] = 'dia_de_entrega';
+            if (!empty($validated['fecha_estimada_de_entrega'])) $changedFields[] = 'fecha_estimada_de_entrega';
+            
+            if (!empty($changedFields)) {
+                broadcast(new \App\Events\OrdenUpdated($orden->fresh(), 'updated', $changedFields));
+                \Log::info("Broadcast enviado para pedido {$orden->numero_pedido} con campos:", $changedFields);
+            }
 
             \Log::info("Pedido #{$orden->numero_pedido} actualizado por " . auth()->user()->name);
 

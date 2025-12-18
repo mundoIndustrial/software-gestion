@@ -248,7 +248,7 @@ class RegistroOrdenQueryController extends Controller
             'prendas.fotos',
             'prendas.fotosLogo',
             'prendas.fotosTela',
-            'cotizacion'
+            'cotizacion.tipoCotizacion'
         ])->where('numero_pedido', $pedido)->firstOrFail();
 
         // Obtener estadísticas mediante servicio
@@ -290,27 +290,8 @@ class RegistroOrdenQueryController extends Controller
             $orderArray['cliente_nombre'] = $orderArray['cliente'] ?? '';
         }
         
-        // Asegurar que descripcion_prendas se calcula correctamente
-        // Si no existe, armarla desde las prendas
-        if (empty($order->descripcion_prendas)) {
-            $prendas = $order->prendas ?? [];
-            $descripcionPrendas = '';
-            foreach ($prendas as $index => $prenda) {
-                if ($index > 0) {
-                    $descripcionPrendas .= "\n\n";
-                }
-                $descripcionPrendas .= "Prenda " . ($index + 1) . ": " . ($prenda->nombre_prenda ?? 'Sin nombre') . "\n";
-                if ($prenda->descripcion) {
-                    $descripcionPrendas .= "Descripción: " . $prenda->descripcion . "\n";
-                }
-                if ($prenda->cantidad_talla) {
-                    $descripcionPrendas .= "Tallas: " . $prenda->cantidad_talla;
-                }
-            }
-            $orderArray['descripcion_prendas'] = $descripcionPrendas ?: '';
-        } else {
-            $orderArray['descripcion_prendas'] = $order->descripcion_prendas;
-        }
+        // Construir descripción con tallas POR PRENDA para el modal (como en el blade de asesores)
+        $orderArray['descripcion_prendas'] = $this->buildDescripcionConTallas($order);
         
         // Obtener prendas formateadas para el modal
         \Log::info('🔍 [getOrderDetails] Obteniendo prendas para pedido', [
@@ -737,4 +718,243 @@ class RegistroOrdenQueryController extends Controller
             return response()->json(['error' => 'Error al calcular días'], 500);
         }
     }
+
+    /**
+     * Calcular fecha estimada de entrega
+     * POST /api/registros/{id}/calcular-fecha-estimada
+     */
+    public function calcularFechaEstimada(Request $request, $id)
+    {
+        try {
+            // Validar entrada
+            $validated = $request->validate([
+                'dia_de_entrega' => 'required|integer|min:1'
+            ]);
+
+            // Obtener la orden
+            $orden = PedidoProduccion::findOrFail($id);
+
+            if (!$orden->fecha_de_creacion_de_orden) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La orden no tiene fecha de creación'
+                ], 400);
+            }
+
+            // Asignar temporalmente el día de entrega para calcular
+            $orden->dia_de_entrega = $validated['dia_de_entrega'];
+            
+            // Calcular la fecha estimada
+            $fechaEstimada = $orden->calcularFechaEstimada();
+
+            if (!$fechaEstimada) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se pudo calcular la fecha estimada'
+                ], 400);
+            }
+
+            \Log::info("Fecha estimada calculada para pedido {$orden->numero_pedido}", [
+                'dias' => $validated['dia_de_entrega'],
+                'fecha_estimada' => $fechaEstimada->format('d/m/Y'),
+                'fecha_creacion' => $orden->fecha_de_creacion_de_orden->format('d/m/Y')
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'fecha_estimada' => $fechaEstimada->format('d/m/Y'),
+                'fecha_estimada_iso' => $fechaEstimada->toIso8601String(),
+                'dias' => $validated['dia_de_entrega'],
+                'fecha_creacion' => $orden->fecha_de_creacion_de_orden->format('d/m/Y')
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validación fallida',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Error en calcularFechaEstimada: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al calcular la fecha estimada: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Construir descripción con tallas por prenda (lógica del blade de asesores)
+     * Maneja dos casos: REFLECTIVO y NORMAL
+     * 
+     * @param PedidoProduccion $order
+     * @return string
+     */
+    private function buildDescripcionConTallas($order)
+    {
+        $descripcionConTallas = '';
+        $descripcionBase = $order->descripcion_prendas ?? '';
+        
+        // VERIFICAR SI ES COTIZACIÓN TIPO REFLECTIVO
+        $esReflectivo = false;
+        if ($order->cotizacion && $order->cotizacion->tipoCotizacion) {
+            $esReflectivo = ($order->cotizacion->tipoCotizacion->codigo === 'RF');
+        }
+        
+        if (!empty($descripcionBase) || ($esReflectivo && $order->prendas && $order->prendas->count() > 0)) {
+            if ($esReflectivo) {
+                // CASO REFLECTIVO: Usar descripción tal cual (ya contiene tallas y cantidad total)
+                $descripcionConTallas = '';
+                
+                \Log::info('🔍 [REFLECTIVO] Construyendo descripción reflectivo', [
+                    'pedido' => $order->numero_pedido,
+                    'esReflectivo' => $esReflectivo,
+                    'total_prendas' => $order->prendas ? $order->prendas->count() : 0,
+                ]);
+                
+                if ($order->prendas && $order->prendas->count() > 0) {
+                    foreach ($order->prendas as $index => $prenda) {
+                        \Log::info('  🧥 PRENDA ' . ($index + 1), [
+                            'nombre' => $prenda->nombre_prenda,
+                            'descripcion_length' => strlen($prenda->descripcion ?? ''),
+                            'cantidad_talla' => $prenda->cantidad_talla,
+                        ]);
+                        
+                        if ($index > 0) {
+                            $descripcionConTallas .= "\n\n";
+                        }
+                        
+                        // Agregar descripción de la prenda (ya tiene tallas incluidas)
+                        if (!empty($prenda->descripcion)) {
+                            $descripcionConTallas .= $prenda->descripcion;
+                        }
+                        
+                        // ✅ AGREGAR TALLAS SI NO ESTÁN EN LA DESCRIPCIÓN
+                        if ($prenda->cantidad_talla) {
+                            try {
+                                $tallas = is_string($prenda->cantidad_talla) 
+                                    ? json_decode($prenda->cantidad_talla, true) 
+                                    : $prenda->cantidad_talla;
+                                
+                                \Log::info('    📊 Tallas decodificadas', [
+                                    'is_array' => is_array($tallas),
+                                    'count' => is_array($tallas) ? count($tallas) : 0,
+                                    'tallas' => $tallas,
+                                ]);
+                                
+                                if (is_array($tallas) && !empty($tallas)) {
+                                    $tallasTexto = [];
+                                    foreach ($tallas as $talla => $cantidad) {
+                                        if ($cantidad > 0) {
+                                            $tallasTexto[] = "$talla: $cantidad";
+                                        }
+                                    }
+                                    if (!empty($tallasTexto)) {
+                                        $descripcionConTallas .= "\nTalla: " . implode(', ', $tallasTexto);
+                                        \Log::info('    ✅ Tallas agregadas: ' . implode(', ', $tallasTexto));
+                                    }
+                                }
+                            } catch (\Exception $e) {
+                                \Log::error('    ❌ Error decodificando tallas: ' . $e->getMessage());
+                            }
+                        } else {
+                            \Log::info('    ⚠️ cantidad_talla está vacío');
+                        }
+                    }
+                }
+            } else {
+                // CASO NORMAL: Parsear por "PRENDA X:"
+                if (strpos($descripcionBase, 'PRENDA ') !== false) {
+                    $prendas = explode('PRENDA ', $descripcionBase);
+                    $prendasCount = 0;
+                    
+                    foreach ($prendas as $index => $prendaBlock) {
+                        if ($index === 0 && empty(trim($prendaBlock))) {
+                            continue;
+                        }
+                        
+                        $prendaBlock = trim($prendaBlock);
+                        if (empty($prendaBlock)) {
+                            continue;
+                        }
+                        
+                        preg_match('/^(\d+):/', $prendaBlock, $matches);
+                        $numPrenda = isset($matches[1]) ? intval($matches[1]) : ($prendasCount + 1);
+                        
+                        $descripcionConTallas .= "PRENDA " . $prendaBlock;
+                        
+                        if ($order->prendas && $order->prendas->count() > 0) {
+                            $prendaActual = $order->prendas->where('numero_prenda', $numPrenda)->first();
+                            
+                            if (!$prendaActual && $prendasCount < $order->prendas->count()) {
+                                $prendaActual = $order->prendas[$prendasCount];
+                            }
+                            
+                            if ($prendaActual && $prendaActual->cantidad_talla) {
+                                try {
+                                    $tallas = is_string($prendaActual->cantidad_talla) 
+                                        ? json_decode($prendaActual->cantidad_talla, true) 
+                                        : $prendaActual->cantidad_talla;
+                                    
+                                    if (is_array($tallas) && !empty($tallas)) {
+                                        $tallasTexto = [];
+                                        foreach ($tallas as $talla => $cantidad) {
+                                            if ($cantidad > 0) {
+                                                $tallasTexto[] = "$talla: $cantidad";
+                                            }
+                                        }
+                                        if (!empty($tallasTexto)) {
+                                            $descripcionConTallas .= "\nTalla: " . implode(', ', $tallasTexto);
+                                        }
+                                    }
+                                } catch (\Exception $e) {
+                                    // Continuar sin tallas
+                                }
+                            }
+                        }
+                        
+                        $prendasCount++;
+                        if ($prendasCount < count($prendas)) {
+                            $descripcionConTallas .= "\n\n";
+                        }
+                    }
+                } else {
+                    // Descripción sin formato PRENDA
+                    $descripcionConTallas = $descripcionBase;
+                    
+                    if ($order->prendas && $order->prendas->count() > 0) {
+                        $prendaActual = $order->prendas->first();
+                        
+                        if ($prendaActual && $prendaActual->cantidad_talla) {
+                            try {
+                                $tallas = is_string($prendaActual->cantidad_talla) 
+                                    ? json_decode($prendaActual->cantidad_talla, true) 
+                                    : $prendaActual->cantidad_talla;
+                                
+                                if (is_array($tallas) && !empty($tallas)) {
+                                    $tallasTexto = [];
+                                    foreach ($tallas as $talla => $cantidad) {
+                                        if ($cantidad > 0) {
+                                            $tallasTexto[] = "$talla: $cantidad";
+                                        }
+                                    }
+                                    if (!empty($tallasTexto)) {
+                                        $descripcionConTallas .= "\n\nTallas: " . implode(', ', $tallasTexto);
+                                    }
+                                }
+                            } catch (\Exception $e) {
+                                // Continuar sin tallas
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (empty($descripcionConTallas)) {
+            $descripcionConTallas = $descripcionBase;
+        }
+        
+        return $descripcionConTallas;
+    }
 }
+
