@@ -19,27 +19,24 @@
             <ul class="menu-list" role="navigation">
                 <li class="menu-item">
                     <a href="{{ route('supervisor-pedidos.index', ['aprobacion' => 'pendiente']) }}"
-                       class="menu-link {{ request()->query('aprobacion') === 'pendiente' ? 'active' : '' }}"
+                       class="menu-link {{ request()->query('aprobacion') === 'pendiente' && !request()->query('tipo') ? 'active' : '' }}"
                        style="display:flex;align-items:center;gap:0.5rem;">
                         <span class="material-symbols-rounded">pending_actions</span>
                         <span class="menu-label">Pendientes</span>
-                        <span class="badge-alert" id="ordenesPendientesCount">0</span>
+                        <span class="badge-alert" id="ordenesPendientesCount" style="display: none;">0</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{{ route('supervisor-pedidos.index', ['aprobacion' => 'pendiente', 'tipo' => 'logo']) }}"
+                       class="menu-link {{ request()->query('tipo') === 'logo' ? 'active' : '' }}"
+                       style="display:flex;align-items:center;gap:0.5rem;">
+                        <span class="material-symbols-rounded">image</span>
+                        <span class="menu-label">Pendientes Logo</span>
+                        <span class="badge-alert" id="ordenesPendientesLogoCount" style="display: none;">0</span>
                     </a>
                 </li>
             </ul>
         </div>
 
-        <div class="menu-section">
-            <span class="menu-section-title">Menú</span>
-            <ul class="menu-list" role="navigation">
-                <li class="menu-item">
-                    <a href="{{ route('supervisor-pedidos.index') }}"
-                       class="menu-link {{ request()->routeIs('supervisor-pedidos.index') && !request()->query('estado') && !request()->query('aprobacion') ? 'active' : '' }}">
-                        <span class="material-symbols-rounded">dashboard</span>
-                        <span class="menu-label">Órdenes de Producción</span>
-                    </a>
-                </li>
-            </ul>
-        </div>
     </div>
 </aside>

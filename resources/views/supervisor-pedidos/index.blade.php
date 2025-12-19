@@ -10,48 +10,6 @@
 
 @section('content')
 <div class="supervisor-pedidos-container">
-    <!-- Buscador General -->
-    <div style="margin-bottom: 2rem;">
-        <form method="GET" action="{{ route('supervisor-pedidos.index') }}" style="display: flex; gap: 1rem;">
-            <!-- Preservar parámetros importantes -->
-            @if(request('aprobacion'))
-                <input type="hidden" name="aprobacion" value="{{ request('aprobacion') }}">
-            @endif
-            @if(request('estado'))
-                <input type="hidden" name="estado" value="{{ request('estado') }}">
-            @endif
-            @if(request('asesora'))
-                <input type="hidden" name="asesora" value="{{ request('asesora') }}">
-            @endif
-            @if(request('forma_pago'))
-                <input type="hidden" name="forma_pago" value="{{ request('forma_pago') }}">
-            @endif
-            @if(request('fecha_desde'))
-                <input type="hidden" name="fecha_desde" value="{{ request('fecha_desde') }}">
-            @endif
-            @if(request('fecha_hasta'))
-                <input type="hidden" name="fecha_hasta" value="{{ request('fecha_hasta') }}">
-            @endif
-            
-            <div style="flex: 1;">
-                <input type="text" 
-                       name="busqueda" 
-                       id="busqueda" 
-                       class="filtro-input" 
-                       placeholder="Buscar por pedido o cliente..." 
-                       value="{{ request('busqueda') }}"
-                       style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.95rem;">
-            </div>
-            <button type="submit" class="btn-filtrar" style="padding: 0.75rem 2rem; display: flex; align-items: center; gap: 0.5rem;">
-                <span class="material-symbols-rounded">search</span>
-                Buscar
-            </button>
-            <a href="{{ route('supervisor-pedidos.index', request('aprobacion') ? ['aprobacion' => request('aprobacion')] : []) }}" class="btn-limpiar" style="padding: 0.75rem 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
-                <span class="material-symbols-rounded">clear</span>
-                Limpiar
-            </a>
-        </form>
-    </div>
 
     <!-- Tabla de Órdenes -->
     <div class="tabla-section">

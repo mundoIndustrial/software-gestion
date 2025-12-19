@@ -190,6 +190,47 @@
                 </div>
             </div>
 
+            <div class="nav-center">
+                <!-- Barra de búsqueda -->
+                <form method="GET" action="{{ route('supervisor-pedidos.index') }}" class="search-form" style="flex: 1; max-width: 500px; margin: 0 1rem;">
+                    @if(request('aprobacion'))
+                        <input type="hidden" name="aprobacion" value="{{ request('aprobacion') }}">
+                    @endif
+                    @if(request('estado'))
+                        <input type="hidden" name="estado" value="{{ request('estado') }}">
+                    @endif
+                    @if(request('asesora'))
+                        <input type="hidden" name="asesora" value="{{ request('asesora') }}">
+                    @endif
+                    @if(request('forma_pago'))
+                        <input type="hidden" name="forma_pago" value="{{ request('forma_pago') }}">
+                    @endif
+                    @if(request('fecha_desde'))
+                        <input type="hidden" name="fecha_desde" value="{{ request('fecha_desde') }}">
+                    @endif
+                    @if(request('fecha_hasta'))
+                        <input type="hidden" name="fecha_hasta" value="{{ request('fecha_hasta') }}">
+                    @endif
+                    <div style="display: flex; gap: 0.5rem; width: 100%;">
+                        <input type="text" 
+                               name="busqueda" 
+                               id="busqueda" 
+                               class="filtro-input" 
+                               placeholder="Buscar por pedido o cliente..." 
+                               value="{{ request('busqueda') }}"
+                               style="flex: 1; padding: 0.5rem 1rem; border: 1px solid var(--border-color); border-radius: 20px; font-size: 0.9rem; background: var(--bg-color);">
+                        @if(request('busqueda'))
+                            <a href="{{ route('supervisor-pedidos.index', array_merge(
+                                request()->only(['aprobacion', 'estado', 'asesora', 'forma_pago', 'fecha_desde', 'fecha_hasta']),
+                                ['busqueda' => '']
+                            )) }}" class="btn-limpiar" style="padding: 0 1rem; border-radius: 20px; display: flex; align-items: center;">
+                                <span class="material-symbols-rounded">close</span>
+                            </a>
+                        @endif
+                    </div>
+                </form>
+            </div>
+
             <div class="nav-right">
                 <!-- Notificaciones -->
                 <div class="notification-dropdown">
@@ -398,13 +439,31 @@
             fetch('{{ route("supervisor-pedidos.ordenes-pendientes-count") }}')
                 .then(response => response.json())
                 .then(data => {
-                    const badge = document.getElementById('ordenesPendientesCount');
-                    if (badge) {
+                    // Actualizar contador de órdenes pendientes regulares
+                    const badgePendientes = document.getElementById('ordenesPendientesCount');
+                    if (badgePendientes) {
                         if (data.success && data.count > 0) {
-                            badge.textContent = data.count;
-                            badge.style.display = 'inline-flex';
+                            // Restar las órdenes de logo para obtener solo las regulares
+                            const countRegulares = data.count - (data.pendientesLogo || 0);
+                            if (countRegulares > 0) {
+                                badgePendientes.textContent = countRegulares;
+                                badgePendientes.style.display = 'inline-flex';
+                            } else {
+                                badgePendientes.style.display = 'none';
+                            }
                         } else {
-                            badge.style.display = 'none';
+                            badgePendientes.style.display = 'none';
+                        }
+                    }
+
+                    // Actualizar contador de órdenes pendientes de logo
+                    const badgeLogo = document.getElementById('ordenesPendientesLogoCount');
+                    if (badgeLogo) {
+                        if (data.success && data.pendientesLogo > 0) {
+                            badgeLogo.textContent = data.pendientesLogo;
+                            badgeLogo.style.display = 'inline-flex';
+                        } else {
+                            badgeLogo.style.display = 'none';
                         }
                     }
                 })

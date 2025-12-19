@@ -136,13 +136,20 @@ class SupervisorPedidosController extends Controller
     public function index(Request $request)
     {
         // Obtener órdenes con filtros
-        $query = PedidoProduccion::with(['asesora', 'prendas']);
+        $query = PedidoProduccion::with(['asesora', 'prendas', 'cotizacion']);
 
         // FILTRO DE APROBACIÓN: Mostrar solo órdenes según su estado de aprobación
         if ($request->filled('aprobacion')) {
             if ($request->aprobacion === 'pendiente') {
                 // Órdenes PENDIENTES DE SUPERVISOR: solo las que tienen estado 'PENDIENTE_SUPERVISOR'
                 $query->where('estado', 'PENDIENTE_SUPERVISOR');
+                
+                // Filtrar solo órdenes con cotización de logo si el parámetro tipo=logo está presente
+                if ($request->filled('tipo') && $request->tipo === 'logo') {
+                    $query->whereHas('cotizacion', function($q) {
+                        $q->where('tipo', 'logo');
+                    });
+                }
             } elseif ($request->aprobacion === 'aprobadas') {
                 // Órdenes aprobadas: las que ya fueron aprobadas (estado Pendiente o posteriores)
                 $query->whereIn('estado', ['Pendiente', 'No iniciado', 'En Ejecución', 'Finalizada', 'Anulada']);
@@ -699,14 +706,22 @@ class SupervisorPedidosController extends Controller
     public function ordenesPendientesCount()
     {
         try {
-            // Contar órdenes con estado 'PENDIENTE_SUPERVISOR'
-            $count = PedidoProduccion::where('estado', 'PENDIENTE_SUPERVISOR')
+            // Contar órdenes con estado 'PENDIENTE_SUPERVISOR' (todas)
+            $totalPendientes = PedidoProduccion::where('estado', 'PENDIENTE_SUPERVISOR')
+                ->count();
+                
+            // Contar solo las órdenes de logo pendientes
+            $pendientesLogo = PedidoProduccion::where('estado', 'PENDIENTE_SUPERVISOR')
+                ->whereHas('cotizacion', function($q) {
+                    $q->where('tipo', 'logo');
+                })
                 ->count();
 
             return response()->json([
                 'success' => true,
-                'count' => $count,
-                'message' => $count > 0 ? "Hay $count orden(es) pendiente(s)" : 'No hay órdenes pendientes'
+                'count' => $totalPendientes,
+                'pendientesLogo' => $pendientesLogo,
+                'message' => $totalPendientes > 0 ? "Hay $totalPendientes orden(es) pendiente(s)" : 'No hay órdenes pendientes'
             ]);
         } catch (\Exception $e) {
             \Log::error('Error al obtener contador de órdenes pendientes', [
@@ -716,6 +731,7 @@ class SupervisorPedidosController extends Controller
             return response()->json([
                 'success' => false,
                 'count' => 0,
+                'pendientesLogo' => 0,
                 'error' => $e->getMessage()
             ], 500);
         }
