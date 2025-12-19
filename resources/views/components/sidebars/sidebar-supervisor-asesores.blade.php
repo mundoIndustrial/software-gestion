@@ -46,9 +46,16 @@
             <ul class="menu-list" role="navigation">
                 <li class="menu-item">
                     <a href="{{ route('supervisor-asesores.pedidos.index') }}"
-                       class="menu-link {{ request()->routeIs('supervisor-asesores.pedidos.*') ? 'active' : '' }}">
+                       class="menu-link {{ request()->routeIs('supervisor-asesores.pedidos.*') && !request('aprobacion') && !request('tipo') ? 'active' : '' }}">
                         <span class="material-symbols-rounded">shopping_cart</span>
                         <span class="menu-label">Todos los Pedidos</span>
+                    </a>
+                </li>
+                <li class="menu-item">
+                    <a href="{{ route('supervisor-asesores.pedidos.index', ['aprobacion' => 'pendiente', 'tipo' => 'logo']) }}"
+                       class="menu-link {{ request('aprobacion') === 'pendiente' && request('tipo') === 'logo' ? 'active' : '' }}">
+                        <span class="material-symbols-rounded">palette</span>
+                        <span class="menu-label">Pendientes Logo</span>
                     </a>
                 </li>
             </ul>
