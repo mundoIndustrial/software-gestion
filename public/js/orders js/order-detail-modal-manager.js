@@ -73,11 +73,77 @@ window.closeOrderDetailModal = function() {
 };
 
 /**
- * Cierra el modal al hacer click en el overlay
+ * Cierra el modal al hacer click en el overlay (cierra ambos modales)
  */
 window.closeModalOverlay = function() {
     console.log('🔵 [MODAL] Click en overlay, cerrando...');
     window.closeOrderDetailModal();
+    window.closeOrderDetailModalLogo();
+};
+
+/**
+ * Abre el modal de detalle de la orden con LOGO (Bordados)
+ */
+window.openOrderDetailModalLogo = function(orderId) {
+    console.log('%c🔴 [MODAL LOGO] Abriendo modal logo para orden: ' + orderId, 'color: red; font-weight: bold; font-size: 14px;');
+    
+    // Obtener el overlay
+    let overlay = document.getElementById('modal-overlay');
+    console.log('🔍 [MODAL LOGO] Overlay encontrado:', !!overlay);
+    
+    if (overlay) {
+        // Mover al body si es necesario
+        if (overlay.parentElement !== document.body) {
+            document.body.appendChild(overlay);
+        }
+        
+        // Mostrar overlay
+        overlay.style.display = 'block';
+        overlay.style.zIndex = '9997';
+        overlay.style.position = 'fixed';
+        overlay.style.opacity = '1';
+        overlay.style.visibility = 'visible';
+        overlay.style.top = '0';
+        overlay.style.left = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        console.log('✅ [MODAL LOGO] Overlay mostrado');
+        
+        // Mostrar el wrapper del modal de LOGO
+        const modalWrapper = document.getElementById('order-detail-modal-wrapper-logo');
+        if (modalWrapper) {
+            modalWrapper.style.display = 'block';
+            modalWrapper.style.zIndex = '9998';
+            modalWrapper.style.position = 'fixed';
+            modalWrapper.style.top = '60%';
+            modalWrapper.style.left = '50%';
+            modalWrapper.style.transform = 'translate(-50%, -50%)';
+            modalWrapper.style.pointerEvents = 'auto';
+            console.log('✅ [MODAL LOGO] Wrapper mostrado');
+        } else {
+            console.error('❌ [MODAL LOGO] Wrapper no encontrado');
+        }
+    }
+};
+
+/**
+ * Cierra el modal de detalle de la orden (Logo)
+ */
+window.closeOrderDetailModalLogo = function() {
+    console.log('%c🔴 [MODAL LOGO] Cerrando modal logo', 'color: red; font-weight: bold; font-size: 14px;');
+    
+    const overlay = document.getElementById('modal-overlay');
+    const modalWrapper = document.getElementById('order-detail-modal-wrapper-logo');
+    
+    if (overlay) {
+        overlay.style.display = 'none';
+        console.log('✅ [MODAL LOGO] Overlay ocultado');
+    }
+    
+    if (modalWrapper) {
+        modalWrapper.style.display = 'none';
+        console.log('✅ [MODAL LOGO] Wrapper ocultado');
+    }
 };
 
 /**
@@ -510,6 +576,69 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         window.openOrderDetailModal();
+    });
+
+    // Listener para cargar datos del logo/bordados de la orden
+    window.addEventListener('load-order-detail-logo', function(event) {
+        console.log('%c📦 [MODAL LOGO] Evento load-order-detail-logo recibido', 'color: red; font-weight: bold; font-size: 14px;');
+        console.log('📦 [MODAL LOGO] event.detail:', event.detail);
+        console.log('📦 [MODAL LOGO] event.detail.numero_pedido:', event.detail?.numero_pedido);
+        
+        const orden = event.detail;
+        
+        // Guardar el número de pedido en variable global para uso en galería
+        // Asignar directamente a window para asegurar que esté disponible
+        if (orden && orden.numero_pedido) {
+            window.currentPedidoNumberLogo = orden.numero_pedido;
+            console.log('✅ [MODAL LOGO] Número de pedido guardado en variable global:', window.currentPedidoNumberLogo);
+        } else {
+            console.error('❌ [MODAL LOGO] No se pudo obtener numero_pedido de orden:', orden);
+        }
+        
+        // Llenar los campos del modal de logo
+        if (document.querySelector('#order-detail-modal-wrapper-logo')) {
+            // Fecha
+            if (orden.fecha_de_creacion_de_orden) {
+                const fecha = new Date(orden.fecha_de_creacion_de_orden);
+                const dayBox = document.querySelector('#order-detail-modal-wrapper-logo .day-box');
+                const monthBox = document.querySelector('#order-detail-modal-wrapper-logo .month-box');
+                const yearBox = document.querySelector('#order-detail-modal-wrapper-logo .year-box');
+                
+                if (dayBox) dayBox.textContent = String(fecha.getDate()).padStart(2, '0');
+                if (monthBox) monthBox.textContent = String(fecha.getMonth() + 1).padStart(2, '0');
+                if (yearBox) yearBox.textContent = fecha.getFullYear();
+            }
+            
+            // Cliente
+            const clienteSpan = document.querySelector('#order-detail-modal-wrapper-logo #cliente-value');
+            if (clienteSpan) clienteSpan.textContent = orden.cliente || '-';
+            
+            // Asesora
+            const asesoraSpan = document.querySelector('#order-detail-modal-wrapper-logo #asesora-value');
+            if (asesoraSpan) asesoraSpan.textContent = orden.asesora || '-';
+            
+            // Forma de pago
+            const formaPagoSpan = document.querySelector('#order-detail-modal-wrapper-logo #forma-pago-value');
+            if (formaPagoSpan) formaPagoSpan.textContent = orden.forma_de_pago || '-';
+            
+            // Número de orden
+            const pedidoDiv = document.querySelector('#order-detail-modal-wrapper-logo #order-pedido');
+            if (pedidoDiv) pedidoDiv.textContent = `#${orden.numero_pedido}`;
+            
+            // Encargado de orden
+            const encargadoSpan = document.querySelector('#order-detail-modal-wrapper-logo #encargado-value');
+            if (encargadoSpan) encargadoSpan.textContent = orden.encargado_orden || '-';
+            
+            // Prendas entregadas
+            const prendasSpan = document.querySelector('#order-detail-modal-wrapper-logo #prendas-entregadas-value');
+            if (prendasSpan && orden.prendas) {
+                prendasSpan.textContent = orden.prendas.length || 0;
+            }
+            
+            console.log('✅ [MODAL LOGO] Datos del modal de logo llenados');
+        }
+
+        window.openOrderDetailModalLogo();
     });
     
     // Listener para abrir el modal

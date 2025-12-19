@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function crearDropdownVer(button) {
         const menuId = button.getAttribute('data-menu-id');
         const pedido = button.getAttribute('data-pedido');
+        const tipoCotizacion = button.getAttribute('data-tipo-cotizacion');
         
         // Verificar si ya existe
         if (document.getElementById(menuId)) {
@@ -27,32 +28,101 @@ document.addEventListener('DOMContentLoaded', function() {
             border: 2px solid #e5e7eb;
             border-radius: 8px;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-            min-width: 160px;
+            min-width: 180px;
             display: none;
             z-index: 999999;
             overflow: visible;
             pointer-events: auto;
         `;
         
-        // HTML del dropdown
-        dropdown.innerHTML = `
-            <button onclick="verFactura(${pedido}); closeDropdown()" style="
-                width: 100%;
-                text-align: left;
-                padding: 0.875rem 1rem;
-                border: none;
-                background: transparent;
-                cursor: pointer;
-                color: #374151;
-                font-size: 0.875rem;
-                transition: all 0.2s ease;
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-                font-weight: 500;
-            " onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='transparent'">
-                <i class="fas fa-file-alt" style="color: #2563eb;"></i> Detalle
-            </button>
+        // Construir el HTML del dropdown según el tipo de cotización
+        let dropdownHTML = '';
+        
+        if (tipoCotizacion === 'L') {
+            // Solo Logo
+            dropdownHTML = `
+                <button onclick="verFacturaLogo(${pedido}); closeDropdown()" style="
+                    width: 100%;
+                    text-align: left;
+                    padding: 0.875rem 1rem;
+                    border: none;
+                    background: transparent;
+                    cursor: pointer;
+                    color: #374151;
+                    font-size: 0.875rem;
+                    transition: all 0.2s ease;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                    font-weight: 500;
+                " onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
+                    <i class="fas fa-image" style="color: #dc2626;"></i> Recibo de Bordados
+                </button>
+            `;
+        } else if (tipoCotizacion === 'PL') {
+            // Prenda + Logo (Combinada)
+            dropdownHTML = `
+                <button onclick="verFactura(${pedido}); closeDropdown()" style="
+                    width: 100%;
+                    text-align: left;
+                    padding: 0.875rem 1rem;
+                    border: none;
+                    background: transparent;
+                    cursor: pointer;
+                    color: #374151;
+                    font-size: 0.875rem;
+                    transition: all 0.2s ease;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                    font-weight: 500;
+                " onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='transparent'">
+                    <i class="fas fa-file-alt" style="color: #2563eb;"></i> Recibo de Costura
+                </button>
+                <div style="height: 1px; background: #e5e7eb;"></div>
+                <button onclick="verFacturaLogo(${pedido}); closeDropdown()" style="
+                    width: 100%;
+                    text-align: left;
+                    padding: 0.875rem 1rem;
+                    border: none;
+                    background: transparent;
+                    cursor: pointer;
+                    color: #374151;
+                    font-size: 0.875rem;
+                    transition: all 0.2s ease;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                    font-weight: 500;
+                " onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
+                    <i class="fas fa-image" style="color: #dc2626;"></i> Recibo de Bordados
+                </button>
+            `;
+        } else {
+            // Prenda o Reflectivo (solo costura)
+            dropdownHTML = `
+                <button onclick="verFactura(${pedido}); closeDropdown()" style="
+                    width: 100%;
+                    text-align: left;
+                    padding: 0.875rem 1rem;
+                    border: none;
+                    background: transparent;
+                    cursor: pointer;
+                    color: #374151;
+                    font-size: 0.875rem;
+                    transition: all 0.2s ease;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                    font-weight: 500;
+                " onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='transparent'">
+                    <i class="fas fa-file-alt" style="color: #2563eb;"></i> Recibo de Costura
+                </button>
+            `;
+        }
+        
+        // Agregar divisor y opción de seguimiento
+        dropdownHTML += `
             <div style="height: 1px; background: #e5e7eb;"></div>
             <button onclick="verSeguimiento(${pedido}); closeDropdown()" style="
                 width: 100%;
@@ -72,6 +142,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 <i class="fas fa-tasks" style="color: #10b981;"></i> Seguimiento
             </button>
         `;
+        
+        dropdown.innerHTML = dropdownHTML;
         
         container.appendChild(dropdown);
         return dropdown;

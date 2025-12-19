@@ -187,7 +187,149 @@ class PedidoProduccionController extends Controller
                 'forma_de_pago_final' => $formaDePago,
             ]);
 
-            // Crear DTO con los datos extraídos
+            // Verificar si es una cotización de tipo LOGO al inicio
+            $esLogoRequest = filter_var($request->input('esLogo', false), FILTER_VALIDATE_BOOLEAN);
+            $tipoCotizacion = $cotizacion->tipo_cotizacion_codigo ?? null;
+            $esCotizacionLogo = $esLogoRequest || $tipoCotizacion === 'L';
+
+            \Log::info('🔍 [DEBUG] Detección de tipo de cotización', [
+                'esLogo_request' => $esLogoRequest,
+                'tipo_cotizacion_codigo' => $tipoCotizacion,
+                'esCotizacionLogo' => $esCotizacionLogo
+            ]);
+
+            // Si es LOGO, manejar de forma independiente
+            if ($esCotizacionLogo) {
+                \Log::info('🎨 [PedidoProduccionController] Iniciando creación de pedido LOGO');
+                
+                $numeroPedido = LogoPedido::generarNumeroPedido();
+                $formaDePago = $request->input('forma_de_pago', '');
+
+                // Crear el logo_pedido directamente
+                $logoPedido = new LogoPedido([
+                    'logo_cotizacion_id' => $request->input('logo_cotizacion_id', $cotizacion->id),
+                    'cliente' => $cotizacion->cliente->nombre ?? 'Cliente no especificado',
+                    'asesora' => auth()->user()->name,
+                    'forma_de_pago' => $formaDePago,
+                    'encargado_orden' => auth()->user()->name,
+                    'fecha_de_creacion_de_orden' => now(),
+                    'estado' => 'pendiente',
+                    'numero_cotizacion' => $cotizacion->numero_cotizacion,
+                    'cotizacion_id' => $cotizacion->id,
+                    'numero_pedido' => $numeroPedido,
+                    'descripcion' => $request->input('descripcion', 'Pedido de LOGO'),
+                    'tecnicas' => $request->input('tecnicas', []),
+                    'ubicaciones' => $request->input('ubicaciones', []),
+                    'observaciones_tecnicas' => $request->input('observaciones_tecnicas', ''),
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+                
+                $logoPedido->save();
+
+                // Procesar imágenes si existen
+                if ($request->has('imagenes') && is_array($request->imagenes)) {
+                    foreach ($request->imagenes as $imagen) {
+                        try {
+                            $path = $imagen->store('public/bordado/pedidos/' . $logoPedido->id);
+                            $logoPedido->imagenes()->create([
+                                'ruta' => str_replace('public/', 'storage/', $path),
+                                'nombre_original' => $imagen->getClientOriginalName(),
+                                'tipo' => $imagen->getClientMimeType(),
+                                'tamanio' => $imagen->getSize(),
+                            ]);
+                        } catch (\Exception $e) {
+                            \Log::error('Error al guardar imagen del logo: ' . $e->getMessage());
+                            continue;
+                        }
+                    }
+                }
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Pedido de LOGO creado exitosamente',
+                    'pedido' => [
+                        'id' => $logoPedido->id,
+                        'numero_pedido' => $logoPedido->numero_pedido,
+                        'tipo' => 'logo',
+                        'fecha_creacion' => $logoPedido->fecha_de_creacion_de_orden->format('Y-m-d H:i:s')
+                    ]
+                ]);
+            }
+
+            // Si es cotización de LOGO, crear el pedido solo en logo_pedidos
+            if ($esCotizacionLogo) {
+                \Log::info('🎨 [PedidoProduccionController] Creando pedido de LOGO (solo en logo_pedidos)', [
+                    'cotizacion_id' => $cotizacion->id,
+                    'cliente_id' => $cotizacion->cliente_id,
+                    'logo_cotizacion_id' => $request->input('logo_cotizacion_id')
+                ]);
+
+                // Generar número de pedido
+                $numeroPedido = LogoPedido::generarNumeroPedido();
+
+                // Crear directamente en logo_pedidos con todos los campos necesarios
+                $logoPedido = new LogoPedido([
+                    'pedido_id' => null, // No hay pedido de producción asociado
+                    'logo_cotizacion_id' => $request->input('logo_cotizacion_id', $cotizacion->id),
+                    'cliente' => $cotizacion->cliente->nombre ?? 'Cliente no especificado',
+                    'asesora' => auth()->user()->name,
+                    'forma_de_pago' => $formaDePago,
+                    'encargado_orden' => auth()->user()->name, // Asignar el usuario actual como encargado
+                    'fecha_de_creacion_de_orden' => now(),
+                    'estado' => 'pendiente',
+                    'numero_cotizacion' => $cotizacion->numero_cotizacion,
+                    'cotizacion_id' => $cotizacion->id,
+                    'prendas' => $request->input('prendas', []), // Datos de prendas si existen
+                    'observaciones' => $request->input('observaciones', ''),
+                    'numero_pedido' => $numeroPedido,
+                    'descripcion' => $request->input('descripcion', 'Pedido de LOGO'),
+                    'tecnicas' => $request->input('tecnicas', []),
+                    'observaciones_tecnicas' => $request->input('observaciones_tecnicas', ''),
+                    'ubicaciones' => $request->input('ubicaciones', []),
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+                
+                // Guardar el logo pedido
+                $logoPedido->save();
+
+                // Procesar imágenes si existen
+                if ($request->has('imagenes') && is_array($request->imagenes)) {
+                    foreach ($request->imagenes as $imagen) {
+                        try {
+                            $path = $imagen->store('public/bordado/pedidos/' . $logoPedido->id);
+                            $logoPedido->imagenes()->create([
+                                'ruta' => str_replace('public/', 'storage/', $path),
+                                'nombre_original' => $imagen->getClientOriginalName(),
+                                'tipo' => $imagen->getClientMimeType(),
+                                'tamanio' => $imagen->getSize(),
+                            ]);
+                        } catch (\Exception $e) {
+                            \Log::error('Error al guardar imagen del logo: ' . $e->getMessage());
+                            continue;
+                        }
+                    }
+                }
+
+                \Log::info('✅ [PedidoProduccionController] Pedido de LOGO creado exitosamente', [
+                    'logo_pedido_id' => $logoPedido->id,
+                    'numero_pedido' => $logoPedido->numero_pedido
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Pedido de LOGO creado exitosamente',
+                    'pedido' => [
+                        'id' => $logoPedido->id,
+                        'numero_pedido' => $logoPedido->numero_pedido,
+                        'tipo' => 'logo',
+                        'fecha_creacion' => $logoPedido->fecha_de_creacion_de_orden->format('Y-m-d H:i:s')
+                    ]
+                ]);
+            }
+
+            // Si no es LOGO, continuar con el flujo normal
             $dto = CrearPedidoProduccionDTO::fromRequest([
                 'cotizacion_id' => $validated['cotizacion_id'],
                 'prendas' => $datosExtraidos['prendas'],

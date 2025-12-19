@@ -293,67 +293,49 @@ class AsesoresController extends Controller
             'logo.observaciones_generales' => 'nullable|string', // JSON string
             'logo.imagenes' => 'nullable|array',
             'logo.imagenes.*' => 'nullable|file|image|max:5242880', // Máximo 5MB por imagen
+            'tipo_cotizacion' => 'nullable|string', // Tipo de cotización (L, PL, P, RF, etc.)
+            'cotizacion_id' => 'nullable|integer', // ID de la cotización
         ]);
 
         DB::beginTransaction();
         try {
-            // Calcular cantidad total de productos
-            $cantidadTotal = collect($validated[$productosKey])->sum('cantidad');
-
-            // Crear pedido en PedidoProduccion
-            $pedidoBorrador = PedidoProduccion::create([
-                'numero_pedido' => null, // Se asignará luego
-                'cliente' => $validated['cliente'],
-                'asesor_id' => Auth::id(),
-                'forma_de_pago' => $validated['forma_de_pago'] ?? null,
-                'estado' => EstadoPedido::PENDIENTE_SUPERVISOR->value,
-            ]);
-
-            // ✅ PROCESAR FOTOS DE TELAS ANTES DE GUARDAR
-            // Procesar archivos de fotos de telas y convertirlos a rutas
-            $productosConTelasProcessadas = $this->procesarFotosTelas($request, $validated[$productosKey]);
-
-            // ✅ Guardar prendas COMPLETAS usando PedidoPrendaService
-            // Este servicio guarda toda la información de las prendas:
-            // - Nombre, cantidad, descripción
-            // - Variaciones (manga, broche, bolsillos, reflectivo)
-            // - Colores y telas
-            // - Fotos de prendas, logos y telas
-            // - Descripción formateada en formato legacy
-            $pedidoPrendaService = new PedidoPrendaService();
-            $pedidoPrendaService->guardarPrendasEnPedido($pedidoBorrador, $productosConTelasProcessadas);
-
-            // ✅ GUARDAR LOGO Y SUS IMÁGENES (PASO 3)
-            if (!empty($request->get('logo.descripcion')) || $request->hasFile('logo.imagenes')) {
-                $logoService = new PedidoLogoService();
+            // Verificar si es un pedido tipo LOGO solamente ('L')
+            // Primero chequear por tipo_cotizacion explícito
+            $esPedidoLogo = $request->input('tipo_cotizacion') === 'L';
+            
+            // Si no está explícito, verificar por cotización_id si existe
+            if (!$esPedidoLogo && $request->filled('cotizacion_id')) {
+                $cotizacionId = $request->input('cotizacion_id');
+                // Buscar la cotización y su tipo
+                $cotizacion = \DB::table('cotizaciones')
+                    ->where('id', $cotizacionId)
+                    ->with('tipoCotizacion')
+                    ->first();
                 
-                // Procesar imágenes del logo
-                $imagenesProcesadas = [];
-                if ($request->hasFile('logo.imagenes')) {
-                    foreach ($request->file('logo.imagenes') as $imagen) {
-                        if ($imagen->isValid()) {
-                            // Guardar en storage y obtener la ruta
-                            $rutaGuardada = $imagen->store('logos/pedidos', 'public');
-                            $imagenesProcesadas[] = [
-                                'ruta_original' => Storage::url($rutaGuardada),
-                                'ruta_webp' => null,
-                                'ruta_miniatura' => null
-                            ];
-                        }
-                    }
+                // Verificar si es una cotización de tipo LOGO ('L')
+                if ($cotizacion) {
+                    $tipoCodigoQuery = \DB::table('cotizaciones')
+                        ->join('tipo_cotizaciones', 'cotizaciones.tipo_cotizacion_id', '=', 'tipo_cotizaciones.id')
+                        ->where('cotizaciones.id', $cotizacionId)
+                        ->select('tipo_cotizaciones.codigo')
+                        ->first();
+                    
+                    $esPedidoLogo = $tipoCodigoQuery && $tipoCodigoQuery->codigo === 'L';
+                    \Log::info('🎨 [STORE] Verificando cotización:', [
+                        'cotizacion_id' => $cotizacionId,
+                        'codigo' => $tipoCodigoQuery?->codigo ?? 'NULL',
+                        'es_logo' => $esPedidoLogo
+                    ]);
                 }
-                
-                // Preparar datos del logo
-                $logoData = [
-                    'descripcion' => $validated['logo.descripcion'] ?? null,
-                    'ubicacion' => null, // Se puede extender si lo necesitas
-                    'observaciones_generales' => null,
-                    'fotos' => $imagenesProcesadas
-                ];
-                
-                // Guardar logo en el pedido
-                $logoService->guardarLogoEnPedido($pedidoBorrador, $logoData);
             }
+
+            if ($esPedidoLogo) {
+                // ✅ GUARDAR SOLO EN logo_pedidos (sin pedidos_produccion)
+                return $this->guardarPedidoLogo($request, $validated);
+            }
+
+            // ✅ GUARDAR EN pedidos_produccion (flujo normal para P, PL, RF, etc.)
+            $pedidoBorrador = $this->guardarPedidoProduccion($request, $validated, $productosKey);
 
             DB::commit();
 
@@ -374,6 +356,153 @@ class AsesoresController extends Controller
                 'message' => 'Error al guardar el pedido: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Guardar un pedido tipo LOGO SOLAMENTE en la tabla logo_pedidos
+     * No crea registro en pedidos_produccion
+     */
+    private function guardarPedidoLogo(Request $request, array $validated)
+    {
+        try {
+            \Log::info('💾 [LOGO] Guardando pedido tipo LOGO en logo_pedidos');
+
+            // Procesar imágenes del logo
+            $imagenesProcesadas = [];
+            if ($request->hasFile('logo.imagenes')) {
+                foreach ($request->file('logo.imagenes') as $imagen) {
+                    if ($imagen->isValid()) {
+                        $rutaGuardada = $imagen->store('logos/pedidos', 'public');
+                        $imagenesProcesadas[] = [
+                            'nombre_archivo' => $imagen->getClientOriginalName(),
+                            'ruta_original' => Storage::url($rutaGuardada),
+                            'ruta_webp' => null,
+                            'url' => Storage::url($rutaGuardada),
+                            'tamaño_archivo' => $imagen->getSize(),
+                            'tipo_archivo' => $imagen->getMimeType(),
+                            'orden' => 0
+                        ];
+                    }
+                }
+            }
+
+            // Crear registro en logo_pedidos
+            $logoPedido = \DB::table('logo_pedidos')->insertGetId([
+                'pedido_id' => null, // No tiene pedido_produccion
+                'logo_cotizacion_id' => null,
+                'numero_pedido' => null, // NULL para logos solamente
+                'cliente' => $validated['cliente'],
+                'asesora' => Auth::user()?->name,
+                'forma_de_pago' => $validated['forma_de_pago'] ?? null,
+                'encargado_orden' => Auth::user()?->name,
+                'fecha_de_creacion_de_orden' => now(),
+                'estado' => 'pendiente',
+                'descripcion' => $request->input('logo.descripcion'),
+                'tecnicas' => $request->input('logo.tecnicas'),
+                'observaciones_tecnicas' => $request->input('logo.observaciones_tecnicas'),
+                'ubicaciones' => $request->input('logo.ubicaciones'),
+                'observaciones' => $request->input('logo.observaciones_generales'),
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            \Log::info('✅ [LOGO] Logo pedido creado', ['logo_pedido_id' => $logoPedido]);
+
+            // Guardar imágenes en logo_pedido_imagenes
+            if (!empty($imagenesProcesadas)) {
+                foreach ($imagenesProcesadas as $index => $imagen) {
+                    \DB::table('logo_pedido_imagenes')->insert([
+                        'logo_pedido_id' => $logoPedido,
+                        'nombre_archivo' => $imagen['nombre_archivo'],
+                        'url' => $imagen['url'],
+                        'ruta_original' => $imagen['ruta_original'],
+                        'ruta_webp' => $imagen['ruta_webp'],
+                        'tipo_archivo' => $imagen['tipo_archivo'],
+                        'tamaño_archivo' => $imagen['tamaño_archivo'],
+                        'orden' => $index,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                }
+                \Log::info('✅ [LOGO] Imágenes guardadas en logo_pedido_imagenes', [
+                    'total_imagenes' => count($imagenesProcesadas)
+                ]);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pedido de logo guardado correctamente',
+                'logo_pedido_id' => $logoPedido,
+                'tipo' => 'logo'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('❌ [LOGO] Error al guardar pedido logo:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Guardar un pedido normal en pedidos_produccion con prendas
+     * Flujo original para P, PL, RF, etc.
+     */
+    private function guardarPedidoProduccion(Request $request, array $validated, string $productosKey)
+    {
+        $productosConTelasProcessadas = $this->procesarFotosTelas($request, $validated[$productosKey]);
+
+        // Crear pedido en PedidoProduccion
+        $pedidoBorrador = PedidoProduccion::create([
+            'numero_pedido' => null, // Se asignará luego
+            'cliente' => $validated['cliente'],
+            'asesor_id' => Auth::id(),
+            'forma_de_pago' => $validated['forma_de_pago'] ?? null,
+            'estado' => EstadoPedido::PENDIENTE_SUPERVISOR->value,
+        ]);
+
+        \Log::info('💾 Pedido normal guardado en pedidos_produccion', ['pedido_id' => $pedidoBorrador->id]);
+
+        // ✅ Guardar prendas COMPLETAS usando PedidoPrendaService
+        $pedidoPrendaService = new PedidoPrendaService();
+        $pedidoPrendaService->guardarPrendasEnPedido($pedidoBorrador, $productosConTelasProcessadas);
+
+        // ✅ GUARDAR LOGO Y SUS IMÁGENES (si existe)
+        if (!empty($request->get('logo.descripcion')) || $request->hasFile('logo.imagenes')) {
+            $logoService = new PedidoLogoService();
+            
+            // Procesar imágenes del logo
+            $imagenesProcesadas = [];
+            if ($request->hasFile('logo.imagenes')) {
+                foreach ($request->file('logo.imagenes') as $imagen) {
+                    if ($imagen->isValid()) {
+                        $rutaGuardada = $imagen->store('logos/pedidos', 'public');
+                        $imagenesProcesadas[] = [
+                            'ruta_original' => Storage::url($rutaGuardada),
+                            'ruta_webp' => null,
+                            'ruta_miniatura' => null
+                        ];
+                    }
+                }
+            }
+            
+            // Preparar datos del logo
+            $logoData = [
+                'descripcion' => $validated['logo.descripcion'] ?? null,
+                'ubicacion' => null,
+                'observaciones_generales' => null,
+                'fotos' => $imagenesProcesadas
+            ];
+            
+            // Guardar logo en el pedido
+            $logoService->guardarLogoEnPedido($pedidoBorrador, $logoData);
+        }
+
+        return $pedidoBorrador;
     }
 
     /**

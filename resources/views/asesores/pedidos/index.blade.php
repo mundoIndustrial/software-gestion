@@ -548,7 +548,7 @@
                     <!-- Acciones -->
                     <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
                         <!-- Botón Ver (con dropdown) -->
-                        <button class="btn-ver-dropdown" data-menu-id="menu-ver-{{ $pedido->numero_pedido }}" data-pedido="{{ $pedido->numero_pedido }}" title="Ver Opciones" style="
+                        <button class="btn-ver-dropdown" data-menu-id="menu-ver-{{ $pedido->numero_pedido }}" data-pedido="{{ $pedido->numero_pedido }}" data-tipo-cotizacion="{{ $pedido->cotizacion?->tipoCotizacion?->codigo ?? '' }}" title="Ver Opciones" style="
                             background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
                             color: white;
                             border: none;
@@ -849,6 +849,11 @@
 
 <div id="order-detail-modal-wrapper" style="width: 90%; max-width: 672px; position: fixed; top: 60%; left: 50%; transform: translate(-50%, -50%); z-index: 9998; pointer-events: auto; display: none;">
     <x-orders-components.order-detail-modal />
+</div>
+
+<!-- Modal de Detalle de Orden - LOGO -->
+<div id="order-detail-modal-wrapper-logo" style="width: 90%; max-width: 672px; position: fixed; top: 60%; left: 50%; transform: translate(-50%, -50%); z-index: 9998; pointer-events: auto; display: none;">
+    <x-orders-components.order-detail-modal-logo />
 </div>
 
 <!-- Modal de Seguimiento del Pedido (Tracking Simplificado para Asesoras) -->

@@ -682,6 +682,11 @@
     <x-orders-components.order-detail-modal />
 </div>
 
+<!-- Modal Wrapper para Detalles de Orden - LOGO -->
+<div id="order-detail-modal-wrapper-logo" style="width: 90%; max-width: 90vw; position: fixed; top: 55%; left: 50%; transform: translate(-50%, -50%); z-index: 9998; pointer-events: auto; display: none;">
+    <x-orders-components.order-detail-modal-logo />
+</div>
+
 <!-- Modal Comparar Pedido y Cotización -->
 <x-supervisor-pedidos.modal-comparar-pedido />
 

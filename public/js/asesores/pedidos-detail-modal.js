@@ -66,6 +66,47 @@ window.verSeguimiento = function verSeguimiento(numeroPedido) {
 }
 
 /**
+ * Abre el modal de detalle de LOGO/BORDADOS del pedido
+ * @param {number} numeroPedido - Número del pedido
+ */
+window.verFacturaLogo = async function verFacturaLogo(numeroPedido) {
+    console.log('🔴 [MODAL LOGO] Abriendo modal de bordados para pedido:', numeroPedido);
+    
+    try {
+        // ✅ HACER FETCH a la API para obtener datos del pedido
+        console.log('🔴 [MODAL LOGO] Haciendo fetch a /registros/' + numeroPedido);
+        let response = await fetch(`/registros/${numeroPedido}`);
+        
+        // Si no encuentra en /registros, intentar con /orders
+        if (!response.ok) {
+            console.log('🔴 [MODAL LOGO] No encontrado en /registros, intentando /orders/' + numeroPedido);
+            response = await fetch(`/orders/${numeroPedido}`);
+        }
+        
+        if (!response.ok) {
+            console.error('❌ [MODAL LOGO] Error en respuesta:', response.status, response.statusText);
+            throw new Error('Error fetching order: ' + response.status);
+        }
+        const order = await response.json();
+        
+        console.log('✅ [MODAL LOGO] Datos del pedido obtenidos:', order);
+        
+        // Disparar evento para que order-detail-modal-manager.js maneje la apertura del logo
+        console.log('🔴 [MODAL LOGO] Disparando evento load-order-detail-logo con detail:', order);
+        const loadEvent = new CustomEvent('load-order-detail-logo', { 
+            detail: order 
+        });
+        console.log('🔴 [MODAL LOGO] CustomEvent creado:', loadEvent);
+        window.dispatchEvent(loadEvent);
+        console.log('🔴 [MODAL LOGO] Evento disparado con window.dispatchEvent');
+        
+    } catch (error) {
+        console.error('❌ Error al cargar datos del pedido (logo):', error);
+        alert('Error al cargar los datos del pedido. Intenta nuevamente.');
+    }
+}
+
+/**
  * Cierra el modal de detalle y el overlay
  */
 window.closeModalOverlay = function closeModalOverlay() {

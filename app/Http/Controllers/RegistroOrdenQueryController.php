@@ -428,14 +428,17 @@ class RegistroOrdenQueryController extends Controller
     /**
      * Obtener imágenes de una orden
      * GET /registros/{pedido}/images
+     * Parámetro opcional: tipo=logo para obtener solo imágenes de logo
      */
     public function getOrderImages($pedido)
     {
         try {
+            $tipo = request()->query('tipo'); // 'logo' o null
             $images = [];
 
             \Log::info('🖼️ [getOrderImages] Iniciando búsqueda de imágenes', [
-                'pedido' => $pedido
+                'pedido' => $pedido,
+                'tipo' => $tipo
             ]);
 
             // Obtener desde PedidoProduccion
@@ -457,6 +460,11 @@ class RegistroOrdenQueryController extends Controller
                 }
                 return '/storage/' . ltrim($ruta, '/');
             };
+
+            // Si el tipo es 'logo', devolver solo imágenes de logo desde logo_pedido_imagenes
+            if ($tipo === 'logo') {
+                return $this->getLogoImages($pedido, $normalize);
+            }
 
             // 1) Incluir imágenes asociadas a la cotización (si existe)
             if ($pedidoProduccion && $pedidoProduccion->cotizacion_id) {
@@ -956,5 +964,113 @@ class RegistroOrdenQueryController extends Controller
         
         return $descripcionConTallas;
     }
+
+    /**
+     * Obtener imágenes de logo desde la tabla logo_pedido_imagenes
+     * Busca directamente en logo_pedidos sin depender de pedidos_produccion
+     */
+    private function getLogoImages($pedido, $normalize)
+    {
+        try {
+            \Log::info('🎨 [getLogoImages] Iniciando búsqueda de imágenes de logo', [
+                'numero_pedido' => $pedido
+            ]);
+
+            // Buscar logo_pedido directamente por numero_pedido (puede ser NULL para logos solamente)
+            $logoPedido = \DB::table('logo_pedidos')
+                ->where('numero_pedido', $pedido)
+                ->orWhere('id', $pedido) // Por si se pasa el ID
+                ->first(['id', 'numero_pedido', 'cliente', 'asesora', 'forma_de_pago']);
+
+            \Log::info('🎨 [getLogoImages] Logo pedido encontrado', [
+                'logo_pedido_id' => $logoPedido?->id,
+                'numero_pedido' => $logoPedido?->numero_pedido ?? 'NULL (logo solamente)'
+            ]);
+
+            // Agrupar imágenes por ubicación si existen
+            $logos = [];
+            
+            if ($logoPedido) {
+                // Obtener todas las imágenes asociadas a este logo_pedido
+                $imagenes = \DB::table('logo_pedido_imagenes')
+                    ->where('logo_pedido_id', $logoPedido->id)
+                    ->orderBy('orden', 'asc')
+                    ->get(['url', 'ruta_webp', 'ruta_original', 'orden', 'nombre_archivo']);
+
+                \Log::info('🎨 [getLogoImages] Imágenes encontradas', [
+                    'total' => $imagenes->count()
+                ]);
+
+                $imagenesFormateadas = [];
+                foreach ($imagenes as $img) {
+                    // Priorizar ruta_webp, luego ruta_original, luego url
+                    $ruta = $img->ruta_webp ?? $img->ruta_original ?? $img->url;
+                    $url = $normalize($ruta);
+                    
+                    if ($url) {
+                        $imagenesFormateadas[] = [
+                            'url' => $url,
+                            'nombre' => $img->nombre_archivo,
+                            'orden' => $img->orden
+                        ];
+                    }
+                }
+
+                if (!empty($imagenesFormateadas)) {
+                    // Obtener ubicaciones desde el JSON
+                    $ubicacionesJson = $logoPedido->ubicaciones;
+                    $ubicaciones = [];
+                    
+                    if ($ubicacionesJson) {
+                        $ubicacionesData = is_string($ubicacionesJson) 
+                            ? json_decode($ubicacionesJson, true) 
+                            : (is_array($ubicacionesJson) ? $ubicacionesJson : []);
+                        
+                        // Extraer nombres de ubicaciones
+                        if (is_array($ubicacionesData)) {
+                            foreach ($ubicacionesData as $ub) {
+                                if (is_array($ub) && isset($ub['ubicacion'])) {
+                                    $ubicaciones[] = $ub['ubicacion'];
+                                } elseif (is_object($ub) && isset($ub->ubicacion)) {
+                                    $ubicaciones[] = $ub->ubicacion;
+                                }
+                            }
+                        }
+                    }
+                    
+                    $logos[] = [
+                        'id' => $logoPedido->id,
+                        'titulo' => 'Logo/Bordado',
+                        'ubicacion' => !empty($ubicaciones) ? implode(', ', $ubicaciones) : 'General',
+                        'imagenes' => $imagenesFormateadas
+                    ];
+                }
+            }
+
+            \Log::info('🎨 [getLogoImages] Resultado final', [
+                'total_logos' => count($logos),
+                'total_imagenes' => collect($logos)->sum(fn($l) => count($l['imagenes'] ?? []))
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'logos' => $logos,
+                'pedido' => $pedido,
+                'tipo' => 'logo'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('❌ [getLogoImages] Error al obtener imágenes de logo: ' . $e->getMessage(), [
+                'pedido' => $pedido,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener imágenes de logo',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
+
 
