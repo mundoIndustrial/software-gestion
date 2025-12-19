@@ -15,7 +15,7 @@
             <button class="user-btn" id="userBtn">
                 <div class="user-avatar">
                     @if(Auth::user()->avatar)
-                        <img src="{{ route('storage.serve', ['path' => 'avatars/' . Auth::user()->avatar]) }}" alt="{{ Auth::user()->name }}">
+                        <img src="{{ asset('storage/avatars/' . Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}">
                     @else
                         <div class="avatar-placeholder">
                             {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
@@ -31,7 +31,7 @@
                 <div class="user-menu-header">
                     <div class="user-avatar-large">
                         @if(Auth::user()->avatar)
-                            <img src="{{ route('storage.serve', ['path' => 'avatars/' . Auth::user()->avatar]) }}" alt="{{ Auth::user()->name }}">
+                            <img src="{{ asset('storage/avatars/' . Auth::user()->avatar) }}" alt="{{ Auth::user()->name }}">
                         @else
                             <div class="avatar-placeholder">
                                 {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
