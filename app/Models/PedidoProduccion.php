@@ -594,9 +594,9 @@ class PedidoProduccion extends Model
     public function getNumeroPedidoMostrable(): string
     {
         if ($this->esLogo()) {
-            return $this->logoPedido()?->numero_pedido ?? $this->numero_pedido;
+            return $this->logoPedido()?->numero_pedido ?? $this->numero_pedido ?? '';
         }
-        return $this->numero_pedido;
+        return $this->numero_pedido ?? '';
     }
 
     /**
