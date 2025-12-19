@@ -202,11 +202,16 @@ class PedidoProduccionController extends Controller
             if ($esCotizacionLogo) {
                 \Log::info('🎨 [PedidoProduccionController] Iniciando creación de pedido LOGO');
                 
-                $numeroPedido = LogoPedido::generarNumeroPedido();
+                // Generar número de pedido con formato seguro
+                $numeroPedido = 'LOGO-' . date('Ymd-His') . '-' . rand(100, 999);
+                
+                \Log::info('🔢 Número de pedido generado para LOGO', ['numero_pedido' => $numeroPedido]);
+                
                 $formaDePago = $request->input('forma_de_pago', '');
 
                 // Crear el logo_pedido directamente
                 $logoPedido = new LogoPedido([
+                    'pedido_id' => null, // Establecer como null ya que no hay pedido de producción
                     'logo_cotizacion_id' => $request->input('logo_cotizacion_id', $cotizacion->id),
                     'cliente' => $cotizacion->cliente->nombre ?? 'Cliente no especificado',
                     'asesora' => auth()->user()->name,
@@ -244,78 +249,6 @@ class PedidoProduccionController extends Controller
                         }
                     }
                 }
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Pedido de LOGO creado exitosamente',
-                    'pedido' => [
-                        'id' => $logoPedido->id,
-                        'numero_pedido' => $logoPedido->numero_pedido,
-                        'tipo' => 'logo',
-                        'fecha_creacion' => $logoPedido->fecha_de_creacion_de_orden->format('Y-m-d H:i:s')
-                    ]
-                ]);
-            }
-
-            // Si es cotización de LOGO, crear el pedido solo en logo_pedidos
-            if ($esCotizacionLogo) {
-                \Log::info('🎨 [PedidoProduccionController] Creando pedido de LOGO (solo en logo_pedidos)', [
-                    'cotizacion_id' => $cotizacion->id,
-                    'cliente_id' => $cotizacion->cliente_id,
-                    'logo_cotizacion_id' => $request->input('logo_cotizacion_id')
-                ]);
-
-                // Generar número de pedido
-                $numeroPedido = LogoPedido::generarNumeroPedido();
-
-                // Crear directamente en logo_pedidos con todos los campos necesarios
-                $logoPedido = new LogoPedido([
-                    'pedido_id' => null, // No hay pedido de producción asociado
-                    'logo_cotizacion_id' => $request->input('logo_cotizacion_id', $cotizacion->id),
-                    'cliente' => $cotizacion->cliente->nombre ?? 'Cliente no especificado',
-                    'asesora' => auth()->user()->name,
-                    'forma_de_pago' => $formaDePago,
-                    'encargado_orden' => auth()->user()->name, // Asignar el usuario actual como encargado
-                    'fecha_de_creacion_de_orden' => now(),
-                    'estado' => 'pendiente',
-                    'numero_cotizacion' => $cotizacion->numero_cotizacion,
-                    'cotizacion_id' => $cotizacion->id,
-                    'prendas' => $request->input('prendas', []), // Datos de prendas si existen
-                    'observaciones' => $request->input('observaciones', ''),
-                    'numero_pedido' => $numeroPedido,
-                    'descripcion' => $request->input('descripcion', 'Pedido de LOGO'),
-                    'tecnicas' => $request->input('tecnicas', []),
-                    'observaciones_tecnicas' => $request->input('observaciones_tecnicas', ''),
-                    'ubicaciones' => $request->input('ubicaciones', []),
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
-                
-                // Guardar el logo pedido
-                $logoPedido->save();
-
-                // Procesar imágenes si existen
-                if ($request->has('imagenes') && is_array($request->imagenes)) {
-                    foreach ($request->imagenes as $imagen) {
-                        try {
-                            $path = $imagen->store('public/bordado/pedidos/' . $logoPedido->id);
-                            $logoPedido->imagenes()->create([
-                                'ruta' => str_replace('public/', 'storage/', $path),
-                                'nombre_original' => $imagen->getClientOriginalName(),
-                                'tipo' => $imagen->getClientMimeType(),
-                                'tamanio' => $imagen->getSize(),
-                            ]);
-                        } catch (\Exception $e) {
-                            \Log::error('Error al guardar imagen del logo: ' . $e->getMessage());
-                            continue;
-                        }
-                    }
-                }
-
-                \Log::info('✅ [PedidoProduccionController] Pedido de LOGO creado exitosamente', [
-                    'logo_pedido_id' => $logoPedido->id,
-                    'numero_pedido' => $logoPedido->numero_pedido
-                ]);
 
                 return response()->json([
                     'success' => true,
@@ -734,9 +667,10 @@ class PedidoProduccionController extends Controller
         \Log::info('🎨 [PedidoProduccionController] ===== GUARDANDO PEDIDO LOGO =====');
 
         try {
-            // Validar datos
+            // Validar datos (pedido_id opcional para casos standalone)
             $validated = $request->validate([
-                'pedido_id' => 'required|integer|exists:pedidos_produccion,id',
+                // pedido_id es el id de logo_pedidos creado en el paso 1; si viene null, creamos uno nuevo
+                'pedido_id' => 'nullable|integer|exists:logo_pedidos,id',
                 'logo_cotizacion_id' => 'required|integer|exists:logo_cotizaciones,id',
                 'descripcion' => 'nullable|string',
                 'tecnicas' => 'nullable|array',
@@ -752,32 +686,45 @@ class PedidoProduccionController extends Controller
                 'fotos_count' => count($validated['fotos'] ?? []),
             ]);
 
-            // Obtener el pedido
-            $pedido = PedidoProduccion::find($validated['pedido_id']);
-            if (!$pedido) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Pedido no encontrado'
-                ], 404);
+            // Recuperar el LogoPedido creado en el paso 1 (si viene), o crear uno standalone
+            $logoPedido = null;
+            if (!empty($validated['pedido_id'])) {
+                $logoPedido = LogoPedido::find($validated['pedido_id']);
             }
 
-            // Generar número único de LOGO pedido
-            $numeroPedido = LogoPedido::generarNumeroPedido();
-
-            \Log::info('🎨 Número de LOGO pedido generado', [
-                'numero_pedido' => $numeroPedido
-            ]);
-
-            // Crear el LogoPedido
-            $logoPedido = LogoPedido::create([
-                'pedido_id' => $validated['pedido_id'],
-                'logo_cotizacion_id' => $validated['logo_cotizacion_id'],
-                'numero_pedido' => $numeroPedido,
-                'descripcion' => $validated['descripcion'] ?? '',
-                'tecnicas' => $validated['tecnicas'] ?? [],
-                'observaciones_tecnicas' => $validated['observaciones_tecnicas'] ?? '',
-                'ubicaciones' => $validated['ubicaciones'] ?? [],
-            ]);
+            if (!$logoPedido) {
+                // Crear uno nuevo con defaults para pedidos solo-logo
+                $numeroPedido = 'LOGO-' . date('Ymd-His') . '-' . rand(100, 999);
+                $logoPedido = LogoPedido::create([
+                    'pedido_id' => null,
+                    'logo_cotizacion_id' => $validated['logo_cotizacion_id'],
+                    'numero_pedido' => $numeroPedido,
+                    'cotizacion_id' => $request->input('cotizacion_id'),
+                    'numero_cotizacion' => $request->input('numero_cotizacion', ''),
+                    'cliente' => $request->input('cliente', 'Cliente no especificado'),
+                    'asesora' => auth()->user()->name,
+                    'forma_de_pago' => $request->input('forma_de_pago', ''),
+                    'encargado_orden' => auth()->user()->name,
+                    'fecha_de_creacion_de_orden' => now(),
+                    'estado' => 'pendiente',
+                    'descripcion' => $validated['descripcion'] ?? '',
+                    'tecnicas' => $validated['tecnicas'] ?? [],
+                    'observaciones_tecnicas' => $validated['observaciones_tecnicas'] ?? '',
+                    'ubicaciones' => $validated['ubicaciones'] ?? [],
+                    'observaciones' => $request->input('observaciones', ''),
+                ]);
+            } else {
+                // Si por alguna razón no tiene numero_pedido, generar uno
+                if (empty($logoPedido->numero_pedido)) {
+                    $logoPedido->numero_pedido = 'LOGO-' . date('Ymd-His') . '-' . rand(100, 999);
+                }
+                // Completar datos faltantes y guardar
+                $logoPedido->descripcion = $validated['descripcion'] ?? $logoPedido->descripcion ?? '';
+                $logoPedido->tecnicas = $validated['tecnicas'] ?? $logoPedido->tecnicas ?? [];
+                $logoPedido->observaciones_tecnicas = $validated['observaciones_tecnicas'] ?? $logoPedido->observaciones_tecnicas ?? '';
+                $logoPedido->ubicaciones = $validated['ubicaciones'] ?? $logoPedido->ubicaciones ?? [];
+                $logoPedido->save();
+            }
 
             \Log::info('🎨 LogoPedido creado exitosamente', [
                 'logo_pedido_id' => $logoPedido->id,
@@ -969,6 +916,74 @@ class PedidoProduccionController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al eliminar la foto'
+            ], 500);
+        }
+    }
+
+    /**
+     * Eliminar un pedido de producción
+     * 
+     * @param int $pedido_id
+     * @return JsonResponse
+     */
+    public function eliminarPedido(int $pedido_id): JsonResponse
+    {
+        try {
+            // Obtener el pedido
+            $pedido = PedidoProduccion::findOrFail($pedido_id);
+
+            // Verificar que el pedido pertenezca al asesor autenticado
+            if ($pedido->asesor_id !== auth()->id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tienes permiso para eliminar este pedido'
+                ], 403);
+            }
+
+            // Eliminar imágenes asociadas
+            if ($pedido->fotospedido) {
+                foreach ($pedido->fotospedido as $foto) {
+                    // Eliminar archivo de storage si existe
+                    if ($foto->nombre_archivo) {
+                        $path = 'public/pedidos/' . $foto->nombre_archivo;
+                        if (\Storage::exists($path)) {
+                            \Storage::delete($path);
+                        }
+                    }
+                    $foto->delete();
+                }
+            }
+
+            // Eliminar prendas asociadas
+            if ($pedido->prendas) {
+                foreach ($pedido->prendas as $prenda) {
+                    $prenda->delete();
+                }
+            }
+
+            // Eliminar el pedido
+            $pedido->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Pedido eliminado correctamente'
+            ]);
+
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pedido no encontrado'
+            ], 404);
+
+        } catch (\Throwable $e) {
+            \Log::error('Error eliminando pedido:', [
+                'error' => $e->getMessage(),
+                'pedido_id' => $pedido_id
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar el pedido: ' . $e->getMessage()
             ], 500);
         }
     }

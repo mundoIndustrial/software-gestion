@@ -588,6 +588,26 @@
                             <i class="fas fa-ban"></i>
                         </button>
                         @endif
+
+                        <!-- Botón Eliminar -->
+                        <button onclick="confirmarEliminarPedido({{ $pedido->id }}, '{{ $pedido->numero_pedido }}')" title="Eliminar Pedido" style="
+                            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                            color: white;
+                            border: none;
+                            padding: 0.5rem;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-size: 1rem;
+                            transition: all 0.3s ease;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            width: 36px;
+                            height: 36px;
+                            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+                        " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(239, 68, 68, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(239, 68, 68, 0.3)'">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </div>
 
                     <!-- Estado -->
@@ -1313,6 +1333,184 @@
         
         // Usar la función de navegación de filtros
         navegarFiltro(url.toString(), { preventDefault: () => {} });
+    }
+
+    /**
+     * Confirmar eliminación de pedido
+     */
+    function confirmarEliminarPedido(pedidoId, numeroPedido) {
+        // Crear un modal de confirmación
+        const confirmHTML = `
+            <div id="confirmDeleteModal" style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 100000;
+                backdrop-filter: blur(4px);
+                animation: fadeIn 0.2s ease;
+            " onclick="if(event.target.id === 'confirmDeleteModal') cerrarConfirmModal()">
+                <div style="
+                    background: white;
+                    border-radius: 12px;
+                    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+                    max-width: 400px;
+                    width: 90%;
+                    padding: 2rem;
+                    animation: slideUp 0.3s ease;
+                ">
+                    <div style="text-align: center; margin-bottom: 1.5rem;">
+                        <div style="
+                            width: 56px;
+                            height: 56px;
+                            background: #fee2e2;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            margin: 0 auto 1rem;
+                            font-size: 1.5rem;
+                        ">
+                            🗑️
+                        </div>
+                        <h3 style="
+                            margin: 0 0 0.5rem 0;
+                            font-size: 1.25rem;
+                            font-weight: 700;
+                            color: #1f2937;
+                        ">Eliminar Pedido</h3>
+                        <p style="
+                            margin: 0;
+                            color: #6b7280;
+                            font-size: 0.95rem;
+                        ">
+                            ¿Estás seguro de que deseas eliminar el pedido <strong>#${numeroPedido}</strong>? 
+                            Esta acción no se puede deshacer.
+                        </p>
+                    </div>
+
+                    <div style="
+                        display: flex;
+                        gap: 0.75rem;
+                        justify-content: flex-end;
+                    ">
+                        <button onclick="cerrarConfirmModal()" style="
+                            background: white;
+                            border: 2px solid #d1d5db;
+                            color: #374151;
+                            padding: 0.625rem 1.25rem;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-weight: 600;
+                            font-size: 0.875rem;
+                            transition: all 0.2s ease;
+                        " onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='#9ca3af'" onmouseout="this.style.background='white'; this.style.borderColor='#d1d5db'">
+                            Cancelar
+                        </button>
+                        <button onclick="eliminarPedido(${pedidoId})" style="
+                            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+                            color: white;
+                            border: none;
+                            padding: 0.625rem 1.25rem;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            font-weight: 600;
+                            font-size: 0.875rem;
+                            transition: all 0.2s ease;
+                        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(239, 68, 68, 0.3)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                            Eliminar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', confirmHTML);
+    }
+
+    function cerrarConfirmModal() {
+        const modal = document.getElementById('confirmDeleteModal');
+        if (modal) {
+            modal.style.animation = 'fadeIn 0.3s ease reverse';
+            setTimeout(() => modal.remove(), 300);
+        }
+    }
+
+    /**
+     * Eliminar pedido (hacer llamada DELETE al servidor)
+     */
+    function eliminarPedido(pedidoId) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        
+        fetch(`/asesores/pedidos-produccion/${pedidoId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Mostrar mensaje de éxito
+                mostrarNotificacion('✅ Pedido eliminado correctamente', 'success');
+                
+                // Cerrar el modal de confirmación
+                cerrarConfirmModal();
+                
+                // Recargar la página después de 1 segundo
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            } else {
+                mostrarNotificacion('❌ ' + (data.message || 'Error al eliminar el pedido'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            mostrarNotificacion('❌ Error al eliminar el pedido', 'error');
+        });
+    }
+
+    /**
+     * Mostrar notificación (toast)
+     */
+    function mostrarNotificacion(mensaje, tipo = 'info') {
+        const toastHTML = `
+            <div style="
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                background: ${tipo === 'success' ? '#10b981' : tipo === 'error' ? '#ef4444' : '#3b82f6'};
+                color: white;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                z-index: 999999;
+                animation: slideIn 0.3s ease;
+                max-width: 400px;
+                font-weight: 500;
+            " id="toast">
+                ${mensaje}
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', toastHTML);
+
+        // Auto-remove después de 3 segundos
+        setTimeout(() => {
+            const toast = document.getElementById('toast');
+            if (toast) {
+                toast.style.animation = 'fadeIn 0.3s ease reverse';
+                setTimeout(() => toast.remove(), 300);
+            }
+        }, 3000);
     }
 </script>
 <script src="{{ asset('js/asesores/pedidos-list.js') }}"></script>

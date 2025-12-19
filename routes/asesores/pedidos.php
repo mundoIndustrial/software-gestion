@@ -59,4 +59,9 @@ Route::middleware(['auth', 'role:asesor'])->group(function () {
         [PedidoProduccionController::class, 'eliminarFotoLogo'])
         ->name('logos.eliminar-foto');
 
+    // Eliminar pedido de producción
+    Route::delete('/pedidos-produccion/{pedido_id}',
+        [PedidoProduccionController::class, 'eliminarPedido'])
+        ->name('pedidos-produccion.destroy');
+
 });

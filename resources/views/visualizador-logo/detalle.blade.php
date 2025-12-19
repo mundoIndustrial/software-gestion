@@ -1,9 +1,10 @@
 @extends('layouts.visualizador-logo')
 
 @section('title', 'Detalle Cotización Logo')
-@section('page-title')
-    <i class="fas fa-image"></i> Cotización #{{ $cotizacion->numero_cotizacion }}
-@endsection
+@section('content')
+    <h3 class="page-title">
+        <i class="fas fa-image"></i> Cotización #{{ $cotizacion->numero_cotizacion }}
+    </h3>
 
 @section('content')
 <div class="container-fluid py-4" style="background: #f5f5f5;">

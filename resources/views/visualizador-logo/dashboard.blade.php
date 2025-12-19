@@ -1,9 +1,6 @@
 @extends('layouts.visualizador-logo')
 
 @section('title', 'Cotizaciones Bordado/Estampado')
-@section('page-title')
-    Cotizaciones Bordado/Estampado
-@endsection
 
 @section('content')
 <div style="padding: 2rem 1rem; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); min-height: calc(100vh - 60px); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">

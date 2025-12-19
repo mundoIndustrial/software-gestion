@@ -1825,7 +1825,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     throw new Error(dataCrearPedido.message || 'Error al crear pedido');
                 }
 
-                const pedidoId = dataCrearPedido.pedido_id;
+                // ✅ MEJORADO: Usar logo_pedido_id si está disponible, sino usar pedido_id
+                const pedidoId = dataCrearPedido.logo_pedido_id || dataCrearPedido.pedido_id;
 
                 // Usar el ID del LogoCotizacion guardado globalmente
                 // Ahora guardar los datos específicos de LOGO
