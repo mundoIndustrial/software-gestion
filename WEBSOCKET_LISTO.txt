@@ -1,0 +1,206 @@
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                                                                               ║
+║     ✅ WEBSOCKET REVERB - TODOS LOS ARCHIVOS LISTOS                          ║
+║     Sistema de actualizaciones en tiempo real para órdenes                    ║
+║                                                                               ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+📦 ARCHIVOS PREPARADOS EN EL PROYECTO:
+───────────────────────────────────────────────────────────────────────────────
+
+1️⃣  .env (ACTUALIZADO)
+    ├─ BROADCAST_DRIVER=reverb ✓
+    ├─ REVERB_HOST=sistemamundoindustrial.online ✓
+    ├─ REVERB_PORT=8080 ✓
+    ├─ REVERB_SCHEME=https ✓
+    ├─ VITE_REVERB_* configurado ✓
+    └─ SSL_CERT_PATH y SSL_KEY_PATH definidos ✓
+
+2️⃣  instalar-reverb.sh (SCRIPT PRINCIPAL)
+    ├─ Instala Laravel Reverb
+    ├─ Configura Supervisor
+    ├─ Inicia el servicio
+    ├─ Limpia cache Laravel
+    └─ Verifica certificados SSL
+
+3️⃣  reverb.conf (CONFIGURACIÓN SUPERVISOR)
+    ├─ Define comando de inicio
+    ├─ Usuario: www-data
+    ├─ Puerto: 8080
+    ├─ Reinicio automático
+    └─ Logs centralizados
+
+4️⃣  diagnostico-reverb.sh (HERRAMIENTA DE DEBUG)
+    ├─ Verifica instalación
+    ├─ Comprueba puerto 8080
+    ├─ Valida Supervisor
+    ├─ Detecta problemas SSL
+    └─ Proporciona soluciones
+
+5️⃣  iniciar-reverb.sh (INICIO MANUAL)
+    ├─ Inicia Reverb con SSL
+    ├─ Genera PID
+    ├─ Registra logs
+    └─ Verifica proceso
+
+6️⃣  REVERB_SETUP.md (DOCUMENTACIÓN COMPLETA)
+    ├─ Instalación paso a paso
+    ├─ Configuración en detalle
+    ├─ Pruebas de funcionamiento
+    ├─ Solución de problemas
+    └─ Comandos de referencia
+
+7️⃣  SETUP_RAPIDO_WEBSOCKET.txt (GUÍA RÁPIDA)
+    ├─ Resumen en 7 pasos
+    ├─ Comandos rápidos
+    ├─ Verificación simple
+    └─ Troubleshooting
+
+8️⃣  nginx-reverb-config.txt (CONFIGURACIÓN NGINX)
+    ├─ Configuración WebSocket
+    ├─ Redirección HTTP → HTTPS
+    ├─ SSL/TLS setup
+    └─ Timeouts y buffers
+
+═══════════════════════════════════════════════════════════════════════════════
+
+⚡ CÓMO USAR AHORA:
+───────────────────────────────────────────────────────────────────────────────
+
+OPCIÓN A: INSTALACIÓN AUTOMATIZADA (RECOMENDADO)
+─────────────────────────────────────────────────
+En el servidor VPS, ejecuta:
+
+    cd /var/www/mundoindustrial
+    chmod +x instalar-reverb.sh
+    sudo ./instalar-reverb.sh
+
+✅ Esto hará todo automáticamente en 2-3 minutos
+
+OPCIÓN B: INSTALACIÓN MANUAL
+──────────────────────────────
+Si prefieres controlar cada paso:
+
+    1. cd /var/www/mundoindustrial
+    2. composer require laravel/reverb
+    3. php artisan vendor:publish --provider="Laravel\\Reverb\\ReverbServiceProvider"
+    4. cp reverb.conf /etc/supervisor/conf.d/
+    5. supervisorctl reread && supervisorctl update
+    6. supervisorctl start reverb
+
+OPCIÓN C: VERIFICACIÓN RÁPIDA
+──────────────────────────────
+Para ver si todo está bien:
+
+    sudo /var/www/mundoindustrial/diagnostico-reverb.sh
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎯 RESULTADO ESPERADO:
+───────────────────────────────────────────────────────────────────────────────
+
+ANTES (❌ No funciona):
+    ❌ WebSocket connection to 'wss://sistemamundoindustrial.online/app...' failed
+    ❌ Failed to load resource: the server responded with a status of 500
+    ❌ Página lenta, sin actualizaciones en tiempo real
+
+DESPUÉS (✅ Funciona):
+    ✅ WebSocket conectado exitosamente a Reverb
+    ✅ Listener de órdenes configurado
+    ✅ Actualizaciones instantáneas en órdenes
+    ✅ Notificaciones en tiempo real
+    ✅ Sin error 500
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📊 VERIFICACIÓN EN NAVEGADOR:
+───────────────────────────────────────────────────────────────────────────────
+
+1. Abre https://sistemamundoindustrial.online
+2. Abre consola del navegador (F12 → Console)
+3. Busca estos logs:
+
+    Deberías ver ✅:
+    ✅ Laravel Echo configurado
+    ✅ WebSocket conectado exitosamente a Reverb
+    ✅ Listener de órdenes configurado
+    ✅ Echo disponible. Suscribiendo al canal "ordenes"
+
+    NO deberías ver ❌:
+    ❌ WebSocket connection failed
+    ❌ Error de conexión WebSocket
+    ❌ Failed to load resource
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🔧 MONITOREO Y MANTENIMIENTO:
+───────────────────────────────────────────────────────────────────────────────
+
+Ver estado:
+    sudo supervisorctl status reverb
+
+Ver logs en vivo:
+    sudo tail -f /var/log/mundo-industrial/reverb.log
+
+Reiniciar si falla:
+    sudo supervisorctl restart reverb
+
+Ver puertos abiertos:
+    netstat -tln | grep 8080
+
+Probar conectividad:
+    curl -I https://sistemamundoindustrial.online:8080
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🆘 SI ALGO FALLA:
+───────────────────────────────────────────────────────────────────────────────
+
+Ejecuta diagnóstico:
+    sudo /var/www/mundoindustrial/diagnostico-reverb.sh
+
+Revisa logs:
+    tail -50 /var/log/mundo-industrial/reverb.log
+
+Verifica permisos:
+    ls -la /var/www/mundoindustrial/artisan
+
+Comprueba SSL:
+    openssl x509 -enddate -noout -in \
+      /etc/letsencrypt/live/sistemamundoindustrial.online/fullchain.pem
+
+Recargar Nginx:
+    sudo nginx -t && sudo systemctl reload nginx
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📝 NOTAS IMPORTANTES:
+───────────────────────────────────────────────────────────────────────────────
+
+✓ Los certificados SSL se renuevan automáticamente con Let's Encrypt
+✓ Reverb se reinicia automáticamente si falla
+✓ Los logs se rotan automáticamente cada 50MB
+✓ Compatible con múltiples instancias de Reverb (escalable)
+✓ Soporta WSS (WebSocket Secure) nativo
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🚀 PRÓXIMOS PASOS:
+───────────────────────────────────────────────────────────────────────────────
+
+1. ✅ Ejecutar instalar-reverb.sh en el servidor
+2. ✅ Verificar que Reverb está RUNNING en Supervisor
+3. ✅ Refresco la página web y buscar logs en consola
+4. ✅ Verificar que aparecen notificaciones en tiempo real
+5. ✅ Probar actualizar una orden → debería reflejarse instantáneamente
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎉 ¡LISTO PARA USAR!
+
+Todos los archivos están listos. Solo necesitas ejecutar
+el script de instalación en el servidor y el tiempo real
+funcionará perfectamente.
+
+═══════════════════════════════════════════════════════════════════════════════
+
