@@ -125,9 +125,10 @@ class RegistroOrdenUpdateService
     {
         $updates = [];
 
+        // ✅ SIEMPRE actualizar si el campo fue enviado, incluso si es null (deseleccionar)
+        $updates['dia_de_entrega'] = $diaEntrega;
+        
         if ($diaEntrega !== null) {
-            $updates['dia_de_entrega'] = $diaEntrega;
-            
             // Recalcular fecha_estimada_de_entrega
             $orden->dia_de_entrega = $diaEntrega;
             $fechaEstimada = $orden->calcularFechaEstimada();
@@ -137,6 +138,10 @@ class RegistroOrdenUpdateService
             }
             
             \Log::info("Día de entrega actualizado para pedido {$orden->numero_pedido}: {$diaEntrega}");
+        } else {
+            // Si es null, también limpiar fecha_estimada_de_entrega
+            $updates['fecha_estimada_de_entrega'] = null;
+            \Log::info("Día de entrega DESELECCIONADO para pedido {$orden->numero_pedido}");
         }
 
         return $updates;

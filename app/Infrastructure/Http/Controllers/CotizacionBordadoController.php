@@ -461,12 +461,24 @@ class CotizacionBordadoController extends Controller
                 }
                 Log::info('✅ Observaciones generales procesadas:', ['observaciones' => $observacionesGenerales]);
                 
+                // Buscar el tipo de cotización "Logo/Bordado" dinámicamente
+                $tipoBordado = \App\Models\TipoCotizacion::where('codigo', 'L')->first();
+                
+                if (!$tipoBordado) {
+                    Log::error('❌ Tipo de cotización "Logo" (L) no encontrado en tipos_cotizacion');
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Error: Tipo de cotización Logo no está registrado en el sistema.',
+                        'error' => 'TIPO_LOGO_NO_ENCONTRADO'
+                    ], 500);
+                }
+                
                 // Crear cotización en tabla cotizaciones
                 $cotizacion = Cotizacion::create([
                     'asesor_id' => Auth::id(),
                     'cliente_id' => $clienteId,
                     'numero_cotizacion' => $numeroCotizacion,
-                    'tipo_cotizacion_id' => 2, // Cotización de Logo/Bordado
+                    'tipo_cotizacion_id' => $tipoBordado->id, // Cotización de Logo/Bordado (B)
                     'tipo_venta' => $request->input('tipo_venta', 'M'),
                     'es_borrador' => $esBorrador,
                     'estado' => $estado,
