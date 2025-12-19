@@ -37,7 +37,7 @@ LOCK_FILE="/tmp/mundo-industrial.lock"
 ENABLE_MIGRATE=0              # Ejecutar migraciones
 ENABLE_REBUILD_ASSETS=0       # npm run build
 ENABLE_CHMOD=0                # Cambiar permisos masivos
-ENABLE_RESTART_SERVICES=0     # Reiniciar servicios
+ENABLE_RESTART_SERVICES=1     # Reiniciar servicios
 ENABLE_DATABASE_BACKUP=0      # Backup de BD
 
 # Funciones de manejo de errores
