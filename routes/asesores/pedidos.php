@@ -49,4 +49,14 @@ Route::middleware(['auth', 'role:asesor'])->group(function () {
         [PedidoProduccionController::class, 'guardarFotosPedido'])
         ->name('pedidos.guardar-fotos');
 
+    // Guardar pedido de LOGO
+    Route::post('/pedidos/guardar-logo-pedido',
+        [PedidoProduccionController::class, 'guardarLogoPedido'])
+        ->name('pedidos.guardar-logo-pedido');
+
+    // Eliminar foto de logo de cotización
+    Route::post('/logos/{cotizacion_id}/eliminar-foto',
+        [PedidoProduccionController::class, 'eliminarFotoLogo'])
+        ->name('logos.eliminar-foto');
+
 });

@@ -132,6 +132,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ============================================================
     
     function cargarPrendasDesdeCotizacion(cotizacionId) {
+        console.log('📥 Cargando prendas de cotización:', cotizacionId);
         fetch(`/asesores/pedidos-produccion/obtener-datos-cotizacion/${cotizacionId}`)
             .then(response => response.json())
             .then(data => {
@@ -165,8 +166,41 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Pasar tipo de cotización para renderizado diferente
                     const tipoCotizacion = data.tipo_cotizacion_codigo || 'PL';
                     const esReflectivo = tipoCotizacion === 'RF';
+                    const esLogo = tipoCotizacion === 'L';
                     
-                    renderizarPrendasEditables(prendasCargadas, data.logo, data.especificaciones, esReflectivo, data.reflectivo);
+                    console.log('🎯 Tipo de cotización:', tipoCotizacion);
+                    console.log('📦 ¿Es Reflectivo?:', esReflectivo);
+                    console.log('🎨 ¿Es Logo?:', esLogo);
+                    console.log('📊 Data Logo:', data.logo);
+                    
+                    // GUARDAR ID DEL LOGO COTIZACION para usar después
+                    if (esLogo && data.logo) {
+                        logoCotizacionId = data.logo.id;
+                        console.log('🎨 LogoCotizacion ID guardado:', logoCotizacionId);
+                    }
+                    
+                    // Cambiar título y alerta dinámicamente
+                    const paso3Titulo = document.getElementById('paso3_titulo_logo');
+                    const paso3Alerta = document.getElementById('paso3_alerta_logo');
+                    
+                    console.log('📌 paso3Titulo element:', paso3Titulo);
+                    console.log('📌 paso3Alerta element:', paso3Alerta);
+                    
+                    if (paso3Titulo && paso3Alerta) {
+                        if (esLogo) {
+                            // Actualizar solo el texto del título
+                            paso3Titulo.textContent = 'Pedido de Logo';
+                            paso3Alerta.innerHTML = 'ℹ️ Completa la información del logo: descripción, ubicaciones, técnicas y observaciones.';
+                        } else {
+                            paso3Titulo.textContent = 'Prendas y Cantidades (Editables)';
+                            paso3Alerta.innerHTML = 'ℹ️ Puedes editar los campos de cada prenda, cambiar cantidades por talla, o eliminar prendas que no desees incluir en el pedido.';
+                        }
+                        console.log('✅ Título y alerta actualizados');
+                    } else {
+                        console.warn('⚠️ No se encontraron los elementos paso3_titulo_logo o paso3_alerta_logo');
+                    }
+                    
+                    renderizarPrendasEditables(prendasCargadas, data.logo, data.especificaciones, esReflectivo, data.reflectivo, esLogo);
                 }
             })
             .catch(error => {
@@ -179,8 +213,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // RENDERIZAR PRENDAS EDITABLES
     // ============================================================
     
-    function renderizarPrendasEditables(prendas, logoCotizacion = null, especificacionesCotizacion = null, esReflectivo = false, datosReflectivo = null) {
+    function renderizarPrendasEditables(prendas, logoCotizacion = null, especificacionesCotizacion = null, esReflectivo = false, datosReflectivo = null, esLogo = false) {
         if (!prendas || prendas.length === 0) {
+            // Si no hay prendas pero hay LOGO, mostrar campos LOGO
+            if (esLogo && logoCotizacion) {
+                console.log('🎨 RENDERIZANDO COTIZACIÓN TIPO LOGO (sin prendas)');
+                renderizarCamposLogo(logoCotizacion);
+                return;
+            }
             prendasContainer.innerHTML = '<p class="text-gray-500 text-center py-8">Esta cotización no tiene prendas</p>';
             return;
         }
@@ -822,6 +862,683 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
+    // RENDERIZAR CAMPOS SOLO PARA LOGO (sin prendas)
+    // ============================================================
+    
+    // Arrays globales para almacenar datos editables del LOGO
+    let logoTecnicasSeleccionadas = [];
+    let logoSeccionesSeleccionadas = [];
+    let logoFotosSeleccionadas = [];  // Array para guardar fotos editables
+    let logoCotizacionId = null;  // ID del LogoCotizacion para guardar en BD
+
+    // Opciones por ubicación (mismas del formulario de bordado)
+    const logoOpcionesPorUbicacion = {
+        'CAMISA': ['PECHO', 'ESPALDA', 'MANGA IZQUIERDA', 'MANGA DERECHA', 'CUELLO'],
+        'JEAN_SUDADERA': ['PIERNA IZQUIERDA', 'PIERNA DERECHA', 'BOLSILLO TRASERO', 'BOLSILLO RELOJERO'],
+        'GORRAS': ['FRENTE', 'LATERAL', 'TRASERA']
+    };
+
+    function renderizarCamposLogo(logoCotizacion) {
+        console.log('🎨 Renderizando campos LOGO únicamente');
+        console.log('📦 Datos logo completos:', logoCotizacion);
+        
+        // Resetear arrays globales
+        logoTecnicasSeleccionadas = [];
+        logoSeccionesSeleccionadas = [];
+        logoObservacionesGenerales = [];
+        
+        // Función helper para parsear datos JSON si es necesario
+        function parseArrayData(data) {
+            if (!data) return [];
+            if (Array.isArray(data)) return data;
+            if (typeof data === 'string') {
+                try {
+                    return JSON.parse(data);
+                } catch (e) {
+                    console.warn('⚠️ No se pudo parsear:', data);
+                    return [];
+                }
+            }
+            return [];
+        }
+        
+        // Parsear ubicaciones
+        let ubicacionesArray = parseArrayData(logoCotizacion.ubicaciones);
+        console.log('📍 Ubicaciones parseadas:', ubicacionesArray);
+        
+        // Cargar técnicas iniciales
+        if (logoCotizacion.tecnicas && logoCotizacion.tecnicas.length > 0) {
+            logoCotizacion.tecnicas.forEach(tecnica => {
+                const tecnicaText = typeof tecnica === 'object' ? tecnica.nombre : tecnica;
+                logoTecnicasSeleccionadas.push(tecnicaText);
+            });
+        }
+        
+        // Cargar ubicaciones iniciales
+        if (ubicacionesArray && ubicacionesArray.length > 0) {
+            ubicacionesArray.forEach(ubicacion => {
+                if (typeof ubicacion === 'object' && ubicacion.ubicacion) {
+                    logoSeccionesSeleccionadas.push({
+                        ubicacion: ubicacion.ubicacion,
+                        opciones: Array.isArray(ubicacion.opciones) ? ubicacion.opciones : [],
+                        observaciones: ubicacion.observaciones || ''
+                    });
+                }
+            });
+        }
+        
+        // Parsear observaciones generales
+        let observacionesArray = parseArrayData(logoCotizacion.observaciones_generales);
+        console.log('📝 Observaciones parseadas:', observacionesArray);
+        
+        if (observacionesArray && observacionesArray.length > 0) {
+            observacionesArray.forEach(obs => {
+                if (typeof obs === 'object') {
+                    logoObservacionesGenerales.push(obs.descripcion || obs.texto || obs.nombre || '');
+                } else {
+                    logoObservacionesGenerales.push(obs);
+                }
+            });
+        }
+        
+        // Cambiar el título del paso 3
+        const paso3Titulo = document.getElementById('paso3_titulo_logo');
+        if (paso3Titulo) {
+            paso3Titulo.textContent = 'Información del Logo';
+        }
+        
+        let html = '<div style="margin-top: 1rem; padding: 2rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0;">';
+        html += '<h2 style="margin: 0 0 1.5rem 0; font-size: 1.3rem; color: #1f2937; border-bottom: 3px solid #0066cc; padding-bottom: 0.75rem;">📋 Información del Logo</h2>';
+        
+        // ========== DESCRIPCIÓN (EDITABLE) ==========
+        html += `<div style="margin-bottom: 1.5rem;">
+            <label style="display: block; font-weight: 700; margin-bottom: 0.5rem; color: #1f2937; font-size: 0.95rem;">DESCRIPCIÓN</label>
+            <textarea name="logo_descripcion" 
+                      style="width: 100%; padding: 0.75rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.9rem; font-family: inherit; min-height: 100px; color: #333;">${logoCotizacion.descripcion || ''}</textarea>
+        </div>`;
+        
+        // ========== FOTOS (EDITABLES) ==========
+        // Cargar fotos iniciales
+        logoFotosSeleccionadas = [];
+        if (logoCotizacion.fotos && logoCotizacion.fotos.length > 0) {
+            logoCotizacion.fotos.forEach((foto) => {
+                const fotoUrl = foto.url || foto.ruta_webp || foto.ruta_original;
+                if (fotoUrl) {
+                    logoFotosSeleccionadas.push({
+                        url: fotoUrl,
+                        preview: fotoUrl,
+                        existing: true,
+                        id: foto.id
+                    });
+                }
+            });
+        }
+        
+        html += `<div style="margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                <label style="display: block; font-weight: 700; color: #1f2937; font-size: 0.95rem;">IMÁGENES (MÁXIMO 5)</label>
+                <button type="button" onclick="abrirModalAgregarFotosLogo()" style="background: #0066cc; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; font-weight: bold;">+</button>
+            </div>
+            <div id="galeria-fotos-logo" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 1rem;"></div>
+        </div>`;
+        
+        // ========== TÉCNICAS (EDITABLES) ==========
+        html += `<div style="margin-bottom: 1.5rem; padding: 1rem; background: white; border-radius: 4px; border-left: 4px solid #0066cc;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <label style="display: block; font-weight: 700; color: #1f2937; font-size: 0.95rem;">Técnicas disponibles</label>
+                <button type="button" class="btn-add" onclick="agregarTecnicaLogo()" style="background: #0066cc; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; font-weight: bold;">+</button>
+            </div>
+            
+            <select id="selector_tecnicas_logo" class="input-large" style="width: 100%; margin-bottom: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
+                <option value="">-- SELECCIONA UNA TÉCNICA --</option>
+                <option value="BORDADO">BORDADO</option>
+                <option value="DTF">DTF</option>
+                <option value="ESTAMPADO">ESTAMPADO</option>
+                <option value="SUBLIMADO">SUBLIMADO</option>
+            </select>
+            
+            <div class="tecnicas-seleccionadas-logo" id="tecnicas_seleccionadas_logo" style="display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+        </div>`;
+        
+        // ========== OBSERVACIONES DE TÉCNICAS (EDITABLE) ==========
+        html += `<div style="margin-bottom: 1.5rem;">
+            <label style="display: block; font-weight: 700; margin-bottom: 0.5rem; color: #1f2937; font-size: 0.95rem;">Observaciones de Técnicas</label>
+            <textarea name="logo_observaciones_tecnicas" 
+                      style="width: 100%; padding: 0.75rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.9rem; font-family: inherit; min-height: 80px; color: #333;">${logoCotizacion.observaciones_tecnicas || ''}</textarea>
+        </div>`;
+        
+        // ========== UBICACIÓN (EDITABLE CON MODAL) ==========
+        html += `<div style="margin-bottom: 1.5rem; padding: 1rem; background: white; border-radius: 4px; border-left: 4px solid #0066cc;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <label style="display: block; font-weight: 700; color: #1f2937; font-size: 0.95rem;">Ubicación</label>
+                <button type="button" class="btn-add" onclick="agregarSeccionLogo()" style="background: #0066cc; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; font-weight: bold;">+</button>
+            </div>
+            
+            <label for="seccion_prenda_logo" style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem;">Selecciona la sección a agregar:</label>
+            <select id="seccion_prenda_logo" style="width: 100%; margin-bottom: 12px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
+                <option value="">-- SELECCIONA UNA OPCIÓN --</option>
+                <option value="CAMISA">CAMISA</option>
+                <option value="JEAN_SUDADERA">JEAN/SUDADERA</option>
+                <option value="GORRAS">GORRAS</option>
+            </select>
+            
+            <div id="errorSeccionPrendaLogo" style="display: none; color: #ef4444; font-size: 0.85rem; font-weight: 600; padding: 0.5rem; background: #fee2e2; border-radius: 4px; margin-bottom: 10px;">
+                ⚠️ Debes seleccionar una ubicación
+            </div>
+            
+            <div class="secciones-agregadas-logo" id="secciones_agregadas_logo" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
+        </div>`;
+        
+        html += `</div>`;
+        
+        prendasContainer.innerHTML = html;
+        
+        // Renderizar datos cargados
+        renderizarFotosLogo();
+        renderizarTecnicasLogo();
+        renderizarSeccionesLogo();
+        
+        console.log('✅ Campos LOGO renderizados correctamente');
+    }
+
+    // ====== FUNCIONES DE FOTOS LOGO ======
+    window.renderizarFotosLogo = function() {
+        const container = document.getElementById('galeria-fotos-logo');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        if (logoFotosSeleccionadas.length === 0) {
+            container.innerHTML = '<p style="grid-column: 1/-1; color: #9ca3af; text-align: center; padding: 2rem;">Sin imágenes</p>';
+            return;
+        }
+        
+        logoFotosSeleccionadas.forEach((foto, idx) => {
+            const div = document.createElement('div');
+            div.style.cssText = 'position: relative; display: inline-block; width: 100%; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: all 0.3s; group: 1;';
+            div.innerHTML = `
+                <img src="${foto.preview}" 
+                     alt="Imagen ${idx + 1}" 
+                     style="width: 100%; height: 120px; object-fit: cover; cursor: pointer; transition: transform 0.2s; display: block;" 
+                     onmouseover="this.style.transform='scale(1.05)'"
+                     onmouseout="this.style.transform=''"
+                     onclick="abrirModalImagen('${foto.preview}', 'Logo - Imagen ${idx + 1}')">
+                <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0); transition: background 0.2s;" class="overlay-foto" onmouseover="this.parentElement.querySelector('.btn-eliminar-foto').style.opacity='1'; this.style.background='rgba(0,0,0,0.3)'" onmouseout="this.parentElement.querySelector('.btn-eliminar-foto').style.opacity='0'; this.style.background='rgba(0,0,0,0)'"></div>
+                <button type="button" onclick="eliminarFotoLogo(${idx})" 
+                        style="position: absolute; top: 8px; right: 8px; background: #ef4444; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s; z-index: 10; padding: 0; line-height: 1;" 
+                        class="btn-eliminar-foto">×</button>
+            `;
+            container.appendChild(div);
+        });
+    };
+
+    window.abrirModalAgregarFotosLogo = function() {
+        if (logoFotosSeleccionadas.length >= 5) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Límite de imágenes',
+                text: 'Ya has alcanzado el máximo de 5 imágenes permitidas',
+                confirmButtonColor: '#0066cc'
+            });
+            return;
+        }
+        
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.multiple = true;
+        
+        input.addEventListener('change', (e) => {
+            manejarArchivosFotosLogo(e.target.files);
+        });
+        
+        input.click();
+    };
+
+    window.manejarArchivosFotosLogo = function(files) {
+        const espacioDisponible = 5 - logoFotosSeleccionadas.length;
+        
+        if (files.length > espacioDisponible) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Demasiadas imágenes',
+                text: `Solo puedes agregar ${espacioDisponible} imagen${espacioDisponible !== 1 ? 's' : ''} más. Máximo 5 en total.`,
+                confirmButtonColor: '#0066cc'
+            });
+            return;
+        }
+        
+        let fotosAgregadas = 0;
+        
+        Array.from(files).forEach(file => {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    logoFotosSeleccionadas.push({
+                        file: file,
+                        preview: e.target.result,
+                        existing: false
+                    });
+                    fotosAgregadas++;
+                    
+                    if (fotosAgregadas === files.length) {
+                        renderizarFotosLogo();
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Imágenes agregadas',
+                            text: `Se agregaron ${fotosAgregadas} imagen${fotosAgregadas !== 1 ? 's' : ''} correctamente`,
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    };
+
+    window.eliminarFotoLogo = function(index) {
+        const fotoAEliminar = logoFotosSeleccionadas[index];
+        
+        // Si es una foto existente (de la BD), eliminarla del servidor
+        if (fotoAEliminar && fotoAEliminar.existing && fotoAEliminar.id) {
+            console.log('🗑️ Eliminando foto existente de la BD:', fotoAEliminar.id);
+            
+            // Obtener ID de la cotización de la URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const cotizacionId = urlParams.get('cotizacion') || document.querySelector('input[name="cotizacion_id"]')?.value;
+            
+            if (!cotizacionId) {
+                console.warn('⚠️ No se encontró el ID de la cotización');
+            } else {
+                // Enviar petición al servidor para eliminar la foto
+                fetch(`/asesores/logos/${cotizacionId}/eliminar-foto`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || 
+                                       document.querySelector('input[name="_token"]')?.value
+                    },
+                    body: JSON.stringify({
+                        foto_id: fotoAEliminar.id
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('✅ Foto eliminada del servidor:', fotoAEliminar.id);
+                        // Quitar de array local
+                        logoFotosSeleccionadas.splice(index, 1);
+                        renderizarFotosLogo();
+                    } else {
+                        console.error('❌ Error al eliminar foto:', data.message);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: data.message || 'No se pudo eliminar la imagen'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Error en petición:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Error al eliminar la imagen'
+                    });
+                });
+            }
+        } else {
+            // Si es una foto nueva (no guardada en BD), simplemente quitarla del array
+            console.log('🗑️ Eliminando foto nueva del array');
+            logoFotosSeleccionadas.splice(index, 1);
+            renderizarFotosLogo();
+        }
+    };
+
+    // ====== FUNCIONES DE TÉCNICAS LOGO ======
+    window.agregarTecnicaLogo = function() {
+        const selector = document.getElementById('selector_tecnicas_logo');
+        const tecnica = selector.value;
+        
+        if (!tecnica) {
+            alert('Selecciona una técnica');
+            return;
+        }
+        
+        if (logoTecnicasSeleccionadas.includes(tecnica)) {
+            alert('Esta técnica ya está agregada');
+            return;
+        }
+        
+        logoTecnicasSeleccionadas.push(tecnica);
+        selector.value = '';
+        renderizarTecnicasLogo();
+    };
+
+    window.renderizarTecnicasLogo = function() {
+        const container = document.getElementById('tecnicas_seleccionadas_logo');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        logoTecnicasSeleccionadas.forEach((tecnica, index) => {
+            const badge = document.createElement('span');
+            badge.style.cssText = 'background: #0066cc; color: white; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; gap: 0.5rem;';
+            badge.innerHTML = `
+                ${tecnica}
+                <span style="cursor: pointer; font-weight: bold; font-size: 1rem;" onclick="eliminarTecnicaLogo(${index})">×</span>
+            `;
+            container.appendChild(badge);
+        });
+    };
+
+    window.eliminarTecnicaLogo = function(index) {
+        logoTecnicasSeleccionadas.splice(index, 1);
+        renderizarTecnicasLogo();
+    };
+
+    // ====== FUNCIONES DE UBICACIONES LOGO ======
+    // Variable temporal para saber si estamos editando
+    let logoUbicacionEditIndex = null;
+    let logoUbicacionTempNombre = '';
+
+    window.agregarSeccionLogo = function() {
+        const selector = document.getElementById('seccion_prenda_logo');
+        const ubicacion = selector.value;
+        const errorDiv = document.getElementById('errorSeccionPrendaLogo');
+        
+        if (!ubicacion) {
+            selector.style.border = '2px solid #ef4444';
+            selector.style.background = '#fee2e2';
+            selector.classList.add('shake');
+            errorDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                selector.style.border = '';
+                selector.style.background = '';
+                selector.classList.remove('shake');
+            }, 600);
+            
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 3000);
+            
+            return;
+        }
+        
+        selector.style.border = '';
+        selector.style.background = '';
+        errorDiv.style.display = 'none';
+        
+        // Crear modal con opciones
+        const opciones = logoOpcionesPorUbicacion[ubicacion] || [];
+        logoUbicacionTempNombre = ubicacion;
+        logoUbicacionEditIndex = null;
+        
+        abrirModalUbicacionLogo(ubicacion, opciones, null);
+    };
+
+    window.editarSeccionLogo = function(index) {
+        const seccion = logoSeccionesSeleccionadas[index];
+        const opciones = logoOpcionesPorUbicacion[seccion.ubicacion] || [];
+        logoUbicacionTempNombre = seccion.ubicacion;
+        logoUbicacionEditIndex = index;
+        
+        abrirModalUbicacionLogo(seccion.ubicacion, opciones, seccion);
+    };
+
+    window.abrirModalUbicacionLogo = function(ubicacion, opciones, seccionActual) {
+        let html = `
+            <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 1rem;" id="modalUbicacionLogo">
+                <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 600px; width: 100%; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto;">
+                    
+                    <!-- Header del modal -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid #f0f0f0;">
+                        <h2 style="margin: 0; color: #1e40af; font-size: 1.3rem; font-weight: 700;">Editar Ubicación</h2>
+                        <button type="button" onclick="cerrarModalUbicacionLogo()" style="background: none; border: none; color: #999; font-size: 1.8rem; cursor: pointer; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">×</button>
+                    </div>
+                    
+                    <!-- Sección 1: Nombre de la sección -->
+                    <div style="margin-bottom: 2rem;">
+                        <label style="display: block; font-weight: 700; margin-bottom: 0.75rem; color: #1e40af; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;">1. Nombre de la Sección</label>
+                        <div style="position: relative;">
+                            <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #999; font-size: 1.2rem;">👕</span>
+                            <input type="text" id="nombreSeccionLogo" value="${ubicacion}" placeholder="Ej: CAMISA, JEAN, GORRA" style="width: 100%; padding: 0.75rem 0.75rem 0.75rem 2.5rem; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 1rem; transition: all 0.3s; box-sizing: border-box;">
+                        </div>
+                    </div>
+                    
+                    <!-- Sección 2: Ubicaciones -->
+                    <div style="margin-bottom: 2rem;">
+                        <label style="display: block; font-weight: 700; margin-bottom: 1rem; color: #1e40af; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;">2. Ubicaciones Disponibles</label>
+                        <div id="opcionesUbicacionLogo" style="display: flex; flex-direction: column; gap: 0.5rem; padding: 1rem; background: #f9f9f9; border-radius: 8px; max-height: 250px; overflow-y: auto;"></div>
+                    </div>
+                    
+                    <!-- Sección 3: Agregar personalizado -->
+                    <div style="margin-bottom: 2rem;">
+                        <label style="display: block; font-weight: 700; margin-bottom: 0.75rem; color: #1e40af; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;">3. Agregar Personalizado</label>
+                        <div style="display: flex; gap: 0.75rem;">
+                            <input type="text" id="nuevaOpcionLogo" placeholder="Ej: BOLSILLO, MANGA" style="flex: 1; padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 0.95rem; transition: all 0.3s; box-sizing: border-box;">
+                            <button type="button" onclick="agregarOpcionPersonalizadaLogo()" style="background: linear-gradient(135deg, #27ae60 0%, #229954 100%); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.3s; white-space: nowrap;">+ Agregar</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Sección 4: Observaciones -->
+                    <div style="margin-bottom: 2rem;">
+                        <label style="display: block; font-weight: 700; margin-bottom: 0.75rem; color: #1e40af; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.5px;">4. Observaciones</label>
+                        <textarea id="obsUbicacionLogo" placeholder="Añade cualquier observación o nota importante..." style="width: 100%; padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 0.95rem; resize: vertical; min-height: 80px; box-sizing: border-box; font-family: inherit; transition: all 0.3s;">${seccionActual && seccionActual.observaciones ? seccionActual.observaciones : ''}</textarea>
+                    </div>
+                    
+                    <!-- Botones de acción -->
+                    <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                        <button type="button" onclick="cerrarModalUbicacionLogo()" style="background: #f0f0f0; color: #333; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.3s;">Cancelar</button>
+                        <button type="button" onclick="guardarUbicacionLogo()" style="background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.3s;">✓ Guardar</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', html);
+        
+        // Agregar opciones como checkboxes
+        setTimeout(() => {
+            const container = document.getElementById('opcionesUbicacionLogo');
+            if (container) {
+                // Agregar opciones predefinidas
+                if (opciones.length > 0) {
+                    opciones.forEach(opcion => {
+                        const isChecked = seccionActual && seccionActual.opciones.includes(opcion);
+                        const label = document.createElement('label');
+                        label.style.cssText = 'display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.75rem; border-radius: 8px; transition: all 0.2s; background: white; border: 1px solid #e0e0e0;';
+                        label.innerHTML = `
+                            <input type="checkbox" value="${opcion}" ${isChecked ? 'checked' : ''} style="width: 20px; height: 20px; cursor: pointer; accent-color: #0066cc;" class="opcion-ubicacion-logo">
+                            <span style="flex: 1; font-weight: 500; color: #333;">${opcion}</span>
+                            <button type="button" onclick="eliminarOpcionLogo('${opcion}')" style="background: none; border: none; color: #ef4444; font-size: 1.2rem; cursor: pointer; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">×</button>
+                        `;
+                        label.addEventListener('mouseover', () => label.style.background = '#f0f7ff');
+                        label.addEventListener('mouseout', () => label.style.background = 'white');
+                        container.appendChild(label);
+                    });
+                }
+            }
+        }, 10);
+        
+        // Mejorar inputs con estilos al enfocar
+        setTimeout(() => {
+            const inputs = document.querySelectorAll('#modalUbicacionLogo input[type="text"], #modalUbicacionLogo textarea');
+            inputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.style.borderColor = '#0066cc';
+                    this.style.boxShadow = '0 0 0 3px rgba(0, 102, 204, 0.1)';
+                });
+                input.addEventListener('blur', function() {
+                    this.style.borderColor = '#e0e0e0';
+                    this.style.boxShadow = 'none';
+                });
+            });
+        }, 20);
+    };
+
+    window.agregarOpcionPersonalizadaLogo = function() {
+        const input = document.getElementById('nuevaOpcionLogo');
+        const opcion = input.value.trim().toUpperCase();
+        
+        if (!opcion) {
+            alert('Escribe una ubicación');
+            return;
+        }
+        
+        const container = document.getElementById('opcionesUbicacionLogo');
+        if (!container) return;
+        
+        // Verificar si ya existe
+        const yaExiste = Array.from(container.querySelectorAll('input[type="checkbox"]')).some(
+            cb => cb.value.toUpperCase() === opcion
+        );
+        
+        if (yaExiste) {
+            alert('Esta ubicación ya está agregada');
+            return;
+        }
+        
+        const label = document.createElement('label');
+        label.style.cssText = 'display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.75rem; border-radius: 6px; transition: background 0.2s; background: #e8f5e9; border: 1px solid #27ae60;';
+        label.innerHTML = `
+            <input type="checkbox" value="${opcion}" checked style="width: 18px; height: 18px; cursor: pointer;" class="opcion-ubicacion-logo">
+            <span style="flex: 1;">${opcion}</span>
+            <button type="button" onclick="eliminarOpcionLogo('${opcion}')" style="background: #ef4444; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; padding: 0;">×</button>
+        `;
+        label.addEventListener('mouseover', () => label.style.background = '#c8e6c9');
+        label.addEventListener('mouseout', () => label.style.background = '#e8f5e9');
+        container.appendChild(label);
+        
+        input.value = '';
+        input.focus();
+    };
+
+    window.eliminarOpcionLogo = function(opcion) {
+        const container = document.getElementById('opcionesUbicacionLogo');
+        if (!container) return;
+        
+        Array.from(container.querySelectorAll('input[type="checkbox"]')).forEach(cb => {
+            if (cb.value === opcion) {
+                cb.closest('label').remove();
+            }
+        });
+    };
+
+    window.cerrarModalUbicacionLogo = function() {
+        const modal = document.getElementById('modalUbicacionLogo');
+        if (modal) modal.remove();
+    };
+
+    window.guardarUbicacionLogo = function() {
+        const nombreNuevo = document.getElementById('nombreSeccionLogo').value.trim().toUpperCase();
+        const checkboxes = document.querySelectorAll('#opcionesUbicacionLogo input[type="checkbox"]:checked');
+        const obs = document.getElementById('obsUbicacionLogo').value;
+        
+        if (!nombreNuevo) {
+            alert('Ingresa un nombre para la sección');
+            return;
+        }
+        
+        if (checkboxes.length === 0) {
+            alert('Selecciona al menos una ubicación');
+            return;
+        }
+        
+        const opciones = Array.from(checkboxes).map(cb => cb.value);
+        
+        if (logoUbicacionEditIndex !== null) {
+            // Editar existente
+            logoSeccionesSeleccionadas[logoUbicacionEditIndex] = {
+                ubicacion: nombreNuevo,
+                opciones: opciones,
+                observaciones: obs
+            };
+        } else {
+            // Agregar nuevo
+            logoSeccionesSeleccionadas.push({
+                ubicacion: nombreNuevo,
+                opciones: opciones,
+                observaciones: obs
+            });
+        }
+        
+        cerrarModalUbicacionLogo();
+        document.getElementById('seccion_prenda_logo').value = '';
+        renderizarSeccionesLogo();
+    };
+
+    window.renderizarSeccionesLogo = function() {
+        const container = document.getElementById('secciones_agregadas_logo');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        logoSeccionesSeleccionadas.forEach((seccion, index) => {
+            const div = document.createElement('div');
+            div.style.cssText = 'background: white; border: 2px solid #3498db; border-radius: 8px; padding: 1rem; margin-bottom: 0.75rem;';
+            
+            const opcionesText = Array.isArray(seccion.opciones) ? seccion.opciones.join(', ') : seccion;
+            const ubicacionText = seccion.ubicacion || seccion;
+            const obsText = seccion.observaciones || '';
+            
+            div.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div style="flex: 1;">
+                        <h4 style="margin: 0 0 0.5rem 0; color: #1e40af; font-size: 0.95rem;">${ubicacionText}</h4>
+                        <p style="margin: 0 0 0.5rem 0; color: #666; font-size: 0.85rem;"><strong>Ubicación:</strong> ${opcionesText}</p>
+                        ${obsText ? `<p style="margin: 0; color: #666; font-size: 0.85rem;"><strong>Observaciones:</strong> ${obsText}</p>` : ''}
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
+                        <button type="button" onclick="editarSeccionLogo(${index})" style="background: #0066cc; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; font-weight: bold;" title="Editar">✎</button>
+                        <button type="button" onclick="eliminarSeccionLogo(${index})" style="background: #ef4444; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center;">×</button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    };
+
+    window.eliminarSeccionLogo = function(index) {
+        logoSeccionesSeleccionadas.splice(index, 1);
+        renderizarSeccionesLogo();
+    };
+
+    // ====== FUNCIONES DE OBSERVACIONES LOGO ======
+    window.agregarObservacionLogo = function() {
+        logoObservacionesGenerales.push('');
+        renderizarObservacionesLogo();
+    };
+
+    window.renderizarObservacionesLogo = function() {
+        const container = document.getElementById('observaciones_lista_logo');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        logoObservacionesGenerales.forEach((obs, index) => {
+            const fila = document.createElement('div');
+            fila.style.cssText = 'display: flex; gap: 10px; align-items: stretch; padding: 10px; background: white; border-radius: 6px; border: 1px solid #ddd;';
+            fila.innerHTML = `
+                <textarea class="logo-obs-input" style="flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; resize: vertical; min-height: 60px; font-family: inherit;">${obs}</textarea>
+                <button type="button" onclick="eliminarObservacionLogo(${index})" style="background: #f44336; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 1rem; flex-shrink: 0; height: fit-content;">✕</button>
+            `;
+            
+            // Actualizar array cuando se escribe
+            const textarea = fila.querySelector('.logo-obs-input');
+            textarea.addEventListener('input', (e) => {
+                logoObservacionesGenerales[index] = e.target.value;
+            });
+            
+            container.appendChild(fila);
+        });
+    };
+
+    window.eliminarObservacionLogo = function(index) {
+        logoObservacionesGenerales.splice(index, 1);
+        renderizarObservacionesLogo();
+    };
+
+
+    // ============================================================
     // FUNCIONES DE MANIPULACIÓN DE PRENDAS
     // ============================================================
     
@@ -1065,6 +1782,112 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
+        // ✅ DETECTAR SI ES LOGO O PRENDAS
+        const esLogo = logoTecnicasSeleccionadas.length > 0 || 
+                       logoSeccionesSeleccionadas.length > 0 || 
+                       logoFotosSeleccionadas.length > 0;
+
+        console.log('🎨 Enviando formulario...', {
+            esLogo: esLogo,
+            logoTecnicas: logoTecnicasSeleccionadas.length,
+            logoSecciones: logoSeccionesSeleccionadas.length,
+            logoFotos: logoFotosSeleccionadas.length
+        });
+
+        if (esLogo) {
+            // ============================================================
+            // FLUJO PARA LOGO
+            // ============================================================
+            console.log('🎨 [LOGO] Preparando datos de LOGO para enviar');
+
+            // Crear el pedido primero
+            const bodyCrearPedido = {
+                cotizacion_id: cotizacionId,
+                forma_de_pago: formaPagoInput.value,
+                prendas: []  // Sin prendas, es solo LOGO
+            };
+
+            console.log('📤 [LOGO] Enviando creación de pedido...', bodyCrearPedido);
+
+            fetch(`/asesores/pedidos-produccion/crear-desde-cotizacion/${cotizacionId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                },
+                body: JSON.stringify(bodyCrearPedido)
+            })
+            .then(response => response.json())
+            .then(dataCrearPedido => {
+                console.log('✅ [LOGO] Pedido creado:', dataCrearPedido);
+
+                if (!dataCrearPedido.success) {
+                    throw new Error(dataCrearPedido.message || 'Error al crear pedido');
+                }
+
+                const pedidoId = dataCrearPedido.pedido_id;
+
+                // Usar el ID del LogoCotizacion guardado globalmente
+                // Ahora guardar los datos específicos de LOGO
+                const bodyLogoPedido = {
+                    pedido_id: pedidoId,
+                    logo_cotizacion_id: logoCotizacionId,  // ← Usar variable global
+                    descripcion: document.querySelector('textarea[id*="logo_descripcion"]')?.value || '',
+                    tecnicas: logoTecnicasSeleccionadas,
+                    observaciones_tecnicas: document.querySelector('textarea[id*="logo_observaciones_tecnicas"]')?.value || '',
+                    ubicaciones: logoSeccionesSeleccionadas,
+                    fotos: logoFotosSeleccionadas
+                };
+
+                console.log('🎨 [LOGO] Datos del LOGO pedido a guardar:', bodyLogoPedido);
+
+                return fetch('/asesores/pedidos/guardar-logo-pedido', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                    },
+                    body: JSON.stringify(bodyLogoPedido)
+                });
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('✅ [LOGO] Respuesta del servidor:', data);
+
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Éxito!',
+                        text: 'Pedido de LOGO creado exitosamente\nNúmero de LOGO: ' + (data.logo_pedido?.numero_pedido || ''),
+                        confirmButtonText: 'OK'
+                    }).then(() => {
+                        window.location.href = '/asesores/pedidos';
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: data.message || 'Error al guardar el LOGO',
+                        confirmButtonText: 'OK'
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('❌ [LOGO] Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error: ' + error.message,
+                    confirmButtonText: 'OK'
+                });
+            });
+
+            return;  // Salir aquí
+        }
+
+        // ============================================================
+        // FLUJO PARA PRENDAS (PRENDA/REFLECTIVO)
+        // ============================================================
         const prendas = [];
         
         // Recopilar fotos de logo que quedan en el DOM (las no eliminadas)

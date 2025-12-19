@@ -532,11 +532,14 @@
 
         <!-- PASO 3: Prendas Editables -->
         <div class="form-section">
-            <h2>
-                <span>3</span> Prendas y Cantidades (Editables)
-            </h2>
+            <div class="step-header">
+                <div class="step-number-container">
+                    <span class="step-number">3</span>
+                </div>
+                <h2 id="paso3_titulo_logo" class="step-title text-center">Prendas y Cantidades (Editables)</h2>
+            </div>
 
-            <div class="alert-info">
+            <div class="alert-info" id="paso3_alerta_logo">
                 ℹ️ Puedes editar los campos de cada prenda, cambiar cantidades por talla, o eliminar prendas que no desees incluir en el pedido.
             </div>
 

@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
         asesoraInput.value = asesora;
         formaPagoInput.value = formaPago || '';
 
-        // Cargar prendas de la cotización usando el endpoint correcto
+        // Cargar datos de la cotización usando el endpoint correcto
         fetch(`/asesores/pedidos-produccion/obtener-datos-cotizacion/${id}`, {
             headers: {
                 'Accept': 'application/json',
@@ -136,19 +136,189 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log('⚠️ No hay forma de pago en los datos');
                 }
                 
-                console.log('📋 Prendas a cargar:', data.prendas);
-                cargarPrendas(data.prendas);
+                // Verificar si es una cotización de LOGO
+                // IMPORTANTE: Si hay logo, mostrar logo (aunque también tenga prendas)
+                if (data.logo) {
+                    console.log('🎯 Cotización de LOGO detectada');
+                    console.log('📦 Datos del logo completos:', data.logo);
+                    cargarCamposLogo(data.logo);
+                } else if (data.prendas && data.prendas.length > 0) {
+                    console.log('📋 Prendas a cargar:', data.prendas);
+                    cargarPrendas(data.prendas);
+                } else {
+                    console.log('⚠️ No hay logo ni prendas en esta cotización');
+                    prendasContainer.innerHTML = '<p class="text-gray-500 text-center py-8">Esta cotización no tiene contenido (sin prendas ni logo)</p>';
+                }
             })
             .catch(error => {
                 console.error('Error:', error);
-                prendasContainer.innerHTML = '<p class="text-red-500">Error al cargar las prendas: ' + error.message + '</p>';
+                prendasContainer.innerHTML = '<p class="text-red-500">Error al cargar los datos: ' + error.message + '</p>';
             });
     };
+
+    // Función para cargar campos de LOGO
+    function cargarCamposLogo(logoData) {
+        console.log('📦 Datos del logo recibidos:', logoData);
+        console.log('📦 Tipo de logoData:', typeof logoData);
+        console.log('📦 LogoData.fotos:', logoData.fotos);
+        console.log('📦 LogoData.tecnicas:', logoData.tecnicas);
+        console.log('📦 LogoData.ubicaciones:', logoData.ubicaciones);
+        
+        // Ocultar contenedor de prendas y mostrar contenedor de logo
+        const prendasContainerElement = document.getElementById('prendas-container');
+        const logoContainerElement = document.getElementById('logo-fields-container');
+        
+        if (prendasContainerElement) {
+            prendasContainerElement.style.display = 'none';
+            console.log('✅ Contenedor de prendas ocultado');
+        }
+        
+        if (logoContainerElement) {
+            logoContainerElement.style.display = 'block';
+            console.log('✅ Contenedor de logo mostrado');
+        } else {
+            console.error('❌ No se encontró logo-fields-container en el DOM');
+        }
+        
+        // Cambiar título del paso 3
+        const paso3Title = document.getElementById('paso3_titulo');
+        if (paso3Title) {
+            paso3Title.textContent = 'Información del Logo';
+        }
+        
+        // Cargar descripción
+        const descElement = document.getElementById('logo_descripcion');
+        if (descElement) {
+            descElement.value = logoData.descripcion || '';
+            console.log('✅ Descripción cargada:', descElement.value);
+        }
+        
+        // Cargar imágenes
+        const galeriaContainer = document.getElementById('logo-galeria-imagenes');
+        if (galeriaContainer) {
+            galeriaContainer.innerHTML = '';
+            if (logoData.fotos && logoData.fotos.length > 0) {
+                console.log('📸 Cargando ' + logoData.fotos.length + ' imágenes');
+                logoData.fotos.forEach((foto, index) => {
+                    const div = document.createElement('div');
+                    div.style.cssText = `
+                        position: relative;
+                        width: 100%;
+                        aspect-ratio: 1;
+                        border-radius: 6px;
+                        overflow: hidden;
+                        background: #f0f0f0;
+                        border: 1px solid #ddd;
+                    `;
+                    const imgUrl = foto.url || foto.ruta_webp || '';
+                    div.innerHTML = `
+                        <img src="${imgUrl}" alt="Logo ${index + 1}" style="width: 100%; height: 100%; object-fit: cover;">
+                    `;
+                    galeriaContainer.appendChild(div);
+                });
+                console.log('✅ ' + logoData.fotos.length + ' imágenes cargadas');
+            } else {
+                galeriaContainer.innerHTML = '<p style="grid-column: 1/-1; color: #9ca3af; text-align: center;">Sin imágenes</p>';
+                console.log('⚠️ No hay imágenes en el logo');
+            }
+        }
+        
+        // Cargar técnicas
+        const tecnicasContainer = document.getElementById('logo-tecnicas-seleccionadas');
+        if (tecnicasContainer) {
+            tecnicasContainer.innerHTML = '';
+            if (logoData.tecnicas && logoData.tecnicas.length > 0) {
+                console.log('🎨 Cargando ' + logoData.tecnicas.length + ' técnicas');
+                logoData.tecnicas.forEach(tecnica => {
+                    const badge = document.createElement('span');
+                    badge.style.cssText = `
+                        background: #3498db;
+                        color: white;
+                        padding: 6px 12px;
+                        border-radius: 20px;
+                        font-size: 0.85rem;
+                        font-weight: 500;
+                    `;
+                    badge.textContent = tecnica;
+                    tecnicasContainer.appendChild(badge);
+                });
+                console.log('✅ Técnicas cargadas');
+            } else {
+                tecnicasContainer.innerHTML = '<span style="color: #9ca3af;">Sin técnicas especificadas</span>';
+                console.log('⚠️ No hay técnicas en el logo');
+            }
+        }
+        
+        // Cargar observaciones de técnicas
+        const obsTecsElement = document.getElementById('logo_observaciones_tecnicas');
+        if (obsTecsElement) {
+            obsTecsElement.value = logoData.observaciones_tecnicas || '';
+            console.log('✅ Observaciones de técnicas cargadas');
+        }
+        
+        // Cargar ubicaciones
+        const ubicacionesContainer = document.getElementById('logo-ubicaciones-seleccionadas');
+        if (ubicacionesContainer) {
+            ubicacionesContainer.innerHTML = '';
+            if (logoData.ubicaciones && logoData.ubicaciones.length > 0) {
+                console.log('📍 Cargando ' + logoData.ubicaciones.length + ' ubicaciones');
+                logoData.ubicaciones.forEach(ubicacion => {
+                    const item = document.createElement('div');
+                    item.style.cssText = `
+                        background: white;
+                        border: 1px solid #ddd;
+                        padding: 8px;
+                        border-radius: 6px;
+                        font-size: 0.85rem;
+                    `;
+                    item.textContent = ubicacion;
+                    ubicacionesContainer.appendChild(item);
+                });
+                console.log('✅ Ubicaciones cargadas');
+            } else {
+                ubicacionesContainer.innerHTML = '<span style="color: #9ca3af; grid-column: 1/-1;">Sin ubicaciones especificadas</span>';
+                console.log('⚠️ No hay ubicaciones en el logo');
+            }
+        }
+        
+        // Cargar observaciones generales
+        const obsContainer = document.getElementById('logo-observaciones-generales');
+        if (obsContainer) {
+            obsContainer.innerHTML = '';
+            if (logoData.observaciones_generales && logoData.observaciones_generales.length > 0) {
+                console.log('📝 Cargando ' + logoData.observaciones_generales.length + ' observaciones');
+                logoData.observaciones_generales.forEach(obs => {
+                    const item = document.createElement('div');
+                    item.style.cssText = `
+                        background: white;
+                        border-left: 3px solid #3498db;
+                        padding: 8px;
+                        border-radius: 4px;
+                        font-size: 0.85rem;
+                        color: #334155;
+                    `;
+                    item.textContent = obs;
+                    obsContainer.appendChild(item);
+                });
+                console.log('✅ Observaciones cargadas');
+            } else {
+                obsContainer.innerHTML = '<span style="color: #9ca3af;">Sin observaciones</span>';
+                console.log('⚠️ No hay observaciones en el logo');
+            }
+        }
+        
+        console.log('✅ Campos de LOGO cargados completamente');
+    }
 
     // Variable global para almacenar prendas cargadas
     let prendasCargadas = [];
 
     function cargarPrendas(prendas) {
+        // Mostrar contenedor de prendas y ocultar el de logo
+        prendasContainer.style.display = 'block';
+        document.getElementById('logo-fields-container').style.display = 'none';
+        document.getElementById('paso3_titulo').textContent = 'Prendas y Cantidades por Talla';
+        
         if (!prendas || prendas.length === 0) {
             prendasContainer.innerHTML = '<p class="text-gray-500 text-center py-8">Esta cotización no tiene prendas</p>';
             return;
@@ -321,28 +491,45 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const prendas = [];
+        // Verificar si es una cotización LOGO
+        const isLogo = document.getElementById('logo-fields-container').style.display !== 'none';
         
-        prendasCargadas.forEach((prenda, index) => {
-            const prendasCard = document.querySelectorAll('.prenda-card')[index];
-            if (!prendasCard) return;
+        let dataToSend = {
+            cotizacion_id: cotizacionId,
+            forma_de_pago: formaPagoInput.value,
+            _token: document.querySelector('input[name="_token"]').value
+        };
+
+        if (isLogo) {
+            // Para cotizaciones LOGO, no enviar cantidades por talla
+            console.log('🎯 Creando pedido de LOGO');
+            dataToSend.tipo_cotizacion = 'LOGO';
+            // Los datos del logo ya están en la cotización
+        } else {
+            // Para cotizaciones de PRENDAS, recopilar cantidades por talla
+            console.log('📦 Creando pedido de PRENDAS');
+            const prendas = [];
             
-            const tallasInputs = prendasCard.querySelectorAll('.talla-input');
-            const cantidadesPorTalla = {};
-            
-            tallasInputs.forEach(input => {
-                const talla = input.closest('.talla-group')?.getAttribute('data-talla');
-                const cantidad = parseInt(input.value) || 0;
-                if (talla && cantidad > 0) {
-                    cantidadesPorTalla[talla] = cantidad;
-                }
-            });
-            
-            if (Object.keys(cantidadesPorTalla).length > 0) {
-                const observacionesMap = {};
-                if (prenda.variantes?.observaciones) {
-                    const obsArray = prenda.variantes.observaciones.split('|').map(o => o.trim());
-                    obsArray.forEach(obs => {
+            prendasCargadas.forEach((prenda, index) => {
+                const prendasCard = document.querySelectorAll('.prenda-card')[index];
+                if (!prendasCard) return;
+                
+                const tallasInputs = prendasCard.querySelectorAll('.talla-input');
+                const cantidadesPorTalla = {};
+                
+                tallasInputs.forEach(input => {
+                    const talla = input.closest('.talla-group')?.getAttribute('data-talla');
+                    const cantidad = parseInt(input.value) || 0;
+                    if (talla && cantidad > 0) {
+                        cantidadesPorTalla[talla] = cantidad;
+                    }
+                });
+                
+                if (Object.keys(cantidadesPorTalla).length > 0) {
+                    const observacionesMap = {};
+                    if (prenda.variantes?.observaciones) {
+                        const obsArray = prenda.variantes.observaciones.split('|').map(o => o.trim());
+                        obsArray.forEach(obs => {
                         if (obs.includes('Manga:')) {
                             observacionesMap.manga_obs = obs.replace('Manga:', '').trim();
                         } else if (obs.includes('Bolsillos:')) {
@@ -388,14 +575,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     logos: prenda.logos || []
                 });
             }
-        });
-
-        const dataToSend = {
-            cotizacion_id: cotizacionId,
-            forma_de_pago: formaPagoInput.value,
-            prendas: prendas,
-            _token: document.querySelector('input[name="_token"]').value
-        };
+            });
+            
+            dataToSend.prendas = prendas;
+        }
 
         console.log('📤 Enviando datos:', dataToSend);
 
@@ -407,7 +590,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Accept': 'application/json'
             },
             body: JSON.stringify(dataToSend)
-        })
+        }))
         .then(response => response.json())
         .then(data => {
             console.log('✅ Respuesta del servidor:', data);

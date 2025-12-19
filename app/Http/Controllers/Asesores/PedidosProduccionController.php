@@ -31,7 +31,8 @@ class PedidosProduccionController extends Controller
                 'prendasCotizaciones.variantes.color',
                 'prendasCotizaciones.variantes.tela',
                 'prendasCotizaciones.variantes.tipoManga',
-                'prendasCotizaciones.variantes.tipoBroche'
+                'prendasCotizaciones.variantes.tipoBroche',
+                'logoCotizacion.fotos'
             ])
             ->orderBy('created_at', 'desc')
             ->get();
@@ -68,14 +69,26 @@ class PedidosProduccionController extends Controller
      */
     public function index(Request $request)
     {
-        $query = PedidoProduccion::whereHas('cotizacion', function ($query) {
-            $query->where('asesor_id', Auth::id());
-        })
-        ->with([
-            'prendas' => function ($q) {
-                $q->with(['color', 'tela', 'tipoManga', 'procesos']);
-            }
-        ]);
+        $query = PedidoProduccion::query()
+            ->with([
+                'cotizacion' => function($q) {
+                    $q->select('id', 'tipo', 'codigo', 'cliente_id', 'estado');
+                },
+                'prendas' => function ($q) {
+                    $q->with(['color', 'tela', 'tipoManga', 'procesos']);
+                },
+                'logoPedidos'
+            ]);
+
+        // Filtrar por asesor
+        $query->where('asesor_id', Auth::id());
+
+        // Filtrar por tipo logo si se especifica
+        if ($request->has('tipo') && $request->tipo === 'logo') {
+            $query->whereHas('cotizacion', function($q) {
+                $q->whereIn('tipo', ['L', 'PL']); // Incluir tanto 'L' (Logo) como 'PL' (Combinada)
+            });
+        }
 
         // Filtrar por estado si se proporciona
         if ($request->has('estado')) {

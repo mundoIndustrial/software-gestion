@@ -61,37 +61,45 @@ class CrearPedidoProduccionJob
             ]);
 
             // Obtener y incrementar número de pedido de forma segura
-            $secuenciaRow = DB::table('numero_secuencias')
-                ->where('tipo', 'pedido_produccion')
-                ->lockForUpdate()
-                ->first();
+            // PERO: Si es LOGO, NO asignar número en pedidos_produccion
+            $numeroPedido = null;
             
-            $numeroPedido = $secuenciaRow->siguiente;
-            
-            \Log::info('🔍 [CrearPedidoProduccionJob] Número obtenido de secuencia', [
-                'secuencia_row' => $secuenciaRow,
-                'numero_pedido_raw' => $numeroPedido,
-                'tipo_numero_pedido' => gettype($numeroPedido),
-                'es_string' => is_string($numeroPedido),
-                'es_int' => is_int($numeroPedido),
-            ]);
-            
-            // ✅ CRÍTICO: Asegurar que sea un entero, no string con prefijo
-            if (is_string($numeroPedido) && str_contains($numeroPedido, 'PEP-')) {
-                // Si viene con prefijo, extraer solo el número
-                $numeroPedido = (int) str_replace('PEP-', '', $numeroPedido);
-                \Log::warning('⚠️ [CrearPedidoProduccionJob] Número tenía prefijo PEP-, se extrajo solo el número', [
-                    'numero_limpio' => $numeroPedido
+            if (!$this->dto->esLogoPedido()) {
+                // Solo para pedidos normales, asignar número
+                $secuenciaRow = DB::table('numero_secuencias')
+                    ->where('tipo', 'pedido_produccion')
+                    ->lockForUpdate()
+                    ->first();
+                
+                $numeroPedido = $secuenciaRow->siguiente;
+                
+                \Log::info('🔍 [CrearPedidoProduccionJob] Número obtenido de secuencia', [
+                    'secuencia_row' => $secuenciaRow,
+                    'numero_pedido_raw' => $numeroPedido,
+                    'tipo_numero_pedido' => gettype($numeroPedido),
+                    'es_string' => is_string($numeroPedido),
+                    'es_int' => is_int($numeroPedido),
                 ]);
-            } else {
-                // Convertir a entero para asegurar
-                $numeroPedido = (int) $numeroPedido;
-            }
+                
+                // ✅ CRÍTICO: Asegurar que sea un entero, no string con prefijo
+                if (is_string($numeroPedido) && str_contains($numeroPedido, 'PEP-')) {
+                    // Si viene con prefijo, extraer solo el número
+                    $numeroPedido = (int) str_replace('PEP-', '', $numeroPedido);
+                    \Log::warning('⚠️ [CrearPedidoProduccionJob] Número tenía prefijo PEP-, se extrajo solo el número', [
+                        'numero_limpio' => $numeroPedido
+                    ]);
+                } else {
+                    // Convertir a entero para asegurar
+                    $numeroPedido = (int) $numeroPedido;
+                }
 
-            // Incrementar para el próximo
-            DB::table('numero_secuencias')
-                ->where('tipo', 'pedido_produccion')
-                ->increment('siguiente');
+                // Incrementar para el próximo
+                DB::table('numero_secuencias')
+                    ->where('tipo', 'pedido_produccion')
+                    ->increment('siguiente');
+            } else {
+                \Log::info('ℹ️  [CrearPedidoProduccionJob] Es pedido LOGO, NO se asigna número en pedidos_produccion');
+            }
 
             // Procesar prendas
             $prendasProcesadas = array_map(

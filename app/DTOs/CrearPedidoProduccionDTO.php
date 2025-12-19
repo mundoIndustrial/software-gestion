@@ -89,4 +89,13 @@ class CrearPedidoProduccionDTO
     {
         return count($this->prendasValidas());
     }
+
+    /**
+     * Determina si es un pedido LOGO (sin prendas, solo logo)
+     */
+    public function esLogoPedido(): bool
+    {
+        // Es LOGO si: no hay prendas válidas Y hay logo data
+        return count($this->prendasValidas()) === 0 && !empty($this->logo);
+    }
 }

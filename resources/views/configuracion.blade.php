@@ -159,6 +159,75 @@
                                     Google Drive
                                 </button>
                             </div>
+
+                            <hr style="margin: 15px 0; border-top: 2px dashed #e5e7eb;">
+
+                            <div class="col-12">
+                                <button type="button" class="backup-btn backup-btn-purple" id="backupInsertOnlyBtn" style="background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 19V5M5 12h14"></path>
+                                    </svg>
+                                    Backup (No Duplicar Datos)
+                                </button>
+                            </div>
+
+                            <div class="col-12">
+                                <button type="button" class="backup-btn backup-btn-teal" id="backupDownloadInsertOnlyBtn" style="background: linear-gradient(135deg, #06b6d4 0%, #10b981 100%);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="7 10 12 15 17 10"></polyline>
+                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                                    </svg>
+                                    Descargar (No Duplicar)
+                                </button>
+                            </div>
+
+                            <div class="col-12">
+                                <button type="button" class="backup-btn" id="backupFlexibleBtn" style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%); color: white;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                        <polyline points="7 10 12 15 17 10"></polyline>
+                                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                                    </svg>
+                                    Backup Flexible (Diferente Estructura)
+                                </button>
+                            </div>
+
+                            <div class="col-12">
+                                <button type="button" class="backup-btn" id="backupFlexibleAdvBtn" style="background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); color: white;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"></path>
+                                    </svg>
+                                    Flexible Avanzado (Seleccionar BD Destino)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal para seleccionar BD Destino -->
+                <div id="selectDbModal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
+                    <div style="background-color: #fefefe; margin: 10% auto; padding: 0; border-radius: 10px; width: 90%; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        <div style="background-color: #8b5cf6; color: white; padding: 20px; border-radius: 10px 10px 0 0; display: flex; justify-content: space-between; align-items: center;">
+                            <h5 style="margin: 0; font-size: 18px; font-weight: bold;">
+                                Seleccionar Base de Datos Destino
+                            </h5>
+                            <button onclick="closeSelectDbModal()" style="background: none; border: none; color: white; font-size: 28px; cursor: pointer; padding: 0; line-height: 1;">&times;</button>
+                        </div>
+                        <div style="padding: 30px; text-align: center;">
+                            <label style="display: block; margin-bottom: 15px; text-align: left;">
+                                <strong>Selecciona la base de datos destino:</strong>
+                                <select id="destDbSelect" style="width: 100%; padding: 10px; margin-top: 8px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
+                                    <option value="">-- Seleccionar base de datos --</option>
+                                    @foreach($databases as $db)
+                                        @if($db !== $currentDatabase)
+                                            <option value="{{ $db }}">{{ $db }}</option>
+                                        @endif
+                                    @endforeach
+                                </select>
+                            </label>
+                            <button onclick="downloadFlexibleAdv()" style="background-color: #8b5cf6; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: bold; margin-right: 10px;">Descargar Backup</button>
+                            <button onclick="closeSelectDbModal()" style="background-color: #e5e7eb; color: #374151; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 14px; font-weight: bold;">Cancelar</button>
                         </div>
                     </div>
                 </div>
@@ -386,18 +455,99 @@
         } else {
             console.error('No se encontró el botón de Google Drive');
         }
+
+        // Manejar el botón de backup Insert Only (guardar en servidor)
+        const backupInsertOnlyBtn = document.getElementById('backupInsertOnlyBtn');
+        if (backupInsertOnlyBtn) {
+            backupInsertOnlyBtn.addEventListener('click', function() {
+                console.log('Botón de backup insert-only clickeado');
+                
+                // Redirigir a la ruta de descarga
+                window.location.href = '{{ route('configuracion.backupInsertOnly') }}';
+            });
+        } else {
+            console.error('No se encontró el botón de backup insert-only');
+        }
+
+        // Manejar el botón de descarga Insert Only
+        const backupDownloadInsertOnlyBtn = document.getElementById('backupDownloadInsertOnlyBtn');
+        if (backupDownloadInsertOnlyBtn) {
+            backupDownloadInsertOnlyBtn.addEventListener('click', function() {
+                console.log('Botón de descarga insert-only clickeado');
+                
+                // Redirigir a la ruta de descarga
+                window.location.href = '{{ route('configuracion.downloadBackupInsertOnly') }}';
+            });
+        } else {
+            console.error('No se encontró el botón de descarga insert-only');
+        }
+
+        // Manejar el botón de backup flexible
+        const backupFlexibleBtn = document.getElementById('backupFlexibleBtn');
+        if (backupFlexibleBtn) {
+            backupFlexibleBtn.addEventListener('click', function() {
+                console.log('Botón de backup flexible clickeado');
+                
+                // Redirigir a la ruta de descarga
+                window.location.href = '{{ route('configuracion.backupFlexible') }}';
+            });
+        } else {
+            console.error('No se encontró el botón de backup flexible');
+        }
+
+        // Manejar el botón de backup flexible avanzado
+        const backupFlexibleAdvBtn = document.getElementById('backupFlexibleAdvBtn');
+        if (backupFlexibleAdvBtn) {
+            backupFlexibleAdvBtn.addEventListener('click', function() {
+                console.log('Botón de backup flexible avanzado clickeado');
+                document.getElementById('selectDbModal').style.display = 'block';
+            });
+        } else {
+            console.error('No se encontró el botón de backup flexible avanzado');
+        }
     });
 
-    // Función para cerrar el modal
-    function closeBackupModal() {
-        document.getElementById('backupModal').style.display = 'none';
+    function downloadFlexibleAdv() {
+        const destDb = document.getElementById('destDbSelect').value;
+        if (!destDb) {
+            alert('Por favor selecciona una base de datos destino');
+            return;
+        }
+        closeSelectDbModal();
+        window.location.href = '{{ route('configuracion.backupFlexible') }}?dest_db=' + encodeURIComponent(destDb);
+    }
+
+    function closeSelectDbModal() {
+        document.getElementById('selectDbModal').style.display = 'none';
     }
 
     // Cerrar modal al hacer clic fuera de él
     window.onclick = function(event) {
-        const modal = document.getElementById('backupModal');
-        if (event.target == modal) {
-            modal.style.display = 'none';
+        const selectDbModal = document.getElementById('selectDbModal');
+        if (event.target == selectDbModal) {
+            selectDbModal.style.display = 'none';
+        }
+        const backupModal = document.getElementById('backupModal');
+        if (event.target == backupModal) {
+            backupModal.style.display = 'none';
+        }
+    }
+
+
+    // Función para cerrar los modales
+    function closeBackupModal() {
+        document.getElementById('backupModal').style.display = 'none';
+    }
+
+    // Cerrar modales al hacer clic fuera de ellos
+    window.onclick = function(event) {
+        const backupModal = document.getElementById('backupModal');
+        if (event.target == backupModal) {
+            backupModal.style.display = 'none';
+        }
+        const selectDbModal = document.getElementById('selectDbModal');
+        if (event.target == selectDbModal) {
+            selectDbModal.style.display = 'none';
         }
     }
 </script>

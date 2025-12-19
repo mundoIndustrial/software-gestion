@@ -412,9 +412,13 @@
     <!-- Filtros Rápidos -->
     <div class="filtros-rapidos-asesores">
         <span class="filtros-rapidos-asesores-label">Filtrar por estado:</span>
-        <a href="{{ route('asesores.pedidos.index') }}" class="btn-filtro-rapido-asesores {{ !request('estado') ? 'active' : '' }}" onclick="return navegarFiltro(this.href, event)">
+        <a href="{{ route('asesores.pedidos.index') }}" class="btn-filtro-rapido-asesores {{ !request('estado') && !request('tipo') ? 'active' : '' }}" onclick="return navegarFiltro(this.href, event)">
             <span class="material-symbols-rounded">home</span>
             Todos
+        </a>
+        <a href="{{ route('asesores.pedidos.index', ['tipo' => 'logo']) }}" class="btn-filtro-rapido-asesores {{ request('tipo') === 'logo' ? 'active' : '' }}" onclick="return navegarFiltro(this.href, event)">
+            <span class="material-symbols-rounded">palette</span>
+            Logo
         </a>
         <a href="{{ route('asesores.pedidos.index', ['estado' => 'Pendiente']) }}" class="btn-filtro-rapido-asesores {{ request('estado') === 'Pendiente' ? 'active' : '' }}" onclick="return navegarFiltro(this.href, event)">
             <span class="material-symbols-rounded">schedule</span>
@@ -618,7 +622,7 @@
 
                     <!-- Pedido -->
                     <div style="color: #2563eb; font-weight: 700; font-size: 0.875rem;">
-                        #{{ $pedido->numero_pedido }}
+                        #{{ $pedido->numero_pedido_mostrable }}
                     </div>
 
                     <!-- Cliente -->

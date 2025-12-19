@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Asesores;
 use App\Http\Controllers\Controller;
 use App\Models\Cotizacion;
 use App\Models\PedidoProduccion;
+use App\Models\LogoPedido;
+use App\Models\LogoPedidoImagen;
 use App\Services\Pedidos\CotizacionSearchService;
 use App\Services\Pedidos\CotizacionDataExtractorService;
 use App\Services\Pedidos\PedidoProduccionCreatorService;
@@ -39,28 +41,32 @@ class PedidoProduccionController extends Controller
      */
     public function index(): View
     {
-        $pedidos = PedidoProduccion::where('asesor_id', auth()->id())
-            ->with('prendas', 'asesora')
-            ->orderBy('created_at', 'desc')
+        $query = PedidoProduccion::where('asesor_id', auth()->id())
+            ->with('prendas', 'asesora', 'logoPedidos');
+
+        // Filtrar por tipo de pedido
+        $tipo = request('tipo');
+        if ($tipo === 'logo') {
+            // Solo pedidos LOGO (que tienen relación con logo_pedidos)
+            $query->whereHas('logoPedidos');
+        }
+
+        $pedidos = $query->orderBy('created_at', 'desc')
             ->paginate(20);
 
         // LOG: Verificar datos enviados a la vista
         \Log::info('📋 [PedidoProduccionController] Pedidos para mostrar', [
             'total_pedidos' => $pedidos->total(),
+            'filtro_tipo' => $tipo,
             'prendas_totales' => $pedidos->sum(function($p) { return $p->prendas->count(); }),
             'muestras' => $pedidos->take(3)->map(function($pedido) {
                 return [
                     'id' => $pedido->id,
                     'numero_pedido' => $pedido->numero_pedido,
+                    'numero_mostrable' => $pedido->numero_pedido_mostrable,
+                    'es_logo' => $pedido->esLogo(),
                     'cantidad_total_db' => $pedido->cantidad_total,
                     'prendas_count' => $pedido->prendas->count(),
-                    'prendas' => $pedido->prendas->map(function($prenda) {
-                        return [
-                            'nombre' => $prenda->nombre_prenda,
-                            'cantidad_acceso' => $prenda->cantidad,
-                            'cantidad_talla' => $prenda->cantidad_talla,
-                        ];
-                    })->all()
                 ];
             })->all()
         ]);
@@ -571,6 +577,256 @@ class PedidoProduccionController extends Controller
         } catch (\Throwable $e) {
             return response()->json([
                 'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Guarda un pedido de LOGO con toda su información
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function guardarLogoPedido(Request $request): JsonResponse
+    {
+        \Log::info('🎨 [PedidoProduccionController] ===== GUARDANDO PEDIDO LOGO =====');
+
+        try {
+            // Validar datos
+            $validated = $request->validate([
+                'pedido_id' => 'required|integer|exists:pedidos_produccion,id',
+                'logo_cotizacion_id' => 'required|integer|exists:logo_cotizaciones,id',
+                'descripcion' => 'nullable|string',
+                'tecnicas' => 'nullable|array',
+                'observaciones_tecnicas' => 'nullable|string',
+                'ubicaciones' => 'nullable|array',
+                'fotos' => 'nullable|array',
+            ]);
+
+            \Log::info('🎨 [PedidoProduccionController] Datos validados', [
+                'pedido_id' => $validated['pedido_id'],
+                'tecnicas_count' => count($validated['tecnicas'] ?? []),
+                'ubicaciones_count' => count($validated['ubicaciones'] ?? []),
+                'fotos_count' => count($validated['fotos'] ?? []),
+            ]);
+
+            // Obtener el pedido
+            $pedido = PedidoProduccion::find($validated['pedido_id']);
+            if (!$pedido) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Pedido no encontrado'
+                ], 404);
+            }
+
+            // Generar número único de LOGO pedido
+            $numeroPedido = LogoPedido::generarNumeroPedido();
+
+            \Log::info('🎨 Número de LOGO pedido generado', [
+                'numero_pedido' => $numeroPedido
+            ]);
+
+            // Crear el LogoPedido
+            $logoPedido = LogoPedido::create([
+                'pedido_id' => $validated['pedido_id'],
+                'logo_cotizacion_id' => $validated['logo_cotizacion_id'],
+                'numero_pedido' => $numeroPedido,
+                'descripcion' => $validated['descripcion'] ?? '',
+                'tecnicas' => $validated['tecnicas'] ?? [],
+                'observaciones_tecnicas' => $validated['observaciones_tecnicas'] ?? '',
+                'ubicaciones' => $validated['ubicaciones'] ?? [],
+            ]);
+
+            \Log::info('🎨 LogoPedido creado exitosamente', [
+                'logo_pedido_id' => $logoPedido->id,
+                'numero_pedido' => $logoPedido->numero_pedido
+            ]);
+
+            // Guardar las imágenes
+            if (!empty($validated['fotos']) && is_array($validated['fotos'])) {
+                $orden = 1;
+
+                foreach ($validated['fotos'] as $fotoData) {
+                    try {
+                        // Determinar si es una imagen existente o nueva
+                        $isExisting = isset($fotoData['existing']) && $fotoData['existing'] === true;
+
+                        if ($isExisting && isset($fotoData['id'])) {
+                            // Es una foto existente de la cotización
+                            // Solo crear referencia en la tabla logo_pedido_imagenes
+                            LogoPedidoImagen::create([
+                                'logo_pedido_id' => $logoPedido->id,
+                                'nombre_archivo' => $fotoData['nombre'] ?? 'imagen_existente',
+                                'url' => $fotoData['url'],
+                                'ruta_original' => $fotoData['ruta_original'] ?? null,
+                                'ruta_webp' => $fotoData['ruta_webp'] ?? null,
+                                'tipo_archivo' => $fotoData['tipo'] ?? 'image/jpeg',
+                                'tamaño_archivo' => $fotoData['tamaño'] ?? 0,
+                                'orden' => $orden++,
+                            ]);
+
+                            \Log::info('🎨 Imagen existente referenciada', [
+                                'imagen_id' => $fotoData['id'],
+                                'orden' => $orden - 1
+                            ]);
+
+                        } else {
+                            // Es una imagen nueva cargada por el usuario
+                            // Convertir base64 a archivo físico
+                            if (isset($fotoData['preview']) && strpos($fotoData['preview'], 'base64') !== false) {
+                                // Es base64
+                                $base64String = preg_replace('#^data:image/\w+;base64,#i', '', $fotoData['preview']);
+                                $imageData = base64_decode($base64String);
+                                
+                                // Generar nombre único
+                                $nombreArchivo = 'logo_' . $logoPedido->id . '_' . time() . '_' . rand(1000, 9999) . '.jpg';
+                                $rutaStorage = 'logo_pedidos/' . $logoPedido->id . '/' . $nombreArchivo;
+                                
+                                // Crear directorio si no existe
+                                $directorioCompleto = storage_path('app/logo_pedidos/' . $logoPedido->id);
+                                if (!is_dir($directorioCompleto)) {
+                                    mkdir($directorioCompleto, 0755, true);
+                                }
+
+                                // Guardar archivo
+                                file_put_contents(storage_path('app/' . $rutaStorage), $imageData);
+
+                                \Log::info('🎨 Imagen nueva guardada en storage', [
+                                    'ruta' => $rutaStorage,
+                                    'tamaño' => strlen($imageData)
+                                ]);
+
+                                // Crear registro en base de datos
+                                LogoPedidoImagen::create([
+                                    'logo_pedido_id' => $logoPedido->id,
+                                    'nombre_archivo' => $nombreArchivo,
+                                    'url' => '/storage/' . $rutaStorage,
+                                    'ruta_original' => $rutaStorage,
+                                    'ruta_webp' => null,
+                                    'tipo_archivo' => 'image/jpeg',
+                                    'tamaño_archivo' => strlen($imageData),
+                                    'orden' => $orden++,
+                                ]);
+
+                                \Log::info('🎨 Referencia de imagen nueva creada en BD', [
+                                    'orden' => $orden - 1
+                                ]);
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        \Log::error('❌ Error procesando foto', [
+                            'error' => $e->getMessage(),
+                            'foto_data' => $fotoData
+                        ]);
+                        // Continuar con la siguiente foto
+                        continue;
+                    }
+                }
+            }
+
+            \Log::info('✅ [PedidoProduccionController] LOGO Pedido guardado completamente', [
+                'logo_pedido_id' => $logoPedido->id,
+                'numero_pedido' => $logoPedido->numero_pedido,
+                'imagenes_totales' => $logoPedido->imagenes()->count()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'LOGO Pedido guardado correctamente',
+                'logo_pedido' => [
+                    'id' => $logoPedido->id,
+                    'numero_pedido' => $logoPedido->numero_pedido,
+                    'descripcion' => $logoPedido->descripcion,
+                    'tecnicas' => $logoPedido->tecnicas,
+                    'ubicaciones' => $logoPedido->ubicaciones,
+                    'observaciones_tecnicas' => $logoPedido->observaciones_tecnicas,
+                    'imagenes_count' => $logoPedido->imagenes()->count(),
+                ]
+            ]);
+
+        } catch (\Throwable $e) {
+            \Log::error('❌ Error guardando LOGO Pedido', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar el LOGO Pedido: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Eliminar foto de logo de cotización
+     * 
+     * @param int $cotizacion_id ID de la cotización
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function eliminarFotoLogo($cotizacion_id, Request $request): JsonResponse
+    {
+        try {
+            $fotoId = $request->input('foto_id');
+            
+            if (!$fotoId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'ID de foto no proporcionado'
+                ], 400);
+            }
+
+            // Buscar la cotización y verificar que pertenece al asesor actual
+            $cotizacion = Cotizacion::where('id', $cotizacion_id)
+                ->where('asesor_id', auth()->id())
+                ->first();
+
+            if (!$cotizacion) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cotización no encontrada'
+                ], 404);
+            }
+
+            // Buscar y eliminar la foto del logo
+            if ($cotizacion->logoCotizacion && $cotizacion->logoCotizacion->fotos) {
+                $foto = $cotizacion->logoCotizacion->fotos()
+                    ->where('id', $fotoId)
+                    ->first();
+
+                if ($foto) {
+                    // Eliminar archivo físico si existe
+                    if ($foto->ruta_original && file_exists(storage_path('app/' . $foto->ruta_original))) {
+                        unlink(storage_path('app/' . $foto->ruta_original));
+                    }
+                    if ($foto->ruta_webp && file_exists(storage_path('app/' . $foto->ruta_webp))) {
+                        unlink(storage_path('app/' . $foto->ruta_webp));
+                    }
+
+                    // Eliminar registro de la BD
+                    $foto->delete();
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Foto eliminada correctamente'
+                    ]);
+                }
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Foto no encontrada'
+            ], 404);
+
+        } catch (\Throwable $e) {
+            \Log::error('Error eliminando foto de logo:', [
+                'error' => $e->getMessage(),
+                'cotizacion_id' => $cotizacion_id
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al eliminar la foto'
             ], 500);
         }
     }

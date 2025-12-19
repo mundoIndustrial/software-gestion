@@ -73,15 +73,74 @@
             </div>
         </div>
 
-        <!-- PASO 3: Prendas y Cantidades por Talla -->
+        <!-- PASO 3: Prendas y Cantidades por Talla O Campos de LOGO -->
         <div class="form-section">
             <h2>
-                <span>3</span> Prendas y Cantidades por Talla
+                <span>3</span> <span id="paso3_titulo">Prendas y Cantidades por Talla</span>
             </h2>
 
             <div id="prendas-container">
                 <div class="empty-state">
                     <p>Selecciona una cotización para ver las prendas</p>
+                </div>
+            </div>
+
+            <!-- Contenedor para campos LOGO (inicialmente oculto) -->
+            <div id="logo-fields-container" style="display: none;">
+                <!-- DESCRIPCIÓN -->
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label for="logo_descripcion" style="display: block; font-weight: 600; color: #334155; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                        DESCRIPCIÓN
+                    </label>
+                    <textarea id="logo_descripcion" readonly style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; background-color: #f8fafc; min-height: 80px;"></textarea>
+                </div>
+
+                <!-- IMÁGENES -->
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; color: #334155; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                        IMÁGENES (MÁXIMO 5)
+                    </label>
+                    <div id="logo-galeria-imagenes" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-top: 10px;">
+                        <!-- Las imágenes se cargarán aquí -->
+                    </div>
+                </div>
+
+                <!-- TÉCNICAS -->
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; color: #334155; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                        Técnicas disponibles
+                    </label>
+                    <div id="logo-tecnicas-seleccionadas" style="display: flex; flex-wrap: wrap; gap: 8px; padding: 0.75rem; background: #f8fafc; border-radius: 6px; min-height: 40px;">
+                        <!-- Las técnicas se mostrarán aquí -->
+                    </div>
+                </div>
+
+                <!-- OBSERVACIONES DE TÉCNICAS -->
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label for="logo_observaciones_tecnicas" style="display: block; font-weight: 600; color: #334155; margin-bottom: 0.3rem; font-size: 0.9rem;">
+                        Observaciones de Técnicas
+                    </label>
+                    <textarea id="logo_observaciones_tecnicas" readonly style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; background-color: #f8fafc; min-height: 60px;"></textarea>
+                </div>
+
+                <!-- UBICACIONES -->
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; color: #334155; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                        Ubicación
+                    </label>
+                    <div id="logo-ubicaciones-seleccionadas" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; padding: 0.75rem; background: #f8fafc; border-radius: 6px;">
+                        <!-- Las ubicaciones se mostrarán aquí -->
+                    </div>
+                </div>
+
+                <!-- OBSERVACIONES GENERALES -->
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 600; color: #334155; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                        Observaciones Generales
+                    </label>
+                    <div id="logo-observaciones-generales" style="display: flex; flex-direction: column; gap: 8px; padding: 0.75rem; background: #f8fafc; border-radius: 6px;">
+                        <!-- Las observaciones se mostrarán aquí -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -113,6 +172,10 @@
                 }
             }
             
+            // Verificar si tiene logo
+            $tieneLogoCotizacion = $cot->logoCotizacion !== null;
+            $prendasCount = $cot->prendasCotizaciones->count();
+            
             return [
                 'id' => $cot->id,
                 'numero_cotizacion' => $cot->numero_cotizacion,
@@ -120,7 +183,9 @@
                 'cliente' => $cot->cliente ? $cot->cliente->nombre : '',
                 'asesora' => $cot->asesor ? $cot->asesor->name : Auth::user()->name,
                 'formaPago' => $formaPago,
-                'prendasCount' => $cot->prendasCotizaciones->count()
+                'prendasCount' => $prendasCount,
+                'tieneLogoCotizacion' => $tieneLogoCotizacion,
+                'tienePrendas' => $prendasCount > 0
             ];
         })->toArray()) !!};
     </script>

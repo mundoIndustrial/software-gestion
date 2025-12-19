@@ -54,12 +54,15 @@
     margin-bottom: 1.5rem;
     display: flex;
     align-items: center;
-    gap: 0.5625rem;
+    gap: 12px;
+    flex-wrap: wrap;
+    line-height: 1.4;
 }
 
 .form-section h2 span {
     background: var(--primary);
     color: white;
+    min-width: 24px;
     width: 24px;
     height: 24px;
     border-radius: 50%;
@@ -68,6 +71,7 @@
     justify-content: center;
     font-weight: 800;
     font-size: 0.675rem;
+    flex-shrink: 0;
 }
 
 /* Grupos de formulario */
@@ -291,6 +295,44 @@
 
 .btn-eliminar-talla:hover {
     background: #dc2626 !important;
+}
+
+/* Estilos para el encabezado de pasos */
+.step-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.step-number-container {
+    margin-bottom: 0.75rem;
+}
+
+.step-number {
+    background: var(--primary);
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.875rem;
+    margin: 0 auto;
+}
+
+.step-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.3;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    text-align: center;
 }
 
 /* Input de talla */

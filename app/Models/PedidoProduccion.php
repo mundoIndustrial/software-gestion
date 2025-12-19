@@ -51,6 +51,7 @@ class PedidoProduccion extends Model
 
     protected $appends = [
         'descripcion_prendas',
+        'numero_pedido_mostrable',
     ];
 
     protected static function boot()
@@ -197,6 +198,16 @@ class PedidoProduccion extends Model
         }
 
         return $this->prendas->sum('cantidad');
+    }
+
+    /**
+     * Obtener el número de pedido que se debe mostrar
+     * Si es LOGO, muestra el número de LOGO (LOGO-00001)
+     * Si no, muestra el número de pedido normal
+     */
+    public function getNumeroPedidoMostrableAttribute()
+    {
+        return $this->getNumeroPedidoMostrable();
     }
 
     /**
@@ -552,7 +563,44 @@ class PedidoProduccion extends Model
     }
 
     /**
-     * Relación: Un pedido tiene un logo (nuevas tablas DDD)
+     * Relación: Un pedido tiene un LOGO (nuevas tablas LOGO DDD)
+     */
+    public function logoPedidos(): HasMany
+    {
+        return $this->hasMany(LogoPedido::class, 'pedido_id', 'id');
+    }
+
+    /**
+     * Obtener el LOGO pedido si existe
+     */
+    public function logoPedido()
+    {
+        return $this->logoPedidos()->first();
+    }
+
+    /**
+     * Determinar si este pedido es de tipo LOGO
+     */
+    public function esLogo(): bool
+    {
+        return $this->logoPedido() !== null;
+    }
+
+    /**
+     * Obtener el número de pedido correcto según el tipo
+     * Si es LOGO, retorna el número de logo_pedidos (LOGO-00001)
+     * Si no, retorna el número de pedidos_produccion
+     */
+    public function getNumeroPedidoMostrable(): string
+    {
+        if ($this->esLogo()) {
+            return $this->logoPedido()?->numero_pedido ?? $this->numero_pedido;
+        }
+        return $this->numero_pedido;
+    }
+
+    /**
+     * Relación anterior (mantener por compatibilidad)
      */
     public function logo(): HasMany
     {
