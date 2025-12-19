@@ -32,6 +32,18 @@ body.dark-theme {
   --text-light: #9ca3af;
 }
 
+/* ===== DROPDOWN STYLES ===== */
+.dia-entrega-dropdown.orange-highlight {
+    background-color: #4bafe9 !important;
+    border-color: #0091d4 !important;
+    box-shadow: 0 0 0 2px rgba(0, 68, 255, 0.2) !important;
+}
+
+.dia-entrega-dropdown.orange-highlight:focus {
+    border-color: #4a00c0 !important;
+    box-shadow: #5caedd;
+}
+
 /* ===== BASE ===== */
 * { box-sizing: border-box; }
 body:has(.table-container) { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.6; color: var(--text-primary); background: var(--surface-gray); margin: 0; height: 100vh; overflow: hidden; }

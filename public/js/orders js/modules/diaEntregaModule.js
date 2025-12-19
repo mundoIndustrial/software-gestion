@@ -27,6 +27,11 @@ const DiaEntregaModule = {
                 console.log('📅 Evento change disparado en:', e.target);
                 this.handleDiaEntregaChange(e.target);
             });
+            
+            // Aplicar highlight a los dropdowns con valor seleccionado
+            if (select.value && select.value !== '') {
+                select.classList.add('orange-highlight');
+            }
         });
         
         // También usar delegación de eventos para selectores dinámicos
@@ -57,8 +62,15 @@ const DiaEntregaModule = {
         
         console.log(`📅 numeroOrden: ${numeroOrden}, value: ${value}`);
         
-        if (!numeroOrden || !value) {
-            console.log('📅 Falta numeroOrden o value, retornando');
+        // Add or remove orange highlight based on selection
+        if (value && value !== '') {
+            select.classList.add('orange-highlight');
+        } else {
+            select.classList.remove('orange-highlight');
+        }
+        
+        if (!numeroOrden) {
+            console.log('📅 Falta numeroOrden, retornando');
             return;
         }
         
