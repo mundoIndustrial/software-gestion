@@ -20,7 +20,7 @@
         <div class="profile-header-avatar">
             <div class="avatar-preview" id="avatarPreview">
                 @if($user->avatar)
-                    <img src="{{ route('storage.serve', ['path' => 'avatars/' . $user->avatar]) }}" alt="Avatar" id="avatarImage" class="avatar-img">
+                    <img src="{{ asset('storage/avatars/' . $user->avatar) }}" alt="Avatar" id="avatarImage" class="avatar-img">
                 @else
                     <div class="avatar-placeholder-large">
                         {{ strtoupper(substr($user->name, 0, 2)) }}
