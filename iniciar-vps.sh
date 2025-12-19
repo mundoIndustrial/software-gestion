@@ -24,7 +24,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuración
-PROJECT_PATH="/var/www/mi-proyecto/mundoindustrial"
+PROJECT_PATH="/var/www/mundoindustrial"
 APP_USER="www-data"
 APP_GROUP="www-data"
 LOG_DIR="/var/log/mundo-industrial"
