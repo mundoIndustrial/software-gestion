@@ -239,17 +239,8 @@
     // Toggle del menú PDF para cotizaciones combinadas
     function toggleMenuPDF(cotizacionId, tipo) {
         if (tipo === 'PL') {
-            // Para combinadas, mostrar menú
-            const menu = document.getElementById(`menu-pdf-${cotizacionId}`);
-            if (menu) {
-                menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-                // Cerrar otros menús
-                document.querySelectorAll('.menu-pdf').forEach(m => {
-                    if (m.id !== `menu-pdf-${cotizacionId}`) {
-                        m.style.display = 'none';
-                    }
-                });
-            }
+            // Para combinadas, crear menú emergente dinámico
+            createPDFDropdown(cotizacionId);
         } else if (tipo === 'RF') {
             // Reflectivo: abrir PDF Prenda en nueva pestaña
             abrirPDFEnPestana(cotizacionId, 'prenda');
@@ -259,15 +250,82 @@
         }
     }
 
+    // Crear menú emergente dinámico para PDF
+    function createPDFDropdown(cotizacionId) {
+        // Verificar si ya existe un dropdown
+        const existingDropdown = document.querySelector(`.pdf-menu-dropdown[data-cot-id="${cotizacionId}"]`);
+        if (existingDropdown) {
+            existingDropdown.remove();
+            return;
+        }
+
+        // Crear dropdown
+        const dropdown = document.createElement('div');
+        dropdown.className = 'pdf-menu-dropdown';
+        dropdown.dataset.cotId = cotizacionId;
+        dropdown.innerHTML = `
+            <a href="#" onclick="abrirPDFEnPestana(${cotizacionId}, 'prenda'); return false;" class="pdf-menu-option">
+                📄 PDF Prenda
+            </a>
+            <a href="#" onclick="abrirPDFEnPestana(${cotizacionId}, 'logo'); return false;" class="pdf-menu-option">
+                🎨 PDF Logo
+            </a>
+        `;
+
+        // Buscar el botón PDF
+        const pdfButton = document.querySelector(`.pdf-menu-btn[data-cot-id="${cotizacionId}"]`);
+        if (pdfButton) {
+            const rect = pdfButton.getBoundingClientRect();
+            dropdown.style.position = 'fixed';
+            dropdown.style.top = (rect.top + 45) + 'px'; // Bajar el menú debajo del botón
+            dropdown.style.left = (rect.left - 10) + 'px'; // Posicionar a la derecha del botón
+            dropdown.style.zIndex = '9999';
+            document.body.appendChild(dropdown);
+
+            console.log('✅ Menú PDF creado exitosamente para cotización:', cotizacionId);
+
+            // Cerrar dropdown al hacer click fuera
+            setTimeout(() => {
+                document.addEventListener('click', function closeDropdown(e) {
+                    if (!dropdown.contains(e.target) && !pdfButton.contains(e.target)) {
+                        dropdown.remove();
+                        document.removeEventListener('click', closeDropdown);
+                    }
+                });
+            }, 0);
+        }
+    }
+
+    // Event listener para botones PDF combinados
+    document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('click', function(e) {
+            const pdfBtn = e.target.closest('.pdf-menu-btn');
+            if (pdfBtn) {
+                e.preventDefault();
+                createPDFDropdown(pdfBtn.dataset.cotId);
+            }
+        });
+    });
+
     // Abrir PDF en nueva pestaña
     function abrirPDFEnPestana(cotizacionId, tipoPDF) {
         const url = `/asesores/cotizacion/${cotizacionId}/pdf?tipo=${tipoPDF}`;
         window.open(url, '_blank');
+        
+        // Cerrar el dropdown si está abierto
+        const dropdown = document.querySelector(`.pdf-menu-dropdown[data-cot-id="${cotizacionId}"]`);
+        if (dropdown) {
+            dropdown.remove();
+        }
     }
 
     // Cerrar menú PDF al hacer clic fuera
     document.addEventListener('click', function(e) {
-        if (!e.target.closest('button[onclick*="toggleMenuPDF"]') && !e.target.closest('.menu-pdf')) {
+        if (!e.target.closest('button[onclick*="toggleMenuPDF"]') && 
+            !e.target.closest('.pdf-menu-btn') && 
+            !e.target.closest('.pdf-menu-dropdown') &&
+            !e.target.closest('.menu-pdf')) {
+            document.querySelectorAll('.pdf-menu-dropdown').forEach(m => m.remove());
             document.querySelectorAll('.menu-pdf').forEach(m => m.style.display = 'none');
         }
     });
@@ -294,6 +352,53 @@
     
     .menu-pdf a:hover {
         background: #f3f4f6;
+    }
+
+    /* Estilos para menú PDF emergente */
+    .pdf-menu-dropdown {
+        background: #ffffff;
+        border: 2px solid #10b981;
+        border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        min-width: 180px;
+        z-index: 9999;
+        animation: slideDown 0.2s ease;
+        display: flex;
+        flex-direction: column;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .pdf-menu-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 16px;
+        color: #1f2937;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        border-bottom: 1px solid #e5e7eb;
+        transition: all 0.2s ease;
+    }
+
+    .pdf-menu-option:last-child {
+        border-bottom: none;
+    }
+
+    .pdf-menu-option:hover {
+        background-color: #f0fdf4;
+        color: #10b981;
+        padding-left: 20px;
     }
 </style>
 

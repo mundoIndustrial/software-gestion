@@ -104,27 +104,16 @@
                                                 onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(30, 64, 175, 0.3)'">
                                                 <i class="fas fa-eye" style="font-size: 1rem;"></i>
                                             </a>
-                                            <!-- Botón PDF con menú dinámico -->
-                                            <div style="position: relative; display: inline-block;">
+                                            <!-- Botón PDF con menú dinámico emergente -->
                                                 @if($cot->tipo === 'PL')
-                                                    <!-- Combinada: mostrar botón con dropdown -->
-                                                    <button onclick="toggleMenuPDF({{ $cot->id }}, '{{ $cot->tipo }}')" 
+                                                    <!-- Combinada: mostrar botón con dropdown emergente -->
+                                                    <button class="pdf-menu-btn" data-cot-id="{{ $cot->id }}" data-tipo="PL" 
                                                         title="Descargar PDF"
                                                         style="background: #10b981; color: white; width: 36px; height: 36px; border-radius: 6px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);"
                                                         onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(16, 185, 129, 0.4)'" 
                                                         onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(16, 185, 129, 0.3)'">
                                                         <i class="fas fa-file-pdf" style="font-size: 1rem;"></i>
                                                     </button>
-                                                    <div id="menu-pdf-{{ $cot->id }}" class="menu-pdf" style="display: none; position: absolute; top: 100%; right: 0; background: white; border: 1px solid #d1d5db; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100; margin-top: 4px; min-width: 150px;">
-                                                    <a href="#" onclick="abrirPDFEnPestana({{ $cot->id }}, 'prenda'); return false;" 
-                                                        style="display: block; padding: 10px 12px; color: #374151; text-decoration: none; font-size: 0.85rem; border-bottom: 1px solid #e5e7eb; transition: background 0.2s;">
-                                                        📄 PDF Prenda
-                                                    </a>
-                                                    <a href="#" onclick="abrirPDFEnPestana({{ $cot->id }}, 'logo'); return false;" 
-                                                            style="display: block; padding: 10px 12px; color: #374151; text-decoration: none; font-size: 0.85rem; transition: background 0.2s;">
-                                                            🎨 PDF Logo
-                                                        </a>
-                                                    </div>
                                                 @elseif($cot->tipo === 'RF')
                                                     <!-- Reflectivo: botón directo a PDF Prenda -->
                                                     <button onclick="abrirPDFEnPestana({{ $cot->id }}, 'prenda')" 
@@ -153,7 +142,6 @@
                                                         <i class="fas fa-file-pdf" style="font-size: 1rem;"></i>
                                                     </button>
                                                 @endif
-                                            </div>
                                             @if($cot->estado !== 'Anulada')
                                             <a href="#" onclick="confirmarAnularCotizacion({{ $cot->id }}, '{{ $cot->numero_cotizacion }}'); return false;" 
                                                 title="Anular Cotización"
