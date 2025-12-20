@@ -71,6 +71,7 @@ window.verSeguimiento = function verSeguimiento(numeroPedido) {
  */
 window.verFacturaLogo = async function verFacturaLogo(numeroPedido) {
     console.log('🔴 [MODAL LOGO] Abriendo modal de bordados para pedido:', numeroPedido);
+    console.log('🔴 [MODAL LOGO] Verificando si window.openOrderDetailModalLogo existe:', typeof window.openOrderDetailModalLogo);
     
     try {
         // ✅ HACER FETCH a la API para obtener datos del pedido
@@ -99,6 +100,16 @@ window.verFacturaLogo = async function verFacturaLogo(numeroPedido) {
         console.log('🔴 [MODAL LOGO] CustomEvent creado:', loadEvent);
         window.dispatchEvent(loadEvent);
         console.log('🔴 [MODAL LOGO] Evento disparado con window.dispatchEvent');
+        console.log('🔴 [MODAL LOGO] ¿Hay listeners? Será visto en la consola del siguiente evento');
+        
+        // DEBUG: Verificar que el evento se dispara
+        setTimeout(() => {
+            console.log('🧪 [MODAL LOGO] Verificando si el modal se abrió después de 500ms');
+            const overlay = document.getElementById('modal-overlay');
+            const wrapper = document.getElementById('order-detail-modal-wrapper-logo');
+            console.log('🧪 overlay.style.display:', overlay?.style.display);
+            console.log('🧪 wrapper.style.display:', wrapper?.style.display);
+        }, 500);
         
     } catch (error) {
         console.error('❌ Error al cargar datos del pedido (logo):', error);

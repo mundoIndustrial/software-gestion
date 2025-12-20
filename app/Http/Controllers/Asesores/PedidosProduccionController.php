@@ -637,6 +637,7 @@ class PedidosProduccionController extends Controller
     /**
      * Crear un pedido LOGO desde cotización
      * ✅ NUEVO: Crea SOLO en logo_pedidos, NO en pedidos_produccion
+     * ✅ CORREGIDO: Guarda logo_cotizacion_id desde la cotización
      */
     private function crearLogoPedidoDesdeAnullCotizacion(Cotizacion $cotizacion)
     {
@@ -648,13 +649,23 @@ class PedidosProduccionController extends Controller
                 'numero_cotizacion' => $cotizacion->numero
             ]);
 
+            // ✅ Obtener el logo_cotizacion_id asociado a esta cotización
+            $logoCotizacionId = DB::table('logo_cotizaciones')
+                ->where('cotizacion_id', $cotizacion->id)
+                ->value('id');
+            
+            \Log::info('🎨 [LOGO desde Cotización] logo_cotizacion encontrado', [
+                'cotizacion_id' => $cotizacion->id,
+                'logo_cotizacion_id' => $logoCotizacionId
+            ]);
+
             // ✅ Generar número LOGO con formato #LOGO-00001
             $numeroLogoPedido = $this->generarNumeroLogoPedido();
 
             // Crear registro inicial en logo_pedidos
             $logoPedidoId = DB::table('logo_pedidos')->insertGetId([
                 'pedido_id' => null, // NO crear en pedidos_produccion
-                'logo_cotizacion_id' => null, // Se asignará luego
+                'logo_cotizacion_id' => $logoCotizacionId, // ✅ CORREGIDO: Guardar la relación
                 'numero_pedido' => $numeroLogoPedido, // ✅ Usar número generado
                 'cotizacion_id' => $cotizacion->id,
                 'numero_cotizacion' => $cotizacion->numero,
@@ -673,11 +684,15 @@ class PedidosProduccionController extends Controller
                 'updated_at' => now()
             ]);
 
+            // ✅ Crear el proceso inicial
+            \App\Models\ProcesosPedidosLogo::crearProcesoInicial($logoPedidoId, Auth::id());
+
             \Log::info('✅ [LOGO desde Cotización] logo_pedido creado', [
                 'logo_pedido_id' => $logoPedidoId,
                 'numero_logo_pedido' => $numeroLogoPedido,
                 'cotizacion_id' => $cotizacion->id,
-                'numero_cotizacion' => $cotizacion->numero
+                'numero_cotizacion' => $cotizacion->numero,
+                'logo_cotizacion_id' => $logoCotizacionId
             ]);
 
             DB::commit();
@@ -687,6 +702,7 @@ class PedidosProduccionController extends Controller
                 'success' => true,
                 'message' => 'Pedido LOGO creado inicialmente',
                 'logo_pedido_id' => $logoPedidoId,
+                'logo_cotizacion_id' => $logoCotizacionId, // ✅ Devolver para que el frontend lo tenga
                 'pedido_id' => null, // Explícitamente null
                 'tipo' => 'logo'
             ]);

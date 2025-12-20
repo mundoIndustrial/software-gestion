@@ -99,7 +99,7 @@ window.openOrderDetailModalLogo = function(orderId) {
         
         // Mostrar overlay
         overlay.style.display = 'block';
-        overlay.style.zIndex = '9997';
+        overlay.style.zIndex = '99997';
         overlay.style.position = 'fixed';
         overlay.style.opacity = '1';
         overlay.style.visibility = 'visible';
@@ -113,7 +113,7 @@ window.openOrderDetailModalLogo = function(orderId) {
         const modalWrapper = document.getElementById('order-detail-modal-wrapper-logo');
         if (modalWrapper) {
             modalWrapper.style.display = 'block';
-            modalWrapper.style.zIndex = '9998';
+            modalWrapper.style.zIndex = '99999';
             modalWrapper.style.position = 'fixed';
             modalWrapper.style.top = '60%';
             modalWrapper.style.left = '50%';
@@ -577,12 +577,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
         window.openOrderDetailModal();
     });
+    // DEBUG: Contador de eventos
+    window.loadOrderDetailLogoCount = 0;
 
     // Listener para cargar datos del logo/bordados de la orden
     window.addEventListener('load-order-detail-logo', function(event) {
-        console.log('%c📦 [MODAL LOGO] Evento load-order-detail-logo recibido', 'color: red; font-weight: bold; font-size: 14px;');
+        window.loadOrderDetailLogoCount++;
+        console.log('%c📦 [MODAL LOGO] Evento load-order-detail-logo recibido (#' + window.loadOrderDetailLogoCount + ')', 'color: red; font-weight: bold; font-size: 14px;');
+        console.log('📦 [MODAL LOGO] event:', event);
         console.log('📦 [MODAL LOGO] event.detail:', event.detail);
         console.log('📦 [MODAL LOGO] event.detail.numero_pedido:', event.detail?.numero_pedido);
+        console.log('📦 [MODAL LOGO] Tipo de event.detail:', typeof event.detail);
         
         const orden = event.detail;
         
@@ -597,6 +602,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Llenar los campos del modal de logo
         if (document.querySelector('#order-detail-modal-wrapper-logo')) {
+            console.log('✅ [MODAL LOGO] Modal wrapper encontrado en DOM');
             // Fecha
             if (orden.fecha_de_creacion_de_orden) {
                 const fecha = new Date(orden.fecha_de_creacion_de_orden);
@@ -635,10 +641,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 prendasSpan.textContent = orden.prendas.length || 0;
             }
             
+            // Descripción
+            const descripcionTextarea = document.querySelector('#order-detail-modal-wrapper-logo #descripcion-text');
+            if (descripcionTextarea) {
+                // Si viene desde un LogoPedido, usar 'descripcion'
+                // Si viene desde PedidoProduccion con logo, usar 'descripcion' también
+                descripcionTextarea.value = orden.descripcion || '-';
+                console.log('✅ [MODAL LOGO] Descripción cargada:', orden.descripcion);
+            }
+            
             console.log('✅ [MODAL LOGO] Datos del modal de logo llenados');
+        } else {
+            console.error('❌ [MODAL LOGO] Modal wrapper NO encontrado en DOM');
         }
 
+        console.log('📦 [MODAL LOGO] Llamando a openOrderDetailModalLogo()');
         window.openOrderDetailModalLogo();
+        console.log('📦 [MODAL LOGO] openOrderDetailModalLogo() completada');
     });
     
     // Listener para abrir el modal

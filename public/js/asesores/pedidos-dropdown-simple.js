@@ -11,7 +11,13 @@ document.addEventListener('DOMContentLoaded', function() {
     function crearDropdownVer(button) {
         const menuId = button.getAttribute('data-menu-id');
         const pedido = button.getAttribute('data-pedido');
-        const tipoCotizacion = button.getAttribute('data-tipo-cotizacion');
+        let tipoCotizacion = button.getAttribute('data-tipo-cotizacion');
+        // Detectar si es LOGO explícito (atributo agregado a la vista)
+        const esLogoAttr = button.getAttribute('data-es-logo');
+        const esLogo = esLogoAttr === '1' || esLogoAttr === 'true';
+        if (esLogo) {
+            tipoCotizacion = 'L';
+        }
         
         // Verificar si ya existe
         if (document.getElementById(menuId)) {
@@ -41,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (tipoCotizacion === 'L') {
             // Solo Logo
             dropdownHTML = `
-                <button onclick="verFacturaLogo(${pedido}); closeDropdown()" style="
+                <button onclick="verFacturaLogo('${pedido}'); closeDropdown()" style="
                     width: 100%;
                     text-align: left;
                     padding: 0.875rem 1rem;
@@ -56,13 +62,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     gap: 0.75rem;
                     font-weight: 500;
                 " onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='transparent'">
-                    <i class="fas fa-image" style="color: #dc2626;"></i> Recibo de Bordados
+                    <i class="fas fa-image" style="color: #dc2626;"></i> Recibo de Logo
                 </button>
             `;
         } else if (tipoCotizacion === 'PL') {
             // Prenda + Logo (Combinada)
             dropdownHTML = `
-                <button onclick="verFactura(${pedido}); closeDropdown()" style="
+                <button onclick="verFactura('${pedido}'); closeDropdown()" style="
                     width: 100%;
                     text-align: left;
                     padding: 0.875rem 1rem;
@@ -80,7 +86,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <i class="fas fa-file-alt" style="color: #2563eb;"></i> Recibo de Costura
                 </button>
                 <div style="height: 1px; background: #e5e7eb;"></div>
-                <button onclick="verFacturaLogo(${pedido}); closeDropdown()" style="
+                <button onclick="verFacturaLogo('${pedido}'); closeDropdown()" style="
                     width: 100%;
                     text-align: left;
                     padding: 0.875rem 1rem;
@@ -101,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             // Prenda o Reflectivo (solo costura)
             dropdownHTML = `
-                <button onclick="verFactura(${pedido}); closeDropdown()" style="
+                <button onclick="verFactura('${pedido}'); closeDropdown()" style="
                     width: 100%;
                     text-align: left;
                     padding: 0.875rem 1rem;

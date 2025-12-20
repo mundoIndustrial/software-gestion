@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Constants\AreaOptions;
 use Illuminate\Http\Request;
 use App\Models\PedidoProduccion;
+use App\Models\LogoPedido;
 use App\Models\Cotizacion;
 use App\Services\CacheCalculosService;
 use App\Services\RegistroOrdenExtendedQueryService;
@@ -241,7 +242,34 @@ class RegistroOrdenQueryController extends Controller
      */
     public function show($pedido)
     {
-        // Buscar en PedidoProduccion por 'numero_pedido'
+        // Primero, intentar buscar en LogoPedido
+        $logoPedido = \App\Models\LogoPedido::where('numero_pedido', $pedido)->first();
+        
+        if ($logoPedido) {
+            // Es un LogoPedido, devolverlo con toda su información
+            \Log::info('📦 [RegistroOrdenQueryController::show] Encontrado LogoPedido', [
+                'numero_pedido' => $pedido,
+            ]);
+            
+            $logoPedidoArray = $logoPedido->toArray();
+            
+            // Agregar información de la fecha
+            if ($logoPedido->fecha_de_creacion_de_orden) {
+                $logoPedidoArray['fecha_de_creacion_de_orden'] = $logoPedido->fecha_de_creacion_de_orden;
+            }
+            
+            // Asegurar que tengamos los campos necesarios para el modal
+            $logoPedidoArray['numero_pedido'] = $pedido;
+            $logoPedidoArray['cliente'] = $logoPedido->cliente ?? '-';
+            $logoPedidoArray['forma_de_pago'] = $logoPedido->forma_de_pago ?? '-';
+            $logoPedidoArray['descripcion'] = $logoPedido->descripcion ?? '';
+            $logoPedidoArray['es_cotizacion'] = false;
+            $logoPedidoArray['es_logo_pedido'] = true;
+            
+            return response()->json($logoPedidoArray);
+        }
+        
+        // Si no es LogoPedido, buscar en PedidoProduccion
         $order = PedidoProduccion::with([
             'asesora', 
             'prendas',

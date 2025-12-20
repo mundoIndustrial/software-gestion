@@ -1,4 +1,5 @@
 @echo off
+cd /d "%~dp0"
 title Mundo Industrial - Servidor de Desarrollo
 color 0A
 

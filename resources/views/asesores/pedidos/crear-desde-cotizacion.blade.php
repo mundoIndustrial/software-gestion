@@ -92,7 +92,7 @@
                     <label for="logo_descripcion" style="display: block; font-weight: 600; color: #334155; margin-bottom: 0.5rem; font-size: 0.9rem;">
                         DESCRIPCIÓN
                     </label>
-                    <textarea id="logo_descripcion" readonly style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; background-color: #f8fafc; min-height: 80px;"></textarea>
+                    <textarea id="logo_descripcion" style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; background-color: #ffffff; min-height: 80px;"></textarea>
                 </div>
 
                 <!-- IMÁGENES -->
@@ -120,7 +120,7 @@
                     <label for="logo_observaciones_tecnicas" style="display: block; font-weight: 600; color: #334155; margin-bottom: 0.3rem; font-size: 0.9rem;">
                         Observaciones de Técnicas
                     </label>
-                    <textarea id="logo_observaciones_tecnicas" readonly style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; background-color: #f8fafc; min-height: 60px;"></textarea>
+                    <textarea id="logo_observaciones_tecnicas" style="width: 100%; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; background-color: #ffffff; min-height: 60px;"></textarea>
                 </div>
 
                 <!-- UBICACIONES -->

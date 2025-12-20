@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ProductoPedido;
 use App\Models\PedidoProduccion;
+use App\Models\LogoPedido;
 use App\Models\PrendaPedido;
 use App\Models\ProcesoPrenda;
 use App\Models\MaterialesOrdenInsumos;
@@ -134,40 +135,55 @@ class AsesoresController extends Controller
         $userName = Auth::user()->name ?? 'Sin nombre';
         \Log::info('AsesoresController@index - Usuario ID: ' . $userId . ', Nombre: ' . $userName);
 
-        // Usar pedidos_produccion en lugar de tabla_original
-        // Filtrar por asesor_id (Foreign Key del usuario autenticado)
-        $query = PedidoProduccion::where('asesor_id', $userId)
-            ->with([
-                'prendas' => function ($q) {
-                    $q->with(['procesos' => function ($q2) {
-                        $q2->orderBy('created_at', 'desc'); // Últimos primero
-                    }]);
-                },
-                'asesora' // Eager load la relación de usuario
-            ]);
+        $tipo = $request->query('tipo');
 
-        // Filtros
-        if ($request->filled('estado')) {
-            // Si el estado es "No iniciado", filtrar por pendientes de aprobación del supervisor
-            if ($request->estado === 'No iniciado') {
-                $query->where('estado', 'No iniciado')
-                      ->whereNull('aprobado_por_supervisor_en');
-            } 
-            // Si el estado es "En Ejecución", mostrar "No iniciado" y "En Ejecución"
-            elseif ($request->estado === 'En Ejecución') {
-                $query->whereIn('estado', ['No iniciado', 'En Ejecución']);
-            } 
-            else {
-                $query->where('estado', $request->estado);
+        // Si es LOGO, mostrar LogoPedidos directamente (que tienen pedido_id = null)
+        if ($tipo === 'logo') {
+            $query = LogoPedido::where('pedido_id', null)
+                ->where('asesora', auth()->user()->name) // Filtrar por usuario autenticado
+                ->with('procesos');
+        } else {
+            // PRENDAS o TODOS: Mostrar PedidoProduccion
+            $query = PedidoProduccion::where('asesor_id', $userId)
+                ->with([
+                    'prendas' => function ($q) {
+                        $q->with(['procesos' => function ($q2) {
+                            $q2->orderBy('created_at', 'desc'); // Últimos primero
+                        }]);
+                    },
+                    'asesora' // Eager load la relación de usuario
+                ]);
+
+            // Si es solo PRENDAS, excluir los que tienen logo
+            if ($tipo === 'prendas') {
+                $query->whereDoesntHave('logoPedidos');
             }
         }
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('numero_pedido', 'LIKE', "%{$search}%")
-                  ->orWhere('cliente', 'LIKE', "%{$search}%");
-            });
+        // Filtros (solo aplicar a PedidoProduccion)
+        if ($tipo !== 'logo') {
+            if ($request->filled('estado')) {
+                // Si el estado es "No iniciado", filtrar por pendientes de aprobación del supervisor
+                if ($request->estado === 'No iniciado') {
+                    $query->where('estado', 'No iniciado')
+                          ->whereNull('aprobado_por_supervisor_en');
+                } 
+                // Si el estado es "En Ejecución", mostrar "No iniciado" y "En Ejecución"
+                elseif ($request->estado === 'En Ejecución') {
+                    $query->whereIn('estado', ['No iniciado', 'En Ejecución']);
+                } 
+                else {
+                    $query->where('estado', $request->estado);
+                }
+            }
+
+            if ($request->filled('search')) {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('numero_pedido', 'LIKE', "%{$search}%")
+                      ->orWhere('cliente', 'LIKE', "%{$search}%");
+                });
+            }
         }
 
         $pedidos = $query->orderBy('created_at', 'desc')->paginate(20);
@@ -176,14 +192,22 @@ class AsesoresController extends Controller
         \Log::info('Pedidos encontrados: ' . $pedidos->count());
         \Log::info('Total de pedidos: ' . $pedidos->total());
         foreach ($pedidos as $pedido) {
-            \Log::info('Pedido: #' . $pedido->numero_pedido . ' - Cliente: ' . $pedido->cliente . ' - Asesora: ' . $pedido->asesora . ' - Prendas: ' . $pedido->prendas->count());
+            if (get_class($pedido) === 'App\Models\LogoPedido') {
+                \Log::info('LogoPedido: #' . $pedido->numero_pedido . ' - Cliente: ' . $pedido->cliente);
+            } else {
+                \Log::info('Pedido: #' . $pedido->numero_pedido . ' - Cliente: ' . $pedido->cliente . ' - Asesora: ' . $pedido->asesora . ' - Prendas: ' . $pedido->prendas->count());
+            }
         }
 
-        // Obtener valores únicos para filtros
-        $estados = PedidoProduccion::select('estado')
-            ->whereNotNull('estado')
-            ->distinct()
-            ->pluck('estado');
+        // Obtener valores únicos para filtros (solo si no es logo)
+        if ($tipo !== 'logo') {
+            $estados = PedidoProduccion::select('estado')
+                ->whereNotNull('estado')
+                ->distinct()
+                ->pluck('estado');
+        } else {
+            $estados = collect();
+        }
 
         return view('asesores.pedidos.index', compact('pedidos', 'estados'));
     }

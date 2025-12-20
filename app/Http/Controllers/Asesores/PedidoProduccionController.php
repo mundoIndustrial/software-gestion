@@ -16,6 +16,8 @@ use App\DTOs\CotizacionSearchDTO;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Controller para Pedidos de Producción - Refactorizado con SOLID
@@ -41,33 +43,57 @@ class PedidoProduccionController extends Controller
      */
     public function index(): View
     {
-        $query = PedidoProduccion::where('asesor_id', auth()->id())
-            ->with('prendas', 'asesora', 'logoPedidos');
-
-        // Filtrar por tipo de pedido
         $tipo = request('tipo');
+        
+        // Si es LOGO, mostrar LogoPedidos directamente (que tienen pedido_id = null)
         if ($tipo === 'logo') {
-            // Solo pedidos LOGO (que tienen relación con logo_pedidos)
-            $query->whereHas('logoPedidos');
-        }
+            $pedidos = LogoPedido::where('pedido_id', null)
+                ->with('procesos')
+                ->orderBy('created_at', 'desc')
+                ->paginate(20);
+        } else {
+            // PRENDAS o TODOS: Mostrar PedidoProduccion
+            $query = PedidoProduccion::where('asesor_id', auth()->id())
+                ->with([
+                    'prendas', 
+                    'asesora',
+                    'logoPedidos' => function($q) {
+                        $q->with('procesos'); // Eager load procesos para obtener areaActual
+                    }
+                ]);
 
-        $pedidos = $query->orderBy('created_at', 'desc')
-            ->paginate(20);
+            // Si es solo PRENDAS, excluir los que tienen logo
+            if ($tipo === 'prendas') {
+                $query->whereDoesntHave('logoPedidos');
+            }
+
+            $pedidos = $query->orderBy('created_at', 'desc')
+                ->paginate(20);
+        }
 
         // LOG: Verificar datos enviados a la vista
         \Log::info('📋 [PedidoProduccionController] Pedidos para mostrar', [
             'total_pedidos' => $pedidos->total(),
             'filtro_tipo' => $tipo,
-            'prendas_totales' => $pedidos->sum(function($p) { return $p->prendas->count(); }),
+            'es_logo' => $tipo === 'logo',
             'muestras' => $pedidos->take(3)->map(function($pedido) {
-                return [
-                    'id' => $pedido->id,
-                    'numero_pedido' => $pedido->numero_pedido,
-                    'numero_mostrable' => $pedido->numero_pedido_mostrable,
-                    'es_logo' => $pedido->esLogo(),
-                    'cantidad_total_db' => $pedido->cantidad_total,
-                    'prendas_count' => $pedido->prendas->count(),
-                ];
+                if (get_class($pedido) === 'App\Models\LogoPedido') {
+                    return [
+                        'id' => $pedido->id,
+                        'numero_pedido' => $pedido->numero_pedido,
+                        'tipo' => 'logo',
+                        'cliente' => $pedido->cliente,
+                    ];
+                } else {
+                    return [
+                        'id' => $pedido->id,
+                        'numero_pedido' => $pedido->numero_pedido,
+                        'numero_mostrable' => $pedido->numero_pedido_mostrable,
+                        'es_logo' => $pedido->esLogo(),
+                        'cantidad_total_db' => $pedido->cantidad_total,
+                        'prendas_count' => $pedido->prendas->count(),
+                    ];
+                }
             })->all()
         ]);
 
@@ -218,7 +244,8 @@ class PedidoProduccionController extends Controller
                     'forma_de_pago' => $formaDePago,
                     'encargado_orden' => auth()->user()->name,
                     'fecha_de_creacion_de_orden' => now(),
-                    'estado' => 'pendiente',
+                    'estado' => \App\Enums\EstadoPedido::PENDIENTE_SUPERVISOR->value,
+                    'area' => 'creacion_de_orden',
                     'numero_cotizacion' => $cotizacion->numero_cotizacion,
                     'cotizacion_id' => $cotizacion->id,
                     'numero_pedido' => $numeroPedido,
@@ -253,6 +280,9 @@ class PedidoProduccionController extends Controller
                 return response()->json([
                     'success' => true,
                     'message' => 'Pedido de LOGO creado exitosamente',
+                    'logo_pedido_id' => $logoPedido->id,
+                    'pedido_id' => $logoPedido->id,
+                    'logo_cotizacion_id' => $logoPedido->logo_cotizacion_id,
                     'pedido' => [
                         'id' => $logoPedido->id,
                         'numero_pedido' => $logoPedido->numero_pedido,
@@ -665,6 +695,7 @@ class PedidoProduccionController extends Controller
     public function guardarLogoPedido(Request $request): JsonResponse
     {
         \Log::info('🎨 [PedidoProduccionController] ===== GUARDANDO PEDIDO LOGO =====');
+        \Log::info('🎨 [PedidoProduccionController] Datos crudos recibidos:', $request->all());
 
         try {
             // Validar datos (pedido_id opcional para casos standalone)
@@ -681,6 +712,7 @@ class PedidoProduccionController extends Controller
 
             \Log::info('🎨 [PedidoProduccionController] Datos validados', [
                 'pedido_id' => $validated['pedido_id'],
+                'descripcion_recibida' => $validated['descripcion'] ?? 'SIN DESCRIPCIÓN',
                 'tecnicas_count' => count($validated['tecnicas'] ?? []),
                 'ubicaciones_count' => count($validated['ubicaciones'] ?? []),
                 'fotos_count' => count($validated['fotos'] ?? []),
@@ -706,7 +738,8 @@ class PedidoProduccionController extends Controller
                     'forma_de_pago' => $request->input('forma_de_pago', ''),
                     'encargado_orden' => auth()->user()->name,
                     'fecha_de_creacion_de_orden' => now(),
-                    'estado' => 'pendiente',
+                    'estado' => \App\Enums\EstadoPedido::PENDIENTE_SUPERVISOR->value,
+                    'area' => 'creacion_de_orden',
                     'descripcion' => $validated['descripcion'] ?? '',
                     'tecnicas' => $validated['tecnicas'] ?? [],
                     'observaciones_tecnicas' => $validated['observaciones_tecnicas'] ?? '',
@@ -723,12 +756,22 @@ class PedidoProduccionController extends Controller
                 $logoPedido->tecnicas = $validated['tecnicas'] ?? $logoPedido->tecnicas ?? [];
                 $logoPedido->observaciones_tecnicas = $validated['observaciones_tecnicas'] ?? $logoPedido->observaciones_tecnicas ?? '';
                 $logoPedido->ubicaciones = $validated['ubicaciones'] ?? $logoPedido->ubicaciones ?? [];
+                // Asegurar que tenga área y estado correcto
+                if (empty($logoPedido->area)) {
+                    $logoPedido->area = 'creacion_de_orden';
+                }
+                if (empty($logoPedido->estado) || $logoPedido->estado === 'pendiente') {
+                    $logoPedido->estado = \App\Enums\EstadoPedido::PENDIENTE_SUPERVISOR->value;
+                }
                 $logoPedido->save();
             }
 
             \Log::info('🎨 LogoPedido creado exitosamente', [
                 'logo_pedido_id' => $logoPedido->id,
-                'numero_pedido' => $logoPedido->numero_pedido
+                'numero_pedido' => $logoPedido->numero_pedido,
+                'descripcion_guardada' => $logoPedido->descripcion ?? 'SIN DESCRIPCIÓN',
+                'tecnicas_guardadas' => $logoPedido->tecnicas,
+                'observaciones_guardadas' => $logoPedido->observaciones_tecnicas,
             ]);
 
             // Guardar las imágenes
@@ -929,7 +972,42 @@ class PedidoProduccionController extends Controller
     public function eliminarPedido(int $pedido_id): JsonResponse
     {
         try {
-            // Obtener el pedido
+            DB::beginTransaction();
+
+            // Primero intentar eliminar un LogoPedido
+            $logoPedido = LogoPedido::find($pedido_id);
+            if ($logoPedido) {
+                \Log::info('🎨 Eliminando LogoPedido', ['logo_pedido_id' => $logoPedido->id]);
+                
+                // Eliminar imágenes asociadas
+                if ($logoPedido->imagenes) {
+                    foreach ($logoPedido->imagenes as $imagen) {
+                        if ($imagen->ruta_original && \Storage::exists($imagen->ruta_original)) {
+                            \Storage::delete($imagen->ruta_original);
+                        }
+                        $imagen->delete();
+                    }
+                }
+
+                // Eliminar procesos asociados
+                if ($logoPedido->procesos) {
+                    foreach ($logoPedido->procesos as $proceso) {
+                        $proceso->delete();
+                    }
+                }
+
+                // Eliminar el pedido LOGO
+                $logoPedido->delete();
+                
+                DB::commit();
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Pedido de LOGO eliminado correctamente'
+                ]);
+            }
+
+            // Si no es LogoPedido, intentar PedidoProduccion
             $pedido = PedidoProduccion::findOrFail($pedido_id);
 
             // Verificar que el pedido pertenezca al asesor autenticado
@@ -939,6 +1017,8 @@ class PedidoProduccionController extends Controller
                     'message' => 'No tienes permiso para eliminar este pedido'
                 ], 403);
             }
+
+            \Log::info('🗑️ Eliminando PedidoProduccion', ['pedido_id' => $pedido->id]);
 
             // Eliminar imágenes asociadas
             if ($pedido->fotospedido) {
@@ -964,18 +1044,22 @@ class PedidoProduccionController extends Controller
             // Eliminar el pedido
             $pedido->delete();
 
+            DB::commit();
+
             return response()->json([
                 'success' => true,
                 'message' => 'Pedido eliminado correctamente'
             ]);
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Pedido no encontrado'
             ], 404);
 
         } catch (\Throwable $e) {
+            DB::rollBack();
             \Log::error('Error eliminando pedido:', [
                 'error' => $e->getMessage(),
                 'pedido_id' => $pedido_id

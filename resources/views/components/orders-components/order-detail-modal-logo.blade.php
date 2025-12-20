@@ -19,10 +19,21 @@
         <div id="order-asesora" class="order-asesora">ASESORA: <span id="asesora-value"></span></div>
         <div id="order-forma-pago" class="order-forma-pago">FORMA DE PAGO: <span id="forma-pago-value"></span></div>
         <div id="order-cliente" class="order-cliente">CLIENTE: <span id="cliente-value"></span></div>
-        <div id="order-descripcion" class="order-descripcion">
-            <div id="descripcion-text"></div>
+        <div id="order-descripcion" class="order-descripcion" style="margin: 1rem 0;">
+            <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem; font-size: 0.875rem;">DESCRIPCIÓN:</label>
+            <textarea id="descripcion-text" style="
+                width: 100%;
+                min-height: 80px;
+                padding: 0.75rem;
+                border: 1px solid #d1d5db;
+                border-radius: 6px;
+                font-size: 0.875rem;
+                font-family: inherit;
+                resize: vertical;
+                background: #f9fafb;
+            " placeholder="Ingrese la descripción del pedido de logo"></textarea>
         </div>
-        <h2 class="receipt-title">RECIBO DE BORDADOS</h2>
+        <h2 class="receipt-title">RECIBO DE LOGO</h2>
         <div class="arrow-container">
             <button id="prev-arrow" class="arrow-btn" style="display: none;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -433,4 +444,12 @@ function handleImageViewerKeyboardLogo(e) {
         closeImageViewerLogo();
     }
 }
+
+// DEBUG: Verificar si el evento se dispara
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🧪 [MODAL LOGO COMPONENT] DOMContentLoaded ejecutado');
+    window.addEventListener('load-order-detail-logo', function(e) {
+        console.log('🧪 [MODAL LOGO COMPONENT] Evento load-order-detail-logo recibido en componente');
+    });
+});
 </script>

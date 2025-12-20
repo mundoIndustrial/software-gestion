@@ -19,6 +19,17 @@ class LogoPedido extends Model
         'tecnicas',
         'observaciones_tecnicas',
         'ubicaciones',
+        'cliente',
+        'asesora',
+        'forma_de_pago',
+        'encargado_orden',
+        'fecha_de_creacion_de_orden',
+        'estado',
+        'area',
+        'numero_cotizacion',
+        'cotizacion_id',
+        'prendas',
+        'observaciones',
     ];
 
     protected $casts = [
@@ -49,6 +60,23 @@ class LogoPedido extends Model
     {
         return $this->hasMany(LogoPedidoImagen::class, 'logo_pedido_id')
                     ->orderBy('orden');
+    }
+
+    /**
+     * Relación: Un LogoPedido tiene muchos procesos/áreas por las que pasa
+     */
+    public function procesos(): HasMany
+    {
+        return $this->hasMany(ProcesosPedidosLogo::class, 'logo_pedido_id')
+                    ->orderBy('created_at', 'asc');
+    }
+
+    /**
+     * Obtener el área actual del pedido
+     */
+    public function getAreaActualAttribute()
+    {
+        return ProcesosPedidosLogo::obtenerAreaActual($this->id);
     }
 
     /**
