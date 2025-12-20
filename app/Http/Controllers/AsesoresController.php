@@ -410,24 +410,35 @@ class AsesoresController extends Controller
                 }
             }
 
-            // Crear registro en logo_pedidos
+            // ✅ Generar número de pedido LOGO-XXXXX automáticamente
+            $numeroPedido = \App\Models\LogoPedido::generarNumeroPedido();
+            
+            // Crear registro en logo_pedidos con TODOS los campos
             $logoPedido = \DB::table('logo_pedidos')->insertGetId([
                 'pedido_id' => null, // No tiene pedido_produccion
                 'logo_cotizacion_id' => null,
-                'numero_pedido' => null, // NULL para logos solamente
-                'cliente' => $validated['cliente'],
-                'asesora' => Auth::user()?->name,
-                'forma_de_pago' => $validated['forma_de_pago'] ?? null,
-                'encargado_orden' => Auth::user()?->name,
-                'fecha_de_creacion_de_orden' => now(),
+                'numero_pedido' => $numeroPedido, // ✅ AHORA CON NÚMERO ÚNICO
+                'cliente' => $validated['cliente'], // ✅ CAMPO IMPORTANTE
+                'asesora' => Auth::user()?->name, // ✅ CAMPO IMPORTANTE
+                'forma_de_pago' => $validated['forma_de_pago'] ?? null, // ✅ CAMPO IMPORTANTE
+                'encargado_orden' => Auth::user()?->name, // ✅ CAMPO IMPORTANTE
+                'fecha_de_creacion_de_orden' => now(), // ✅ CAMPO IMPORTANTE (SIEMPRE)
                 'estado' => 'pendiente',
-                'descripcion' => $request->input('logo.descripcion'),
-                'tecnicas' => $request->input('logo.tecnicas'),
-                'observaciones_tecnicas' => $request->input('logo.observaciones_tecnicas'),
-                'ubicaciones' => $request->input('logo.ubicaciones'),
-                'observaciones' => $request->input('logo.observaciones_generales'),
+                'area' => 'creacion_de_orden',
+                'descripcion' => $request->input('logo.descripcion'), // ✅ CAMPO IMPORTANTE
+                'tecnicas' => $request->input('logo.tecnicas'), // ✅ GUARDAR JSON
+                'observaciones_tecnicas' => $request->input('logo.observaciones_tecnicas'), // ✅ CAMPO IMPORTANTE
+                'ubicaciones' => $request->input('logo.ubicaciones'), // ✅ GUARDAR JSON
+                'observaciones' => $request->input('logo.observaciones_generales'), // ✅ GUARDAR OBSERVACIONES
                 'created_at' => now(),
                 'updated_at' => now()
+            ]);
+            
+            \Log::info('✅ [LOGO] Pedido LOGO generado con número', [
+                'numero_pedido' => $numeroPedido,
+                'logo_pedido_id' => $logoPedido,
+                'cliente' => $validated['cliente'],
+                'asesora' => Auth::user()?->name
             ]);
 
             \Log::info('✅ [LOGO] Logo pedido creado', ['logo_pedido_id' => $logoPedido]);

@@ -152,8 +152,11 @@ function loadGaleriaLogo(container, pedido) {
     
     console.log('🖼️ [GALERIA LOGO] Cargando galería para pedido:', pedido);
     
+    // ✅ Remover el # del número de pedido si existe
+    const pedidoLimpio = pedido.replace('#', '');
+    
     // Cargar imágenes de logo
-    const url = `/registros/${pedido}/images?tipo=logo`;
+    const url = `/registros/${pedidoLimpio}/images?tipo=logo`;
     console.log('🖼️ [GALERIA LOGO] Haciendo fetch a:', url);
     
     fetch(url)

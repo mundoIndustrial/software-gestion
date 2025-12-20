@@ -594,7 +594,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Guardar el número de pedido en variable global para uso en galería
         // Asignar directamente a window para asegurar que esté disponible
         if (orden && orden.numero_pedido) {
-            window.currentPedidoNumberLogo = orden.numero_pedido;
+            // ✅ Limpiar el # del número de pedido si existe
+            window.currentPedidoNumberLogo = orden.numero_pedido.replace('#', '');
             console.log('✅ [MODAL LOGO] Número de pedido guardado en variable global:', window.currentPedidoNumberLogo);
         } else {
             console.error('❌ [MODAL LOGO] No se pudo obtener numero_pedido de orden:', orden);

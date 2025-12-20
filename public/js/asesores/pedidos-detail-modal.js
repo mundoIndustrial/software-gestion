@@ -70,33 +70,24 @@ window.verSeguimiento = function verSeguimiento(numeroPedido) {
 
 /**
  * Abre el modal de detalle de LOGO/BORDADOS del pedido
- * @param {number} numeroPedido - Número del pedido
+ * @param {number} logoPedidoId - ID del LogoPedido (NO número de pedido)
  */
-window.verFacturaLogo = async function verFacturaLogo(numeroPedido) {
-    // Limpiar el número del pedido (remover # si existe)
-    const pedidoLimpio = numeroPedido.replace('#', '');
-    
-    console.log('🔴 [MODAL LOGO] Abriendo modal de bordados para pedido:', pedidoLimpio);
+window.verFacturaLogo = async function verFacturaLogo(logoPedidoId) {
+    console.log('🔴 [MODAL LOGO] Abriendo modal de bordados para ID:', logoPedidoId);
     console.log('🔴 [MODAL LOGO] Verificando si window.openOrderDetailModalLogo existe:', typeof window.openOrderDetailModalLogo);
     
     try {
-        // ✅ HACER FETCH a la API para obtener datos del pedido
-        console.log('🔴 [MODAL LOGO] Haciendo fetch a /registros/' + pedidoLimpio);
-        let response = await fetch(`/registros/${pedidoLimpio}`);
-        
-        // Si no encuentra en /registros, intentar con /orders
-        if (!response.ok) {
-            console.log('🔴 [MODAL LOGO] No encontrado en /registros, intentando /orders/' + pedidoLimpio);
-            response = await fetch(`/orders/${pedidoLimpio}`);
-        }
+        // ✅ HACER FETCH a la API usando el ID en lugar del número de pedido
+        console.log('🔴 [MODAL LOGO] Haciendo fetch a /api/logo-pedidos/' + logoPedidoId);
+        let response = await fetch(`/api/logo-pedidos/${logoPedidoId}`);
         
         if (!response.ok) {
             console.error('❌ [MODAL LOGO] Error en respuesta:', response.status, response.statusText);
-            throw new Error('Error fetching order: ' + response.status);
+            throw new Error('Error fetching logo pedido: ' + response.status);
         }
         const order = await response.json();
         
-        console.log('✅ [MODAL LOGO] Datos del pedido obtenidos:', order);
+        console.log('✅ [MODAL LOGO] Datos del LogoPedido obtenidos:', order);
         
         // Disparar evento para que order-detail-modal-manager.js maneje la apertura del logo
         console.log('🔴 [MODAL LOGO] Disparando evento load-order-detail-logo con detail:', order);
