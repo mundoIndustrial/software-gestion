@@ -10,61 +10,6 @@
         display: none !important;
     }
 
-    /* ====================== FILTROS RÁPIDOS ====================== */
-    .filtros-rapidos-asesores {
-        background: white;
-        border-radius: 12px;
-        padding: 1rem 1.5rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        display: flex;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-        align-items: center;
-    }
-
-    .filtros-rapidos-asesores-label {
-        font-weight: 600;
-        font-size: 0.875rem;
-        color: #2c3e50;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        white-space: nowrap;
-        margin-right: 0.5rem;
-    }
-
-    .btn-filtro-rapido-asesores {
-        padding: 0.625rem 1.25rem;
-        border: 2px solid #e0e6ed;
-        background: white;
-        border-radius: 20px;
-        font-weight: 600;
-        font-size: 0.875rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        color: #2c3e50;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        white-space: nowrap;
-    }
-
-    .btn-filtro-rapido-asesores:hover {
-        border-color: #3498db;
-        color: #3498db;
-        background: rgba(52, 152, 219, 0.05);
-    }
-
-    .btn-filtro-rapido-asesores.active {
-        background: #3498db;
-        color: white;
-        border-color: #3498db;
-    }
-
-    .btn-filtro-rapido-asesores .material-symbols-rounded {
-        font-size: 1.1rem;
-    }
-
     /* ====================== BOTONES FILTRO EMBUDO ====================== */
     .th-wrapper {
         display: flex;
@@ -452,31 +397,6 @@
         </form>
     </div>
 
-    <!-- Filtros Rápidos -->
-    <div class="filtros-rapidos-asesores">
-        <span class="filtros-rapidos-asesores-label">Filtrar por estado:</span>
-        <a href="{{ route('supervisor-asesores.pedidos.index') }}" class="btn-filtro-rapido-asesores {{ !request('estado') ? 'active' : '' }}" onclick="return navegarFiltro(this.href, event)">
-            <span class="material-symbols-rounded">home</span>
-            Todos
-        </a>
-        <a href="{{ route('supervisor-asesores.pedidos.index', ['estado' => 'Pendiente']) }}" class="btn-filtro-rapido-asesores {{ request('estado') === 'Pendiente' ? 'active' : '' }}" onclick="return navegarFiltro(this.href, event)">
-            <span class="material-symbols-rounded">schedule</span>
-            Pendientes
-        </a>
-        <a href="javascript:void(0)" onclick="filtrarEnProduccionSupervisor()" class="btn-filtro-rapido-asesores {{ (request('estado') === 'No iniciado' || request('estado') === 'En Ejecución') ? 'active' : '' }}" id="btnEnProduccionSupervisor">
-            <span class="material-symbols-rounded">build</span>
-            En Producción
-        </a>
-        <a href="{{ route('supervisor-asesores.pedidos.index', ['estado' => 'Entregado']) }}" class="btn-filtro-rapido-asesores {{ request('estado') === 'Entregado' ? 'active' : '' }}" onclick="return navegarFiltro(this.href, event)">
-            <span class="material-symbols-rounded">check_circle</span>
-            Entregados
-        </a>
-        <a href="{{ route('supervisor-asesores.pedidos.index', ['estado' => 'Anulada']) }}" class="btn-filtro-rapido-asesores {{ request('estado') === 'Anulada' ? 'active' : '' }}" onclick="return navegarFiltro(this.href, event)">
-            <span class="material-symbols-rounded">cancel</span>
-            Anulados
-        </a>
-    </div>
-
     <!-- Tabla con Scroll Horizontal -->
     <div style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem;">
         <!-- Contenedor con Scroll -->
@@ -756,7 +676,7 @@
                             font-weight: 600;
                             display: inline-block;
                         ">
-                            {{ $pedido->procesoActualOptimizado() ?? '-' }}
+                            {{ $pedido->area ?? 'Pendiente' }}
                         </span>
                     </div>
 
@@ -766,7 +686,7 @@
                     </div>
 
                     <!-- Cliente -->
-                    <div style="color: #374151; font-size: 0.875rem; font-weight: 500; cursor: pointer;" onclick="abrirModalCelda('Cliente', '{{ $pedido->cliente }}')" title="Click para ver completo">
+                    <div style="color: #374151; font-size: 0.875rem; font-weight: 500; cursor: pointer; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; word-break: break-word;" onclick="abrirModalCelda('Cliente', '{{ $pedido->cliente }}')" title="Click para ver completo">
                         {{ $pedido->cliente }}
                     </div>
 
@@ -795,7 +715,7 @@
                     </div>
 
                     <!-- Forma Pago -->
-                    <div style="color: #374151; font-size: 0.875rem; cursor: pointer;" onclick="abrirModalCelda('Forma de Pago', '{{ $pedido->forma_de_pago ?? '-' }}')" title="Click para ver completo">
+                    <div style="color: #374151; font-size: 0.875rem; cursor: pointer; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="abrirModalCelda('Forma de Pago', '{{ $pedido->forma_de_pago ?? '-' }}')" title="Click para ver completo">
                         {{ $pedido->forma_de_pago ?? '-' }}
                     </div>
 
@@ -832,8 +752,166 @@
 
     <!-- Paginación -->
     @if($pedidos->hasPages())
-        <div style="margin-top: 1.5rem; display: flex; justify-content: center;">
-            {{ $pedidos->links() }}
+        <div style="margin-top: 2rem; display: flex; justify-content: center; padding: 1.5rem; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);">
+            <nav role="navigation" aria-label="Pagination Navigation" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; justify-content: center;">
+                <!-- Primera Página -->
+                @if($pedidos->onFirstPage())
+                    <span style="
+                        padding: 0.5rem 0.75rem;
+                        border: 1px solid #e5e7eb;
+                        color: #d1d5db;
+                        border-radius: 6px;
+                        font-size: 0.875rem;
+                        background: #f9fafb;
+                        cursor: not-allowed;
+                    ">
+                        <span class="material-symbols-rounded" style="font-size: 1.25rem; vertical-align: middle;">first_page</span>
+                    </span>
+                @else
+                    <a href="{{ $pedidos->url(1) }}" style="
+                        padding: 0.5rem 0.75rem;
+                        border: 1px solid #e5e7eb;
+                        color: #3b82f6;
+                        border-radius: 6px;
+                        font-size: 0.875rem;
+                        background: white;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        text-decoration: none;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.25rem;
+                    " onmouseover="this.style.background='#eff6ff'; this.style.borderColor='#3b82f6';" onmouseout="this.style.background='white'; this.style.borderColor='#e5e7eb';">
+                        <span class="material-symbols-rounded" style="font-size: 1.25rem;">first_page</span>
+                    </a>
+                @endif
+
+                <!-- Página Anterior -->
+                @if($pedidos->onFirstPage())
+                    <span style="
+                        padding: 0.5rem 0.75rem;
+                        border: 1px solid #e5e7eb;
+                        color: #d1d5db;
+                        border-radius: 6px;
+                        font-size: 0.875rem;
+                        background: #f9fafb;
+                        cursor: not-allowed;
+                    ">
+                        <span class="material-symbols-rounded" style="font-size: 1.25rem;">navigate_before</span>
+                    </span>
+                @else
+                    <a href="{{ $pedidos->previousPageUrl() }}" style="
+                        padding: 0.5rem 0.75rem;
+                        border: 1px solid #e5e7eb;
+                        color: #3b82f6;
+                        border-radius: 6px;
+                        font-size: 0.875rem;
+                        background: white;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        text-decoration: none;
+                        display: inline-flex;
+                        align-items: center;
+                    " onmouseover="this.style.background='#eff6ff'; this.style.borderColor='#3b82f6';" onmouseout="this.style.background='white'; this.style.borderColor='#e5e7eb';">
+                        <span class="material-symbols-rounded" style="font-size: 1.25rem;">navigate_before</span>
+                    </a>
+                @endif
+
+                <!-- Números de página -->
+                @foreach($pedidos->getUrlRange(max(1, $pedidos->currentPage() - 2), min($pedidos->lastPage(), $pedidos->currentPage() + 2)) as $page => $url)
+                    @if($page == $pedidos->currentPage())
+                        <span style="
+                            padding: 0.5rem 0.75rem;
+                            border: 2px solid #3b82f6;
+                            color: white;
+                            background: #3b82f6;
+                            border-radius: 6px;
+                            font-size: 0.875rem;
+                            font-weight: 600;
+                            min-width: 2.5rem;
+                            text-align: center;
+                        ">{{ $page }}</span>
+                    @else
+                        <a href="{{ $url }}" style="
+                            padding: 0.5rem 0.75rem;
+                            border: 1px solid #e5e7eb;
+                            color: #374151;
+                            border-radius: 6px;
+                            font-size: 0.875rem;
+                            background: white;
+                            cursor: pointer;
+                            transition: all 0.3s ease;
+                            text-decoration: none;
+                            display: inline-block;
+                            min-width: 2.5rem;
+                            text-align: center;
+                        " onmouseover="this.style.background='#f3f4f6'; this.style.borderColor='#d1d5db';" onmouseout="this.style.background='white'; this.style.borderColor='#e5e7eb';">{{ $page }}</a>
+                    @endif
+                @endforeach
+
+                <!-- Página Siguiente -->
+                @if($pedidos->hasMorePages())
+                    <a href="{{ $pedidos->nextPageUrl() }}" style="
+                        padding: 0.5rem 0.75rem;
+                        border: 1px solid #e5e7eb;
+                        color: #3b82f6;
+                        border-radius: 6px;
+                        font-size: 0.875rem;
+                        background: white;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        text-decoration: none;
+                        display: inline-flex;
+                        align-items: center;
+                    " onmouseover="this.style.background='#eff6ff'; this.style.borderColor='#3b82f6';" onmouseout="this.style.background='white'; this.style.borderColor='#e5e7eb';">
+                        <span class="material-symbols-rounded" style="font-size: 1.25rem;">navigate_next</span>
+                    </a>
+                @else
+                    <span style="
+                        padding: 0.5rem 0.75rem;
+                        border: 1px solid #e5e7eb;
+                        color: #d1d5db;
+                        border-radius: 6px;
+                        font-size: 0.875rem;
+                        background: #f9fafb;
+                        cursor: not-allowed;
+                    ">
+                        <span class="material-symbols-rounded" style="font-size: 1.25rem;">navigate_next</span>
+                    </span>
+                @endif
+
+                <!-- Última Página -->
+                @if($pedidos->onLastPage())
+                    <span style="
+                        padding: 0.5rem 0.75rem;
+                        border: 1px solid #e5e7eb;
+                        color: #d1d5db;
+                        border-radius: 6px;
+                        font-size: 0.875rem;
+                        background: #f9fafb;
+                        cursor: not-allowed;
+                    ">
+                        <span class="material-symbols-rounded" style="font-size: 1.25rem;">last_page</span>
+                    </span>
+                @else
+                    <a href="{{ $pedidos->url($pedidos->lastPage()) }}" style="
+                        padding: 0.5rem 0.75rem;
+                        border: 1px solid #e5e7eb;
+                        color: #3b82f6;
+                        border-radius: 6px;
+                        font-size: 0.875rem;
+                        background: white;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        text-decoration: none;
+                        display: inline-flex;
+                        align-items: center;
+                        gap: 0.25rem;
+                    " onmouseover="this.style.background='#eff6ff'; this.style.borderColor='#3b82f6';" onmouseout="this.style.background='white'; this.style.borderColor='#e5e7eb';">
+                        <span class="material-symbols-rounded" style="font-size: 1.25rem;">last_page</span>
+                    </a>
+                @endif
+            </nav>
         </div>
     @endif
 </div>
@@ -1110,16 +1188,6 @@
 
 
 
-    /**
-     * Filtrar pedidos "En Producción" (No iniciado O En Ejecución) - Supervisor
-     */
-    function filtrarEnProduccionSupervisor() {
-        const url = new URL(window.location);
-        url.searchParams.set('estado', 'En Producción');
-        
-        // Usar la función de navegación de filtros
-        navegarFiltro(url.toString(), { preventDefault: () => {} });
-    }
 </script>
 <script src="{{ asset('js/asesores/pedidos-list.js') }}"></script>
 <script src="{{ asset('js/asesores/pedidos.js') }}"></script>

@@ -251,11 +251,44 @@ class PrendaPedido extends Model
      */
     public function generarDescripcionDetallada($index = 1)
     {
-        // Extraer datos estructurados de la prenda
-        $datos = DescripcionPrendaHelper::extraerDatosPrenda($this, $index);
+        // ✅ MANEJAR AMBOS CASOS:
+        // 1. Si tiene color_id/tela_id poblados → construir dinámicamente desde relaciones
+        // 2. Si todo es NULL → usar descripcion existente (datos migrados)
         
-        // Generar descripción usando el template
-        return DescripcionPrendaHelper::generarDescripcion($datos);
+        $tieneRelacionesPobladas = $this->color_id || $this->tela_id || $this->tipo_manga_id || $this->tipo_broche_id;
+        
+        if ($tieneRelacionesPobladas) {
+            // Caso 1: Construir dinámicamente desde relaciones
+            $datos = DescripcionPrendaHelper::extraerDatosPrenda($this, $index);
+            return DescripcionPrendaHelper::generarDescripcion($datos);
+        } else {
+            // Caso 2: Usar descripcion existente (datos migrados de la BD antigua)
+            if ($this->descripcion) {
+                // Formatear como: PRENDA X: NOMBRE\n + descripcion existente + \nTallas: ...
+                $nombre = strtoupper($this->nombre_prenda ?? '');
+                $desc = trim($this->descripcion);
+                
+                // Obtener tallas del campo cantidad_talla
+                $tallas = $this->cantidad_talla ?? [];
+                $tallasStr = '';
+                if (!empty($tallas) && is_array($tallas)) {
+                    $tallasFormato = [];
+                    foreach ($tallas as $talla => $cantidad) {
+                        if ($cantidad > 0) {
+                            $tallasFormato[] = "{$talla}: {$cantidad}";
+                        }
+                    }
+                    if (!empty($tallasFormato)) {
+                        $tallasStr = "\nTallas: " . implode(', ', $tallasFormato);
+                    }
+                }
+                
+                return "PRENDA {$index}: {$nombre}\n{$desc}{$tallasStr}";
+            }
+            
+            // Fallback si no hay descripcion tampoco
+            return "PRENDA {$index}: " . strtoupper($this->nombre_prenda ?? '');
+        }
     }
 
 

@@ -21,6 +21,9 @@ Route::middleware(['auth', 'insumos-access'])
         Route::post('/materiales/{numeroPedido}', [MaterialesController::class, 'store'])
             ->name('materiales.store');
 
+        Route::post('/materiales/{numeroPedido}/guardar', [MaterialesController::class, 'guardarObservaciones'])
+            ->name('materiales.guardar');
+
         Route::post('/materiales/{numeroPedido}/eliminar', [MaterialesController::class, 'destroy'])
             ->name('materiales.destroy');
 

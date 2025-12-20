@@ -10,61 +10,6 @@
         display: none !important;
     }
 
-    /* ====================== FILTROS RÁPIDOS ====================== */
-    .filtros-rapidos-asesores {
-        background: white;
-        border-radius: 12px;
-        padding: 1rem 1.5rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-        display: flex;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-        align-items: center;
-    }
-
-    .filtros-rapidos-asesores-label {
-        font-weight: 600;
-        font-size: 0.875rem;
-        color: #2c3e50;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        white-space: nowrap;
-        margin-right: 0.5rem;
-    }
-
-    .btn-filtro-rapido-asesores {
-        padding: 0.625rem 1.25rem;
-        border: 2px solid #e0e6ed;
-        background: white;
-        border-radius: 20px;
-        font-weight: 600;
-        font-size: 0.875rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        color: #2c3e50;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        white-space: nowrap;
-    }
-
-    .btn-filtro-rapido-asesores:hover {
-        border-color: #3498db;
-        color: #3498db;
-        background: rgba(52, 152, 219, 0.05);
-    }
-
-    .btn-filtro-rapido-asesores.active {
-        background: #3498db;
-        color: white;
-        border-color: #3498db;
-    }
-
-    .btn-filtro-rapido-asesores .material-symbols-rounded {
-        font-size: 1.1rem;
-    }
-
     /* ====================== BOTONES FILTRO EMBUDO ====================== */
     .th-wrapper {
         display: flex;
@@ -409,35 +354,81 @@
         </div>
     </div>
 
-    <!-- Filtros Rápidos -->
-    <div class="filtros-rapidos-asesores">
-        <span class="filtros-rapidos-asesores-label">Filtrar por estado:</span>
-        <a href="{{ route('asesores.pedidos.index') }}" class="btn-filtro-rapido-asesores {{ !request('estado') && !request('tipo') ? 'active' : '' }}" onclick="return navegarFiltro(this.href, event)">
-            <span class="material-symbols-rounded">home</span>
-            Todos
-        </a>
-        <a href="{{ route('asesores.pedidos.index', ['tipo' => 'logo']) }}" class="btn-filtro-rapido-asesores {{ request('tipo') === 'logo' ? 'active' : '' }}" onclick="return navegarFiltro(this.href, event)">
-            <span class="material-symbols-rounded">palette</span>
-            Logo
-        </a>
-        <a href="{{ route('asesores.pedidos.index', ['estado' => 'Pendiente']) }}" class="btn-filtro-rapido-asesores {{ request('estado') === 'Pendiente' ? 'active' : '' }}" onclick="return navegarFiltro(this.href, event)">
-            <span class="material-symbols-rounded">schedule</span>
-            Pendientes
-        </a>
-        <a href="javascript:void(0)" onclick="filtrarEnProduccion()" class="btn-filtro-rapido-asesores {{ (request('estado') === 'No iniciado' || request('estado') === 'En Ejecución') ? 'active' : '' }}" id="btnEnProduccion">
-            <span class="material-symbols-rounded">build</span>
-            En Producción
-        </a>
-        <a href="{{ route('asesores.pedidos.index', ['estado' => 'Entregado']) }}" class="btn-filtro-rapido-asesores {{ request('estado') === 'Entregado' ? 'active' : '' }}" onclick="return navegarFiltro(this.href, event)">
-            <span class="material-symbols-rounded">check_circle</span>
-            Entregados
-        </a>
-        <a href="{{ route('asesores.pedidos.index', ['estado' => 'Anulada']) }}" class="btn-filtro-rapido-asesores {{ request('estado') === 'Anulada' ? 'active' : '' }}" onclick="return navegarFiltro(this.href, event)">
-            <span class="material-symbols-rounded">cancel</span>
-            Anulados
-        </a>
     </div>
-        </a>
+
+    <!-- Buscador de Cliente y Pedido -->
+    <div style="background: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);">
+        <form action="{{ route('asesores.pedidos.index') }}" method="GET" style="display: flex; gap: 12px; align-items: flex-end;">
+            <div style="flex: 1;">
+                <label style="display: block; font-weight: 600; font-size: 0.875rem; color: #2c3e50; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Buscar Cliente o Pedido</label>
+                <div style="position: relative;">
+                    <input 
+                        type="text" 
+                        name="search" 
+                        placeholder="Ingresa nombre del cliente o número de pedido..." 
+                        value="{{ request('search') }}"
+                        style="
+                            width: 100%;
+                            padding: 10px 12px;
+                            padding-left: 35px;
+                            border: 2px solid #e0e6ed;
+                            border-radius: 8px;
+                            font-size: 0.95rem;
+                            transition: all 0.3s ease;
+                        "
+                        onfocus="this.style.borderColor='#3498db'; this.style.boxShadow='0 0 0 3px rgba(52, 152, 219, 0.1)'"
+                        onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none'"
+                    >
+                    <span class="material-symbols-rounded" style="
+                        position: absolute;
+                        left: 10px;
+                        top: 50%;
+                        transform: translateY(-50%);
+                        color: #95a5a6;
+                        font-size: 20px;
+                        pointer-events: none;
+                    ">search</span>
+                </div>
+            </div>
+            <button type="submit" style="
+                padding: 10px 24px;
+                background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+                color: white;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 0.95rem;
+                font-weight: 600;
+                transition: all 0.3s ease;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+            " onmouseover="this.style.boxShadow='0 4px 12px rgba(52, 152, 219, 0.3)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(52, 152, 219, 0.2)'">
+                <span class="material-symbols-rounded" style="font-size: 18px;">search</span>
+                Buscar
+            </button>
+            @if(request('search'))
+                <a href="{{ route('asesores.pedidos.index') }}" style="
+                    padding: 10px 24px;
+                    background: white;
+                    color: #e74c3c;
+                    border: 2px solid #e74c3c;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-size: 0.95rem;
+                    font-weight: 600;
+                    transition: all 0.3s ease;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    text-decoration: none;
+                " onmouseover="this.style.background='#e74c3c'; this.style.color='white'" onmouseout="this.style.background='white'; this.style.color='#e74c3c'">
+                    <span class="material-symbols-rounded" style="font-size: 18px;">close</span>
+                    Limpiar
+                </a>
+            @endif
+        </form>
     </div>
 
     <!-- Tabla con Scroll Horizontal -->
@@ -636,7 +627,7 @@
                             font-weight: 600;
                             display: inline-block;
                         ">
-                            {{ $pedido->procesoActualOptimizado() ?? '-' }}
+                            {{ $pedido->area ?? 'Pendiente' }}
                         </span>
                     </div>
 
@@ -1322,18 +1313,6 @@
     });
 
 
-
-    /**
-     * Filtrar pedidos "En Producción" (No iniciado O En Ejecución)
-     * Redirige al controlador con estado=En Producción para filtrado backend
-     */
-    function filtrarEnProduccion() {
-        const url = new URL(window.location);
-        url.searchParams.set('estado', 'En Producción');
-        
-        // Usar la función de navegación de filtros
-        navegarFiltro(url.toString(), { preventDefault: () => {} });
-    }
 
     /**
      * Confirmar eliminación de pedido

@@ -119,14 +119,23 @@ class MaterialesService
         $preparados = [];
 
         foreach ((array)$datos as $item) {
+            // Mapear el campo 'nombre' (que viene del JS) a 'nombre_material'
+            $nombreMaterial = $item['nombre'] ?? ($item['nombre_material'] ?? $item['nombre_insumo'] ?? '');
+            
             $preparados[] = [
                 'numero_pedido' => $item['numero_pedido'] ?? null,
-                'nombre_insumo' => trim($item['nombre_insumo'] ?? ''),
+                'nombre_material' => trim($nombreMaterial),
                 'cantidad' => $item['cantidad'] ?? 0,
                 'estado' => $item['estado'] ?? 'No iniciado',
                 'area' => $item['area'] ?? null,
                 'observaciones' => $item['observaciones'] ?? null,
                 'asignado_a' => $item['asignado_a'] ?? Auth::id(),
+                'fecha_orden' => $item['fecha_orden'] ?? null,
+                'fecha_pedido' => $item['fecha_pedido'] ?? null,
+                'fecha_pago' => $item['fecha_pago'] ?? null,
+                'fecha_llegada' => $item['fecha_llegada'] ?? null,
+                'fecha_despacho' => $item['fecha_despacho'] ?? null,
+                'recibido' => $item['recibido'] ?? false,
             ];
         }
 

@@ -152,11 +152,6 @@
             <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
                 @csrf
             </form>
-            
-            <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema">
-                <span class="material-symbols-rounded">light_mode</span>
-                <span class="theme-text">Tema Claro</span>
-            </button>
         </div>
     </aside>
 

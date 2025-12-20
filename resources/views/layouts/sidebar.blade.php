@@ -200,8 +200,8 @@
       <span class="menu-section-title">Módulos</span>
       <ul class="menu-list" role="navigation">
       <li class="menu-item">
-        <a href="{{ route('asesores.dashboard') }}"
-           class="menu-link {{ request()->routeIs('asesores.*') ? 'active' : '' }}"
+        <a href="{{ route('supervisor-asesores.dashboard') }}"
+           class="menu-link {{ request()->routeIs('supervisor-asesores.*') ? 'active' : '' }}"
            aria-label="Ver módulo de asesores">
           <span class="material-symbols-rounded" aria-hidden="true">people</span>
           <span class="menu-label">Asesores</span>
@@ -290,11 +290,7 @@
     @endif
   </div>
 
-  <!-- Footer con toggle de tema -->
+  <!-- Footer -->
   <div class="sidebar-footer">
-    <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema">
-      <span class="material-symbols-rounded">light_mode</span>
-      <span class="theme-text">Tema</span>
-    </button>
   </div>
 </aside>

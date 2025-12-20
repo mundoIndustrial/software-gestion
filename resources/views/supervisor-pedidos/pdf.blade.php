@@ -282,7 +282,7 @@
                     <tr>
                         <td><strong>{{ $prenda->nombre_prenda }}</strong></td>
                         <td>{{ $prenda->cantidad }}</td>
-                        <td>{{ $prenda->descripcion ?? 'N/A' }}</td>
+                        <td style="white-space: pre-wrap;">{{ $prenda->generarDescripcionDetallada($loop->iteration) ?? 'N/A' }}</td>
                         <td>
                             @if($prenda->procesos && $prenda->procesos->count() > 0)
                                 <span class="estado-badge estado-{{ strtolower(str_replace(' ', '-', $prenda->procesos->last()->estado_proceso ?? 'N/A')) }}">

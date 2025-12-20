@@ -25,6 +25,12 @@ class MaterialesOrdenInsumos extends Model
         'area',
         'observaciones',
         'asignado_a',
+        'fecha_orden',
+        'fecha_pedido',
+        'fecha_pago',
+        'fecha_llegada',
+        'fecha_despacho',
+        'recibido',
     ];
 
     /**

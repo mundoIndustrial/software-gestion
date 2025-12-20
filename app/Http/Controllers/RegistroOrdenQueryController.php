@@ -243,11 +243,7 @@ class RegistroOrdenQueryController extends Controller
     {
         // Buscar en PedidoProduccion por 'numero_pedido'
         $order = PedidoProduccion::with([
-            'asesora', 
-            'prendas',
-            'prendas.fotos',
-            'prendas.fotosLogo',
-            'prendas.fotosTela',
+            'asesora',
             'cotizacion.tipoCotizacion'
         ])->where('numero_pedido', $pedido)->firstOrFail();
 
@@ -255,6 +251,34 @@ class RegistroOrdenQueryController extends Controller
         $stats = $this->statsService->getOrderStats($pedido);
         $order->total_cantidad = $stats['total_cantidad'];
         $order->total_entregado = $stats['total_entregado'];
+
+        // ✅ CARGAR prendas CON relaciones ANTES de toArray()
+        // Hacemos un query directo para asegurar que las relaciones se cargan
+        $prendasConRelaciones = \App\Models\PrendaPedido::where('numero_pedido', $pedido)
+            ->with(['color', 'tela', 'tipoManga', 'tipoBroche', 'fotos', 'fotosLogo', 'fotosTela'])
+            ->orderBy('id', 'asc')
+            ->get();
+        
+        \Log::info('✅ [show] Prendas cargadas con relaciones', [
+            'pedido' => $pedido,
+            'total' => $prendasConRelaciones->count(),
+            'primera_prenda' => $prendasConRelaciones->first() ? [
+                'nombre' => $prendasConRelaciones->first()->nombre_prenda,
+                'color_loaded' => $prendasConRelaciones->first()->relationLoaded('color'),
+                'color_nombre' => $prendasConRelaciones->first()->color ? $prendasConRelaciones->first()->color->nombre : 'NULL',
+            ] : 'N/A',
+        ]);
+        
+        // Reemplazar prendas en la orden con las que tienen relaciones
+        $order->setRelation('prendas', $prendasConRelaciones);
+
+        // ✅ CONSTRUIR DESCRIPCIÓN MIENTRAS AÚN TENEMOS ACCESO A RELACIONES ELOQUENT
+        $descripcionPrendas = $this->buildDescripcionConTallas($order);
+        
+        \Log::info('✅ [show] Descripción construida', [
+            'longitud' => strlen($descripcionPrendas),
+            'primeras_lineas' => substr($descripcionPrendas, 0, 150),
+        ]);
 
         // Filtrar datos sensibles
         $orderArray = $order->toArray();
@@ -290,8 +314,8 @@ class RegistroOrdenQueryController extends Controller
             $orderArray['cliente_nombre'] = $orderArray['cliente'] ?? '';
         }
         
-        // Construir descripción con tallas POR PRENDA para el modal (como en el blade de asesores)
-        $orderArray['descripcion_prendas'] = $this->buildDescripcionConTallas($order);
+        // Agregar la descripción ya construida
+        $orderArray['descripcion_prendas'] = $descripcionPrendas;
         
         // Obtener prendas formateadas para el modal
         \Log::info('🔍 [getOrderDetails] Obteniendo prendas para pedido', [
@@ -300,14 +324,9 @@ class RegistroOrdenQueryController extends Controller
         ]);
         
         try {
-            // SIEMPRE cargar prendas con relaciones para generar descripción dinámica
-            // (sin importar si es cotización o no)
+            // Usar prendas YA cargadas con relaciones
             {
-                // Cargar prendas CON relaciones necesarias para descripción dinámica
-                $prendas = \App\Models\PrendaPedido::where('numero_pedido', $pedido)
-                    ->with(['color', 'tela', 'tipoManga', 'tipoBroche'])
-                    ->orderBy('id', 'asc')
-                    ->get();
+                $prendas = $order->prendas;
 
                 // Formatear prendas con todos los datos necesarios
                 $prendasFormato = [];
@@ -319,43 +338,22 @@ class RegistroOrdenQueryController extends Controller
                     $tipoMangaNombre = null;
                     $tipoBrocheNombre = null;
                     
-                    try {
-                        if ($prenda->color_id) {
-                            $color = \App\Models\ColorPrenda::find($prenda->color_id);
-                            $colorNombre = $color ? $color->nombre : null;
-                        }
-                    } catch (\Exception $e) {
-                        \Log::warning('Error obteniendo color', ['error' => $e->getMessage()]);
+                    // ✅ Usar las relaciones ya cargadas
+                    if ($prenda->color) {
+                        $colorNombre = $prenda->color->nombre;
                     }
                     
-                    try {
-                        if ($prenda->tela_id) {
-                            $tela = \App\Models\TelaPrenda::find($prenda->tela_id);
-                            if ($tela) {
-                                $telaNombre = $tela->nombre;
-                                $telaReferencia = $tela->referencia;
-                            }
-                        }
-                    } catch (\Exception $e) {
-                        \Log::warning('Error obteniendo tela', ['error' => $e->getMessage()]);
+                    if ($prenda->tela) {
+                        $telaNombre = $prenda->tela->nombre;
+                        $telaReferencia = $prenda->tela->referencia;
                     }
                     
-                    try {
-                        if ($prenda->tipo_manga_id) {
-                            $tipoManga = \App\Models\TipoManga::find($prenda->tipo_manga_id);
-                            $tipoMangaNombre = $tipoManga ? $tipoManga->nombre : null;
-                        }
-                    } catch (\Exception $e) {
-                        \Log::warning('Error obteniendo manga', ['error' => $e->getMessage()]);
+                    if ($prenda->tipoManga) {
+                        $tipoMangaNombre = $prenda->tipoManga->nombre;
                     }
                     
-                    try {
-                        if ($prenda->tipo_broche_id) {
-                            $tipoBroche = \App\Models\TipoBroche::find($prenda->tipo_broche_id);
-                            $tipoBrocheNombre = $tipoBroche ? $tipoBroche->nombre : null;
-                        }
-                    } catch (\Exception $e) {
-                        \Log::warning('Error obteniendo broche', ['error' => $e->getMessage()]);
+                    if ($prenda->tipoBroche) {
+                        $tipoBrocheNombre = $prenda->tipoBroche->nombre;
                     }
                     
                     $prendasFormato[] = [
@@ -806,6 +804,36 @@ class RegistroOrdenQueryController extends Controller
         $esReflectivo = false;
         if ($order->cotizacion && $order->cotizacion->tipoCotizacion) {
             $esReflectivo = ($order->cotizacion->tipoCotizacion->codigo === 'RF');
+        }
+        
+        // ✅ FALLBACK: Si descripción_prendas está vacía, generar dinámicamente desde las prendas
+        if (empty($descripcionBase) && $order->prendas && $order->prendas->count() > 0) {
+            \Log::info('🔄 [buildDescripcionConTallas] Generando descripción dinámicamente', [
+                'pedido' => $order->numero_pedido,
+                'total_prendas' => $order->prendas->count(),
+            ]);
+            
+            $descripciones = $order->prendas->map(function($prenda, $index) {
+                \Log::info('  🧥 [Prenda ' . ($index + 1) . '] Datos disponibles:', [
+                    'nombre' => $prenda->nombre_prenda,
+                    'color_id' => $prenda->color_id,
+                    'color_loaded' => $prenda->relationLoaded('color'),
+                    'color_nombre' => $prenda->color ? $prenda->color->nombre : 'NULL',
+                    'tela_id' => $prenda->tela_id,
+                    'tela_loaded' => $prenda->relationLoaded('tela'),
+                    'tela_nombre' => $prenda->tela ? $prenda->tela->nombre : 'NULL',
+                    'cantidad_talla' => is_array($prenda->cantidad_talla) ? count($prenda->cantidad_talla) . ' tallas' : 'NULL',
+                    'descripcion_variaciones_length' => strlen($prenda->descripcion_variaciones ?? ''),
+                ]);
+                return $prenda->generarDescripcionDetallada($index + 1);
+            })->toArray();
+            
+            $descripcionBase = implode("\n\n", $descripciones);
+            
+            \Log::info('✅ [buildDescripcionConTallas] Descripción generada', [
+                'longitud' => strlen($descripcionBase),
+                'primeras_lineas' => substr($descripcionBase, 0, 200),
+            ]);
         }
         
         if (!empty($descripcionBase) || ($esReflectivo && $order->prendas && $order->prendas->count() > 0)) {

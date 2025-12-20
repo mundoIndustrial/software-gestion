@@ -1,5 +1,0 @@
-echo "\n📋 TIPOS DE COTIZACIÓN DESPUÉS DEL SEEDER:\n";
-$tipos = \App\Models\TipoCotizacion::all();
-foreach ($tipos as $tipo) {
-    echo "ID: {$tipo->id}, Código: {$tipo->codigo}, Nombre: {$tipo->nombre}\n";
-}

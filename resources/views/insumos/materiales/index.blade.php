@@ -84,6 +84,31 @@
         overflow: visible !important;
     }
     
+    /* Asegurar que la columna de acciones sea visible */
+    td:last-child {
+        overflow: visible !important;
+        display: table-cell !important;
+        min-width: 200px !important;
+    }
+    
+    /* Asegurar que los botones sean visibles en la celda de acciones */
+    td:last-child > div {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0.75rem !important;
+        flex-wrap: wrap !important;
+        overflow: visible !important;
+    }
+    
+    td:last-child button {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
     /* Indicador de carga */
     .loading-overlay {
         position: fixed;
@@ -322,9 +347,9 @@
         </div>
     </div>
 
-    <div style="margin: 0; width: 100%; overflow: hidden;">
+    <div style="margin: 0; width: 100%; overflow: visible;">
         {{-- Tabla Principal de Órdenes --}}
-        <div class="bg-white" style="margin: 0; border-radius: 0; box-shadow: none; width: 100%; overflow-x: auto; padding: 0 0.5rem;">
+        <div class="bg-white" style="margin: 0; border-radius: 0; box-shadow: none; width: 100%; overflow-x: auto; overflow-y: visible; padding: 0 0.5rem;">
             <div style="width: 100%; margin: 0; padding: 0;">
                 <table class="w-full" style="font-size: 0.75em; width: 100%; margin: 0; padding: 0;">
                     <thead>
@@ -389,7 +414,7 @@
                                     </button>
                                 </div>
                             </th>
-                            <th class="text-center py-4 px-6 font-bold">Acciones</th>
+                            <th class="text-center py-4 px-6 font-bold whitespace-nowrap" style="min-width: 200px;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -442,8 +467,8 @@
                                         {{ $orden->fecha_de_creacion_de_orden ? \Carbon\Carbon::parse($orden->fecha_de_creacion_de_orden)->subHours(5)->format('d/m/Y') : 'N/A' }}
                                     </span>
                                 </td>
-                                <td class="py-4 px-6 text-center">
-                                    <div class="flex items-center justify-center gap-3">
+                                <td class="py-4 px-6 text-center" style="min-width: 250px; overflow: visible; background: white; position: relative; z-index: 5;">
+                                    <div class="flex items-center justify-center gap-3" style="display: flex !important; flex-wrap: wrap; overflow: visible;">
                                         {{-- Botón Ver (disponible para todos) --}}
                                         <button 
                                             class="btn-tooltip p-2 text-blue-600 hover:bg-blue-50 rounded transition"
@@ -1130,20 +1155,22 @@
                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" 
                     rows="6"
                     placeholder="Escribe las observaciones del insumo aquí..."
+                    onkeydown="if(event.ctrlKey && event.key === 'Enter') guardarObservaciones()"
                 ></textarea>
+                <p class="text-gray-500 text-xs mt-2">💡 Presiona <strong>Ctrl + Enter</strong> para guardar rápidamente</p>
             </div>
             <div class="flex gap-3 justify-end">
-                <button 
-                    onclick="cerrarModalObservaciones()" 
-                    class="px-6 py-2 bg-gray-400 text-white font-semibold rounded-lg hover:bg-gray-500 transition flex items-center gap-2"
-                >
-                    <i class="fas fa-times"></i> Cancelar
-                </button>
                 <button 
                     onclick="guardarObservaciones()" 
                     class="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition flex items-center gap-2"
                 >
                     <i class="fas fa-save"></i> Guardar
+                </button>
+                <button 
+                    onclick="cerrarModalObservaciones()" 
+                    class="px-6 py-2 bg-gray-400 text-white font-semibold rounded-lg hover:bg-gray-500 transition flex items-center gap-2"
+                >
+                    <i class="fas fa-times"></i> Cerrar
                 </button>
             </div>
         </div>
@@ -1754,6 +1781,20 @@
         .then(data => {
             if (data.success) {
                 showToast('Observaciones guardadas correctamente', 'success');
+                // Actualizar el input hidden para que se refleje en futuras aperturas
+                const inputObservaciones = document.getElementById(`observaciones_${materialId}`);
+                if (inputObservaciones) {
+                    inputObservaciones.value = observaciones;
+                }
+                // Recargar los datos del modal para asegurar sincronización
+                fetch(`/insumos/api/materiales/${pedido}`)
+                    .then(response => response.json())
+                    .then(fetchData => {
+                        if (fetchData.materiales) {
+                            llenarTablaInsumos(fetchData.materiales || []);
+                        }
+                    })
+                    .catch(err => console.error('Error recargando datos:', err));
             } else {
                 showToast('Error al guardar observaciones: ' + (data.message || ''), 'error');
             }

@@ -1,9 +1,0 @@
-$cotizacion = \App\Models\Cotizacion::with('tipoCotizacion')->find(49);
-if ($cotizacion) {
-    echo "Cotización 49 encontrada\n";
-    echo "Tipo Cotización ID: {$cotizacion->tipo_cotizacion_id}\n";
-    echo "Tipo Código: {$cotizacion->tipoCotizacion->codigo}\n";
-    echo "Tipo Nombre: {$cotizacion->tipoCotizacion->nombre}\n";
-} else {
-    echo "Cotización 49 NO encontrada\n";
-}

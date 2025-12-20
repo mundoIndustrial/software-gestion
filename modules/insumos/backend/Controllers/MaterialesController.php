@@ -112,6 +112,36 @@ class MaterialesController extends BaseController
     }
 
     /**
+     * Guardar observaciones de materiales (API)
+     */
+    public function guardarObservaciones(Request $request, $numeroPedido)
+    {
+        try {
+            $materiales = $request->input('materiales', []);
+            
+            if (empty($materiales)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay materiales para guardar',
+                ], 400);
+            }
+
+            // Guardar los materiales con sus observaciones
+            $this->materialesService->guardarMateriales($materiales);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Observaciones guardadas correctamente',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Obtener opciones de filtro (API)
      */
     public function obtenerFiltros($column)

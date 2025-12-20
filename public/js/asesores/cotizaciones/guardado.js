@@ -801,7 +801,7 @@ async function procederEnviarCotizacion(datos) {
                                     });
                                     
                                     if (foto instanceof File) {
-                                        formData.append(`prendas[${index}][telas][${telaIdx}][fotos][]`, foto);
+                                        formData.append(`productos_friendly[${index}][telas][${telaIdx}][fotos][]`, foto);
                                         console.log(`✅ Tela ${telaIdx} Foto ${fotoIdx + 1} agregada a FormData: ${foto.name}`);
                                     } else {
                                         console.error(`❌ Tela ${telaIdx} Foto ${fotoIdx + 1} NO ES File object:`, foto);

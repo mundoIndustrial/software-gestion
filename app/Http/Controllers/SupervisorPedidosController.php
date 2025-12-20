@@ -224,8 +224,12 @@ class SupervisorPedidosController extends Controller
      */
     public function descargarPDF($id)
     {
-        $orden = PedidoProduccion::with(['prendas', 'prendas.procesos'])
-                                 ->findOrFail($id);
+        $orden = PedidoProduccion::with([
+            'prendas' => function($q) {
+                $q->with(['color', 'tela', 'tipoManga', 'tipoBroche']);
+            },
+            'prendas.procesos'
+        ])->findOrFail($id);
 
         $pdf = Pdf::loadView('supervisor-pedidos.pdf', compact('orden'));
         
