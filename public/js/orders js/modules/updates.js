@@ -223,14 +223,27 @@ const UpdatesModule = {
         this._sendUpdate(`${this.baseUrl}/${orderId}`, { dia_de_entrega: valorAEnviar }, (data) => {
             if (data.success) {
                 console.log(`✅ Día de entrega actualizado`);
+                console.log(`📊 Datos recibidos del servidor:`, data);
                 
                 if (dropdown) {
-                    dropdown.classList.remove('updating');
+                    // Actualizar el valor del dropdown localmente
+                    dropdown.value = valorAEnviar || '';
+                    dropdown.classList.remove('updating', 'orange-highlight');
+                    console.log(`✅ Dropdown actualizado localmente: ${dropdown.value}`);
                 }
                 
-                const row = document.querySelector(`tr[data-numero-pedido="${orderId}"]`);
+                // Buscar la fila (puede ser tr o div.table-row)
+                let row = document.querySelector(`tr[data-numero-pedido="${orderId}"]`);
+                if (!row) {
+                    row = document.querySelector(`.table-row[data-orden-id="${orderId}"]`);
+                }
+                console.log(`🔍 Buscando fila para orden ${orderId}, encontrada:`, !!row);
+                
                 if (row) {
+                    console.log(`📋 Ejecutando executeRowUpdate para orden ${orderId}`);
                     RowManager.executeRowUpdate(row, data, orderId, valorAEnviar);
+                } else {
+                    console.warn(`⚠️ No se encontró fila para actualizar orden ${orderId}`);
                 }
             } else {
                 this._handleError(dropdown, oldDias, 'dia_de_entrega');

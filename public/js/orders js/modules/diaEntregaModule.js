@@ -74,6 +74,13 @@ const DiaEntregaModule = {
             return;
         }
         
+        // Si el valor está vacío (deseleccionado), enviar null para borrar
+        if (!value || value === '') {
+            console.log(`📅 Deseleccionando día de entrega para orden ${numeroOrden}`);
+            this._updateWithDebounce(numeroOrden, null);
+            return;
+        }
+        
         console.log(`📅 Cambio detectado en orden ${numeroOrden}: ${value} días`);
         
         // Validar valor
