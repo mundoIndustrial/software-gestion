@@ -558,7 +558,7 @@
                             $tipoDocumento = get_class($pedido) === 'App\Models\LogoPedido' ? 'L' : ($pedido->cotizacion?->tipoCotizacion?->codigo ?? '');
                             $esLogo = get_class($pedido) === 'App\Models\LogoPedido' ? '1' : '0';
                         @endphp
-                        <button class="btn-ver-dropdown" data-menu-id="menu-ver-{{ $numeroPedido }}" data-pedido="{{ $numeroPedido }}" data-tipo-cotizacion="{{ $tipoDocumento }}" data-es-logo="{{ $esLogo }}" title="Ver Opciones" style="
+                        <button class="btn-ver-dropdown" data-menu-id="menu-ver-{{ str_replace('#', '', $numeroPedido) }}" data-pedido="{{ str_replace('#', '', $numeroPedido) }}" data-tipo-cotizacion="{{ $tipoDocumento }}" data-es-logo="{{ $esLogo }}" title="Ver Opciones" style="
                             background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
                             color: white;
                             border: none;

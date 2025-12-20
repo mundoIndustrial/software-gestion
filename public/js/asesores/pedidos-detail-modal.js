@@ -10,18 +10,21 @@ console.log('📄 [MODAL] Cargando pedidos-detail-modal.js');
  * @param {number} numeroPedido - Número del pedido
  */
 window.verFactura = async function verFactura(numeroPedido) {
-    console.log('🔵 [MODAL] Abriendo modal de factura para pedido:', numeroPedido);
+    // Limpiar el número del pedido (remover # si existe)
+    const pedidoLimpio = numeroPedido.replace('#', '');
+    
+    console.log('🔵 [MODAL] Abriendo modal de factura para pedido:', pedidoLimpio);
     
     try {
         // ✅ HACER FETCH a la API para obtener datos del pedido
         // Intentar primero con /registros (para asesores), luego con /orders (para órdenes)
-        console.log('🔵 [MODAL] Haciendo fetch a /registros/' + numeroPedido);
-        let response = await fetch(`/registros/${numeroPedido}`);
+        console.log('🔵 [MODAL] Haciendo fetch a /registros/' + pedidoLimpio);
+        let response = await fetch(`/registros/${pedidoLimpio}`);
         
         // Si no encuentra en /registros, intentar con /orders
         if (!response.ok) {
-            console.log('🔵 [MODAL] No encontrado en /registros, intentando /orders/' + numeroPedido);
-            response = await fetch(`/orders/${numeroPedido}`);
+            console.log('🔵 [MODAL] No encontrado en /registros, intentando /orders/' + pedidoLimpio);
+            response = await fetch(`/orders/${pedidoLimpio}`);
         }
         
         if (!response.ok) {
@@ -70,18 +73,21 @@ window.verSeguimiento = function verSeguimiento(numeroPedido) {
  * @param {number} numeroPedido - Número del pedido
  */
 window.verFacturaLogo = async function verFacturaLogo(numeroPedido) {
-    console.log('🔴 [MODAL LOGO] Abriendo modal de bordados para pedido:', numeroPedido);
+    // Limpiar el número del pedido (remover # si existe)
+    const pedidoLimpio = numeroPedido.replace('#', '');
+    
+    console.log('🔴 [MODAL LOGO] Abriendo modal de bordados para pedido:', pedidoLimpio);
     console.log('🔴 [MODAL LOGO] Verificando si window.openOrderDetailModalLogo existe:', typeof window.openOrderDetailModalLogo);
     
     try {
         // ✅ HACER FETCH a la API para obtener datos del pedido
-        console.log('🔴 [MODAL LOGO] Haciendo fetch a /registros/' + numeroPedido);
-        let response = await fetch(`/registros/${numeroPedido}`);
+        console.log('🔴 [MODAL LOGO] Haciendo fetch a /registros/' + pedidoLimpio);
+        let response = await fetch(`/registros/${pedidoLimpio}`);
         
         // Si no encuentra en /registros, intentar con /orders
         if (!response.ok) {
-            console.log('🔴 [MODAL LOGO] No encontrado en /registros, intentando /orders/' + numeroPedido);
-            response = await fetch(`/orders/${numeroPedido}`);
+            console.log('🔴 [MODAL LOGO] No encontrado en /registros, intentando /orders/' + pedidoLimpio);
+            response = await fetch(`/orders/${pedidoLimpio}`);
         }
         
         if (!response.ok) {

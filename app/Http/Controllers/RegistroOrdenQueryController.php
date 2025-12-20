@@ -249,22 +249,80 @@ class RegistroOrdenQueryController extends Controller
             // Es un LogoPedido, devolverlo con toda su información
             \Log::info('📦 [RegistroOrdenQueryController::show] Encontrado LogoPedido', [
                 'numero_pedido' => $pedido,
+                'pedido_id' => $logoPedido->pedido_id,
+                'logo_cotizacion_id' => $logoPedido->logo_cotizacion_id,
             ]);
             
             $logoPedidoArray = $logoPedido->toArray();
             
-            // Agregar información de la fecha
-            if ($logoPedido->fecha_de_creacion_de_orden) {
-                $logoPedidoArray['fecha_de_creacion_de_orden'] = $logoPedido->fecha_de_creacion_de_orden;
+            // PASO 1: Intentar completar desde PedidoProduccion
+            if ($logoPedido->pedido_id) {
+                $pedidoProd = \App\Models\PedidoProduccion::with('asesora')->find($logoPedido->pedido_id);
+                
+                if ($pedidoProd) {
+                    \Log::info('📦 Encontrado PedidoProduccion, completando datos', [
+                        'cliente' => $pedidoProd->cliente,
+                        'asesora' => $pedidoProd->asesora?->name,
+                        'fecha' => $pedidoProd->fecha_de_creacion_de_orden
+                    ]);
+                    
+                    // Completar desde el pedido de producción
+                    if (!$logoPedidoArray['cliente'] || $logoPedidoArray['cliente'] === '-') {
+                        $logoPedidoArray['cliente'] = $pedidoProd->cliente ?? '-';
+                    }
+                    if (!$logoPedidoArray['asesora'] || $logoPedidoArray['asesora'] === '-') {
+                        $logoPedidoArray['asesora'] = $pedidoProd->asesora?->name ?? '-';
+                    }
+                    if (!$logoPedidoArray['fecha_de_creacion_de_orden']) {
+                        $logoPedidoArray['fecha_de_creacion_de_orden'] = $pedidoProd->fecha_de_creacion_de_orden;
+                    }
+                }
             }
             
-            // Asegurar que tengamos los campos necesarios para el modal
-            $logoPedidoArray['numero_pedido'] = $pedido;
-            $logoPedidoArray['cliente'] = $logoPedido->cliente ?? '-';
-            $logoPedidoArray['forma_de_pago'] = $logoPedido->forma_de_pago ?? '-';
+            // PASO 2: Si aún falta info, intentar desde LogoCotizacion
+            if ($logoPedido->logo_cotizacion_id && (!$logoPedidoArray['cliente'] || $logoPedidoArray['cliente'] === '-')) {
+                $logoCot = \App\Models\LogoCotizacion::with('cotizacion')->find($logoPedido->logo_cotizacion_id);
+                
+                if ($logoCot && $logoCot->cotizacion) {
+                    \Log::info('📦 Encontrado LogoCotizacion, completando datos', [
+                        'cliente' => $logoCot->cotizacion->cliente,
+                        'fecha' => $logoCot->cotizacion->fecha_de_creacion
+                    ]);
+                    
+                    if (!$logoPedidoArray['cliente'] || $logoPedidoArray['cliente'] === '-') {
+                        $logoPedidoArray['cliente'] = $logoCot->cotizacion->cliente ?? '-';
+                    }
+                    if (!$logoPedidoArray['fecha_de_creacion_de_orden']) {
+                        $logoPedidoArray['fecha_de_creacion_de_orden'] = $logoCot->cotizacion->fecha_de_creacion;
+                    }
+                }
+            }
+            
+            // PASO 3: Asegurar valores finales
+            $logoPedidoArray['numero_pedido'] = $logoPedido->numero_pedido ?? $pedido;
+            $logoPedidoArray['cliente'] = $logoPedidoArray['cliente'] ?: '-';
+            $logoPedidoArray['asesora'] = $logoPedidoArray['asesora'] ?: '-';
             $logoPedidoArray['descripcion'] = $logoPedido->descripcion ?? '';
+            $logoPedidoArray['fecha_de_creacion_de_orden'] = $logoPedidoArray['fecha_de_creacion_de_orden'] ?? null;
+            $logoPedidoArray['encargado_orden'] = $logoPedido->encargado_orden ?? '-';
+            $logoPedidoArray['forma_de_pago'] = $logoPedido->forma_de_pago ?? '-';
+            $logoPedidoArray['observaciones'] = $logoPedido->observaciones ?? '';
+            $logoPedidoArray['estado'] = $logoPedido->estado ?? '-';
+            $logoPedidoArray['area'] = $logoPedido->area ?? '-';
+            $logoPedidoArray['tecnicas'] = $logoPedido->tecnicas ?? [];
+            $logoPedidoArray['ubicaciones'] = $logoPedido->ubicaciones ?? [];
+            $logoPedidoArray['prendas'] = $logoPedido->prendas ?? [];
+            
+            // Campos de identificación
             $logoPedidoArray['es_cotizacion'] = false;
             $logoPedidoArray['es_logo_pedido'] = true;
+            
+            \Log::info('✅ [RegistroOrdenQueryController::show] LogoPedido finalizado', [
+                'cliente' => $logoPedidoArray['cliente'],
+                'asesora' => $logoPedidoArray['asesora'],
+                'descripcion' => $logoPedidoArray['descripcion'],
+                'fecha' => $logoPedidoArray['fecha_de_creacion_de_orden']
+            ]);
             
             return response()->json($logoPedidoArray);
         }

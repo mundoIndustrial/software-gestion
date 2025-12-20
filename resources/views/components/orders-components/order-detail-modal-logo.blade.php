@@ -17,7 +17,7 @@
             </div>
         </div>
         <div id="order-asesora" class="order-asesora">ASESORA: <span id="asesora-value"></span></div>
-        <div id="order-forma-pago" class="order-forma-pago">FORMA DE PAGO: <span id="forma-pago-value"></span></div>
+        <div id="order-forma-pago" class="order-forma-pago" style="display: none;">FORMA DE PAGO: <span id="forma-pago-value"></span></div>
         <div id="order-cliente" class="order-cliente">CLIENTE: <span id="cliente-value"></span></div>
         <div id="order-descripcion" class="order-descripcion" style="margin: 1rem 0;">
             <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem; font-size: 0.875rem;">DESCRIPCIÓN:</label>

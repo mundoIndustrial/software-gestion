@@ -603,6 +603,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Llenar los campos del modal de logo
         if (document.querySelector('#order-detail-modal-wrapper-logo')) {
             console.log('✅ [MODAL LOGO] Modal wrapper encontrado en DOM');
+            console.log('📦 [MODAL LOGO] Datos de orden completos:', orden);
+            
             // Fecha
             if (orden.fecha_de_creacion_de_orden) {
                 const fecha = new Date(orden.fecha_de_creacion_de_orden);
@@ -610,39 +612,82 @@ document.addEventListener('DOMContentLoaded', function() {
                 const monthBox = document.querySelector('#order-detail-modal-wrapper-logo .month-box');
                 const yearBox = document.querySelector('#order-detail-modal-wrapper-logo .year-box');
                 
-                if (dayBox) dayBox.textContent = String(fecha.getDate()).padStart(2, '0');
-                if (monthBox) monthBox.textContent = String(fecha.getMonth() + 1).padStart(2, '0');
-                if (yearBox) yearBox.textContent = fecha.getFullYear();
+                console.log('📅 [MODAL LOGO] Fecha:', {
+                    original: orden.fecha_de_creacion_de_orden,
+                    parsed: fecha,
+                    day: dayBox ? dayBox.textContent : 'no encontrado',
+                    month: monthBox ? monthBox.textContent : 'no encontrado',
+                    year: yearBox ? yearBox.textContent : 'no encontrado'
+                });
+                
+                if (dayBox) {
+                    dayBox.textContent = String(fecha.getDate()).padStart(2, '0');
+                    console.log('✅ Día establecido:', dayBox.textContent);
+                }
+                if (monthBox) {
+                    monthBox.textContent = String(fecha.getMonth() + 1).padStart(2, '0');
+                    console.log('✅ Mes establecido:', monthBox.textContent);
+                }
+                if (yearBox) {
+                    yearBox.textContent = fecha.getFullYear();
+                    console.log('✅ Año establecido:', yearBox.textContent);
+                }
+            } else {
+                console.warn('⚠️ [MODAL LOGO] No hay fecha_de_creacion_de_orden');
             }
             
             // Cliente
             const clienteSpan = document.querySelector('#order-detail-modal-wrapper-logo #cliente-value');
-            if (clienteSpan) clienteSpan.textContent = orden.cliente || '-';
+            console.log('👤 [MODAL LOGO] Cliente span encontrado:', !!clienteSpan, 'valor:', orden.cliente);
+            if (clienteSpan) {
+                clienteSpan.textContent = orden.cliente || '-';
+                console.log('✅ Cliente establecido:', clienteSpan.textContent);
+            }
             
             // Asesora
             const asesoraSpan = document.querySelector('#order-detail-modal-wrapper-logo #asesora-value');
-            if (asesoraSpan) asesoraSpan.textContent = orden.asesora || '-';
+            console.log('👩 [MODAL LOGO] Asesora span encontrado:', !!asesoraSpan, 'valor:', orden.asesora);
+            if (asesoraSpan) {
+                asesoraSpan.textContent = orden.asesora || '-';
+                console.log('✅ Asesora establecida:', asesoraSpan.textContent);
+            }
             
             // Forma de pago
             const formaPagoSpan = document.querySelector('#order-detail-modal-wrapper-logo #forma-pago-value');
-            if (formaPagoSpan) formaPagoSpan.textContent = orden.forma_de_pago || '-';
+            console.log('💳 [MODAL LOGO] Forma de pago span encontrado:', !!formaPagoSpan, 'valor:', orden.forma_de_pago);
+            if (formaPagoSpan) {
+                formaPagoSpan.textContent = orden.forma_de_pago || '-';
+                console.log('✅ Forma de pago establecida:', formaPagoSpan.textContent);
+            }
             
             // Número de orden
             const pedidoDiv = document.querySelector('#order-detail-modal-wrapper-logo #order-pedido');
-            if (pedidoDiv) pedidoDiv.textContent = `#${orden.numero_pedido}`;
+            console.log('🔢 [MODAL LOGO] Pedido div encontrado:', !!pedidoDiv, 'valor:', orden.numero_pedido);
+            if (pedidoDiv) {
+                pedidoDiv.textContent = `#${orden.numero_pedido}`;
+                console.log('✅ Número de pedido establecido:', pedidoDiv.textContent);
+            }
             
             // Encargado de orden
             const encargadoSpan = document.querySelector('#order-detail-modal-wrapper-logo #encargado-value');
-            if (encargadoSpan) encargadoSpan.textContent = orden.encargado_orden || '-';
+            console.log('👨‍💼 [MODAL LOGO] Encargado span encontrado:', !!encargadoSpan, 'valor:', orden.encargado_orden);
+            if (encargadoSpan) {
+                encargadoSpan.textContent = orden.encargado_orden || '-';
+                console.log('✅ Encargado establecido:', encargadoSpan.textContent);
+            }
             
             // Prendas entregadas
             const prendasSpan = document.querySelector('#order-detail-modal-wrapper-logo #prendas-entregadas-value');
-            if (prendasSpan && orden.prendas) {
-                prendasSpan.textContent = orden.prendas.length || 0;
+            console.log('👕 [MODAL LOGO] Prendas span encontrado:', !!prendasSpan, 'prendas:', orden.prendas);
+            if (prendasSpan) {
+                const cantidadPrendas = orden.prendas ? (Array.isArray(orden.prendas) ? orden.prendas.length : Object.keys(orden.prendas).length) : 0;
+                prendasSpan.textContent = cantidadPrendas;
+                console.log('✅ Prendas entregadas establecidas:', cantidadPrendas);
             }
             
             // Descripción
             const descripcionTextarea = document.querySelector('#order-detail-modal-wrapper-logo #descripcion-text');
+            console.log('📝 [MODAL LOGO] Descripción textarea encontrado:', !!descripcionTextarea, 'valor:', orden.descripcion);
             if (descripcionTextarea) {
                 // Si viene desde un LogoPedido, usar 'descripcion'
                 // Si viene desde PedidoProduccion con logo, usar 'descripcion' también
@@ -650,9 +695,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('✅ [MODAL LOGO] Descripción cargada:', orden.descripcion);
             }
             
-            console.log('✅ [MODAL LOGO] Datos del modal de logo llenados');
+            console.log('✅ [MODAL LOGO] Todos los datos del modal de logo llenados');
         } else {
             console.error('❌ [MODAL LOGO] Modal wrapper NO encontrado en DOM');
+            console.log('🔍 [MODAL LOGO] Buscando elemento #order-detail-modal-wrapper-logo');
+            const wrapper = document.getElementById('order-detail-modal-wrapper-logo');
+            console.log('   Resultado directo por ID:', !!wrapper);
         }
 
         console.log('📦 [MODAL LOGO] Llamando a openOrderDetailModalLogo()');
