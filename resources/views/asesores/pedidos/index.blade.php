@@ -580,7 +580,7 @@
                         </button>
                         @endif
 
-                        <!-- Botón Eliminar -->
+                        {{-- Botón Eliminar
                         <button onclick="confirmarEliminarPedido({{ $pedido->id }}, '{{ $pedido->numero_pedido }}')" title="Eliminar Pedido" style="
                             background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
                             color: white;
@@ -599,6 +599,7 @@
                         " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(239, 68, 68, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(239, 68, 68, 0.3)'">
                             <i class="fas fa-trash"></i>
                         </button>
+                        --}}
                     </div>
 
                     <!-- Estado -->

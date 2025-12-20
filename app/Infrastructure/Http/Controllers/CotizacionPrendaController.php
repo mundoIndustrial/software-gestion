@@ -419,11 +419,15 @@ class CotizacionPrendaController extends Controller
                     'telas' => $telasMultiples,
                 ]);
                 
+                // Mapeo de indice de tela => prenda_tela_cot_id
+                $telaCotIds = [];
+                
                 // PROCESAR TODAS LAS TELAS DE telas_multiples (CON O SIN FOTOS)
                 foreach ($telasMultiples as $telaInfo) {
                     // Buscar o crear color
                     $colorId = null;
                     if (!empty($telaInfo['color'])) {
+                        \Log::info('🎨 Buscando color', ['color_nombre' => $telaInfo['color']]);
                         $color = DB::table('colores_prenda')
                             ->where('nombre', $telaInfo['color'])
                             ->first();
@@ -438,12 +442,16 @@ class CotizacionPrendaController extends Controller
                             \Log::info('✅ Color creado', ['color' => $telaInfo['color'], 'id' => $colorId]);
                         } else {
                             $colorId = $color->id;
+                            \Log::info('✅ Color encontrado', ['color' => $telaInfo['color'], 'id' => $colorId]);
                         }
+                    } else {
+                        \Log::warning('⚠️ Color vacío en telaInfo', ['telaInfo' => $telaInfo]);
                     }
                     
                     // Buscar o crear tela
                     $telaId = null;
                     if (!empty($telaInfo['tela'])) {
+                        \Log::info('🧵 Buscando tela', ['tela_nombre' => $telaInfo['tela']]);
                         $tela = DB::table('telas_prenda')
                             ->where('nombre', trim($telaInfo['tela']))
                             ->first();
@@ -459,10 +467,21 @@ class CotizacionPrendaController extends Controller
                             \Log::info('✅ Tela creada', ['tela' => $telaInfo['tela'], 'id' => $telaId]);
                         } else {
                             $telaId = $tela->id;
+                            \Log::info('✅ Tela encontrada', ['tela' => $telaInfo['tela'], 'id' => $telaId]);
                         }
+                    } else {
+                        \Log::warning('⚠️ Tela vacía en telaInfo', ['telaInfo' => $telaInfo]);
                     }
 
                     // GUARDAR REGISTRO EN prenda_telas_cot
+                    \Log::info('💾 Intentando guardar en prenda_telas_cot', [
+                        'colorId' => $colorId,
+                        'telaId' => $telaId,
+                        'variante' => $variante ? $variante->id : null,
+                        'prenda_id' => $prenda->id,
+                        'condicion_cumplida' => ($colorId && $telaId && $variante) ? 'SI' : 'NO',
+                    ]);
+                    
                     if ($colorId && $telaId && $variante) {
                         // Verificar si ya existe
                         $existente = DB::table('prenda_telas_cot')
@@ -482,6 +501,12 @@ class CotizacionPrendaController extends Controller
                                 'updated_at' => now(),
                             ]);
                             
+                            // Guardar el ID en el mapeo
+                            $telaIndex = $telaInfo['indice'] ?? null;
+                            if ($telaIndex !== null) {
+                                $telaCotIds[$telaIndex] = $prendaTelaCotId;
+                            }
+                            
                             \Log::info('✅ Registro guardado en prenda_telas_cot (desde telas_multiples)', [
                                 'prenda_telas_cot_id' => $prendaTelaCotId,
                                 'prenda_id' => $prenda->id,
@@ -491,16 +516,39 @@ class CotizacionPrendaController extends Controller
                                 'color' => $telaInfo['color'] ?? '',
                                 'tela' => $telaInfo['tela'] ?? '',
                                 'referencia' => $telaInfo['referencia'] ?? '',
+                                'indice' => $telaIndex,
                             ]);
                         } else {
+                            // Guardar el ID existente en el mapeo
+                            $telaIndex = $telaInfo['indice'] ?? null;
+                            if ($telaIndex !== null) {
+                                $telaCotIds[$telaIndex] = $existente->id;
+                            }
+                            
                             \Log::info('ℹ️ Registro ya existe en prenda_telas_cot', [
                                 'prenda_id' => $prenda->id,
+                                'prenda_tela_cot_id' => $existente->id,
                                 'color' => $telaInfo['color'] ?? '',
                                 'tela' => $telaInfo['tela'] ?? '',
+                                'indice' => $telaIndex,
                             ]);
                         }
+                    } else {
+                        \Log::error('❌ NO se puede guardar en prenda_telas_cot - falta algún dato', [
+                            'colorId' => $colorId,
+                            'telaId' => $telaId,
+                            'variante_existe' => $variante ? 'SI' : 'NO',
+                            'prenda_id' => $prenda->id,
+                            'telaInfo' => $telaInfo,
+                        ]);
                     }
                 }
+                
+                \Log::info('📊 Resumen después de procesar telas_multiples', [
+                    'prenda_id' => $prenda->id,
+                    'telaCotIds_mapeados' => $telaCotIds,
+                    'cantidad_mapeos' => count($telaCotIds),
+                ]);
                 
                 foreach ($prendaFiles['telas'] as $telaIndex => $telaData) {
                     if (isset($telaData['fotos']) && is_array($telaData['fotos'])) {
@@ -508,6 +556,7 @@ class CotizacionPrendaController extends Controller
                             'prenda_index' => $prendaIndex,
                             'tela_index' => $telaIndex,
                             'cantidad_archivos' => count($telaData['fotos']),
+                            'telaCotIds_disponibles' => $telaCotIds,
                         ]);
 
                         // Obtener color y tela del JSON telas_multiples
@@ -601,12 +650,21 @@ class CotizacionPrendaController extends Controller
                                         'nombre_archivo' => $archivoFoto->getClientOriginalName(),
                                     ]);
 
-                                    // Guardar en tabla prenda_tela_fotos_cot con color_id y tela_id
+                                    // Obtener prenda_tela_cot_id del mapeo
+                                    $prendaTelaCotId = $telaCotIds[$telaIndex] ?? null;
+                                    
+                                    \Log::info('💾 Guardando foto en prenda_tela_fotos_cot', [
+                                        'prenda_id' => $prenda->id,
+                                        'tela_index' => $telaIndex,
+                                        'prenda_tela_cot_id' => $prendaTelaCotId,
+                                        'foto_orden' => $fotoIndex + 1,
+                                        'ruta' => $rutaUrl,
+                                    ]);
+                                    
+                                    // Guardar en tabla prenda_tela_fotos_cot con prenda_tela_cot_id
                                     DB::table('prenda_tela_fotos_cot')->insert([
                                         'prenda_cot_id' => $prenda->id,
-                                        'color_id' => $colorId,
-                                        'tela_id' => $telaId,
-                                        'referencia' => $telaInfo['referencia'] ?? '',
+                                        'prenda_tela_cot_id' => $prendaTelaCotId,
                                         'ruta_original' => $rutaUrl,
                                         'ruta_webp' => null,
                                         'ruta_miniatura' => null,
@@ -618,11 +676,14 @@ class CotizacionPrendaController extends Controller
                                         'updated_at' => now(),
                                     ]);
 
-                                    \Log::info('✅ Foto de tela guardada en BD', [
+                                    \Log::info('✅ Foto de tela guardada en prenda_tela_fotos_cot', [
                                         'prenda_id' => $prenda->id,
-                                        'color_id' => $colorId,
-                                        'tela_id' => $telaId,
+                                        'prenda_tela_cot_id' => $prendaTelaCotId,
+                                        'color_id' => $colorId ?? 'N/A',
+                                        'tela_id' => $telaId ?? 'N/A',
                                         'referencia' => $telaInfo['referencia'] ?? '',
+                                        'ruta' => $rutaUrl,
+                                        'orden' => $fotoIndex + 1,
                                     ]);
                                 } catch (\Exception $e) {
                                     \Log::error('❌ Error guardando foto de tela', [

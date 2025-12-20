@@ -13,6 +13,8 @@ class PrendaTelaFotoCot extends Model
 
     protected $fillable = [
         'prenda_cot_id',
+        'prenda_tela_cot_id',
+        'tela_index',
         'ruta_original',
         'ruta_webp',
         'ruta_miniatura',
@@ -24,6 +26,8 @@ class PrendaTelaFotoCot extends Model
 
     protected $casts = [
         'prenda_cot_id' => 'integer',
+        'prenda_tela_cot_id' => 'integer',
+        'tela_index' => 'integer',
         'orden' => 'integer',
         'ancho' => 'integer',
         'alto' => 'integer',

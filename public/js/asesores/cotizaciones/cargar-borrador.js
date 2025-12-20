@@ -8,6 +8,20 @@ function cargarBorrador(cotizacion) {
     
     console.log('📂 Cargando borrador:', cotizacion);
     
+    // 🧹 LIMPIAR MEMORIA DE FOTOS ANTES DE CARGAR PARA EVITAR DUPLICADOS
+    if (window.fotosSeleccionadas) {
+        window.fotosSeleccionadas = {};
+        console.log('🧹 window.fotosSeleccionadas limpiado antes de cargar');
+    }
+    if (window.telasSeleccionadas) {
+        window.telasSeleccionadas = {};
+        console.log('🧹 window.telasSeleccionadas limpiado antes de cargar');
+    }
+    if (window.fotosEliminadasServidor) {
+        window.fotosEliminadasServidor = { prendas: [], telas: [] };
+        console.log('🧹 window.fotosEliminadasServidor limpiado antes de cargar');
+    }
+    
     // Guardar ID de cotización en variable global para usarlo en funciones de foto
     window.cotizacionIdActual = cotizacion.id;
     
@@ -420,7 +434,19 @@ function cargarBorrador(cotizacion) {
                                 }
                             }
                             
-                            // Referencia
+                        // Color primera tela
+                            if (primeraTela.color) {
+                                const colorInput = productoActual.querySelector('input[name*="[color_id]"]');
+                                if (colorInput) {
+                                    colorInput.value = primeraTela.color;
+                                    colorInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                    colorInput.dispatchEvent(new Event('change', { bubbles: true }));
+                                    colorInput.dispatchEvent(new Event('blur', { bubbles: true }));
+                                    console.log('✅ Color primera tela cargado:', primeraTela.color);
+                                }
+                            }
+                            
+                            // Referencia primera tela
                             if (primeraTela.referencia) {
                                 const refInput = productoActual.querySelector('.referencia-input');
                                 if (refInput) {
@@ -430,6 +456,94 @@ function cargarBorrador(cotizacion) {
                                 } else {
                                     console.log('⚠️ Selector .referencia-input no encontrado');
                                 }
+                            }
+                            
+                            // CREAR FILAS ADICIONALES PARA TELAS 2, 3, etc.
+                            if (variantes.telas_multiples.length > 1) {
+                                console.log('🧵 Creando', variantes.telas_multiples.length - 1, 'filas adicionales de telas');
+                                
+                                setTimeout(() => {
+                                    const btnAgregarTela = productoActual.querySelector('.btn-agregar-tela');
+                                    
+                                    // Usar función recursiva para crear filas secuencialmente
+                                    const crearFilaTela = (index) => {
+                                        if (index >= variantes.telas_multiples.length) {
+                                            console.log('✅ Todas las filas de telas creadas');
+                                            return;
+                                        }
+                                        
+                                        const telaData = variantes.telas_multiples[index];
+                                        
+                                        // Hacer clic en "Agregar Tela"
+                                        if (btnAgregarTela) {
+                                            btnAgregarTela.click();
+                                            
+                                            // Esperar que se cree la fila y llenar datos
+                                            setTimeout(() => {
+                                                // Buscar todas las filas visibles de telas en este producto
+                                                const todasLasFilas = Array.from(productoActual.querySelectorAll('table tbody tr')).filter(tr => {
+                                                    // Filtrar solo las filas que tienen inputs de tela
+                                                    return tr.querySelector('input[name*="[tela_id]"]') !== null;
+                                                });
+                                                
+                                                console.log('🔍 Total de filas de telas encontradas:', todasLasFilas.length);
+                                                const nuevaFila = todasLasFilas[index];
+                                                
+                                                if (nuevaFila) {
+                                                    console.log('🔍 Llenando fila', index, 'con:', telaData);
+                                                    
+                                                    // Color
+                                                    if (telaData.color) {
+                                                        const colorInput = nuevaFila.querySelector('.color-input, input[name*="[color_id]"]');
+                                                        if (colorInput) {
+                                                            colorInput.value = telaData.color;
+                                                            colorInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                                            colorInput.dispatchEvent(new Event('change', { bubbles: true }));
+                                                            colorInput.dispatchEvent(new Event('blur', { bubbles: true }));
+                                                            console.log('   ✓ Color asignado:', telaData.color, 'Clase:', colorInput.className);
+                                                        } else {
+                                                            console.log('   ⚠️ Color input NO encontrado en fila', index);
+                                                        }
+                                                    }
+                                                    
+                                                    // Tela
+                                                    if (telaData.tela) {
+                                                        const telaInput = nuevaFila.querySelector('.tela-input, input[name*="[tela_id]"]');
+                                                        if (telaInput) {
+                                                            telaInput.value = telaData.tela;
+                                                            telaInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                                            telaInput.dispatchEvent(new Event('change', { bubbles: true }));
+                                                            telaInput.dispatchEvent(new Event('blur', { bubbles: true }));
+                                                            console.log('   ✓ Tela asignada:', telaData.tela, 'Clase:', telaInput.className);
+                                                        } else {
+                                                            console.log('   ⚠️ Tela input NO encontrado en fila', index);
+                                                        }
+                                                    }
+                                                    
+                                                    // Referencia
+                                                    if (telaData.referencia) {
+                                                        const refInput = nuevaFila.querySelector('.referencia-input, input[name*="[referencia]"]');
+                                                        if (refInput) {
+                                                            refInput.value = telaData.referencia;
+                                                            refInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                                            console.log('   ✓ Referencia asignada:', telaData.referencia);
+                                                        }
+                                                    }
+                                                    
+                                                    console.log('✅ Tela', index + 1, 'cargada:', telaData.color, telaData.tela, telaData.referencia);
+                                                } else {
+                                                    console.log('⚠️ Fila', index, 'no encontrada');
+                                                }
+                                                
+                                                // Crear siguiente fila
+                                                crearFilaTela(index + 1);
+                                            }, 300);
+                                        }
+                                    };
+                                    
+                                    // Iniciar desde la fila 1 (la 0 ya existe)
+                                    crearFilaTela(1);
+                                }, 400);
                             }
                         } else {
                             console.log('⚠️ telas_multiples no disponible o vacío en variantes');
@@ -674,54 +788,76 @@ function cargarBorrador(cotizacion) {
                         }, 500);
                     }
                     
-                    // Cargar fotos de tela
+                    // Cargar fotos de tela CON DISTRIBUCIÓN POR ÍNDICE
                     if (prenda.tela_fotos && Array.isArray(prenda.tela_fotos) && prenda.tela_fotos.length > 0) {
                         console.log('🧵 Cargando', prenda.tela_fotos.length, 'fotos de telas');
                         
+                        // Delay mayor para esperar a que se creen todas las filas de telas
                         setTimeout(() => {
-                            const telasContainer = productoActual.querySelector('.foto-tela-preview');
-                            if (telasContainer) {
-                                telasContainer.innerHTML = '';
+                            // Agrupar fotos por tela_index
+                            const fotosPorTela = {};
+                            prenda.tela_fotos.forEach((fotoData) => {
+                                const telaIdx = parseInt(fotoData.tela_index) || 0;
+                                if (!fotosPorTela[telaIdx]) {
+                                    fotosPorTela[telaIdx] = [];
+                                }
+                                fotosPorTela[telaIdx].push(fotoData);
+                            });
+                            
+                            console.log('🧵 Fotos agrupadas por tela:', fotosPorTela);
+                            
+                            // Buscar todas las filas de telas que tengan input de tela_id
+                            const filasTabla = Array.from(productoActual.querySelectorAll('table tbody tr')).filter(tr => {
+                                return tr.querySelector('input[name*="[tela_id]"]') !== null;
+                            });
+                            console.log('🧵 Filas de telas encontradas:', filasTabla.length);
+                            
+                            // Distribuir fotos a cada fila según su índice
+                            filasTabla.forEach((fila, filaIdx) => {
+                                const fotosContainer = fila.querySelector('.foto-tela-preview');
                                 
-                                prenda.tela_fotos.forEach((foto, idx) => {
-                                    const fotoDiv = document.createElement('div');
-                                    fotoDiv.style.cssText = 'position: relative; border-radius: 6px; overflow: hidden; background: #f0f0f0;';
+                                if (fotosContainer && fotosPorTela[filaIdx]) {
+                                    fotosContainer.innerHTML = ''; // Limpiar contenedor
                                     
-                                    const rutaFoto = foto.ruta_webp || foto.ruta_original || foto.url;
-                                    let urlFoto = rutaFoto;
-                                    if (rutaFoto.startsWith('http')) {
-                                        urlFoto = rutaFoto;
-                                    } else if (!rutaFoto.startsWith('/storage')) {
-                                        urlFoto = '/storage/' + (rutaFoto.startsWith('/') ? rutaFoto.substring(1) : rutaFoto);
-                                    }
-                                    
-                                    const btnBorrar = foto.id 
-                                        ? `<button type="button" onclick="borrarImagenTela(${foto.id}, this)" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 14px;" title="Eliminar imagen de tela">✕</button>`
-                                        : `<button type="button" onclick="this.closest('div').remove()" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 14px;" title="Eliminar imagen de tela">✕</button>`;
-                                    
-                                    fotoDiv.innerHTML = `
-                                        <img src="${urlFoto}" style="width: 100%; height: 100%; object-fit: cover;" alt="Foto tela ${idx + 1}" data-foto-id="${foto.id || ''}">
-                                        ${btnBorrar}
-                                    `;
-                                    
-                                    telasContainer.appendChild(fotoDiv);
-                                    
-                                    if (foto.id && window.imagenesEnMemoria && window.imagenesEnMemoria.telaConIndice) {
-                                        window.imagenesEnMemoria.telaConIndice.push({
-                                            prendaIndex: prendaIndexActual,
-                                            file: urlFoto,  // Ruta de la imagen guardada
-                                            esGuardada: true,
-                                            fotoId: foto.id
-                                        });
-                                        console.log('✅ Foto de tela agregada a imagenesEnMemoria ID:', foto.id, 'Index:', prendaIndexActual);
-                                    }
-                                    
-                                    console.log('✅ Foto de tela cargada:', urlFoto, 'ID:', foto.id);
-                                });
-                            } else {
-                                console.log('⚠️ Contenedor .foto-tela-preview no encontrado');
-                            }
-                        }, 500);
+                                    fotosPorTela[filaIdx].forEach((foto, fotoIdx) => {
+                                        const fotoDiv = document.createElement('div');
+                                        fotoDiv.style.cssText = 'position: relative; border-radius: 6px; overflow: hidden; background: #f0f0f0;';
+                                        
+                                        const rutaFoto = foto.ruta_webp || foto.ruta_original || foto.url;
+                                        let urlFoto = rutaFoto;
+                                        if (rutaFoto.startsWith('http')) {
+                                            urlFoto = rutaFoto;
+                                        } else if (!rutaFoto.startsWith('/storage')) {
+                                            urlFoto = '/storage/' + (rutaFoto.startsWith('/') ? rutaFoto.substring(1) : rutaFoto);
+                                        }
+                                        
+                                        const btnBorrar = foto.id 
+                                            ? `<button type="button" onclick="borrarImagenTela(${foto.id}, this)" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 14px;" title="Eliminar imagen de tela">✕</button>`
+                                            : `<button type="button" onclick="this.closest('div').remove()" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; font-size: 14px;" title="Eliminar imagen de tela">✕</button>`;
+                                        
+                                        fotoDiv.innerHTML = `
+                                            <img src="${urlFoto}" style="width: 100%; height: 100%; object-fit: cover;" alt="Foto tela ${fotoIdx + 1}" data-foto-id="${foto.id || ''}">
+                                            ${btnBorrar}
+                                        `;
+                                        
+                                        fotosContainer.appendChild(fotoDiv);
+                                        
+                                        if (foto.id && window.imagenesEnMemoria && window.imagenesEnMemoria.telaConIndice) {
+                                            window.imagenesEnMemoria.telaConIndice.push({
+                                                prendaIndex: prendaIndexActual,
+                                                telaIndex: filaIdx,
+                                                file: urlFoto,
+                                                esGuardada: true,
+                                                fotoId: foto.id
+                                            });
+                                            console.log('✅ Foto de tela agregada a imagenesEnMemoria ID:', foto.id, 'Tela Index:', filaIdx, 'Prenda Index:', prendaIndexActual);
+                                        }
+                                        
+                                        console.log('✅ Foto de tela cargada en fila', filaIdx, ':', urlFoto, 'ID:', foto.id);
+                                    });
+                                }
+                            });
+                        }, 1500); // Delay de 1500ms para esperar creación secuencial de todas las filas
                     }
             };
             
@@ -945,7 +1081,7 @@ function cargarBorrador(cotizacion) {
                         console.log(`📸 No hay fotos de prenda para cargar (fotos: ${prenda.fotos ? prenda.fotos.length : 0})`);
                     }
                     
-                    // Cargar fotos de telas (desde tela_fotos)
+                    // Cargar fotos de telas (desde tela_fotos) - DISTRIBUIDAS POR TELA_INDEX
                     const fotoTelaPreview = card.querySelector('.foto-tela-preview');
                     console.log(`🧵 DEBUG Tela Preview:`, {
                         encontrado: !!fotoTelaPreview,
@@ -954,47 +1090,79 @@ function cargarBorrador(cotizacion) {
                         tela_fotos_es_array: Array.isArray(prenda.tela_fotos),
                         tela_fotos_count: prenda.tela_fotos ? (Array.isArray(prenda.tela_fotos) ? prenda.tela_fotos.length : 'no es array') : 0
                     });
-                    if (fotoTelaPreview && prenda.tela_fotos && Array.isArray(prenda.tela_fotos)) {
-                        console.log(`🧵 Cargando ${prenda.tela_fotos.length} fotos de tela en preview`);
-                        prenda.tela_fotos.forEach((fotoData, fotoIdx) => {
-                            // Extraer ruta correctamente
-                            let rutaFoto = '';
-                            if (typeof fotoData === 'string') {
-                                rutaFoto = fotoData;
-                            } else if (fotoData.ruta_webp) {
-                                rutaFoto = fotoData.ruta_webp;
-                            } else if (fotoData.ruta_original) {
-                                rutaFoto = fotoData.ruta_original;
-                            } else if (fotoData.ruta) {
-                                rutaFoto = fotoData.ruta;
-                            } else if (fotoData.nombre) {
-                                rutaFoto = fotoData.nombre;
-                            }
-                            
-                            // Construir URL correctamente
-                            let srcUrl = '';
-                            if (rutaFoto) {
-                                if (rutaFoto.startsWith('/storage/')) {
-                                    srcUrl = rutaFoto;
-                                } else if (rutaFoto.startsWith('http')) {
-                                    srcUrl = rutaFoto;
-                                } else {
-                                    srcUrl = `/storage/${rutaFoto}`;
+                    
+                    if (prenda.tela_fotos && Array.isArray(prenda.tela_fotos) && prenda.tela_fotos.length > 0) {
+                        console.log(`🧵 Cargando ${prenda.tela_fotos.length} fotos de tela en sus respectivas filas`);
+                        
+                        // Esperar a que las filas de telas estén renderizadas
+                        setTimeout(() => {
+                            // Agrupar fotos por tela_index
+                            const fotosPorTela = {};
+                            prenda.tela_fotos.forEach((fotoData) => {
+                                const telaIdx = fotoData.tela_index !== undefined && fotoData.tela_index !== null 
+                                    ? parseInt(fotoData.tela_index) 
+                                    : 0; // Default a 0 si no tiene tela_index
+                                
+                                if (!fotosPorTela[telaIdx]) {
+                                    fotosPorTela[telaIdx] = [];
                                 }
-                            }
+                                fotosPorTela[telaIdx].push(fotoData);
+                            });
                             
-                            const img = document.createElement('img');
-                            img.src = srcUrl;
-                            img.style.cssText = 'width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;';
-                            img.alt = 'Foto de tela';
-                            img.title = 'Haz clic para eliminar';
-                            img.dataset.ruta = srcUrl;
-                            img.onclick = function() {
-                                eliminarFotoLogoInmediatamente(srcUrl, window.cotizacionIdActual);
-                            };
-                            fotoTelaPreview.appendChild(img);
-                            console.log(`✅ Foto de tela ${fotoIdx + 1} cargada:`, srcUrl);
-                        });
+                            console.log('🧵 Fotos agrupadas por tela:', fotosPorTela);
+                            
+                            // Obtener todas las filas de telas
+                            const filasTabla = card.querySelectorAll('tbody[id^="tabla-telas-"] tr');
+                            console.log(`🧵 Filas de telas encontradas: ${filasTabla.length}`);
+                            
+                            // Para cada fila de tela, agregar sus fotos correspondientes
+                            filasTabla.forEach((fila, filaIdx) => {
+                                const fotosContainer = fila.querySelector('.foto-tela-preview');
+                                if (fotosContainer && fotosPorTela[filaIdx]) {
+                                    fotosContainer.innerHTML = ''; // Limpiar
+                                    
+                                    fotosPorTela[filaIdx].forEach((fotoData, fotoIdx) => {
+                                        // Extraer ruta correctamente
+                                        let rutaFoto = '';
+                                        if (typeof fotoData === 'string') {
+                                            rutaFoto = fotoData;
+                                        } else if (fotoData.ruta_webp) {
+                                            rutaFoto = fotoData.ruta_webp;
+                                        } else if (fotoData.ruta_original) {
+                                            rutaFoto = fotoData.ruta_original;
+                                        } else if (fotoData.ruta) {
+                                            rutaFoto = fotoData.ruta;
+                                        } else if (fotoData.nombre) {
+                                            rutaFoto = fotoData.nombre;
+                                        }
+                                        
+                                        // Construir URL correctamente
+                                        let srcUrl = '';
+                                        if (rutaFoto) {
+                                            if (rutaFoto.startsWith('/storage/')) {
+                                                srcUrl = rutaFoto;
+                                            } else if (rutaFoto.startsWith('http')) {
+                                                srcUrl = rutaFoto;
+                                            } else {
+                                                srcUrl = `/storage/${rutaFoto}`;
+                                            }
+                                        }
+                                        
+                                        const img = document.createElement('img');
+                                        img.src = srcUrl;
+                                        img.style.cssText = 'width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;';
+                                        img.alt = 'Foto de tela';
+                                        img.title = 'Haz clic para eliminar';
+                                        img.dataset.ruta = srcUrl;
+                                        img.onclick = function() {
+                                            eliminarFotoLogoInmediatamente(srcUrl, window.cotizacionIdActual);
+                                        };
+                                        fotosContainer.appendChild(img);
+                                        console.log(`✅ Foto de tela ${fotoIdx + 1} cargada en fila ${filaIdx}:`, srcUrl);
+                                    });
+                                }
+                            });
+                        }, 500); // Esperar a que las filas de telas se rendericen
                     }
                 }
             }, 1000 + (prendaIdx * 200));

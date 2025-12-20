@@ -52,12 +52,18 @@ class CrearPedidoProduccionJob
             // ✅ ENRIQUECER PRENDAS DEL FRONTEND CON IDs FALTANTES
             $prendasEnriquecidas = $enriquecerService->enriquecerPrendas($this->prendas);
             
-            \Log::info('🔍 [CrearPedidoProduccionJob] Prendas enriquecidas', [
+            \Log::info('🔍 [CrearPedidoProduccionJob] Prendas enriquecidas - DETALLE COMPLETO', [
                 'total_prendas' => count($prendasEnriquecidas),
+                'prendas_completas' => $prendasEnriquecidas,
+            ]);
+            
+            \Log::info('🔍 [CrearPedidoProduccionJob] Primera prenda - análisis de telas', [
                 'primera_prenda_tela_id' => $prendasEnriquecidas[0]['tela_id'] ?? null,
                 'primera_prenda_color_id' => $prendasEnriquecidas[0]['color_id'] ?? null,
-                'primera_prenda_tipo_manga_id' => $prendasEnriquecidas[0]['tipo_manga_id'] ?? null,
-                'primera_prenda_tipo_broche_id' => $prendasEnriquecidas[0]['tipo_broche_id'] ?? null,
+                'primera_prenda_telas' => $prendasEnriquecidas[0]['telas'] ?? null,
+                'primera_prenda_fotos' => count($prendasEnriquecidas[0]['fotos'] ?? []),
+                'primera_prenda_tiene_telas_array' => isset($prendasEnriquecidas[0]['telas']),
+                'primera_prenda_cantidad_telas' => isset($prendasEnriquecidas[0]['telas']) ? count($prendasEnriquecidas[0]['telas']) : 0,
             ]);
 
             // Obtener y incrementar número de pedido de forma segura
@@ -142,12 +148,13 @@ class CrearPedidoProduccionJob
             // ✅ USAR PRENDAS ENRIQUECIDAS CON IDs CORRECTOS
             // Guardar prendas en tablas normalizadas (DDD)
             if (!empty($prendasEnriquecidas)) {
-                \Log::info('🟢 [CrearPedidoProduccionJob] Guardando prendas en pedido', [
+                \Log::info('🟢 [CrearPedidoProduccionJob] Guardando prendas en pedido - ANÁLISIS ANTES DE GUARDAR', [
                     'total_prendas' => count($prendasEnriquecidas),
                     'primera_prenda_tela_id' => $prendasEnriquecidas[0]['tela_id'] ?? null,
                     'primera_prenda_color_id' => $prendasEnriquecidas[0]['color_id'] ?? null,
                     'primera_prenda_fotos' => count($prendasEnriquecidas[0]['fotos'] ?? []),
-                    'primera_prenda_telas' => count($prendasEnriquecidas[0]['telas'] ?? []),
+                    'primera_prenda_telas' => $prendasEnriquecidas[0]['telas'] ?? [],
+                    'primera_prenda_cantidad_telas' => isset($prendasEnriquecidas[0]['telas']) ? count($prendasEnriquecidas[0]['telas']) : 0,
                 ]);
                 $prendaService->guardarPrendasEnPedido($pedido, $prendasEnriquecidas);
                 \Log::info('✅ [CrearPedidoProduccionJob] Prendas guardadas exitosamente');

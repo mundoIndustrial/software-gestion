@@ -268,6 +268,20 @@ function limpiarFormularioCompleto() {
             console.log('✓ Contenedor de productos limpiado');
         }
         
+        // 3.5. Limpiar memoria de fotos seleccionadas
+        if (window.fotosSeleccionadas) {
+            window.fotosSeleccionadas = {};
+            console.log('✓ window.fotosSeleccionadas limpiado');
+        }
+        if (window.telasSeleccionadas) {
+            window.telasSeleccionadas = {};
+            console.log('✓ window.telasSeleccionadas limpiado');
+        }
+        if (window.fotosEliminadasServidor) {
+            window.fotosEliminadasServidor = { prendas: [], telas: [] };
+            console.log('✓ window.fotosEliminadasServidor limpiado');
+        }
+        
         // 4. Limpiar secciones de ubicación
         const seccionesContainer = document.getElementById('secciones_agregadas');
         if (seccionesContainer) {

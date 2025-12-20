@@ -296,26 +296,6 @@ class PedidoProduccionController extends Controller
                 'numero_pedido' => $pedido->numero_pedido,
             ]);
 
-            // ✅ GUARDAR LAS FOTOS SELECCIONADAS POR EL USUARIO
-            if (!empty($validated['prendas'])) {
-                try {
-                    \Log::info('📸 [PedidoProduccionController] Guardando fotos seleccionadas', [
-                        'numero_pedido' => $pedido->numero_pedido,
-                        'total_prendas' => count($validated['prendas']),
-                    ]);
-
-                    // Preparar datos de fotos por prenda
-                    $fotosData = [];
-                    $telasData = [];
-                    $logosData = [];
-
-                    foreach ($validated['prendas'] as $indexPrenda => $prenda) {
-                        // Recopilar fotos de esta prenda
-                        $fotosData[$indexPrenda] = $prenda['fotos'] ?? [];
-                        $telasData[$indexPrenda] = $prenda['telas'] ?? [];
-                        $logosData[$indexPrenda] = $prenda['logos'] ?? [];
-
-                        \Log::info('📸 Fotos preparadas para prenda', [
                             'index' => $indexPrenda,
                             'fotos' => count($fotosData[$indexPrenda]),
                             'telas' => count($telasData[$indexPrenda]),
@@ -461,76 +441,9 @@ class PedidoProduccionController extends Controller
                     'success' => false,
                     'message' => 'No se encontraron prendas para este pedido'
                 ], 404);
-            }
-
-            \DB::beginTransaction();
-
-            // Procesar por prenda
-            $indexPrenda = 0;
-            foreach ($prendas as $prenda) {
-                // Guardar fotos de esta prenda
-                if (!empty($fotos) && isset($fotos[$indexPrenda])) {
-                    $fotosPreenda = $fotos[$indexPrenda];
-                    if (is_array($fotosPreenda)) {
-                        foreach ($fotosPreenda as $orden => $foto) {
-                            \DB::table('prenda_fotos_pedido')->insert([
-                                'prenda_pedido_id' => $prenda->id,
-                                'ruta_original' => $foto['ruta_original'] ?? null,
-                                'ruta_webp' => $foto['ruta_webp'] ?? null,
-                                'ruta_miniatura' => $foto['ruta_miniatura'] ?? null,
-                                'orden' => $orden + 1,
-                                'ancho' => $foto['ancho'] ?? null,
-                                'alto' => $foto['alto'] ?? null,
-                                'tamaño' => $foto['tamaño'] ?? null,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
-                        }
-                        \Log::info('✅ Fotos de prenda guardadas', [
-                            'prenda_id' => $prenda->id,
-                            'cantidad' => count($fotosPreenda),
                         ]);
                     }
                 }
-
-                // Guardar fotos de telas
-                if (!empty($telas) && isset($telas[$indexPrenda])) {
-                    $telasPreenda = $telas[$indexPrenda];
-                    if (is_array($telasPreenda)) {
-                        foreach ($telasPreenda as $tela) {
-                            if (!empty($tela['fotos'])) {
-                                foreach ($tela['fotos'] as $orden => $foto) {
-                                    \DB::table('prenda_fotos_tela_pedido')->insert([
-                                        'prenda_pedido_id' => $prenda->id,
-                                        'tela_id' => $tela['tela_id'] ?? null,
-                                        'color_id' => $tela['color_id'] ?? null,
-                                        'ruta_original' => $foto['ruta_original'] ?? $foto['url'] ?? null,
-                                        'ruta_webp' => $foto['ruta_webp'] ?? null,
-                                        'ruta_miniatura' => $foto['ruta_miniatura'] ?? null,
-                                        'orden' => $orden + 1,
-                                        'ancho' => $foto['ancho'] ?? null,
-                                        'alto' => $foto['alto'] ?? null,
-                                        'tamaño' => $foto['tamaño'] ?? null,
-                                        'created_at' => now(),
-                                        'updated_at' => now(),
-                                    ]);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Guardar logos/bordados
-                if (!empty($logos) && isset($logos[$indexPrenda])) {
-                    $logosPreenda = $logos[$indexPrenda];
-                    if (is_array($logosPreenda)) {
-                        foreach ($logosPreenda as $orden => $logo) {
-                            \DB::table('prenda_fotos_logo_pedido')->insert([
-                                'prenda_pedido_id' => $prenda->id,
-                                'ruta_original' => $logo['ruta_original'] ?? $logo['url'] ?? null,
-                                'ruta_webp' => $logo['ruta_webp'] ?? null,
-                                'ruta_miniatura' => $logo['ruta_miniatura'] ?? null,
-                                'orden' => $orden + 1,
                                 'ubicacion' => $logo['ubicacion'] ?? null,
                                 'ancho' => $logo['ancho'] ?? null,
                                 'alto' => $logo['alto'] ?? null,

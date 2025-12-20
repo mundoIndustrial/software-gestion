@@ -13,6 +13,14 @@ if (!window.telasSeleccionadas) {
     window.telasSeleccionadas = {};
 }
 
+// Rastrear fotos eliminadas del servidor (para no duplicar al guardar)
+if (!window.fotosEliminadasServidor) {
+    window.fotosEliminadasServidor = {
+        prendas: [], // IDs de fotos de prenda eliminadas
+        telas: []    // IDs de fotos de tela eliminadas
+    };
+}
+
 // ============ PRODUCTOS ============
 
 function agregarProductoFriendly() {
@@ -461,11 +469,11 @@ function eliminarFoto(productoId, index) {
             });
         } else {
             // Es una foto nueva - eliminarla directamente sin confirmar
-            if (fotosSeleccionadas[productoId]) {
+            if (window.fotosSeleccionadas[productoId]) {
                 // Encontrar el índice en fotosSeleccionadas por nombre
-                const indexEnFotos = fotosSeleccionadas[productoId].findIndex(f => f.name === fileName);
+                const indexEnFotos = window.fotosSeleccionadas[productoId].findIndex(f => f.name === fileName);
                 if (indexEnFotos !== -1) {
-                    fotosSeleccionadas[productoId].splice(indexEnFotos, 1);
+                    window.fotosSeleccionadas[productoId].splice(indexEnFotos, 1);
                     console.log(`✅ Foto nueva eliminada de fotosSeleccionadas`);
                 }
             }
@@ -636,8 +644,8 @@ function agregarFotoTela(input) {
     const filaTelaActual = input.closest('.fila-tela');
     const telaIndex = filaTelaActual ? filaTelaActual.getAttribute('data-tela-index') : '0';
     
-    if (!telasSeleccionadas[productoId]) telasSeleccionadas[productoId] = {};
-    if (!telasSeleccionadas[productoId][telaIndex]) telasSeleccionadas[productoId][telaIndex] = [];
+    if (!window.telasSeleccionadas[productoId]) window.telasSeleccionadas[productoId] = {};
+    if (!window.telasSeleccionadas[productoId][telaIndex]) window.telasSeleccionadas[productoId][telaIndex] = [];
     
     // Obtener índice de prenda (posición en la lista de productos)
     const allProductos = document.querySelectorAll('.producto-card');
@@ -657,8 +665,8 @@ function agregarFotoTela(input) {
     
     Array.from(input.files).forEach((file, fileIndex) => {
         // Máximo 3 fotos por tela
-        if (telasSeleccionadas[productoId][telaIndex].length < 3) {
-            telasSeleccionadas[productoId][telaIndex].push(file);
+        if (window.telasSeleccionadas[productoId][telaIndex].length < 3) {
+            window.telasSeleccionadas[productoId][telaIndex].push(file);
             console.log(`✅ Foto ${fileIndex + 1} de tela ${telaIndex} guardada: ${file.name}`);
         }
     });
@@ -667,8 +675,8 @@ function agregarFotoTela(input) {
     console.log('📊 Estado actual de telasSeleccionadas:', JSON.stringify({
         productoId,
         telaIndex,
-        fotosAlmacenadas: telasSeleccionadas[productoId][telaIndex].length,
-        estructuraCompleta: telasSeleccionadas
+        fotosAlmacenadas: window.telasSeleccionadas[productoId][telaIndex].length,
+        estructuraCompleta: window.telasSeleccionadas
     }));
     
     const container = productoCard.querySelector(`.fila-tela[data-tela-index="${telaIndex}"] .foto-tela-preview`);
@@ -769,6 +777,21 @@ function eliminarFotoTelaById(fotoTelaId) {
         return;
     }
     
+    // Verificar si es una foto guardada en el servidor (tiene data-foto-id)
+    const fotoImg = fotoElement.querySelector('img[data-foto-id]');
+    const fotoIdServidor = fotoImg ? fotoImg.getAttribute('data-foto-id') : null;
+    
+    if (fotoIdServidor) {
+        // Es una foto guardada en el servidor, registrar para eliminar al guardar
+        if (!window.fotosEliminadasServidor) {
+            window.fotosEliminadasServidor = { prendas: [], telas: [] };
+        }
+        if (!window.fotosEliminadasServidor.telas.includes(fotoIdServidor)) {
+            window.fotosEliminadasServidor.telas.push(fotoIdServidor);
+            console.log(`📝 Foto de tela ID ${fotoIdServidor} marcada para eliminar del servidor`);
+        }
+    }
+    
     // Obtener el contenedor (foto-tela-preview)
     const container = fotoElement.closest('.foto-tela-preview');
     if (!container) {
@@ -798,16 +821,17 @@ function eliminarFotoTelaById(fotoTelaId) {
     
     console.log(`✅ Foto de tela ${telaIndex} eliminada. Total restante: ${todasLasFotos.length}`);
     
-    // Actualizar telasSeleccionadas
-    // Buscar el producto card para obtener el productoId
-    const productoCard = container.closest('.producto-card');
-    if (productoCard) {
-        const productoId = productoCard.dataset.productoId;
-        if (window.telasSeleccionadas && window.telasSeleccionadas[productoId] && window.telasSeleccionadas[productoId][telaIndex]) {
-            const indexEnTelas = window.telasSeleccionadas[productoId][telaIndex].findIndex(f => f.name === fileName);
-            if (indexEnTelas !== -1) {
-                window.telasSeleccionadas[productoId][telaIndex].splice(indexEnTelas, 1);
-                console.log(`✅ Foto de tela ${telaIndex} eliminada de telasSeleccionadas`);
+    // Actualizar telasSeleccionadas (solo si es foto nueva, no guardada)
+    if (!fotoIdServidor) {
+        const productoCard = container.closest('.producto-card');
+        if (productoCard) {
+            const productoId = productoCard.dataset.productoId;
+            if (window.telasSeleccionadas && window.telasSeleccionadas[productoId] && window.telasSeleccionadas[productoId][telaIndex]) {
+                const indexEnTelas = window.telasSeleccionadas[productoId][telaIndex].findIndex(f => f.name === fileName);
+                if (indexEnTelas !== -1) {
+                    window.telasSeleccionadas[productoId][telaIndex].splice(indexEnTelas, 1);
+                    console.log(`✅ Foto nueva de tela ${telaIndex} eliminada de telasSeleccionadas`);
+                }
             }
         }
     }

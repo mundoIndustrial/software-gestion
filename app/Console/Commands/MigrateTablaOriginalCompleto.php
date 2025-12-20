@@ -362,7 +362,7 @@ class MigrateTablaOriginalCompleto extends Command
                         'asesor_id' => $asesorId,
                         'cliente_id' => $clienteId,
                         'cliente' => $pedidoOrig->cliente,
-                        'estado' => $pedidoOrig->estado ?? 'Pendiente',
+                        'estado' => $this->normalizarEstado($pedidoOrig->estado),
                         'fecha_de_creacion_de_orden' => $this->parsearFecha($pedidoOrig->fecha_de_creacion_de_orden),
                         'dia_de_entrega' => $pedidoOrig->dia_de_entrega ?? 0,
                         'fecha_estimada_de_entrega' => $this->parsearFecha($pedidoOrig->fecha_estimada_de_entrega),
@@ -608,6 +608,44 @@ class MigrateTablaOriginalCompleto extends Command
         }
 
         $this->info(str_repeat("=", 140) . "\n");
+    }
+
+    /**
+     * Normalizar estado a valores del ENUM
+     */
+    private function normalizarEstado($estado)
+    {
+        if (!$estado) {
+            return 'Pendiente';
+        }
+
+        // Limpiar caracteres especiales y normalizar
+        $estadoLimpio = mb_strtolower(trim($estado));
+        $estadoLimpio = preg_replace('/[^a-z0-9\s]/ui', '', $estadoLimpio);
+
+        // Mapeo de estados
+        $mapeo = [
+            'pendiente' => 'Pendiente',
+            'entregado' => 'Entregado',
+            'en ejecucion' => 'En Ejecución',
+            'en ejecucion' => 'En Ejecución',
+            'no iniciado' => 'No iniciado',
+            'anulada' => 'Anulada',
+            'anulado' => 'Anulada',
+            'pendiente supervisor' => 'PENDIENTE_SUPERVISOR',
+            'pendiente_supervisor' => 'PENDIENTE_SUPERVISOR',
+        ];
+
+        // Buscar coincidencia
+        foreach ($mapeo as $buscar => $reemplazar) {
+            if (stripos($estadoLimpio, str_replace(' ', '', $buscar)) !== false || 
+                stripos($estadoLimpio, $buscar) !== false) {
+                return $reemplazar;
+            }
+        }
+
+        // Si no hay coincidencia, usar Pendiente por defecto
+        return 'Pendiente';
     }
 
     /**

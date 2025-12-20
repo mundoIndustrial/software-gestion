@@ -294,6 +294,40 @@ class MigrarProcesosCorrectamente extends Command
         $this->line("   ✅ Áreas actualizadas: {$this->stats['areas_asignadas']}\n");
     }
 
+    private function normalizarEstado($estado)
+    {
+        if (!$estado) {
+            return 'Pendiente';
+        }
+
+        // Limpiar caracteres especiales y normalizar
+        $estadoLimpio = mb_strtolower(trim($estado));
+        $estadoLimpio = preg_replace('/[^a-z0-9\s]/ui', '', $estadoLimpio);
+
+        // Mapeo de estados
+        $mapeo = [
+            'pendiente' => 'Pendiente',
+            'entregado' => 'Entregado',
+            'en ejecucion' => 'En Ejecución',
+            'no iniciado' => 'No iniciado',
+            'anulada' => 'Anulada',
+            'anulado' => 'Anulada',
+            'pendiente supervisor' => 'PENDIENTE_SUPERVISOR',
+            'pendiente_supervisor' => 'PENDIENTE_SUPERVISOR',
+        ];
+
+        // Buscar coincidencia
+        foreach ($mapeo as $buscar => $reemplazar) {
+            if (stripos($estadoLimpio, str_replace(' ', '', $buscar)) !== false || 
+                stripos($estadoLimpio, $buscar) !== false) {
+                return $reemplazar;
+            }
+        }
+
+        // Si no hay coincidencia, usar Pendiente por defecto
+        return 'Pendiente';
+    }
+
     private function parsearFecha($fecha)
     {
         if (!$fecha || $fecha === '0000-00-00' || $fecha === '0000-00-00 00:00:00') {

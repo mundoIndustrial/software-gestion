@@ -30,8 +30,15 @@ class PedidoPrendaService
      */
     public function guardarPrendasEnPedido(PedidoProduccion $pedido, array $prendas): void
     {
+        Log::info('📦 [PedidoPrendaService::guardarPrendasEnPedido] INICIO - Análisis completo', [
+            'pedido_id' => $pedido->id,
+            'numero_pedido' => $pedido->numero_pedido,
+            'cantidad_prendas' => count($prendas),
+            'prendas_completas' => $prendas,
+        ]);
+        
         if (empty($prendas)) {
-            Log::warning('PedidoPrendaService: No hay prendas para guardar', [
+            Log::warning('⚠️ [PedidoPrendaService] No hay prendas para guardar', [
                 'pedido_id' => $pedido->id,
             ]);
             return;
@@ -40,7 +47,15 @@ class PedidoPrendaService
         DB::beginTransaction();
         try {
             $index = 1;
-            foreach ($prendas as $prendaData) {
+            foreach ($prendas as $prendaIndex => $prendaData) {
+                Log::info("📋 [PedidoPrendaService] Procesando prenda #{$index}", [
+                    'prenda_index' => $prendaIndex,
+                    'prenda_data_type' => gettype($prendaData),
+                    'prenda_data' => $prendaData,
+                    'tiene_telas' => isset($prendaData['telas']),
+                    'cantidad_telas' => isset($prendaData['telas']) ? count($prendaData['telas']) : 0,
+                ]);
+                
                 // CRÍTICO: Convertir DTO a array si es necesario
                 if (is_object($prendaData) && method_exists($prendaData, 'toArray')) {
                     $prendaData = $prendaData->toArray();
@@ -50,15 +65,16 @@ class PedidoPrendaService
                 $index++;
             }
             DB::commit();
-            Log::info('PedidoPrendaService: Prendas guardadas correctamente', [
+            Log::info('✅ [PedidoPrendaService] Prendas guardadas correctamente', [
                 'pedido_id' => $pedido->id,
                 'cantidad' => count($prendas),
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('PedidoPrendaService: Error guardando prendas', [
+            Log::error('❌ [PedidoPrendaService] Error guardando prendas', [
                 'pedido_id' => $pedido->id,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
             throw $e;
         }
@@ -172,8 +188,20 @@ class PedidoPrendaService
         }
 
         // 5. Guardar fotos de telas/colores (si existen)
+        Log::info('🔍 [PedidoPrendaService::guardarPrenda] Verificando si hay telas para guardar', [
+            'prenda_id' => $prenda->id,
+            'tiene_telas' => !empty($prendaData['telas']),
+            'cantidad_telas' => !empty($prendaData['telas']) ? count($prendaData['telas']) : 0,
+            'telas_data' => $prendaData['telas'] ?? null,
+        ]);
+        
         if (!empty($prendaData['telas'])) {
             $this->guardarFotosTelas($prenda, $prendaData['telas']);
+        } else {
+            Log::warning('⚠️ [PedidoPrendaService] No hay telas para guardar en esta prenda', [
+                'prenda_id' => $prenda->id,
+                'prenda_data_keys' => array_keys($prendaData),
+            ]);
         }
     }
 
@@ -330,24 +358,31 @@ class PedidoPrendaService
      */
     private function guardarFotosTelas(PrendaPedido $prenda, array $telas): void
     {
-        Log::info('🧵 guardarFotosTelas - Iniciando', [
+        Log::info('🧵 [PedidoPrendaService] guardarFotosTelas - Iniciando', [
             'prenda_id' => $prenda->id,
+            'numero_pedido' => $prenda->numero_pedido,
             'cantidad_telas' => count($telas),
             'telas_data' => $telas,
         ]);
 
-        foreach ($telas as $tela) {
-            Log::info('🧵 Procesando tela', [
+        foreach ($telas as $telaIndex => $tela) {
+            Log::info('🧵 [PedidoPrendaService] Procesando tela', [
+                'tela_index' => $telaIndex,
                 'tela_data' => $tela,
                 'tiene_fotos' => !empty($tela['fotos']),
+                'cantidad_fotos' => !empty($tela['fotos']) ? count($tela['fotos']) : 0,
             ]);
             
             if (!empty($tela['fotos'])) {
                 foreach ($tela['fotos'] as $index => $foto) {
-                    Log::info('🧵 Guardando foto de tela', [
+                    Log::info('📸 [PedidoPrendaService] Guardando foto de tela en prenda_fotos_tela_pedido', [
+                        'prenda_pedido_id' => $prenda->id,
+                        'tela_index' => $telaIndex,
+                        'foto_index' => $index,
                         'foto_data' => $foto,
                         'tela_id' => $tela['tela_id'] ?? null,
                         'color_id' => $tela['color_id'] ?? null,
+                        'ruta' => $foto['ruta_original'] ?? $foto['url'] ?? null,
                     ]);
                     
                     DB::table('prenda_fotos_tela_pedido')->insert([
@@ -364,11 +399,28 @@ class PedidoPrendaService
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
+                    
+                    Log::info('✅ [PedidoPrendaService] Foto de tela guardada en BD (prenda_fotos_tela_pedido)', [
+                        'prenda_pedido_id' => $prenda->id,
+                        'tela_id' => $tela['tela_id'] ?? null,
+                        'color_id' => $tela['color_id'] ?? null,
+                        'orden' => $index + 1,
+                        'ruta' => $foto['ruta_original'] ?? $foto['url'] ?? null,
+                    ]);
                 }
+            } else {
+                Log::warning('⚠️ [PedidoPrendaService] Tela sin fotos', [
+                    'tela_index' => $telaIndex,
+                    'tela_id' => $tela['tela_id'] ?? null,
+                    'color_id' => $tela['color_id'] ?? null,
+                ]);
             }
         }
         
-        Log::info('🧵 guardarFotosTelas - Completado');
+        Log::info('🧵 [PedidoPrendaService] guardarFotosTelas - Completado', [
+            'prenda_id' => $prenda->id,
+            'telas_procesadas' => count($telas),
+        ]);
     }
 
     /**
