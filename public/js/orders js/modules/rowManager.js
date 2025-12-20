@@ -106,26 +106,61 @@ const RowManager = {
      * Ejecutar actualización completa de fila
      */
     executeRowUpdate(row, data, orderId, valorAEnviar) {
-        if (!row) return;
+        console.log(`🔄 executeRowUpdate iniciado para orden ${orderId}, valorAEnviar: ${valorAEnviar}`);
+        
+        if (!row) {
+            console.warn(`❌ Row es nula para orden ${orderId}`);
+            return;
+        }
 
         if (data.totalDiasCalculados) {
             const totalDias = data.totalDiasCalculados[orderId] || 0;
             const estado = data.order?.estado || '';
 
-            // Actualizar fecha estimada
-            if (data.order?.fecha_estimada_de_entrega) {
-                const tdFecha = row.querySelector('td[data-column="fecha_estimada_de_entrega"]');
-                if (tdFecha) {
-                    const spanFecha = tdFecha.querySelector('.cell-text');
-                    if (spanFecha) {
+            console.log(`📊 totalDias: ${totalDias}, estado: ${estado}`);
+
+            // Actualizar fecha estimada (incluso si es null para limpiar)
+            // Buscar por clase fecha-estimada-cell (para div.table-row)
+            let fechaCell = row.querySelector('.fecha-estimada-cell');
+            
+            // Si no encuentra, buscar por data-column (para tr tradicional)
+            if (!fechaCell) {
+                fechaCell = row.querySelector('td[data-column="fecha_estimada_de_entrega"]');
+            }
+            
+            console.log(`🔍 Buscando celda fecha estimada, encontrada:`, !!fechaCell);
+            
+            if (fechaCell) {
+                let spanFecha = fechaCell.querySelector('.fecha-estimada-span');
+                
+                // Si no encuentra .fecha-estimada-span, buscar .cell-text
+                if (!spanFecha) {
+                    spanFecha = fechaCell.querySelector('.cell-text');
+                }
+                
+                if (spanFecha) {
+                    if (data.order?.fecha_estimada_de_entrega) {
                         const fechaFormateada = FormattingModule.formatearFecha(data.order.fecha_estimada_de_entrega);
                         spanFecha.textContent = fechaFormateada;
+                        fechaCell.setAttribute('data-fecha-estimada', fechaFormateada);
+                        console.log(`✅ Fecha estimada actualizada: ${fechaFormateada}`);
+                    } else {
+                        // Si es null, limpiar la fecha
+                        spanFecha.textContent = '-';
+                        fechaCell.setAttribute('data-fecha-estimada', '-');
+                        console.log(`✅ Fecha estimada limpiada (valor null)`);
                     }
+                } else {
+                    console.warn(`⚠️ No se encontró span dentro de fechaCell`);
                 }
+            } else {
+                console.warn(`⚠️ No se encontró celda de fecha estimada`);
             }
 
             // Actualizar estilos
             this._applyRowStyles(row, estado, totalDias, valorAEnviar);
+        } else {
+            console.warn(`⚠️ No hay totalDiasCalculados en data`);
         }
     },
 

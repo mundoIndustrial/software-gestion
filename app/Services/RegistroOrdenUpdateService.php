@@ -254,7 +254,7 @@ class RegistroOrdenUpdateService
     private function getDateColumns(): array
     {
         return [
-            'fecha_de_creacion_de_orden', 'insumos_y_telas', 'corte', 'costura',
+            'fecha_de_creacion_de_orden', 'fecha_estimada_de_entrega', 'insumos_y_telas', 'corte', 'costura',
             'lavanderia', 'arreglos', 'control_de_calidad', 'entrega', 'despacho'
         ];
     }
