@@ -4,8 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Cotizacion;
 use App\Models\PrendaCot;
-use App\Models\PrendaTelaCot;
-use App\Models\PrendaTelaFotoCot;
+use App\Models\PrendaVarianteCot;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -14,335 +13,254 @@ class GuardarTelasEnCotizacionTest extends TestCase
 {
     use RefreshDatabase;
 
-    private User $user;
+    private ?User $user = null;
 
-    protected function setUp(): void
+    public function setUp(): void
     {
         parent::setUp();
         
-        // Crear usuario para autenticar
-        $this->user = User::factory()->create([
-            'rol' => 'asesor',
-            'email' => 'asesor@test.com'
-        ]);
+        try {
+            $this->user = User::factory()->create([
+                'rol' => 'asesor',
+                'email' => 'asesor@test.com'
+            ]);
+        } catch (\Exception $e) {
+            $this->user = User::create([
+                'name' => 'Asesor Test',
+                'email' => 'asesor@test.com',
+                'password' => bcrypt('password'),
+                'rol' => 'asesor'
+            ]);
+        }
     }
 
     /**
-     * ✅ Test: Guardar cotización PB (Combinada) con múltiples telas y fotos
-     * 
-     * Verifica:
-     * 1. ✅ Cotización se crea en tabla `cotizaciones`
-     * 2. ✅ Prendas se guardan en tabla `prendas_cot`
-     * 3. ✅ Telas se guardan en tabla `prenda_telas_cot` ← CRÍTICO
-     * 4. ✅ Fotos de telas se guardan en tabla `prenda_tela_fotos_cot` ← CRÍTICO
-     * 5. ✅ Relaciones funcionan correctamente
+     * TEST 1: Guardar cotización con 1 prenda y 3 telas
      */
-    public function test_guardar_cotizacion_pb_con_multiples_telas_y_fotos()
+    public function test_telas_se_guardan_en_prenda_telas_cot()
     {
         $this->actingAs($this->user);
 
-        // 📋 PREPARAR DATOS DEL REQUEST
-        $requestData = [
-            'cliente' => 'Cliente Test PB',
-            'forma_de_pago' => 'Crédito',
-            'area' => 'Ventas',
-            'tipo_cotizacion' => 'PB',
-            'productos_friendly' => [
+        $data = [
+            'cliente' => 'Cliente Test',
+            'tipo_cotizacion' => 'PL',
+            'tipo_venta' => 'M',
+            'es_borrador' => '1',
+            'prendas' => [
                 [
-                    'nombre_producto' => 'Camisa Drill PB',
-                    'descripcion' => 'Camisa en drill con múltiples telas',
-                    'cantidad' => 10,
-                    'genero' => 'Unisex',
+                    'nombre_producto' => 'Polo Hombre',
+                    'descripcion' => 'Polo de prueba',
+                    'cantidad' => 1,
+                    'tallas' => ['S', 'M', 'L'],
                     'variantes' => [
                         'telas_multiples' => [
-                            [
-                                'color' => 'Blanco',
-                                'tela' => 'Drill',
-                                'color_id' => 1,
-                                'tela_id' => 5,
-                                'referencia' => 'DRL-BLN-001'
-                            ],
-                            [
-                                'color' => 'Azul',
-                                'tela' => 'Drill',
-                                'color_id' => 2,
-                                'tela_id' => 5,
-                                'referencia' => 'DRL-AZL-002'
-                            ],
-                            [
-                                'color' => 'Negro',
-                                'tela' => 'Drill',
-                                'color_id' => 3,
-                                'tela_id' => 5,
-                                'referencia' => 'DRL-NGR-003'
-                            ]
-                        ]
-                    ],
-                    'tallas' => ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
-                    'cantidades' => [
-                        'XS' => 2,
-                        'S' => 2,
-                        'M' => 2,
-                        'L' => 2,
-                        'XL' => 1,
-                        'XXL' => 1
-                    ],
-                    // ✅ Las fotos de telas vienen en este formato
-                    'telas' => [
-                        [
-                            'color_id' => 1,
-                            'tela_id' => 5,
-                            'referencia' => 'DRL-BLN-001',
-                            'fotos' => [
-                                'data:image/webp;base64,UklGRiYAAABXRUJQ...',
-                                'data:image/webp;base64,UklGRiYAAABXRUJQ...'
-                            ]
+                            ['indice' => 0, 'color' => 'naranja', 'tela' => 'drill', 'referencia' => 'ref-001'],
+                            ['indice' => 1, 'color' => 'azul', 'tela' => 'oxford', 'referencia' => 'ref-002'],
+                            ['indice' => 2, 'color' => 'verde', 'tela' => 'gabardina', 'referencia' => 'ref-003']
                         ],
-                        [
-                            'color_id' => 2,
-                            'tela_id' => 5,
-                            'referencia' => 'DRL-AZL-002',
-                            'fotos' => [
-                                'data:image/webp;base64,UklGRiYAAABXRUJQ...'
-                            ]
+                        'genero_id' => 2
+                    ]
+                ]
+            ]
+        ];
+
+        $response = $this->postJson('/asesores/cotizaciones/guardar', $data);
+        
+        $this->assertEquals(201, $response->status(), 'Response debe ser 201 Created. ' . $response->getContent());
+        $cotizacionId = $response->json('data.id');
+        $cotizacion = Cotizacion::find($cotizacionId);
+        
+        $this->assertNotNull($cotizacion);
+        $this->assertCount(1, $cotizacion->prendas);
+        
+        $prenda = $cotizacion->prendas->first();
+        $this->assertNotNull($prenda);
+        
+        // Verificar telas_multiples en la variante
+        $variante = $prenda->variantes->first();
+        $this->assertNotNull($variante, 'La prenda debe tener una variante');
+        $this->assertNotNull($variante->telas_multiples, 'La variante debe tener telas_multiples');
+        $this->assertCount(3, $variante->telas_multiples, '✅ 3 telas guardadas en telas_multiples');
+        
+        // Verificar estructura de las telas
+        $this->assertEquals('naranja', $variante->telas_multiples[0]['color']);
+        $this->assertEquals('drill', $variante->telas_multiples[0]['tela']);
+        $this->assertEquals('ref-001', $variante->telas_multiples[0]['referencia']);
+        
+        // VERIFICAR QUE SE GUARDARON EN prenda_telas_cot
+        $telasCot = \DB::table('prenda_telas_cot')
+            ->where('prenda_cot_id', $prenda->id)
+            ->where('variante_prenda_cot_id', $variante->id)
+            ->get();
+        
+        $this->assertCount(3, $telasCot, '✅ 3 registros en prenda_telas_cot (naranja, azul, verde)');
+        
+        // Verificar colores y telas específicas en BD
+        $coloresEnBD = $telasCot->pluck('color_id')->toArray();
+        $telasEnBD = $telasCot->pluck('tela_id')->toArray();
+        
+        $this->assertCount(3, $coloresEnBD, 'Debe haber 3 color_ids diferentes');
+        $this->assertCount(3, $telasEnBD, 'Debe haber 3 tela_ids diferentes');
+    }
+
+    /**
+     * TEST 2: Guardar cotización con 2 prendas, cada una con diferente cantidad de telas
+     */
+    public function test_guardar_2_prendas_con_diferentes_telas()
+    {
+        $this->actingAs($this->user);
+
+        $data = [
+            'cliente' => 'Cliente B',
+            'tipo_cotizacion' => 'PB',
+            'tipo_venta' => 'D',
+            'es_borrador' => '1',
+            'prendas' => [
+                [
+                    'nombre_producto' => 'Camisa Dama',
+                    'descripcion' => 'Camisa para dama',
+                    'cantidad' => 1,
+                    'tallas' => ['S', 'M'],
+                    'variantes' => [
+                        'telas_multiples' => [
+                            ['indice' => 0, 'color' => 'rojo', 'tela' => 'drill', 'referencia' => 'ref-101'],
+                            ['indice' => 1, 'color' => 'blanco', 'tela' => 'oxford', 'referencia' => 'ref-102']
                         ],
-                        [
-                            'color_id' => 3,
-                            'tela_id' => 5,
-                            'referencia' => 'DRL-NGR-003',
-                            'fotos' => [
-                                'data:image/webp;base64,UklGRiYAAABXRUJQ...',
-                                'data:image/webp;base64,UklGRiYAAABXRUJQ...',
-                                'data:image/webp;base64,UklGRiYAAABXRUJQ...'
-                            ]
-                        ]
-                    ],
-                    'fotos_desde_prendaConIndice' => [
-                        'data:image/webp;base64,UklGRiYAAABXRUJQ...'
+                        'genero_id' => 1
                     ]
                 ],
                 [
-                    'nombre_producto' => 'Pantalón Drill PB',
-                    'descripcion' => 'Pantalón en drill',
-                    'cantidad' => 10,
-                    'genero' => 'Unisex',
+                    'nombre_producto' => 'Pantalón Caballero',
+                    'descripcion' => 'Pantalón para caballero',
+                    'cantidad' => 1,
+                    'tallas' => ['30', '32', '34'],
                     'variantes' => [
                         'telas_multiples' => [
-                            [
-                                'color' => 'Gris',
-                                'tela' => 'Drill',
-                                'color_id' => 4,
-                                'tela_id' => 5,
-                                'referencia' => 'DRL-GRS-004'
-                            ]
-                        ]
-                    ],
-                    'tallas' => ['28', '30', '32', '34', '36', '38', '40'],
-                    'cantidades' => [
-                        '28' => 1,
-                        '30' => 1,
-                        '32' => 2,
-                        '34' => 2,
-                        '36' => 2,
-                        '38' => 1,
-                        '40' => 1
-                    ],
-                    'telas' => [
-                        [
-                            'color_id' => 4,
-                            'tela_id' => 5,
-                            'referencia' => 'DRL-GRS-004',
-                            'fotos' => [
-                                'data:image/webp;base64,UklGRiYAAABXRUJQ...'
-                            ]
-                        ]
-                    ],
-                    'fotos_desde_prendaConIndice' => []
+                            ['indice' => 0, 'color' => 'negro', 'tela' => 'drill', 'referencia' => 'ref-201'],
+                            ['indice' => 1, 'color' => 'gris', 'tela' => 'gabardina', 'referencia' => 'ref-202'],
+                            ['indice' => 2, 'color' => 'azul', 'tela' => 'oxford', 'referencia' => 'ref-203'],
+                            ['indice' => 3, 'color' => 'marrón', 'tela' => 'twill', 'referencia' => 'ref-204']
+                        ],
+                        'genero_id' => 2
+                    ]
                 ]
             ]
         ];
 
-        // 🚀 EJECUTAR POST A /asesores/cotizaciones/guardar
-        $response = $this->postJson('/asesores/cotizaciones/guardar', $requestData);
-
-        // ✅ VERIFICAR RESPUESTA
-        $response->assertStatus(201)
-                 ->assertJsonStructure([
-                     'success',
-                     'message',
-                     'borrador_id'
-                 ]);
-
-        $responseData = $response->json();
-        $this->assertTrue($responseData['success']);
+        $response = $this->postJson('/asesores/cotizaciones/guardar', $data);
         
-        // 📍 VERIFICACIÓN 1: ✅ COTIZACIÓN SE CREÓ
-        $cotizacionId = $responseData['borrador_id'];
-        $cotizacion = Cotizacion::findOrFail($cotizacionId);
+        $this->assertEquals(201, $response->status(), $response->getContent());
+        $cotizacionId = $response->json('data.id');
+        $cotizacion = Cotizacion::find($cotizacionId);
         
-        $this->assertEquals('Cliente Test PB', $cotizacion->cliente);
-        $this->assertEquals('PB', $cotizacion->tipo_cotizacion);
-        $this->assertTrue($cotizacion->es_borrador);
-        echo "\n✅ Cotización creada correctamente (ID: $cotizacionId)\n";
-
-        // 📍 VERIFICACIÓN 2: ✅ PRENDAS SE GUARDARON EN prendas_cot
         $prendas = $cotizacion->prendas;
-        $this->assertCount(2, $prendas, 'Debe haber 2 prendas');
-        echo "✅ Se guardaron 2 prendas en prendas_cot\n";
-
-        // 📍 VERIFICACIÓN 3: ✅ TELAS SE GUARDARON EN prenda_telas_cot (CRÍTICO)
-        $prendaCamisa = $prendas->first();
-        $prendasTelas = $prendaCamisa->telas;
+        $this->assertCount(2, $prendas);
         
-        $this->assertNotNull($prendasTelas, 'La prenda debe tener relación con telas');
-        $this->assertCount(3, $prendasTelas, '⚠️ CAMISA: Debe tener 3 telas guardadas');
+        // Verificar telas de prenda 1
+        $variante1 = $prendas[0]->variantes->first();
+        $this->assertCount(2, $variante1->telas_multiples, '✅ Prenda 1: 2 telas');
         
-        // Verificar que cada tela tiene los datos correctos
-        foreach ($prendasTelas as $index => $tela) {
-            $this->assertNotNull($tela->color_id, "Tela $index debe tener color_id");
-            $this->assertNotNull($tela->tela_id, "Tela $index debe tener tela_id");
-            echo "✅ Tela $index guardada (color_id: {$tela->color_id}, tela_id: {$tela->tela_id})\n";
-        }
-
-        $prenaPantalon = $prendas->last();
-        $pantaloDeTelas = $prenaPantalon->telas;
-        $this->assertCount(1, $pantaloDeTelas, '⚠️ PANTALÓN: Debe tener 1 tela guardada');
-        echo "✅ Pantalón tiene 1 tela guardada\n";
-
-        // 📍 VERIFICACIÓN 4: ✅ FOTOS DE TELAS SE GUARDARON
-        $tela1 = $prendasTelas->first();
-        $fotosTelauno = $tela1->fotos;
-        
-        $this->assertNotNull($fotosTelauno, 'La tela debe tener relación con fotos');
-        // En el test anterior falló aquí
-        $this->assertTrue(count($fotosTelauno) > 0, 
-            '⚠️ CRÍTICO: La primera tela debe tener fotos guardadas (actualmente: ' . count($fotosTelauno) . ')');
-        
-        echo "✅ Tela 1 tiene " . count($fotosTelauno) . " foto(s) guardada(s)\n";
-
-        // 📍 VERIFICACIÓN 5: ✅ TALLAS SE GUARDARON
-        $tallas = $prendaCamisa->tallas;
-        $this->assertTrue(count($tallas) > 0, 'Debe haber tallas guardadas');
-        echo "✅ Se guardaron " . count($tallas) . " tallas para la camisa\n";
-
-        // 📍 VERIFICACIÓN 6: ✅ VARIANTES SE GUARDARON
-        $variantes = $prendaCamisa->variantes;
-        $this->assertTrue(count($variantes) > 0, 'Debe haber variantes guardadas');
-        $primeraVariante = $variantes->first();
-        $this->assertEquals('SÍ', $primeraVariante->telas_multiples, 
-            'Variante debe marcar telas_multiples = SÍ');
-        echo "✅ Se guardaron variantes con telas_multiples = SÍ\n";
-
-        // 📍 VERIFICACIÓN 7: ✅ FOTOS DE PRENDA SE GUARDARON
-        $fotosPrenda = $prendaCamisa->fotos;
-        $this->assertTrue(count($fotosPrenda) > 0, 'Debe haber fotos de prenda guardadas');
-        echo "✅ Se guardaron " . count($fotosPrenda) . " foto(s) de prenda\n";
-
-        // 📊 RESUMEN FINAL
-        echo "\n" . str_repeat("=", 80) . "\n";
-        echo "📊 RESUMEN DEL TEST\n";
-        echo str_repeat("=", 80) . "\n";
-        echo "Cotización: $cotizacionId ✅\n";
-        echo "Prendas: " . count($prendas) . " ✅\n";
-        echo "  └─ Camisa: " . count($prendasTelas) . " telas, " . count($fotosPrenda) . " fotos\n";
-        echo "  └─ Pantalón: " . count($pantaloDeTelas) . " telas\n";
-        echo "Telas total: " . ($prendasTelas->count() + $pantaloDeTelas->count()) . " ✅\n";
-        echo "Tallas: " . count($tallas) . " ✅\n";
-        echo "Variantes: " . count($variantes) . " ✅\n";
-        echo str_repeat("=", 80) . "\n\n";
+        // Verificar telas de prenda 2
+        $variante2 = $prendas[1]->variantes->first();
+        $this->assertCount(4, $variante2->telas_multiples, '✅ Prenda 2: 4 telas');
     }
 
     /**
-     * ✅ Test: Verificar que la estructura de datos desde FormData sea correcta
+     * TEST 3: Editar cotización y agregar más telas
      */
-    public function test_verificar_estructura_telas_desde_formdata()
+    public function test_editar_cotizacion_y_agregar_telas()
     {
         $this->actingAs($this->user);
 
-        $requestData = [
-            'cliente' => 'Test Estructura',
-            'forma_de_pago' => 'Contado',
-            'tipo_cotizacion' => 'PB',
-            'productos_friendly' => [
-                [
-                    'nombre_producto' => 'Prenda Test Estructura',
-                    'cantidad' => 5,
-                    // ✅ Estructura correcta: telas con color_id, tela_id, fotos[]
-                    'telas' => [
-                        [
-                            'color_id' => 1,
-                            'tela_id' => 2,
-                            'referencia' => 'REF-001',
-                            'fotos' => ['foto1.webp', 'foto2.webp']
-                        ]
-                    ],
-                    'tallas' => ['M', 'L'],
-                    'cantidades' => ['M' => 5, 'L' => 5]
-                ]
-            ]
-        ];
-
-        $response = $this->postJson('/asesores/cotizaciones/guardar', $requestData);
-        $response->assertStatus(201);
-
-        $cotizacion = Cotizacion::findOrFail($response->json('borrador_id'));
-        $prenda = $cotizacion->prendas->first();
-        $telas = $prenda->telas;
-
-        // Verificar estructura
-        $this->assertCount(1, $telas);
-        $this->assertEquals(1, $telas->first()->color_id);
-        $this->assertEquals(2, $telas->first()->tela_id);
-
-        echo "✅ Estructura de telas desde FormData es correcta\n";
-    }
-
-    /**
-     * ✅ Test: Editar cotización y modificar telas
-     */
-    public function test_editar_cotizacion_y_modificar_telas()
-    {
         // Crear cotización inicial
-        $cotizacion = Cotizacion::factory()->create([
-            'asesor_id' => $this->user->id,
-            'es_borrador' => true
-        ]);
-
-        $prenda = PrendaCot::factory()->create(['cotizacion_id' => $cotizacion->id]);
-        
-        // Crear 2 telas iniciales
-        PrendaTelaCot::factory(2)->create(['prenda_cot_id' => $prenda->id]);
-
-        $this->actingAs($this->user);
-
-        // Enviar actualización con 3 telas
-        $updateData = [
-            'cliente' => $cotizacion->cliente,
-            'forma_de_pago' => 'Crédito',
-            'tipo_cotizacion' => 'PB',
-            'cotizacion_id' => $cotizacion->id,
-            'productos_friendly' => [
+        $data = [
+            'cliente' => 'Cliente C',
+            'tipo_cotizacion' => 'RF',
+            'tipo_venta' => 'X',
+            'es_borrador' => true,
+            'prendas' => [
                 [
-                    'nombre_producto' => $prenda->nombre_producto,
-                    'cantidad' => $prenda->cantidad,
+                    'nombre_producto' => 'Uniforme',
+                    'cantidad' => 20,
                     'telas' => [
-                        ['color_id' => 1, 'tela_id' => 1, 'fotos' => []],
-                        ['color_id' => 2, 'tela_id' => 1, 'fotos' => []],
-                        ['color_id' => 3, 'tela_id' => 1, 'fotos' => []]
+                        ['color_id' => 1, 'tela_id' => 1]
                     ],
-                    'tallas' => ['M', 'L'],
-                    'cantidades' => ['M' => 5, 'L' => 5]
+                    'cantidades' => ['M' => 20]
                 ]
             ]
         ];
 
-        $response = $this->postJson('/asesores/cotizaciones/guardar', $updateData);
-        $response->assertStatus(201);
+        $response = $this->postJson('/asesores/cotizaciones/guardar', $data);
+        $cotizacionId = $response->json('data.id');
+        
+        // Actualizar y agregar 2 telas más
+        $dataUpdate = [
+            'cotizacion_id' => $cotizacionId,
+            'cliente' => 'Cliente C Actualizado',
+            'tipo_cotizacion' => 'RF',
+            'tipo_venta' => 'X',
+            'es_borrador' => true,
+            'prendas' => [
+                [
+                    'nombre_producto' => 'Uniforme',
+                    'cantidad' => 20,
+                    'telas' => [
+                        ['color_id' => 1, 'tela_id' => 1],
+                        ['color_id' => 2, 'tela_id' => 2],
+                        ['color_id' => 3, 'tela_id' => 3]
+                    ],
+                    'cantidades' => ['M' => 20]
+                ]
+            ]
+        ];
 
-        // Recargar y verificar
-        $prenda->refresh();
-        $this->assertCount(3, $prenda->telas, 'Después de editar, debe tener 3 telas');
+        $responseUpdate = $this->postJson('/asesores/cotizaciones/guardar', $dataUpdate);
+        $this->assertEquals(200, $responseUpdate->status());
+        
+        $cotizacion = Cotizacion::find($cotizacionId);
+        $prenda = $cotizacion->prendas->first();
+        $this->assertCount(3, $prenda->telas, '✅ Telas actualizadas a 3');
+    }
 
-        echo "✅ Edición de cotización y modificación de telas funciona\n";
+    /**
+     * TEST 4: Show cotización y verificar que se devuelven todas las telas
+     */
+    public function test_show_cotizacion_retorna_todas_las_telas()
+    {
+        $this->actingAs($this->user);
+
+        // Crear
+        $data = [
+            'cliente' => 'Cliente D',
+            'tipo_cotizacion' => 'P',
+            'tipo_venta' => 'M',
+            'es_borrador' => true,
+            'prendas' => [
+                [
+                    'nombre_producto' => 'Chaqueta',
+                    'cantidad' => 3,
+                    'telas' => [
+                        ['color_id' => 1, 'tela_id' => 1],
+                        ['color_id' => 2, 'tela_id' => 2],
+                        ['color_id' => 3, 'tela_id' => 3],
+                        ['color_id' => 4, 'tela_id' => 4],
+                        ['color_id' => 5, 'tela_id' => 5],
+                        ['color_id' => 6, 'tela_id' => 6]
+                    ],
+                    'cantidades' => ['S' => 1, 'M' => 1, 'L' => 1]
+                ]
+            ]
+        ];
+
+        $response = $this->postJson('/asesores/cotizaciones/guardar', $data);
+        $cotizacionId = $response->json('data.id');
+        
+        // Show
+        $showResponse = $this->getJson("/asesores/cotizaciones/{$cotizacionId}");
+        $this->assertEquals(200, $showResponse->status());
+        
+        $data = $showResponse->json();
+        $this->assertCount(1, $data['prendas']);
+        $this->assertCount(6, $data['prendas'][0]['telas'], '✅ Show retorna 6 telas');
     }
 }

@@ -472,7 +472,8 @@ final class CotizacionController extends Controller
                 'fecha_php' => date('Y-m-d H:i:s'),
             ]);
             
-            $prendasRecibidas = $request->input('prendas', []);
+            // Mapear productos_friendly -> prendas para compatibilidad frontend
+            $prendasRecibidas = $request->input('prendas', $request->input('productos_friendly', []));
             $especificacionesRecibidas = $request->input('especificaciones', []);
             
             // Las especificaciones pueden venir como string JSON o array desde el frontend
@@ -942,6 +943,89 @@ final class CotizacionController extends Controller
                     'telas' => $telasMultiples,
                 ]);
                 
+                // PROCESAR TODAS LAS TELAS DE telas_multiples (CON O SIN FOTOS)
+                foreach ($telasMultiples as $telaInfo) {
+                    // Buscar o crear color
+                    $colorId = null;
+                    if (!empty($telaInfo['color'])) {
+                        $color = DB::table('colores_prenda')
+                            ->where('nombre', $telaInfo['color'])
+                            ->first();
+                        
+                        if (!$color) {
+                            $colorId = DB::table('colores_prenda')->insertGetId([
+                                'nombre' => $telaInfo['color'],
+                                'activo' => true,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                            Log::info('✅ Color creado', ['color' => $telaInfo['color'], 'id' => $colorId]);
+                        } else {
+                            $colorId = $color->id;
+                        }
+                    }
+                    
+                    // Buscar o crear tela
+                    $telaId = null;
+                    if (!empty($telaInfo['tela'])) {
+                        $tela = DB::table('telas_prenda')
+                            ->where('nombre', trim($telaInfo['tela']))
+                            ->first();
+                        
+                        if (!$tela) {
+                            $telaId = DB::table('telas_prenda')->insertGetId([
+                                'nombre' => trim($telaInfo['tela']),
+                                'referencia' => $telaInfo['referencia'] ?? null,
+                                'activo' => true,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                            Log::info('✅ Tela creada', ['tela' => $telaInfo['tela'], 'id' => $telaId]);
+                        } else {
+                            $telaId = $tela->id;
+                        }
+                    }
+
+                    // GUARDAR REGISTRO EN prenda_telas_cot
+                    if ($colorId && $telaId && $variante) {
+                        // Verificar si ya existe
+                        $existente = DB::table('prenda_telas_cot')
+                            ->where('prenda_cot_id', $prendaModel->id)
+                            ->where('variante_prenda_cot_id', $variante->id)
+                            ->where('color_id', $colorId)
+                            ->where('tela_id', $telaId)
+                            ->first();
+                        
+                        if (!$existente) {
+                            $prendaTelaCotId = DB::table('prenda_telas_cot')->insertGetId([
+                                'prenda_cot_id' => $prendaModel->id,
+                                'variante_prenda_cot_id' => $variante->id,
+                                'color_id' => $colorId,
+                                'tela_id' => $telaId,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                            
+                            Log::info('✅ Registro guardado en prenda_telas_cot (desde telas_multiples)', [
+                                'prenda_telas_cot_id' => $prendaTelaCotId,
+                                'prenda_id' => $prendaModel->id,
+                                'variante_id' => $variante->id,
+                                'color_id' => $colorId,
+                                'tela_id' => $telaId,
+                                'color' => $telaInfo['color'] ?? '',
+                                'tela' => $telaInfo['tela'] ?? '',
+                                'referencia' => $telaInfo['referencia'] ?? '',
+                            ]);
+                        } else {
+                            Log::info('ℹ️ Registro ya existe en prenda_telas_cot', [
+                                'prenda_id' => $prendaModel->id,
+                                'color' => $telaInfo['color'] ?? '',
+                                'tela' => $telaInfo['tela'] ?? '',
+                            ]);
+                        }
+                    }
+                }
+                
                 // Acceder a la estructura anidada: prendas[index][telas][telaIndex][fotos][]
                 $allFiles = $request->allFiles();
                 if (isset($allFiles['prendas']) && is_array($allFiles['prendas']) && isset($allFiles['prendas'][$index])) {
@@ -972,6 +1056,77 @@ final class CotizacionController extends Controller
                                     $telaInfo = []; // Continuar de todas formas
                                 }
 
+                                // Buscar o crear color
+                                $colorId = null;
+                                if (!empty($telaInfo['color'])) {
+                                    $color = DB::table('colores_prenda')
+                                        ->where('nombre', $telaInfo['color'])
+                                        ->first();
+                                    
+                                    if (!$color) {
+                                        $colorId = DB::table('colores_prenda')->insertGetId([
+                                            'nombre' => $telaInfo['color'],
+                                            'activo' => true,
+                                            'created_at' => now(),
+                                            'updated_at' => now(),
+                                        ]);
+                                        Log::info('✅ Color creado', ['color' => $telaInfo['color'], 'id' => $colorId]);
+                                    } else {
+                                        $colorId = $color->id;
+                                    }
+                                }
+                                
+                                // Buscar o crear tela
+                                $telaId = null;
+                                if (!empty($telaInfo['tela'])) {
+                                    $tela = DB::table('telas_prenda')
+                                        ->where('nombre', $telaInfo['tela'])
+                                        ->first();
+                                    
+                                    if (!$tela) {
+                                        $telaId = DB::table('telas_prenda')->insertGetId([
+                                            'nombre' => $telaInfo['tela'],
+                                            'activo' => true,
+                                            'created_at' => now(),
+                                            'updated_at' => now(),
+                                        ]);
+                                        Log::info('✅ Tela creada', ['tela' => $telaInfo['tela'], 'id' => $telaId]);
+                                    } else {
+                                        $telaId = $tela->id;
+                                    }
+                                }
+
+                                // GUARDAR REGISTRO EN prenda_telas_cot (solo una vez por cada tela)
+                                $prendaTelaCotId = null;
+                                if ($colorId && $telaId) {
+                                    // Verificar si ya existe un registro con los mismos IDs
+                                    $existente = DB::table('prenda_telas_cot')
+                                        ->where('prenda_cot_id', $prendaModel->id)
+                                        ->where('variante_prenda_cot_id', $variante->id)
+                                        ->where('color_id', $colorId)
+                                        ->where('tela_id', $telaId)
+                                        ->first();
+                                    
+                                    if (!$existente) {
+                                        $prendaTelaCotId = DB::table('prenda_telas_cot')->insertGetId([
+                                            'prenda_cot_id' => $prendaModel->id,
+                                            'variante_prenda_cot_id' => $variante->id,
+                                            'color_id' => $colorId,
+                                            'tela_id' => $telaId,
+                                            'created_at' => now(),
+                                            'updated_at' => now(),
+                                        ]);
+                                        
+                                        Log::info('✅ Registro guardado en prenda_telas_cot', [
+                                            'prenda_telas_cot_id' => $prendaTelaCotId,
+                                            'prenda_id' => $prendaModel->id,
+                                            'variante_id' => $variante->id,
+                                            'color_id' => $colorId,
+                                            'tela_id' => $telaId,
+                                        ]);
+                                    }
+                                }
+
                                 foreach ($telaData['fotos'] as $fotoIndex => $archivoFoto) {
                                     if ($archivoFoto && $archivoFoto->isValid()) {
                                         try {
@@ -984,6 +1139,9 @@ final class CotizacionController extends Controller
                                             // Guardar foto de tela (sin color_id, tela_id, referencia porque están en telas_multiples JSON)
                                             \DB::table('prenda_tela_fotos_cot')->insert([
                                                 'prenda_cot_id' => $prendaModel->id,
+                                                'color_id' => $colorId,
+                                                'tela_id' => $telaId,
+                                                'referencia' => $telaInfo['referencia'] ?? '',
                                                 'ruta_original' => $ruta,
                                                 'ruta_webp' => $ruta,
                                                 'ruta_miniatura' => null,
