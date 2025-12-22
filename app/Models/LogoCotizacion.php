@@ -16,7 +16,7 @@ class LogoCotizacion extends Model
         'imagenes',
         'tecnicas',
         'observaciones_tecnicas',
-        'ubicaciones',
+        'secciones',
         'observaciones_generales',
         'tipo_venta'
     ];
@@ -24,7 +24,7 @@ class LogoCotizacion extends Model
     protected $casts = [
         'imagenes' => 'array',
         'tecnicas' => 'array',
-        'ubicaciones' => 'array',
+        'secciones' => 'array',
         'observaciones_generales' => 'array'
     ];
 

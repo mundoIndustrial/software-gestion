@@ -326,10 +326,6 @@ class PedidoProduccionController extends Controller
                 'numero_pedido' => $pedido->numero_pedido,
             ]);
 
-                            'index' => $indexPrenda,
-                            'fotos' => count($fotosData[$indexPrenda]),
-                            'telas' => count($telasData[$indexPrenda]),
-                            'logos' => count($logosData[$indexPrenda]),
                         ]);
                     }
 

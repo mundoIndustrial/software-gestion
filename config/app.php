@@ -1,5 +1,7 @@
 <?php
 
+use Illuminate\Support\Facades\Facade;
+
 return [
 
     /*
@@ -39,7 +41,7 @@ return [
     |
     */
 
-    'debug' => (bool) env('APP_DEBUG', false),
+    'debug' => (bool) env('APP_DEBUG', TRUE),
 
     /*
     |--------------------------------------------------------------------------
@@ -98,6 +100,10 @@ return [
     'cipher' => 'AES-256-CBC',
 
     'key' => env('APP_KEY'),
+
+    'aliases' => Facade::defaultAliases()->merge([
+        'Image' => Intervention\Image\Laravel\Facades\Image::class,
+    ])->toArray(),
 
     'previous_keys' => [
         ...array_filter(

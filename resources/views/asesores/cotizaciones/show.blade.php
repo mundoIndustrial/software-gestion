@@ -55,6 +55,7 @@
                     'esLogo' => $esLogoTab
                 ])
 
+                
                 {{-- Reflectivo Tab --}}
                 @include('components.cotizaciones.show.reflectivo-tab', [
                     'cotizacion' => $cotizacion
