@@ -23,7 +23,6 @@
                        class="menu-link {{ request()->routeIs('asesores.dashboard') ? 'active' : '' }}">
                         <span class="material-symbols-rounded">dashboard</span>
                         <span class="menu-label">Dashboard</span>
-                        <span class="menu-badge">New</span>
                     </a>
                 </li>
             </ul>
