@@ -562,16 +562,15 @@ document.addEventListener('DOMContentLoaded', function() {
             // Generar HTML de tallas editables (TABLA ESTILO SIMILAR A TELAS)
             let tallasHtml = '';
             if (tallas.length > 0) {
-                tallasHtml = '<div style="margin-top: 1.5rem; padding: 0; background: transparent;">';
-                tallasHtml += '<div style="padding: 0.75rem 1rem; background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; border-radius: 6px 6px 0 0; font-weight: 600; display: grid; grid-template-columns: 1fr 1fr 1fr 100px; gap: 1rem; align-items: center;">';
+                tallasHtml = '<div style="margin-top: 1.5rem; padding: 0; background: transparent; width: 100%;">';
+                tallasHtml += '<div style="padding: 0.75rem 1rem; background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; border-radius: 6px 6px 0 0; font-weight: 600; display: grid; grid-template-columns: 1.5fr 1fr 100px; gap: 1rem; align-items: center; width: 100%;">';
                 tallasHtml += '<div>Talla - Introduce cantidades</div>';
                 tallasHtml += '<div>Cantidad</div>';
-                tallasHtml += '<div></div>';
                 tallasHtml += '<div style="text-align: center;">Acción</div>';
                 tallasHtml += '</div>';
                 
                 tallas.forEach(talla => {
-                    tallasHtml += `<div style="padding: 1rem; background: white; border: 1px solid #e0e0e0; border-top: none; display: grid; grid-template-columns: 1fr 1fr 1fr 100px; gap: 1rem; align-items: center; transition: background 0.2s;">
+                    tallasHtml += `<div style="padding: 1rem; background: white; border: 1px solid #e0e0e0; border-top: none; display: grid; grid-template-columns: 1.5fr 1fr 100px; gap: 1rem; align-items: center; transition: background 0.2s; width: 100%;">
                         <div style="display: flex; flex-direction: column;">
                             <label style="font-size: 0.75rem; color: #666; font-weight: 600; text-transform: uppercase; margin-bottom: 0.4rem;">Talla</label>
                             <div style="font-weight: 500; color: #1f2937;">${talla}</div>
@@ -588,7 +587,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                    data-prenda="${index}"
                                    style="width: 100%; padding: 0.6rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.9rem; transition: border-color 0.2s;">
                         </div>
-                        <div></div>
                         <div style="text-align: center;">
                             <button type="button" class="btn-quitar-talla" onclick="quitarTallaDelFormulario(${index}, '${talla}')" style="background: #dc3545; color: white; border: none; padding: 0.5rem 0.75rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.3rem; white-space: nowrap;">
                                 ✕ Quitar
@@ -642,8 +640,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             if (variacionesArray.length > 0) {
-                variacionesHtml = '<div style="margin-top: 1.5rem; padding: 0; background: transparent;">';
-                variacionesHtml += '<div style="padding: 0.75rem 1rem; background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; border-radius: 6px 6px 0 0; font-weight: 600; display: grid; grid-template-columns: 1fr 1fr 1fr 100px; gap: 1rem; align-items: center;">';
+                variacionesHtml = '<div style="margin-top: 1.5rem; padding: 0; background: transparent; width: 100%;">';
+                variacionesHtml += '<div style="padding: 0.75rem 1rem; background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; border-radius: 6px 6px 0 0; font-weight: 600; display: grid; grid-template-columns: 1.5fr 150px 1.5fr 100px; gap: 1rem; align-items: center; width: 100%;">';
                 variacionesHtml += '<div>📋 Variaciones de la Prenda</div>';
                 variacionesHtml += '<div>Valor</div>';
                 variacionesHtml += '<div>Observaciones</div>';
@@ -671,7 +669,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                            style="width: 100%; padding: 0.6rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.9rem; transition: border-color 0.2s;">`;
                     }
                     
-                    variacionesHtml += `<div style="padding: 1rem; background: white; border: 1px solid #e0e0e0; border-top: none; display: grid; grid-template-columns: 1fr 1fr 1fr 100px; gap: 1rem; align-items: start; transition: background 0.2s;" data-variacion="${varIdx}" data-prenda="${index}">
+                    variacionesHtml += `<div style="padding: 1rem; background: white; border: 1px solid #e0e0e0; border-top: none; display: grid; grid-template-columns: 1.5fr 150px 1.5fr 100px; gap: 1rem; align-items: start; transition: background 0.2s; width: 100%;" data-variacion="${varIdx}" data-prenda="${index}">
                         <div style="display: flex; flex-direction: column;">
                             <label style="font-size: 0.75rem; color: #666; font-weight: 600; text-transform: uppercase; margin-bottom: 0.4rem;">Tipo</label>
                             <div style="font-weight: 500; color: #1f2937;">${variacion.tipo}</div>
@@ -744,8 +742,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }
                 
-                telasHtml = '<div style="margin-top: 1.5rem; padding: 0; background: transparent;">';
-                telasHtml += '<div style="padding: 0.75rem 1rem; background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; border-radius: 6px 6px 0 0; font-weight: 600; display: grid; grid-template-columns: 1fr 1fr 1fr 100px; gap: 1rem; align-items: center;">';
+                telasHtml = '<div style="margin-top: 1.5rem; padding: 0; background: transparent; width: 100%;">';
+                telasHtml += '<div style="padding: 0.75rem 1rem; background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; border-radius: 6px 6px 0 0; font-weight: 600; display: grid; grid-template-columns: 1fr 1fr 1fr 100px; gap: 1rem; align-items: center; width: 100%;">';
                 telasHtml += '<div>Telas</div>';
                 telasHtml += '<div>Color</div>';
                 telasHtml += '<div>Referencia</div>';
@@ -804,7 +802,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     console.log(`   - Tela ${telaIdx}: nombre="${nombreTela}", color="${colorTela}", referencia="${referenciaTela}"`);
                     
-                    telasHtml += `<div style="padding: 1rem; background: white; border: 1px solid #e0e0e0; border-top: none; display: grid; grid-template-columns: 1fr 1fr 1fr 100px; gap: 1rem; align-items: center; transition: background 0.2s;">
+                    telasHtml += `<div style="padding: 1rem; background: white; border: 1px solid #e0e0e0; border-top: none; display: grid; grid-template-columns: 1fr 1fr 1fr 100px; gap: 1rem; align-items: center; transition: background 0.2s; width: 100%;">
                         <div style="display: flex; flex-direction: column;">
                             <label style="font-size: 0.75rem; color: #666; font-weight: 600; text-transform: uppercase; margin-bottom: 0.4rem;">Tela</label>
                             <input type="text" value="${nombreTela}" data-field="tela_nombre" data-idx="${telaIdx}" data-prenda="${index}" style="width: 100%; padding: 0.6rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.9rem; transition: border-color 0.2s;" placeholder="Ej: Algodón">
@@ -903,9 +901,6 @@ document.addEventListener('DOMContentLoaded', function() {
                                           class="prenda-descripcion"
                                           data-prenda="${index}" style="min-height: 80px;">${prenda.descripcion || ''}</textarea>
                             </div>
-
-                            ${variacionesHtml}
-                            ${tallasHtml}
                         </div>
 
                         <div class="prenda-fotos-section">
@@ -913,6 +908,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
 
+                    ${variacionesHtml}
+                    ${tallasHtml}
                     ${telasHtml}
                 </div>
             `;
