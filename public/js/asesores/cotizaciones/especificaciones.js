@@ -202,7 +202,7 @@ const opcionesPorUbicacionFriendly = {
     'GORRAS': ['FRENTE', 'LATERAL', 'TRASERA']
 };
 
-let seccionesSeleccionadasFriendly = [];
+window.seccionesSeleccionadasFriendly = [];
 
 function agregarSeccion() {
     const selector = document.getElementById('seccion_prenda');

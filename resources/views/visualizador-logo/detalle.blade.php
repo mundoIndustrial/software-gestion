@@ -129,12 +129,12 @@
                             <div class="col-12 mb-3">
                                 <label class="text-muted small">Ubicaciones</label>
                                 <p class="mb-0">
-                                    @if(is_array($cotizacion->logoCotizacion->ubicaciones))
-                                        @foreach($cotizacion->logoCotizacion->ubicaciones as $ubicacion)
+                                    @if(is_array($cotizacion->logoCotizacion->secciones))
+                                        @foreach($cotizacion->logoCotizacion->secciones as $ubicacion)
                                             <span class="badge bg-light text-dark me-1">{{ $ubicacion }}</span>
                                         @endforeach
                                     @else
-                                        {{ $cotizacion->logoCotizacion->ubicaciones ?? '-' }}
+                                        {{ $cotizacion->logoCotizacion->secciones ?? '-' }}
                                     @endif
                                 </p>
                             </div>

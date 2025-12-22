@@ -1,6 +1,6 @@
 {{-- Logo Ubicaciones --}}
 @php
-    $ubicaciones = $logo->ubicaciones;
+    $ubicaciones = $logo->secciones;
     if (is_string($ubicaciones)) {
         $ubicaciones = json_decode($ubicaciones, true) ?? [];
     }

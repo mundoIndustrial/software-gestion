@@ -34,6 +34,13 @@ class AppServiceProvider extends ServiceProvider
                 return new \App\Application\Cotizacion\Services\GenerarNumeroCotizacionService();
             }
         );
+
+        // Registrar la façade de Intervention Image
+        $this->app->singleton('image', function ($app) {
+            return new \Intervention\Image\ImageManager(
+                new \Intervention\Image\Drivers\Gd\Driver()
+            );
+        });
     }
 
     /**

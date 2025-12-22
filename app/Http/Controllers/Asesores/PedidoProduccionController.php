@@ -525,12 +525,14 @@ class PedidoProduccionController extends Controller
                 ], 404);
             }
 
-            return response()->json([
+            // Preparar respuesta base
+            $response = [
                 'id' => $cotizacion->id,
                 'numero' => $cotizacion->numero_cotizacion,
                 'cliente' => $cotizacion->cliente,
                 'asesora' => $cotizacion->asesora,
                 'forma_pago' => $cotizacion->forma_pago ?? '',
+                'tipo_cotizacion_codigo' => $cotizacion->tipo_cotizacion_codigo ?? '',
                 'prendas' => $cotizacion->prendasCotizaciones->map(function($prenda) {
                     // Mapear fotos para que contengan URLs correctas
                     $fotosFormato = [];
@@ -586,7 +588,40 @@ class PedidoProduccionController extends Controller
                         'variantes' => $prenda->variantes ?? [],
                     ];
                 })->toArray(),
-            ]);
+            ];
+
+            // ✅ Agregar datos del LOGO si existe
+            if ($cotizacion->logoCotizacion) {
+                $logoCotizacion = $cotizacion->logoCotizacion;
+                
+                // Formatear fotos del logo
+                $fotosLogo = [];
+                if ($logoCotizacion->fotos && count($logoCotizacion->fotos) > 0) {
+                    $fotosLogo = $logoCotizacion->fotos->map(function($foto) {
+                        return [
+                            'id' => $foto->id,
+                            'url' => $foto->url ?? $foto->ruta_webp ?? $foto->ruta_original,
+                            'ruta_original' => $foto->ruta_original,
+                            'ruta_webp' => $foto->ruta_webp,
+                            'ruta_miniatura' => $foto->ruta_miniatura,
+                            'orden' => $foto->orden,
+                        ];
+                    })->toArray();
+                }
+
+                $response['logo'] = [
+                    'id' => $logoCotizacion->id,
+                    'descripcion' => $logoCotizacion->descripcion ?? '',
+                    'tecnicas' => $logoCotizacion->tecnicas ?? [],
+                    'observaciones_tecnicas' => $logoCotizacion->observaciones_tecnicas ?? '',
+                    'secciones' => $logoCotizacion->secciones ?? [],  // ✅ AGREGAR SECCIONES
+                    'observaciones_generales' => $logoCotizacion->observaciones_generales ?? [],
+                    'fotos' => $fotosLogo,
+                    'tipo_venta' => $logoCotizacion->tipo_venta ?? '',
+                ];
+            }
+
+            return response()->json($response);
 
         } catch (\Throwable $e) {
             return response()->json([

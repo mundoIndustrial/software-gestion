@@ -340,7 +340,7 @@ final class CotizacionController extends Controller
                 'especificaciones' => $cotizacion->especificaciones,
                 'logo' => $logo ? 'Sí' : 'No',
                 'logo_tecnicas' => $logo ? $logo->tecnicas : null,
-                'logo_ubicaciones' => $logo ? $logo->ubicaciones : null,
+                'logo_ubicaciones' => $logo ? $logo->secciones : null,
                 'logo_observaciones_generales' => $logo ? $logo->observaciones_generales : null,
             ]);
 
@@ -1251,7 +1251,7 @@ final class CotizacionController extends Controller
                     'descripcion' => $logoDescripcion ?: null,
                     'tecnicas' => is_array($logoTecnicas) ? json_encode($logoTecnicas) : $logoTecnicas,
                     'observaciones_tecnicas' => $logoObservacionesTecnicas ?: null,
-                    'ubicaciones' => is_array($logoUbicaciones) ? json_encode($logoUbicaciones) : $logoUbicaciones,
+                    'secciones' => is_array($logoUbicaciones) ? json_encode($logoUbicaciones) : $logoUbicaciones,
                     'observaciones_generales' => is_array($logoObservacionesGenerales) ? json_encode($logoObservacionesGenerales) : $logoObservacionesGenerales,
                     'tipo_venta' => $request->input('tipo_venta_paso3') ?? $request->input('tipo_venta') ?? null,
                 ]

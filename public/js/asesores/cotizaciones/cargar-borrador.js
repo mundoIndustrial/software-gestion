@@ -1244,8 +1244,8 @@ function cargarBorrador(cotizacion) {
         }
         
         // Cargar ubicaciones del logo
-        if (cotizacion.logo_cotizacion.ubicaciones) {
-            let ubicaciones = cotizacion.logo_cotizacion.ubicaciones;
+        if (cotizacion.logo_cotizacion.secciones) {
+            let ubicaciones = cotizacion.logo_cotizacion.secciones;
             if (typeof ubicaciones === 'string') {
                 try {
                     ubicaciones = JSON.parse(ubicaciones);
@@ -1262,10 +1262,10 @@ function cargarBorrador(cotizacion) {
                 setTimeout(() => {
                     console.log('📍 DEBUG Ubicaciones:', { ubicaciones: ubicaciones });
                     // Cargar en seccionesSeleccionadasFriendly para que renderizarSeccionesFriendly() las dibuje
-                    if (typeof seccionesSeleccionadasFriendly !== 'undefined') {
-                        seccionesSeleccionadasFriendly = [];
+                    if (typeof window.seccionesSeleccionadasFriendly !== 'undefined') {
+                        window.seccionesSeleccionadasFriendly = [];
                         ubicaciones.forEach(ubicacion => {
-                            seccionesSeleccionadasFriendly.push({
+                            window.seccionesSeleccionadasFriendly.push({
                                 ubicacion: ubicacion.seccion || ubicacion,
                                 opciones: ubicacion.ubicaciones_seleccionadas || [],
                                 observaciones: ubicacion.observaciones || ''

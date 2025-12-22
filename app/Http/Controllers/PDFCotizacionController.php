@@ -438,8 +438,8 @@ class PDFCotizacionController extends Controller
         
         // TABLA DE UBICACIONES
         $ubicaciones = [];
-        if ($logo->ubicaciones) {
-            $ubicacionesData = is_string($logo->ubicaciones) ? json_decode($logo->ubicaciones, true) : $logo->ubicaciones;
+        if ($logo->secciones) {
+            $ubicacionesData = is_string($logo->secciones) ? json_decode($logo->secciones, true) : $logo->secciones;
             if (is_array($ubicacionesData)) {
                 $ubicaciones = $ubicacionesData;
             }
