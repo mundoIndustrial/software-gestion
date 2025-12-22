@@ -29,6 +29,14 @@ class LogoCotizacion extends Model
     ];
 
     /**
+     * Accessor para compatibilidad: ubicaciones retorna secciones
+     */
+    public function getUbicacionesAttribute()
+    {
+        return $this->secciones ?? [];
+    }
+
+    /**
      * Relación con Cotizacion
      */
     public function cotizacion(): BelongsTo

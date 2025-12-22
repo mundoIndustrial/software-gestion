@@ -321,100 +321,84 @@ class PedidoProduccionController extends Controller
                 auth()->id()
             );
 
+
             \Log::info('🚀 [PedidoProduccionController] Pedido creado exitosamente', [
                 'pedido_id' => $pedido->id,
                 'numero_pedido' => $pedido->numero_pedido,
             ]);
 
-                        ]);
-                    }
-
-                    // Si hay fotos de reflectivo seleccionadas, agregarlas a la primera prenda
-                    if (!empty($validated['reflectivo_fotos_ids'])) {
-                        \Log::info('📸 [PedidoProduccionController] Procesando fotos de reflectivo', [
-                            'fotos_ids' => $validated['reflectivo_fotos_ids']
-                        ]);
-                        
-                        // Obtener las fotos del reflectivo desde la BD
-                        $reflectivo = \App\Models\ReflectivoCotizacion::where('cotizacion_id', $validated['cotizacion_id'])->first();
-                        
-                        if ($reflectivo) {
-                            $fotosReflectivo = \App\Models\ReflectivoCotizacionFoto::whereIn('id', $validated['reflectivo_fotos_ids'])
-                                ->where('reflectivo_cotizacion_id', $reflectivo->id)
-                                ->get();
-                            
-                            \Log::info('📸 Fotos de reflectivo encontradas', [
-                                'cantidad' => $fotosReflectivo->count()
-                            ]);
-                            
-                            // Agregar las fotos del reflectivo a la primera prenda (índice 0)
-                            if ($fotosReflectivo->count() > 0) {
-                                if (!isset($fotosData[0])) {
-                                    $fotosData[0] = [];
-                                }
-                                
-                                foreach ($fotosReflectivo as $foto) {
-                                    $fotosData[0][] = [
-                                        'url' => '/storage/' . ltrim($foto->ruta_webp ?? $foto->ruta_original, '/'),
-                                        'ruta_original' => $foto->ruta_original,
-                                        'ruta_webp' => $foto->ruta_webp,
-                                        'orden' => $foto->orden ?? 0,
-                                    ];
-                                }
-                                
-                                \Log::info('✅ Fotos de reflectivo agregadas a fotosData[0]', [
-                                    'total_fotos_prenda_0' => count($fotosData[0])
-                                ]);
-                            }
-                        }
-                    }
-
-                    // Llamar a endpoint de guardado de fotos
-                    $request->merge([
-                        'numero_pedido' => $pedido->numero_pedido,
-                        'fotos' => $fotosData,
-                        'telas' => $telasData,
-                        'logos' => $logosData,
-                    ]);
-
-                    $resultadoFotos = $this->guardarFotosPedido($request);
-                    $fotoResponse = json_decode($resultadoFotos->getContent(), true);
-
-                    if (!$fotoResponse['success']) {
-                        \Log::warning('⚠️ Error al guardar fotos, pero pedido ya creado', [
-                            'error' => $fotoResponse['message'] ?? 'desconocido',
-                        ]);
-                    }
-                } catch (\Exception $e) {
-                    \Log::error('❌ Error guardando fotos', [
-                        'error' => $e->getMessage(),
-                    ]);
-                    // No lanzar excepción, el pedido ya fue creado
-                }
-            }
-
             return response()->json([
                 'success' => true,
-                'message' => 'Pedido creado exitosamente',
                 'pedido_id' => $pedido->id,
-                'redirect' => route('asesores.pedidos-produccion.index')
-            ]);
+                'numero_pedido' => $pedido->numero_pedido,
+                'mensaje' => '✅ Pedido creado exitosamente'
+            ], 201);
 
-        } catch (\InvalidArgumentException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 422);
         } catch (\Throwable $e) {
+            \Log::error('❌ [PedidoProduccionController] Error al crear pedido:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
-                'success' => false,
-                'message' => 'Error al crear el pedido: ' . $e->getMessage()
+                'error' => $e->getMessage()
             ], 500);
         }
     }
 
     /**
+     * Procesa fotos de reflectivo para un pedido
+     */
+    private function procesarFotosReflectivo(array $fotosIds, int $cotizacionId, array &$fotosData): void
+    {
+        if (empty($fotosIds)) {
+            return;
+        }
+
+        \Log::info('📸 [PedidoProduccionController] Procesando fotos de reflectivo', [
+            'fotos_ids' => $fotosIds
+        ]);
+        
+        // Obtener las fotos del reflectivo desde la BD
+        $reflectivo = \App\Models\ReflectivoCotizacion::where('cotizacion_id', $cotizacionId)->first();
+        
+        if (!$reflectivo) {
+            return;
+        }
+
+        $fotosReflectivo = \App\Models\ReflectivoCotizacionFoto::whereIn('id', $fotosIds)
+            ->where('reflectivo_cotizacion_id', $reflectivo->id)
+            ->get();
+        
+        \Log::info('📸 Fotos de reflectivo encontradas', [
+            'cantidad' => $fotosReflectivo->count()
+        ]);
+        
+        // Agregar las fotos del reflectivo a la primera prenda (índice 0)
+        if ($fotosReflectivo->count() > 0) {
+            if (!isset($fotosData[0])) {
+                $fotosData[0] = [];
+            }
+            
+            foreach ($fotosReflectivo as $foto) {
+                $fotosData[0][] = [
+                    'url' => '/storage/' . ltrim($foto->ruta_webp ?? $foto->ruta_original, '/'),
+                    'ruta_original' => $foto->ruta_original,
+                    'ruta_webp' => $foto->ruta_webp,
+                    'orden' => $foto->orden ?? 0,
+                ];
+            }
+            
+            \Log::info('✅ Fotos de reflectivo agregadas a fotosData[0]', [
+                'total_fotos_prenda_0' => count($fotosData[0])
+            ]);
+        }
+    }
+
+    /**
      * Obtiene próximo número de pedido
+    /**
+     * Obtiene el número de pedido siguiente
      * 
      * @return JsonResponse
      */
@@ -467,24 +451,7 @@ class PedidoProduccionController extends Controller
                     'success' => false,
                     'message' => 'No se encontraron prendas para este pedido'
                 ], 404);
-                        ]);
-                    }
-                }
-                                'ubicacion' => $logo['ubicacion'] ?? null,
-                                'ancho' => $logo['ancho'] ?? null,
-                                'alto' => $logo['alto'] ?? null,
-                                'tamaño' => $logo['tamaño'] ?? null,
-                                'created_at' => now(),
-                                'updated_at' => now(),
-                            ]);
-                        }
-                    }
-                }
-
-                $indexPrenda++;
             }
-
-            \DB::commit();
 
             \Log::info('✅ [guardarFotosPedido] Todas las fotos guardadas exitosamente');
 
@@ -494,7 +461,6 @@ class PedidoProduccionController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \DB::rollBack();
             \Log::error('❌ [guardarFotosPedido] Error', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
@@ -525,14 +491,68 @@ class PedidoProduccionController extends Controller
                 ], 404);
             }
 
+            // Obtener logo si existe
+            $logoData = null;
+            if ($cotizacion->logo) {
+                $seccionesRaw = $cotizacion->logo->secciones;
+                
+                // Parsear secciones si vienen como JSON string
+                $seccionesArray = $seccionesRaw;
+                if (is_string($seccionesRaw)) {
+                    try {
+                        $seccionesArray = json_decode($seccionesRaw, true);
+                    } catch (\Exception $e) {
+                        \Log::warning('Error parseando secciones del logo:', ['error' => $e->getMessage()]);
+                        $seccionesArray = [];
+                    }
+                }
+                
+                // Convertir NULL a array vacío
+                if ($seccionesArray === null) {
+                    $seccionesArray = [];
+                }
+                
+                \Log::info('📍 Logo secciones datos:', [
+                    'cotizacion_id' => $cotizacion->id,
+                    'logo_id' => $cotizacion->logo->id,
+                    'raw' => $seccionesRaw,
+                    'tipo_raw' => gettype($seccionesRaw),
+                    'parseado' => $seccionesArray,
+                    'es_array' => is_array($seccionesArray),
+                    'count' => is_array($seccionesArray) ? count($seccionesArray) : 0
+                ]);
+                
+                $logoData = [
+                    'id' => $cotizacion->logo->id,
+                    'descripcion' => $cotizacion->logo->descripcion,
+                    'secciones' => $seccionesArray ?? [],  // Secciones parseadas
+                    'ubicaciones' => $seccionesArray ?? [],  // Compatibilidad con viejos datos
+                    'tecnicas' => $cotizacion->logo->tecnicas ?? [],
+                    'observaciones_tecnicas' => $cotizacion->logo->observaciones_tecnicas,
+                    'observaciones_generales' => $cotizacion->logo->observaciones_generales,
+                    'fotos' => $cotizacion->logo->fotos ? $cotizacion->logo->fotos->map(function($foto) {
+                        return [
+                            'id' => $foto->id,
+                            'url' => $foto->url ?? $foto->ruta_webp ?? $foto->ruta_original,
+                            'ruta_original' => $foto->ruta_original,
+                            'ruta_webp' => $foto->ruta_webp,
+                            'ruta_miniatura' => $foto->ruta_miniatura,
+                        ];
+                    })->toArray() : [],
+                ];
+            }
+
             // Preparar respuesta base
             $response = [
                 'id' => $cotizacion->id,
                 'numero' => $cotizacion->numero_cotizacion,
+                'numero_cotizacion' => $cotizacion->numero_cotizacion,
                 'cliente' => $cotizacion->cliente,
                 'asesora' => $cotizacion->asesora,
                 'forma_pago' => $cotizacion->forma_pago ?? '',
                 'tipo_cotizacion_codigo' => $cotizacion->tipo_cotizacion_codigo ?? '',
+                'tipo_cotizacion_codigo' => $cotizacion->tipoCotizacion->codigo ?? 'PL',
+                'logo' => $logoData,
                 'prendas' => $cotizacion->prendasCotizaciones->map(function($prenda) {
                     // Mapear fotos para que contengan URLs correctas
                     $fotosFormato = [];
