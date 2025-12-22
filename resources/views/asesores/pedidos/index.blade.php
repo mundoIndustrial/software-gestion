@@ -326,6 +326,96 @@
         transform: translateY(-1px);
         box-shadow: 0 4px 8px rgba(249, 115, 22, 0.3);
     }
+
+    /* ====================== FILTROS RÁPIDOS ASESORES ====================== */
+    .filtros-rapidos-asesores {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 15px;
+        margin: 20px 0 25px 0;
+        flex-wrap: wrap;
+        background: #f9fafb;
+        padding: 15px 20px;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+    }
+
+    .filtros-rapidos-asesores-label {
+        margin: 0;
+        color: #4b5563;
+        font-weight: 600;
+        font-size: 0.9rem;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-filtro-rapido-asesores {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 0.625rem 1.25rem;
+        background: #ffffff;
+        border: 2px solid #e5e7eb;
+        border-radius: 6px;
+        color: #6b7280;
+        font-weight: 500;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .btn-filtro-rapido-asesores:hover {
+        background: #f3f4f6;
+        border-color: #d1d5db;
+        color: #374151;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-filtro-rapido-asesores.active {
+        background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+        border-color: #1e40af;
+        color: #ffffff;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-filtro-rapido-asesores.active:hover {
+        background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+        box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+        transform: translateY(-2px);
+    }
+
+    .btn-filtro-rapido-asesores .material-symbols-rounded {
+        font-size: 1.2rem;
+        font-weight: 400;
+    }
+
+    /* ====================== ESTILOS SCROLLBAR ====================== */
+    .table-scroll-container::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+
+    .table-scroll-container::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 6px;
+    }
+
+    .table-scroll-container::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 6px;
+        border: 2px solid #f1f5f9;
+    }
+
+    .table-scroll-container::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
 </style>
 
 <div style="padding: 0 0.5rem 0 0; max-width: 100%; margin: 0 auto;">
@@ -374,15 +464,15 @@
     <!-- Tabla con Scroll Horizontal -->
     <div style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem; width: 100%; max-width: 100%;">
         <!-- Contenedor con Scroll -->
-        <div class="table-scroll-container" style="overflow-x: auto; overflow-y: auto; width: 100%; max-width: 100%; max-height: {{ request('tipo') === 'logo' ? '400px' : 'none' }}; border-radius: 6px;">
+        <div class="table-scroll-container" style="overflow-x: auto; overflow-y: auto; width: 100%; max-width: 100%; max-height: {{ request('tipo') === 'logo' ? '400px' : 'none' }}; border-radius: 6px; scrollbar-width: thin; scrollbar-color: #cbd5e1 #f1f5f9;">
             <!-- Header Azul -->
             <div style="
                 background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
                 color: white;
                 padding: 0.75rem 1rem;
                 display: grid;
-                grid-template-columns: {{ request('tipo') === 'logo' ? '120px 120px 140px 150px 160px 220px 130px 140px' : '90px 90px 90px 110px 80px 140px 130px 90px 100px 100px' }};
-                gap: 0.8rem;
+                grid-template-columns: {{ request('tipo') === 'logo' ? '140px 140px 160px 180px 190px 260px 160px 170px' : '120px 120px 120px 140px 110px 170px 160px 120px 130px 130px' }};
+                gap: 1.2rem;
                 font-weight: 600;
                 font-size: 0.8rem;
                 text-transform: uppercase;
@@ -481,8 +571,8 @@
                 @foreach($pedidos as $pedido)
                     <div style="
                         display: grid;
-                        grid-template-columns: {{ request('tipo') === 'logo' ? '120px 120px 140px 150px 160px 220px 130px 140px' : '90px 90px 90px 110px 80px 140px 130px 90px 100px 100px' }};
-                        gap: 0.8rem;
+                        grid-template-columns: {{ request('tipo') === 'logo' ? '140px 140px 160px 180px 190px 260px 160px 170px' : '120px 120px 120px 140px 110px 170px 160px 120px 130px 130px' }};
+                        gap: 1.2rem;
                         padding: 0.75rem 1rem;
                         align-items: center;
                         transition: all 0.3s ease;
@@ -568,11 +658,10 @@
                         " onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 4px 8px rgba(239, 68, 68, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 2px 4px rgba(239, 68, 68, 0.3)'">
                             <i class="fas fa-trash"></i>
                         </button>
-                        --}}
                     </div>
 
                     <!-- Estado -->
-                    <div>
+                    <div style="display: flex; align-items: center;">
                         <span style="
                             background: #fef3c7;
                             color: #92400e;
@@ -597,7 +686,7 @@
                     </div>
 
                     <!-- Área -->
-                    <div>
+                    <div style="display: flex; align-items: center;">
                         @php
                             $area = '-';
                             
@@ -633,7 +722,7 @@
                     </div>
 
                     <!-- Pedido -->
-                    <div style="color: #2563eb; font-weight: 700; font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    <div style="display: flex; align-items: center; color: #2563eb; font-weight: 700; font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                         @php
                             if (get_class($pedido) === 'App\Models\LogoPedido') {
                                 // LogoPedido ya tiene # al inicio (ejemplo: #LOGO-00001)
@@ -645,7 +734,7 @@
                     </div>
 
                     <!-- Cliente -->
-                    <div style="color: #374151; font-size: 0.85rem; font-weight: 500; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="abrirModalCelda('Cliente', '{{ $pedido->cliente }}')" title="Click para ver completo">
+                    <div style="display: flex; align-items: center; color: #374151; font-size: 0.85rem; font-weight: 500; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="abrirModalCelda('Cliente', '{{ $pedido->cliente }}')" title="Click para ver completo">
                         @php
                             echo $pedido->cliente ?? '-';
                         @endphp
@@ -780,7 +869,7 @@
                             $descripcionConTallas = get_class($pedido) === 'App\Models\LogoPedido' ? 'Logo personalizado' : '-';
                         }
                     @endphp
-                    <div style="color: #6b7280; font-size: 0.8rem; cursor: pointer; max-width: {{ request('tipo') === 'logo' ? '220px' : '130px' }}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="abrirModalCelda('Descripción', {{ json_encode($descripcionConTallas) }})" title="Click para ver completo">
+                    <div style="display: flex; align-items: center; color: #6b7280; font-size: 0.8rem; cursor: pointer; max-width: {{ request('tipo') === 'logo' ? '220px' : '130px' }}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="abrirModalCelda('Descripción', {{ json_encode($descripcionConTallas) }})" title="Click para ver completo">
                         @php
                             if (get_class($pedido) === 'App\Models\LogoPedido') {
                                 echo 'Logo personalizado <span style="color: #3b82f6; font-weight: 600;">...</span>';
@@ -812,12 +901,12 @@
                     @endif
 
                     <!-- Forma Pago -->
-                    <div style="color: #374151; font-size: 0.8rem; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="abrirModalCelda('Forma de Pago', '{{ $pedido->forma_de_pago ?? '-' }}')" title="Click para ver completo">
+                    <div style="display: flex; align-items: center; color: #374151; font-size: 0.8rem; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="abrirModalCelda('Forma de Pago', '{{ $pedido->forma_de_pago ?? '-' }}')" title="Click para ver completo">
                         {{ $pedido->forma_de_pago ?? '-' }}
                     </div>
 
                     <!-- Fecha Creación -->
-                    <div style="color: #6b7280; font-size: 0.75rem; white-space: nowrap;">
+                    <div style="display: flex; align-items: center; color: #6b7280; font-size: 0.75rem; white-space: nowrap;">
                         @php
                             if (get_class($pedido) === 'App\Models\LogoPedido') {
                                 echo $pedido->created_at ? $pedido->created_at->format('d/m/Y') : '-';
@@ -829,7 +918,7 @@
 
                     <!-- Fecha Estimada de Entrega (solo si no es logo) -->
                     @if(request('tipo') !== 'logo')
-                    <div style="color: #6b7280; font-size: 0.75rem; white-space: nowrap;">
+                    <div style="display: flex; align-items: center; color: #6b7280; font-size: 0.75rem; white-space: nowrap;">
                         @php
                             if (get_class($pedido) === 'App\Models\LogoPedido') {
                                 echo '-'; // LogoPedido no tiene fecha estimada

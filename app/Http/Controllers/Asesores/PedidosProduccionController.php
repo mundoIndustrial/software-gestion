@@ -1351,10 +1351,25 @@ class PedidosProduccionController extends Controller
                     })->toArray();
                     
                     // Obtener fotos de telas con URLs correctas
-                    $telaFotos = $prenda->telaFotos->map(function($telaFoto) {
+                    // Intentar relacionar fotos con telas por color si tela_id es null
+                    $telaFotos = $prenda->telaFotos->map(function($telaFoto) use ($telas) {
+                        $telaId = $telaFoto->tela_id;
+                        
+                        // Si tela_id es null, intentar encontrar la tela por atributos
+                        if (!$telaId && $telas && count($telas) > 0) {
+                            // Intentar hacer matching por nombre de archivo o descripción
+                            // Si la foto tiene info de tela, usarla
+                            if (isset($telaFoto->nombre_tela) && $telaFoto->nombre_tela) {
+                                $telaBuscada = collect($telas)->firstWhere('nombre_tela', $telaFoto->nombre_tela);
+                                if ($telaBuscada) {
+                                    $telaId = $telaBuscada['id'];
+                                }
+                            }
+                        }
+                        
                         return [
                             'id' => $telaFoto->id,
-                            'tela_id' => $telaFoto->tela_id,
+                            'tela_id' => $telaId,
                             'url' => '/storage/' . ltrim($telaFoto->ruta_webp ?? $telaFoto->url, '/'),
                             'ruta_original' => '/storage/' . ltrim($telaFoto->ruta_original, '/'),
                             'ruta_webp' => '/storage/' . ltrim($telaFoto->ruta_webp, '/'),

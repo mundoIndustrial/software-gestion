@@ -445,6 +445,7 @@ function initializeFilterButtons() {
  */
 document.addEventListener('DOMContentLoaded', function() {
     initializeFilterButtons();
+});
 
 /**
  * Actualizar links de paginación para mantener parámetros de filtro
