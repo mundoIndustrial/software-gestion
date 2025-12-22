@@ -21,7 +21,7 @@
         <div id="order-cliente" class="order-cliente">CLIENTE: <span id="cliente-value"></span></div>
         <div id="order-descripcion" class="order-descripcion" style="margin: 1rem 0;">
             <label style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.5rem; font-size: 0.875rem;">DESCRIPCIÓN:</label>
-            <textarea id="descripcion-text" style="
+            <div id="descripcion-text" style="
                 width: 100%;
                 min-height: 80px;
                 padding: 0.75rem;
@@ -29,9 +29,24 @@
                 border-radius: 6px;
                 font-size: 0.875rem;
                 font-family: inherit;
-                resize: vertical;
                 background: #f9fafb;
-            " placeholder="Ingrese la descripción del pedido de logo"></textarea>
+                white-space: pre-wrap;
+                word-break: break-word;
+            "></div>
+            <div style="margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                <div>
+                    <div style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.25rem; font-size: 0.875rem;">TÉCNICAS:</div>
+                    <div id="logo-tecnicas" style="font-size: 0.875rem; color: #111827; white-space: pre-wrap; word-break: break-word;"></div>
+                </div>
+                <div>
+                    <div style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.25rem; font-size: 0.875rem;">OBSERVACIONES TÉCNICAS:</div>
+                    <div id="logo-observaciones-tecnicas" style="font-size: 0.875rem; color: #111827; white-space: pre-wrap; word-break: break-word;"></div>
+                </div>
+                <div>
+                    <div style="display: block; font-weight: 600; color: #1f2937; margin-bottom: 0.25rem; font-size: 0.875rem;">UBICACIONES:</div>
+                    <div id="logo-ubicaciones" style="font-size: 0.875rem; color: #111827; white-space: pre-wrap; word-break: break-word;"></div>
+                </div>
+            </div>
         </div>
         <h2 class="receipt-title">RECIBO DE LOGO</h2>
         <div class="arrow-container">

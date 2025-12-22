@@ -687,14 +687,58 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             // Descripción
-            const descripcionTextarea = document.querySelector('#order-detail-modal-wrapper-logo #descripcion-text');
-            console.log('📝 [MODAL LOGO] Descripción textarea encontrado:', !!descripcionTextarea, 'valor:', orden.descripcion);
-            if (descripcionTextarea) {
-                // Si viene desde un LogoPedido, usar 'descripcion'
-                // Si viene desde PedidoProduccion con logo, usar 'descripcion' también
-                descripcionTextarea.value = orden.descripcion || '-';
+            const descripcionEl = document.querySelector('#order-detail-modal-wrapper-logo #descripcion-text');
+            console.log('📝 [MODAL LOGO] Descripción elemento encontrado:', !!descripcionEl, 'valor:', orden.descripcion);
+            if (descripcionEl) {
+                descripcionEl.textContent = orden.descripcion || '-';
                 console.log('✅ [MODAL LOGO] Descripción cargada:', orden.descripcion);
             }
+
+            // Técnicas
+            const tecnicasEl = document.querySelector('#order-detail-modal-wrapper-logo #logo-tecnicas');
+            if (tecnicasEl) {
+                const tecnicas = Array.isArray(orden.tecnicas)
+                    ? orden.tecnicas
+                    : (typeof orden.tecnicas === 'string' ? (JSON.parse(orden.tecnicas || '[]')) : []);
+                tecnicasEl.textContent = (tecnicas && tecnicas.length > 0) ? tecnicas.join(', ') : '-';
+            }
+
+            // Observaciones técnicas
+            const obsTecEl = document.querySelector('#order-detail-modal-wrapper-logo #logo-observaciones-tecnicas');
+            if (obsTecEl) {
+                obsTecEl.textContent = orden.observaciones_tecnicas || '-';
+            }
+
+            // Ubicaciones (JSON array): [{opciones:[...], ubicacion:"...", observaciones:"..."}]
+            const ubicacionesEl = document.querySelector('#order-detail-modal-wrapper-logo #logo-ubicaciones');
+            if (ubicacionesEl) {
+                let ubicaciones = [];
+                try {
+                    ubicaciones = Array.isArray(orden.ubicaciones)
+                        ? orden.ubicaciones
+                        : (typeof orden.ubicaciones === 'string' ? (JSON.parse(orden.ubicaciones || '[]')) : []);
+                } catch (e) {
+                    ubicaciones = [];
+                }
+
+                if (ubicaciones && ubicaciones.length > 0) {
+                    const lineas = ubicaciones.map((u) => {
+                        const prenda = u?.ubicacion ? String(u.ubicacion).toUpperCase() : '';
+                        const ops = Array.isArray(u?.opciones) ? u.opciones.map(o => String(o).toUpperCase()).join(', ') : '';
+                        const obs = u?.observaciones ? String(u.observaciones) : '';
+
+                        let linea = '';
+                        if (prenda) linea += prenda;
+                        if (ops) linea += (linea ? ' - ' : '') + ops;
+                        if (obs) linea += (linea ? ': ' : '') + obs;
+                        return linea || '-';
+                    });
+                    ubicacionesEl.textContent = lineas.join('\n');
+                } else {
+                    ubicacionesEl.textContent = '-';
+                }
+            }
+
             
             console.log('✅ [MODAL LOGO] Todos los datos del modal de logo llenados');
         } else {

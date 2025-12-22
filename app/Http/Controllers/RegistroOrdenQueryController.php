@@ -1261,6 +1261,9 @@ class RegistroOrdenQueryController extends Controller
                         if (empty($logoPedidoArray['tecnicas'])) {
                             $logoPedidoArray['tecnicas'] = $logoCotizacion->tecnicas;
                         }
+                        if (empty($logoPedidoArray['observaciones_tecnicas'])) {
+                            $logoPedidoArray['observaciones_tecnicas'] = $logoCotizacion->observaciones_tecnicas;
+                        }
                         if (empty($logoPedidoArray['ubicaciones'])) {
                             $logoPedidoArray['ubicaciones'] = $logoCotizacion->ubicaciones;
                         }
