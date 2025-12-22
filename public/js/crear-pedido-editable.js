@@ -1,6 +1,93 @@
 // Crear Pedido - Script EDITABLE con soporte para edición y eliminación de prendas
 
 /**
+ * FUNCIÓN: Abre una imagen en modal para ampliarla
+ * @param {string} url - URL de la imagen a ampliar
+ * @param {string} titulo - Título del modal (nombre de la foto)
+ */
+window.abrirModalImagen = function(url, titulo = 'Imagen') {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.95);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+        cursor: pointer;
+        padding: 2rem;
+    `;
+    
+    const container = document.createElement('div');
+    container.style.cssText = `
+        position: relative;
+        max-width: 90%;
+        max-height: 90%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    `;
+    
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = titulo;
+    img.style.cssText = `
+        max-width: 100%;
+        max-height: 80vh;
+        object-fit: contain;
+        border-radius: 8px;
+        box-shadow: 0 0 30px rgba(255,255,255,0.3);
+    `;
+    
+    const title = document.createElement('div');
+    title.style.cssText = `
+        color: white;
+        text-align: center;
+        margin-top: 1rem;
+        font-size: 1.1rem;
+        font-weight: 500;
+    `;
+    title.textContent = titulo;
+    
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕ Cerrar';
+    closeBtn.style.cssText = `
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: rgba(255,255,255,0.2);
+        color: white;
+        border: 1px solid white;
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        transition: background 0.2s;
+    `;
+    closeBtn.onmouseover = () => closeBtn.style.background = 'rgba(255,255,255,0.4)';
+    closeBtn.onmouseout = () => closeBtn.style.background = 'rgba(255,255,255,0.2)';
+    closeBtn.onclick = (e) => {
+        e.stopPropagation();
+        modal.remove();
+    };
+    
+    container.appendChild(img);
+    container.appendChild(title);
+    modal.appendChild(container);
+    modal.appendChild(closeBtn);
+    
+    modal.onclick = () => modal.remove();
+    img.onclick = (e) => e.stopPropagation();
+    
+    document.body.appendChild(modal);
+};
+
+/**
  * FUNCIÓN HELPER: Procesa imágenes restantes después de eliminar una
  * Actualiza los índices y asegura que todos los datos sean consistentes
  * 
@@ -125,12 +212,104 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Cargar prendas
         cargarPrendasDesdeCotizacion(id);
+        
+        // Mostrar/ocultar tabs según tipo de cotización
+        mostrarOcultarTabs(id);
     };
 
     // ============================================================
-    // CARGAR PRENDAS DESDE COTIZACIÓN (VÍA AJAX)
+    // MOSTRAR/OCULTAR TABS SEGÚN TIPO DE COTIZACIÓN
     // ============================================================
     
+    function mostrarOcultarTabs(cotizacionId) {
+        const cotizacion = misCotizaciones.find(c => c.id === cotizacionId);
+        const tabsContainer = document.getElementById('tabs-pedido-container');
+        const tabLogoBtn = document.getElementById('tab-logo-btn');
+        const logoFormContainer = document.getElementById('logo-form-container');
+        
+        if (!cotizacion || !tabsContainer) return;
+
+        // Mostrar tabs container
+        tabsContainer.style.display = 'flex';
+
+        // Mostrar tab de logo solo si es cotización combinada (PL) o logo puro (L)
+        const esCombinada = cotizacion.tipo_cotizacion_codigo === 'PL';
+        const esLogo = cotizacion.tipo_cotizacion_codigo === 'L';
+        
+        if (esCombinada) {
+            // Mostrar ambos tabs y formulario de logo
+            if (tabLogoBtn) {
+                tabLogoBtn.style.display = 'flex';
+            }
+            if (logoFormContainer) {
+                logoFormContainer.style.display = 'block';
+            }
+        } else if (esLogo) {
+            // Mostrar solo tab de logo y formulario
+            if (tabLogoBtn) {
+                tabLogoBtn.style.display = 'flex';
+            }
+            if (logoFormContainer) {
+                logoFormContainer.style.display = 'block';
+            }
+            // Cambiar a tab logo automáticamente
+            document.getElementById('tab-logo-btn').click();
+        } else {
+            // Ocultar tab de logo (solo prendas)
+            if (tabLogoBtn) {
+                tabLogoBtn.style.display = 'none';
+            }
+            if (logoFormContainer) {
+                logoFormContainer.style.display = 'none';
+            }
+            // Asegurar que el tab de prendas esté activo
+            cambiarTabPedido('prendas');
+        }
+    }
+
+    // Hacer la función global accesible desde HTML
+    window.mostrarOcultarTabs = mostrarOcultarTabs;
+
+    // ============================================================
+    // CAMBIAR TAB - Función para manejar cambio de tabs
+    // ============================================================
+    
+    window.cambiarTabPedido = function(tab, event) {
+        if (event) {
+            event.preventDefault();
+        }
+
+        // Remover clase active de todos los botones
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+
+        // Remover clase active de todos los contenidos
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.classList.remove('active');
+        });
+
+        // Agregar clase active al botón actual
+        if (event && event.target) {
+            const btn = event.target.closest('.tab-button');
+            if (btn) {
+                btn.classList.add('active');
+            }
+        } else {
+            // Si no hay event (llamada desde JS), buscar el botón por tab
+            const btnPorTab = document.querySelector(`.tab-button[onclick*="'${tab}'"]`);
+            if (btnPorTab) {
+                btnPorTab.classList.add('active');
+            }
+        }
+
+        // Mostrar el tab correspondiente
+        const tabContent = document.getElementById('tab-' + tab);
+        if (tabContent) {
+            tabContent.classList.add('active');
+        }
+    };
+
     function cargarPrendasDesdeCotizacion(cotizacionId) {
         console.log('📥 Cargando prendas de cotización:', cotizacionId);
         fetch(`/asesores/pedidos-produccion/obtener-datos-cotizacion/${cotizacionId}`)
@@ -201,19 +380,167 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     
                     renderizarPrendasEditables(prendasCargadas, data.logo, data.especificaciones, esReflectivo, data.reflectivo, esLogo);
+                    
+                    // Si es combinada (PL), también renderizar el logo en el tab de logo
+                    if ((tipoCotizacion === 'PL' || tipoCotizacion === 'L') && data.logo) {
+                        console.log('🎨 RENDERIZANDO INFORMACIÓN DE LOGO EN TAB');
+                        renderizarLogoEnTab(data.logo);
+                    }
                 }
             })
             .catch(error => {
                 console.error('❌ Error:', error);
                 prendasContainer.innerHTML = `<p style="color: #ef4444;">Error al cargar las prendas: ${error.message}</p>`;
             });
-    }
-
     // ============================================================
-    // RENDERIZAR PRENDAS EDITABLES
+    // RENDERIZAR INFORMACIÓN DE LOGO EN TAB
     // ============================================================
     
-    function renderizarPrendasEditables(prendas, logoCotizacion = null, especificacionesCotizacion = null, esReflectivo = false, datosReflectivo = null, esLogo = false) {
+    function renderizarPrendasEditables(prendasCargadas, logoCotizacion, especificaciones, esReflectivo, datosReflectivo, esLogo) {
+    function renderizarLogoEnTab(logoCotizacion) {
+        if (!logoCotizacion) return;
+        
+        const logoTabContent = document.getElementById('logo-tab-content');
+        if (!logoTabContent) {
+            console.warn('⚠️ No se encontró elemento #logo-tab-content');
+            return;
+        }
+
+        console.log('🎨 Renderizando logo en tab:', logoCotizacion);
+
+        let html = `<div class="logo-info-card" style="background: white; border-radius: 12px; padding: 2rem; border: 1px solid #e0e0e0;">`;
+        
+        // Descripción
+        if (logoCotizacion.descripcion) {
+            html += `<div class="form-group-editable" style="margin-bottom: 1.5rem;">
+                <label style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>📝</span> Descripción del Logo
+                </label>
+                <div style="background: #f5f5f5; padding: 1rem; border-radius: 6px; border-left: 3px solid #2196F3;">
+                    <p style="margin: 0; color: #333; line-height: 1.5; white-space: pre-wrap;">${logoCotizacion.descripcion}</p>
+                </div>
+            </div>`;
+        }
+
+        // Técnicas
+        let tecnicas = [];
+        if (logoCotizacion.tecnicas) {
+            if (Array.isArray(logoCotizacion.tecnicas)) {
+                tecnicas = logoCotizacion.tecnicas;
+            } else if (typeof logoCotizacion.tecnicas === 'string') {
+                try {
+                    tecnicas = JSON.parse(logoCotizacion.tecnicas);
+                    if (!Array.isArray(tecnicas)) tecnicas = [tecnicas];
+                } catch (e) {
+                    tecnicas = logoCotizacion.tecnicas.split(',').map(t => t.trim());
+                }
+            }
+        }
+
+        if (tecnicas.length > 0) {
+            html += `<div class="form-group-editable" style="margin-bottom: 1.5rem;">
+                <label style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>🎯</span> Técnicas
+                </label>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">`;
+            
+            const colores = {
+                'BORDADO': '#4CAF50',
+                'DTF': '#2196F3',
+                'ESTAMPADO': '#FF9800',
+                'SUBLIMADO': '#9C27B0'
+            };
+
+            tecnicas.forEach(tecnica => {
+                const tecnicaText = typeof tecnica === 'object' ? (tecnica.nombre || tecnica) : tecnica;
+                const color = colores[tecnicaText] || '#666';
+                html += `<span style="background: ${color}; color: white; padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem; font-weight: 500;">
+                    ${tecnicaText}
+                </span>`;
+            });
+
+            html += `</div></div>`;
+        }
+
+        // Ubicaciones
+        let ubicaciones = [];
+        if (logoCotizacion.ubicaciones) {
+            if (Array.isArray(logoCotizacion.ubicaciones)) {
+                ubicaciones = logoCotizacion.ubicaciones;
+            } else if (typeof logoCotizacion.ubicaciones === 'string') {
+                try {
+                    ubicaciones = JSON.parse(logoCotizacion.ubicaciones);
+                    if (!Array.isArray(ubicaciones)) ubicaciones = [ubicaciones];
+                } catch (e) {
+                    console.warn('Error parseando ubicaciones:', e);
+                    ubicaciones = [];
+                }
+            }
+        }
+
+        if (ubicaciones.length > 0) {
+            html += `<div class="form-group-editable" style="margin-bottom: 1.5rem;">
+                <label style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>📍</span> Ubicaciones
+                </label>
+                <div style="background: #f5f5f5; padding: 1rem; border-radius: 6px;">`;
+            
+            ubicaciones.forEach((ub, idx) => {
+                const ubicacionText = typeof ub === 'object' ? (ub.ubicacion || ub) : ub;
+                const opciones = typeof ub === 'object' && ub.opciones ? ub.opciones : [];
+                
+                html += `<div style="margin-bottom: ${idx < ubicaciones.length - 1 ? '1rem' : '0'}; padding-bottom: ${idx < ubicaciones.length - 1 ? '1rem' : '0'}; border-bottom: ${idx < ubicaciones.length - 1 ? '1px solid #e0e0e0' : 'none'};">
+                    <p style="margin: 0 0 0.5rem 0; color: #333; font-weight: 500;">• ${ubicacionText}</p>`;
+                
+                if (Array.isArray(opciones) && opciones.length > 0) {
+                    html += `<div style="margin-left: 1.5rem; color: #666; font-size: 0.9rem;">
+                        ${opciones.join(', ')}
+                    </div>`;
+                }
+                
+                html += `</div>`;
+            });
+
+            html += `</div></div>`;
+        }
+
+        // Observaciones
+        if (logoCotizacion.observaciones_tecnicas) {
+            html += `<div class="form-group-editable" style="margin-bottom: 1.5rem;">
+                <label style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>📋</span> Observaciones Técnicas
+                </label>
+                <div style="background: #fffde7; padding: 1rem; border-radius: 6px; border-left: 3px solid #FBC02D;">
+                    <p style="margin: 0; color: #333; line-height: 1.5; white-space: pre-wrap;">${logoCotizacion.observaciones_tecnicas}</p>
+                </div>
+            </div>`;
+        }
+
+        // Fotos
+        if (logoCotizacion.fotos && Array.isArray(logoCotizacion.fotos) && logoCotizacion.fotos.length > 0) {
+            html += `<div class="form-group-editable">
+                <label style="font-weight: 600; font-size: 0.95rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>🖼️</span> Galería de Fotos (${logoCotizacion.fotos.length})
+                </label>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem;">`;
+
+            logoCotizacion.fotos.forEach((foto, idx) => {
+                const fotoUrl = typeof foto === 'string' ? foto : (foto.url || foto);
+                html += `<div style="position: relative; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); cursor: pointer;" onclick="abrirModalImagen('${fotoUrl}', 'Foto Logo ${idx + 1}')">
+                    <img src="${fotoUrl}" alt="Logo foto ${idx + 1}" style="width: 100%; height: 120px; object-fit: cover; display: block; transition: transform 0.2s;">
+                    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s;" class="foto-overlay" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">
+                        <span style="color: white; font-size: 1.5rem;">🔍</span>
+                    </div>
+                </div>`;
+            });
+
+            html += `</div></div>`;
+        }
+
+        html += `</div>`;
+        logoTabContent.innerHTML = html;
+    }
+
         if (!prendas || prendas.length === 0) {
             // Si no hay prendas pero hay LOGO, mostrar campos LOGO
             if (esLogo && logoCotizacion) {
@@ -861,16 +1188,20 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Prendas y logo renderizados con información completa');
     }
 
+// ============================================================
+// VARIABLES GLOBALES PARA LOGO
+// ============================================================
+
+let logoTecnicasSeleccionadas = [];
+let logoSeccionesSeleccionadas = [];
+let logoFotosSeleccionadas = [];  // Array para guardar fotos editables
+let logoObservacionesGenerales = [];  // Observaciones del logo
+let logoCotizacionId = null;  // ID del LogoCotizacion para guardar en BD
+
     // ============================================================
     // RENDERIZAR CAMPOS SOLO PARA LOGO (sin prendas)
     // ============================================================
     
-    // Arrays globales para almacenar datos editables del LOGO
-    let logoTecnicasSeleccionadas = [];
-    let logoSeccionesSeleccionadas = [];
-    let logoFotosSeleccionadas = [];  // Array para guardar fotos editables
-    let logoCotizacionId = null;  // ID del LogoCotizacion para guardar en BD
-
     // Opciones por ubicación (mismas del formulario de bordado)
     const logoOpcionesPorUbicacion = {
         'CAMISA': ['PECHO', 'ESPALDA', 'MANGA IZQUIERDA', 'MANGA DERECHA', 'CUELLO'],
@@ -1764,6 +2095,131 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // ============================================================
+    // FUNCIONES HELPER PARA RECOLECTAR DATOS
+    // ============================================================
+
+    /**
+     * Recolecta datos de una prenda específica desde el formulario
+     * @param {Element} card - Card element de la prenda
+     * @param {number} index - Índice de la prenda
+     * @returns {Object} Datos de la prenda o null si no tiene cantidades
+     */
+    function recolectarDatosPrenda(card, index) {
+        if (!card) return null;
+
+        const prenda = prendasCargadas[index];
+        if (!prenda) return null;
+
+        // Obtener valores editados
+        const nombreProducto = card.querySelector(`.prenda-nombre`)?.value || prenda.nombre_producto;
+        const descripcion = card.querySelector(`.prenda-descripcion`)?.value || prenda.descripcion || '';
+
+        // Obtener cantidades por talla
+        const cantidadesPorTalla = {};
+        const tallaInputs = card.querySelectorAll('.talla-cantidad');
+        tallaInputs.forEach(input => {
+            const cantidad = parseInt(input.value) || 0;
+            const talla = input.getAttribute('data-talla');
+            if (cantidad > 0) {
+                cantidadesPorTalla[talla] = cantidad;
+            }
+        });
+
+        // Si no hay cantidades, omitir
+        if (Object.keys(cantidadesPorTalla).length === 0) {
+            return null;
+        }
+
+        // Recopilar variaciones editadas
+        const variacionesEditadas = {};
+        const inputsVariaciones = card.querySelectorAll('[data-field]');
+        inputsVariaciones.forEach(input => {
+            const field = input.getAttribute('data-field');
+            const value = input.type === 'checkbox' ? (input.checked ? 1 : 0) : (input.value || '');
+            if (field && value !== '') {
+                variacionesEditadas[field] = value;
+            }
+        });
+
+        // Recopilar telas
+        const telasEditadas = [];
+        const telaCards = card.querySelectorAll('[data-prenda="' + index + '"]');
+        telaCards.forEach(telaCard => {
+            const telaNombre = telaCard.querySelector('[data-field="tela_nombre"]')?.value;
+            const telaColor = telaCard.querySelector('[data-field="tela_color"]')?.value;
+            const telaRef = telaCard.querySelector('[data-field="tela_ref"]')?.value;
+            
+            if (telaNombre || telaColor || telaRef) {
+                telasEditadas.push({
+                    tela: telaNombre || prenda.tela || '',
+                    color: telaColor || prenda.color || '',
+                    referencia: telaRef || ''
+                });
+            }
+        });
+
+        // Obtener géneros seleccionados
+        const generosSeleccionados = [];
+        const generosCheckboxes = card.querySelectorAll('.genero-checkbox:checked');
+        generosCheckboxes.forEach(checkbox => {
+            generosSeleccionados.push(checkbox.value);
+        });
+
+        // Recopilar fotos
+        const fotosEnDOM = [];
+        const imagenesPrendaDOM = card.querySelectorAll('img[data-foto-url][data-prenda-index="' + index + '"]');
+        imagenesPrendaDOM.forEach(img => {
+            const fotoJSON = img.getAttribute('data-foto-url');
+            if (fotoJSON) {
+                try {
+                    const foto = JSON.parse(decodeURIComponent(fotoJSON));
+                    fotosEnDOM.push(foto);
+                } catch (e) {
+                    console.error('Error parseando foto:', e);
+                }
+            }
+        });
+
+        // Retornar objeto con todos los datos
+        return {
+            nombre_producto: nombreProducto,
+            descripcion: descripcion,
+            cantidades_por_talla: cantidadesPorTalla,
+            variaciones: variacionesEditadas,
+            telas: telasEditadas,
+            generos: generosSeleccionados,
+            fotos: fotosEnDOM,
+            prenda_id: prenda.id || null
+        };
+    }
+
+    /**
+     * Obtiene técnicas seleccionadas del formulario
+     * @returns {Array} Array de técnicas seleccionadas
+     */
+    function obtenerTecnicasSeleccionadas() {
+        const tecnicas = [];
+        document.querySelectorAll('input[name="logo_tecnicas"]:checked').forEach(checkbox => {
+            tecnicas.push(checkbox.value);
+        });
+        return tecnicas;
+    }
+
+    /**
+     * Obtiene ubicaciones seleccionadas del formulario
+     * @returns {Array} Array de ubicaciones
+     */
+    function obtenerUbicacionesSeleccionadas() {
+        try {
+            const ubicacionesText = document.getElementById('logo_ubicaciones')?.value || '[]';
+            return JSON.parse(ubicacionesText);
+        } catch (e) {
+            console.warn('Error parseando ubicaciones:', e);
+            return [];
+        }
+    }
+
+    // ============================================================
     // ENVÍO DEL FORMULARIO
     // ============================================================
     
@@ -1782,19 +2238,168 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // ✅ DETECTAR SI ES LOGO O PRENDAS
-        const esLogo = logoTecnicasSeleccionadas.length > 0 || 
-                       logoSeccionesSeleccionadas.length > 0 || 
-                       logoFotosSeleccionadas.length > 0;
+        // Obtener información de cotización
+        const cotizacion = misCotizaciones.find(c => c.id === parseInt(cotizacionId));
+        const esCombinada = cotizacion && cotizacion.tipo_cotizacion_codigo === 'PL';
+        const esLogo = cotizacion && cotizacion.tipo_cotizacion_codigo === 'L';
+        
+        console.log('🎯 [SUBMIT] Tipo cotización:', cotizacion?.tipo_cotizacion_codigo);
+        console.log('🎯 [SUBMIT] ¿Es combinada?:', esCombinada);
+        console.log('🎯 [SUBMIT] ¿Es logo puro?:', esLogo);
+
+        // ============================================================
+        // CASO 1: COTIZACIÓN COMBINADA (Crear 2 pedidos)
+        // ============================================================
+        if (esCombinada) {
+            console.log('🎯 [COMBINADA] Detectada cotización COMBINADA - crear ambos pedidos');
+            
+            // Paso 1: Crear pedido de PRENDAS
+            const prendasParaEnviar = [];
+            document.querySelectorAll('.prenda-card-editable').forEach((card, index) => {
+                if (!prendasEliminadas.has(index)) {
+                    // Recolectar datos de la prenda igual a como está en el flujo normal
+                    const prendaData = recolectarDatosPrenda(card, index);
+                    if (prendaData) {
+                        prendasParaEnviar.push(prendaData);
+                    }
+                }
+            });
+
+            console.log('📦 [COMBINADA] Prendas a enviar:', prendasParaEnviar.length);
+            console.log('📖 [COMBINADA] Datos prendas:', prendasParaEnviar);
+
+            const bodyCrearPrendas = {
+                cotizacion_id: cotizacionId,
+                forma_de_pago: formaPagoInput.value,
+                prendas: prendasParaEnviar
+            };
+
+            // Crear primero el pedido de PRENDAS
+            fetch(`/asesores/pedidos-produccion/crear-desde-cotizacion/${cotizacionId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                },
+                body: JSON.stringify(bodyCrearPrendas)
+            })
+            .then(response => response.json())
+            .then(dataPrendas => {
+                console.log('✅ [COMBINADA] Pedido de prendas creado:', dataPrendas);
+                
+                if (!dataPrendas.success) {
+                    throw new Error(dataPrendas.message || 'Error al crear pedido de prendas');
+                }
+
+                // Paso 2: Crear pedido de LOGO
+                const bodyCrearLogo = {
+                    cotizacion_id: cotizacionId,
+                    forma_de_pago: formaPagoInput.value,
+                    prendas: []  // Sin prendas, es solo LOGO
+                };
+
+                return Promise.all([
+                    Promise.resolve(dataPrendas),
+                    fetch(`/asesores/pedidos-produccion/crear-desde-cotizacion/${cotizacionId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                        },
+                        body: JSON.stringify(bodyCrearLogo)
+                    }).then(response => response.json())
+                ]);
+            })
+            .then(([dataPrendas, dataLogo]) => {
+                console.log('✅ [COMBINADA] Respuesta Logo:', dataLogo);
+
+                if (!dataLogo.success) {
+                    throw new Error(dataLogo.message || 'Error al crear pedido de logo');
+                }
+
+                // Paso 3: Guardar datos específicos del LOGO
+                const logoPedidoId = dataLogo.logo_pedido_id || dataLogo.pedido_id;
+                const logoCotizacionIdAUsar = dataLogo.logo_cotizacion_id || logoCotizacionId;
+
+                const bodyLogoPedido = {
+                    pedido_id: logoPedidoId,
+                    logo_cotizacion_id: logoCotizacionIdAUsar,
+                    descripcion: document.getElementById('logo_descripcion')?.value || '',
+                    tecnicas: obtenerTecnicasSeleccionadas(),
+                    observaciones_tecnicas: document.getElementById('logo_observaciones')?.value || '',
+                    ubicaciones: obtenerUbicacionesSeleccionadas(),
+                    fotos: logoFotosSeleccionadas || []
+                };
+
+                console.log('🎨 [COMBINADA] Guardando datos de logo:', bodyLogoPedido);
+
+                return Promise.all([
+                    Promise.resolve(dataPrendas),
+                    Promise.resolve(dataLogo),
+                    fetch('/asesores/pedidos/guardar-logo-pedido', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                        },
+                        body: JSON.stringify(bodyLogoPedido)
+                    }).then(response => response.json())
+                ]);
+            })
+            .then(([dataPrendas, dataLogo, dataLogoPedido]) => {
+                console.log('✅ [COMBINADA] Datos logo guardados:', dataLogoPedido);
+
+                if (!dataLogoPedido.success) {
+                    throw new Error(dataLogoPedido.message || 'Error al guardar datos del logo');
+                }
+
+                // ✅ ÉXITO: Mostrar ambos números
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Éxito!',
+                    html: `
+                        <div style="text-align: left;">
+                            <p><strong>Ambos pedidos fueron creados exitosamente:</strong></p>
+                            <p style="margin-top: 1rem;">
+                                📦 <strong>Pedido de Prendas:</strong> <span style="color: #0066cc; font-weight: bold;">${dataPrendas.pedido?.numero_pedido || 'PED-' + dataPrendas.pedido_id}</span>
+                            </p>
+                            <p style="margin-top: 0.5rem;">
+                                🎨 <strong>Pedido de Logo:</strong> <span style="color: #0066cc; font-weight: bold;">${dataLogo.pedido?.numero_pedido || 'LOGO-' + dataLogo.pedido_id}</span>
+                            </p>
+                        </div>
+                    `,
+                    confirmButtonText: 'Ir a Pedidos'
+                }).then(() => {
+                    window.location.href = '/asesores/pedidos';
+                });
+            })
+            .catch(error => {
+                console.error('❌ [COMBINADA] Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error: ' + error.message,
+                    confirmButtonText: 'OK'
+                });
+            });
+
+            return;
+        }
+
+        // ✅ DETECTAR SI ES LOGO PURO O PRENDAS
+        const esLogoSolo = esLogo || logoTecnicasSeleccionadas.length > 0 || 
+                           logoSeccionesSeleccionadas.length > 0 || 
+                           logoFotosSeleccionadas.length > 0;
 
         console.log('🎨 Enviando formulario...', {
-            esLogo: esLogo,
+            esLogo: esLogoSolo,
             logoTecnicas: logoTecnicasSeleccionadas.length,
             logoSecciones: logoSeccionesSeleccionadas.length,
             logoFotos: logoFotosSeleccionadas.length
         });
 
-        if (esLogo) {
+        if (esLogoSolo) {
+
             // ============================================================
             // FLUJO PARA LOGO
             // ============================================================
@@ -2150,15 +2755,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     console.log('Script de formulario editable cargado correctamente');
-
-    /**
-     * Actualizar resumen de una prenda (tallas y fotos)
-     * DESHABILITADO: El resumen fue removido de la interfaz
-     */
-    window.actualizarResumenPrenda = function(prendasContainer) {
-        // Función disponible pero inactiva
-        console.log('actualizarResumenPrenda: Resumen removido de la interfaz');
-    };
 });
 
 // ============================================================

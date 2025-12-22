@@ -4,6 +4,7 @@
 
 @section('extra_styles')
     <link rel="stylesheet" href="{{ asset('css/crear-pedido.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         /* ============================================================
            ESTILOS GLOBALES Y CONSISTENTES
@@ -11,7 +12,7 @@
         
         /* Colores del diseño */
         :root {
-            --color-primary: #0066cc;
+            --color-primary: #1e40af;
             --color-primary-dark: #0052a3;
             --color-danger: #dc3545;
             --color-danger-dark: #c82333;
@@ -20,6 +21,88 @@
             --color-border: #d0d0d0;
             --color-bg-light: #f5f5f5;
             --color-bg-input: #ffffff;
+            --secondary: #0ea5e9;
+            --accent: #06b6d4;
+        }
+
+        /* ============================================================
+           ESTILOS TABS - IGUAL A COTIZACIONES
+           ============================================================ */
+        
+        .tabs-container {
+            display: flex;
+            gap: 0;
+            margin-bottom: 0;
+            border-bottom: 2px solid #e2e8f0;
+            background: white;
+            border-radius: 12px 12px 0 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #64748b;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 3px solid transparent;
+            position: relative;
+            bottom: -2px;
+            white-space: nowrap;
+        }
+
+        .tab-button:hover {
+            background: #f8fafc;
+            color: var(--color-primary);
+        }
+
+        .tab-button.active {
+            color: white;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--secondary) 100%);
+            border-bottom-color: var(--secondary);
+        }
+
+        .tab-button i {
+            font-size: 1rem;
+        }
+
+        .tab-content-wrapper {
+            background: white;
+            border-radius: 0 0 12px 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            width: 100%;
+            display: block;
+            box-sizing: border-box;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         /* Estilos para la vista editable - PROFESIONAL */
@@ -530,30 +613,116 @@
             </div>
         </div>
 
-        <!-- PASO 3: Prendas Editables -->
+        <!-- PASO 3: Prendas y Logo con TABS -->
         <div class="form-section">
             <div class="step-header">
                 <div class="step-number-container">
                     <span class="step-number">3</span>
                 </div>
-                <h2 id="paso3_titulo_logo" class="step-title text-center">Prendas y Cantidades (Editables)</h2>
+                <h2 id="paso3_titulo" class="step-title text-center">Prendas y Logo (Editables)</h2>
             </div>
 
-            <div class="alert-info" id="paso3_alerta_logo">
-                ℹ️ Puedes editar los campos de cada prenda, cambiar cantidades por talla, o eliminar prendas que no desees incluir en el pedido.
+            <!-- TABS NAVIGATION -->
+            <div class="tabs-container" id="tabs-pedido-container" style="display: none;">
+                <!-- Tab Prendas -->
+                <button type="button" class="tab-button active" onclick="cambiarTabPedido('prendas', event)">
+                    <i class="fas fa-box"></i> PRENDAS
+                </button>
+                
+                <!-- Tab Logo (se muestra solo si es combinada) -->
+                <button type="button" class="tab-button" id="tab-logo-btn" onclick="cambiarTabPedido('logo', event)" style="display: none;">
+                    <i class="fas fa-tools"></i> LOGO
+                </button>
             </div>
 
-            <div id="prendas-container-editable">
-                <div class="empty-state">
-                    <p>Selecciona una cotización para ver las prendas</p>
+            <!-- TABS CONTENT -->
+            <div class="tab-content-wrapper" id="tab-content-wrapper">
+                
+                <!-- TAB: PRENDAS -->
+                <div id="tab-prendas" class="tab-content active">
+                    <div class="alert-info">
+                        ℹ️ Edita los campos de cada prenda, cambia cantidades por talla, o elimina prendas que no desees incluir en el pedido.
+                    </div>
+
+                    <div id="prendas-container-editable">
+                        <div class="empty-state">
+                            <p>Selecciona una cotización para ver las prendas</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: LOGO -->
+                <div id="tab-logo" class="tab-content">
+                    <div class="alert-info">
+                        ℹ️ A continuación se muestra la información del logo de la cotización. Puedes editar los detalles si es necesario.
+                    </div>
+
+                    <!-- Contenedor para mostrar información cargada del logo -->
+                    <div id="logo-tab-content" style="margin-bottom: 2rem;">
+                        <div style="text-align: center; padding: 3rem; color: #999;">
+                            <p>Cargando información del logo...</p>
+                        </div>
+                    </div>
+
+                    <!-- Formulario para editar datos del logo (opcional) -->
+                    <div id="logo-form-container" style="display: none; margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #e0e0e0;">
+                        <h3 style="margin-bottom: 1.5rem; color: #0066cc;">Editar Información del Logo</h3>
+                        
+                        <div class="form-group-editable">
+                            <label for="logo_descripcion">Descripción del Logo</label>
+                            <textarea id="logo_descripcion" name="logo_descripcion" placeholder="Describe el logo..." rows="4"></textarea>
+                        </div>
+
+                        <div class="form-group-inline" style="margin-top: 1.5rem;">
+                            <div class="form-group-editable">
+                                <label>Técnicas</label>
+                                <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.5rem;">
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
+                                        <input type="checkbox" name="logo_tecnicas" value="BORDADO"> Bordado
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
+                                        <input type="checkbox" name="logo_tecnicas" value="DTF"> DTF
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
+                                        <input type="checkbox" name="logo_tecnicas" value="ESTAMPADO"> Estampado
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
+                                        <input type="checkbox" name="logo_tecnicas" value="SUBLIMADO"> Sublimado
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group-editable" style="margin-top: 1.5rem;">
+                            <label>Ubicaciones (JSON)</label>
+                            <textarea id="logo_ubicaciones" name="logo_ubicaciones" placeholder="Ej: [{'ubicacion': 'CAMISA', 'opciones': ['PECHO', 'ESPALDA']}]" rows="3"></textarea>
+                        </div>
+
+                        <div class="form-group-editable" style="margin-top: 1.5rem;">
+                            <label for="logo_observaciones">Observaciones Técnicas</label>
+                            <textarea id="logo_observaciones" name="logo_observaciones" placeholder="Observaciones..." rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+                        <div class="form-group-editable" style="margin-top: 1.5rem;">
+                            <label>Fotos del Logo</label>
+                            <div id="logo-fotos-container" style="display: flex; flex-direction: column; gap: 1rem;">
+                                <input type="file" name="logo_fotos[]" multiple accept="image/*" style="padding: 0.75rem; border: 1px solid #d0d0d0; border-radius: 4px;">
+                                <div id="logo-fotos-preview" style="display: flex; gap: 1rem; flex-wrap: wrap;"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- PASO 4: Botones de Acción -->
         <div class="btn-actions">
-            <button type="submit" class="btn btn-primary">
-                ✓ Crear Pedido de Producción
+            <button type="submit" class="btn btn-primary" id="btn-crear-pedido">
+                ✓ Crear Pedido
             </button>
             <a href="{{ route('asesores.pedidos-produccion.index') }}" class="btn btn-secondary">
                 ✕ Cancelar
@@ -583,7 +752,9 @@
                 'cliente' => $cot->cliente ? $cot->cliente->nombre : '',
                 'asesora' => $cot->asesor ? $cot->asesor->name : Auth::user()->name,
                 'formaPago' => $formaPago,
-                'prendasCount' => $cot->prendas->count()
+                'prendasCount' => $cot->prendas->count(),
+                'tipo_cotizacion_codigo' => $cot->tipo_cotizacion_codigo ?? '',
+                'tieneLogoData' => ($cot->logo && ($cot->logo->descripcion || ($cot->logo->fotos && $cot->logo->fotos->count() > 0)))
             ];
         })->toArray()) !!};
     </script>
