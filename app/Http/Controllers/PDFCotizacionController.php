@@ -352,6 +352,52 @@ class PDFCotizacionController extends Controller
             $html .= '<div style="font-size: 10px; margin-bottom: 10px; color: #333;">
                 <strong>DESCRIPCIÓN:</strong><br>' . htmlspecialchars($logo->descripcion) . '</div>';
         }
+
+        // TABLA DE SECCIONES
+        $secciones = $logo->secciones ?? [];
+        if (is_string($secciones)) {
+            $secciones = json_decode($secciones, true) ?? [];
+        }
+
+        if (is_array($secciones) && count($secciones) > 0) {
+            $html .= '<div style="margin-bottom: 12px;">
+                <div style="font-size: 10px; font-weight: bold; margin-bottom: 6px;">SECCIONES DE PRENDAS</div>
+                <table style="width: 100%; border-collapse: collapse; border: 1px solid #999;">
+                    <tr style="background: #f5f5f5; border: 1px solid #999;">
+                        <th style="padding: 6px; text-align: left; font-size: 9px; font-weight: bold; border: 1px solid #999;">Prenda</th>
+                        <th style="padding: 6px; text-align: left; font-size: 9px; font-weight: bold; border: 1px solid #999;">Tallas</th>
+                        <th style="padding: 6px; text-align: left; font-size: 9px; font-weight: bold; border: 1px solid #999;">Ubicaciones</th>
+                        <th style="padding: 6px; text-align: left; font-size: 9px; font-weight: bold; border: 1px solid #999;">Observaciones</th>
+                    </tr>';
+
+            foreach ($secciones as $seccion) {
+                $prenda = htmlspecialchars($seccion['ubicacion'] ?? '');
+                $observaciones = htmlspecialchars($seccion['observaciones'] ?? '');
+
+                $tallasHtml = '';
+                if (!empty($seccion['tallas'])) {
+                    foreach($seccion['tallas'] as $talla) {
+                        $tallasHtml .= htmlspecialchars($talla['talla'] . ': ' . $talla['cantidad']) . '<br>';
+                    }
+                }
+
+                $ubicacionesHtml = '';
+                if (!empty($seccion['opciones'])) {
+                    foreach($seccion['opciones'] as $opcion) {
+                        $ubicacionesHtml .= '• ' . htmlspecialchars($opcion) . '<br>';
+                    }
+                }
+
+                $html .= '<tr style="border: 1px solid #999;">
+                        <td style="padding: 6px; font-size: 9px; border: 1px solid #999;">' . $prenda . '</td>
+                        <td style="padding: 6px; font-size: 9px; border: 1px solid #999;">' . $tallasHtml . '</td>
+                        <td style="padding: 6px; font-size: 9px; border: 1px solid #999;">' . $ubicacionesHtml . '</td>
+                        <td style="padding: 6px; font-size: 9px; border: 1px solid #999;">' . $observaciones . '</td>
+                    </tr>';
+            }
+
+            $html .= '</table></div>';
+        }
         
         // TABLA DE TÉCNICAS Y OBSERVACIONES
         $tecnicas = [];

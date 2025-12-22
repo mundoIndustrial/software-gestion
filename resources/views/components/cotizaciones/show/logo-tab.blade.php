@@ -33,37 +33,105 @@
         @endif
         
         {{-- Descripción del Logo --}}
+        @if($logo)
+        {{-- Descripción y Secciones --}}
         @if($logo->descripcion)
-            <div style="
-                font-size: 1.4rem;
-                font-weight: 800;
-                color: #1e293b;
-                margin-bottom: 1.75rem;
-                padding-bottom: 1rem;
-                border-bottom: 3px solid #0ea5e9;
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-            ">
-                <i class="fas fa-pen" style="color: #0ea5e9; font-size: 1.4rem;"></i> Descripción
-            </div>
-            <div style="
-                background: white;
-                padding: 1.5rem;
-                border-radius: 10px;
-                border-left: 4px solid #0ea5e9;
-                margin-bottom: 2rem;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-            ">
-                <p style="color: #475569; margin: 0; line-height: 1.7; font-size: 0.95rem;">
-                    {{ $logo->descripcion }}
-                </p>
+            <div class="info-card">
+                <div class="info-section no-border">
+                    <h4 class="section-title"><i class="fas fa-pen"></i> Descripción</h4>
+                    <p>{{ $logo->descripcion }}</p>
+                </div>
             </div>
         @endif
 
-        @include('components.cotizaciones.show.logo-tecnicas', ['logo' => $logo, 'esLogo' => $esLogo])
-        @include('components.cotizaciones.show.logo-ubicaciones', ['logo' => $logo])
-        @include('components.cotizaciones.show.logo-observaciones', ['logo' => $logo])
+        @if ($logo->secciones && is_array($logo->secciones) && count($logo->secciones) > 0)
+            <div class="info-card">
+                <div class="info-section no-border">
+                    <h4 class="section-title"><i class="fas fa-tshirt"></i> Secciones de Prendas</h4>
+                    @foreach ($logo->secciones as $seccion)
+                        <div class="seccion-item">
+                            <p class="seccion-prenda"><strong>Prenda:</strong> {{ $seccion['ubicacion'] }}</p>
+                            @if (!empty($seccion['tallas']))
+                                <div class="tag-group">
+                                    <strong>Tallas:</strong>
+                                    @foreach ($seccion['tallas'] as $talla)
+                                        <span class="tag tag-green">{{ $talla['talla'] }}: {{ $talla['cantidad'] }}</span>
+                                    @endforeach
+                                </div>
+                            @endif
+                            @if (!empty($seccion['opciones']))
+                                <div class="tag-group">
+                                    <strong>Ubicaciones:</strong>
+                                    @foreach ($seccion['opciones'] as $opcion)
+                                        <span class="tag tag-blue">{{ $opcion }}</span>
+                                    @endforeach
+                                </div>
+                            @endif
+                            @if (!empty($seccion['observaciones']))
+                                <p><strong>Observaciones:</strong> {{ $seccion['observaciones'] }}</p>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
+        {{-- Técnicas y Observaciones Técnicas --}}
+        @php
+            $tecnicas = $logo->tecnicas;
+            if (is_string($tecnicas)) { $tecnicas = json_decode($tecnicas, true) ?? []; }
+            $tecnicas = is_array($tecnicas) ? $tecnicas : [];
+        @endphp
+        @if(!empty($tecnicas) || $logo->observaciones_tecnicas)
+            <div class="info-card">
+                <div class="info-section no-border">
+                    <h4 class="section-title"><i class="fas fa-tools"></i> Técnicas y Observaciones</h4>
+                    @if(!empty($tecnicas))
+                        <div class="tag-group">
+                            <strong>Técnicas:</strong>
+                            @foreach($tecnicas as $tecnica)
+                                <span class="tag tag-blue">{{ is_array($tecnica) ? implode(', ', $tecnica) : $tecnica }}</span>
+                            @endforeach
+                        </div>
+                    @endif
+                    @if($logo->observaciones_tecnicas)
+                        <p style="margin-top: 1rem;"><strong>Observaciones Técnicas:</strong> {{ is_array($logo->observaciones_tecnicas) ? implode(', ', $logo->observaciones_tecnicas) : $logo->observaciones_tecnicas }}</p>
+                    @endif
+                </div>
+            </div>
+        @endif
+
+        {{-- Observaciones Generales --}}
+        @php
+            $observaciones_generales = $logo->observaciones_generales;
+            if (is_string($observaciones_generales)) { $observaciones_generales = json_decode($observaciones_generales, true) ?? []; }
+            $observaciones_generales = is_array($observaciones_generales) ? $observaciones_generales : [];
+        @endphp
+        @if(!empty($observaciones_generales))
+            <div class="info-card">
+                <div class="info-section no-border">
+                    <h4 class="section-title"><i class="fas fa-comment"></i> Observaciones Generales</h4>
+                    <ul class="obs-list">
+                        @foreach($observaciones_generales as $obs)
+                            @php
+                                $texto = is_array($obs) ? ($obs['texto'] ?? '') : $obs;
+                                $tipo = is_array($obs) ? ($obs['tipo'] ?? 'texto') : 'texto';
+                                $valor = is_array($obs) ? ($obs['valor'] ?? '') : '';
+                            @endphp
+                            <li>
+                                <span>{{ $texto }}</span>
+                                @if($tipo === 'checkbox' && $valor)
+                                    <i class="fas fa-check-square obs-check"></i>
+                                @elseif($tipo === 'texto' && !empty($valor))
+                                    <span class="tag tag-gray">{{ $valor }}</span>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        @endif
+    @endif
 
         {{-- Imágenes desde fotos --}}
         @if($logo->fotos && $logo->fotos->count() > 0)

@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Cotizacion;
 use App\Models\Cliente;
 use App\Models\NumeroSecuencia;
+use Intervention\Image\Laravel\Facades\Image;
 
 class CotizacionBordadoController extends Controller
 {
@@ -31,6 +32,7 @@ class CotizacionBordadoController extends Controller
             $id = $request->input('editar');
             $cotizacion = Cotizacion::with([
                 'cliente',
+                'logoCotizacion',
                 'logoCotizacion.fotos'
             ])->findOrFail($id);
 
@@ -192,10 +194,10 @@ class CotizacionBordadoController extends Controller
                     $tecnicas = json_decode($tecnicas, true) ?? [];
                 }
                 
-                // Procesar ubicaciones (pueden venir como JSON string desde FormData)
-                $ubicaciones = $request->input('ubicaciones', '[]');
-                if (is_string($ubicaciones)) {
-                    $ubicaciones = json_decode($ubicaciones, true) ?? [];
+                // Procesar secciones (pueden venir como JSON string desde FormData)
+                $secciones = $request->input('secciones', '[]');
+                if (is_string($secciones)) {
+                    $secciones = json_decode($secciones, true) ?? [];
                 }
                 
                 // Procesar observaciones generales (pueden venir como JSON string desde FormData)
@@ -212,7 +214,7 @@ class CotizacionBordadoController extends Controller
                     'observaciones_tecnicas' => $observacionesTecnicas,
                     'tecnicas' => $tecnicas,
                     'tecnicas_type' => gettype($tecnicas),
-                    'ubicaciones' => $ubicaciones,
+                    'secciones' => $secciones,
                     'observaciones_generales' => $observacionesGenerales
                 ]);
                 
@@ -236,10 +238,8 @@ class CotizacionBordadoController extends Controller
                     $datosActualizar['observaciones_tecnicas'] = $observacionesTecnicas;
                 }
                 
-                // Solo actualizar ubicaciones si no está vacío
-                if (!empty($ubicaciones)) {
-                    $datosActualizar['ubicaciones'] = $ubicaciones;
-                }
+                // Siempre actualizar las secciones para permitir guardar un arreglo vacío (No Aplica)
+                $datosActualizar['secciones'] = $secciones;
                 
                 // Solo actualizar observaciones generales si no está vacío
                 if (!empty($observacionesGenerales)) {
@@ -281,6 +281,8 @@ class CotizacionBordadoController extends Controller
                 // Procesar nuevas imágenes si existen
                 // Las imágenes existentes en logo_fotos_cot se preservan automáticamente
                 // ya que solo agregamos nuevas, no eliminamos las existentes
+                // Procesar nuevas imágenes si existen, buscando en 'imagenes' y 'imagenes_bordado'
+                $imagenes = $request->file('imagenes', $request->file('imagenes_bordado', []));
                 if ($request->hasFile('imagenes') || $request->hasFile('imagenes_bordado')) {
                     $this->procesarImagenesCotizacion($request, $id);
                 }
@@ -447,12 +449,12 @@ class CotizacionBordadoController extends Controller
                 }
                 Log::info('✅ Técnicas procesadas:', ['tecnicas' => $tecnicas]);
                 
-                // Procesar ubicaciones (pueden venir como JSON string desde FormData)
-                $ubicaciones = $request->input('ubicaciones', '[]');
-                if (is_string($ubicaciones)) {
-                    $ubicaciones = json_decode($ubicaciones, true) ?? [];
+                // Procesar secciones (pueden venir como JSON string desde FormData)
+                $secciones = $request->input('secciones', '[]');
+                if (is_string($secciones)) {
+                    $secciones = json_decode($secciones, true) ?? [];
                 }
-                Log::info('✅ Ubicaciones procesadas:', ['ubicaciones' => $ubicaciones]);
+                Log::info('✅ Secciones procesadas:', ['secciones' => $secciones]);
                 
                 // Procesar observaciones generales (pueden venir como JSON string desde FormData)
                 $observacionesGenerales = $request->input('observaciones_generales', '[]');
@@ -499,7 +501,7 @@ class CotizacionBordadoController extends Controller
                         'descripcion' => $request->input('descripcion', ''),
                         'tecnicas' => $tecnicas,  // El modelo aplicará json_encode automáticamente
                         'observaciones_tecnicas' => $request->input('observaciones_tecnicas', ''),
-                        'ubicaciones' => $ubicaciones,  // El modelo aplicará json_encode automáticamente
+                        'secciones' => $secciones,  // El modelo aplicará json_encode automáticamente
                         'observaciones_generales' => $observacionesGenerales,  // El modelo aplicará json_encode automáticamente
                         'imagenes' => [],  // El modelo aplicará json_encode automáticamente
                         'tipo_venta' => $request->input('tipo_venta_bordado') ?? $request->input('tipo_venta') ?? null,
@@ -614,19 +616,24 @@ class CotizacionBordadoController extends Controller
         if (!empty($archivos)) {
             foreach ($archivos as $archivo) {
                 try {
-                    // Guardar imagen original
-                    $rutaOriginal = $archivo->store('bordado/cotizaciones/' . $cotizacionId, 'public');
+                    // Generar un nombre de archivo único con extensión .webp
+                    $nombreArchivo = uniqid() . '.webp';
+                    $rutaDestino = 'bordado/cotizaciones/' . $cotizacionId . '/' . $nombreArchivo;
 
-                    // Aquí podrías generar versiones webp y miniatura
-                    // Por ahora, usamos la misma ruta para las tres versiones
-                    $rutaWebp = $rutaOriginal;
-                    $rutaMiniatura = $rutaOriginal;
+                    // Convertir y guardar la imagen en formato .webp
+                    $imagenWebp = Image::make($archivo)->encode('webp', 80);
+                    Storage::disk('public')->put($rutaDestino, (string) $imagenWebp);
+
+                    // Las rutas ahora apuntan al archivo .webp
+                    $rutaOriginal = $rutaDestino;
+                    $rutaWebp = $rutaDestino;
+                    $rutaMiniatura = $rutaDestino;
 
                     // Obtener dimensiones de la imagen
                     $imageInfo = @getimagesize(storage_path('app/public/' . $rutaOriginal));
                     $ancho = $imageInfo[0] ?? 0;
                     $alto = $imageInfo[1] ?? 0;
-                    $tamaño = $archivo->getSize();
+                    $tamaño = Storage::disk('public')->size($rutaOriginal);
 
                     // Guardar en logo_fotos_cot
                     DB::table('logo_fotos_cot')->insert([
