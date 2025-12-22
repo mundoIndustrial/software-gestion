@@ -8,10 +8,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Cotizacion;
 use App\Models\Cliente;
 use App\Models\NumeroSecuencia;
-use Intervention\Image\Laravel\Facades\Image;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Gd\Driver;
 
 class CotizacionBordadoController extends Controller
 {
@@ -218,33 +220,55 @@ class CotizacionBordadoController extends Controller
                     'observaciones_generales' => $observacionesGenerales
                 ]);
                 
-                // Usar modelo LogoCotizacion para que aplique los casts correctamente
-                // Busca por cotizacion_id y actualiza o crea si no existe
-                // IMPORTANTE: Solo actualizar campos que tienen valor para no borrar datos existentes
+                // Cargar datos existentes si el logo_cotizacion ya existe
+                $logoExistente = \App\Models\LogoCotizacion::where('cotizacion_id', $id)->first();
+                
+                // Preparar datos a actualizar
+                // Estrategia: Si un campo viene vacío, preservar el valor existente
                 $datosActualizar = [];
                 
-                // Solo actualizar descripción si tiene valor
-                if (!empty($descripcion)) {
-                    $datosActualizar['descripcion'] = $descripcion;
-                }
-                
-                // Solo actualizar técnicas si no está vacío
+                // Técnicas: Actualizar si tiene valor, de lo contrario preservar existente
                 if (!empty($tecnicas)) {
                     $datosActualizar['tecnicas'] = $tecnicas;
+                } elseif ($logoExistente && !empty($logoExistente->tecnicas)) {
+                    Log::info('⚠️ Preservando técnicas existentes (cliente no envió datos)', [
+                        'tecnicas_existentes' => $logoExistente->tecnicas
+                    ]);
+                    $datosActualizar['tecnicas'] = $logoExistente->tecnicas;
                 }
                 
-                // Solo actualizar observaciones técnicas si tiene valor
-                if (!empty($observacionesTecnicas)) {
-                    $datosActualizar['observaciones_tecnicas'] = $observacionesTecnicas;
-                }
-                
-                // Siempre actualizar las secciones para permitir guardar un arreglo vacío (No Aplica)
-                $datosActualizar['secciones'] = $secciones;
-                
-                // Solo actualizar observaciones generales si no está vacío
+                // Observaciones generales: Actualizar si tiene valor, de lo contrario preservar
                 if (!empty($observacionesGenerales)) {
                     $datosActualizar['observaciones_generales'] = $observacionesGenerales;
+                } elseif ($logoExistente && !empty($logoExistente->observaciones_generales)) {
+                    Log::info('⚠️ Preservando observaciones generales (cliente no envió datos)', [
+                        'observaciones_existentes' => $logoExistente->observaciones_generales
+                    ]);
+                    $datosActualizar['observaciones_generales'] = $logoExistente->observaciones_generales;
                 }
+                
+                // Descripción: Actualizar si tiene valor, de lo contrario preservar
+                if (!empty($descripcion)) {
+                    $datosActualizar['descripcion'] = $descripcion;
+                } elseif ($logoExistente && !empty($logoExistente->descripcion)) {
+                    Log::info('⚠️ Preservando descripción (cliente no envió datos)', [
+                        'descripcion_existente' => $logoExistente->descripcion
+                    ]);
+                    $datosActualizar['descripcion'] = $logoExistente->descripcion;
+                }
+                
+                // Observaciones técnicas: Actualizar si tiene valor, de lo contrario preservar
+                if (!empty($observacionesTecnicas)) {
+                    $datosActualizar['observaciones_tecnicas'] = $observacionesTecnicas;
+                } elseif ($logoExistente && !empty($logoExistente->observaciones_tecnicas)) {
+                    Log::info('⚠️ Preservando observaciones técnicas (cliente no envió datos)', [
+                        'observaciones_tecnicas_existentes' => $logoExistente->observaciones_tecnicas
+                    ]);
+                    $datosActualizar['observaciones_tecnicas'] = $logoExistente->observaciones_tecnicas;
+                }
+                
+                // Secciones: Siempre actualizar para permitir guardar un arreglo vacío (No Aplica)
+                $datosActualizar['secciones'] = $secciones;
                 
                 // Agregar tipo_venta_bordado si está disponible
                 $tipoVentaBordado = $request->input('tipo_venta_bordado') ?? $request->input('tipo_venta');
@@ -254,13 +278,13 @@ class CotizacionBordadoController extends Controller
                 
                 $logoCotizacion = \App\Models\LogoCotizacion::updateOrCreate(
                     ['cotizacion_id' => $id],  // Condición de búsqueda
-                    $datosActualizar  // Solo actualizar campos con valor
+                    $datosActualizar  // Actualizar con preservación de existentes
                 );
                 
                 Log::info('✅ logo_cotizaciones actualizado/creado', [
                     'cotizacion_id' => $id,
                     'logo_id' => $logoCotizacion->id,
-                    'descripcion' => $descripcion,
+                    'descripcion' => $datosActualizar['descripcion'] ?? 'NO ACTUALIZADO',
                     'tecnicas_enviadas' => $tecnicas,
                     'tecnicas_count' => count($tecnicas),
                     'tecnicas_guardadas_en_bd' => $logoCotizacion->tecnicas,
@@ -611,6 +635,9 @@ class CotizacionBordadoController extends Controller
 
         $orden = $ultimoOrden + 1;
 
+        // Crear instancia del ImageManager
+        $manager = new ImageManager(new Driver());
+
         // Procesar archivos del request
         $archivos = $request->file('imagenes') ?? $request->file('imagenes_bordado') ?? [];
         if (!empty($archivos)) {
@@ -620,9 +647,10 @@ class CotizacionBordadoController extends Controller
                     $nombreArchivo = uniqid() . '.webp';
                     $rutaDestino = 'bordado/cotizaciones/' . $cotizacionId . '/' . $nombreArchivo;
 
-                    // Convertir y guardar la imagen en formato .webp
-                    $imagenWebp = Image::make($archivo)->encode('webp', 80);
-                    Storage::disk('public')->put($rutaDestino, (string) $imagenWebp);
+                    // Convertir y guardar la imagen en formato .webp usando Intervention Image v3
+                    $image = $manager->read($archivo);
+                    $webpContent = $image->toWebp(80);
+                    Storage::disk('public')->put($rutaDestino, $webpContent);
 
                     // Las rutas ahora apuntan al archivo .webp
                     $rutaOriginal = $rutaDestino;

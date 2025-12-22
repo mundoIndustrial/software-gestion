@@ -736,12 +736,28 @@ function agregarTecnica() {
     console.log('📊 Es array?', Array.isArray(tecnicasSeleccionadas));
     
     if (!tecnica) {
-        alert('Selecciona una técnica');
+        Swal.fire({
+            icon: 'warning',
+            title: 'Técnica Requerida',
+            text: 'Selecciona una técnica de la lista',
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2000
+        });
         return;
     }
     
     if (tecnicasSeleccionadas.includes(tecnica)) {
-        alert('Esta técnica ya está agregada');
+        Swal.fire({
+            icon: 'info',
+            title: 'Ya Agregada',
+            text: `La técnica "${tecnica}" ya está en la lista`,
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2000
+        });
         return;
     }
     
@@ -841,6 +857,13 @@ function cerrarModalUbicacion(modalId) {
 }
 
 function abrirModalUbicaciones(prenda, ubicacionesIniciales, tallasIniciales, onSave, observacionesIniciales = '') {
+    console.log('🎬 BORDADO - abrirModalUbicaciones iniciado');
+    console.log('📌 prenda:', prenda);
+    console.log('📌 ubicacionesIniciales:', ubicacionesIniciales);
+    console.log('📌 tallasIniciales:', tallasIniciales);
+    console.log('📌 observacionesIniciales:', observacionesIniciales);
+    console.log('📌 todasLasUbicaciones:', todasLasUbicaciones);
+    
     let ubicacionesSeleccionadasModal = [...ubicacionesIniciales];
     let tallasModal = [...tallasIniciales];
 
@@ -904,14 +927,18 @@ function abrirModalUbicaciones(prenda, ubicacionesIniciales, tallasIniciales, on
     `;
 
     document.body.insertAdjacentHTML('beforeend', modalHtml);
+    console.log('✅ BORDADO - Modal HTML insertado en DOM');
+    console.log('📋 modalHtml:', modalHtml);
 
     // --- Lógica del nuevo modal ---
     const datalist = document.getElementById('ubicaciones-datalist');
+    console.log('📍 datalist element:', datalist);
     todasLasUbicaciones.forEach(op => {
         const option = document.createElement('option');
         option.value = op;
         datalist.appendChild(option);
     });
+    console.log('✅ BORDADO - Opciones del datalist agregadas:', todasLasUbicaciones.length);
 
     // Tallas
     const tallasContent = document.getElementById('tallas-content');
@@ -919,8 +946,16 @@ function abrirModalUbicaciones(prenda, ubicacionesIniciales, tallasIniciales, on
     const tallaInput = document.getElementById('talla-input');
     const cantidadInput = document.getElementById('cantidad-input');
     const addTallaButton = document.getElementById('btn-add-talla');
+    
+    console.log('📍 BORDADO - Selectores de Tallas:');
+    console.log('  tallasContent:', tallasContent);
+    console.log('  btnTallasNA:', btnTallasNA);
+    console.log('  tallaInput:', tallaInput);
+    console.log('  cantidadInput:', cantidadInput);
+    console.log('  addTallaButton:', addTallaButton);
 
     btnTallasNA.addEventListener('click', () => {
+        console.log('🔘 BORDADO - btnTallasNA clicked');
         const isApplied = tallasContent.style.display !== 'none';
         if (isApplied) {
             tallasContent.style.display = 'none';
@@ -995,8 +1030,15 @@ function abrirModalUbicaciones(prenda, ubicacionesIniciales, tallasIniciales, on
     const btnUbicacionesNA = document.getElementById('btn-ubicaciones-na');
     const ubicacionInput = document.getElementById('ubicacion-input');
     const addUbicacionButton = document.getElementById('btn-add-ubicacion');
+    
+    console.log('📍 BORDADO - Selectores de Ubicaciones:');
+    console.log('  ubicacionesContent:', ubicacionesContent);
+    console.log('  btnUbicacionesNA:', btnUbicacionesNA);
+    console.log('  ubicacionInput:', ubicacionInput);
+    console.log('  addUbicacionButton:', addUbicacionButton);
 
     btnUbicacionesNA.addEventListener('click', () => {
+        console.log('🔘 BORDADO - btnUbicacionesNA clicked');
         const isApplied = ubicacionesContent.style.display !== 'none';
         if (isApplied) {
             ubicacionesContent.style.display = 'none';
@@ -1070,14 +1112,28 @@ function abrirModalUbicaciones(prenda, ubicacionesIniciales, tallasIniciales, on
     // Guardar
     const saveButton = document.getElementById('btn-save-ubicaciones');
     const obsTextarea = document.getElementById('obs-ubicacion-modal');
+    
+    console.log('📍 BORDADO - Selectores de Guardar:');
+    console.log('  saveButton:', saveButton);
+    console.log('  obsTextarea:', obsTextarea);
 
     saveButton.addEventListener('click', () => {
+        console.log('💾 BORDADO - saveButton clicked');
+        console.log('  ubicacionesSeleccionadasModal:', ubicacionesSeleccionadasModal);
+        console.log('  tallasModal:', tallasModal);
+        console.log('  obsTextarea.value:', obsTextarea.value);
         // Se eliminan las validaciones para permitir guardar aunque no apliquen tallas o ubicaciones.
         onSave(ubicacionesSeleccionadasModal, tallasModal, obsTextarea.value);
     });
 
     renderizarUbicacionesSeleccionadas();
     renderTallas();
+    
+    console.log('✅ BORDADO - Modal abrirModalUbicaciones completamente inicializado');
+    console.log('📊 Estado final:');
+    console.log('  ubicacionesSeleccionadasModal:', ubicacionesSeleccionadasModal);
+    console.log('  tallasModal:', tallasModal);
+    console.log('  observacionesIniciales:', observacionesIniciales);
 }
 
 function renderizarSecciones() {
@@ -1511,6 +1567,24 @@ function cargarDatosBorrador(cotizacion) {
             console.log('⚠️ No se encontró descripción en logo_cotizacion');
         }
 
+        // Cargar técnicas
+        if (cotizacion.logo_cotizacion && cotizacion.logo_cotizacion.tecnicas) {
+            const tecnicas = typeof cotizacion.logo_cotizacion.tecnicas === 'string'
+                ? JSON.parse(cotizacion.logo_cotizacion.tecnicas)
+                : cotizacion.logo_cotizacion.tecnicas;
+
+            if (Array.isArray(tecnicas)) {
+                console.log('🎨 Técnicas encontradas:', tecnicas);
+                tecnicasSeleccionadas = tecnicas;
+                // Renderizar las técnicas seleccionadas
+                renderizarTecnicas();
+            } else {
+                console.log('⚠️ Técnicas no es un array:', tecnicas);
+            }
+        } else {
+            console.log('⚠️ No se encontraron técnicas en logo_cotizacion');
+        }
+
         // Cargar ubicaciones
         if (cotizacion.logo_cotizacion && cotizacion.logo_cotizacion.secciones) {
             const secciones = typeof cotizacion.logo_cotizacion.secciones === 'string'
@@ -1584,9 +1658,6 @@ function cargarDatosBorrador(cotizacion) {
             console.log('📸 Total imágenes cargadas:', imagenesSeleccionadas.length);
             console.log('📸 imagenesSeleccionadas después de cargar:', imagenesSeleccionadas);
             console.log('📸 imagenesABorrar preservado:', imagenesABorrar);
-            renderizarImagenes();
-            imagenesSeleccionadas = [];
-            // IMPORTANTE: NO limpiar imagenesABorrar aquí
             renderizarImagenes();
         }
 

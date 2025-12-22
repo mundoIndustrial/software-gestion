@@ -1011,12 +1011,34 @@ function recopilarDatos() {
     const observaciones_tecnicas = document.getElementById('observaciones_tecnicas')?.value || '';
     console.log('📝 Observaciones técnicas:', observaciones_tecnicas);
     
-    // Recopilar ubicaciones desde seccionesSeleccionadasFriendly (guardadas en memoria)
+    // Recopilar ubicaciones desde paso3_secciones_datos o seccionesSeleccionadasFriendly
     const ubicaciones = [];
     
-    // Verificar si existe seccionesSeleccionadasFriendly (variable global de especificaciones.js)
-    if (typeof seccionesSeleccionadasFriendly !== 'undefined' && Array.isArray(seccionesSeleccionadasFriendly)) {
-        seccionesSeleccionadasFriendly.forEach(seccion => {
+    // Primero intentar desde el campo oculto paso3_secciones_datos (paso-tres.blade.php)
+    const paso3_secciones_campo = document.getElementById('paso3_secciones_datos');
+    if (paso3_secciones_campo && paso3_secciones_campo.value) {
+        try {
+            const paso3Secciones = JSON.parse(paso3_secciones_campo.value);
+            if (Array.isArray(paso3Secciones)) {
+                paso3Secciones.forEach(seccion => {
+                    if (seccion.ubicacion && seccion.opciones && seccion.opciones.length > 0) {
+                        ubicaciones.push({
+                             ubicacion: seccion.ubicacion,
+                             opciones: seccion.opciones,
+                             tallas: seccion.tallas,
+                             observaciones: seccion.observaciones || ''
+                        });
+                    }
+                });
+            }
+        } catch (e) {
+            console.error('❌ Error parsing paso3_secciones_datos:', e);
+        }
+    }
+    
+    // Si no hay datos en paso3_secciones_datos, intentar desde window.seccionesSeleccionadasFriendly
+    if (ubicaciones.length === 0 && typeof window.seccionesSeleccionadasFriendly !== 'undefined' && Array.isArray(window.seccionesSeleccionadasFriendly)) {
+        window.seccionesSeleccionadasFriendly.forEach(seccion => {
             if (seccion.ubicacion && seccion.opciones && seccion.opciones.length > 0) {
                 ubicaciones.push({
                     seccion: seccion.ubicacion,
@@ -1028,7 +1050,8 @@ function recopilarDatos() {
     }
     
     console.log('📍 Ubicaciones recopiladas:', ubicaciones);
-    console.log('📍 seccionesSeleccionadasFriendly:', typeof seccionesSeleccionadasFriendly !== 'undefined' ? seccionesSeleccionadasFriendly : 'NO DEFINIDO');
+    console.log('📍 paso3_secciones_campo valor:', paso3_secciones_campo?.value || 'NO ENCONTRADO');
+    console.log('📍 seccionesSeleccionadasFriendly:', typeof window.seccionesSeleccionadasFriendly !== 'undefined' ? window.seccionesSeleccionadasFriendly : 'NO DEFINIDO');
     
     // Recopilar observaciones generales CON TIPO Y VALOR como objetos
     const observaciones_generales = [];
