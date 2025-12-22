@@ -21,8 +21,8 @@ class SetSecurityHeaders
         // Content Security Policy (CSP) - More permissive for Laravel Echo and CDNs
         $csp = "default-src 'self'; "
             . "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.googleapis.com; "
-            . "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
-            . "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; "
+            . "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://fonts.bunny.net; "
+            . "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com https://fonts.bunny.net; "
             . "img-src 'self' data: https: blob:; "
             . "connect-src 'self' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com ws://servermi:8080 wss://servermi:8080 ws: wss: https:; "
             . "frame-ancestors 'none'; "

@@ -99,7 +99,7 @@ window.openOrderDetailModalLogo = function(orderId) {
         
         // Mostrar overlay
         overlay.style.display = 'block';
-        overlay.style.zIndex = '9997';
+        overlay.style.zIndex = '99997';
         overlay.style.position = 'fixed';
         overlay.style.opacity = '1';
         overlay.style.visibility = 'visible';
@@ -113,7 +113,7 @@ window.openOrderDetailModalLogo = function(orderId) {
         const modalWrapper = document.getElementById('order-detail-modal-wrapper-logo');
         if (modalWrapper) {
             modalWrapper.style.display = 'block';
-            modalWrapper.style.zIndex = '9998';
+            modalWrapper.style.zIndex = '99999';
             modalWrapper.style.position = 'fixed';
             modalWrapper.style.top = '60%';
             modalWrapper.style.left = '50%';
@@ -577,19 +577,25 @@ document.addEventListener('DOMContentLoaded', function() {
 
         window.openOrderDetailModal();
     });
+    // DEBUG: Contador de eventos
+    window.loadOrderDetailLogoCount = 0;
 
     // Listener para cargar datos del logo/bordados de la orden
     window.addEventListener('load-order-detail-logo', function(event) {
-        console.log('%c📦 [MODAL LOGO] Evento load-order-detail-logo recibido', 'color: red; font-weight: bold; font-size: 14px;');
+        window.loadOrderDetailLogoCount++;
+        console.log('%c📦 [MODAL LOGO] Evento load-order-detail-logo recibido (#' + window.loadOrderDetailLogoCount + ')', 'color: red; font-weight: bold; font-size: 14px;');
+        console.log('📦 [MODAL LOGO] event:', event);
         console.log('📦 [MODAL LOGO] event.detail:', event.detail);
         console.log('📦 [MODAL LOGO] event.detail.numero_pedido:', event.detail?.numero_pedido);
+        console.log('📦 [MODAL LOGO] Tipo de event.detail:', typeof event.detail);
         
         const orden = event.detail;
         
         // Guardar el número de pedido en variable global para uso en galería
         // Asignar directamente a window para asegurar que esté disponible
         if (orden && orden.numero_pedido) {
-            window.currentPedidoNumberLogo = orden.numero_pedido;
+            // ✅ Limpiar el # del número de pedido si existe
+            window.currentPedidoNumberLogo = orden.numero_pedido.replace('#', '');
             console.log('✅ [MODAL LOGO] Número de pedido guardado en variable global:', window.currentPedidoNumberLogo);
         } else {
             console.error('❌ [MODAL LOGO] No se pudo obtener numero_pedido de orden:', orden);
@@ -597,6 +603,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Llenar los campos del modal de logo
         if (document.querySelector('#order-detail-modal-wrapper-logo')) {
+            console.log('✅ [MODAL LOGO] Modal wrapper encontrado en DOM');
+            console.log('📦 [MODAL LOGO] Datos de orden completos:', orden);
+            
             // Fecha
             if (orden.fecha_de_creacion_de_orden) {
                 const fecha = new Date(orden.fecha_de_creacion_de_orden);
@@ -604,41 +613,144 @@ document.addEventListener('DOMContentLoaded', function() {
                 const monthBox = document.querySelector('#order-detail-modal-wrapper-logo .month-box');
                 const yearBox = document.querySelector('#order-detail-modal-wrapper-logo .year-box');
                 
-                if (dayBox) dayBox.textContent = String(fecha.getDate()).padStart(2, '0');
-                if (monthBox) monthBox.textContent = String(fecha.getMonth() + 1).padStart(2, '0');
-                if (yearBox) yearBox.textContent = fecha.getFullYear();
+                console.log('📅 [MODAL LOGO] Fecha:', {
+                    original: orden.fecha_de_creacion_de_orden,
+                    parsed: fecha,
+                    day: dayBox ? dayBox.textContent : 'no encontrado',
+                    month: monthBox ? monthBox.textContent : 'no encontrado',
+                    year: yearBox ? yearBox.textContent : 'no encontrado'
+                });
+                
+                if (dayBox) {
+                    dayBox.textContent = String(fecha.getDate()).padStart(2, '0');
+                    console.log('✅ Día establecido:', dayBox.textContent);
+                }
+                if (monthBox) {
+                    monthBox.textContent = String(fecha.getMonth() + 1).padStart(2, '0');
+                    console.log('✅ Mes establecido:', monthBox.textContent);
+                }
+                if (yearBox) {
+                    yearBox.textContent = fecha.getFullYear();
+                    console.log('✅ Año establecido:', yearBox.textContent);
+                }
+            } else {
+                console.warn('⚠️ [MODAL LOGO] No hay fecha_de_creacion_de_orden');
             }
             
             // Cliente
             const clienteSpan = document.querySelector('#order-detail-modal-wrapper-logo #cliente-value');
-            if (clienteSpan) clienteSpan.textContent = orden.cliente || '-';
+            console.log('👤 [MODAL LOGO] Cliente span encontrado:', !!clienteSpan, 'valor:', orden.cliente);
+            if (clienteSpan) {
+                clienteSpan.textContent = orden.cliente || '-';
+                console.log('✅ Cliente establecido:', clienteSpan.textContent);
+            }
             
             // Asesora
             const asesoraSpan = document.querySelector('#order-detail-modal-wrapper-logo #asesora-value');
-            if (asesoraSpan) asesoraSpan.textContent = orden.asesora || '-';
+            console.log('👩 [MODAL LOGO] Asesora span encontrado:', !!asesoraSpan, 'valor:', orden.asesora);
+            if (asesoraSpan) {
+                asesoraSpan.textContent = orden.asesora || '-';
+                console.log('✅ Asesora establecida:', asesoraSpan.textContent);
+            }
             
             // Forma de pago
             const formaPagoSpan = document.querySelector('#order-detail-modal-wrapper-logo #forma-pago-value');
-            if (formaPagoSpan) formaPagoSpan.textContent = orden.forma_de_pago || '-';
+            console.log('💳 [MODAL LOGO] Forma de pago span encontrado:', !!formaPagoSpan, 'valor:', orden.forma_de_pago);
+            if (formaPagoSpan) {
+                formaPagoSpan.textContent = orden.forma_de_pago || '-';
+                console.log('✅ Forma de pago establecida:', formaPagoSpan.textContent);
+            }
             
             // Número de orden
             const pedidoDiv = document.querySelector('#order-detail-modal-wrapper-logo #order-pedido');
-            if (pedidoDiv) pedidoDiv.textContent = `#${orden.numero_pedido}`;
+            console.log('🔢 [MODAL LOGO] Pedido div encontrado:', !!pedidoDiv, 'valor:', orden.numero_pedido);
+            if (pedidoDiv) {
+                pedidoDiv.textContent = `#${orden.numero_pedido}`;
+                console.log('✅ Número de pedido establecido:', pedidoDiv.textContent);
+            }
             
             // Encargado de orden
             const encargadoSpan = document.querySelector('#order-detail-modal-wrapper-logo #encargado-value');
-            if (encargadoSpan) encargadoSpan.textContent = orden.encargado_orden || '-';
+            console.log('👨‍💼 [MODAL LOGO] Encargado span encontrado:', !!encargadoSpan, 'valor:', orden.encargado_orden);
+            if (encargadoSpan) {
+                encargadoSpan.textContent = orden.encargado_orden || '-';
+                console.log('✅ Encargado establecido:', encargadoSpan.textContent);
+            }
             
             // Prendas entregadas
             const prendasSpan = document.querySelector('#order-detail-modal-wrapper-logo #prendas-entregadas-value');
-            if (prendasSpan && orden.prendas) {
-                prendasSpan.textContent = orden.prendas.length || 0;
+            console.log('👕 [MODAL LOGO] Prendas span encontrado:', !!prendasSpan, 'prendas:', orden.prendas);
+            if (prendasSpan) {
+                const cantidadPrendas = orden.prendas ? (Array.isArray(orden.prendas) ? orden.prendas.length : Object.keys(orden.prendas).length) : 0;
+                prendasSpan.textContent = cantidadPrendas;
+                console.log('✅ Prendas entregadas establecidas:', cantidadPrendas);
             }
             
-            console.log('✅ [MODAL LOGO] Datos del modal de logo llenados');
+            // Descripción
+            const descripcionEl = document.querySelector('#order-detail-modal-wrapper-logo #descripcion-text');
+            console.log('📝 [MODAL LOGO] Descripción elemento encontrado:', !!descripcionEl, 'valor:', orden.descripcion);
+            if (descripcionEl) {
+                descripcionEl.textContent = orden.descripcion || '-';
+                console.log('✅ [MODAL LOGO] Descripción cargada:', orden.descripcion);
+            }
+
+            // Técnicas
+            const tecnicasEl = document.querySelector('#order-detail-modal-wrapper-logo #logo-tecnicas');
+            if (tecnicasEl) {
+                const tecnicas = Array.isArray(orden.tecnicas)
+                    ? orden.tecnicas
+                    : (typeof orden.tecnicas === 'string' ? (JSON.parse(orden.tecnicas || '[]')) : []);
+                tecnicasEl.textContent = (tecnicas && tecnicas.length > 0) ? tecnicas.join(', ') : '-';
+            }
+
+            // Observaciones técnicas
+            const obsTecEl = document.querySelector('#order-detail-modal-wrapper-logo #logo-observaciones-tecnicas');
+            if (obsTecEl) {
+                obsTecEl.textContent = orden.observaciones_tecnicas || '-';
+            }
+
+            // Ubicaciones (JSON array): [{opciones:[...], ubicacion:"...", observaciones:"..."}]
+            const ubicacionesEl = document.querySelector('#order-detail-modal-wrapper-logo #logo-ubicaciones');
+            if (ubicacionesEl) {
+                let ubicaciones = [];
+                try {
+                    ubicaciones = Array.isArray(orden.ubicaciones)
+                        ? orden.ubicaciones
+                        : (typeof orden.ubicaciones === 'string' ? (JSON.parse(orden.ubicaciones || '[]')) : []);
+                } catch (e) {
+                    ubicaciones = [];
+                }
+
+                if (ubicaciones && ubicaciones.length > 0) {
+                    const lineas = ubicaciones.map((u) => {
+                        const prenda = u?.ubicacion ? String(u.ubicacion).toUpperCase() : '';
+                        const ops = Array.isArray(u?.opciones) ? u.opciones.map(o => String(o).toUpperCase()).join(', ') : '';
+                        const obs = u?.observaciones ? String(u.observaciones) : '';
+
+                        let linea = '';
+                        if (prenda) linea += prenda;
+                        if (ops) linea += (linea ? ' - ' : '') + ops;
+                        if (obs) linea += (linea ? ': ' : '') + obs;
+                        return linea || '-';
+                    });
+                    ubicacionesEl.textContent = lineas.join('\n');
+                } else {
+                    ubicacionesEl.textContent = '-';
+                }
+            }
+
+            
+            console.log('✅ [MODAL LOGO] Todos los datos del modal de logo llenados');
+        } else {
+            console.error('❌ [MODAL LOGO] Modal wrapper NO encontrado en DOM');
+            console.log('🔍 [MODAL LOGO] Buscando elemento #order-detail-modal-wrapper-logo');
+            const wrapper = document.getElementById('order-detail-modal-wrapper-logo');
+            console.log('   Resultado directo por ID:', !!wrapper);
         }
 
+        console.log('📦 [MODAL LOGO] Llamando a openOrderDetailModalLogo()');
         window.openOrderDetailModalLogo();
+        console.log('📦 [MODAL LOGO] openOrderDetailModalLogo() completada');
     });
     
     // Listener para abrir el modal

@@ -10,6 +10,7 @@
  */
 
 use App\Http\Controllers\Asesores\PedidoProduccionController;
+use App\Http\Controllers\Asesores\PedidoLogoAreaController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'role:asesor'])->group(function () {
@@ -64,4 +65,22 @@ Route::middleware(['auth', 'role:asesor'])->group(function () {
         [PedidoProduccionController::class, 'eliminarPedido'])
         ->name('pedidos-produccion.destroy');
 
+    // ========== RUTAS PARA ÁREAS DE PEDIDOS LOGO ==========
+    
+    // Cambiar área de un pedido logo
+    Route::post('/pedidos-logo/{logo_pedido_id}/cambiar-area',
+        [PedidoLogoAreaController::class, 'cambiarArea'])
+        ->name('pedidos-logo.cambiar-area');
+
+    // Obtener historial de áreas
+    Route::get('/pedidos-logo/{logo_pedido_id}/historial',
+        [PedidoLogoAreaController::class, 'obtenerHistorial'])
+        ->name('pedidos-logo.historial');
+
+    // Obtener áreas disponibles
+    Route::get('/pedidos-logo/areas/disponibles',
+        [PedidoLogoAreaController::class, 'obtenerAreas'])
+        ->name('pedidos-logo.areas');
+
 });
+

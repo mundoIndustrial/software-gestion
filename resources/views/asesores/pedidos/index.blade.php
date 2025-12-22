@@ -354,97 +354,37 @@
         </div>
     </div>
 
-    </div>
-
-    <!-- Buscador de Cliente y Pedido -->
-    <div style="background: white; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);">
-        <form action="{{ route('asesores.pedidos.index') }}" method="GET" style="display: flex; gap: 12px; align-items: flex-end;">
-            <div style="flex: 1;">
-                <label style="display: block; font-weight: 600; font-size: 0.875rem; color: #2c3e50; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Buscar Cliente o Pedido</label>
-                <div style="position: relative;">
-                    <input 
-                        type="text" 
-                        name="search" 
-                        placeholder="Ingresa nombre del cliente o número de pedido..." 
-                        value="{{ request('search') }}"
-                        style="
-                            width: 100%;
-                            padding: 10px 12px;
-                            padding-left: 35px;
-                            border: 2px solid #e0e6ed;
-                            border-radius: 8px;
-                            font-size: 0.95rem;
-                            transition: all 0.3s ease;
-                        "
-                        onfocus="this.style.borderColor='#3498db'; this.style.boxShadow='0 0 0 3px rgba(52, 152, 219, 0.1)'"
-                        onblur="this.style.borderColor='#e0e6ed'; this.style.boxShadow='none'"
-                    >
-                    <span class="material-symbols-rounded" style="
-                        position: absolute;
-                        left: 10px;
-                        top: 50%;
-                        transform: translateY(-50%);
-                        color: #95a5a6;
-                        font-size: 20px;
-                        pointer-events: none;
-                    ">search</span>
-                </div>
-            </div>
-            <button type="submit" style="
-                padding: 10px 24px;
-                background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-                color: white;
-                border: none;
-                border-radius: 8px;
-                cursor: pointer;
-                font-size: 0.95rem;
-                font-weight: 600;
-                transition: all 0.3s ease;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
-            " onmouseover="this.style.boxShadow='0 4px 12px rgba(52, 152, 219, 0.3)'" onmouseout="this.style.boxShadow='0 2px 8px rgba(52, 152, 219, 0.2)'">
-                <span class="material-symbols-rounded" style="font-size: 18px;">search</span>
-                Buscar
-            </button>
-            @if(request('search'))
-                <a href="{{ route('asesores.pedidos.index') }}" style="
-                    padding: 10px 24px;
-                    background: white;
-                    color: #e74c3c;
-                    border: 2px solid #e74c3c;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    font-size: 0.95rem;
-                    font-weight: 600;
-                    transition: all 0.3s ease;
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    text-decoration: none;
-                " onmouseover="this.style.background='#e74c3c'; this.style.color='white'" onmouseout="this.style.background='white'; this.style.color='#e74c3c'">
-                    <span class="material-symbols-rounded" style="font-size: 18px;">close</span>
-                    Limpiar
-                </a>
-            @endif
-        </form>
+    <!-- Filtros Rápidos -->
+    <div class="filtros-rapidos-asesores">
+        <span class="filtros-rapidos-asesores-label">Filtrar por tipo:</span>
+        <a href="{{ route('asesores.pedidos.index') }}" class="btn-filtro-rapido-asesores {{ !request('tipo') ? 'active' : '' }}" onclick="return navegarFiltro(this.href, event)">
+            <span class="material-symbols-rounded">shopping_cart</span>
+            Todos
+        </a>
+        <a href="{{ route('asesores.pedidos.index', ['tipo' => 'prendas']) }}" class="btn-filtro-rapido-asesores {{ request('tipo') === 'prendas' ? 'active' : '' }}" onclick="return navegarFiltro(this.href, event)">
+            <span class="material-symbols-rounded">checkroom</span>
+            Prendas
+        </a>
+        <a href="{{ route('asesores.pedidos.index', ['tipo' => 'logo']) }}" class="btn-filtro-rapido-asesores {{ request('tipo') === 'logo' ? 'active' : '' }}" onclick="return navegarFiltro(this.href, event)">
+            <span class="material-symbols-rounded">palette</span>
+            Logo
+        </a>
     </div>
 
     <!-- Tabla con Scroll Horizontal -->
-    <div style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem;">
+    <div style="background: #e5e7eb; border-radius: 8px; overflow: visible; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); padding: 0.75rem; width: 100%; max-width: 100%;">
         <!-- Contenedor con Scroll -->
-        <div class="table-scroll-container" style="overflow-x: auto; overflow-y: visible;">
+        <div class="table-scroll-container" style="overflow-x: auto; overflow-y: auto; width: 100%; max-width: 100%; max-height: {{ request('tipo') === 'logo' ? '400px' : 'none' }}; border-radius: 6px;">
             <!-- Header Azul -->
             <div style="
                 background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
                 color: white;
-                padding: 1rem 1.5rem;
+                padding: 0.75rem 1rem;
                 display: grid;
-                grid-template-columns: 130px 110px 110px 130px 90px 160px 150px 110px 110px 110px;
-                gap: 1.2rem;
+                grid-template-columns: {{ request('tipo') === 'logo' ? '120px 120px 140px 150px 160px 220px 130px 140px' : '90px 90px 90px 110px 80px 140px 130px 90px 100px 100px' }};
+                gap: 0.8rem;
                 font-weight: 600;
-                font-size: 0.875rem;
+                font-size: 0.8rem;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
                 min-width: min-content;
@@ -486,12 +426,14 @@
                         <span class="material-symbols-rounded">filter_alt</span>
                     </button>
                 </div>
+                @if(request('tipo') !== 'logo')
                 <div class="th-wrapper">
                     <span>Cantidad</span>
                     <button type="button" class="btn-filter-column" title="Filtrar Cantidad">
                         <span class="material-symbols-rounded">filter_alt</span>
                     </button>
                 </div>
+                @endif
                 <div class="th-wrapper">
                     <span>Forma Pago</span>
                     <button type="button" class="btn-filter-column" title="Filtrar Forma Pago">
@@ -504,12 +446,14 @@
                         <span class="material-symbols-rounded">filter_alt</span>
                     </button>
                 </div>
+                @if(request('tipo') !== 'logo')
                 <div class="th-wrapper">
                     <span>Fecha Estimada</span>
                     <button type="button" class="btn-filter-column" title="Filtrar Fecha">
                         <span class="material-symbols-rounded">filter_alt</span>
                     </button>
                 </div>
+                @endif
             </div>
 
             <!-- Filas -->
@@ -517,14 +461,29 @@
                 <div style="padding: 3rem 2rem; text-align: center; color: #6b7280;">
                     <i class="fas fa-inbox" style="font-size: 3rem; color: #d1d5db; margin-bottom: 1rem; display: block;"></i>
                     <p style="font-size: 1rem; margin: 0;">No hay pedidos registrados</p>
+                    
+                    <!-- BOTÓN DE TEST TEMPORAL -->
+                    @if(request('tipo') === 'logo')
+                    <button onclick="testAbrirModal()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #dc2626; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                        TEST: Abrir Modal
+                    </button>
+                    <script>
+                    function testAbrirModal() {
+                        console.log('🧪 TEST: Intentando abrir modal');
+                        console.log('🧪 overlay elemento:', document.getElementById('modal-overlay'));
+                        console.log('🧪 wrapper-logo elemento:', document.getElementById('order-detail-modal-wrapper-logo'));
+                        window.openOrderDetailModalLogo();
+                    }
+                    </script>
+                    @endif
                 </div>
             @else
                 @foreach($pedidos as $pedido)
                     <div style="
                         display: grid;
-                        grid-template-columns: 130px 110px 110px 130px 90px 160px 150px 110px 110px 110px;
-                        gap: 1.2rem;
-                        padding: 1rem 1.5rem;
+                        grid-template-columns: {{ request('tipo') === 'logo' ? '120px 120px 140px 150px 160px 220px 130px 140px' : '90px 90px 90px 110px 80px 140px 130px 90px 100px 100px' }};
+                        gap: 0.8rem;
+                        padding: 0.75rem 1rem;
                         align-items: center;
                         transition: all 0.3s ease;
                         min-width: min-content;
@@ -539,7 +498,13 @@
                     <!-- Acciones -->
                     <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
                         <!-- Botón Ver (con dropdown) -->
-                        <button class="btn-ver-dropdown" data-menu-id="menu-ver-{{ $pedido->numero_pedido }}" data-pedido="{{ $pedido->numero_pedido }}" data-tipo-cotizacion="{{ $pedido->cotizacion?->tipoCotizacion?->codigo ?? '' }}" title="Ver Opciones" style="
+                        @php
+                            $numeroPedido = get_class($pedido) === 'App\Models\LogoPedido' ? $pedido->numero_pedido : $pedido->numero_pedido;
+                            $pedidoId = $pedido->id;
+                            $tipoDocumento = get_class($pedido) === 'App\Models\LogoPedido' ? 'L' : ($pedido->cotizacion?->tipoCotizacion?->codigo ?? '');
+                            $esLogo = get_class($pedido) === 'App\Models\LogoPedido' ? '1' : '0';
+                        @endphp
+                        <button class="btn-ver-dropdown" data-menu-id="menu-ver-{{ str_replace('#', '', $numeroPedido) }}" data-pedido="{{ str_replace('#', '', $numeroPedido) }}" data-pedido-id="{{ $pedidoId }}" data-tipo-cotizacion="{{ $tipoDocumento }}" data-es-logo="{{ $esLogo }}" title="Ver Opciones" style="
                             background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
                             color: white;
                             border: none;
@@ -559,8 +524,11 @@
                         </button>
                         
                         <!-- Botón Anular (solo si no está anulado) -->
-                        @if($pedido->estado !== 'Anulada')
-                        <button onclick="confirmarAnularPedido({{ $pedido->numero_pedido }})" title="Anular Pedido" style="
+                        @php
+                            $estado = get_class($pedido) === 'App\Models\LogoPedido' ? ($pedido->estado ?? 'pendiente') : ($pedido->estado ?? 'Pendiente');
+                        @endphp
+                        @if($estado !== 'Anulada' && $estado !== 'anulada')
+                        <button onclick="confirmarAnularPedido({{ $numeroPedido }})" title="Anular Pedido" style="
                             background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
                             color: white;
                             border: none;
@@ -580,8 +548,9 @@
                         </button>
                         @endif
 
-                        {{-- Botón Eliminar
-                        <button onclick="confirmarEliminarPedido({{ $pedido->id }}, '{{ $pedido->numero_pedido }}')" title="Eliminar Pedido" style="
+                        <!-- Botón Eliminar -->
+                        <button onclick="confirmarEliminarPedido({{ $pedido->id }}, '{{ $numeroPedido }}')" title="Eliminar Pedido" style="
+
                             background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
                             color: white;
                             border: none;
@@ -607,97 +576,178 @@
                         <span style="
                             background: #fef3c7;
                             color: #92400e;
-                            padding: 0.25rem 0.75rem;
+                            padding: 0.25rem 0.5rem;
                             border-radius: 12px;
-                            font-size: 0.75rem;
+                            font-size: 0.7rem;
                             font-weight: 600;
                             display: inline-block;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                            max-width: 90px;
+                            white-space: nowrap;
                         ">
-                            {{ $pedido->estado ?? 'Pendiente' }}
+                            @php
+                                if (get_class($pedido) === 'App\Models\LogoPedido') {
+                                    echo ucfirst($pedido->estado ?? 'pendiente');
+                                } else {
+                                    echo $pedido->estado ?? 'Pendiente';
+                                }
+                            @endphp
                         </span>
                     </div>
 
                     <!-- Área -->
                     <div>
+                        @php
+                            $area = '-';
+                            
+                            // Verificar si es LogoPedido (tiene campo 'numero_pedido' pero no 'prendas')
+                            if (get_class($pedido) === 'App\Models\LogoPedido') {
+                                // Es un LogoPedido
+                                $area = $pedido->areaActual ?? 'Creacion de orden';
+                            } elseif ($pedido->logoPedidos && $pedido->logoPedidos->count() > 0) {
+                                // Es un PedidoProduccion con logo
+                                $logoPedido = $pedido->logoPedidos->first();
+                                $area = $logoPedido->areaActual ?? 'Creacion de orden';
+                            } else {
+                                // Es un PedidoProduccion normal
+                                $area = $pedido->procesoActualOptimizado() ?? '-';
+                            }
+                        @endphp
                         <span style="
                             background: #dbeafe;
                             color: #1e40af;
-                            padding: 0.25rem 0.75rem;
+                            padding: 0.25rem 0.5rem;
                             border-radius: 12px;
-                            font-size: 0.75rem;
+                            font-size: 0.7rem;
                             font-weight: 600;
                             display: inline-block;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                            max-width: 100px;
+                            white-space: nowrap;
                         ">
-                            {{ $pedido->area ?? 'Pendiente' }}
+                            {{ $area }}
+
                         </span>
                     </div>
 
                     <!-- Pedido -->
-                    <div style="color: #2563eb; font-weight: 700; font-size: 0.875rem;">
-                        #{{ $pedido->numero_pedido_mostrable }}
+                    <div style="color: #2563eb; font-weight: 700; font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        @php
+                            if (get_class($pedido) === 'App\Models\LogoPedido') {
+                                // LogoPedido ya tiene # al inicio (ejemplo: #LOGO-00001)
+                                echo $pedido->numero_pedido;
+                            } else {
+                                echo '#' . $pedido->numero_pedido_mostrable;
+                            }
+                        @endphp
                     </div>
 
                     <!-- Cliente -->
-                    <div style="color: #374151; font-size: 0.875rem; font-weight: 500; cursor: pointer;" onclick="abrirModalCelda('Cliente', '{{ $pedido->cliente }}')" title="Click para ver completo">
-                        {{ $pedido->cliente }}
+                    <div style="color: #374151; font-size: 0.85rem; font-weight: 500; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="abrirModalCelda('Cliente', '{{ $pedido->cliente }}')" title="Click para ver completo">
+                        @php
+                            echo $pedido->cliente ?? '-';
+                        @endphp
                     </div>
 
                     <!-- Descripción -->
                     @php
-                        // Construir descripción con tallas POR PRENDA para el modal
                         $descripcionConTallas = '';
-                        $descripcionBase = $pedido->descripcion_prendas ?? '';
                         
-                        // VERIFICAR SI ES COTIZACIÓN TIPO REFLECTIVO
-                        $esReflectivo = false;
-                        if ($pedido->cotizacion && $pedido->cotizacion->tipoCotizacion) {
-                            $esReflectivo = ($pedido->cotizacion->tipoCotizacion->codigo === 'RF');
-                        }
-                        
-                        if (!empty($descripcionBase) || ($esReflectivo && $pedido->prendas && $pedido->prendas->count() > 0)) {
-                            if ($esReflectivo) {
-                                // CASO REFLECTIVO: Usar descripción tal cual (ya contiene tallas y cantidad total)
-                                $descripcionConTallas = '';
-                                
-                                if ($pedido->prendas && $pedido->prendas->count() > 0) {
-                                    foreach ($pedido->prendas as $index => $prenda) {
-                                        if ($index > 0) {
-                                            $descripcionConTallas .= "\n\n";
-                                        }
-                                        
-                                        // Agregar descripción de la prenda (ya tiene tallas incluidas)
-                                        if (!empty($prenda->descripcion)) {
-                                            $descripcionConTallas .= $prenda->descripcion;
+                        // Verificar si es LogoPedido
+                        if (get_class($pedido) === 'App\Models\LogoPedido') {
+                            // Para LogoPedido, mostrar el campo descripción directamente
+                            $descripcionConTallas = $pedido->descripcion ?? 'Logo personalizado';
+                        } else {
+                            // Para PedidoProduccion, usar la lógica anterior
+                            $descripcionBase = $pedido->descripcion_prendas ?? '';
+                            
+                            // VERIFICAR SI ES COTIZACIÓN TIPO REFLECTIVO
+                            $esReflectivo = false;
+                            if ($pedido->cotizacion && $pedido->cotizacion->tipoCotizacion) {
+                                $esReflectivo = ($pedido->cotizacion->tipoCotizacion->codigo === 'RF');
+                            }
+                            
+                            if (!empty($descripcionBase) || ($esReflectivo && $pedido->prendas && $pedido->prendas->count() > 0)) {
+                                if ($esReflectivo) {
+                                    // CASO REFLECTIVO: Usar descripción tal cual (ya contiene tallas y cantidad total)
+                                    $descripcionConTallas = '';
+                                    
+                                    if ($pedido->prendas && $pedido->prendas->count() > 0) {
+                                        foreach ($pedido->prendas as $index => $prenda) {
+                                            if ($index > 0) {
+                                                $descripcionConTallas .= "\n\n";
+                                            }
+                                            
+                                            // Agregar descripción de la prenda (ya tiene tallas incluidas)
+                                            if (!empty($prenda->descripcion)) {
+                                                $descripcionConTallas .= $prenda->descripcion;
+                                            }
                                         }
                                     }
-                                }
-                            } else {
-                                // CASO NORMAL: Parsear por "PRENDA X:"
-                                if (strpos($descripcionBase, 'PRENDA ') !== false) {
-                                    $prendas = explode('PRENDA ', $descripcionBase);
-                                    $prendasCount = 0;
-                                    
-                                    foreach ($prendas as $index => $prendaBlock) {
-                                        if ($index === 0 && empty(trim($prendaBlock))) {
-                                            continue;
+                                } else {
+                                    // CASO NORMAL: Parsear por "PRENDA X:"
+                                    if (strpos($descripcionBase, 'PRENDA ') !== false) {
+                                        $prendas = explode('PRENDA ', $descripcionBase);
+                                        $prendasCount = 0;
+                                        
+                                        foreach ($prendas as $index => $prendaBlock) {
+                                            if ($index === 0 && empty(trim($prendaBlock))) {
+                                                continue;
+                                            }
+                                            
+                                            $prendaBlock = trim($prendaBlock);
+                                            if (empty($prendaBlock)) {
+                                                continue;
+                                            }
+                                            
+                                            preg_match('/^(\d+):/', $prendaBlock, $matches);
+                                            $numPrenda = isset($matches[1]) ? intval($matches[1]) : ($prendasCount + 1);
+                                            
+                                            $descripcionConTallas .= "PRENDA " . $prendaBlock;
+                                            
+                                            if ($pedido->prendas && $pedido->prendas->count() > 0) {
+                                                $prendaActual = $pedido->prendas->where('numero_prenda', $numPrenda)->first();
+                                                
+                                                if (!$prendaActual && $prendasCount < $pedido->prendas->count()) {
+                                                    $prendaActual = $pedido->prendas[$prendasCount];
+                                                }
+                                                
+                                                if ($prendaActual && $prendaActual->cantidad_talla) {
+                                                    try {
+                                                        $tallas = is_string($prendaActual->cantidad_talla) 
+                                                            ? json_decode($prendaActual->cantidad_talla, true) 
+                                                            : $prendaActual->cantidad_talla;
+                                                        
+                                                        if (is_array($tallas) && !empty($tallas)) {
+                                                            $tallasTexto = [];
+                                                            foreach ($tallas as $talla => $cantidad) {
+                                                                if ($cantidad > 0) {
+                                                                    $tallasTexto[] = "$talla: $cantidad";
+                                                                }
+                                                            }
+                                                            if (!empty($tallasTexto)) {
+                                                                $descripcionConTallas .= "\nTalla: " . implode(', ', $tallasTexto);
+                                                            }
+                                                        }
+                                                    } catch (\Exception $e) {
+                                                        // Continuar sin tallas
+                                                    }
+                                                }
+                                            }
+                                            
+                                            $prendasCount++;
+                                            if ($prendasCount < count($prendas)) {
+                                                $descripcionConTallas .= "\n\n";
+                                            }
                                         }
-                                        
-                                        $prendaBlock = trim($prendaBlock);
-                                        if (empty($prendaBlock)) {
-                                            continue;
-                                        }
-                                        
-                                        preg_match('/^(\d+):/', $prendaBlock, $matches);
-                                        $numPrenda = isset($matches[1]) ? intval($matches[1]) : ($prendasCount + 1);
-                                        
-                                        $descripcionConTallas .= "PRENDA " . $prendaBlock;
+                                    } else {
+                                        // Descripción sin formato PRENDA
+                                        $descripcionConTallas = $descripcionBase;
                                         
                                         if ($pedido->prendas && $pedido->prendas->count() > 0) {
-                                            $prendaActual = $pedido->prendas->where('numero_prenda', $numPrenda)->first();
-                                            
-                                            if (!$prendaActual && $prendasCount < $pedido->prendas->count()) {
-                                                $prendaActual = $pedido->prendas[$prendasCount];
-                                            }
+                                            $prendaActual = $pedido->prendas->first();
                                             
                                             if ($prendaActual && $prendaActual->cantidad_talla) {
                                                 try {
@@ -713,46 +763,12 @@
                                                             }
                                                         }
                                                         if (!empty($tallasTexto)) {
-                                                            $descripcionConTallas .= "\nTalla: " . implode(', ', $tallasTexto);
+                                                            $descripcionConTallas .= "\n\nTallas: " . implode(', ', $tallasTexto);
                                                         }
                                                     }
                                                 } catch (\Exception $e) {
                                                     // Continuar sin tallas
                                                 }
-                                            }
-                                        }
-                                        
-                                        $prendasCount++;
-                                        if ($prendasCount < count($prendas)) {
-                                            $descripcionConTallas .= "\n\n";
-                                        }
-                                    }
-                                } else {
-                                    // Descripción sin formato PRENDA
-                                    $descripcionConTallas = $descripcionBase;
-                                    
-                                    if ($pedido->prendas && $pedido->prendas->count() > 0) {
-                                        $prendaActual = $pedido->prendas->first();
-                                        
-                                        if ($prendaActual && $prendaActual->cantidad_talla) {
-                                            try {
-                                                $tallas = is_string($prendaActual->cantidad_talla) 
-                                                    ? json_decode($prendaActual->cantidad_talla, true) 
-                                                    : $prendaActual->cantidad_talla;
-                                                
-                                                if (is_array($tallas) && !empty($tallas)) {
-                                                    $tallasTexto = [];
-                                                    foreach ($tallas as $talla => $cantidad) {
-                                                        if ($cantidad > 0) {
-                                                            $tallasTexto[] = "$talla: $cantidad";
-                                                        }
-                                                    }
-                                                    if (!empty($tallasTexto)) {
-                                                        $descripcionConTallas .= "\n\nTallas: " . implode(', ', $tallasTexto);
-                                                    }
-                                                }
-                                            } catch (\Exception $e) {
-                                                // Continuar sin tallas
                                             }
                                         }
                                     }
@@ -761,12 +777,14 @@
                         }
                         
                         if (empty($descripcionConTallas)) {
-                            $descripcionConTallas = $descripcionBase;
+                            $descripcionConTallas = get_class($pedido) === 'App\Models\LogoPedido' ? 'Logo personalizado' : '-';
                         }
                     @endphp
-                    <div style="color: #6b7280; font-size: 0.875rem; cursor: pointer; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="abrirModalCelda('Descripción', {{ json_encode($descripcionConTallas) }})" title="Click para ver completo">
+                    <div style="color: #6b7280; font-size: 0.8rem; cursor: pointer; max-width: {{ request('tipo') === 'logo' ? '220px' : '130px' }}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="abrirModalCelda('Descripción', {{ json_encode($descripcionConTallas) }})" title="Click para ver completo">
                         @php
-                            if ($pedido->prendas && $pedido->prendas->count() > 0) {
+                            if (get_class($pedido) === 'App\Models\LogoPedido') {
+                                echo 'Logo personalizado <span style="color: #3b82f6; font-weight: 600;">...</span>';
+                            } elseif ($pedido->prendas && $pedido->prendas->count() > 0) {
                                 $prendasInfo = $pedido->prendas->map(function($prenda) {
                                     return $prenda->nombre_prenda ?? 'Prenda sin nombre';
                                 })->unique()->toArray();
@@ -778,40 +796,58 @@
                         @endphp
                     </div>
 
-                    <!-- Cantidad -->
-                    <div style="color: #374151; font-weight: 600; font-size: 0.875rem; text-align: center;">
-                        @if($pedido->prendas->count() > 0)
-                            <span style="white-space: nowrap;">{{ $pedido->prendas->sum('cantidad') }} <small style="color: #9ca3af;">und</small></span>
-                        @else
-                            <span style="color: #d1d5db;">-</span>
-                        @endif
+                    <!-- Cantidad (solo si no es logo) -->
+                    @if(request('tipo') !== 'logo')
+                    <div style="color: #374151; font-weight: 600; font-size: 0.8rem; text-align: center; white-space: nowrap;">
+                        @php
+                            if (get_class($pedido) === 'App\Models\LogoPedido') {
+                                echo '<span style="color: #3b82f6;">LOGO</span>';
+                            } elseif ($pedido->prendas->count() > 0) {
+                                echo '<span>' . $pedido->prendas->sum('cantidad') . ' und</span>';
+                            } else {
+                                echo '<span style="color: #d1d5db;">-</span>';
+                            }
+                        @endphp
                     </div>
+                    @endif
 
                     <!-- Forma Pago -->
-                    <div style="color: #374151; font-size: 0.875rem; cursor: pointer;" onclick="abrirModalCelda('Forma de Pago', '{{ $pedido->forma_de_pago ?? '-' }}')" title="Click para ver completo">
+                    <div style="color: #374151; font-size: 0.8rem; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" onclick="abrirModalCelda('Forma de Pago', '{{ $pedido->forma_de_pago ?? '-' }}')" title="Click para ver completo">
                         {{ $pedido->forma_de_pago ?? '-' }}
                     </div>
 
                     <!-- Fecha Creación -->
-                    <div style="color: #6b7280; font-size: 0.75rem;">
-                        {{ $pedido->fecha_de_creacion_de_orden ? $pedido->fecha_de_creacion_de_orden->format('d/m/Y') : '-' }}
-                    </div>
-
-                    <!-- Fecha Estimada de Entrega -->
-                    <div style="color: #6b7280; font-size: 0.75rem;">
+                    <div style="color: #6b7280; font-size: 0.75rem; white-space: nowrap;">
                         @php
-                            if ($pedido->fecha_estimada_de_entrega) {
-                                try {
-                                    $fecha = \Carbon\Carbon::parse($pedido->fecha_estimada_de_entrega);
-                                    echo $fecha->format('d/m/Y');
-                                } catch (\Exception $e) {
-                                    echo $pedido->fecha_estimada_de_entrega;
-                                }
+                            if (get_class($pedido) === 'App\Models\LogoPedido') {
+                                echo $pedido->created_at ? $pedido->created_at->format('d/m/Y') : '-';
                             } else {
-                                echo '-';
+                                echo $pedido->fecha_de_creacion_de_orden ? $pedido->fecha_de_creacion_de_orden->format('d/m/Y') : '-';
                             }
                         @endphp
                     </div>
+
+                    <!-- Fecha Estimada de Entrega (solo si no es logo) -->
+                    @if(request('tipo') !== 'logo')
+                    <div style="color: #6b7280; font-size: 0.75rem; white-space: nowrap;">
+                        @php
+                            if (get_class($pedido) === 'App\Models\LogoPedido') {
+                                echo '-'; // LogoPedido no tiene fecha estimada
+                            } else {
+                                if ($pedido->fecha_estimada_de_entrega) {
+                                    try {
+                                        $fecha = \Carbon\Carbon::parse($pedido->fecha_estimada_de_entrega);
+                                        echo $fecha->format('d/m/Y');
+                                    } catch (\Exception $e) {
+                                        echo $pedido->fecha_estimada_de_entrega;
+                                    }
+                                } else {
+                                    echo '-';
+                                }
+                            }
+                        @endphp
+                    </div>
+                    @endif
                 </div>
                 @endforeach
             @endif
@@ -864,7 +900,7 @@
 </div>
 
 <!-- Modal de Detalle de Orden - LOGO -->
-<div id="order-detail-modal-wrapper-logo" style="width: 90%; max-width: 672px; position: fixed; top: 60%; left: 50%; transform: translate(-50%, -50%); z-index: 9998; pointer-events: auto; display: none;">
+<div id="order-detail-modal-wrapper-logo" style="width: 90%; max-width: 672px; position: fixed; top: 60%; left: 50%; transform: translate(-50%, -50%); z-index: 99999; pointer-events: auto; display: none;">
     <x-orders-components.order-detail-modal-logo />
 </div>
 

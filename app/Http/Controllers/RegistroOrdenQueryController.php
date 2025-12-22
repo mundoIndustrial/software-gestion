@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Constants\AreaOptions;
 use Illuminate\Http\Request;
 use App\Models\PedidoProduccion;
+use App\Models\LogoPedido;
+use App\Models\LogoCotizacion;
 use App\Models\Cotizacion;
 use App\Services\CacheCalculosService;
 use App\Services\RegistroOrdenExtendedQueryService;
@@ -241,7 +243,132 @@ class RegistroOrdenQueryController extends Controller
      */
     public function show($pedido)
     {
-        // Buscar en PedidoProduccion por 'numero_pedido'
+        // Primero, intentar buscar en LogoPedido
+        $logoPedido = \App\Models\LogoPedido::where('numero_pedido', $pedido)->first();
+        
+        if ($logoPedido) {
+            // Es un LogoPedido, devolverlo con toda su información
+            \Log::info('📦 [RegistroOrdenQueryController::show] Encontrado LogoPedido', [
+                'numero_pedido' => $pedido,
+                'pedido_id' => $logoPedido->pedido_id,
+                'logo_cotizacion_id' => $logoPedido->logo_cotizacion_id,
+            ]);
+            
+            $logoPedidoArray = $logoPedido->toArray();
+            
+            // PASO 1: Intentar completar desde PedidoProduccion
+            if ($logoPedido->pedido_id) {
+                try {
+                    $pedidoProd = \App\Models\PedidoProduccion::with('asesora')->find($logoPedido->pedido_id);
+                    
+                    if ($pedidoProd) {
+                        \Log::info('📦 Encontrado PedidoProduccion, completando datos', [
+                            'pedido_id' => $logoPedido->pedido_id,
+                            'cliente' => $pedidoProd->cliente,
+                            'asesora' => $pedidoProd->asesora?->name,
+                            'fecha' => $pedidoProd->fecha_de_creacion_de_orden
+                        ]);
+                        
+                        // Completar desde el pedido de producción - SIEMPRE si viene vacío
+                        if (empty($logoPedidoArray['cliente']) || $logoPedidoArray['cliente'] === '-') {
+                            $logoPedidoArray['cliente'] = $pedidoProd->cliente ?? '-';
+                            \Log::info('✅ [PASO 1] Cliente completado desde PedidoProduccion', ['cliente' => $logoPedidoArray['cliente']]);
+                        }
+                        if (empty($logoPedidoArray['asesora']) || $logoPedidoArray['asesora'] === '-') {
+                            $asesoraName = $pedidoProd->asesora?->name ?? $pedidoProd->asesor?->name ?? '-';
+                            $logoPedidoArray['asesora'] = $asesoraName;
+                            \Log::info('✅ [PASO 1] Asesora completada desde PedidoProduccion', ['asesora' => $logoPedidoArray['asesora']]);
+                        }
+                        if (empty($logoPedidoArray['fecha_de_creacion_de_orden'])) {
+                            $logoPedidoArray['fecha_de_creacion_de_orden'] = $pedidoProd->fecha_de_creacion_de_orden;
+                            \Log::info('✅ [PASO 1] Fecha completada desde PedidoProduccion', ['fecha' => $logoPedidoArray['fecha_de_creacion_de_orden']]);
+                        }
+                        if (empty($logoPedidoArray['descripcion']) && $pedidoProd->descripcion_prendas) {
+                            $logoPedidoArray['descripcion'] = $pedidoProd->descripcion_prendas;
+                            \Log::info('✅ [PASO 1] Descripción completada desde PedidoProduccion');
+                        }
+                    } else {
+                        \Log::warning('⚠️ [PASO 1] PedidoProduccion no encontrado', ['pedido_id' => $logoPedido->pedido_id]);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('❌ [PASO 1] Error al buscar PedidoProduccion', ['error' => $e->getMessage()]);
+                }
+            }
+            
+            // PASO 2: Si aún falta info, intentar desde LogoCotizacion
+            if ($logoPedido->logo_cotizacion_id && (empty($logoPedidoArray['cliente']) || $logoPedidoArray['cliente'] === '-')) {
+                try {
+                    $logoCot = \App\Models\LogoCotizacion::with('cotizacion')->find($logoPedido->logo_cotizacion_id);
+                    
+                    if ($logoCot && $logoCot->cotizacion) {
+                        \Log::info('📦 Encontrado LogoCotizacion, completando datos', [
+                            'cliente' => $logoCot->cotizacion->cliente,
+                            'fecha' => $logoCot->cotizacion->fecha_de_creacion
+                        ]);
+                        
+                        if (empty($logoPedidoArray['cliente']) || $logoPedidoArray['cliente'] === '-') {
+                            $logoPedidoArray['cliente'] = $logoCot->cotizacion->cliente ?? '-';
+                            \Log::info('✅ [PASO 2] Cliente completado desde LogoCotizacion', ['cliente' => $logoPedidoArray['cliente']]);
+                        }
+                        if (empty($logoPedidoArray['fecha_de_creacion_de_orden'])) {
+                            $logoPedidoArray['fecha_de_creacion_de_orden'] = $logoCot->cotizacion->fecha_de_creacion;
+                            \Log::info('✅ [PASO 2] Fecha completada desde LogoCotizacion', ['fecha' => $logoPedidoArray['fecha_de_creacion_de_orden']]);
+                        }
+                        if (empty($logoPedidoArray['asesora']) || $logoPedidoArray['asesora'] === '-') {
+                            $logoPedidoArray['asesora'] = $logoCot->cotizacion->asesor?->name ?? '-';
+                            \Log::info('✅ [PASO 2] Asesora completada desde LogoCotizacion', ['asesora' => $logoPedidoArray['asesora']]);
+                        }
+                        if (empty($logoPedidoArray['descripcion']) && $logoCot->descripcion) {
+                            $logoPedidoArray['descripcion'] = $logoCot->descripcion;
+                            \Log::info('✅ [PASO 2] Descripción completada desde LogoCotizacion');
+                        }
+                    } else {
+                        \Log::warning('⚠️ [PASO 2] LogoCotizacion no encontrado o sin cotización', ['logo_cotizacion_id' => $logoPedido->logo_cotizacion_id]);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('❌ [PASO 2] Error al buscar LogoCotizacion', ['error' => $e->getMessage()]);
+                }
+            }
+            
+            // PASO 3: Asegurar valores finales
+            $logoPedidoArray['numero_pedido'] = $logoPedido->numero_pedido ?? $pedido;
+            $logoPedidoArray['cliente'] = $logoPedidoArray['cliente'] ?: '-';
+            $logoPedidoArray['asesora'] = $logoPedidoArray['asesora'] ?: '-';
+            $logoPedidoArray['descripcion'] = $logoPedido->descripcion ?? '';
+            
+            // ✅ IMPORTANTE: Si no hay fecha_de_creacion_de_orden, usar created_at
+            if (empty($logoPedidoArray['fecha_de_creacion_de_orden'])) {
+                $logoPedidoArray['fecha_de_creacion_de_orden'] = $logoPedido->created_at ?? now();
+                \Log::info('✅ [PASO 3] Fecha asignada desde created_at', ['fecha' => $logoPedidoArray['fecha_de_creacion_de_orden']]);
+            }
+            
+            $logoPedidoArray['encargado_orden'] = $logoPedido->encargado_orden ?? '-';
+            $logoPedidoArray['forma_de_pago'] = $logoPedido->forma_de_pago ?? '-';
+            $logoPedidoArray['observaciones'] = $logoPedido->observaciones ?? '';
+            $logoPedidoArray['estado'] = $logoPedido->estado ?? '-';
+            $logoPedidoArray['area'] = $logoPedido->area ?? '-';
+            $logoPedidoArray['tecnicas'] = $logoPedido->tecnicas ?? [];
+            $logoPedidoArray['ubicaciones'] = $logoPedido->ubicaciones ?? [];
+            $logoPedidoArray['prendas'] = $logoPedido->prendas ?? [];
+            
+            // Campos de identificación
+            $logoPedidoArray['es_cotizacion'] = false;
+            $logoPedidoArray['es_logo_pedido'] = true;
+            
+            \Log::info('✅ [RegistroOrdenQueryController::show] LogoPedido finalizado COMPLETAMENTE', [
+                'numero_pedido' => $logoPedidoArray['numero_pedido'],
+                'cliente' => $logoPedidoArray['cliente'],
+                'asesora' => $logoPedidoArray['asesora'],
+                'descripcion' => $logoPedidoArray['descripcion'],
+                'fecha_de_creacion_de_orden' => $logoPedidoArray['fecha_de_creacion_de_orden'],
+                'forma_de_pago' => $logoPedidoArray['forma_de_pago'],
+                'encargado_orden' => $logoPedidoArray['encargado_orden'],
+            ]);
+            
+            return response()->json($logoPedidoArray);
+        }
+        
+        // Si no es LogoPedido, buscar en PedidoProduccion
         $order = PedidoProduccion::with([
             'asesora',
             'cotizacion.tipoCotizacion'
@@ -1096,6 +1223,114 @@ class RegistroOrdenQueryController extends Controller
                 'success' => false,
                 'message' => 'Error al obtener imágenes de logo',
                 'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener LogoPedido por ID con fallback a relacionados
+     * @route GET /api/logo-pedidos/{id}
+     */
+    public function showLogoPedidoById($id)
+    {
+        try {
+            // 🔍 Buscar LogoPedido por ID
+            $logoPedido = LogoPedido::find($id);
+            
+            if (!$logoPedido) {
+                return response()->json([
+                    'error' => 'LogoPedido no encontrado',
+                    'id' => $id
+                ], 404);
+            }
+
+            $logoPedidoArray = $logoPedido->toArray();
+            
+            \Log::info('🔍 [API] showLogoPedidoById buscando ID: ' . $id, [
+                'cliente' => $logoPedidoArray['cliente'] ?? null,
+                'asesora' => $logoPedidoArray['asesora'] ?? null,
+                'descripcion' => $logoPedidoArray['descripcion'] ?? null,
+                'fecha_de_creacion_de_orden' => $logoPedidoArray['fecha_de_creacion_de_orden'] ?? null
+            ]);
+
+            // 📋 PASO 1: Completar desde PedidoProduccion si LogoPedido está incompleto
+            if ($logoPedido->pedido_id && empty($logoPedidoArray['cliente'])) {
+                try {
+                    $pedidoProduccion = PedidoProduccion::find($logoPedido->pedido_id);
+                    if ($pedidoProduccion) {
+                        if (empty($logoPedidoArray['cliente'])) {
+                            $logoPedidoArray['cliente'] = $pedidoProduccion->cliente;
+                        }
+                        if (empty($logoPedidoArray['asesora']) && $pedidoProduccion->asesora) {
+                            $logoPedidoArray['asesora'] = $pedidoProduccion->asesora->nombre ?? $pedidoProduccion->asesora->name;
+                        }
+                        if (empty($logoPedidoArray['descripcion'])) {
+                            $logoPedidoArray['descripcion'] = $pedidoProduccion->descripcion;
+                        }
+                        if (empty($logoPedidoArray['fecha_de_creacion_de_orden'])) {
+                            $logoPedidoArray['fecha_de_creacion_de_orden'] = $pedidoProduccion->fecha_de_creacion_de_orden;
+                        }
+                        
+                        \Log::info('✅ [PASO 1 API] Completados datos desde PedidoProduccion #' . $logoPedido->pedido_id);
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('⚠️ [PASO 1 API] Error al obtener PedidoProduccion: ' . $e->getMessage());
+                }
+            }
+
+            // 📋 PASO 2: Completar desde LogoCotizacion si aún hay campos vacíos
+            if ($logoPedido->logo_cotizacion_id && empty($logoPedidoArray['descripcion'])) {
+                try {
+                    $logoCotizacion = LogoCotizacion::find($logoPedido->logo_cotizacion_id);
+                    if ($logoCotizacion) {
+                        if (empty($logoPedidoArray['descripcion'])) {
+                            $logoPedidoArray['descripcion'] = $logoCotizacion->descripcion;
+                        }
+                        if (empty($logoPedidoArray['tecnicas'])) {
+                            $logoPedidoArray['tecnicas'] = $logoCotizacion->tecnicas;
+                        }
+                        if (empty($logoPedidoArray['observaciones_tecnicas'])) {
+                            $logoPedidoArray['observaciones_tecnicas'] = $logoCotizacion->observaciones_tecnicas;
+                        }
+                        if (empty($logoPedidoArray['ubicaciones'])) {
+                            $logoPedidoArray['ubicaciones'] = $logoCotizacion->ubicaciones;
+                        }
+                        
+                        \Log::info('✅ [PASO 2 API] Completados datos desde LogoCotizacion #' . $logoPedido->logo_cotizacion_id);
+                    }
+                } catch (\Exception $e) {
+                    \Log::warning('⚠️ [PASO 2 API] Error al obtener LogoCotizacion: ' . $e->getMessage());
+                }
+            }
+
+            // 📋 PASO 3: Garantizar fecha_de_creacion_de_orden usando created_at
+            if (empty($logoPedidoArray['fecha_de_creacion_de_orden'])) {
+                $logoPedidoArray['fecha_de_creacion_de_orden'] = $logoPedido->created_at;
+                \Log::info('✅ [PASO 3 API] Usando created_at como fecha de creación');
+            }
+
+            // ✅ Responder con datos completos
+            \Log::info('✅ [API] LogoPedido ID ' . $id . ' respondido correctamente', [
+                'cliente' => $logoPedidoArray['cliente'],
+                'asesora' => $logoPedidoArray['asesora'],
+                'descripcion' => $logoPedidoArray['descripcion'],
+                'fecha_de_creacion_de_orden' => $logoPedidoArray['fecha_de_creacion_de_orden'],
+                'forma_de_pago' => $logoPedidoArray['forma_de_pago'],
+                'encargado_orden' => $logoPedidoArray['encargado_orden']
+            ]);
+            
+            return response()->json($logoPedidoArray);
+            
+        } catch (\Exception $e) {
+            \Log::error('❌ [API] Error en showLogoPedidoById: ' . $e->getMessage(), [
+                'id' => $id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'error' => 'Error al obtener LogoPedido por ID',
+                'id' => $id,
+                'message' => $e->getMessage()
             ], 500);
         }
     }

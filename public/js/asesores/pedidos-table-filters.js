@@ -374,9 +374,9 @@ function loadFiltersFromURL() {
 }
 
 /**
- * Inicializar los botones de filtro
+ * Inicializar los botones de filtro (reutilizable)
  */
-document.addEventListener('DOMContentLoaded', function() {
+function initializeFilterButtons() {
     // 📂 Cargar filtros: primero desde URL, luego desde localStorage
     const hasURLFilters = loadFiltersFromURL();
     if (!hasURLFilters) {
@@ -438,7 +438,13 @@ document.addEventListener('DOMContentLoaded', function() {
             closeFilterModal();
         }
     });
-});
+}
+
+/**
+ * Inicializar los botones de filtro en carga
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    initializeFilterButtons();
 
 /**
  * Actualizar links de paginación para mantener parámetros de filtro

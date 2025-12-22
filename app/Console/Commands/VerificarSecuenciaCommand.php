@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
-class VerificarSecuencia extends Command
+class VerificarSecuenciaCommand extends Command
 {
     protected $signature = 'verificar:secuencia';
     protected $description = 'Verifica que exista la secuencia universal de cotizaciones';

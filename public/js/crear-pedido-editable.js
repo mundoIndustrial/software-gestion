@@ -953,7 +953,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // ========== DESCRIPCIÓN (EDITABLE) ==========
         html += `<div style="margin-bottom: 1.5rem;">
             <label style="display: block; font-weight: 700; margin-bottom: 0.5rem; color: #1f2937; font-size: 0.95rem;">DESCRIPCIÓN</label>
-            <textarea name="logo_descripcion" 
+            <textarea id="logo_descripcion" name="logo_descripcion" 
                       style="width: 100%; padding: 0.75rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.9rem; font-family: inherit; min-height: 100px; color: #333;">${logoCotizacion.descripcion || ''}</textarea>
         </div>`;
         
@@ -1003,7 +1003,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // ========== OBSERVACIONES DE TÉCNICAS (EDITABLE) ==========
         html += `<div style="margin-bottom: 1.5rem;">
             <label style="display: block; font-weight: 700; margin-bottom: 0.5rem; color: #1f2937; font-size: 0.95rem;">Observaciones de Técnicas</label>
-            <textarea name="logo_observaciones_tecnicas" 
+            <textarea id="logo_observaciones_tecnicas" name="logo_observaciones_tecnicas" 
                       style="width: 100%; padding: 0.75rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.9rem; font-family: inherit; min-height: 80px; color: #333;">${logoCotizacion.observaciones_tecnicas || ''}</textarea>
         </div>`;
         
@@ -1827,15 +1827,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // ✅ MEJORADO: Usar logo_pedido_id si está disponible, sino usar pedido_id
                 const pedidoId = dataCrearPedido.logo_pedido_id || dataCrearPedido.pedido_id;
+                
+                // ✅ CORREGIDO: Usar logo_cotizacion_id devuelto por el servidor (más confiable)
+                // Si no viene en la respuesta, usar la variable global como fallback
+                const logoCotizacionIdAUsar = dataCrearPedido.logo_cotizacion_id || logoCotizacionId;
 
-                // Usar el ID del LogoCotizacion guardado globalmente
                 // Ahora guardar los datos específicos de LOGO
+                const descripcionLogoPedido = document.getElementById('logo_descripcion')?.value || '';
+                const observacionesTecnicas = document.getElementById('logo_observaciones_tecnicas')?.value || '';
+
+                console.log('🎨 [LOGO] Capturando descripción:', descripcionLogoPedido);
+                console.log('🎨 [LOGO] Técnicas seleccionadas (array):', logoTecnicasSeleccionadas);
+                console.log('🎨 [LOGO] Observaciones técnicas:', observacionesTecnicas);
+                console.log('🎨 [LOGO] Ubicaciones seleccionadas:', logoSeccionesSeleccionadas);
+
                 const bodyLogoPedido = {
                     pedido_id: pedidoId,
-                    logo_cotizacion_id: logoCotizacionId,  // ← Usar variable global
-                    descripcion: document.querySelector('textarea[id*="logo_descripcion"]')?.value || '',
+                    logo_cotizacion_id: logoCotizacionIdAUsar,  // ← Usar valor del servidor
+                    descripcion: descripcionLogoPedido,
                     tecnicas: logoTecnicasSeleccionadas,
-                    observaciones_tecnicas: document.querySelector('textarea[id*="logo_observaciones_tecnicas"]')?.value || '',
+                    observaciones_tecnicas: observacionesTecnicas,
                     ubicaciones: logoSeccionesSeleccionadas,
                     fotos: logoFotosSeleccionadas
                 };

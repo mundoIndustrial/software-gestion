@@ -10,18 +10,21 @@ console.log('📄 [MODAL] Cargando pedidos-detail-modal.js');
  * @param {number} numeroPedido - Número del pedido
  */
 window.verFactura = async function verFactura(numeroPedido) {
-    console.log('🔵 [MODAL] Abriendo modal de factura para pedido:', numeroPedido);
+    // Limpiar el número del pedido (remover # si existe)
+    const pedidoLimpio = numeroPedido.replace('#', '');
+    
+    console.log('🔵 [MODAL] Abriendo modal de factura para pedido:', pedidoLimpio);
     
     try {
         // ✅ HACER FETCH a la API para obtener datos del pedido
         // Intentar primero con /registros (para asesores), luego con /orders (para órdenes)
-        console.log('🔵 [MODAL] Haciendo fetch a /registros/' + numeroPedido);
-        let response = await fetch(`/registros/${numeroPedido}`);
+        console.log('🔵 [MODAL] Haciendo fetch a /registros/' + pedidoLimpio);
+        let response = await fetch(`/registros/${pedidoLimpio}`);
         
         // Si no encuentra en /registros, intentar con /orders
         if (!response.ok) {
-            console.log('🔵 [MODAL] No encontrado en /registros, intentando /orders/' + numeroPedido);
-            response = await fetch(`/orders/${numeroPedido}`);
+            console.log('🔵 [MODAL] No encontrado en /registros, intentando /orders/' + pedidoLimpio);
+            response = await fetch(`/orders/${pedidoLimpio}`);
         }
         
         if (!response.ok) {
@@ -67,29 +70,24 @@ window.verSeguimiento = function verSeguimiento(numeroPedido) {
 
 /**
  * Abre el modal de detalle de LOGO/BORDADOS del pedido
- * @param {number} numeroPedido - Número del pedido
+ * @param {number} logoPedidoId - ID del LogoPedido (NO número de pedido)
  */
-window.verFacturaLogo = async function verFacturaLogo(numeroPedido) {
-    console.log('🔴 [MODAL LOGO] Abriendo modal de bordados para pedido:', numeroPedido);
+window.verFacturaLogo = async function verFacturaLogo(logoPedidoId) {
+    console.log('🔴 [MODAL LOGO] Abriendo modal de bordados para ID:', logoPedidoId);
+    console.log('🔴 [MODAL LOGO] Verificando si window.openOrderDetailModalLogo existe:', typeof window.openOrderDetailModalLogo);
     
     try {
-        // ✅ HACER FETCH a la API para obtener datos del pedido
-        console.log('🔴 [MODAL LOGO] Haciendo fetch a /registros/' + numeroPedido);
-        let response = await fetch(`/registros/${numeroPedido}`);
-        
-        // Si no encuentra en /registros, intentar con /orders
-        if (!response.ok) {
-            console.log('🔴 [MODAL LOGO] No encontrado en /registros, intentando /orders/' + numeroPedido);
-            response = await fetch(`/orders/${numeroPedido}`);
-        }
+        // ✅ HACER FETCH a la API usando el ID en lugar del número de pedido
+        console.log('🔴 [MODAL LOGO] Haciendo fetch a /api/logo-pedidos/' + logoPedidoId);
+        let response = await fetch(`/api/logo-pedidos/${logoPedidoId}`);
         
         if (!response.ok) {
             console.error('❌ [MODAL LOGO] Error en respuesta:', response.status, response.statusText);
-            throw new Error('Error fetching order: ' + response.status);
+            throw new Error('Error fetching logo pedido: ' + response.status);
         }
         const order = await response.json();
         
-        console.log('✅ [MODAL LOGO] Datos del pedido obtenidos:', order);
+        console.log('✅ [MODAL LOGO] Datos del LogoPedido obtenidos:', order);
         
         // Disparar evento para que order-detail-modal-manager.js maneje la apertura del logo
         console.log('🔴 [MODAL LOGO] Disparando evento load-order-detail-logo con detail:', order);
@@ -99,6 +97,16 @@ window.verFacturaLogo = async function verFacturaLogo(numeroPedido) {
         console.log('🔴 [MODAL LOGO] CustomEvent creado:', loadEvent);
         window.dispatchEvent(loadEvent);
         console.log('🔴 [MODAL LOGO] Evento disparado con window.dispatchEvent');
+        console.log('🔴 [MODAL LOGO] ¿Hay listeners? Será visto en la consola del siguiente evento');
+        
+        // DEBUG: Verificar que el evento se dispara
+        setTimeout(() => {
+            console.log('🧪 [MODAL LOGO] Verificando si el modal se abrió después de 500ms');
+            const overlay = document.getElementById('modal-overlay');
+            const wrapper = document.getElementById('order-detail-modal-wrapper-logo');
+            console.log('🧪 overlay.style.display:', overlay?.style.display);
+            console.log('🧪 wrapper.style.display:', wrapper?.style.display);
+        }, 500);
         
     } catch (error) {
         console.error('❌ Error al cargar datos del pedido (logo):', error);
