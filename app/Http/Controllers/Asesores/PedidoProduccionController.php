@@ -117,7 +117,7 @@ class PedidoProduccionController extends Controller
             ->map(fn($cot) => $cot->toArray())
             ->values();
 
-        return view('asesores.pedidos.crear-desde-cotizacion-refactorizado', [
+        return view('asesores.pedidos.crear-desde-cotizacion-editable', [
             'cotizacionesDTOs' => $cotizacionesDTOs,
         ]);
     }
@@ -228,8 +228,8 @@ class PedidoProduccionController extends Controller
             if ($esCotizacionLogo) {
                 \Log::info('🎨 [PedidoProduccionController] Iniciando creación de pedido LOGO');
                 
-                // Generar número de pedido con formato seguro
-                $numeroPedido = 'LOGO-' . date('Ymd-His') . '-' . rand(100, 999);
+                // Generar número de pedido con formato secuencial
+                $numeroPedido = $this->generarNumeroLogoPedido();
                 
                 \Log::info('🔢 Número de pedido generado para LOGO', ['numero_pedido' => $numeroPedido]);
                 
@@ -645,8 +645,8 @@ class PedidoProduccionController extends Controller
         try {
             // Validar datos (pedido_id opcional para casos standalone)
             $validated = $request->validate([
-                // pedido_id es el id de logo_pedidos creado en el paso 1; si viene null, creamos uno nuevo
-                'pedido_id' => 'nullable|integer|exists:logo_pedidos,id',
+                // pedido_id es el id de pedidos_produccion (cuando es COMBINADA PL); si viene null, creamos uno nuevo
+                'pedido_id' => 'nullable|integer|exists:pedidos_produccion,id',
                 'logo_cotizacion_id' => 'required|integer|exists:logo_cotizaciones,id',
                 'descripcion' => 'nullable|string',
                 'tecnicas' => 'nullable|array',
@@ -671,7 +671,7 @@ class PedidoProduccionController extends Controller
 
             if (!$logoPedido) {
                 // Crear uno nuevo con defaults para pedidos solo-logo
-                $numeroPedido = 'LOGO-' . date('Ymd-His') . '-' . rand(100, 999);
+                $numeroPedido = $this->generarNumeroLogoPedido();
                 $logoPedido = LogoPedido::create([
                     'pedido_id' => null,
                     'logo_cotizacion_id' => $validated['logo_cotizacion_id'],
@@ -694,7 +694,7 @@ class PedidoProduccionController extends Controller
             } else {
                 // Si por alguna razón no tiene numero_pedido, generar uno
                 if (empty($logoPedido->numero_pedido)) {
-                    $logoPedido->numero_pedido = 'LOGO-' . date('Ymd-His') . '-' . rand(100, 999);
+                    $logoPedido->numero_pedido = $this->generarNumeroLogoPedido();
                 }
                 // Completar datos faltantes y guardar
                 $logoPedido->descripcion = $validated['descripcion'] ?? $logoPedido->descripcion ?? '';
@@ -1014,6 +1014,60 @@ class PedidoProduccionController extends Controller
                 'success' => false,
                 'message' => 'Error al eliminar el pedido: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Genera números LOGO secuenciales usando la tabla numero_secuencias
+     * Formato: #LOGO-00001, #LOGO-00002, etc.
+     */
+    private function generarNumeroLogoPedido()
+    {
+        try {
+            // Obtener o crear la secuencia para LOGO pedidos
+            $secuencia = \DB::table('numero_secuencias')
+                ->lockForUpdate()
+                ->where('tipo', 'logo_pedidos')
+                ->first();
+
+            if (!$secuencia) {
+                // Crear la secuencia si no existe
+                \DB::table('numero_secuencias')->insert([
+                    'tipo' => 'logo_pedidos',
+                    'siguiente' => 1,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                $siguiente = 1;
+            } else {
+                $siguiente = $secuencia->siguiente;
+            }
+            
+            // Incrementar la secuencia para el próximo
+            \DB::table('numero_secuencias')
+                ->where('tipo', 'logo_pedidos')
+                ->update([
+                    'siguiente' => $siguiente + 1,
+                    'updated_at' => now(),
+                ]);
+
+            // Generar número con formato #LOGO-00001
+            $numeroLogo = sprintf('#LOGO-%05d', $siguiente);
+            
+            \Log::info('✅ Número LOGO generado', [
+                'numero' => $numeroLogo,
+                'secuencia' => $siguiente,
+            ]);
+            
+            return $numeroLogo;
+        } catch (\Exception $e) {
+            \Log::error('❌ Error generando número LOGO', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            // Fallback: usar método alternativo
+            throw new \Exception('Error al generar número de pedido LOGO: ' . $e->getMessage());
         }
     }
 }

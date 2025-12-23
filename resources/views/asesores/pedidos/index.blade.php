@@ -1552,7 +1552,7 @@
     function eliminarPedido(pedidoId) {
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         
-        fetch(`/asesores/pedidos-produccion/${pedidoId}`, {
+        fetch(`/asesores/pedidos/${pedidoId}`, {
             method: 'DELETE',
             headers: {
                 'X-CSRF-TOKEN': csrfToken,

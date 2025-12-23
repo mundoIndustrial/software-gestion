@@ -332,25 +332,40 @@ window.eliminarPedidoConfirmado = async function(numeroPedido) {
         
         const data = await response.json();
         
+        console.log('🗑️ Respuesta del servidor:', { status: response.status, data: data });
+        
         if (response.ok && data.success) {
             // Cerrar modal
-            modal.remove();
+            if (modal) {
+                modal.remove();
+            }
             
             // Mostrar mensaje de éxito
-            showSuccessMessage('Pedido eliminado exitosamente');
+            showSuccessMessage('✅ ' + (data.message || 'Pedido eliminado exitosamente'));
             
             // Recargar la página después de 1.5 segundos
             setTimeout(() => {
                 location.reload();
             }, 1500);
         } else {
-            throw new Error(data.message || 'Error al eliminar el pedido');
+            // El servidor devolvió un error (pero fue procesable)
+            const errorMsg = data.message || 'Error al eliminar el pedido';
+            console.error('❌ Error del servidor:', errorMsg);
+            throw new Error(errorMsg);
         }
     } catch (error) {
         console.error('❌ Error al eliminar pedido:', error);
         button.disabled = false;
         button.innerHTML = '<i class="fas fa-trash-alt"></i> Eliminar Pedido';
-        alert('Error al eliminar el pedido: ' + error.message);
+        
+        // Mostrar error de forma más amigable
+        Swal.fire({
+            icon: 'error',
+            title: 'Error al eliminar',
+            text: error.message || 'No se pudo eliminar el pedido. Por favor intenta de nuevo.',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#ef4444'
+        });
     }
 };
 

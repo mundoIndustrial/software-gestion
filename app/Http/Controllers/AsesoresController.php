@@ -820,17 +820,27 @@ class AsesoresController extends Controller
     {
         $userId = Auth::id();
         
+        // ✅ Usar first() en lugar de firstOrFail() para mayor tolerancia
         $pedidoData = PedidoProduccion::where('numero_pedido', $pedido)
             ->where('asesor_id', $userId)
-            ->firstOrFail();
+            ->first();
+
+        // Si no existe, devolver error amigable
+        if (!$pedidoData) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pedido no encontrado o no tienes permiso para eliminarlo'
+            ], 404);
+        }
 
         DB::beginTransaction();
         try {
             $numeroPedido = $pedidoData->numero_pedido;
+            $pedidoId = $pedidoData->id;
             
             \Log::info('🗑️ Iniciando eliminación de pedido', [
                 'numero_pedido' => $numeroPedido,
-                'pedido_id' => $pedidoData->id,
+                'pedido_id' => $pedidoId,
             ]);
             
             // Obtener todas las prendas del pedido para eliminar sus fotos
@@ -853,7 +863,7 @@ class AsesoresController extends Controller
                     ->delete();
             }
             
-            \Log::info('🗑️ Fotos eliminadas del pedido', [
+            \Log::info('🗑️ Fotos de prendas eliminadas', [
                 'numero_pedido' => $numeroPedido,
                 'prendas_procesadas' => $prendas->count()
             ]);
@@ -872,12 +882,55 @@ class AsesoresController extends Controller
             // 6. Eliminar materiales de insumos (relacionados por numero_pedido)
             MaterialesOrdenInsumos::where('numero_pedido', $numeroPedido)->delete();
             
+            // ✅ NUEVO: Eliminar pedido(s) de LOGO si esta es una cotización combinada
+            $logoPedidos = DB::table('logo_pedidos')
+                ->where('pedido_id', $pedidoId)
+                ->get();
+            
+            if ($logoPedidos->count() > 0) {
+                \Log::info('🗑️ Encontrados logo_pedidos vinculados', [
+                    'cantidad' => $logoPedidos->count(),
+                    'pedido_id' => $pedidoId
+                ]);
+                
+                foreach ($logoPedidos as $logoPedido) {
+                    // Eliminar fotos del logo
+                    DB::table('logo_pedido_fotos')
+                        ->where('logo_pedido_id', $logoPedido->id)
+                        ->delete();
+                    
+                    DB::table('logo_pedido_imagenes')
+                        ->where('logo_pedido_id', $logoPedido->id)
+                        ->delete();
+                    
+                    // Eliminar procesos del logo
+                    DB::table('procesos_pedidos_logo')
+                        ->where('logo_pedido_id', $logoPedido->id)
+                        ->delete();
+                    
+                    \Log::info('🗑️ Fotos y procesos del logo eliminados', [
+                        'logo_pedido_id' => $logoPedido->id,
+                        'numero_logo_pedido' => $logoPedido->numero_pedido ?? 'N/A'
+                    ]);
+                }
+                
+                // Eliminar el logo_pedido
+                DB::table('logo_pedidos')
+                    ->where('pedido_id', $pedidoId)
+                    ->delete();
+                
+                \Log::info('🗑️ Logo pedidos eliminados', [
+                    'pedido_id' => $pedidoId,
+                    'cantidad' => $logoPedidos->count()
+                ]);
+            }
+            
             // 7. Eliminar el pedido de pedidos_produccion
             $pedidoData->delete();
             
             \Log::info('🗑️ Pedido eliminado de pedidos_produccion', [
                 'numero_pedido' => $numeroPedido,
-                'pedido_id' => $pedidoData->id,
+                'pedido_id' => $pedidoId,
             ]);
             
             // 8. Decrementar el número de secuencia
@@ -893,7 +946,7 @@ class AsesoresController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Pedido, prendas y todas sus fotos eliminados exitosamente'
+                'message' => 'Pedido, prendas, logos y todas sus fotos eliminados exitosamente'
             ]);
 
         } catch (\Exception $e) {
