@@ -813,25 +813,24 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     
                     // Obtener valores de tela desde el objeto mapeado
-                    // Puede venir de variantes.telas_multiples o de prenda.telaFotos
-                    const nombreTela = tela.tela_nombre || tela.nombre_tela || tela.tela || '';
-                    const colorTela = tela.color_nombre || (typeof tela.color === 'object' ? (tela.color?.nombre || tela.color?.name || '') : (tela.color || ''));
+                    const nombreTela = tela.nombre_tela || '';
+                    const colorTela = typeof tela.color === 'object' ? (tela.color?.nombre || tela.color?.name || '') : (tela.color || '');
                     const referenciaTela = tela.referencia || '';
                     
-                    console.log(`   - Tela ${telaIdx}: nombre="${nombreTela}", color="${colorTela}", referencia="${referenciaTela}"`, tela);
+                    console.log(`   - Tela ${telaIdx}: nombre="${nombreTela}", color="${colorTela}", referencia="${referenciaTela}"`);
                     
                     telasHtml += `<div style="padding: 1rem; background: white; border: 1px solid #e0e0e0; border-top: none; display: grid; grid-template-columns: 1fr 1fr 1fr 100px; gap: 1rem; align-items: center; transition: background 0.2s; width: 100%;">
                         <div style="display: flex; flex-direction: column;">
                             <label style="font-size: 0.75rem; color: #666; font-weight: 600; text-transform: uppercase; margin-bottom: 0.4rem;">Tela</label>
-                            <input type="text" value="${nombreTela}" data-field="tela_nombre" data-idx="${telaIdx}" data-prenda="${index}" style="width: 100%; padding: 0.6rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.9rem; transition: border-color 0.2s; color: ${nombreTela ? '#333' : '#aaa'};" placeholder="Ej: Algodón">
+                            <input type="text" value="${nombreTela}" data-field="tela_nombre" data-idx="${telaIdx}" data-prenda="${index}" style="width: 100%; padding: 0.6rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.9rem; transition: border-color 0.2s;" placeholder="Ej: Algodón">
                         </div>
                         <div style="display: flex; flex-direction: column;">
                             <label style="font-size: 0.75rem; color: #666; font-weight: 600; text-transform: uppercase; margin-bottom: 0.4rem;">Color</label>
-                            <input type="text" value="${colorTela}" data-field="tela_color" data-idx="${telaIdx}" data-prenda="${index}" style="width: 100%; padding: 0.6rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.9rem; transition: border-color 0.2s; color: ${colorTela ? '#333' : '#aaa'};" placeholder="Ej: Rojo">
+                            <input type="text" value="${colorTela}" data-field="tela_color" data-idx="${telaIdx}" data-prenda="${index}" style="width: 100%; padding: 0.6rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.9rem; transition: border-color 0.2s;" placeholder="Ej: Rojo">
                         </div>
                         <div style="display: flex; flex-direction: column;">
                             <label style="font-size: 0.75rem; color: #666; font-weight: 600; text-transform: uppercase; margin-bottom: 0.4rem;">Referencia</label>
-                            <input type="text" value="${referenciaTela}" data-field="tela_ref" data-idx="${telaIdx}" data-prenda="${index}" style="width: 100%; padding: 0.6rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.9rem; transition: border-color 0.2s; color: ${referenciaTela ? '#333' : '#aaa'};" placeholder="Ej: REF-001">
+                            <input type="text" value="${referenciaTela}" data-field="tela_ref" data-idx="${telaIdx}" data-prenda="${index}" style="width: 100%; padding: 0.6rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.9rem; transition: border-color 0.2s;" placeholder="Ej: REF-001">
                         </div>
                         <div style="display: flex; justify-content: center; align-items: center;">
                             ${fotosTelaHtml}
@@ -1250,9 +1249,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return [];
         }
         
-        // Parsear ubicaciones/secciones (pueden venir como 'secciones' o 'ubicaciones')
-        let ubicacionesArray = parseArrayData(logoCotizacion.secciones || logoCotizacion.ubicaciones);
-        console.log('📍 Secciones parseadas:', ubicacionesArray);
+        // Parsear ubicaciones
+        let ubicacionesArray = parseArrayData(logoCotizacion.ubicaciones);
+        console.log('📍 Ubicaciones parseadas:', ubicacionesArray);
         
         // Cargar técnicas iniciales
         if (logoCotizacion.tecnicas && logoCotizacion.tecnicas.length > 0) {
@@ -1262,15 +1261,14 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
         
-        // Cargar ubicaciones/secciones iniciales
+        // Cargar ubicaciones iniciales
         if (ubicacionesArray && ubicacionesArray.length > 0) {
             ubicacionesArray.forEach(ubicacion => {
-                if (typeof ubicacion === 'object' && (ubicacion.ubicacion || ubicacion.seccion)) {
+                if (typeof ubicacion === 'object' && ubicacion.ubicacion) {
                     logoSeccionesSeleccionadas.push({
-                        ubicacion: ubicacion.ubicacion || ubicacion.seccion || '',
+                        ubicacion: ubicacion.ubicacion,
                         opciones: Array.isArray(ubicacion.opciones) ? ubicacion.opciones : [],
-                        observaciones: ubicacion.observaciones || '',
-                        tallas: ubicacion.tallas || []  // ✅ INCLUIR TALLAS
+                        observaciones: ubicacion.observaciones || ''
                     });
                 }
             });
@@ -1522,17 +1520,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }, 100);
         
-        // ✅ GUARDAR EN VARIABLES GLOBALES para que actualizarResumenFriendly() los encuentre
-        window.tecnicasGuardadas = logoTecnicasSeleccionadas;
-        window.ubicacionesGuardadas = logoSeccionesSeleccionadas;
-        window.obsTecnicasGuardadas = logoCotizacion.observaciones_tecnicas || '';
-        
         console.log('✅ Campos LOGO renderizados correctamente');
-        console.log('✅ Datos guardados en variables globales:', {
-            tecnicas: window.tecnicasGuardadas,
-            ubicaciones: window.ubicacionesGuardadas,
-            obsTecnicas: window.obsTecnicasGuardadas
-        });
     }
 
     // ====== FUNCIONES DE FOTOS LOGO ======
@@ -1975,30 +1963,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const ubicacionText = seccion.ubicacion || seccion;
             const obsText = seccion.observaciones || '';
             
-            // Renderizar tallas si existen
-            let tallasHTML = '';
-            if (seccion.tallas && Array.isArray(seccion.tallas) && seccion.tallas.length > 0) {
-                tallasHTML = '<div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e0e0e0;">';
-                tallasHTML += '<p style="margin: 0 0 0.5rem 0; font-weight: 600; color: #1e40af; font-size: 0.85rem;">TALLAS:</p>';
-                tallasHTML += '<div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">';
-                seccion.tallas.forEach(talla => {
-                    const tallaName = typeof talla === 'object' ? (talla.talla || talla.nombre) : talla;
-                    const tallaQty = typeof talla === 'object' ? (talla.cantidad || '') : '';
-                    const badge = tallaQty 
-                        ? `<span style="display: inline-block; background: #e3f2fd; color: #1e40af; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">${tallaName} (${tallaQty})</span>`
-                        : `<span style="display: inline-block; background: #e3f2fd; color: #1e40af; padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.8rem; font-weight: 600;">${tallaName}</span>`;
-                    tallasHTML += badge;
-                });
-                tallasHTML += '</div></div>';
-            }
-            
             div.innerHTML = `
                 <div style="display: flex; justify-content: space-between; align-items: start;">
                     <div style="flex: 1;">
-                        <h4 style="margin: 0 0 0.5rem 0; color: #1e40af; font-size: 0.95rem; font-weight: 700;">📦 ${ubicacionText}</h4>
+                        <h4 style="margin: 0 0 0.5rem 0; color: #1e40af; font-size: 0.95rem;">${ubicacionText}</h4>
                         <p style="margin: 0 0 0.5rem 0; color: #666; font-size: 0.85rem;"><strong>Ubicación:</strong> ${opcionesText}</p>
-                        ${obsText ? `<p style="margin: 0; color: #666; font-size: 0.85rem;"><strong>Obs:</strong> ${obsText}</p>` : ''}
-                        ${tallasHTML}
+                        ${obsText ? `<p style="margin: 0; color: #666; font-size: 0.85rem;"><strong>Observaciones:</strong> ${obsText}</p>` : ''}
                     </div>
                     <div style="display: flex; gap: 0.5rem; flex-shrink: 0;">
                         <button type="button" onclick="editarSeccionLogo(${index})" style="background: #0066cc; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; font-weight: bold;" title="Editar">✎</button>
