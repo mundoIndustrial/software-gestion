@@ -244,20 +244,30 @@ async function guardarCotizacion() {
                     }
                 });
                 
-                // ✅ FOTOS DE PRENDA (Si es nueva: todas, Si es edición: solo nuevas)
+                // ✅ FOTOS DE PRENDA (nuevas y existentes) - AL GUARDAR: enviar nuevas + IDs de existentes
                 if (window.imagenesEnMemoria && window.imagenesEnMemoria.prendaConIndice) {
                     const fotosDeEstaPrenda = window.imagenesEnMemoria.prendaConIndice.filter(p => p.prendaIndex === index);
-                    const esEdicion = !!window.cotizacionIdActual;
+                    const fotosNuevas = [];
+                    const fotosExistentes = [];
+                    
                     fotosDeEstaPrenda.forEach((item, fotoIndex) => {
-                        if (item.file instanceof File && (!esEdicion || !item.esGuardada)) {
-                            // Enviar: File objects nuevos, o TODAS si es cotización nueva
-                            formData.append(`prendas[${index}][fotos][]`, item.file);
-                            console.log(`✅ Foto de prenda agregada [${index}][${fotoIndex}]:`, item.file.name, esEdicion ? '(NUEVA)' : '');
-                        } else if (esEdicion && item.esGuardada) {
-                            // Solo omitir si es edición y foto ya guardada
-                            console.log(`⏭️ Foto de prenda ya guardada (OMITIDA) [${index}][${fotoIndex}]: ID ${item.fotoId}`);
+                        if (item.file instanceof File) {
+                            fotosNuevas.push(item.file);
+                            console.log(`✅ Foto de prenda (nueva) [${index}][${fotoIndex}]: ${item.file.name}`);
+                        } else if (item.fotoId && typeof item.file === 'string') {
+                            fotosExistentes.push(item.fotoId);
+                            console.log(`✅ ID de foto existente [${index}][${fotoIndex}]: ${item.fotoId}`);
                         }
                     });
+                    
+                    fotosNuevas.forEach((foto) => {
+                        formData.append(`prendas[${index}][fotos][]`, foto);
+                    });
+                    
+                    if (fotosExistentes.length > 0) {
+                        formData.append(`prendas[${index}][fotos_existentes]`, JSON.stringify(fotosExistentes));
+                        console.log(`✅ IDs de fotos existentes: [${fotosExistentes.join(',')}]`);
+                    }
                 }
                 
                 // ✅ TELAS (File objects desde window.telasSeleccionadas)
@@ -307,18 +317,33 @@ async function guardarCotizacion() {
                     }
                 }
                 
-                // FALLBACK: Buscar en window.imagenesEnMemoria.telaConIndice (Si es nueva: todas, Si es edición: solo nuevas)
+                // FALLBACK: Buscar en window.imagenesEnMemoria.telaConIndice (nuevas y existentes)
                 if (window.imagenesEnMemoria && window.imagenesEnMemoria.telaConIndice) {
                     const telasDeEstaPrenda = window.imagenesEnMemoria.telaConIndice.filter(t => t.prendaIndex === index);
-                    const esEdicion = !!window.cotizacionIdActual;
                     if (telasDeEstaPrenda.length > 0) {
-                        console.log(`🧵 Usando fallback: imagenesEnMemoria.telaConIndice con ${telasDeEstaPrenda.length} telas`);
-                        telasDeEstaPrenda.forEach((item, telaIndex) => {
-                            if (item.file instanceof File && (!esEdicion || !item.esGuardada)) {
-                                formData.append(`prendas[${index}][telas][${item.telaIndex || telaIndex}][fotos][0]`, item.file);
-                                console.log(`✅ Tela agregada [${index}][${item.telaIndex || telaIndex}]:`, item.file.name, esEdicion ? '(NUEVA)' : '');
-                            } else if (esEdicion && item.esGuardada) {
-                                console.log(`⏭️ Tela ya guardada (OMITIDA) [${index}][${item.telaIndex}]: ID ${item.fotoId}`);
+                        console.log(`🧵 Usando fallback: imagenesEnMemoria.telaConIndice`);
+                        const telasPorIndice = {};
+                        telasDeEstaPrenda.forEach(item => {
+                            const telaIdx = item.telaIndex || 0;
+                            if (!telasPorIndice[telaIdx]) {
+                                telasPorIndice[telaIdx] = { nuevas: [], existentes: [] };
+                            }
+                            if (item.file instanceof File) {
+                                telasPorIndice[telaIdx].nuevas.push(item.file);
+                            } else if (item.fotoId && typeof item.file === 'string') {
+                                telasPorIndice[telaIdx].existentes.push(item.fotoId);
+                            }
+                        });
+                        
+                        Object.keys(telasPorIndice).forEach(telaIdx => {
+                            const telaFotos = telasPorIndice[telaIdx];
+                            telaFotos.nuevas.forEach((foto) => {
+                                formData.append(`prendas[${index}][telas][${telaIdx}][fotos][0]`, foto);
+                                console.log(`✅ Tela (nueva) [${index}][${telaIdx}]: ${foto.name}`);
+                            });
+                            if (telaFotos.existentes.length > 0) {
+                                formData.append(`prendas[${index}][telas][${telaIdx}][fotos_existentes]`, JSON.stringify(telaFotos.existentes));
+                                console.log(`✅ IDs de tela existentes [${telaIdx}]: [${telaFotos.existentes.join(',')}]`);
                             }
                         });
                     }
@@ -342,20 +367,31 @@ async function guardarCotizacion() {
             }
         }
         
-        // ✅ LOGO - IMÁGENES (File objects desde window.imagenesEnMemoria + rutas guardadas)
+        // ✅ LOGO - IMÁGENES (nuevas y existentes) - AL GUARDAR: enviar nuevas + IDs de existentes
         if (window.imagenesEnMemoria && window.imagenesEnMemoria.logo && Array.isArray(window.imagenesEnMemoria.logo)) {
             console.log('📸 Procesando imágenes de logo:', window.imagenesEnMemoria.logo.length);
             
-            // Enviar archivos File nuevos
+            const logosNuevos = [];
+            const logosExistentes = [];
+            
             window.imagenesEnMemoria.logo.forEach((imagen, imagenIndex) => {
                 if (imagen instanceof File) {
-                    // Usar nombre con índices entre corchetes: logo[imagenes][0], logo[imagenes][1], etc.
-                    formData.append(`logo[imagenes][${imagenIndex}]`, imagen);
-                    console.log(`✅ Imagen de logo (File) agregada a FormData [${imagenIndex}]:`, imagen.name);
-                } else {
-                    console.log(`⚠️ Imagen de logo no es File [${imagenIndex}]:`, typeof imagen);
+                    logosNuevos.push(imagen);
+                    console.log(`✅ Logo (nuevo) [${imagenIndex}]: ${imagen.name}`);
+                } else if (imagen.fotoId && (typeof imagen.ruta === 'string' || typeof imagen.file === 'string')) {
+                    logosExistentes.push(imagen.fotoId);
+                    console.log(`✅ ID de logo existente [${imagenIndex}]: ${imagen.fotoId}`);
                 }
             });
+            
+            logosNuevos.forEach((imagen) => {
+                formData.append(`logo[imagenes][]`, imagen);
+            });
+            
+            if (logosExistentes.length > 0) {
+                formData.append(`logo_fotos_existentes`, JSON.stringify(logosExistentes));
+                console.log(`✅ IDs de logos existentes: [${logosExistentes.join(',')}]`);
+            }
         } else {
             console.log('⚠️ No hay imágenes de logo en memoria');
         }
@@ -818,20 +854,34 @@ async function procederEnviarCotizacion(datos) {
                     }
                 });
                 
-                // ✅ FOTOS DE PRENDA (Si es nueva: todas, Si es edición: solo nuevas)
+                // ✅ FOTOS DE PRENDA - EN ENVÍO: SIEMPRE ENVIAR TODAS (no omitir guardadas)
                 if (window.imagenesEnMemoria && window.imagenesEnMemoria.prendaConIndice) {
                     const fotosDeEstaPrenda = window.imagenesEnMemoria.prendaConIndice.filter(p => p.prendaIndex === index);
-                    const esEdicion = !!window.cotizacionIdActual;
+                    const fotosNuevas = [];
+                    const fotosExistentes = [];
+                    
                     fotosDeEstaPrenda.forEach((item, fotoIndex) => {
-                        if (item.file instanceof File && (!esEdicion || !item.esGuardada)) {
-                            // Enviar: File objects nuevos, o TODAS si es cotización nueva
-                            formData.append(`prendas[${index}][fotos][]`, item.file);
-                            console.log(`✅ Foto de prenda agregada [${index}][${fotoIndex}]:`, item.file.name, esEdicion ? '(NUEVA)' : '');
-                        } else if (esEdicion && item.esGuardada) {
-                            // Solo omitir si es edición y foto ya guardada
-                            console.log(`⏭️ Foto de prenda ya guardada (OMITIDA) [${index}][${fotoIndex}]: ID ${item.fotoId}`);
+                        if (item.file instanceof File) {
+                            // 🔑 CRÍTICO: Cuando se ENVÍA, se envían TODAS las fotos nuevas (File objects)
+                            fotosNuevas.push(item.file);
+                            console.log(`✅ Foto de prenda (nueva) agregada en ENVÍO [${index}][${fotoIndex}]: ${item.file.name}`);
+                        } else if (item.fotoId && typeof item.file === 'string') {
+                            // ES UNA FOTO YA GUARDADA (con URL string) - GUARDAR SU ID para que backend la copie
+                            fotosExistentes.push(item.fotoId);
+                            console.log(`✅ ID de foto de prenda existente registrado [${index}][${fotoIndex}]: ${item.fotoId}`);
                         }
                     });
+                    
+                    // Enviar fotos nuevas al FormData
+                    fotosNuevas.forEach((foto) => {
+                        formData.append(`prendas[${index}][fotos][]`, foto);
+                    });
+                    
+                    // Enviar IDs de fotos existentes para que backend las copie
+                    if (fotosExistentes.length > 0) {
+                        formData.append(`prendas[${index}][fotos_existentes]`, JSON.stringify(fotosExistentes));
+                        console.log(`✅ IDs de fotos existentes de prenda: [${fotosExistentes.join(',')}]`);
+                    }
                 }
                 
                 // ✅ TELAS (File objects desde window.telasSeleccionadas)
@@ -881,18 +931,42 @@ async function procederEnviarCotizacion(datos) {
                     }
                 }
                 
-                // FALLBACK: Buscar en window.imagenesEnMemoria.telaConIndice (Si es nueva: todas, Si es edición: solo nuevas)
+                // FALLBACK: Buscar en window.imagenesEnMemoria.telaConIndice - EN ENVÍO: SIEMPRE ENVIAR TODAS
                 if (window.imagenesEnMemoria && window.imagenesEnMemoria.telaConIndice) {
                     const telasDeEstaPrenda = window.imagenesEnMemoria.telaConIndice.filter(t => t.prendaIndex === index);
-                    const esEdicion = !!window.cotizacionIdActual;
                     if (telasDeEstaPrenda.length > 0) {
                         console.log(`🧵 Usando fallback: imagenesEnMemoria.telaConIndice con ${telasDeEstaPrenda.length} telas`);
-                        telasDeEstaPrenda.forEach((item, telaIndex) => {
-                            if (item.file instanceof File && (!esEdicion || !item.esGuardada)) {
-                                formData.append(`prendas[${index}][telas][${item.telaIndex || telaIndex}][fotos][0]`, item.file);
-                                console.log(`✅ Tela agregada [${index}][${item.telaIndex || telaIndex}]:`, item.file.name, esEdicion ? '(NUEVA)' : '');
-                            } else if (esEdicion && item.esGuardada) {
-                                console.log(`⏭️ Tela ya guardada (OMITIDA) [${index}][${item.telaIndex}]: ID ${item.fotoId}`);
+                        
+                        // Agrupar por telaIndex - SEPARAR NUEVAS DE EXISTENTES
+                        const telasPorIndice = {};
+                        telasDeEstaPrenda.forEach(item => {
+                            const telaIdx = item.telaIndex || 0;
+                            if (!telasPorIndice[telaIdx]) {
+                                telasPorIndice[telaIdx] = { nuevas: [], existentes: [] };
+                            }
+                            
+                            if (item.file instanceof File) {
+                                telasPorIndice[telaIdx].nuevas.push(item.file);
+                                console.log(`✅ Tela ${telaIdx}: foto NUEVA agregada (File)`);
+                            } else if (item.fotoId && typeof item.file === 'string') {
+                                telasPorIndice[telaIdx].existentes.push(item.fotoId);
+                            }
+                        });
+                        
+                        // Enviar fotos por telaIndex
+                        Object.keys(telasPorIndice).forEach(telaIdx => {
+                            const telaFotos = telasPorIndice[telaIdx];
+                            
+                            // Fotos nuevas
+                            telaFotos.nuevas.forEach((foto) => {
+                                formData.append(`prendas[${index}][telas][${telaIdx}][fotos][0]`, foto);
+                                console.log(`✅ Tela (nueva) agregada en ENVÍO [${index}][${telaIdx}]: ${foto.name}`);
+                            });
+                            
+                            // IDs de fotos existentes
+                            if (telaFotos.existentes.length > 0) {
+                                formData.append(`prendas[${index}][telas][${telaIdx}][fotos_existentes]`, JSON.stringify(telaFotos.existentes));
+                                console.log(`✅ IDs de fotos de tela existentes [${index}][${telaIdx}]: [${telaFotos.existentes.join(',')}]`);
                             }
                         });
                     }

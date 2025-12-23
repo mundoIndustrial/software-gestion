@@ -3,7 +3,7 @@
     $idLogo = \App\Models\TipoCotizacion::getIdPorCodigo('L');
     $idCombinada = \App\Models\TipoCotizacion::getIdPorCodigo('PL');
     $tabActivoPorDefecto = 'prendas';
-    if ($cotizacion->tipo_cotizacion_id === $idLogo || $cotizacion->tipo_cotizacion_id === $idCombinada) {
+    if ($cotizacion->tipo_cotizacion_id === $idLogo) {
         $tabActivoPorDefecto = 'bordado';
     }
 @endphp

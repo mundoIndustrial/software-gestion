@@ -525,11 +525,19 @@ class AsesoresController extends Controller
                 }
             }
             
+            // Normalizar observaciones generales (vienen como JSON string)
+            $observacionesGenerales = $request->input('logo.observaciones_generales');
+            if (is_string($observacionesGenerales)) {
+                $observacionesGenerales = json_decode($observacionesGenerales, true) ?? [];
+            } elseif (!is_array($observacionesGenerales)) {
+                $observacionesGenerales = [];
+            }
+
             // Preparar datos del logo
             $logoData = [
                 'descripcion' => $validated['logo.descripcion'] ?? null,
                 'ubicacion' => null,
-                'observaciones_generales' => null,
+                'observaciones_generales' => $observacionesGenerales,
                 'fotos' => $imagenesProcesadas
             ];
             

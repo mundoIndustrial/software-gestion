@@ -721,6 +721,7 @@ function cargarBorrador(cotizacion) {
                         let variacionesObj = {
                             nombreProducto: prenda.nombre_producto,
                             tallas: tallasSeleccionadas.join(', '),
+                            genero: variantes.genero || '', // Agregar género para mostrar en resumen
                             color: variantes.color || '',
                             tela: (variantes.telas_multiples && variantes.telas_multiples.length > 0) ? variantes.telas_multiples[0].tela : '',
                             referencia: (variantes.telas_multiples && variantes.telas_multiples.length > 0) ? variantes.telas_multiples[0].referencia : '',
@@ -1266,9 +1267,10 @@ function cargarBorrador(cotizacion) {
                         window.seccionesSeleccionadasFriendly = [];
                         ubicaciones.forEach(ubicacion => {
                             window.seccionesSeleccionadasFriendly.push({
-                                ubicacion: ubicacion.seccion || ubicacion,
-                                opciones: ubicacion.ubicaciones_seleccionadas || [],
-                                observaciones: ubicacion.observaciones || ''
+                                ubicacion: ubicacion.seccion || ubicacion.ubicacion || ubicacion,
+                                opciones: ubicacion.ubicaciones_seleccionadas || ubicacion.opciones || [],
+                                observaciones: ubicacion.observaciones || '',
+                                tallas: ubicacion.tallas || []
                             });
                         });
                         // Renderizar usando la función existente (mismo diseño que crear nuevo)

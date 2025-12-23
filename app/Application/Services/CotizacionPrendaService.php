@@ -82,17 +82,19 @@ class CotizacionPrendaService
                     Log::info("✅ Fotos de prenda guardadas", ['cantidad' => count($fotos)]);
                 }
 
-                // 3. Guardar telas y sus fotos en prenda_telas_cot y prenda_tela_fotos_cot
+                // 3. COMENTADO - Telas ahora se procesan en la sección de variantes (línea ~258)
+                //    La razón: Necesitaban variante_prenda_cot_id para foreign key constraint
+                //    El código antiguo creaba telas SIN variante_id, causando el error:
+                //    "Field 'variante_prenda_cot_id' doesn't have a default value"
+                //    Ahora se crean telas con telas_multiples en el mismo contexto que variantes
+                /* DISABLED CODE - kept for reference
                 $telas = $productoData['telas'] ?? [];
                 if (!empty($telas)) {
                     foreach ($telas as $telaIndex => $telaData) {
-                        // Guardar tela en prenda_telas_cot
                         $tela = $prenda->telas()->create([
                             'color_id' => $telaData['color_id'] ?? null,
                             'tela_id' => $telaData['tela_id'] ?? null,
                         ]);
-                        
-                        // Guardar fotos de tela en prenda_tela_fotos_cot
                         $telaFotos = $telaData['fotos'] ?? [];
                         if (!empty($telaFotos)) {
                             $orden = 1;
@@ -108,11 +110,10 @@ class CotizacionPrendaService
                                     $orden++;
                                 }
                             }
-                            Log::info("✅ Fotos de tela guardadas", ['cantidad' => count($telaFotos)]);
                         }
                     }
-                    Log::info("✅ Telas guardadas", ['cantidad' => count($telas)]);
                 }
+                */
 
                 // 4. Guardar tallas en prenda_tallas_cot
                 $tallas = $productoData['tallas'] ?? [];
@@ -254,6 +255,47 @@ class CotizacionPrendaService
                             'tipo_broche_id' => $variantes['tipo_broche_id'] ?? null,
                             'telas_multiples_count' => count($telasMultiples),
                         ]);
+
+                        // ✅ PROCESAR prenda_telas_cot desde telas_multiples
+                        if (!empty($telasMultiples)) {
+                            foreach ($telasMultiples as $telaInfo) {
+                                // Buscar color por nombre
+                                $colorId = null;
+                                if (!empty($telaInfo['color'])) {
+                                    $colorModel = \App\Models\ColorPrenda::where('nombre', $telaInfo['color'])->first();
+                                    $colorId = $colorModel->id ?? null;
+                                }
+                                
+                                // Buscar tela por nombre
+                                $telaId = null;
+                                if (!empty($telaInfo['tela'])) {
+                                    $telaModel = \App\Models\TelaPrenda::where('nombre', $telaInfo['tela'])->first();
+                                    $telaId = $telaModel->id ?? null;
+                                }
+                                
+                                // Crear registro en prenda_telas_cot
+                                if ($colorId && $telaId) {
+                                    $prendaTelaCot = \App\Models\PrendaTelaCot::create([
+                                        'prenda_cot_id' => $prenda->id,
+                                        'variante_prenda_cot_id' => $variante->id,
+                                        'color_id' => $colorId,
+                                        'tela_id' => $telaId,
+                                    ]);
+                                    
+                                    Log::info("✅ Registro guardado en prenda_telas_cot (desde telas_multiples)", [
+                                        'prenda_telas_cot_id' => $prendaTelaCot->id,
+                                        'prenda_id' => $prenda->id,
+                                        'variante_id' => $variante->id,
+                                        'color_id' => $colorId,
+                                        'tela_id' => $telaId,
+                                        'color' => $telaInfo['color'] ?? '',
+                                        'tela' => $telaInfo['tela'] ?? '',
+                                        'referencia' => $telaInfo['referencia'] ?? '',
+                                        'indice' => $telaInfo['indice'] ?? '',
+                                    ]);
+                                }
+                            }
+                        }
                     } catch (\Exception $e) {
                         Log::error("❌ ERROR al guardar variante", [
                             'error' => $e->getMessage(),

@@ -13,6 +13,12 @@ window.imagenesEnMemoria = {
 };
 window.especificacionesSeleccionadas = {};
 
+// Inicializar registro de fotos eliminadas (solo para edición, no para nuevas)
+window.fotosEliminadasServidor = {
+    prendas: [],
+    telas: []
+};
+
 // Mapeo de géneros a IDs (desde generos_prenda tabla)
 const GENEROS_MAP = {
     'dama': 2,
@@ -21,6 +27,7 @@ const GENEROS_MAP = {
 
 console.log('🔵 Sistema de cotizaciones inicializado');
 console.log('📸 imagenesEnMemoria inicializado:', window.imagenesEnMemoria);
+console.log('📸 fotosEliminadasServidor inicializado:', window.fotosEliminadasServidor);
 
 // ============ GESTIÓN DE TIPO DE COTIZACIÓN ============
 
@@ -209,6 +216,10 @@ function mostrarFechaActual() {
 }
 
 function actualizarResumenFriendly() {
+    console.log('🔄 actualizarResumenFriendly() INICIADO');
+    console.log('   📦 Prendas DOM encontradas:', document.querySelectorAll('.producto-card').length);
+    console.log('   🎨 Técnicas DOM encontradas:', document.querySelectorAll('#tecnicas_seleccionadas > div').length);
+    console.log('   🎨 Técnicas guardadas:', window.tecnicasGuardadas?.length || 0);
     console.log('🔄 Actualizando resumen del paso 4...');
     
     // 1. INFORMACIÓN DEL CLIENTE
@@ -266,10 +277,12 @@ function actualizarResumenFriendly() {
     
     // 4. RESUMEN DE PRENDAS (Solo si hay prendas)
     const resumenPrendas = document.getElementById('resumen_prendas');
-    const resumenPrendasContainer = resumenPrendas?.closest('div[style*="background"]');
     if (resumenPrendas) {
         const prendas = document.querySelectorAll('.producto-card');
         console.log('📦 Prendas encontradas:', prendas.length);
+        
+        // Buscar el contenedor padre (el div con background #f0f7ff)
+        const resumenPrendasContainer = resumenPrendas.parentElement;
         
         if (prendas.length === 0) {
             if (resumenPrendasContainer) resumenPrendasContainer.style.display = 'none';
@@ -283,136 +296,254 @@ function actualizarResumenFriendly() {
                 
                 // Obtener tallas desde guardadas primero, luego desde DOM
                 let tallasTexto = 'Sin tallas';
+                let generoTexto = '';
+                
                 if (window.variacionesGuardadas && window.variacionesGuardadas[index]) {
                     const varGuardadas = window.variacionesGuardadas[index];
                     if (varGuardadas.tallas && varGuardadas.tallas.trim() !== '') {
                         tallasTexto = varGuardadas.tallas;
                         console.log('📏 Tallas desde guardadas:', tallasTexto);
                     }
+                    if (varGuardadas.genero) {
+                        generoTexto = varGuardadas.genero;
+                        console.log('👥 Género desde guardadas:', generoTexto);
+                    }
                 } 
                 
-                // Si aún no hay tallas, buscar en DOM
+                // Si aún no hay tallas, buscar en DOM desde el input hidden
                 if (tallasTexto === 'Sin tallas') {
-                    const tallas = prenda.querySelectorAll('button[data-talla].active');
-                    if (tallas.length > 0) {
-                        tallasTexto = Array.from(tallas).map(t => t.textContent).join(', ');
-                        console.log('📏 Tallas desde DOM:', tallasTexto);
+                    const tallasHiddenInput = prenda.querySelector('input[name*="tallas"][type="hidden"]');
+                    if (tallasHiddenInput && tallasHiddenInput.value?.trim()) {
+                        tallasTexto = tallasHiddenInput.value;
+                        console.log('📏 Tallas desde DOM (input hidden):', tallasTexto);
+                    }
+                    
+                    // Si aún no hay, buscar botones activos (fallback)
+                    if (tallasTexto === 'Sin tallas') {
+                        const tallas = prenda.querySelectorAll('button[data-talla].active');
+                        if (tallas.length > 0) {
+                            tallasTexto = Array.from(tallas).map(t => t.textContent).join(', ');
+                            console.log('📏 Tallas desde botones activos:', tallasTexto);
+                        }
+                    }
+                }
+                
+                // Buscar género en DOM si no está en guardadas
+                if (!generoTexto) {
+                    const generoSelect = prenda.querySelector('select.talla-genero-select');
+                    if (generoSelect && generoSelect.value) {
+                        generoTexto = generoSelect.options[generoSelect.selectedIndex]?.text || '';
+                        console.log('👥 Género desde DOM:', generoTexto);
                     }
                 }
                 
                 // Obtener variaciones desde window.variacionesGuardadas (si existe)
-                let variacionesHTML = '';
+                let telasHTML = '';
+                let otrasVariacionesHTML = '';
                 
                 if (window.variacionesGuardadas && window.variacionesGuardadas[index]) {
                     const varGuardadas = window.variacionesGuardadas[index];
                     console.log('🎨 Variaciones desde guardadas:', varGuardadas);
                     
-                    // Construir HTML para variaciones CON observaciones
-                    let variacionesArray = [];
+                    // ====== SECCIÓN DE TELAS (Agrupadas) ======
+                    let telas = [];
+                    if (varGuardadas.color || varGuardadas.tela || varGuardadas.referencia) {
+                        telas.push({
+                            color: varGuardadas.color || '-',
+                            tela: varGuardadas.tela || '-',
+                            referencia: varGuardadas.referencia || '-'
+                        });
+                    }
                     
-                    if (varGuardadas.color) variacionesArray.push(`Color: ${varGuardadas.color}`);
-                    if (varGuardadas.tela) variacionesArray.push(`Tela: ${varGuardadas.tela}`);
-                    if (varGuardadas.referencia) variacionesArray.push(`Ref: ${varGuardadas.referencia}`);
+                    if (telas.length > 0) {
+                        telasHTML = '<div style="margin-bottom: 8px;"><small style="color: #666;"><strong>🧵 Telas:</strong></small><div style="margin-top: 6px;">';
+                        telas.forEach(t => {
+                            telasHTML += `<div style="background: #f0f8ff; padding: 8px; border-radius: 4px; margin-bottom: 6px; border-left: 3px solid #0066cc;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; font-size: 0.85rem;">
+                                    <div><span style="color: #64748b;">Color:</span> <strong>${t.color}</strong></div>
+                                    <div><span style="color: #64748b;">Tela:</span> <strong>${t.tela}</strong></div>
+                                    <div><span style="color: #64748b;">Ref:</span> <strong>${t.referencia}</strong></div>
+                                </div>
+                            </div>`;
+                        });
+                        telasHTML += '</div></div>';
+                    }
                     
-                    // Manga - solo mostrar si existe nombre
+                    // ====== OTRAS VARIACIONES (Manga, Bolsillos, Broche, Reflectivo) ======
+                    let otrasVariaciones = [];
+                    
                     if (varGuardadas.manga) {
                         let mangaTexto = varGuardadas.manga;
                         if (varGuardadas.obsManga) mangaTexto += ` (${varGuardadas.obsManga})`;
-                        variacionesArray.push(`Manga: ${mangaTexto}`);
+                        otrasVariaciones.push(`Manga: ${mangaTexto}`);
                     }
                     
-                    // Bolsillos - sin el "Sí", ya está implícito
                     if (varGuardadas.bolsillos) {
                         let bolsillosTexto = 'Bolsillos';
                         if (varGuardadas.obsBolsillos) bolsillosTexto += ` (${varGuardadas.obsBolsillos})`;
-                        variacionesArray.push(bolsillosTexto);
+                        otrasVariaciones.push(bolsillosTexto);
                     }
                     
-                    // Tipo de cierre (Botón, Broche, etc) - solo mostrar el nombre sin prefijo
+                    // Mostrar solo UNA VEZ el tipo de cierre (evitar duplicados)
                     if (varGuardadas.broche) {
                         let cierreTexto = varGuardadas.broche;
                         if (varGuardadas.obsBroche) cierreTexto += ` (${varGuardadas.obsBroche})`;
-                        variacionesArray.push(cierreTexto);
+                        otrasVariaciones.push(cierreTexto);
                     }
                     
-                    // Reflectivo - sin el "Sí"
                     if (varGuardadas.reflectivo) {
                         let reflectivoTexto = 'Reflectivo';
                         if (varGuardadas.obsReflectivo) reflectivoTexto += ` (${varGuardadas.obsReflectivo})`;
-                        variacionesArray.push(reflectivoTexto);
+                        otrasVariaciones.push(reflectivoTexto);
                     }
                     
-                    variacionesHTML = variacionesArray.join(' | ');
+                    if (otrasVariaciones.length > 0) {
+                        otrasVariacionesHTML = `<div style="padding-left: 10px; border-left: 2px solid #95a5a6;">
+                            <small style="color: #666;"><strong>Otros atributos:</strong></small><br>
+                            <small style="color: #666; display: block; margin-top: 4px;">${otrasVariaciones.map(v => `• ${v}`).join('<br>')}</small>
+                        </div>`;
+                    }
                 } else {
                     // Si no hay datos guardados, buscar en el DOM
-                    let variacionesArray = [];
+                    // ====== TELAS DESDE DOM ======
+                    let telasDesdeDOM = [];
                     
-                    const colorInputs = prenda.querySelectorAll('input[name*="color"]');
-                    if (colorInputs.length > 0) {
-                        colorInputs.forEach(inp => {
-                            if (inp.value) variacionesArray.push(`Color: ${inp.value}`);
+                    // Buscar filas de tela en la tabla (fila-tela)
+                    const filasTelaDOM = prenda.querySelectorAll('.fila-tela');
+                    
+                    filasTelaDOM.forEach(fila => {
+                        const colorInput = fila.querySelector('.color-input');
+                        const telaInput = fila.querySelector('.tela-input');
+                        const refInput = fila.querySelector('.referencia-input');
+                        
+                        const color = colorInput?.value?.trim() || '-';
+                        const tela = telaInput?.value?.trim() || '-';
+                        const ref = refInput?.value?.trim() || '-';
+                        
+                        if (color !== '-' || tela !== '-' || ref !== '-') {
+                            telasDesdeDOM.push({ color, tela, ref });
+                        }
+                    });
+                    
+                    if (telasDesdeDOM.length > 0) {
+                        telasHTML = '<div style="margin-bottom: 8px;"><small style="color: #666;"><strong>🧵 Telas:</strong></small><div style="margin-top: 6px;">';
+                        telasDesdeDOM.forEach(t => {
+                            telasHTML += `<div style="background: #f0f8ff; padding: 8px; border-radius: 4px; margin-bottom: 6px; border-left: 3px solid #0066cc;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; font-size: 0.85rem;">
+                                    <div><span style="color: #64748b;">Color:</span> <strong>${t.color}</strong></div>
+                                    <div><span style="color: #64748b;">Tela:</span> <strong>${t.tela}</strong></div>
+                                    <div><span style="color: #64748b;">Ref:</span> <strong>${t.ref}</strong></div>
+                                </div>
+                            </div>`;
                         });
+                        telasHTML += '</div></div>';
                     }
                     
-                    const telaSelects = prenda.querySelectorAll('select[name*="tela"]');
-                    if (telaSelects.length > 0) {
-                        telaSelects.forEach(sel => {
-                            if (sel.value) variacionesArray.push(`Tela: ${sel.value}`);
-                        });
+                    // ====== OTRAS VARIACIONES DESDE DOM ======
+                    let otrasVariacionesDesdeDOM = [];
+                    
+                    // MANGA - buscar el checkbox y el tipo de manga
+                    const mangaCheckbox = prenda.querySelector('input[name*="aplica_manga"]');
+                    if (mangaCheckbox?.checked) {
+                        const mangaSelect = prenda.querySelector('select[name*="tipo_manga_id"]');
+                        const mangaObsInput = prenda.querySelector('input[name*="obs_manga"]');
+                        
+                        let mangaTexto = 'Manga';
+                        if (mangaSelect?.value) {
+                            const selectedOption = mangaSelect.options[mangaSelect.selectedIndex];
+                            if (selectedOption?.text) {
+                                mangaTexto = selectedOption.text;
+                            }
+                        }
+                        
+                        if (mangaObsInput?.value?.trim()) {
+                            mangaTexto += ` (${mangaObsInput.value.trim()})`;
+                        }
+                        otrasVariacionesDesdeDOM.push(mangaTexto);
                     }
                     
-                    const refInputs = prenda.querySelectorAll('input[name*="referencia"]');
-                    if (refInputs.length > 0) {
-                        refInputs.forEach(inp => {
-                            if (inp.value) variacionesArray.push(`Ref: ${inp.value}`);
-                        });
+                    // BOLSILLOS - buscar el checkbox y observación
+                    const bolsillosCheckbox = prenda.querySelector('input[name*="aplica_bolsillos"]');
+                    if (bolsillosCheckbox?.checked) {
+                        const bolsillosObsInput = prenda.querySelector('input[name*="obs_bolsillos"]');
+                        
+                        let bolsillosTexto = 'Bolsillos';
+                        if (bolsillosObsInput?.value?.trim()) {
+                            bolsillosTexto += ` (${bolsillosObsInput.value.trim()})`;
+                        }
+                        otrasVariacionesDesdeDOM.push(bolsillosTexto);
                     }
                     
-                    const mangaInputs = prenda.querySelectorAll('input[name*="tipo_manga"]:not([type="hidden"])');
-                    if (mangaInputs.length > 0) {
-                        mangaInputs.forEach(inp => {
-                            if (inp.value) variacionesArray.push(`Manga: ${inp.value}`);
-                        });
+                    // BROCHE/BOTÓN - evitar duplicados
+                    const brocheSet = new Set();
+                    const brocheCheckbox = prenda.querySelector('input[name*="aplica_broche"]');
+                    if (brocheCheckbox?.checked) {
+                        const brocheSelect = prenda.querySelector('select[name*="tipo_broche_id"]');
+                        const brocheObsInput = prenda.querySelector('input[name*="obs_broche"]');
+                        
+                        if (brocheSelect?.value) {
+                            let brocheTexto = brocheSelect.options[brocheSelect.selectedIndex]?.text || '';
+                            if (brocheTexto && brocheTexto !== '-' && brocheTexto !== 'Seleccionar...') {
+                                if (brocheObsInput?.value?.trim()) {
+                                    brocheTexto += ` (${brocheObsInput.value.trim()})`;
+                                }
+                                brocheSet.add(brocheTexto);
+                            }
+                        }
+                    }
+                    brocheSet.forEach(broche => otrasVariacionesDesdeDOM.push(broche));
+                    
+                    // REFLECTIVO - buscar el checkbox y observación
+                    const reflectivoCheckbox = prenda.querySelector('input[name*="aplica_reflectivo"]');
+                    if (reflectivoCheckbox?.checked) {
+                        const reflectivoObsInput = prenda.querySelector('input[name*="obs_reflectivo"]');
+                        
+                        let reflectivoTexto = 'Reflectivo';
+                        if (reflectivoObsInput?.value?.trim()) {
+                            reflectivoTexto += ` (${reflectivoObsInput.value.trim()})`;
+                        }
+                        otrasVariacionesDesdeDOM.push(reflectivoTexto);
                     }
                     
-                    const brocheSelects = prenda.querySelectorAll('select[name*="tipo_broche"]');
-                    if (brocheSelects.length > 0) {
-                        brocheSelects.forEach(sel => {
-                            const selectedText = sel.options[sel.selectedIndex]?.text || '';
-                            if (selectedText && selectedText !== '-') variacionesArray.push(`Broche: ${selectedText}`);
-                        });
+                    if (otrasVariacionesDesdeDOM.length > 0) {
+                        otrasVariacionesHTML = `<div style="padding-left: 10px; border-left: 2px solid #95a5a6;">
+                            <small style="color: #666;"><strong>Otros atributos:</strong></small><br>
+                            <small style="color: #666; display: block; margin-top: 4px;">${otrasVariacionesDesdeDOM.map(v => `• ${v}`).join('<br>')}</small>
+                        </div>`;
                     }
-                    
-                    const bolsillosCheckbox = prenda.querySelector('input[name*="tiene_bolsillos"]');
-                    if (bolsillosCheckbox?.checked) variacionesArray.push('Bolsillos: Sí');
-                    
-                    const reflectivoCheckbox = prenda.querySelector('input[name*="tiene_reflectivo"]');
-                    if (reflectivoCheckbox?.checked) variacionesArray.push('Reflectivo: Sí');
-                    
-                    variacionesHTML = variacionesArray.join(' | ');
                 }
                 
                 const div = document.createElement('div');
                 div.style.cssText = 'padding: 15px; background: #fff; border-left: 4px solid #3498db; border-radius: 4px; margin-bottom: 10px;';
                 
-                let html = `<div style="margin-bottom: 8px;">
+                let html = `<div style="margin-bottom: 12px;">
                     <strong style="font-size: 1.05rem; color: #0066cc;">👕 Prenda ${index + 1}: ${nombre}</strong>
                 </div>`;
                 
                 if (descripcion) {
-                    html += `<div style="margin-bottom: 6px; padding-left: 10px; border-left: 2px solid #95a5a6;">
+                    html += `<div style="margin-bottom: 10px; padding-left: 10px; border-left: 2px solid #95a5a6;">
                         <small style="color: #666;"><strong>Descripción:</strong> ${descripcion}</small>
                     </div>`;
                 }
                 
-                html += `<div style="margin-bottom: 6px; padding-left: 10px; border-left: 2px solid #95a5a6;">
-                    <small style="color: #666;"><strong>Tallas:</strong> ${tallasTexto}</small>
-                </div>`;
+                html += `<div style="margin-bottom: 10px; padding-left: 10px; border-left: 2px solid #95a5a6;">
+                    <small style="color: #666;"><strong>Tallas:</strong> ${tallasTexto}</small>`;
+                if (generoTexto) {
+                    html += `<small style="color: #999; margin-left: 12px;">(${generoTexto})</small>`;
+                }
+                html += `</div>`;
                 
-                if (variacionesHTML) {
-                    html += `<div style="padding-left: 10px; border-left: 2px solid #95a5a6;">
-                        <small style="color: #666;"><strong>Variaciones:</strong></small><br>
-                        <small style="color: #666; display: block; margin-top: 4px;">${variacionesHTML.split(' | ').map(v => `• ${v}`).join('<br>')}</small>
+                // Agregar telas agrupadas
+                if (telasHTML) {
+                    html += `<div style="margin-bottom: 10px; padding-left: 10px; border-left: 2px solid #95a5a6;">
+                        ${telasHTML}
+                    </div>`;
+                }
+                
+                // Agregar otras variaciones
+                if (otrasVariacionesHTML) {
+                    html += `<div style="margin-bottom: 0; padding-left: 0;">
+                        ${otrasVariacionesHTML}
                     </div>`;
                 }
                 
@@ -445,6 +576,18 @@ function actualizarResumenFriendly() {
     if (resumenTecnicas) {
         // Usar variable global si está disponible (desde cargar-borrador.js)
         let tecnicasArray = window.tecnicasGuardadas || [];
+        
+        // Si no hay técnicas guardadas, buscar en el DOM
+        if (tecnicasArray.length === 0) {
+            const tecnicasSeleccionadas = document.querySelectorAll('#tecnicas_seleccionadas > div');
+            tecnicasSeleccionadas.forEach(div => {
+                const input = div.querySelector('input[name="tecnicas[]"]');
+                if (input && input.value?.trim()) {
+                    tecnicasArray.push(input.value);
+                }
+            });
+            console.log('🎨 Técnicas desde DOM:', tecnicasArray);
+        }
         
         console.log('🎨 DEBUG Técnicas desde global:', {
             tecnicasGuardadas: window.tecnicasGuardadas,
@@ -501,9 +644,20 @@ function actualizarResumenFriendly() {
             resumenLogoUbicacionesContainer.style.display = 'block';
             
             ubicacionesArray.forEach((ubicacion, idx) => {
-                const seccionNombre = ubicacion.seccion || 'Sección';
-                const ubicacionesTexto = (ubicacion.ubicaciones_seleccionadas || []).join(', ') || 'Sin ubicaciones';
-                const obs = ubicacion.observaciones ? ubicacion.observaciones : '';
+                // Soportar tanto formato antiguo (seccion) como nuevo (ubicacion)
+                const seccionNombre = ubicacion.ubicacion || ubicacion.seccion || 'Sección sin nombre';
+                
+                // Las opciones pueden venir como array o como string separado por comas
+                let opcionesTexto = '';
+                if (Array.isArray(ubicacion.opciones)) {
+                    opcionesTexto = ubicacion.opciones.join(', ');
+                } else if (typeof ubicacion.opciones === 'string') {
+                    opcionesTexto = ubicacion.opciones;
+                } else if (Array.isArray(ubicacion.ubicaciones_seleccionadas)) {
+                    opcionesTexto = ubicacion.ubicaciones_seleccionadas.join(', ');
+                }
+                
+                const obs = ubicacion.observaciones || '';
                 
                 const divResumen = document.createElement('div');
                 divResumen.style.cssText = 'padding: 12px; background: #fff; border-left: 3px solid #3498db; border-radius: 4px; margin-bottom: 8px; font-size: 0.95rem;';
@@ -513,9 +667,23 @@ function actualizarResumenFriendly() {
                     obsHTML = `<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ecf0f1; font-size: 0.85rem; color: #555;"><strong>Obs:</strong> ${obs}</div>`;
                 }
                 
+                // Mostrar tallas si existen
+                let tallasHTML = '';
+                if (ubicacion.tallas && Array.isArray(ubicacion.tallas) && ubicacion.tallas.length > 0) {
+                    tallasHTML = '<div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #ecf0f1;"><strong style="font-size: 0.85rem; color: #0066cc;">Tallas:</strong>';
+                    tallasHTML += '<div style="margin-left: 12px; font-size: 0.85rem; color: #555;">';
+                    ubicacion.tallas.forEach(talla => {
+                        const tallaName = typeof talla === 'object' ? (talla.talla || talla.nombre) : talla;
+                        const tallaQty = typeof talla === 'object' ? (talla.cantidad || '') : '';
+                        tallasHTML += tallaQty ? `${tallaName} (${tallaQty}) ` : `${tallaName} `;
+                    });
+                    tallasHTML += '</div></div>';
+                }
+                
                 divResumen.innerHTML = `
-                    <div style="font-weight: 600; margin-bottom: 4px; color: #0066cc;">${seccionNombre}</div>
-                    <div style="margin-left: 12px; color: #555;">${ubicacionesTexto}</div>
+                    <div style="font-weight: 600; margin-bottom: 4px; color: #0066cc; font-size: 1rem;">📦 ${seccionNombre}</div>
+                    ${opcionesTexto ? `<div style="margin-bottom: 4px; margin-left: 12px; color: #555;"><strong style="font-size: 0.85rem;">Ubicaciones:</strong> ${opcionesTexto}</div>` : ''}
+                    ${tallasHTML}
                     ${obsHTML}
                 `;
                 resumenLogoUbicaciones.appendChild(divResumen);
@@ -918,10 +1086,23 @@ function recopilarDatos() {
         // ✅ CAPTURAR GENERO_ID desde el input hidden (IMPORTANTE para "ambos")
         // NOTA: Solo se captura si tiene un valor definido
         const generoIdInput = item.querySelector('.genero-id-hidden');
+        let generoNombre = '';
+        
         if (generoIdInput && generoIdInput.value) {
             // Solo asignar si tiene valor (no incluir la clave si está vacío)
             variantes.genero_id = generoIdInput.value;
-            console.log('✅ genero_id capturado:', variantes.genero_id);
+            
+            // Mapear ID a nombre para referencia
+            if (generoIdInput.value === '1') {
+                generoNombre = 'Dama';
+            } else if (generoIdInput.value === '2') {
+                generoNombre = 'Caballero';
+            }
+            
+            if (generoNombre) {
+                variantes.genero = generoNombre;
+            }
+            console.log('✅ genero_id capturado:', variantes.genero_id, '- genero:', generoNombre);
         } else {
             // Si no existe o está vacío, NO incluir la clave en variantes
             // genero_id = null en backend significa "aplica a ambos géneros"
@@ -1041,8 +1222,9 @@ function recopilarDatos() {
         window.seccionesSeleccionadasFriendly.forEach(seccion => {
             if (seccion.ubicacion && seccion.opciones && seccion.opciones.length > 0) {
                 ubicaciones.push({
-                    seccion: seccion.ubicacion,
-                    ubicaciones_seleccionadas: seccion.opciones,
+                    ubicacion: seccion.ubicacion,
+                    opciones: seccion.opciones,
+                    tallas: seccion.tallas || [],
                     observaciones: seccion.observaciones || ''
                 });
             }

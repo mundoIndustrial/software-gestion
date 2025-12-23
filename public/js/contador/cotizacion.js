@@ -28,9 +28,41 @@ function openCotizacionModal(cotizacionId) {
 
             // Construir HTML del modal sin el encabezado (que ya está en el layout)
             let html = '';
+            
+            // Determinar si se necesitan tabs (cuando hay tanto prendas como logo)
+            const tieneTabsNecesarios = data.tiene_prendas && data.tiene_logo;
+            
+            if (tieneTabsNecesarios) {
+                // Crear estructura de tabs
+                html += `
+                    <div class="cotizacion-tabs-container">
+                        <div class="cotizacion-tabs-header">
+                            <button class="cotizacion-tab-button active" data-tab="prendas">
+                                <span class="material-symbols-rounded" style="font-size: 20px; margin-right: 0.5rem;">checkroom</span>
+                                PRENDAS
+                            </button>
+                            <button class="cotizacion-tab-button" data-tab="logo">
+                                <span class="material-symbols-rounded" style="font-size: 20px; margin-right: 0.5rem;">image</span>
+                                LOGO
+                            </button>
+                        </div>
+                        <div class="cotizacion-tabs-content">
+                            <div id="tab-prendas" class="cotizacion-tab-content active">
+                                <!-- Contenido de prendas se insertará aquí -->
+                            </div>
+                            <div id="tab-logo" class="cotizacion-tab-content">
+                                <!-- Contenido de logo se insertará aquí -->
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Construir contenido de prendas
+            let htmlPrendas = '';
 
             // Contenedor de prendas
-            html += '<div class="prendas-container" style="display: flex; flex-direction: column; gap: 1.5rem;">';
+            htmlPrendas += '<div class="prendas-container" style="display: flex; flex-direction: column; gap: 1.5rem;">';
 
             if (data.prendas_cotizaciones && data.prendas_cotizaciones.length > 0) {
                 data.prendas_cotizaciones.forEach((prenda, index) => {
@@ -75,7 +107,7 @@ function openCotizacionModal(cotizacionId) {
                     if (manguaInfo) atributosLinea.push(`Manga: ${manguaInfo}`);
 
                     // Construir HTML de la prenda
-                    html += `
+                    htmlPrendas += `
                         <div class="prenda-card" style="background: #f5f5f5; border-left: 5px solid #1e5ba8; padding: 1rem 1.5rem; border-radius: 4px;">
                             <h3 style="margin: 0 0 0.5rem 0; color: #1e5ba8; font-size: 1.1rem; font-weight: 700; text-transform: uppercase;">
                                 ${prenda.nombre_prenda || 'Sin nombre'}
@@ -94,7 +126,7 @@ function openCotizacionModal(cotizacionId) {
                         const textoPersonalizado = prenda.texto_personalizado_tallas ? ` ${prenda.texto_personalizado_tallas}` : '';
                         const textoCompleto = tallasTexto + textoPersonalizado;
                         
-                        html += `
+                        htmlPrendas += `
                             <div style="margin: 0 0 0.5rem 0;">
                                 <span style="color: #1e5ba8; font-size: 0.9rem; font-weight: 700;">Tallas: </span>
                                 <span 
@@ -111,23 +143,23 @@ function openCotizacionModal(cotizacionId) {
 
                     // Mostrar fotos de la prenda si existen
                     if (prenda.fotos && prenda.fotos.length > 0) {
-                        html += `
+                        htmlPrendas += `
                             <p style="margin: 0 0 0.5rem 0; color: #1e5ba8; font-size: 0.9rem; font-weight: 700;">
                                 IMAGENES:
                             </p>
                             <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem;">
                         `;
                         prenda.fotos.forEach(foto => {
-                            html += `
+                            htmlPrendas += `
                                 <img src="${foto}" alt="Foto prenda" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" onclick="abrirImagenGrande('${foto}')">
                             `;
                         });
-                        html += `</div>`;
+                        htmlPrendas += `</div>`;
                     }
 
                     // Mostrar fotos de telas si existen
                     if (prenda.tela_fotos && prenda.tela_fotos.length > 0) {
-                        html += `
+                        htmlPrendas += `
                             <p style="margin: 0 0 0.5rem 0; color: #1e5ba8; font-size: 0.9rem; font-weight: 700;">
                                 TELAS:
                             </p>
@@ -135,21 +167,21 @@ function openCotizacionModal(cotizacionId) {
                         `;
                         prenda.tela_fotos.forEach(foto => {
                             if (foto) {
-                                html += `
+                                htmlPrendas += `
                                     <img src="${foto}" alt="Foto tela" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" onclick="abrirImagenGrande('${foto}')">
                                 `;
                             }
                         });
-                        html += `</div>`;
+                        htmlPrendas += `</div>`;
                     }
 
-                    html += `</div>`;
+                    htmlPrendas += `</div>`;
                 });
             } else {
-                html += '<p style="color: #999; text-align: center; padding: 2rem;">No hay prendas para mostrar</p>';
+                htmlPrendas += '<p style="color: #999; text-align: center; padding: 2rem;">No hay prendas para mostrar</p>';
             }
 
-            html += '</div>';
+            htmlPrendas += '</div>';
 
             // Agregar tabla de Especificaciones Generales
             if (data.cotizacion && data.cotizacion.especificaciones && Object.keys(data.cotizacion.especificaciones).length > 0) {
@@ -162,7 +194,7 @@ function openCotizacionModal(cotizacionId) {
                     'flete': 'FLETE DE ENVÍO'
                 };
 
-                html += `
+                htmlPrendas += `
                     <div style="margin-top: 2rem;">
                         <h3 style="margin: 0 0 1rem 0; color: #1e5ba8; font-size: 1.1rem; font-weight: 700; text-transform: uppercase;">Especificaciones Generales</h3>
                         <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #ddd; border-radius: 4px; overflow: hidden;">
@@ -190,7 +222,7 @@ function openCotizacionModal(cotizacionId) {
                         valoresText = valores;
                     }
 
-                    html += `
+                    htmlPrendas += `
                                 <tr style="border-bottom: 1px solid #eee;">
                                     <td style="padding: 0.75rem 1rem; color: #333; font-weight: 600; font-size: 0.85rem;">${nombreCategoria}</td>
                                     <td style="padding: 0.75rem 1rem; color: #666; font-size: 0.85rem;">${valoresText}</td>
@@ -198,18 +230,175 @@ function openCotizacionModal(cotizacionId) {
                     `;
                 }
 
-                html += `
+                htmlPrendas += `
                             </tbody>
                         </table>
                     </div>
                 `;
             }
 
+
+            // Construir contenido de logo
+            let htmlLogo = '';
+            if (data.logo_cotizacion) {
+                const logo = data.logo_cotizacion;
+                
+                htmlLogo += '<div class="logo-container" style="display: flex; flex-direction: column; gap: 1.5rem;">';
+                
+                // Descripción del logo
+                if (logo.descripcion) {
+                    htmlLogo += `
+                        <div style="background: #f5f5f5; border-left: 5px solid #ef4444; padding: 1rem 1.5rem; border-radius: 4px;">
+                            <h3 style="margin: 0 0 0.5rem 0; color: #ef4444; font-size: 1.1rem; font-weight: 700; text-transform: uppercase;">
+                                Descripción
+                            </h3>
+                            <p style="margin: 0; color: #333; font-size: 0.9rem; line-height: 1.6;">
+                                ${logo.descripcion}
+                            </p>
+                        </div>
+                    `;
+                }
+                
+                // Técnicas utilizadas
+                if (logo.tecnicas && Array.isArray(logo.tecnicas) && logo.tecnicas.length > 0) {
+                    htmlLogo += `
+                        <div style="background: #f5f5f5; border-left: 5px solid #ef4444; padding: 1rem 1.5rem; border-radius: 4px;">
+                            <h3 style="margin: 0 0 0.5rem 0; color: #ef4444; font-size: 0.95rem; font-weight: 700; text-transform: uppercase;">
+                                Técnicas
+                            </h3>
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                ${logo.tecnicas.map(tecnica => `<span style="background: #ef4444; color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">${tecnica}</span>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Ubicaciones/Secciones
+                if (logo.secciones && Array.isArray(logo.secciones) && logo.secciones.length > 0) {
+                    htmlLogo += `
+                        <div style="background: #f5f5f5; border-left: 5px solid #ef4444; padding: 1rem 1.5rem; border-radius: 4px;">
+                            <h3 style="margin: 0 0 1rem 0; color: #ef4444; font-size: 0.95rem; font-weight: 700; text-transform: uppercase;">
+                                Ubicaciones
+                            </h3>
+                    `;
+                    
+                    logo.secciones.forEach((seccion, idx) => {
+                        htmlLogo += `
+                            <div style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #ddd;">
+                                <p style="margin: 0 0 0.5rem 0; color: #333; font-weight: 700; font-size: 0.9rem;">
+                                    📍 ${seccion.ubicacion || 'Sin ubicación'}
+                                </p>
+                        `;
+                        
+                        if (seccion.opciones && Array.isArray(seccion.opciones) && seccion.opciones.length > 0) {
+                            htmlLogo += `
+                                <p style="margin: 0 0 0.25rem 0; color: #666; font-size: 0.85rem;">
+                                    <strong>Opciones:</strong> ${seccion.opciones.join(', ')}
+                                </p>
+                            `;
+                        }
+                        
+                        if (seccion.tallas && Array.isArray(seccion.tallas) && seccion.tallas.length > 0) {
+                            const tallasStr = seccion.tallas.map(t => `${t.talla} (${t.cantidad})`).join(', ');
+                            htmlLogo += `
+                                <p style="margin: 0 0 0.25rem 0; color: #666; font-size: 0.85rem;">
+                                    <strong>Tallas:</strong> ${tallasStr}
+                                </p>
+                            `;
+                        }
+                        
+                        if (seccion.observaciones) {
+                            htmlLogo += `
+                                <p style="margin: 0; color: #666; font-size: 0.85rem;">
+                                    <strong>Observaciones:</strong> ${seccion.observaciones}
+                                </p>
+                            `;
+                        }
+                        
+                        htmlLogo += `</div>`;
+                    });
+                    
+                    htmlLogo += `</div>`;
+                }
+                
+                // Fotos del logo
+                if (logo.fotos && Array.isArray(logo.fotos) && logo.fotos.length > 0) {
+                    htmlLogo += `
+                        <div style="background: #f5f5f5; border-left: 5px solid #ef4444; padding: 1rem 1.5rem; border-radius: 4px;">
+                            <h3 style="margin: 0 0 1rem 0; color: #ef4444; font-size: 0.95rem; font-weight: 700; text-transform: uppercase;">
+                                Imágenes del Logo
+                            </h3>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 1rem;">
+                    `;
+                    
+                    logo.fotos.forEach(foto => {
+                        htmlLogo += `
+                            <div style="position: relative;">
+                                <img src="${foto.url}" alt="Logo" style="width: 100%; height: 100px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" onclick="abrirImagenGrande('${foto.url}')">
+                                <span style="position: absolute; top: 2px; right: 2px; background: #ef4444; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">${foto.orden}</span>
+                            </div>
+                        `;
+                    });
+                    
+                    htmlLogo += `
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                htmlLogo += '</div>';
+            } else {
+                htmlLogo += '<p style="color: #999; text-align: center; padding: 2rem;">No hay información de logo para mostrar</p>';
+            }
+
             // Insertar contenido en el modal
-            document.getElementById('modalBody').innerHTML = html;
+            if (tieneTabsNecesarios) {
+                // Insertar HTML en tabs
+                document.getElementById('modalBody').innerHTML = html;
+                document.getElementById('tab-prendas').innerHTML = htmlPrendas;
+                document.getElementById('tab-logo').innerHTML = htmlLogo;
+                
+                // Agregar event listeners a los tabs
+                setTimeout(() => {
+                    const tabButtons = document.querySelectorAll('.cotizacion-tab-button');
+                    tabButtons.forEach(button => {
+                        button.addEventListener('click', function() {
+                            const tabName = this.getAttribute('data-tab');
+                            
+                            // Remover clase active de todos los botones
+                            tabButtons.forEach(btn => btn.classList.remove('active'));
+                            
+                            // Agregar clase active al botón clickeado
+                            this.classList.add('active');
+                            
+                            // Ocultar todos los contenidos
+                            document.querySelectorAll('.cotizacion-tab-content').forEach(content => {
+                                content.classList.remove('active');
+                                content.style.display = 'none';
+                            });
+                            
+                            // Mostrar el contenido del tab
+                            const tabContent = document.getElementById(`tab-${tabName}`);
+                            if (tabContent) {
+                                tabContent.classList.add('active');
+                                tabContent.style.display = 'block';
+                            }
+                        });
+                    });
+                }, 100);
+            } else {
+                // Sin tabs, insertar contenido normal
+                if (data.tiene_prendas) {
+                    html += htmlPrendas;
+                } else if (data.tiene_logo) {
+                    html += htmlLogo;
+                }
+                document.getElementById('modalBody').innerHTML = html;
+            }
+
             document.getElementById('cotizacionModal').style.display = 'flex';
 
-            console.log('✅ Modal abierto correctamente con', data.prendas_cotizaciones ? data.prendas_cotizaciones.length : 0, 'prendas');
+            console.log('✅ Modal abierto correctamente con', data.prendas_cotizaciones ? data.prendas_cotizaciones.length : 0, 'prendas y logo:', data.tiene_logo);
         })
         .catch(error => {
             console.error('Error:', error);

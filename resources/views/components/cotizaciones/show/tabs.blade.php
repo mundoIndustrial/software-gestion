@@ -26,11 +26,11 @@
     $mostrarTabLogo = $esLogo || ($logo && ($logo->descripcion || ($logo->fotos && $logo->fotos->count() > 0)));
     
     // Determinar qué tab debe estar activo por defecto
-    // Si es tipo Logo puro (L), el tab de Logo debe estar activo
-    // Si es Combinada (PL), el tab de Logo debe estar activo
-    // Si es Prenda pura (P), el tab de Prendas debe estar activo
+    // Logo puro (L): tab de Logo
+    // Combinada (PL): tab de Prendas primero
+    // Prenda pura (P): tab de Prendas
     $tabActivoPorDefecto = 'prendas';
-    if ($tipoCotizacionId === $idLogo || $tipoCotizacionId === $idCombinada) {
+    if ($tipoCotizacionId === $idLogo) {
         $tabActivoPorDefecto = 'bordado'; // Logo
     }
 @endphp

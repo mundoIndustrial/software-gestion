@@ -3,9 +3,18 @@
     $idLogo = \App\Models\TipoCotizacion::getIdPorCodigo('L');
     $idCombinada = \App\Models\TipoCotizacion::getIdPorCodigo('PL');
     $tabActivoPorDefecto = 'prendas';
-    if ($cotizacion->tipo_cotizacion_id === $idLogo || $cotizacion->tipo_cotizacion_id === $idCombinada) {
+    // Solo activar Logo por defecto cuando la cotización es SOLO logo.
+    // En combinadas (PL) el tab inicial debe ser Prendas para evitar que ambos contenidos queden activos.
+    if ($cotizacion->tipo_cotizacion_id === $idLogo) {
         $tabActivoPorDefecto = 'bordado';
     }
+
+    // Normalizar secciones: vienen como JSON string o array
+    $secciones = $logo ? ($logo->secciones ?? []) : [];
+    if (is_string($secciones)) {
+        $secciones = json_decode($secciones, true) ?? [];
+    }
+    $secciones = is_array($secciones) ? $secciones : [];
 @endphp
 <div id="tab-bordado" class="tab-content {{ $tabActivoPorDefecto === 'bordado' ? 'active' : '' }}">
     @if($logo)
@@ -44,11 +53,11 @@
             </div>
         @endif
 
-        @if ($logo->secciones && is_array($logo->secciones) && count($logo->secciones) > 0)
+        @if (!empty($secciones))
             <div class="info-card">
                 <div class="info-section no-border">
                     <h4 class="section-title"><i class="fas fa-tshirt"></i> Secciones de Prendas</h4>
-                    @foreach ($logo->secciones as $seccion)
+                    @foreach ($secciones as $seccion)
                         <div class="seccion-item">
                             <p class="seccion-prenda"><strong>Prenda:</strong> {{ $seccion['ubicacion'] }}</p>
                             @if (!empty($seccion['tallas']))
