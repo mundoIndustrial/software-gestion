@@ -436,52 +436,6 @@ class PDFCotizacionController extends Controller
             $html .= '</table></div>';
         }
         
-        // TABLA DE UBICACIONES
-        $ubicaciones = [];
-        if ($logo->secciones) {
-            $ubicacionesData = is_string($logo->secciones) ? json_decode($logo->secciones, true) : $logo->secciones;
-            if (is_array($ubicacionesData)) {
-                $ubicaciones = $ubicacionesData;
-            }
-        }
-        
-        if (count($ubicaciones) > 0) {
-            $html .= '<div style="margin-bottom: 12px;">
-                <div style="font-size: 10px; font-weight: bold; margin-bottom: 6px;">UBICACIONES</div>
-                <table style="width: 100%; border-collapse: collapse; border: 1px solid #999;">
-                    <tr style="background: #f5f5f5; border: 1px solid #999;">
-                        <th style="padding: 6px; text-align: left; font-size: 9px; font-weight: bold; border: 1px solid #999; width: 20%;">Sección</th>
-                        <th style="padding: 6px; text-align: left; font-size: 9px; font-weight: bold; border: 1px solid #999; width: 50%;">Ubicaciones Seleccionadas</th>
-                        <th style="padding: 6px; text-align: left; font-size: 9px; font-weight: bold; border: 1px solid #999; width: 30%;">Observaciones</th>
-                    </tr>';
-            
-            foreach ($ubicaciones as $ub) {
-                if (is_array($ub)) {
-                    $seccion = $ub['seccion'] ?? '';
-                    $seleccionadas = $ub['ubicaciones_seleccionadas'] ?? [];
-                    $obs = $ub['observaciones'] ?? '';
-                    
-                    if ($seccion) {
-                        // Formatear ubicaciones como bullets
-                        $ubicacionesTexto = '';
-                        if (is_array($seleccionadas) && count($seleccionadas) > 0) {
-                            foreach ($seleccionadas as $sel) {
-                                $ubicacionesTexto .= '• ' . htmlspecialchars($sel) . '<br>';
-                            }
-                        }
-                        
-                        $html .= '<tr style="border: 1px solid #999;">
-                                <td style="padding: 6px; font-size: 9px; border: 1px solid #999; font-weight: bold;">' . htmlspecialchars($seccion) . '</td>
-                                <td style="padding: 6px; font-size: 9px; border: 1px solid #999;">' . $ubicacionesTexto . '</td>
-                                <td style="padding: 6px; font-size: 9px; border: 1px solid #999;">' . htmlspecialchars($obs) . '</td>
-                            </tr>';
-                    }
-                }
-            }
-            
-            $html .= '</table></div>';
-        }
-        
         // OBSERVACIONES GENERALES
         $obsGenerales = $logo->observaciones_generales ?? [];
         if (!is_array($obsGenerales)) {
@@ -558,7 +512,7 @@ class PDFCotizacionController extends Controller
                 <img src="' . $logoPath . '" class="header-logo" alt="Logo">
                 <div class="header-content">
                     <div class="header-title">Uniformes Mundo Industrial</div>
-                    <div class="header-subtitle">Leonis Ruth Mahecha Acosta</div>
+                    <div class="header-subtitle">Lenis Ruth Mahecha Acosta</div>
                     <div class="header-subtitle">NIT: 1.093.738.433-3 Régimen Común</div>
                     <div style="font-size: 12px; font-weight: bold; margin-top: 4px;">' . $titulo . '</div>
                 </div>
@@ -638,60 +592,101 @@ class PDFCotizacionController extends Controller
             
             // Cargar variantes si existen
             $variantes = $prenda->variantes ?? [];
-            $colorTelaManga = '';
+            $lineasColorTela = [];
             
             if ($variantes && count($variantes) > 0) {
                 $variante = $variantes[0]; // Usar primera variante
                 
-                // LÍNEA 2: Color | Tela REF: | Manga
-                $partes = [];
-                
-                // Color
-                if ($variante->color) {
-                    $partes[] = 'Color: ' . htmlspecialchars($variante->color);
+                // Telas múltiples agrupadas (Color/Tela/Referencia)
+                $telasMultiples = $variante->telas_multiples ?? [];
+                if (is_string($telasMultiples)) {
+                    $telasMultiples = json_decode($telasMultiples, true) ?? [];
                 }
                 
-                // Telas
-                $telas = $prenda->telas ?? [];
-                if ($telas && count($telas) > 0) {
-                    $telasTexto = [];
-                    foreach ($telas as $telaPrenda) {
-                        $textoTela = '';
+                if (is_array($telasMultiples) && count($telasMultiples) > 0) {
+                    foreach ($telasMultiples as $tm) {
+                        $partesLinea = [];
+                        if (!empty($tm['color'])) {
+                            $partesLinea[] = 'Color: ' . htmlspecialchars($tm['color']);
+                        } elseif (!empty($variante->color)) {
+                            // Fallback de color general de la variante
+                            $partesLinea[] = 'Color: ' . htmlspecialchars($variante->color);
+                        }
                         
-                        // Obtener nombre de tela a través de la relación
-                        if ($telaPrenda->tela) {
-                            $textoTela = htmlspecialchars($telaPrenda->tela->nombre ?? '');
+                        if (!empty($tm['tela'])) {
+                            $telaTexto = 'Tela: ' . htmlspecialchars($tm['tela']);
+                            if (!empty($tm['referencia'])) {
+                                $telaTexto .= ' Ref: ' . htmlspecialchars($tm['referencia']);
+                            }
+                            $partesLinea[] = $telaTexto;
+                        }
+                        
+                        if (!empty($tm['manga'])) {
+                            $partesLinea[] = 'Manga: ' . htmlspecialchars($tm['manga']);
+                        }
+                        
+                        if (!empty($partesLinea)) {
+                            $lineasColorTela[] = implode(' | ', $partesLinea);
+                        }
+                    }
+                } else {
+                    // Fallback: usar color + telas de la prenda
+                    $partes = [];
+                    
+                    // Color
+                    if ($variante->color) {
+                        $partes[] = 'Color: ' . htmlspecialchars($variante->color);
+                    }
+                    
+                    // Telas (relación)
+                    $telas = $prenda->telas ?? [];
+                    if ($telas && count($telas) > 0) {
+                        $telasTexto = [];
+                        foreach ($telas as $telaPrenda) {
+                            $textoTela = '';
                             
-                            // Agregar referencia si existe
-                            if ($telaPrenda->tela->referencia) {
-                                $textoTela .= ' REF:' . htmlspecialchars($telaPrenda->tela->referencia);
+                            // Obtener nombre de tela a través de la relación
+                            if ($telaPrenda->tela) {
+                                $textoTela = htmlspecialchars($telaPrenda->tela->nombre ?? '');
+                                
+                                // Agregar referencia si existe
+                                if ($telaPrenda->tela->referencia) {
+                                    $textoTela .= ' REF:' . htmlspecialchars($telaPrenda->tela->referencia);
+                                }
+                            } elseif ($telaPrenda->nombre_tela) {
+                                // Fallback a campo directo si existe
+                                $textoTela = htmlspecialchars($telaPrenda->nombre_tela);
+                                if ($telaPrenda->referencia_tela) {
+                                    $textoTela .= ' REF:' . htmlspecialchars($telaPrenda->referencia_tela);
+                                }
                             }
-                        } elseif ($telaPrenda->nombre_tela) {
-                            // Fallback a campo directo si existe
-                            $textoTela = htmlspecialchars($telaPrenda->nombre_tela);
-                            if ($telaPrenda->referencia_tela) {
-                                $textoTela .= ' REF:' . htmlspecialchars($telaPrenda->referencia_tela);
+                            
+                            if ($textoTela) {
+                                $telasTexto[] = $textoTela;
                             }
                         }
-                        
-                        if ($textoTela) {
-                            $telasTexto[] = $textoTela;
+                        if (count($telasTexto) > 0) {
+                            $partes[] = 'Tela: ' . implode(', ', $telasTexto);
                         }
                     }
-                    if (count($telasTexto) > 0) {
-                        $partes[] = 'Tela: ' . implode(', ', $telasTexto);
+                    
+                    if (!empty($partes)) {
+                        $lineasColorTela[] = implode(' | ', $partes);
                     }
                 }
                 
-                // Manga
+                // Manga (se muestra aparte para no mezclar con telas)
                 if ($variante->tipo_manga_id) {
                     $tipomanga = $variante->manga ? $variante->manga->nombre : 'Manga desconocida';
-                    $partes[] = 'Manga: ' . htmlspecialchars($tipomanga);
+                    $mangaLinea = 'Manga: ' . htmlspecialchars($tipomanga);
+                    if (!empty($variante->obs_manga)) {
+                        $mangaLinea .= ' (' . htmlspecialchars($variante->obs_manga) . ')';
+                    }
+                    $lineasColorTela[] = $mangaLinea;
                 }
                 
-                if (count($partes) > 0) {
-                    $colorTelaManga = implode(' | ', $partes);
-                    $html .= '<div style="font-size: 10px; margin-bottom: 6px; color: #333;">' . $colorTelaManga . '</div>';
+                if (count($lineasColorTela) > 0) {
+                    $html .= '<div style="font-size: 10px; margin-bottom: 6px; color: #333;">' . implode('<br>', $lineasColorTela) . '</div>';
                 }
             }
             
@@ -716,8 +711,8 @@ class PDFCotizacionController extends Controller
                         <strong>.</strong> <strong>Bolsillos:</strong> ' . htmlspecialchars($variante->obs_bolsillos) . '</div>';
                 }
                 
-                // Manga - Observaciones
-                if ($variante->aplica_manga && $variante->obs_manga) {
+                // Manga - Observaciones (solo si no se mostró junto a la manga)
+                if ($variante->obs_manga && !$variante->tipo_manga_id) {
                     $html .= '<div style="font-size: 10px; margin: 4px 0 4px 20px; color: #333;">
                         <strong>.</strong> <strong>Manga:</strong> ' . htmlspecialchars($variante->obs_manga) . '</div>';
                 }
@@ -945,13 +940,13 @@ class PDFCotizacionController extends Controller
         ];
         
         $html = '<div class="spec-wrapper" style="page-break-inside: avoid; margin: 8px 0 0 0; padding: 8px 12mm; border-top: 2px solid #FFE082;">
-            <div style="font-size: 10px; font-weight: bold; margin-bottom: 6px; color: #1e293b; padding-bottom: 3px;">Especificaciones Generales</div>
-            <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd; font-size: 7.5px;">
+            <div style="font-size: 11px; font-weight: bold; margin-bottom: 6px; color: #1e293b; padding-bottom: 3px;">Especificaciones Generales</div>
+            <table style="width: 100%; border-collapse: collapse; border: 1px solid #ddd; font-size: 9px;">
                 <thead>
                     <tr style="background: #FFE082; border: 1px solid #FFE082;">
-                        <th style="padding: 3px 3px; text-align: left; font-weight: bold; font-size: 7.5px; border: 1px solid #FFE082; width: 35%; color: #000;">CATEGORÍA</th>
-                        <th style="padding: 3px 3px; text-align: center; font-weight: bold; font-size: 7.5px; border: 1px solid #FFE082; width: 10%; color: #000;">ESTADO</th>
-                        <th style="padding: 3px 3px; text-align: left; font-weight: bold; font-size: 7.5px; border: 1px solid #FFE082; width: 55%; color: #000;">OBSERVACIONES</th>
+                        <th style="padding: 4px 4px; text-align: left; font-weight: bold; font-size: 9px; border: 1px solid #FFE082; width: 35%; color: #000;">CATEGORÍA</th>
+                        <th style="padding: 4px 4px; text-align: center; font-weight: bold; font-size: 9px; border: 1px solid #FFE082; width: 10%; color: #000;">ESTADO</th>
+                        <th style="padding: 4px 4px; text-align: left; font-weight: bold; font-size: 9px; border: 1px solid #FFE082; width: 55%; color: #000;">OBSERVACIONES</th>
                     </tr>
                 </thead>
                 <tbody>';
@@ -968,7 +963,7 @@ class PDFCotizacionController extends Controller
                 
                 // Agregar encabezado de categoría
                 $html .= '<tr style="border: 1px solid #ddd; background: #FFE082;">
-                        <td colspan="3" style="padding: 3px 3px; font-size: 7.5px; font-weight: 600; color: #000; border: 1px solid #FFE082;">' . htmlspecialchars($categoriaNombre) . '</td>
+                        <td colspan="3" style="padding: 4px 4px; font-size: 9px; font-weight: 600; color: #000; border: 1px solid #FFE082;">' . htmlspecialchars($categoriaNombre) . '</td>
                     </tr>';
                 
                 // Agregar valores dentro de la categoría
@@ -984,9 +979,9 @@ class PDFCotizacionController extends Controller
                     }
                     
                     $html .= '<tr style="border: 1px solid #ddd; background: #f9f9f9;">
-                            <td style="padding: 2px 3px; font-size: 7px; border: 1px solid #ddd; color: #333; font-weight: 500; line-height: 1.1;">' . htmlspecialchars($valor) . '</td>
-                            <td style="padding: 2px 3px; text-align: center; font-weight: 700; color: #28a745; font-size: 9px; border: 1px solid #ddd;">✓</td>
-                            <td style="padding: 2px 3px; font-size: 7px; border: 1px solid #ddd; color: #555; line-height: 1.1;">' . htmlspecialchars($observacion) . '</td>
+                            <td style="padding: 3px 4px; font-size: 8.5px; border: 1px solid #ddd; color: #333; font-weight: 500; line-height: 1.2;">' . htmlspecialchars($valor) . '</td>
+                            <td style="padding: 3px 4px; text-align: center; font-weight: 700; color: #28a745; font-size: 10px; border: 1px solid #ddd;">✓</td>
+                            <td style="padding: 3px 4px; font-size: 8.5px; border: 1px solid #ddd; color: #555; line-height: 1.2;">' . htmlspecialchars($observacion) . '</td>
                         </tr>';
                 }
             }

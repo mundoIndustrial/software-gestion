@@ -18,6 +18,9 @@ shakeStyleElement.textContent = `
 `;
 document.head.appendChild(shakeStyleElement);
 
+// Índice en edición para secciones friendly
+let seccionEditIndexFriendly = null;
+
 // ============ MODAL ESPECIFICACIONES ============
 
 function abrirModalEspecificaciones() {
@@ -324,12 +327,19 @@ function guardarUbicacionFriendly(ubicacion) {
     }
     
     const opciones = Array.from(checkboxes).map(cb => cb.value);
-    
-    seccionesSeleccionadasFriendly.push({
+
+    const seccionPayload = {
         ubicacion: ubicacion,
         opciones: opciones,
         observaciones: obs
-    });
+    };
+    
+    if (seccionEditIndexFriendly !== null && seccionEditIndexFriendly >= 0 && seccionEditIndexFriendly < seccionesSeleccionadasFriendly.length) {
+        seccionesSeleccionadasFriendly[seccionEditIndexFriendly] = seccionPayload;
+    } else {
+        seccionesSeleccionadasFriendly.push(seccionPayload);
+    }
+    seccionEditIndexFriendly = null;
     
     cerrarModalUbicacionFriendly();
     document.getElementById('seccion_prenda').value = '';
@@ -344,8 +354,37 @@ function renderizarSeccionesFriendly() {
         const div = document.createElement('div');
         div.style.cssText = 'background: white; border: 2px solid #3498db; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;';
         
-        const opcionesText = Array.isArray(seccion.opciones) ? seccion.opciones.join(', ') : seccion;
-        const ubicacionText = seccion.ubicacion || seccion;
+        const opcionesText = Array.isArray(seccion.opciones)
+            ? seccion.opciones
+                .map(opt => {
+                    if (typeof opt === 'object') {
+                        return opt.nombre || opt.ubicacion || opt.seccion || opt.valor || JSON.stringify(opt);
+                    }
+                    return opt;
+                })
+                .join(', ')
+            : (typeof seccion.opciones === 'object'
+                ? (seccion.opciones.nombre || seccion.opciones.ubicacion || seccion.opciones.seccion || seccion.opciones.valor || JSON.stringify(seccion.opciones))
+                : (seccion.opciones || ''));
+
+        const ubicacionText = (typeof seccion.ubicacion === 'object')
+            ? (seccion.ubicacion.nombre || seccion.ubicacion.ubicacion || seccion.ubicacion.seccion || JSON.stringify(seccion.ubicacion))
+            : (seccion.ubicacion || seccion);
+
+        const tallasText = Array.isArray(seccion.tallas) && seccion.tallas.length > 0
+            ? seccion.tallas
+                .map(t => {
+                    if (typeof t === 'object') {
+                        const nombreTalla = t.talla || t.nombre || t.valor || '';
+                        const cantidad = t.cantidad ? ` (${t.cantidad})` : '';
+                        return `${nombreTalla}${cantidad}`.trim();
+                    }
+                    return t;
+                })
+                .filter(Boolean)
+                .join(', ')
+            : '';
+
         const obsText = seccion.observaciones || '';
         
         div.innerHTML = `
@@ -353,18 +392,115 @@ function renderizarSeccionesFriendly() {
                 <div>
                     <h4 style="margin: 0 0 0.5rem 0; color: #1e40af; font-size: 0.95rem;">${ubicacionText}</h4>
                     <p style="margin: 0 0 0.5rem 0; color: #666; font-size: 0.85rem;"><strong>Ubicación:</strong> ${opcionesText}</p>
+                    ${tallasText ? `<p style="margin: 0 0 0.5rem 0; color: #666; font-size: 0.85rem;"><strong>Tallas:</strong> ${tallasText}</p>` : ''}
                     ${obsText ? `<p style="margin: 0; color: #666; font-size: 0.85rem;"><strong>Observaciones:</strong> ${obsText}</p>` : ''}
                 </div>
                 <div style="display: flex; gap: 0.5rem;">
+                    <button type="button" onclick="editarSeccionFriendly(${index})" style="background: #0ea5e9; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center;">✎</button>
                     <button type="button" onclick="eliminarSeccionFriendly(${index})" style="background: #ef4444; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center;">×</button>
                 </div>
             </div>
         `;
         container.appendChild(div);
     });
+
+    // Sincronizar campo oculto paso3_secciones_datos (para envíos y persistencia)
+    const hiddenSecciones = document.getElementById('paso3_secciones_datos');
+    if (hiddenSecciones) {
+        hiddenSecciones.value = JSON.stringify(seccionesSeleccionadasFriendly);
+    }
 }
 
 function eliminarSeccionFriendly(index) {
     seccionesSeleccionadasFriendly.splice(index, 1);
     renderizarSeccionesFriendly();
+}
+
+// Editar seccion existente (usa el mismo modal de creación)
+function editarSeccionFriendly(index) {
+    const seccion = seccionesSeleccionadasFriendly[index];
+    if (!seccion) return;
+    seccionEditIndexFriendly = index;
+    
+    // Preferir modal de paso-tres (abre con tallas y ubicaciones)
+    if (typeof abrirModalUbicaciones === 'function') {
+        const ubicacion = seccion.ubicacion || '';
+        const opciones = seccion.opciones || [];
+        const tallas = seccion.tallas || [];
+        const obs = seccion.observaciones || '';
+
+        abrirModalUbicaciones(
+            ubicacion,
+            opciones,
+            tallas,
+            (nuevasUbicaciones, nuevasTallas, nuevasObs) => {
+                seccionesSeleccionadasFriendly[index] = {
+                    ubicacion,
+                    opciones: nuevasUbicaciones,
+                    tallas: nuevasTallas,
+                    observaciones: nuevasObs || ''
+                };
+                renderizarSeccionesFriendly();
+                if (typeof cerrarModalUbicacion === 'function') {
+                    cerrarModalUbicacion('modalUbicaciones');
+                }
+            },
+            obs
+        );
+        return;
+    }
+    
+    // Si no existe el modal anterior, intentar el de friendly; si tampoco existe, crear inline
+    if (typeof abrirModalUbicacionFriendly === 'function') {
+        abrirModalUbicacionFriendly();
+    } else {
+        // Modal inline básico si no existe el de paso-tres
+        const existing = document.getElementById('modalUbicacionFriendly');
+        if (existing) existing.remove();
+        const modal = document.createElement('div');
+        modal.id = 'modalUbicacionFriendly';
+        modal.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.4);z-index:9999;';
+        modal.innerHTML = `
+            <div style="background:white;padding:1rem;border-radius:8px;max-width:420px;width:100%;box-shadow:0 10px 30px rgba(0,0,0,0.25);">
+                <h3 style="margin-top:0;margin-bottom:0.75rem;color:#0ea5e9;">Editar sección</h3>
+                <label style="display:block;margin-bottom:0.25rem;font-weight:600;">Sección</label>
+                <input id="seccion_prenda" type="text" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;margin-bottom:0.75rem;" />
+                <div id="opcionesUbicacionFriendly" style="margin-bottom:0.75rem;">
+                    ${(window.todasLasUbicaciones || ['PECHO','ESPALDA']).map(opt => `
+                        <label style="display:inline-flex;align-items:center;gap:6px;margin:4px 8px 4px 0;font-size:0.9rem;">
+                            <input type="checkbox" value="${opt}"> ${opt}
+                        </label>
+                    `).join('')}
+                </div>
+                <label style="display:block;margin-bottom:0.25rem;font-weight:600;">Observaciones</label>
+                <textarea id="obsUbicacionFriendly" rows="2" style="width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;"></textarea>
+                <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:1rem;">
+                    <button onclick="cerrarModalUbicacionFriendly()" style="padding:8px 12px;border:1px solid #ccc;border-radius:4px;background:#f3f4f6;">Cancelar</button>
+                    <button onclick="guardarUbicacionFriendly(document.getElementById('seccion_prenda').value)" style="padding:8px 12px;border:none;border-radius:4px;background:#0ea5e9;color:white;font-weight:700;">Guardar</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    // Rellenar campos después de que el modal exista en el DOM
+    setTimeout(() => {
+        const selector = document.getElementById('seccion_prenda');
+        if (selector && seccion.ubicacion) {
+            selector.value = seccion.ubicacion;
+        }
+        
+        const checkboxes = document.querySelectorAll('#opcionesUbicacionFriendly input[type="checkbox"]');
+        if (checkboxes && seccion.opciones) {
+            const opcionesSet = new Set(
+                Array.isArray(seccion.opciones) ? seccion.opciones.map(o => (typeof o === 'object' ? (o.valor || o.nombre || o.ubicacion || o.seccion) : o)) : []
+            );
+            checkboxes.forEach(cb => cb.checked = opcionesSet.has(cb.value));
+        }
+        
+        const obsInput = document.getElementById('obsUbicacionFriendly');
+        if (obsInput) {
+            obsInput.value = seccion.observaciones || '';
+        }
+    }, 0);
 }

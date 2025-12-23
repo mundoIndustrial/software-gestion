@@ -1,0 +1,123 @@
+/* ===== TABS PARA COTIZACIONES COMBINADAS (PRENDAS + LOGO) ===== */
+
+.cotizacion-tabs-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    gap: 0;
+}
+
+.cotizacion-tabs-header {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid #e5e7eb;
+    background: #f9fafb;
+    padding: 0;
+    border-radius: 4px 4px 0 0;
+    margin: -1rem -1rem 0 -1rem;
+    padding: 0 1rem;
+}
+
+.cotizacion-tab-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 1.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+    position: relative;
+    white-space: nowrap;
+}
+
+.cotizacion-tab-button:hover {
+    color: #1e5ba8;
+    background: #f0f4f8;
+}
+
+.cotizacion-tab-button.active {
+    color: #1e5ba8;
+    border-bottom-color: #1e5ba8;
+    background: white;
+}
+
+.cotizacion-tab-button .material-symbols-rounded {
+    font-size: 20px;
+}
+
+/* Tab content */
+.cotizacion-tabs-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem 1rem;
+    background: white;
+}
+
+.cotizacion-tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.cotizacion-tab-content.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .cotizacion-tabs-header {
+        flex-wrap: wrap;
+        gap: 0;
+    }
+
+    .cotizacion-tab-button {
+        flex: 1;
+        min-width: 150px;
+        padding: 0.75rem 1rem;
+        font-size: 0.85rem;
+    }
+
+    .cotizacion-tab-button .material-symbols-rounded {
+        font-size: 18px;
+    }
+}
+
+/* Asegurar que los tabs se vean bien con scrolling */
+.cotizacion-tabs-content {
+    min-height: 400px;
+    max-height: 600px;
+}
+
+/* Mejorar apariencia de contenido dentro de tabs */
+.cotizacion-tabs-content .prenda-card,
+.cotizacion-tabs-content .logo-container > div {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}

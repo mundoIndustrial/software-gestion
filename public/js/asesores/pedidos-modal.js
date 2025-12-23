@@ -197,8 +197,36 @@ function recopilarDatosLogo() {
         };
     });
     
-    // Recopilar observaciones generales
-    const observacionesGenerales = Array.from(document.querySelectorAll('#observaciones_lista textarea')).map(ta => ta.value);
+    // Recopilar observaciones generales con tipo y valor (similar a cotizaciones.js)
+    const observacionesGenerales = [];
+    document.querySelectorAll('#observaciones_lista > div').forEach(obs => {
+        const textoInput = obs.querySelector('input[name="observaciones_generales[]"]') || obs.querySelector('textarea');
+        const checkboxInput = obs.querySelector('input[name="observaciones_check[]"]');
+        const valorInput = obs.querySelector('input[name="observaciones_valor[]"]');
+        const checkboxModeDiv = obs.querySelector('.obs-checkbox-mode');
+        const textModeDiv = obs.querySelector('.obs-text-mode');
+
+        const texto = textoInput?.value || '';
+        if (!texto.trim()) return;
+
+        const esModoTexto = textModeDiv && textModeDiv.style.display !== 'none';
+        const esModoCheckbox = checkboxModeDiv && checkboxModeDiv.style.display !== 'none';
+
+        if (esModoTexto) {
+            observacionesGenerales.push({
+                tipo: 'texto',
+                texto: texto,
+                valor: valorInput?.value || ''
+            });
+        } else {
+            // Por defecto, tratar como checkbox
+            observacionesGenerales.push({
+                tipo: 'checkbox',
+                texto: texto,
+                valor: checkboxInput?.checked ? 'on' : ''
+            });
+        }
+    });
     
     // Recopilar imágenes (File objects)
     const imagenes = Array.from(document.querySelectorAll('#galeria_imagenes img')).map(img => {

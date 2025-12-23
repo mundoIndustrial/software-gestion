@@ -48,6 +48,44 @@ class PrendaTelaFotoCot extends Model
     }
 
     /**
+     * Relación: Una foto de tela pertenece a una prenda_tela_cot (para acceder a tela y color)
+     */
+    public function prendaTelaCot()
+    {
+        return $this->belongsTo(PrendaTelaCot::class, 'prenda_tela_cot_id');
+    }
+
+    /**
+     * Relación: Acceder directamente a TelaPrenda a través de prenda_tela_cot
+     */
+    public function telaPrenda()
+    {
+        return $this->hasOneThrough(
+            TelaPrenda::class,
+            PrendaTelaCot::class,
+            'id',
+            'id',
+            'prenda_tela_cot_id',
+            'tela_id'
+        );
+    }
+
+    /**
+     * Relación: Acceder directamente a ColorPrenda a través de prenda_tela_cot
+     */
+    public function colorPrenda()
+    {
+        return $this->hasOneThrough(
+            ColorPrenda::class,
+            PrendaTelaCot::class,
+            'id',
+            'id',
+            'prenda_tela_cot_id',
+            'color_id'
+        );
+    }
+
+    /**
      * Accessor: Obtener URL de la imagen (usa WebP si existe, sino original)
      * Las rutas se guardan sin prefijo 'storage/', así que aquí se agrega
      */

@@ -38,6 +38,7 @@
 @push('styles')
     <link rel="stylesheet" href="{{ asset('css/contador/tabla-index.css') }}?v={{ time() }}">
     <link rel="stylesheet" href="{{ asset('css/realtime-cotizaciones.css') }}?v={{ time() }}">
+    <link rel="stylesheet" href="{{ asset('css/contador/cotizacion-tabs.css') }}?v={{ time() }}">
 @endpush
 
 <script>

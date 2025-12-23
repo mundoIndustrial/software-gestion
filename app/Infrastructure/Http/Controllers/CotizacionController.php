@@ -831,6 +831,11 @@ final class CotizacionController extends Controller
                 'prendas_count' => count($prendas),
                 'all_files_keys' => array_keys($allFiles),
             ]);
+            
+            Log::info('DEBUG - prendas input:', [
+                'prendas_array' => $prendas,
+                'prendas_type' => gettype($prendas),
+            ]);
 
             foreach ($prendas as $index => $prenda) {
                 // Obtener la prenda guardada
@@ -844,6 +849,47 @@ final class CotizacionController extends Controller
                 }
 
                 Log::info('Procesando prenda', ['prenda_id' => $prendaModel->id, 'index' => $index]);
+
+                // === FOTOS DE PRENDA EXISTENTES (preservar en edición o copia) ===
+                // Si la foto ya pertenece a esta prenda, no se duplica; solo se usan IDs para copiar entre cotizaciones.
+                $ordenFotosPrenda = (($prendaModel->fotos()->max('orden')) ?? 0) + 1;
+                $fotosPrendaExistentes = $request->input("prendas.{$index}.fotos_existentes") ?? ($prenda['fotos_existentes'] ?? []);
+                if (is_string($fotosPrendaExistentes)) {
+                    $fotosPrendaExistentes = json_decode($fotosPrendaExistentes, true) ?? [];
+                }
+                if (!is_array($fotosPrendaExistentes)) {
+                    $fotosPrendaExistentes = [];
+                }
+                if (!empty($fotosPrendaExistentes)) {
+                    foreach ($fotosPrendaExistentes as $fotoId) {
+                        $fotoExistente = \App\Models\PrendaFotoCot::find($fotoId);
+                        if ($fotoExistente) {
+                            // Si ya pertenece a esta prenda, no duplicar
+                            if ($fotoExistente->prenda_cot_id == $prendaModel->id) {
+                                Log::info('↔️ Foto de prenda ya pertenece a la prenda, no se duplica', [
+                                    'foto_id' => $fotoId,
+                                    'prenda_id' => $prendaModel->id,
+                                ]);
+                                continue;
+                            }
+                            $prendaModel->fotos()->create([
+                                'ruta_original' => $fotoExistente->ruta_original,
+                                'ruta_webp' => $fotoExistente->ruta_webp,
+                                'ruta_miniatura' => $fotoExistente->ruta_miniatura,
+                                'orden' => $ordenFotosPrenda,
+                                'ancho' => $fotoExistente->ancho,
+                                'alto' => $fotoExistente->alto,
+                                'tamaño' => $fotoExistente->tamaño,
+                            ]);
+                            Log::info('✅ Foto de prenda existente copiada', [
+                                'foto_id' => $fotoId,
+                                'prenda_id' => $prendaModel->id,
+                                'orden' => $ordenFotosPrenda,
+                            ]);
+                            $ordenFotosPrenda++;
+                        }
+                    }
+                }
 
                 // Procesar imágenes de prenda
                 // FormData envía múltiples archivos con [] al final: prendas[0][fotos][]
@@ -878,7 +924,7 @@ final class CotizacionController extends Controller
                 ]);
 
                 if (!empty($fotosArchivos)) {
-                    $orden = 1;
+                    $orden = $ordenFotosPrenda; // continuar después de las existentes
                     foreach ($fotosArchivos as $foto) {
                         if ($foto instanceof \Illuminate\Http\UploadedFile) {
                             $ruta = $this->procesarImagenesService->procesarImagenPrenda(
@@ -906,7 +952,7 @@ final class CotizacionController extends Controller
                 }
                 
                 if (!empty($fotosGuardadas)) {
-                    $orden = count($fotosArchivos) + 1; // Continuar con el orden
+                    $orden = max($ordenFotosPrenda, count($fotosArchivos) + $ordenFotosPrenda); // Continuar con el orden
                     foreach ($fotosGuardadas as $rutaGuardada) {
                         if ($rutaGuardada && is_string($rutaGuardada)) {
                             // Limpiar ruta: remover /storage/ del principio si existe
@@ -929,7 +975,9 @@ final class CotizacionController extends Controller
 
                 // Procesar imágenes de telas - NUEVA LÓGICA
                 // Obtener telas_multiples del JSON de variantes para asociar color_id y tela_id
-                $variante = $prendaModel->variantes->first();
+                // ✅ REFRESH: Recargar el modelo para obtener las variantes recién creadas
+                $prendaModel->refresh();
+                $variante = $prendaModel->variantes()->first();
                 $telasMultiples = [];
                 if ($variante && $variante->telas_multiples) {
                     $telasMultiples = is_array($variante->telas_multiples) 
@@ -1051,138 +1099,113 @@ final class CotizacionController extends Controller
                     
                     if (isset($prendaFiles['telas']) && is_array($prendaFiles['telas'])) {
                         foreach ($prendaFiles['telas'] as $telaIndex => $telaData) {
+                            // Buscar info de la tela (color/tela/ref) por índice
+                            $telaInfo = [];
+                            foreach ($telasMultiples as $tm) {
+                                if (($tm['indice'] ?? null) === (int)$telaIndex) {
+                                    $telaInfo = $tm;
+                                    break;
+                                }
+                            }
+                            
+                            // === FOTOS DE TELA EXISTENTES (preservar) ===
+                            $fotosTelaExistentes = $request->input("prendas.{$index}.telas.{$telaIndex}.fotos_existentes") ?? ($telaData['fotos_existentes'] ?? []);
+                            if (is_string($fotosTelaExistentes)) {
+                                $fotosTelaExistentes = json_decode($fotosTelaExistentes, true) ?? [];
+                            }
+                            if (!is_array($fotosTelaExistentes)) {
+                                $fotosTelaExistentes = [];
+                            }
+                            
+                            // Orden inicia después de las fotos que ya tenga esta prenda en ese índice
+                            $ordenFotosTela = (DB::table('prenda_tela_fotos_cot')
+                                ->where('prenda_cot_id', $prendaModel->id)
+                                ->where('tela_index', $telaIndex)
+                                ->max('orden') ?? 0) + 1;
+                            if (!empty($fotosTelaExistentes)) {
+                                foreach ($fotosTelaExistentes as $fotoId) {
+                                    $fotoExistente = \App\Models\PrendaTelaFotoCot::find($fotoId);
+                                    if ($fotoExistente) {
+                                        // Si ya pertenece a esta prenda y mismo índice, no duplicar
+                                        if ($fotoExistente->prenda_cot_id == $prendaModel->id && $fotoExistente->tela_index == $telaIndex) {
+                                            Log::info('↔️ Foto de tela ya pertenece a la prenda, no se duplica', [
+                                                'foto_id' => $fotoId,
+                                                'prenda_id' => $prendaModel->id,
+                                                'tela_index' => $telaIndex,
+                                            ]);
+                                            continue;
+                                        }
+                                        $prendaTelaCotId = $telaCotIds[$telaIndex] ?? null;
+                                        \DB::table('prenda_tela_fotos_cot')->insert([
+                                            'prenda_cot_id' => $prendaModel->id,
+                                            'prenda_tela_cot_id' => $prendaTelaCotId,
+                                            'tela_index' => $telaIndex,
+                                            'ruta_original' => $fotoExistente->ruta_original,
+                                            'ruta_webp' => $fotoExistente->ruta_webp,
+                                            'ruta_miniatura' => $fotoExistente->ruta_miniatura,
+                                            'orden' => $ordenFotosTela,
+                                            'ancho' => $fotoExistente->ancho,
+                                            'alto' => $fotoExistente->alto,
+                                            'tamaño' => $fotoExistente->tamaño,
+                                            'created_at' => now(),
+                                            'updated_at' => now(),
+                                        ]);
+                                        Log::info('✅ Foto de tela existente preservada', [
+                                            'foto_id' => $fotoId,
+                                            'prenda_id' => $prendaModel->id,
+                                            'tela_index' => $telaIndex,
+                                            'orden' => $ordenFotosTela,
+                                        ]);
+                                        $ordenFotosTela++;
+                                    }
+                                }
+                            }
+                            
+                            // Nuevas fotos de tela (subidas)
                             if (isset($telaData['fotos']) && is_array($telaData['fotos'])) {
                                 Log::info('🖼️ Encontrado grupo de fotos de tela', [
                                     'prenda_index' => $index,
                                     'tela_index' => $telaIndex,
                                     'cantidad_archivos' => count($telaData['fotos']),
+                                    'telaCotIds_disponibles' => $telaCotIds,
                                 ]);
-
-                                // Obtener info de tela del JSON telas_multiples (solo para logging)
-                                $telaInfo = null;
-                                foreach ($telasMultiples as $tm) {
-                                    if (isset($tm['indice']) && $tm['indice'] == $telaIndex) {
-                                        $telaInfo = $tm;
-                                        break;
-                                    }
-                                }
                                 
-                                if (!$telaInfo) {
-                                    Log::warning('⚠️ No se encontró info de tela en telas_multiples', [
-                                        'tela_index' => $telaIndex,
-                                    ]);
-                                    $telaInfo = []; // Continuar de todas formas
-                                }
-
-                                // Buscar o crear color
-                                $colorId = null;
-                                if (!empty($telaInfo['color'])) {
-                                    $color = DB::table('colores_prenda')
-                                        ->where('nombre', $telaInfo['color'])
-                                        ->first();
-                                    
-                                    if (!$color) {
-                                        $colorId = DB::table('colores_prenda')->insertGetId([
-                                            'nombre' => $telaInfo['color'],
-                                            'activo' => true,
-                                            'created_at' => now(),
-                                            'updated_at' => now(),
-                                        ]);
-                                        Log::info('✅ Color creado', ['color' => $telaInfo['color'], 'id' => $colorId]);
-                                    } else {
-                                        $colorId = $color->id;
-                                    }
-                                }
+                                // Obtener prenda_tela_cot_id del mapeo
+                                $prendaTelaCotId = $telaCotIds[$telaIndex] ?? null;
                                 
-                                // Buscar o crear tela
-                                $telaId = null;
-                                if (!empty($telaInfo['tela'])) {
-                                    $tela = DB::table('telas_prenda')
-                                        ->where('nombre', $telaInfo['tela'])
-                                        ->first();
-                                    
-                                    if (!$tela) {
-                                        $telaId = DB::table('telas_prenda')->insertGetId([
-                                            'nombre' => $telaInfo['tela'],
-                                            'activo' => true,
-                                            'created_at' => now(),
-                                            'updated_at' => now(),
-                                        ]);
-                                        Log::info('✅ Tela creada', ['tela' => $telaInfo['tela'], 'id' => $telaId]);
-                                    } else {
-                                        $telaId = $tela->id;
-                                    }
-                                }
-
-                                // GUARDAR REGISTRO EN prenda_telas_cot (solo una vez por cada tela)
-                                $prendaTelaCotId = null;
-                                if ($colorId && $telaId) {
-                                    // Verificar si ya existe un registro con los mismos IDs
-                                    $existente = DB::table('prenda_telas_cot')
-                                        ->where('prenda_cot_id', $prendaModel->id)
-                                        ->where('variante_prenda_cot_id', $variante->id)
-                                        ->where('color_id', $colorId)
-                                        ->where('tela_id', $telaId)
-                                        ->first();
-                                    
-                                    if (!$existente) {
-                                        $prendaTelaCotId = DB::table('prenda_telas_cot')->insertGetId([
-                                            'prenda_cot_id' => $prendaModel->id,
-                                            'variante_prenda_cot_id' => $variante->id,
-                                            'color_id' => $colorId,
-                                            'tela_id' => $telaId,
-                                            'created_at' => now(),
-                                            'updated_at' => now(),
-                                        ]);
-                                        
-                                        Log::info('✅ Registro guardado en prenda_telas_cot', [
-                                            'prenda_telas_cot_id' => $prendaTelaCotId,
-                                            'prenda_id' => $prendaModel->id,
-                                            'variante_id' => $variante->id,
-                                            'color_id' => $colorId,
-                                            'tela_id' => $telaId,
-                                        ]);
-                                    }
-                                }
-
-                                foreach ($telaData['fotos'] as $fotoIndex => $archivoFoto) {
+                                foreach ($telaData['fotos'] as $archivoFoto) {
                                     if ($archivoFoto && $archivoFoto->isValid()) {
                                         try {
-                                            $ruta = $this->procesarImagenesService->procesarImagenTela(
-                                                $archivoFoto,
-                                                $cotizacionId,
-                                                $prendaModel->id
-                                            );
-
-                                            // Obtener prenda_tela_cot_id del mapeo
-                                            $prendaTelaCotId = $telaCotIds[$telaIndex] ?? null;
+                                            // Guardar en storage
+                                            $rutaGuardada = $archivoFoto->store('telas/cotizaciones', 'public');
+                                            $rutaUrl = Storage::url($rutaGuardada);
                                             
-                                            // Guardar foto de tela con prenda_tela_cot_id Y tela_index
-                                            \DB::table('prenda_tela_fotos_cot')->insert([
+                                            // Guardar en tabla prenda_tela_fotos_cot con prenda_tela_cot_id
+                                            DB::table('prenda_tela_fotos_cot')->insert([
                                                 'prenda_cot_id' => $prendaModel->id,
                                                 'prenda_tela_cot_id' => $prendaTelaCotId,
-                                                'tela_index' => $telaIndex,  // ✅ AGREGAR: Índice de la tela para cargar correctamente
-                                                'ruta_original' => $ruta,
-                                                'ruta_webp' => $ruta,
+                                                'tela_index' => $telaIndex,
+                                                'ruta_original' => $rutaUrl,
+                                                'ruta_webp' => null,
                                                 'ruta_miniatura' => null,
-                                                'orden' => $fotoIndex + 1,
+                                                'orden' => $ordenFotosTela,
                                                 'ancho' => null,
                                                 'alto' => null,
-                                                'tamaño' => null,
+                                                'tamaño' => $archivoFoto->getSize(),
                                                 'created_at' => now(),
                                                 'updated_at' => now(),
                                             ]);
 
-                                            Log::info('✅ Foto de tela guardada en BD', [
+                                            Log::info('✅ Foto de tela guardada en prenda_tela_fotos_cot', [
                                                 'prenda_id' => $prendaModel->id,
-                                                'tela_index' => $telaIndex,
-                                                'color' => $telaInfo['color'] ?? '',
-                                                'tela' => $telaInfo['tela'] ?? '',
+                                                'prenda_tela_cot_id' => $prendaTelaCotId,
                                                 'referencia' => $telaInfo['referencia'] ?? '',
-                                                'ruta' => $ruta,
+                                                'ruta' => $rutaUrl,
+                                                'orden' => $ordenFotosTela,
                                             ]);
+                                            $ordenFotosTela++;
                                         } catch (\Exception $e) {
-                                            Log::error('❌ Error guardando foto de tela', [
+                                            \Log::error('❌ Error guardando foto de tela', [
                                                 'error' => $e->getMessage(),
                                                 'archivo' => $archivoFoto->getClientOriginalName(),
                                             ]);
@@ -1195,7 +1218,106 @@ final class CotizacionController extends Controller
                 }
             }
 
-            // Procesar imágenes de logo
+            // ===== PROCESAR FOTOS EXISTENTES DE TELAS (sin archivos nuevos) =====
+            // Este bloque detecta cuando se envían telas sin archivos nuevos
+            // y copia automáticamente las fotos existentes
+            Log::info('🔄 PROCESANDO FOTOS EXISTENTES DE TELAS - Verificando necesidad de copia');
+            
+            try {
+            foreach ($prendas as $index => $prenda) {
+                // Obtener la prenda guardada
+                $prendaModel = \App\Models\PrendaCot::where('cotizacion_id', $cotizacionId)
+                    ->skip($index)
+                    ->first();
+
+                if (!$prendaModel) {
+                    Log::info('Prenda no encontrada para fallback', ['cotizacion_id' => $cotizacionId, 'index' => $index]);
+                    continue;
+                }
+
+                // ESTRATEGIA: Si hay telas pero NO hay fotos de esas telas, COPIAR de BD
+                // Obtener todas las telas de esta prenda
+                $todasLasTelas = DB::table('prenda_telas_cot')
+                    ->where('prenda_cot_id', $prendaModel->id)
+                    ->orderBy('created_at')
+                    ->get();
+
+                if ($todasLasTelas->isEmpty()) {
+                    Log::info('Fallback: Sin telas para procesar', ['prenda_id' => $prendaModel->id]);
+                    continue;
+                }
+
+                // Para cada tela, verificar si necesita copiar fotos
+                foreach ($todasLasTelas as $telaIndex => $telaCot) {
+                    // Verificar si esta tela ya tiene fotos
+                    $yaTieneFotos = DB::table('prenda_tela_fotos_cot')
+                        ->where('prenda_tela_cot_id', $telaCot->id)
+                        ->exists();
+
+                    if ($yaTieneFotos) {
+                        Log::info('Fallback: Tela ya tiene fotos', ['prenda_tela_cot_id' => $telaCot->id]);
+                        continue;
+                    }
+
+                    // BUSCAR: Fotos existentes de tela del mismo color/tela en OTRA cotización (draft anterior)
+                    // Estrategia: Buscar en prenda_tela_fotos_cot por color_id y tela_id
+                    // NO incluimos variante_prenda_cot_id porque cada cotización tiene su propia variante
+                    $fotosAnteriores = DB::table('prenda_tela_fotos_cot as ptf')
+                        ->join('prenda_telas_cot as ptc', 'ptf.prenda_tela_cot_id', '=', 'ptc.id')
+                        ->where('ptc.color_id', $telaCot->color_id)
+                        ->where('ptc.tela_id', $telaCot->tela_id)
+                        ->whereNotNull('ptf.ruta_original')
+                        ->select('ptf.*')
+                        ->get();
+
+                    if ($fotosAnteriores->isEmpty()) {
+                        Log::info('Fallback: No hay fotos anteriores para copiar', ['tela_cot_id' => $telaCot->id]);
+                        continue;
+                    }
+
+                    Log::info('Fallback: Encontradas fotos anteriores para copiar', [
+                        'prenda_tela_cot_id' => $telaCot->id,
+                        'fotos_count' => $fotosAnteriores->count()
+                    ]);
+
+                    // Copiar cada foto anterior
+                    $orden = 1;
+                    foreach ($fotosAnteriores as $fotoAnterior) {
+                        // Usar ruta_original como fuente (siempre tiene valor)
+                        $rutaAUsar = $fotoAnterior->ruta_original ?: $fotoAnterior->ruta_webp;
+
+                        DB::table('prenda_tela_fotos_cot')->insert([
+                            'prenda_cot_id' => $prendaModel->id,
+                            'prenda_tela_cot_id' => $telaCot->id,
+                            'tela_index' => $telaIndex,
+                            'ruta_original' => $rutaAUsar,
+                            'ruta_webp' => $rutaAUsar,  // Usar la misma para que aparezca
+                            'ruta_miniatura' => $fotoAnterior->ruta_miniatura,
+                            'orden' => $orden,
+                            'ancho' => $fotoAnterior->ancho,
+                            'alto' => $fotoAnterior->alto,
+                            'tamaño' => $fotoAnterior->tamaño,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+
+                        Log::info('✅ Foto de tela copiada automáticamente', [
+                            'prenda_tela_cot_id' => $telaCot->id,
+                            'foto_anterior_id' => $fotoAnterior->id,
+                            'ruta' => $rutaAUsar,
+                            'orden' => $orden,
+                        ]);
+
+                        $orden++;
+                    }
+                }
+            }
+            } catch (\Exception $e) {
+                Log::error('❌ Error en fallback de fotos existentes de telas', [
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString(),
+                ]);
+            }
             // FormData envía múltiples archivos con nombre: logo[imagenes][0], logo[imagenes][1], etc.
             $logoArchivos = [];
             

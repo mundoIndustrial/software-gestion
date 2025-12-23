@@ -172,7 +172,7 @@ class ContadorController extends Controller
 
     /**
      * Obtener detalle de una cotización para el modal
-     * Devuelve toda la información completa de la cotización y sus prendas
+     * Devuelve toda la información completa de la cotización y sus prendas + logo si existe
      */
     public function getCotizacionDetail($id)
     {
@@ -193,6 +193,9 @@ class ContadorController extends Controller
                             $q->with(['manga', 'broche']);
                         }
                     ]);
+                },
+                'logoCotizacion' => function($query) {
+                    $query->with('fotos');
                 }
             ])->findOrFail($id);
 
@@ -280,6 +283,30 @@ class ContadorController extends Controller
                     ];
                 })->toArray(),
             ];
+
+            // Agregar datos del logo si existe
+            $logoCotizacion = null;
+            if ($cotizacionModelo->logoCotizacion) {
+                $logoCotizacion = [
+                    'id' => $cotizacionModelo->logoCotizacion->id,
+                    'descripcion' => $cotizacionModelo->logoCotizacion->descripcion ?? null,
+                    'tecnicas' => $cotizacionModelo->logoCotizacion->tecnicas ?? [],
+                    'secciones' => $cotizacionModelo->logoCotizacion->secciones ?? [],
+                    'observaciones_tecnicas' => $cotizacionModelo->logoCotizacion->observaciones_tecnicas ?? null,
+                    'observaciones_generales' => $cotizacionModelo->logoCotizacion->observaciones_generales ?? [],
+                    'fotos' => $cotizacionModelo->logoCotizacion->fotos ? $cotizacionModelo->logoCotizacion->fotos->map(function($foto) {
+                        return [
+                            'id' => $foto->id,
+                            'url' => $foto->url,
+                            'orden' => $foto->orden,
+                        ];
+                    })->toArray() : [],
+                ];
+            }
+
+            $datos['logo_cotizacion'] = $logoCotizacion;
+            $datos['tiene_logo'] = !is_null($logoCotizacion);
+            $datos['tiene_prendas'] = count($datos['prendas_cotizaciones']) > 0;
 
             return response()->json($datos);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
