@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         console.warn('⚠️ No se encontraron los elementos paso3_titulo_logo o paso3_alerta_logo');
                     }
                     
-                    renderizarPrendasEditables(prendasCargadas, data.logo, data.especificaciones, esReflectivo, data.reflectivo, esLogo);
+                    renderizarPrendasEditables(prendasCargadas, data.logo, data.especificaciones, esReflectivo, data.reflectivo, esLogo, tipoCotizacion);
                 }
             })
             .catch(error => {
@@ -260,7 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // RENDERIZAR PRENDAS EDITABLES
     // ============================================================
     
-    function renderizarPrendasEditables(prendas, logoCotizacion = null, especificacionesCotizacion = null, esReflectivo = false, datosReflectivo = null, esLogo = false) {
+    function renderizarPrendasEditables(prendas, logoCotizacion = null, especificacionesCotizacion = null, esReflectivo = false, datosReflectivo = null, esLogo = false, tipoCotizacion = 'P') {
         if (!prendas || prendas.length === 0) {
             // Si no hay prendas pero hay LOGO, mostrar campos LOGO
             if (esLogo && logoCotizacion) {
@@ -437,6 +437,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('⚠️ No hay fotos del reflectivo o datosReflectivo es null');
             }
             
+            // ✅ AGREGAR ATRIBUTO data-tipo-cotizacion AL CONTENEDOR
+            prendasContainer.setAttribute('data-tipo-cotizacion', tipoCotizacion);
             prendasContainer.innerHTML = html;
             return;
         }
@@ -924,165 +926,188 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (tieneLogoPrendas) {
                 html += `<div id="tab-logo" class="tab-content" style="display: none;">`;
+                html += `<div style="margin-top: 1rem; padding: 2rem; background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0;">`;
+                html += `<h3 style="margin: 0 0 1.5rem 0; font-size: 1.1rem; color: #1f2937; border-bottom: 3px solid #0066cc; padding-bottom: 0.75rem;">📋 Información del Logo</h3>`;
             }
         }
 
-        // Agregar información de logos en el tab de logo
+        // ========== SECCIÓN DE LOGO COMPLETA (para cotizaciones combinadas) ==========
         if (logoCotizacion) {
-            
-            // ========== DESCRIPCIÓN DEL BORDADO (EDITABLE) ==========
-            if (logoCotizacion.descripcion) {
-                html += `<div style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #333; font-size: 0.95rem;">Descripción del Bordado:</label>
-                    <textarea name="logo_descripcion" 
-                              style="width: 100%; padding: 0.75rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.95rem; font-family: inherit; min-height: 80px; color: #333;">${logoCotizacion.descripcion}</textarea>
-                </div>`;
+            // Función helper para parsear datos JSON
+            function parseArrayData(data) {
+                if (!data) return [];
+                if (Array.isArray(data)) return data;
+                if (typeof data === 'string') {
+                    try {
+                        return JSON.parse(data);
+                    } catch (e) {
+                        console.warn('⚠️ No se pudo parsear:', data);
+                        return [];
+                    }
+                }
+                return [];
             }
+
+            // Parsear ubicaciones
+            let ubicacionesArray = parseArrayData(logoCotizacion.ubicaciones);
+            let logoSeccionesSeleccionadasTab = [];
             
-            // ========== TÉCNICAS (TABLA EDITABLE Y ELIMINABLE) ==========
-            if (logoCotizacion.tecnicas && logoCotizacion.tecnicas.length > 0) {
-                html += `<div style="margin-bottom: 1.5rem; padding: 1rem; background: white; border-radius: 4px; border-left: 4px solid #0066cc;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 1rem; color: #333; font-size: 0.95rem;">Técnicas Disponibles:</label>
-                    <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #d0d0d0; border-radius: 4px; overflow: hidden; font-size: 0.9rem;">
-                        <thead>
-                            <tr style="background: #f0f0f0; border-bottom: 2px solid #d0d0d0;">
-                                <th style="padding: 0.75rem; text-align: left; font-weight: 600; border-right: 1px solid #d0d0d0;">Técnica</th>
-                                <th style="padding: 0.75rem; text-align: left; font-weight: 600; border-right: 1px solid #d0d0d0;">Observaciones</th>
-                                <th style="padding: 0.75rem; text-align: center; font-weight: 600; width: 80px;">Eliminar</th>
-                            </tr>
-                        </thead>
-                        <tbody>`;
-                
-                logoCotizacion.tecnicas.forEach((tecnica, tecIdx) => {
-                    // Para la primera técnica, mostrar las observaciones generales de técnica si existen
-                    const obsValue = tecIdx === 0 && logoCotizacion.observaciones_tecnicas ? logoCotizacion.observaciones_tecnicas : '';
-                    
-                    html += `<tr style="border-bottom: 1px solid #eee;" data-tecnica="${tecIdx}">
-                        <td style="padding: 0.75rem; border-right: 1px solid #d0d0d0; font-weight: 500;">
-                            <input type="text" 
-                                   value="${tecnica}" 
-                                   data-field="tecnica_nombre"
-                                   data-idx="${tecIdx}"
-                                   style="width: 100%; padding: 0.4rem; border: 1px solid #ccc; border-radius: 3px; font-size: 0.85rem;">
-                        </td>
-                        <td style="padding: 0.75rem; border-right: 1px solid #d0d0d0;">
-                            <textarea 
-                                   data-field="tecnica_obs"
-                                   data-idx="${tecIdx}"
-                                   style="width: 100%; padding: 0.4rem; border: 1px solid #ccc; border-radius: 3px; font-size: 0.85rem; min-height: 40px; resize: vertical; font-family: inherit;" 
-                                   placeholder="Agregar observaciones de la técnica...">${obsValue}</textarea>
-                        </td>
-                        <td style="padding: 0.75rem; text-align: center;">
-                            <button type="button" 
-                                    onclick="eliminarTecnicaDeBordado(${tecIdx})"
-                                    style="background: #dc3545; color: white; border: none; padding: 0.5rem 0.75rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.3rem; white-space: nowrap;">
-                                ✕ Eliminar
-                            </button>
-                        </td>
-                    </tr>`;
+            // Cargar ubicaciones iniciales
+            if (ubicacionesArray && ubicacionesArray.length > 0) {
+                ubicacionesArray.forEach(ubicacion => {
+                    if (typeof ubicacion === 'object' && ubicacion.ubicacion) {
+                        logoSeccionesSeleccionadasTab.push({
+                            id: window.generarUUID(),
+                            ubicacion: ubicacion.ubicacion,
+                            opciones: Array.isArray(ubicacion.opciones) ? ubicacion.opciones : [],
+                            tallas: Array.isArray(ubicacion.tallas) ? ubicacion.tallas.map(t => t.talla || t) : [],
+                            tallasCantidad: ubicacion.tallasCantidad || (Array.isArray(ubicacion.tallas) ? ubicacion.tallas.reduce((acc, t) => {
+                                acc[t.talla || t] = t.cantidad || 0;
+                                return acc;
+                            }, {}) : {}),
+                            observaciones: ubicacion.observaciones || ''
+                        });
+                    }
                 });
-                
-                html += `</tbody>
-                    </table>
-                </div>`;
             }
             
-            // ========== UBICACIONES DEL LOGO (TABLA EDITABLE Y ELIMINABLE) ==========
-            if (logoCotizacion.ubicaciones && logoCotizacion.ubicaciones.length > 0) {
-                html += `<div style="margin-bottom: 1.5rem; padding: 1rem; background: white; border-radius: 4px; border-left: 4px solid #0066cc;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 1rem; color: #333; font-size: 0.95rem;">Ubicaciones del Logo:</label>
-                    <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #d0d0d0; border-radius: 4px; overflow: hidden; font-size: 0.9rem;">
-                        <thead>
-                            <tr style="background: #f0f0f0; border-bottom: 2px solid #d0d0d0;">
-                                <th style="padding: 0.75rem; text-align: left; font-weight: 600; border-right: 1px solid #d0d0d0;">Sección</th>
-                                <th style="padding: 0.75rem; text-align: left; font-weight: 600; border-right: 1px solid #d0d0d0;">Ubicaciones Seleccionadas</th>
-                                <th style="padding: 0.75rem; text-align: left; font-weight: 600; border-right: 1px solid #d0d0d0;">Observaciones</th>
-                                <th style="padding: 0.75rem; text-align: center; font-weight: 600; width: 80px;">Eliminar</th>
-                            </tr>
-                        </thead>
-                        <tbody>`;
-                
-                logoCotizacion.ubicaciones.forEach((ubicacion, ubIdx) => {
-                    const ubicacionesSeleccionadas = Array.isArray(ubicacion.ubicaciones_seleccionadas) ? ubicacion.ubicaciones_seleccionadas : [];
-                    html += `<tr style="border-bottom: 1px solid #eee;" data-ubicacion="${ubIdx}">
-                        <td style="padding: 0.75rem; border-right: 1px solid #d0d0d0; font-weight: 500;">
-                            <input type="text" 
-                                   value="${ubicacion.seccion}" 
-                                   data-field="ubicacion_seccion"
-                                   data-idx="${ubIdx}"
-                                   style="width: 100%; padding: 0.4rem; border: 1px solid #ccc; border-radius: 3px; font-size: 0.85rem;">
-                        </td>
-                        <td style="padding: 0.75rem; border-right: 1px solid #d0d0d0;">
-                            <div style="display: flex; flex-wrap: wrap; gap: 0.3rem;">
-                                ${ubicacionesSeleccionadas.map((ub, ubItemIdx) => `
-                                    <span style="display: inline-flex; align-items: center; gap: 0.3rem; background: #e3f2fd; color: #1976d2; padding: 0.3rem 0.6rem; border-radius: 3px; font-size: 0.8rem;">
-                                        ${ub}
-                                        <button type="button" 
-                                                onclick="eliminarUbicacionItem(${ubIdx}, ${ubItemIdx})"
-                                                style="background: none; border: none; color: #1976d2; cursor: pointer; font-weight: bold; padding: 0; font-size: 0.9rem;">×</button>
-                                    </span>
-                                `).join('')}
-                            </div>
-                            <div style="display: flex; gap: 0.3rem; margin-top: 0.3rem;">
-                                <input type="text" 
-                                       data-field="ubicacion_nueva"
-                                       data-idx="${ubIdx}"
-                                       placeholder="Agregar nueva ubicación..."
-                                       style="flex: 1; padding: 0.4rem; border: 1px solid #ccc; border-radius: 3px; font-size: 0.85rem;">
-                                <button type="button"
-                                        onclick="agregarUbicacionNueva(${ubIdx})"
-                                        style="background: #0066cc; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 3px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.2s; white-space: nowrap;">
-                                    + Agregar
-                                </button>
-                            </div>
-                        </td>
-                        <td style="padding: 0.75rem; border-right: 1px solid #d0d0d0;">
-                            <textarea 
-                                   data-field="ubicacion_obs"
-                                   data-idx="${ubIdx}"
-                                   style="width: 100%; padding: 0.4rem; border: 1px solid #ccc; border-radius: 3px; font-size: 0.85rem; min-height: 40px; resize: vertical; font-family: inherit;" 
-                                   placeholder="Agregar observaciones...">${ubicacion.observaciones || ''}</textarea>
-                        </td>
-                        <td style="padding: 0.75rem; text-align: center;">
-                            <button type="button" 
-                                    onclick="eliminarUbicacionDeBordado(${ubIdx})"
-                                    style="background: #dc3545; color: white; border: none; padding: 0.5rem 0.75rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.3rem; white-space: nowrap;">
-                                ✕ Eliminar
-                            </button>
-                        </td>
-                    </tr>`;
-                });
-                
-                html += `</tbody>
-                    </table>
-                </div>`;
-            }
+            // Asignar a variable global para acceso desde modales
+            window.logoSeccionesSeleccionadasTab = logoSeccionesSeleccionadasTab;
             
-            // ========== FOTOS DEL LOGO ==========
+            // ========== DESCRIPCIÓN (EDITABLE) ==========
+            html += `<div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-weight: 700; margin-bottom: 0.5rem; color: #1f2937; font-size: 0.95rem;">DESCRIPCIÓN</label>
+                <textarea id="logo_descripcion" name="logo_descripcion" 
+                          style="width: 100%; padding: 0.75rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.9rem; font-family: inherit; min-height: 100px; color: #333;">${logoCotizacion.descripcion || ''}</textarea>
+            </div>`;
+            
+            // ========== FOTOS (EDITABLES) ==========
+            html += `<div style="margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                    <label style="display: block; font-weight: 700; color: #1f2937; font-size: 0.95rem;">IMÁGENES (MÁXIMO 5)</label>
+                    <button type="button" onclick="abrirModalAgregarFotosLogo()" style="background: #0066cc; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; font-weight: bold;">+</button>
+                </div>
+                <div id="galeria-fotos-logo" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 1rem;">`;
+            
+            // Cargar fotos iniciales
             if (logoCotizacion.fotos && logoCotizacion.fotos.length > 0) {
-                html += `<div style="margin-bottom: 1.5rem;">
-                    <label style="display: block; font-weight: 600; margin-bottom: 0.75rem; color: #333; font-size: 0.95rem;">Fotos del Bordado:</label>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 1rem;">`;
-                logoCotizacion.fotos.forEach(logo => {
-                    const logoUrl = logo.url || logo.ruta_webp || logo.ruta_original;
-                    if (logoUrl) {
-                        const logoURLEncoded = encodeURIComponent(JSON.stringify(logo));
+                logoCotizacion.fotos.forEach((foto) => {
+                    const fotoUrl = foto.url || foto.ruta_webp || foto.ruta_original;
+                    if (fotoUrl) {
                         html += `<div style="position: relative; display: inline-block; width: 100%;">
-                            <img src="${logoUrl}" 
-                                 alt="Logo" 
-                                 data-logo-url="${logoURLEncoded}"
-                                 style="width: 100%; height: 150px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 1px solid #d0d0d0; transition: transform 0.2s;" 
-                                 onclick="abrirModalImagen('${logoUrl}', 'Logo de cotización')">
-                            <button type="button"
-                                    onclick="eliminarImagenLogo(this)"
-                                    style="position: absolute; top: 5px; right: 5px; background: #dc3545; color: white; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-weight: bold; font-size: 1rem; display: flex; align-items: center; justify-content: center; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);" title="Eliminar imagen">×</button>
+                            <img src="${fotoUrl}" 
+                                 alt="Foto" 
+                                 style="width: 100%; height: 120px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 1px solid #d0d0d0;" 
+                                 onclick="abrirModalImagen('${fotoUrl}', 'Foto del logo')">
+                            <button type="button" 
+                                    style="position: absolute; top: 5px; right: 5px; background: #dc3545; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center;">×</button>
                         </div>`;
                     }
                 });
-                html += `</div></div>`;
             }
             
-            html += '</div>'; // cierra #tab-logo
+            html += `</div></div>`;
+            
+            // ========== TÉCNICAS (EDITABLE) ==========
+            html += `<div style="margin-bottom: 1.5rem; padding: 1rem; background: white; border-radius: 4px; border-left: 4px solid #0066cc;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 700; color: #1f2937; font-size: 0.95rem;">Técnicas Disponibles</label>
+                    <button type="button" onclick="agregarTecnicaTabLogo()" style="background: #0066cc; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; font-weight: bold;">+</button>
+                </div>
+                
+                <select id="selector_tecnicas_logo" style="width: 100%; margin-bottom: 10px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
+                    <option value="">-- SELECCIONA UNA TÉCNICA --</option>
+                    <option value="BORDADO">BORDADO</option>
+                    <option value="DTF">DTF</option>
+                    <option value="ESTAMPADO">ESTAMPADO</option>
+                    <option value="SUBLIMADO">SUBLIMADO</option>
+                </select>
+                
+                <div id="tecnicas_seleccionadas_logo" style="display: flex; flex-wrap: wrap; gap: 0.5rem;"></div>
+            </div>`;
+            
+            // ========== OBSERVACIONES DE TÉCNICAS (EDITABLE) ==========
+            html += `<div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-weight: 700; margin-bottom: 0.5rem; color: #1f2937; font-size: 0.95rem;">Observaciones de Técnicas</label>
+                <textarea id="logo_observaciones_tecnicas" name="logo_observaciones_tecnicas" 
+                          style="width: 100%; padding: 0.75rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.9rem; font-family: inherit; min-height: 80px; color: #333;">${logoCotizacion.observaciones_tecnicas || ''}</textarea>
+            </div>`;
+            
+            // ========== TALLAS A COTIZAR - CONSOLIDADAS EN UBICACIONES (ELIMINAR) ==========
+            // Las tallas ahora se manejan dentro de cada sección en el modal de ubicaciones
+            // Esta tabla vieja ha sido eliminada
+            
+
+            // ========== UBICACIÓN (TABLA EDITABLE) ==========
+            html += `<div style="margin-bottom: 1.5rem;">
+                <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 700; color: #1f2937; font-size: 0.95rem; margin: 0; flex-shrink: 0;">📍 UBICACIÓN</label>
+                    <input type="text" id="seccion_prenda_logo_tab" placeholder="Ej: CAMISA, JEAN, GORRA" style="flex: 1; padding: 0.6rem 0.75rem; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;" />
+                    <button type="button" onclick="agregarSeccionLogoTab()" title="Agregar nueva sección" style="background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,102,204,0.3); flex-shrink: 0;">+</button>
+                </div>
+                
+                <table style="width: 100%; border-collapse: separate; border-spacing: 0; background: white; border-radius: 8px; overflow: hidden; font-size: 0.9rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                    <thead>
+                        <tr style="background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white;">
+                            <th style="padding: 1rem; text-align: left; font-weight: 600; border-right: 1px solid rgba(255,255,255,0.1); color: white;">Sección</th>
+                            <th style="padding: 1rem; text-align: left; font-weight: 600; border-right: 1px solid rgba(255,255,255,0.1); color: white;">Tallas</th>
+                            <th style="padding: 1rem; text-align: left; font-weight: 600; border-right: 1px solid rgba(255,255,255,0.1); color: white;">Ubicaciones</th>
+                            <th style="padding: 1rem; text-align: left; font-weight: 600; border-right: 1px solid rgba(255,255,255,0.1); color: white;">Obs.</th>
+                            <th style="padding: 1rem; text-align: center; font-weight: 600; width: 100px; color: white;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logo-ubicaciones-tbody-tab">`;
+            
+            if (logoSeccionesSeleccionadasTab && logoSeccionesSeleccionadasTab.length > 0) {
+                logoSeccionesSeleccionadasTab.forEach((seccion) => {
+                    if (!seccion.id) {
+                        seccion.id = window.generarUUID();
+                    }
+                    const seccionId = seccion.id;
+                    const tallasConCantidad = seccion.tallas && seccion.tallas.length > 0 
+                        ? seccion.tallas.map(t => `${t} (${seccion.tallasCantidad && seccion.tallasCantidad[t] ? seccion.tallasCantidad[t] : 0})`).join(', ')
+                        : '—';
+                    html += `<tr style="border-bottom: 1px solid #e5e7eb; transition: all 0.2s;" data-seccion-id="${seccionId}" onmouseover="this.style.backgroundColor = '#f8fafb';" onmouseout="this.style.backgroundColor = 'white';">
+                        <td style="padding: 1rem; border-right: 1px solid #e5e7eb;">
+                            <strong style="font-weight: 600; color: #1f2937;">${seccion.ubicacion}</strong>
+                        </td>
+                        <td style="padding: 1rem; border-right: 1px solid #e5e7eb; font-size: 0.8rem; color: #666;">
+                            ${tallasConCantidad}
+                        </td>
+                        <td style="padding: 1rem; border-right: 1px solid #e5e7eb;">
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.3rem;" id="opciones-${seccionId}">
+                                ${seccion.opciones && seccion.opciones.length > 0 ? seccion.opciones.map((opcion, opIdx) => `
+                                    <span style="display: inline-flex; align-items: center; gap: 0.3rem; background: #dbeafe; color: #1976d2; padding: 0.4rem 0.7rem; border-radius: 4px; font-size: 0.75rem; font-weight: 500;">
+                                        ${opcion}
+                                        <button type="button" onclick="eliminarUbicacionItemTab('${seccionId}', ${opIdx})" style="background: none; border: none; color: #1976d2; cursor: pointer; font-weight: bold; padding: 0; font-size: 0.85rem; line-height: 1; margin-left: 0.1rem;">×</button>
+                                    </span>
+                                `).join('') : '<span style="color: #999; font-size: 0.75rem;">Sin ubicaciones</span>'}
+                            </div>
+                        </td>
+                        <td style="padding: 1rem; border-right: 1px solid #e5e7eb;">
+                            <textarea class="logo-ubicacion-obs-tab" data-seccion-id="${seccionId}" style="width: 100%; padding: 0.5rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.75rem; min-height: 40px; resize: vertical; font-family: inherit; background: #fafafa; box-sizing: border-box;"
+                                      onfocus="this.style.borderColor = '#0066cc'; this.style.backgroundColor = 'white';"
+                                      onblur="this.style.borderColor = '#d0d0d0'; this.style.backgroundColor = '#fafafa';"
+                                      placeholder="...">${seccion.observaciones || ''}</textarea>
+                        </td>
+                        <td style="padding: 1rem; text-align: center; display: flex; gap: 0.4rem; justify-content: center;">
+                            <button type="button" onclick="editarSeccionLogoTab('${seccionId}')" title="Editar sección" style="background: #3b82f6; color: white; border: none; padding: 0.5rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; min-width: 35px; hover: background: #2563eb;">✏</button>
+                            <button type="button" onclick="eliminarSeccionLogoTab('${seccionId}')" title="Eliminar sección" style="background: #dc3545; color: white; border: none; padding: 0.5rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; min-width: 35px; hover: background: #c82333;">✕</button>
+                        </td>
+                    </tr>`;
+                });
+            } else {
+                html += `<tr><td colspan="5" style="padding: 1rem; text-align: center; color: #999;">Sin ubicaciones definidas. Agrega una haciendo clic en el botón +</td></tr>`;
+            }
+            
+            html += `</tbody>
+                </table>
+            </div>`;
+            
+            if (tieneLogoPrendas) {
+                html += `</div>`; // cierra el contenedor principal con estilos
+                html += '</div>'; // cierra #tab-logo
+            }
         }
 
         // Cerrar tab-content-wrapper si se crearon tabs
@@ -1090,9 +1115,57 @@ document.addEventListener('DOMContentLoaded', function() {
             html += '</div>'; // cierra tab-content-wrapper
         }
         
+        // ✅ AGREGAR ATRIBUTO data-tipo-cotizacion AL CONTENEDOR
+        prendasContainer.setAttribute('data-tipo-cotizacion', tipoCotizacion);
         prendasContainer.innerHTML = html;
         
         console.log('Prendas y logo renderizados con información completa');
+        
+        // ============================================================
+        // CARGAR TÉCNICAS EN EL TAB LOGO (SI ES COTIZACIÓN COMBINADA)
+        // ============================================================
+        if (tieneLogoPrendas && logoCotizacion && logoCotizacion.tecnicas) {
+            setTimeout(() => {
+                const galeriaFotos = document.getElementById('galeria-fotos-logo');
+                const tecnicasSeleccionadasDiv = document.getElementById('tecnicas_seleccionadas_logo');
+                
+                // Renderizar fotos iniciales
+                if (galeriaFotos && logoCotizacion.fotos && logoCotizacion.fotos.length > 0) {
+                    galeriaFotos.innerHTML = '';
+                    logoCotizacion.fotos.forEach((foto, idx) => {
+                        const fotoUrl = foto.url || foto.ruta_webp || foto.ruta_original;
+                        if (fotoUrl) {
+                            const div = document.createElement('div');
+                            div.style.cssText = 'position: relative; display: inline-block; width: 100%;';
+                            div.innerHTML = `
+                                <img src="${fotoUrl}" 
+                                     alt="Foto" 
+                                     style="width: 100%; height: 120px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 1px solid #d0d0d0;" 
+                                     onclick="abrirModalImagen('${fotoUrl}', 'Foto del logo')">
+                                <button type="button" 
+                                        style="position: absolute; top: 5px; right: 5px; background: #dc3545; color: white; border: none; width: 24px; height: 24px; border-radius: 50%; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center;">×</button>
+                            `;
+                            galeriaFotos.appendChild(div);
+                        }
+                    });
+                }
+                
+                // Renderizar técnicas seleccionadas
+                if (tecnicasSeleccionadasDiv && logoCotizacion.tecnicas && logoCotizacion.tecnicas.length > 0) {
+                    tecnicasSeleccionadasDiv.innerHTML = '';
+                    logoCotizacion.tecnicas.forEach((tecnica, idx) => {
+                        const tecnicaText = typeof tecnica === 'object' ? tecnica.nombre : tecnica;
+                        const span = document.createElement('span');
+                        span.style.cssText = 'display: inline-flex; align-items: center; gap: 0.5rem; background: #e3f2fd; color: #1976d2; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem; font-weight: 600;';
+                        span.innerHTML = `
+                            ${tecnicaText}
+                            <button type="button" onclick="eliminarTecnicaDelTabLogo(${idx})" style="background: none; border: none; color: #1976d2; cursor: pointer; font-size: 1.2rem; padding: 0;">×</button>
+                        `;
+                        tecnicasSeleccionadasDiv.appendChild(span);
+                    });
+                }
+            }, 50);
+        }
         
         // ============================================================
         // EVENT LISTENERS PARA ACTUALIZAR TÍTULO DE PRENDA EN TIEMPO REAL
@@ -1134,6 +1207,9 @@ document.addEventListener('DOMContentLoaded', function() {
         'JEAN_SUDADERA': ['PIERNA IZQUIERDA', 'PIERNA DERECHA', 'BOLSILLO TRASERO', 'BOLSILLO RELOJERO'],
         'GORRAS': ['FRENTE', 'LATERAL', 'TRASERA']
     };
+    
+    // Asignar a variable global para acceso desde funciones
+    window.logoOpcionesPorUbicacion = logoOpcionesPorUbicacion;
 
     function renderizarCamposLogo(logoCotizacion) {
         console.log('🎨 Renderizando campos LOGO únicamente');
@@ -1265,14 +1341,64 @@ document.addEventListener('DOMContentLoaded', function() {
                       style="width: 100%; padding: 0.75rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.9rem; font-family: inherit; min-height: 80px; color: #333;">${logoCotizacion.observaciones_tecnicas || ''}</textarea>
         </div>`;
         
-        // ========== UBICACIÓN (EDITABLE CON MODAL) ==========
-        html += `<div style="margin-bottom: 1.5rem; padding: 1rem; background: white; border-radius: 4px; border-left: 4px solid #0066cc;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <label style="display: block; font-weight: 700; color: #1f2937; font-size: 0.95rem;">Ubicación</label>
+        // ========== TALLAS A COTIZAR (TABLA EDITABLE) ==========
+        // Parsear tallas de las ubicaciones
+        let tallasArray = [];
+        if (ubicacionesArray && ubicacionesArray.length > 0) {
+            ubicacionesArray.forEach(ub => {
+                if (ub.tallas && Array.isArray(ub.tallas)) {
+                    ub.tallas.forEach(talla => {
+                        // Evitar duplicados
+                        const yaBuscada = tallasArray.find(t => t.talla === talla.talla);
+                        if (!yaBuscada) {
+                            tallasArray.push(talla);
+                        }
+                    });
+                }
+            });
+        }
+        
+        html += `<div style="margin-bottom: 1.5rem;">
+            <label style="display: block; font-weight: 700; margin-bottom: 0.75rem; color: #1f2937; font-size: 0.95rem;">🧵 TALLAS A COTIZAR</label>
+            <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; font-size: 0.9rem;">
+                <thead>
+                    <tr style="background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white;">
+                        <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 600; border-right: 1px solid #cbd5e1;">Talla</th>
+                        <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 600; border-right: 1px solid #cbd5e1;">Cantidad</th>
+                        <th style="padding: 0.75rem 1rem; text-align: center; font-weight: 600; width: 80px;">Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="logo-tallas-tbody">`;
+        
+        if (tallasArray.length > 0) {
+            tallasArray.forEach((talla, idx) => {
+                html += `<tr style="border-bottom: 1px solid #e0e0e0;">
+                    <td style="padding: 0.75rem 1rem; border-right: 1px solid #cbd5e1;">
+                        <input type="text" value="${talla.talla || ''}" data-talla-idx="${idx}" class="logo-talla-nombre" style="width: 100%; padding: 0.5rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.85rem;">
+                    </td>
+                    <td style="padding: 0.75rem 1rem; border-right: 1px solid #cbd5e1;">
+                        <input type="number" value="${talla.cantidad || 0}" data-talla-idx="${idx}" class="logo-talla-cantidad" min="0" style="width: 100%; padding: 0.5rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.85rem;">
+                    </td>
+                    <td style="padding: 0.75rem 1rem; text-align: center;">
+                        <button type="button" onclick="eliminarTallaLogo(${idx})" style="background: #dc3545; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.2s;">✕ Eliminar</button>
+                    </td>
+                </tr>`;
+            });
+        } else {
+            html += `<tr><td colspan="3" style="padding: 1rem; text-align: center; color: #999;">Sin tallas definidas</td></tr>`;
+        }
+        
+        html += `</tbody>
+            </table>
+        </div>`;
+        
+        // ========== UBICACIÓN (TABLA EDITABLE) ==========
+        html += `<div style="margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                <label style="display: block; font-weight: 700; color: #1f2937; font-size: 0.95rem;">📍 UBICACIÓN</label>
                 <button type="button" class="btn-add" onclick="agregarSeccionLogo()" style="background: #0066cc; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; font-weight: bold;">+</button>
             </div>
             
-            <label for="seccion_prenda_logo" style="display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem;">Selecciona la sección a agregar:</label>
             <select id="seccion_prenda_logo" style="width: 100%; margin-bottom: 12px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem;">
                 <option value="">-- SELECCIONA UNA OPCIÓN --</option>
                 <option value="CAMISA">CAMISA</option>
@@ -1284,17 +1410,102 @@ document.addEventListener('DOMContentLoaded', function() {
                 ⚠️ Debes seleccionar una ubicación
             </div>
             
-            <div class="secciones-agregadas-logo" id="secciones_agregadas_logo" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
+            <table style="width: 100%; border-collapse: collapse; background: white; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; font-size: 0.9rem;">
+                <thead>
+                    <tr style="background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white;">
+                        <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 600; border-right: 1px solid #cbd5e1;">Sección</th>
+                        <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 600; border-right: 1px solid #cbd5e1;">Ubicaciones Seleccionadas</th>
+                        <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 600; border-right: 1px solid #cbd5e1;">Observaciones</th>
+                        <th style="padding: 0.75rem 1rem; text-align: center; font-weight: 600; width: 80px;">Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="logo-ubicaciones-tbody">`;
+        
+        if (logoSeccionesSeleccionadas.length > 0) {
+            logoSeccionesSeleccionadas.forEach((seccion, idx) => {
+                const ubicacionesText = Array.isArray(seccion.opciones) ? seccion.opciones.join(', ') : '';
+                html += `<tr style="border-bottom: 1px solid #e0e0e0;" data-ubicacion-idx="${idx}">
+                    <td style="padding: 0.75rem 1rem; border-right: 1px solid #cbd5e1;">
+                        <input type="text" value="${seccion.ubicacion}" class="logo-ubicacion-nombre" data-ubicacion-idx="${idx}" style="width: 100%; padding: 0.5rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.85rem;">
+                    </td>
+                    <td style="padding: 0.75rem 1rem; border-right: 1px solid #cbd5e1;">
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.3rem;">
+                            ${seccion.opciones.map((opcion, opIdx) => `
+                                <span style="display: inline-flex; align-items: center; gap: 0.3rem; background: #e3f2fd; color: #1976d2; padding: 0.3rem 0.6rem; border-radius: 3px; font-size: 0.8rem;">
+                                    ${opcion}
+                                    <button type="button" onclick="eliminarUbicacionItem(${idx}, ${opIdx})" style="background: none; border: none; color: #1976d2; cursor: pointer; font-weight: bold; padding: 0; font-size: 0.9rem;">×</button>
+                                </span>
+                            `).join('')}
+                        </div>
+                    </td>
+                    <td style="padding: 0.75rem 1rem; border-right: 1px solid #cbd5e1;">
+                        <textarea class="logo-ubicacion-obs" data-ubicacion-idx="${idx}" style="width: 100%; padding: 0.5rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.85rem; min-height: 40px; resize: vertical; font-family: inherit;" placeholder="Observaciones...">${seccion.observaciones || ''}</textarea>
+                    </td>
+                    <td style="padding: 0.75rem 1rem; text-align: center;">
+                        <button type="button" onclick="eliminarSeccionLogo(${idx})" style="background: #dc3545; color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.2s;">✕ Eliminar</button>
+                    </td>
+                </tr>`;
+            });
+        } else {
+            html += `<tr><td colspan="4" style="padding: 1rem; text-align: center; color: #999;">Sin ubicaciones definidas. Agrega una haciendo clic en el botón +</td></tr>`;
+        }
+        
+        html += `</tbody>
+            </table>
         </div>`;
         
         html += `</div>`;
         
+        // ✅ AGREGAR ATRIBUTO data-tipo-cotizacion AL CONTENEDOR
+        prendasContainer.setAttribute('data-tipo-cotizacion', tipoCotizacion);
         prendasContainer.innerHTML = html;
         
         // Renderizar datos cargados
         renderizarFotosLogo();
         renderizarTecnicasLogo();
         renderizarSeccionesLogo();
+        
+        // ====== AGREGAR EVENT LISTENERS PARA CAPTURAR CAMBIOS EN TABLA ======
+        // Listeners para tallas
+        setTimeout(() => {
+            const tallasInputs = document.querySelectorAll('.logo-talla-nombre, .logo-talla-cantidad');
+            tallasInputs.forEach(input => {
+                input.addEventListener('change', function() {
+                    const idx = parseInt(this.dataset.tallaIdx);
+                    const fila = this.closest('tr');
+                    if (fila) {
+                        const nombreInput = fila.querySelector('.logo-talla-nombre');
+                        const cantidadInput = fila.querySelector('.logo-talla-cantidad');
+                        if (nombreInput && cantidadInput && tallasArray[idx]) {
+                            tallasArray[idx].talla = nombreInput.value.trim().toUpperCase();
+                            tallasArray[idx].cantidad = parseInt(cantidadInput.value) || 0;
+                        }
+                    }
+                });
+            });
+            
+            // Listeners para ubicaciones
+            const ubicacionNombres = document.querySelectorAll('.logo-ubicacion-nombre');
+            const ubicacionObs = document.querySelectorAll('.logo-ubicacion-obs');
+            
+            ubicacionNombres.forEach(input => {
+                input.addEventListener('change', function() {
+                    const idx = parseInt(this.dataset.ubicacionIdx);
+                    if (logoSeccionesSeleccionadas[idx]) {
+                        logoSeccionesSeleccionadas[idx].ubicacion = this.value.trim().toUpperCase();
+                    }
+                });
+            });
+            
+            ubicacionObs.forEach(input => {
+                input.addEventListener('change', function() {
+                    const idx = parseInt(this.dataset.ubicacionIdx);
+                    if (logoSeccionesSeleccionadas[idx]) {
+                        logoSeccionesSeleccionadas[idx].observaciones = this.value;
+                    }
+                });
+            });
+        }, 100);
         
         // ✅ GUARDAR EN VARIABLES GLOBALES para que actualizarResumenFriendly() los encuentre
         window.tecnicasGuardadas = logoTecnicasSeleccionadas;
@@ -1788,11 +1999,751 @@ document.addEventListener('DOMContentLoaded', function() {
         logoSeccionesSeleccionadas.splice(index, 1);
         renderizarSeccionesLogo();
     };
+    
+    // ====== FUNCIONES DE ACTUALIZACIÓN DE TALLAS Y UBICACIONES EN TABLA ======
+    window.eliminarTallaLogo = function(index) {
+        // Obtener todas las tallas del formulario y eliminar por índice
+        const tbody = document.getElementById('logo-tallas-tbody');
+        if (tbody && tbody.rows[index]) {
+            tbody.deleteRow(index);
+        }
+    };
+    
+    window.eliminarUbicacionItem = function(ubicacionIdx, itemIdx) {
+        if (logoSeccionesSeleccionadas[ubicacionIdx]) {
+            logoSeccionesSeleccionadas[ubicacionIdx].opciones.splice(itemIdx, 1);
+            // Re-renderizar la tabla
+            const tbody = document.getElementById('logo-ubicaciones-tbody');
+            const fila = tbody.rows[ubicacionIdx];
+            if (fila) {
+                const ubicacionesText = logoSeccionesSeleccionadas[ubicacionIdx].opciones.join(', ');
+                const celda = fila.cells[1];
+                if (celda) {
+                    celda.innerHTML = `<div style="display: flex; flex-wrap: wrap; gap: 0.3rem;">
+                        ${logoSeccionesSeleccionadas[ubicacionIdx].opciones.map((opcion, opIdx) => `
+                            <span style="display: inline-flex; align-items: center; gap: 0.3rem; background: #e3f2fd; color: #1976d2; padding: 0.3rem 0.6rem; border-radius: 3px; font-size: 0.8rem;">
+                                ${opcion}
+                                <button type="button" onclick="eliminarUbicacionItem(${ubicacionIdx}, ${opIdx})" style="background: none; border: none; color: #1976d2; cursor: pointer; font-weight: bold; padding: 0; font-size: 0.9rem;">×</button>
+                            </span>
+                        `).join('')}
+                    </div>`;
+                }
+            }
+        }
+    };
+    
+    window.agregarUbicacionNueva = function(ubicacionIdx) {
+        const input = document.getElementById(`logo-ubicaciones-tbody`).rows[ubicacionIdx]?.cells[1]?.querySelector('input[data-field="ubicacion_nueva"]');
+        if (input && input.value.trim()) {
+            const nuevaUbicacion = input.value.trim().toUpperCase();
+            if (!logoSeccionesSeleccionadas[ubicacionIdx].opciones.includes(nuevaUbicacion)) {
+                logoSeccionesSeleccionadas[ubicacionIdx].opciones.push(nuevaUbicacion);
+                input.value = '';
+                // Re-renderizar
+                const celda = input.closest('td');
+                if (celda) {
+                    celda.innerHTML = `<div style="display: flex; flex-wrap: wrap; gap: 0.3rem;">
+                        ${logoSeccionesSeleccionadas[ubicacionIdx].opciones.map((opcion, opIdx) => `
+                            <span style="display: inline-flex; align-items: center; gap: 0.3rem; background: #e3f2fd; color: #1976d2; padding: 0.3rem 0.6rem; border-radius: 3px; font-size: 0.8rem;">
+                                ${opcion}
+                                <button type="button" onclick="eliminarUbicacionItem(${ubicacionIdx}, ${opIdx})" style="background: none; border: none; color: #1976d2; cursor: pointer; font-weight: bold; padding: 0; font-size: 0.9rem;">×</button>
+                            </span>
+                        `).join('')}
+                    </div>`;
+                }
+            }
+        }
+    };
 
     // ====== FUNCIONES DE OBSERVACIONES LOGO ======
     window.agregarObservacionLogo = function() {
         logoObservacionesGenerales.push('');
         renderizarObservacionesLogo();
+    };
+
+    // ====== FUNCIONES PARA TAB LOGO EN COTIZACIONES COMBINADAS ======
+    // eliminarTallaLogoTab() - FUNCIÓN ANTIGUA ELIMINADA
+    // Las tallas ahora se eliminan desde el modal de cada sección
+    
+
+    // Función auxiliar para generar UUID
+    window.generarUUID = function() {
+        return 'sec_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+    };
+
+    window.agregarSeccionLogoTab = function() {
+        const input = document.getElementById('seccion_prenda_logo_tab');
+        const seccion = input.value.trim().toUpperCase();
+        
+        if (!seccion) {
+            input.style.border = '2px solid #ef4444';
+            input.style.background = '#fee2e2';
+            input.classList.add('shake');
+            
+            setTimeout(() => {
+                input.style.border = '1px solid #d0d0d0';
+                input.style.background = '';
+                input.classList.remove('shake');
+            }, 600);
+            
+            Swal.fire({
+                icon: 'warning',
+                title: 'Campo vacío',
+                text: 'Por favor escribe el nombre de la sección',
+                timer: 2000
+            });
+            return;
+        }
+        
+        // Verificar si ya existe
+        if (!window.logoSeccionesSeleccionadasTab) {
+            window.logoSeccionesSeleccionadasTab = [];
+        }
+        
+        if (window.logoSeccionesSeleccionadasTab.some(s => s.ubicacion.toUpperCase() === seccion)) {
+            input.style.border = '2px solid #ef4444';
+            input.style.background = '#fee2e2';
+            
+            setTimeout(() => {
+                input.style.border = '1px solid #d0d0d0';
+                input.style.background = '';
+            }, 600);
+            
+            Swal.fire({
+                icon: 'info',
+                title: 'Sección duplicada',
+                text: 'Esta sección ya existe',
+                timer: 2000
+            });
+            return;
+        }
+        
+        // Limpiar el input
+        input.value = '';
+        input.style.border = '1px solid #d0d0d0';
+        input.style.background = '';
+        
+        // Obtener opciones disponibles para esta sección
+        const logoOpcionesDisponibles = window.logoOpcionesPorUbicacion[seccion] || [];
+        
+        // Crear ID único para la nueva sección
+        const seccionId = window.generarUUID();
+        
+        // Guardar temporalmente
+        window.logoSeccionTempTab = {
+            id: seccionId,
+            ubicacion: seccion,
+            opciones: [],
+            tallas: [],
+            tallasCantidad: {},
+            observaciones: ''
+        };
+        
+        // Abrir el modal de edición directamente (sin intermediate modal)
+        abrirModalSeccionEditarTab(seccion, logoOpcionesDisponibles, null);
+    };
+
+    window.abrirModalSeccionEditarTab = function(ubicacion, opcionesDisponibles, seccionData) {
+        // seccionData será null si es crear, o un objeto con datos si es editar
+        const isEditar = seccionData !== null;
+        const tituloModal = isEditar ? 'Editar Sección' : 'Configurar Sección';
+        const textoBtnGuardar = isEditar ? '✓ Actualizar' : '✓ Guardar';
+        const fnGuardar = isEditar ? 'guardarSeccionTabEdicion()' : 'guardarSeccionTab()';
+        
+        let html = `
+            <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 1rem;" id="modalSeccionTab">
+                <div style="background: white; border-radius: 12px; padding: 2rem; max-width: 550px; width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.3); max-height: 85vh; overflow-y: auto;">
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #e5e7eb;">
+                        <h2 style="margin: 0; color: #1e40af; font-size: 1.25rem; font-weight: 700;">${tituloModal}</h2>
+                        <button type="button" onclick="cerrarModalSeccionTab()" style="background: none; border: none; color: #999; font-size: 1.6rem; cursor: pointer; padding: 0; width: 30px; height: 30px;">×</button>
+                    </div>
+                    
+                    <!-- 1. Nombre de la Sección -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #1e40af; font-size: 0.9rem;">1. Nombre de la Sección</label>
+                        <input type="text" id="nombreSeccionTab" value="${ubicacion}" style="width: 100%; padding: 0.6rem; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;" ${isEditar ? 'readonly' : ''}>
+                    </div>
+                    
+                    <!-- 2. Ubicaciones -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.75rem; color: #1e40af; font-size: 0.9rem;">2. Ubicaciones</label>
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
+                            <input type="text" id="inputUbicacionTab" placeholder="Busca o escribe una ubicación..." list="opcionesUbicacionList" style="flex: 1; padding: 0.6rem; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box;">
+                            <button type="button" onclick="agregarUbicacionDesdeInputTab()" style="background: #27ae60; color: white; border: none; padding: 0.6rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; white-space: nowrap;">✓ Agregar</button>
+                        </div>
+                        <datalist id="opcionesUbicacionList"></datalist>
+                        <div id="opcionesSeccionTab" style="display: flex; flex-direction: column; gap: 0.4rem; padding: 1rem; background: #f9f9f9; border-radius: 6px; min-height: 50px; max-height: 200px; overflow-y: auto;"></div>
+                    </div>
+                    
+                    <!-- 3. Tallas -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.75rem; color: #1e40af; font-size: 0.9rem;">3. Tallas</label>
+                        <div id="tallasSeccionTab" style="display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 1rem; background: #f9f9f9; border-radius: 6px; min-height: 45px;"></div>
+                        <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem; align-items: flex-start;">
+                            <input type="text" id="nuevaTallaTab" placeholder="Ej: S, M, L, XL" style="flex: 1; padding: 0.6rem; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 0.85rem; box-sizing: border-box;">
+                            <input type="number" id="nuevaTallaCantidadTab" placeholder="Cant." min="1" value="1" style="width: 70px; padding: 0.6rem; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 0.85rem; box-sizing: border-box;">
+                            <button type="button" onclick="agregarTallaSeccionTab()" style="background: #3b82f6; color: white; border: none; padding: 0.6rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; white-space: nowrap;">+ Agregar</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 4. Observaciones -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #1e40af; font-size: 0.9rem;">4. Observaciones</label>
+                        <textarea id="obsSeccionTab" placeholder="Notas importantes..." style="width: 100%; padding: 0.6rem; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 0.85rem; min-height: 70px; box-sizing: border-box; font-family: inherit; resize: none;">${seccionData && seccionData.observaciones ? seccionData.observaciones : ''}</textarea>
+                    </div>
+                    
+                    <!-- Botones -->
+                    <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                        <button type="button" onclick="cerrarModalSeccionTab()" style="background: #f0f0f0; color: #333; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem;">Cancelar</button>
+                        <button type="button" onclick="${fnGuardar}" style="background: #0066cc; color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem;">${textoBtnGuardar}</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', html);
+        
+        // Agregar opciones disponibles
+        setTimeout(() => {
+            // Llenar el datalist con opciones disponibles
+            const datalist = document.getElementById('opcionesUbicacionList');
+            if (datalist && opcionesDisponibles.length > 0) {
+                opcionesDisponibles.forEach(opcion => {
+                    const option = document.createElement('option');
+                    option.value = opcion;
+                    datalist.appendChild(option);
+                });
+            }
+            
+            // Cargar ubicaciones existentes si estamos editando
+            const container = document.getElementById('opcionesSeccionTab');
+            if (container && seccionData && seccionData.opciones && seccionData.opciones.length > 0) {
+                seccionData.opciones.forEach(opcion => {
+                    const label = document.createElement('label');
+                    label.style.cssText = 'display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 4px; background: #dbeafe; border: 1px solid #bfdbfe; transition: all 0.2s; font-size: 0.85rem;';
+                    label.innerHTML = `
+                        <input type="checkbox" checked style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;" class="opcion-seccion-tab">
+                        <span style="flex: 1; color: #1e40af; font-weight: 500;">${opcion}</span>
+                        <button type="button" onclick="this.parentElement.remove(); window.logoSeccionTempTab.opciones = window.logoSeccionTempTab.opciones.filter(o => o !== '${opcion}');" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 0; font-size: 0.9rem; font-weight: bold;">×</button>
+                    `;
+                    label.addEventListener('mouseover', () => label.style.background = '#c8e6f5');
+                    label.addEventListener('mouseout', () => label.style.background = '#dbeafe');
+                    container.appendChild(label);
+                });
+            }
+        }, 10);
+        
+        // Cargar tallas existentes si estamos editando
+        setTimeout(() => {
+            const container = document.getElementById('tallasSeccionTab');
+            if (container && seccionData && seccionData.tallas && seccionData.tallas.length > 0) {
+                seccionData.tallas.forEach(talla => {
+                    const cantidad = seccionData.tallasCantidad && seccionData.tallasCantidad[talla] ? seccionData.tallasCantidad[talla] : 0;
+                    const chip = document.createElement('span');
+                    chip.style.cssText = 'display: inline-flex; align-items: center; gap: 0.4rem; background: #dbeafe; color: #1e40af; padding: 0.3rem 0.8rem; border-radius: 16px; font-size: 0.8rem; font-weight: 500;';
+                    chip.innerHTML = `${talla} (${cantidad}) <button type="button" onclick="eliminarTallaSeccionTab('${talla}')" style="background: none; border: none; color: #1e40af; cursor: pointer; font-weight: bold; padding: 0; font-size: 0.9rem;">×</button>`;
+                    container.appendChild(chip);
+                });
+            }
+        }, 10);
+    };
+    
+    window.agregarUbicacionDesdeInputTab = function() {
+        const input = document.getElementById('inputUbicacionTab');
+        const valor = input.value.trim().toUpperCase();
+        
+        if (!valor) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Escribe una ubicación',
+                timer: 1500
+            });
+            return;
+        }
+        
+        // Verificar si ya existe
+        if (window.logoSeccionTempTab.opciones.includes(valor)) {
+            Swal.fire({
+                icon: 'info',
+                title: 'Ubicación duplicada',
+                text: 'Esta ubicación ya fue agregada',
+                timer: 1500
+            });
+            return;
+        }
+        
+        // Agregar a opciones temporales
+        window.logoSeccionTempTab.opciones.push(valor);
+        
+        // Mostrar en el contenedor
+        const container = document.getElementById('opcionesSeccionTab');
+        const label = document.createElement('label');
+        label.style.cssText = 'display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.5rem 0.75rem; border-radius: 4px; background: #dbeafe; border: 1px solid #bfdbfe; transition: all 0.2s; font-size: 0.85rem;';
+        label.innerHTML = `
+            <input type="checkbox" checked style="width: 18px; height: 18px; cursor: pointer; accent-color: #0066cc;" class="opcion-seccion-tab">
+            <span style="flex: 1; color: #1e40af; font-weight: 500;">${valor}</span>
+            <button type="button" onclick="this.parentElement.remove(); window.logoSeccionTempTab.opciones = window.logoSeccionTempTab.opciones.filter(o => o !== '${valor}');" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 0; font-size: 0.9rem; font-weight: bold;">×</button>
+        `;
+        container.appendChild(label);
+        
+        // Resetear input
+        input.value = '';
+        input.focus();
+    };
+
+
+    window.agregarOpcionSeccionTab = function() {
+        const input = document.getElementById('nuevaOpcionTab');
+        const valor = input.value.trim().toUpperCase();
+        if (!valor) return;
+        
+        if (!window.logoSeccionTempTab.opciones.includes(valor)) {
+            window.logoSeccionTempTab.opciones.push(valor);
+            const container = document.getElementById('opcionesSeccionTab');
+            const label = document.createElement('label');
+            label.style.cssText = 'display: flex; align-items: center; gap: 0.75rem; cursor: pointer; padding: 0.5rem; border-radius: 4px; background: #dbeafe; border: 1px solid #bfdbfe; transition: all 0.2s; font-size: 0.85rem;';
+            label.innerHTML = `
+                <input type="checkbox" checked style="width: 18px; height: 18px; cursor: pointer; accent-color: #1e40af;" class="opcion-seccion-tab">
+                <span style="flex: 1; color: #1e40af; font-weight: 500;">${valor}</span>
+                <button type="button" onclick="this.parentElement.remove(); window.logoSeccionTempTab.opciones = window.logoSeccionTempTab.opciones.filter(o => o !== '${valor}');" style="background: none; border: none; color: #1e40af; cursor: pointer; padding: 0; font-size: 0.9rem;">×</button>
+            `;
+            container.appendChild(label);
+            input.value = '';
+            input.focus();
+        }
+    };
+    
+    window.agregarTallaSeccionTab = function() {
+        const inputTalla = document.getElementById('nuevaTallaTab');
+        const inputCantidad = document.getElementById('nuevaTallaCantidadTab');
+        const container = document.getElementById('tallasSeccionTab');
+        
+        if (!inputTalla || !inputCantidad || !container) {
+            console.error('Elementos del modal no encontrados');
+            return;
+        }
+        
+        const talla = inputTalla.value.trim().toUpperCase();
+        const cantidad = parseInt(inputCantidad.value) || 0;
+        
+        if (!talla || cantidad <= 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Datos inválidos',
+                text: 'Ingresa una talla y una cantidad mayor a 0',
+                timer: 2000
+            });
+            return;
+        }
+        
+        if (!window.logoSeccionTempTab) {
+            window.logoSeccionTempTab = {
+                id: window.generarUUID(),
+                opciones: [],
+                tallas: [],
+                tallasCantidad: {},
+                observaciones: ''
+            };
+        }
+        
+        if (!window.logoSeccionTempTab.tallasCantidad) {
+            window.logoSeccionTempTab.tallasCantidad = {};
+        }
+        
+        if (!window.logoSeccionTempTab.tallas.includes(talla)) {
+            window.logoSeccionTempTab.tallas.push(talla);
+            window.logoSeccionTempTab.tallasCantidad[talla] = cantidad;
+            
+            const chip = document.createElement('span');
+            chip.style.cssText = 'display: inline-flex; align-items: center; gap: 0.4rem; background: #dbeafe; color: #1e40af; padding: 0.3rem 0.8rem; border-radius: 16px; font-size: 0.8rem; font-weight: 500;';
+            chip.id = `chip-${talla}`;
+            chip.innerHTML = `${talla} (${cantidad}) <button type="button" onclick="eliminarTallaSeccionTab('${talla}')" style="background: none; border: none; color: #1e40af; cursor: pointer; font-weight: bold; padding: 0; font-size: 0.9rem;">×</button>`;
+            container.appendChild(chip);
+            inputTalla.value = '';
+            inputCantidad.value = '1';
+            inputTalla.focus();
+            
+            console.log('Talla agregada:', talla, 'Cantidad:', cantidad);
+        } else {
+            Swal.fire({
+                icon: 'info',
+                title: 'Talla duplicada',
+                text: 'Esta talla ya fue agregada',
+                timer: 2000
+            });
+        }
+    };
+    
+    window.eliminarTallaSeccionTab = function(talla) {
+        if (window.logoSeccionTempTab.tallas.includes(talla)) {
+            window.logoSeccionTempTab.tallas = window.logoSeccionTempTab.tallas.filter(t => t !== talla);
+            if (window.logoSeccionTempTab.tallasCantidad) {
+                delete window.logoSeccionTempTab.tallasCantidad[talla];
+            }
+            // Re-renderizar chip
+            const container = document.getElementById('tallasSeccionTab');
+            if (container) {
+                const chip = Array.from(container.children).find(c => c.textContent.includes(talla));
+                if (chip) chip.remove();
+            }
+        }
+    };
+    
+    window.eliminarTallaDelModalTab = function(talla) {
+        if (window.logoSeccionTempTab.tallas.includes(talla)) {
+            window.logoSeccionTempTab.tallas = window.logoSeccionTempTab.tallas.filter(t => t !== talla);
+            if (window.logoSeccionTempTab.tallasCantidad) {
+                delete window.logoSeccionTempTab.tallasCantidad[talla];
+            }
+        }
+    };
+    
+    window.guardarSeccionTab = function() {
+        const nombreInput = document.getElementById('nombreSeccionTab');
+        const obsInput = document.getElementById('obsSeccionTab');
+        
+        const seccionName = nombreInput.value.trim().toUpperCase() || window.logoSeccionTempTab.ubicacion;
+        window.logoSeccionTempTab.ubicacion = seccionName;
+        window.logoSeccionTempTab.observaciones = obsInput.value.trim();
+        
+        // Las opciones ya están en window.logoSeccionTempTab.opciones (se actualizan dinámicamente)
+        
+        // Agregar al array global
+        if (!window.logoSeccionesSeleccionadasTab) {
+            window.logoSeccionesSeleccionadasTab = [];
+        }
+        window.logoSeccionesSeleccionadasTab.push(window.logoSeccionTempTab);
+        
+        // Renderizar la fila en la tabla
+        const tbody = document.getElementById('logo-ubicaciones-tbody-tab');
+        if (tbody) {
+            const seccionId = window.logoSeccionTempTab.id;
+            // Mostrar tallas con cantidades
+            const tallasText = window.logoSeccionTempTab.tallas && window.logoSeccionTempTab.tallas.length > 0 
+                ? window.logoSeccionTempTab.tallas.map(t => `${t} (${window.logoSeccionTempTab.tallasCantidad && window.logoSeccionTempTab.tallasCantidad[t] ? window.logoSeccionTempTab.tallasCantidad[t] : 0})`).join(', ')
+                : '—';
+            const tr = document.createElement('tr');
+            tr.style.cssText = 'border-bottom: 1px solid #e5e7eb; transition: all 0.2s;';
+            tr.onmouseover = function() { this.style.backgroundColor = '#f9fafb'; };
+            tr.onmouseout = function() { this.style.backgroundColor = 'white'; };
+            tr.setAttribute('data-seccion-id', seccionId);
+            tr.innerHTML = `
+                <td style="padding: 0.75rem; font-weight: 500; color: #1f2937;">
+                    <input type="text" value="${window.logoSeccionTempTab.ubicacion}" class="logo-ubicacion-nombre-tab" data-seccion-id="${seccionId}" style="width: 100%; padding: 0.4rem 0.6rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.8rem; background: #f5f5f5; box-sizing: border-box;"
+                           onfocus="this.style.borderColor = '#0066cc'; this.style.backgroundColor = 'white';"
+                           onblur="this.style.borderColor = '#d0d0d0'; this.style.backgroundColor = '#f5f5f5';">
+                </td>
+                <td style="padding: 0.75rem; color: #666; font-size: 0.75rem;">
+                    <span style="display: inline-block; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${tallasText}">${tallasText}</span>
+                </td>
+                <td style="padding: 0.75rem;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.3rem;" id="opciones-${seccionId}">
+                        ${window.logoSeccionTempTab.opciones.map((opcion, opIdx) => `
+                            <span style="display: inline-flex; align-items: center; gap: 0.2rem; background: #dbeafe; color: #1e40af; padding: 0.25rem 0.6rem; border-radius: 12px; font-size: 0.7rem; font-weight: 500;">
+                                ${opcion}
+                                <button type="button" onclick="eliminarUbicacionItemTab('${seccionId}', ${opIdx})" style="background: none; border: none; color: #1e40af; cursor: pointer; font-weight: bold; padding: 0; font-size: 0.8rem; line-height: 1; margin-left: 0.2rem;">×</button>
+                            </span>
+                        `).join('')}
+                    </div>
+                </td>
+                <td style="padding: 0.75rem;">
+                    <textarea class="logo-ubicacion-obs-tab" data-seccion-id="${seccionId}" style="width: 100%; padding: 0.4rem 0.6rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.75rem; min-height: 45px; resize: none; font-family: inherit; background: #fafafa; box-sizing: border-box;"
+                              onfocus="this.style.borderColor = '#0066cc'; this.style.backgroundColor = 'white';"
+                              onblur="this.style.borderColor = '#d0d0d0'; this.style.backgroundColor = '#fafafa';"
+                              placeholder="...">${window.logoSeccionTempTab.observaciones}</textarea>
+                </td>
+                <td style="padding: 0.75rem; text-align: center; display: flex; gap: 0.4rem; justify-content: center;">
+                    <button type="button" onclick="editarSeccionLogoTab('${seccionId}')" 
+                            style="background: #0066cc; color: white; border: none; padding: 0.4rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 600; transition: all 0.3s; white-space: nowrap;">
+                        ✏ Editar
+                    </button>
+                    <button type="button" onclick="eliminarSeccionLogoTab('${seccionId}')" 
+                            style="background: #ef4444; color: white; border: none; padding: 0.4rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem; font-weight: 600; transition: all 0.3s; white-space: nowrap;">
+                        ✕ Eliminar
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+        
+        cerrarModalSeccionTab();
+    };
+    
+    window.cerrarModalSeccionTab = function() {
+        const modal = document.getElementById('modalSeccionTab');
+        if (modal) modal.remove();
+        window.logoSeccionTempTab = null;
+        window.logoSeccionEditIdTab = null;
+    };
+
+    window.editarSeccionLogoTab = function(seccionId) {
+        const seccion = window.logoSeccionesSeleccionadasTab.find(s => s.id === seccionId);
+        if (!seccion) return;
+        
+        // Marcar que estamos en modo edición
+        window.logoSeccionEditIdTab = seccionId;
+        
+        // Crear objeto temporal con datos de la sección
+        window.logoSeccionTempTab = {
+            id: seccion.id,
+            ubicacion: seccion.ubicacion || '',
+            opciones: [...(seccion.opciones || [])],
+            tallas: [...(seccion.tallas || [])],
+            tallasCantidad: { ...(seccion.tallasCantidad || {}) },
+            observaciones: seccion.observaciones || ''
+        };
+        
+        // Obtener opciones disponibles
+        const opcionesDisponibles = window.logoOpcionesPorUbicacion[seccion.ubicacion] || [];
+        
+        // Abrir modal con datos precargados - pasar los datos de la sección
+        abrirModalSeccionEditarTab(seccion.ubicacion, opcionesDisponibles, seccion);
+    };
+
+    // Función duplicada eliminada - se usa abrirModalSeccionEditarTab en su lugar
+    
+
+
+    window.guardarSeccionTabEdicion = function() {
+        const nombreInput = document.getElementById('nombreSeccionTab');
+        const obsInput = document.getElementById('obsSeccionTab');
+        
+        const seccionName = nombreInput.value.trim().toUpperCase() || window.logoSeccionTempTab.ubicacion;
+        window.logoSeccionTempTab.ubicacion = seccionName;
+        window.logoSeccionTempTab.observaciones = obsInput.value.trim();
+        
+        // Las opciones ya están en window.logoSeccionTempTab.opciones (se actualizan dinámicamente)
+        
+        // Actualizar en el array global
+        const index = window.logoSeccionesSeleccionadasTab.findIndex(s => s.id === window.logoSeccionEditIdTab);
+        if (index !== -1) {
+            window.logoSeccionesSeleccionadasTab[index] = window.logoSeccionTempTab;
+        }
+        
+        // Re-renderizar la fila en la tabla
+        const seccionId = window.logoSeccionTempTab.id;
+        const tallasText = window.logoSeccionTempTab.tallas && window.logoSeccionTempTab.tallas.length > 0 
+            ? window.logoSeccionTempTab.tallas.map(t => `${t} (${window.logoSeccionTempTab.tallasCantidad && window.logoSeccionTempTab.tallasCantidad[t] ? window.logoSeccionTempTab.tallasCantidad[t] : 0})`).join(', ')
+            : '—';
+        
+        // Actualizar la fila en la tabla
+        const filaExistente = document.querySelector(`tr[data-seccion-id="${seccionId}"]`);
+        if (filaExistente) {
+            // Actualizar nombre
+            filaExistente.children[0].innerHTML = `
+                <input type="text" value="${window.logoSeccionTempTab.ubicacion}" class="logo-ubicacion-nombre-tab" data-seccion-id="${seccionId}" style="width: 100%; padding: 0.4rem 0.6rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.8rem; background: #f5f5f5; box-sizing: border-box;"
+                       onfocus="this.style.borderColor = '#0066cc'; this.style.backgroundColor = 'white';"
+                       onblur="this.style.borderColor = '#d0d0d0'; this.style.backgroundColor = '#f5f5f5';">
+            `;
+            
+            // Actualizar tallas
+            filaExistente.children[1].innerHTML = tallasText;
+            
+            // Actualizar ubicaciones
+            const opcionesDiv = filaExistente.children[2].querySelector(`div`) || filaExistente.children[2];
+            if (opcionesDiv) {
+                opcionesDiv.innerHTML = `
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.3rem;" id="opciones-${seccionId}">
+                        ${window.logoSeccionTempTab.opciones && window.logoSeccionTempTab.opciones.length > 0 ? window.logoSeccionTempTab.opciones.map((opcion, opIdx) => `
+                            <span style="display: inline-flex; align-items: center; gap: 0.2rem; background: #dbeafe; color: #1e40af; padding: 0.25rem 0.6rem; border-radius: 12px; font-size: 0.7rem; font-weight: 500;">
+                                ${opcion}
+                                <button type="button" onclick="eliminarUbicacionItemTab('${seccionId}', ${opIdx})" style="background: none; border: none; color: #1e40af; cursor: pointer; font-weight: bold; padding: 0; font-size: 0.8rem; line-height: 1; margin-left: 0.2rem;">×</button>
+                            </span>
+                        `).join('') : '<span style="color: #999; font-size: 0.75rem;">Sin ubicaciones</span>'}
+                    </div>
+                `;
+            }
+            
+            // Actualizar observaciones (encontrar textarea)
+            const textareaExistente = filaExistente.querySelector('textarea.logo-ubicacion-obs-tab');
+            if (textareaExistente) {
+                textareaExistente.value = window.logoSeccionTempTab.observaciones;
+            }
+        }
+        
+        cerrarModalSeccionTab();
+    };
+
+    window.editarSeccionLogoTab = function(seccionId) {
+        if (!window.logoSeccionesSeleccionadasTab) return;
+        
+        // Buscar la sección a editar
+        const seccion = window.logoSeccionesSeleccionadasTab.find(s => s.id === seccionId);
+        if (!seccion) return;
+        
+        // Guardar el ID para saber que estamos editando
+        window.logoSeccionEditIdTab = seccionId;
+        
+        // Cargar los datos en la variable temporal
+        window.logoSeccionTempTab = { ...seccion };
+        
+        // Obtener opciones disponibles
+        const logoOpcionesDisponibles = window.logoOpcionesPorUbicacion[seccion.ubicacion] || [];
+        
+        // Abrir el modal en modo edición
+        abrirModalSeccionEditarTab(seccion.ubicacion, logoOpcionesDisponibles, seccion);
+    };
+
+    window.eliminarSeccionLogoTab = function(seccionId) {
+        if (!window.logoSeccionesSeleccionadasTab) return;
+        
+        // Eliminar del array por ID
+        window.logoSeccionesSeleccionadasTab = window.logoSeccionesSeleccionadasTab.filter(s => s.id !== seccionId);
+        
+        // Eliminar de la tabla por ID
+        const tbody = document.getElementById('logo-ubicaciones-tbody-tab');
+        if (tbody) {
+            const filaAEliminar = document.querySelector(`tr[data-seccion-id="${seccionId}"]`);
+            if (filaAEliminar) {
+                filaAEliminar.remove();
+            }
+        }
+    };
+
+    window.eliminarUbicacionItemTab = function(seccionId, itemIdx) {
+        if (!window.logoSeccionesSeleccionadasTab) return;
+        
+        // Buscar la sección por ID
+        const seccion = window.logoSeccionesSeleccionadasTab.find(s => s.id === seccionId);
+        if (!seccion) return;
+        
+        seccion.opciones.splice(itemIdx, 1);
+        
+        // Re-renderizar las ubicaciones en el contenedor específico
+        const opcionesDiv = document.getElementById(`opciones-${seccionId}`);
+        if (opcionesDiv) {
+            opcionesDiv.innerHTML = `
+                ${seccion.opciones.map((opcion, opIdx) => `
+                    <span style="display: inline-flex; align-items: center; gap: 0.4rem; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #1e40af; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.85rem; font-weight: 500; box-shadow: 0 2px 4px rgba(30,64,175,0.1);">
+                        ${opcion}
+                        <button type="button" onclick="eliminarUbicacionItemTab('${seccionId}', ${opIdx})" style="background: none; border: none; color: #1e40af; cursor: pointer; font-weight: bold; padding: 0; font-size: 1rem; transition: all 0.2s; line-height: 1;" onmouseover="this.style.transform = 'scale(1.3)';" onmouseout="this.style.transform = 'scale(1)';">×</button>
+                    </span>
+                `).join('')}
+            `;
+        }
+    };
+
+    window.agregarTecnicaTabLogo = function() {
+        const select = document.getElementById('selector_tecnicas_logo');
+        const tecnicaValue = select.value.trim();
+        
+        if (!tecnicaValue) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Selecciona una técnica',
+                text: 'Debes seleccionar una técnica antes de agregarla',
+                timer: 2000
+            });
+            return;
+        }
+        
+        // Obtener el array global de técnicas (crear si no existe)
+        if (!window.logoTecnicasSeleccionadasTab) {
+            window.logoTecnicasSeleccionadasTab = [];
+        }
+        
+        // Verificar que no esté duplicada
+        if (window.logoTecnicasSeleccionadasTab.includes(tecnicaValue)) {
+            Swal.fire({
+                icon: 'info',
+                title: 'Técnica duplicada',
+                text: 'Esta técnica ya ha sido agregada',
+                timer: 2000
+            });
+            return;
+        }
+        
+        window.logoTecnicasSeleccionadasTab.push(tecnicaValue);
+        
+        const tecnicasDiv = document.getElementById('tecnicas_seleccionadas_logo');
+        if (tecnicasDiv) {
+            const span = document.createElement('span');
+            span.style.cssText = 'display: inline-flex; align-items: center; gap: 0.5rem; background: #e3f2fd; color: #1976d2; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem; font-weight: 600;';
+            const idx = window.logoTecnicasSeleccionadasTab.length - 1;
+            span.innerHTML = `
+                ${tecnicaValue}
+                <button type="button" onclick="eliminarTecnicaDelTabLogo(${idx})" style="background: none; border: none; color: #1976d2; cursor: pointer; font-size: 1.2rem; padding: 0;">×</button>
+            `;
+            tecnicasDiv.appendChild(span);
+        }
+        
+        select.value = '';
+    };
+
+    // agregarTallaAlTab() - FUNCIÓN ANTIGUA ELIMINADA
+    // Las tallas ahora se agregan en el modal de cada sección
+    
+
+    window.agregarUbicacionNuevaTab = function(seccionId) {
+        const input = document.querySelector(`.ubicacion-nueva-input-tab[data-seccion-id="${seccionId}"]`);
+        if (!input || !input.value.trim()) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Ingresa una ubicación',
+                text: 'Por favor escribe el nombre de la ubicación',
+                timer: 2000
+            });
+            return;
+        }
+        
+        const nuevaUbicacion = input.value.trim().toUpperCase();
+        
+        if (!window.logoSeccionesSeleccionadasTab) {
+            window.logoSeccionesSeleccionadasTab = [];
+        }
+        
+        // Buscar la sección por ID
+        const seccion = window.logoSeccionesSeleccionadasTab.find(s => s.id === seccionId);
+        if (!seccion) return;
+        
+        if (seccion.opciones.includes(nuevaUbicacion)) {
+            Swal.fire({
+                icon: 'info',
+                title: 'Ubicación duplicada',
+                text: 'Esta ubicación ya existe en esta sección',
+                timer: 2000
+            });
+            return;
+        }
+        
+        seccion.opciones.push(nuevaUbicacion);
+        input.value = '';
+        input.focus();
+        
+        // Re-renderizar las ubicaciones en el contenedor específico
+        const opcionesDiv = document.getElementById(`opciones-${seccionId}`);
+        if (opcionesDiv) {
+            opcionesDiv.innerHTML = `
+                ${seccion.opciones.map((opcion, opIdx) => `
+                    <span style="display: inline-flex; align-items: center; gap: 0.4rem; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); color: #1e40af; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.85rem; font-weight: 500; box-shadow: 0 2px 4px rgba(30,64,175,0.1);">
+                        ${opcion}
+                        <button type="button" onclick="eliminarUbicacionItemTab('${seccionId}', ${opIdx})" style="background: none; border: none; color: #1e40af; cursor: pointer; font-weight: bold; padding: 0; font-size: 1rem; transition: all 0.2s; line-height: 1;" onmouseover="this.style.transform = 'scale(1.3)';" onmouseout="this.style.transform = 'scale(1)';">×</button>
+                    </span>
+                `).join('')}
+            `;
+        }
+    };
+
+    window.eliminarTecnicaDelTabLogo = function(index) {
+        if (!window.logoTecnicasSeleccionadasTab) return;
+        window.logoTecnicasSeleccionadasTab.splice(index, 1);
+        
+        const tecnicasDiv = document.getElementById('tecnicas_seleccionadas_logo');
+        if (tecnicasDiv) {
+            tecnicasDiv.innerHTML = '';
+            if (window.logoTecnicasSeleccionadasTab.length > 0) {
+                window.logoTecnicasSeleccionadasTab.forEach((tecnica, idx) => {
+                    const span = document.createElement('span');
+                    span.style.cssText = 'display: inline-flex; align-items: center; gap: 0.5rem; background: #e3f2fd; color: #1976d2; padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.9rem; font-weight: 600;';
+                    span.innerHTML = `
+                        ${tecnica}
+                        <button type="button" onclick="eliminarTecnicaDelTabLogo(${idx})" style="background: none; border: none; color: #1976d2; cursor: pointer; font-size: 1.2rem; padding: 0;">×</button>
+                    `;
+                    tecnicasDiv.appendChild(span);
+                });
+            }
+        }
     };
 
     window.renderizarObservacionesLogo = function() {
@@ -2068,29 +3019,75 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        // ✅ DETECTAR SI ES LOGO O PRENDAS
+        // ✅ DETECTAR TIPO DE COTIZACIÓN Y SI TIENE LOGO
+        const tipoCotizacionElement = document.querySelector('[data-tipo-cotizacion]');
+        const tipoCotizacion = tipoCotizacionElement?.dataset.tipoCotizacion || 'P';
+        
         const esLogo = logoTecnicasSeleccionadas.length > 0 || 
                        logoSeccionesSeleccionadas.length > 0 || 
                        logoFotosSeleccionadas.length > 0;
+        
+        const esCombinada = tipoCotizacion === 'PL';
+        const esLogoSolo = tipoCotizacion === 'L';
 
-        console.log('🎨 Enviando formulario...', {
+        console.log('🎯 Análisis de cotización:', {
+            tipoCotizacion: tipoCotizacion,
+            esCombinada: esCombinada,
+            esLogoSolo: esLogoSolo,
             esLogo: esLogo,
             logoTecnicas: logoTecnicasSeleccionadas.length,
             logoSecciones: logoSeccionesSeleccionadas.length,
             logoFotos: logoFotosSeleccionadas.length
         });
 
-        if (esLogo) {
+        if (esLogoSolo || esCombinada) {
             // ============================================================
-            // FLUJO PARA LOGO
+            // FLUJO PARA LOGO SOLO (Tipo L) o COMBINADA (Tipo PL)
             // ============================================================
-            console.log('🎨 [LOGO] Preparando datos de LOGO para enviar');
+            if (esLogoSolo) {
+                console.log('🎨 [LOGO SOLO] Preparando datos de LOGO para enviar');
+            } else {
+                console.log('🎨 [COMBINADA PL] Preparando pedidos de PRENDAS y LOGO para enviar');
+            }
+
+            // Para COMBINADA (PL), preparar prendas; para LOGO SOLO, enviar vacío
+            let prendasParaEnviar = [];
+            if (esCombinada) {
+                // Recopilar prendas igual que en el flujo normal
+                prendasCargadas.forEach((prenda, index) => {
+                    if (prendasEliminadas.has(index)) {
+                        console.log(`Saltando prenda eliminada: ${index}`);
+                        return;
+                    }
+
+                    const prendasCard = document.querySelector(`.prenda-card-editable[data-prenda-index="${index}"]`);
+                    if (!prendasCard) return;
+                    
+                    const tallasInputs = prendasCard.querySelectorAll('.talla-input');
+                    const cantidadesPorTalla = {};
+                    
+                    tallasInputs.forEach(input => {
+                        const talla = input.closest('.talla-group')?.getAttribute('data-talla');
+                        const cantidad = parseInt(input.value) || 0;
+                        if (talla && cantidad > 0) {
+                            cantidadesPorTalla[talla] = cantidad;
+                        }
+                    });
+                    
+                    prendasParaEnviar.push({
+                        index: index,
+                        nombre_producto: prenda.nombre_producto,
+                        cantidades: cantidadesPorTalla
+                    });
+                });
+                console.log('📦 [COMBINADA] Prendas a enviar:', prendasParaEnviar);
+            }
 
             // Crear el pedido primero
             const bodyCrearPedido = {
                 cotizacion_id: cotizacionId,
                 forma_de_pago: formaPagoInput.value,
-                prendas: []  // Sin prendas, es solo LOGO
+                prendas: prendasParaEnviar  // Vacío para LOGO SOLO, lleno para COMBINADA
             };
 
             console.log('📤 [LOGO] Enviando creación de pedido...', bodyCrearPedido);
@@ -2111,12 +3108,39 @@ document.addEventListener('DOMContentLoaded', function() {
                     throw new Error(dataCrearPedido.message || 'Error al crear pedido');
                 }
 
-                // ✅ MEJORADO: Usar logo_pedido_id si está disponible, sino usar pedido_id
-                const pedidoId = dataCrearPedido.logo_pedido_id || dataCrearPedido.pedido_id;
+                // ✅ DIFERENCIACIÓN: Depende del tipo de cotización
+                // - LOGO SOLO (L): dataCrearPedido.logo_pedido_id
+                // - COMBINADA (PL): dataCrearPedido.pedido_id (del pedidos_produccion)
+                const esCombinada = (dataCrearPedido.es_combinada === true || dataCrearPedido.es_combinada === 'true' || dataCrearPedido.tipo_cotizacion === 'PL');
+                const pedidoId = esCombinada ? dataCrearPedido.pedido_id : (dataCrearPedido.logo_pedido_id || dataCrearPedido.pedido_id);
+                
+                console.log('🎯 [PRIMER REQUEST COMPLETADO] Respuesta completa del servidor:', dataCrearPedido);
+                console.log('🎯 [LOGO] DETECTANDO TIPO:', {
+                    esCombinada: esCombinada,
+                    'dataCrearPedido.es_combinada': dataCrearPedido.es_combinada,
+                    'typeof es_combinada': typeof dataCrearPedido.es_combinada,
+                    'dataCrearPedido.tipo_cotizacion': dataCrearPedido.tipo_cotizacion,
+                    pedidoId: pedidoId,
+                    'dataCrearPedido.pedido_id': dataCrearPedido.pedido_id,
+                    'dataCrearPedido.logo_pedido_id': dataCrearPedido.logo_pedido_id
+                });
                 
                 // ✅ CORREGIDO: Usar logo_cotizacion_id devuelto por el servidor (más confiable)
                 // Si no viene en la respuesta, usar la variable global como fallback
                 const logoCotizacionIdAUsar = dataCrearPedido.logo_cotizacion_id || logoCotizacionId;
+
+                // ✅ NUEVO: Calcular cantidad total (suma de todas las tallas del logo)
+                let cantidadTotal = 0;
+                const tallaInputs = document.querySelectorAll('.logo-talla-cantidad');
+                console.log('📍 [CANTIDAD] Buscando inputs .logo-talla-cantidad, encontrados:', tallaInputs.length);
+                
+                tallaInputs.forEach((input, idx) => {
+                    const cantidad = parseInt(input.value) || 0;
+                    console.log('   Talla ' + idx + ': ' + cantidad);
+                    cantidadTotal += cantidad;
+                });
+                
+                console.log('📦 [LOGO] Cantidad total calculada (suma de tallas):', cantidadTotal);
 
                 // Ahora guardar los datos específicos de LOGO
                 const descripcionLogoPedido = document.getElementById('logo_descripcion')?.value || '';
@@ -2130,7 +3154,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const bodyLogoPedido = {
                     pedido_id: pedidoId,
                     logo_cotizacion_id: logoCotizacionIdAUsar,  // ← Usar valor del servidor
+                    cotizacion_id: cotizacionId,  // ✅ NUEVO: Enviar cotizacion_id para que se guarde en BD
+                    forma_de_pago: formaPagoInput.value,  // ✅ NUEVO: Enviar forma de pago
                     descripcion: descripcionLogoPedido,
+                    cantidad: cantidadTotal, // ✅ NUEVO: Enviar cantidad total
                     tecnicas: logoTecnicasSeleccionadas,
                     observaciones_tecnicas: observacionesTecnicas,
                     ubicaciones: logoSeccionesSeleccionadas,
@@ -2139,6 +3166,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 console.log('🎨 [LOGO] Datos del LOGO pedido a guardar:', bodyLogoPedido);
 
+                // ✅ CRÍTICO: Solo hacer fetch para COMBINADA (PL)
+                // Para LOGO SOLO, el pedido ya se creó en el primer request
+                console.log('\n==================== DECISIÓN CRÍTICA ====================');
+                console.log('⚠️  [DECISIÓN] Valor de esCombinada:', esCombinada);
+                console.log('⚠️  [DECISIÓN] Tipo de esCombinada:', typeof esCombinada);
+                console.log('⚠️  [DECISIÓN] ¿!esCombinada (NO combinada)?', !esCombinada);
+                console.log('⚠️  [DECISIÓN] ¿esCombinada (SÍ combinada)?', esCombinada);
+                console.log('==========================================================\n');
+                
+                if (!esCombinada) {
+                    // Para LOGO SOLO, saltarse el segundo fetch y mostrar éxito directamente
+                    console.log('📍 [LOGO SOLO] Es LOGO SOLO, no enviar segundo request');
+                    return Promise.resolve({
+                        success: true,
+                        numero_pedido_logo: dataCrearPedido.numero_pedido || 'LOGO-PENDIENTE',
+                        logo_pedido: {
+                            numero_pedido: dataCrearPedido.numero_pedido || 'LOGO-PENDIENTE'
+                        }
+                    });
+                }
+
+                console.log('📍 [COMBINADA] ¡¡¡ ES COMBINADA, ENVIANDO SEGUNDO REQUEST !!!');
+                console.log('📍 [COMBINADA] URL: /asesores/pedidos/guardar-logo-pedido');
+                console.log('📍 [COMBINADA] BODY:', bodyLogoPedido);
+                
                 return fetch('/asesores/pedidos/guardar-logo-pedido', {
                     method: 'POST',
                     headers: {
@@ -2148,19 +3200,42 @@ document.addEventListener('DOMContentLoaded', function() {
                     body: JSON.stringify(bodyLogoPedido)
                 });
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('✅ [RESPUESTA SEGUNDO REQUEST] Status:', response.status);
+                return response.json();
+            })
             .then(data => {
-                console.log('✅ [LOGO] Respuesta del servidor:', data);
+                console.log('✅ [RESPUESTA SEGUNDO REQUEST JSON] Respuesta completa:', data);
 
                 if (data.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: '¡Éxito!',
-                        text: 'Pedido de LOGO creado exitosamente\nNúmero de LOGO: ' + (data.logo_pedido?.numero_pedido || ''),
-                        confirmButtonText: 'OK'
-                    }).then(() => {
-                        window.location.href = '/asesores/pedidos';
-                    });
+                    // Para LOGO SOLO, mostrar éxito con número de LOGO
+                    if (esLogoSolo) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Éxito!',
+                            text: 'Pedido de LOGO creado exitosamente\nNúmero de LOGO: ' + (data.logo_pedido?.numero_pedido || data.numero_pedido_logo || ''),
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            window.location.href = '/asesores/pedidos';
+                        });
+                    } else if (esCombinada) {
+                        // Para COMBINADA (PL), mostrar AMBOS números
+                        const numeroPrendas = data.numero_pedido_produccion || data.pedido_produccion?.numero_pedido || 'N/A';
+                        const numeroLogo = data.numero_pedido_logo || data.logo_pedido?.numero_pedido || 'N/A';
+                        
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Éxito!',
+                            html: '<p style="font-size: 16px; line-height: 1.8;">' +
+                                  'Pedidos creados exitosamente<br><br>' +
+                                  '<strong>📦 Pedido Producción:</strong> ' + numeroPrendas + '<br>' +
+                                  '<strong>🎨 Pedido Logo:</strong> ' + numeroLogo +
+                                  '</p>',
+                            confirmButtonText: 'OK'
+                        }).then(() => {
+                            window.location.href = '/asesores/pedidos';
+                        });
+                    }
                 } else {
                     Swal.fire({
                         icon: 'error',
@@ -2180,7 +3255,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             });
 
-            return;  // Salir aquí
+            return;  // Salir aquí (tanto LOGO SOLO como COMBINADA terminan aquí)
         }
 
         // ============================================================

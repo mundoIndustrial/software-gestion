@@ -183,27 +183,29 @@ class PedidosProduccionController extends Controller
             ], 403);
         }
 
-        // ✅ VALIDACIÓN: Detectar si es cotización tipo LOGO
+        // ✅ VALIDACIÓN: Detectar si es cotización tipo LOGO o COMBINADA (PL)
         $tipoCotizacionCodigo = strtoupper(trim($cotizacion->tipoCotizacion?->codigo ?? ''));
         \Log::warning('🎨 [crearDesdeCotizacion] Verificando tipo cotización', [
             'codigo_original' => $cotizacion->tipoCotizacion?->codigo,
             'codigo_normalizado' => $tipoCotizacionCodigo,
-            'es_logo' => ($tipoCotizacionCodigo === 'L' ? 'SÍ' : 'NO'),
+            'es_logo_solo' => ($tipoCotizacionCodigo === 'L' ? 'SÍ' : 'NO'),
+            'es_combinada' => ($tipoCotizacionCodigo === 'PL' ? 'SÍ' : 'NO'),
             'tipoCotizacion_objeto' => $cotizacion->tipoCotizacion ? 'existe' : 'NULL'
         ]);
         
         if ($tipoCotizacionCodigo === 'L') {
-            \Log::info('🎨🎨🎨 [crearDesdeCotizacion] ¡¡¡ES LOGO!!! Redirigiendo a crearLogoPedidoDesdeAnullCotizacion', [
+            \Log::info('🎨🎨🎨 [crearDesdeCotizacion] ¡¡¡ES LOGO SOLO!!! Redirigiendo a crearLogoPedidoDesdeAnullCotizacion', [
                 'cotizacion_id' => $cotizacion->id,
                 'numero_cotizacion' => $cotizacion->numero
             ]);
-            // ✅ Si es LOGO, crear en logo_pedidos en lugar de pedidos_produccion
+            // ✅ Si es LOGO SOLO, crear en logo_pedidos en lugar de pedidos_produccion
             return $this->crearLogoPedidoDesdeAnullCotizacion($cotizacion);
         }
 
-        \Log::info('📦 [crearDesdeCotizacion] NO es LOGO, continuando con pedidos_produccion normal', [
+        \Log::info('📦 [crearDesdeCotizacion] Continuando con pedidos_produccion normal', [
             'cotizacion_id' => $cotizacion->id,
-            'codigo' => $tipoCotizacionCodigo
+            'codigo' => $tipoCotizacionCodigo,
+            'es_combinada_pl' => ($tipoCotizacionCodigo === 'PL' ? 'SÍ (creará AMBOS pedidos)' : 'NO')
         ]);
 
         try {
@@ -615,11 +617,28 @@ class PedidosProduccionController extends Controller
 
             DB::commit();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Cotización aceptada y pedido creado',
-                'pedido_id' => $pedido->id
-            ]);
+            // ✅ Si es combinada (PL), indicar al frontend que debe crear TAMBIÉN logo_pedido
+            if ($tipoCotizacionCodigo === 'PL') {
+                // Obtener logo_cotizacion_id para enviarlo al frontend
+                $logoCotizacionId = DB::table('logo_cotizaciones')
+                    ->where('cotizacion_id', $cotizacionId)
+                    ->value('id');
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Pedido de PRENDAS creado. El pedido de LOGO se creará al completar el formulario.',
+                    'pedido_id' => $pedido->id,
+                    'tipo_cotizacion' => 'PL',
+                    'es_combinada' => true,
+                    'logo_cotizacion_id' => $logoCotizacionId  // ✅ NUEVO: Enviar para que JavaScript lo use
+                ]);
+            } else {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Cotización aceptada y pedido creado',
+                    'pedido_id' => $pedido->id
+                ]);
+            }
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('Error al crear pedido desde cotización', [
@@ -725,6 +744,7 @@ class PedidosProduccionController extends Controller
      * Guardar los datos específicos del LOGO en un pedido LOGO existente
      * ✅ NUEVO: Actualiza logo_pedidos con los datos del formulario
      * ✅ Guarda TODOS los campos necesarios según tabla logo_pedidos
+     * ✅ Calcula y guarda la cantidad total (suma de tallas)
      */
     public function guardarLogoPedido(Request $request): JsonResponse
     {
@@ -733,56 +753,138 @@ class PedidosProduccionController extends Controller
 
             $pedidoId = $request->input('pedido_id');
             $logoCotizacionId = $request->input('logo_cotizacion_id');
+            $cantidad = $request->input('cantidad', 0); // Suma de tallas enviada desde frontend
+            $cotizacionId = $request->input('cotizacion_id');
 
             \Log::info('🎨 [guardarLogoPedido] Guardando datos de LOGO', [
                 'pedido_id' => $pedidoId,
-                'logo_cotizacion_id' => $logoCotizacionId
+                'logo_cotizacion_id' => $logoCotizacionId,
+                'cantidad' => $cantidad,
+                'cotizacion_id' => $cotizacionId
             ]);
 
             // Obtener datos de la cotización si fue enviada
-            $cotizacionId = $request->input('cotizacion_id');
             $numeroCotizacion = null;
+            $cliente = null;
+            $asesora = null;
+            $formaPago = null;
             
             if ($cotizacionId) {
                 $cotizacion = DB::table('cotizaciones')
                     ->where('id', $cotizacionId)
-                    ->select('id', 'numero')
+                    ->select('id', 'numero', 'cliente_id')
                     ->first();
                 
                 if ($cotizacion) {
                     $numeroCotizacion = $cotizacion->numero;
+                    // Obtener cliente
+                    $clienteObj = DB::table('clientes')->where('id', $cotizacion->cliente_id)->first();
+                    $cliente = $clienteObj?->nombre ?? 'Sin nombre';
                 }
             }
+            
+            $asesora = Auth::user()?->name;
+            $formaPago = $request->input('forma_de_pago') ?? 'Por definir';
 
-            // Actualizar el registro en logo_pedidos con los datos del formulario
-            $updateData = [
-                'logo_cotizacion_id' => $logoCotizacionId,
-                'descripcion' => $request->input('descripcion', ''),
-                'tecnicas' => json_encode($request->input('tecnicas', [])),
-                'observaciones_tecnicas' => $request->input('observaciones_tecnicas', ''),
-                'ubicaciones' => json_encode($request->input('ubicaciones', [])),
-                'observaciones' => $request->input('observaciones', ''),
-                'updated_at' => now(),
-            ];
+            // ✅ VERIFICAR: ¿Existe ya un logo_pedido con este ID?
+            $logoPedidoExistente = DB::table('logo_pedidos')->find($pedidoId);
+            
+            \Log::info('🎨 [guardarLogoPedido] Buscando logo_pedido existente', [
+                'pedido_id_buscado' => $pedidoId,
+                'encontrado' => $logoPedidoExistente ? 'SÍ' : 'NO'
+            ]);
+            
+            if (!$logoPedidoExistente) {
+                // ✅ NUEVO: Si no existe, CREAR uno nuevo en logo_pedidos
+                // Esto ocurre cuando es COMBINADA (PL) y es la primera vez que se guarda el logo
+                \Log::info('🎨 [guardarLogoPedido] CREANDO nuevo registro en logo_pedidos (COMBINADA PL)', [
+                    'pedido_id' => $pedidoId,
+                    'cotizacion_id' => $cotizacionId
+                ]);
+                
+                // Generar número LOGO
+                $numeroLogoPedido = $this->generarNumeroLogoPedido();
+                
+                \Log::info('🎨 [guardarLogoPedido] Datos a insertar en INSERT', [
+                    'pedido_id' => $pedidoId,
+                    'logo_cotizacion_id' => $logoCotizacionId,
+                    'numero_pedido' => $numeroLogoPedido,
+                    'cliente' => $cliente,
+                    'asesora' => $asesora,
+                    'forma_de_pago' => $formaPago
+                ]);
+                
+                $nuevoPedidoLogoId = DB::table('logo_pedidos')->insertGetId([
+                    'pedido_id' => $pedidoId,  // FK a pedidos_produccion
+                    'logo_cotizacion_id' => $logoCotizacionId,
+                    'numero_pedido' => $numeroLogoPedido,
+                    'cotizacion_id' => $cotizacionId,
+                    'numero_cotizacion' => $numeroCotizacion,
+                    'cliente' => $cliente,
+                    'asesora' => $asesora,
+                    'forma_de_pago' => $formaPago,
+                    'encargado_orden' => $asesora,
+                    'fecha_de_creacion_de_orden' => now(),
+                    'estado' => 'pendiente',
+                    'descripcion' => $request->input('descripcion', ''),
+                    'cantidad' => $cantidad,
+                    'tecnicas' => json_encode($request->input('tecnicas', [])),
+                    'observaciones_tecnicas' => $request->input('observaciones_tecnicas', ''),
+                    'ubicaciones' => json_encode($request->input('ubicaciones', [])),
+                    'observaciones' => $request->input('observaciones', ''),
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+                
+                \Log::info('✅ [guardarLogoPedido] INSERT completado', [
+                    'nuevo_logo_pedido_id' => $nuevoPedidoLogoId
+                ]);
+                
+                // USAR EL NUEVO ID DEVUELTO POR INSERT, NO EL ORIGINAL
+                $pedidoId = $nuevoPedidoLogoId;
+                
+                // ❌ TEMPORALMENTE DESHABILITADO: Crear proceso inicial
+                // TODO: Revisar validación en ProcesosPedidosLogo::crearProcesoInicial
+                \Log::info('⏭️  [guardarLogoPedido] Saltando creación de proceso inicial (TEMPORALMENTE)');
+                
+                \Log::info('✅ [guardarLogoPedido] Nuevo logo_pedido creado', [
+                    'logo_pedido_id' => $pedidoId,
+                    'numero_pedido' => $numeroLogoPedido
+                ]);
+            } else {
+                // ✅ Si ya existe, ACTUALIZAR (para LOGO SOLO)
+                // Actualizar el registro en logo_pedidos con los datos del formulario
+                $updateData = [
+                    'logo_cotizacion_id' => $logoCotizacionId,
+                    'descripcion' => $request->input('descripcion', ''),
+                    'cantidad' => $cantidad,
+                    'tecnicas' => json_encode($request->input('tecnicas', [])),
+                    'observaciones_tecnicas' => $request->input('observaciones_tecnicas', ''),
+                    'ubicaciones' => json_encode($request->input('ubicaciones', [])),
+                    'observaciones' => $request->input('observaciones', ''),
+                    'updated_at' => now(),
+                ];
 
-            // Agregar campos opcionales si están disponibles
-            if ($cotizacionId) {
-                $updateData['cotizacion_id'] = $cotizacionId;
-            }
-            if ($numeroCotizacion) {
-                $updateData['numero_cotizacion'] = $numeroCotizacion;
-            }
+                // Agregar campos opcionales si están disponibles
+                if ($cotizacionId) {
+                    $updateData['cotizacion_id'] = $cotizacionId;
+                }
+                if ($numeroCotizacion) {
+                    $updateData['numero_cotizacion'] = $numeroCotizacion;
+                }
 
-            $updated = DB::table('logo_pedidos')
-                ->where('id', $pedidoId)
-                ->update($updateData);
+                $updated = DB::table('logo_pedidos')
+                    ->where('id', $pedidoId)
+                    ->update($updateData);
 
-            if (!$updated) {
-                throw new \Exception('No se encontró el registro de logo_pedido con ID: ' . $pedidoId);
+                if (!$updated) {
+                    throw new \Exception('No se encontró el registro de logo_pedido con ID: ' . $pedidoId);
+                }
             }
 
             \Log::info('✅ [guardarLogoPedido] LOGO actualizado correctamente', [
                 'logo_pedido_id' => $pedidoId,
+                'cantidad' => $cantidad,
                 'logo_cotizacion_id' => $logoCotizacionId,
                 'cotizacion_id' => $cotizacionId
             ]);
@@ -808,17 +910,32 @@ class PedidosProduccionController extends Controller
 
             // Obtener el registro actualizado
             $logoPedido = DB::table('logo_pedidos')->find($pedidoId);
+            
+            // ✅ Si es COMBINADA (tiene pedido_id), obtener también datos del pedido de prendas
+            $pedidoPrendas = null;
+            if ($logoPedido->pedido_id) {
+                $pedidoPrendas = DB::table('pedidos_produccion')
+                    ->where('id', $logoPedido->pedido_id)
+                    ->select('id', 'numero_pedido')
+                    ->first();
+            }
 
             return response()->json([
                 'success' => true,
                 'message' => 'LOGO Pedido guardado correctamente',
-                'logo_pedido' => $logoPedido
+                'logo_pedido' => $logoPedido,
+                'pedido_produccion' => $pedidoPrendas,  // ✅ NUEVO: Devolver datos del pedido de prendas si existe
+                'numero_pedido_produccion' => $pedidoPrendas?->numero_pedido,  // Para facilitar en frontend
+                'numero_pedido_logo' => $logoPedido->numero_pedido
             ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
             \Log::error('❌ [guardarLogoPedido] Error al guardar logo_pedido', [
                 'error' => $e->getMessage(),
+                'code' => $e->getCode(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString()
             ]);
 
