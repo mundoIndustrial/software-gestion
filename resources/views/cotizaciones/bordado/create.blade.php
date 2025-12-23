@@ -1351,7 +1351,7 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
                      document.querySelector('input[name="_token"]')?.value;
 
     if (tieneImagenesNuevas) {
-        // Si hay imágenes nuevas, usar FormData
+        // Si hay imágenes nuevas, usar FormData (un solo fetch)
         const formData = new FormData();
         
         // Si es PUT, agregar _method para que Laravel lo reconozca
@@ -1359,30 +1359,14 @@ document.getElementById('cotizacionBordadoForm').addEventListener('submit', asyn
             formData.append('_method', 'PUT');
         }
 
-        // Siempre usar POST para FormData con archivos, Laravel lo manejará con _method
-        const fetchOptions = {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRF-TOKEN': csrfToken
+        // Agregar datos JSON al FormData
+        Object.keys(data).forEach(key => {
+            if (Array.isArray(data[key]) || typeof data[key] === 'object') {
+                formData.append(key, JSON.stringify(data[key]));
+            } else {
+                formData.append(key, data[key]);
             }
-        };
-
-        try {
-            // Agregar datos JSON al FormData
-            Object.keys(data).forEach(key => {
-                if (Array.isArray(data[key]) || typeof data[key] === 'object') {
-                    formData.append(key, JSON.stringify(data[key]));
-                } else {
-                    formData.append(key, data[key]);
-                }
-            });
-
-            response = await fetch(url, fetchOptions);
-        } catch (error) {
-            console.error('❌ Error en el fetch con FormData:', error);
-            throw error;
-        }
+        });
 
         // Agregar solo imágenes nuevas (no existentes)
         imagenesSeleccionadas.forEach((img) => {

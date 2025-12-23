@@ -1395,10 +1395,10 @@ function cargarBorrador(cotizacion) {
                 
                 div.innerHTML = `
                     <img src="${srcUrl}" 
+                         data-ruta="${rutaFoto}"
                          style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;" 
                          alt="Imagen general"
                          title="Haz clic para eliminar"
-                         data-ruta="${srcUrl}"
                          data-foto-id="${fotoData.id || ''}">
                     ${btnBorrar}
                 `;

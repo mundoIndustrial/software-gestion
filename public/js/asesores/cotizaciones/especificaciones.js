@@ -344,6 +344,13 @@ function guardarUbicacionFriendly(ubicacion) {
     cerrarModalUbicacionFriendly();
     document.getElementById('seccion_prenda').value = '';
     renderizarSeccionesFriendly();
+    
+    // ✅ ACTUALIZAR EL CAMPO OCULTO paso3_secciones_datos
+    const campoOculto = document.getElementById('paso3_secciones_datos');
+    if (campoOculto) {
+        campoOculto.value = JSON.stringify(seccionesSeleccionadasFriendly);
+        console.log('✅ Campo paso3_secciones_datos actualizado:', seccionesSeleccionadasFriendly);
+    }
 }
 
 function renderizarSeccionesFriendly() {
@@ -414,6 +421,13 @@ function renderizarSeccionesFriendly() {
 function eliminarSeccionFriendly(index) {
     seccionesSeleccionadasFriendly.splice(index, 1);
     renderizarSeccionesFriendly();
+    
+    // ✅ ACTUALIZAR EL CAMPO OCULTO paso3_secciones_datos
+    const campoOculto = document.getElementById('paso3_secciones_datos');
+    if (campoOculto) {
+        campoOculto.value = JSON.stringify(seccionesSeleccionadasFriendly);
+        console.log('✅ Campo paso3_secciones_datos actualizado (eliminación):', seccionesSeleccionadasFriendly);
+    }
 }
 
 // Editar seccion existente (usa el mismo modal de creación)

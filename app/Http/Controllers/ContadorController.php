@@ -287,6 +287,34 @@ class ContadorController extends Controller
             // Agregar datos del logo si existe
             $logoCotizacion = null;
             if ($cotizacionModelo->logoCotizacion) {
+                // Fotos desde relación (logo_fotos_cot)
+                $logoFotos = $cotizacionModelo->logoCotizacion->fotos ? $cotizacionModelo->logoCotizacion->fotos->map(function($foto) {
+                    return [
+                        'id' => $foto->id,
+                        'url' => $foto->url,
+                        'orden' => $foto->orden,
+                    ];
+                })->toArray() : [];
+
+                // Fallback: campo imágenes (array de rutas) para cotizaciones guardadas en ese formato
+                if (empty($logoFotos) && !empty($cotizacionModelo->logoCotizacion->imagenes)) {
+                    $logoFotos = collect($cotizacionModelo->logoCotizacion->imagenes)
+                        ->filter()
+                        ->values()
+                        ->map(function($ruta, $idx) {
+                            $url = $ruta;
+                            if (is_string($ruta) && !str_starts_with($ruta, 'http')) {
+                                $url = str_starts_with($ruta, '/storage/') ? $ruta : '/storage/' . ltrim($ruta, '/');
+                            }
+                            return [
+                                'id' => null,
+                                'url' => $url,
+                                'orden' => $idx + 1,
+                            ];
+                        })
+                        ->toArray();
+                }
+
                 $logoCotizacion = [
                     'id' => $cotizacionModelo->logoCotizacion->id,
                     'descripcion' => $cotizacionModelo->logoCotizacion->descripcion ?? null,
@@ -294,13 +322,7 @@ class ContadorController extends Controller
                     'secciones' => $cotizacionModelo->logoCotizacion->secciones ?? [],
                     'observaciones_tecnicas' => $cotizacionModelo->logoCotizacion->observaciones_tecnicas ?? null,
                     'observaciones_generales' => $cotizacionModelo->logoCotizacion->observaciones_generales ?? [],
-                    'fotos' => $cotizacionModelo->logoCotizacion->fotos ? $cotizacionModelo->logoCotizacion->fotos->map(function($foto) {
-                        return [
-                            'id' => $foto->id,
-                            'url' => $foto->url,
-                            'orden' => $foto->orden,
-                        ];
-                    })->toArray() : [],
+                    'fotos' => $logoFotos,
                 ];
             }
 

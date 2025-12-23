@@ -533,7 +533,7 @@ final class CotizacionController extends Controller
             if (!$esBorrador) {
                 // Usar el servicio de generación segura de números (con database locks)
                 $usuarioId = \App\Domain\Shared\ValueObjects\UserId::crear(Auth::id());
-                $numeroCotizacion = $this->generarNumeroCotizacionService->generarProxNumeroCotizacion($usuarioId);
+                $numeroCotizacion = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId);
                 
                 Log::info('CotizacionController@store: Número de cotización generado con servicio seguro', [
                     'usuario_id' => Auth::id(),
@@ -618,10 +618,36 @@ final class CotizacionController extends Controller
                 Log::info('Cliente creado/obtenido en update', ['cliente_id' => $clienteId, 'nombre' => $nombreCliente]);
             }
 
+            // Determinar si es borrador o envío
+            $tipo = $request->input('tipo'); // 'borrador' o 'enviada'
+            $esBorrador = ($tipo === 'borrador' || $request->input('es_borrador') === '1' || $request->input('es_borrador') === true);
+            $estado = $esBorrador ? 'BORRADOR' : 'ENVIADA_CONTADOR';
+            
+            // Generar número de cotización si es envío (y no tiene uno)
+            $numeroCotizacion = $cotizacion->numero_cotizacion;
+            if (!$esBorrador && !$numeroCotizacion) {
+                $usuarioId = \App\Domain\Shared\ValueObjects\UserId::crear(Auth::id());
+                $numeroCotizacion = $this->generarNumeroCotizacionService->generarNumeroCotizacionFormateado($usuarioId);
+                Log::info('Número de cotización generado en UPDATE', ['numero' => $numeroCotizacion, 'cotizacion_id' => $id]);
+            }
+            
+            Log::info('UPDATE - Estado de cotización', [
+                'tipo_recibido' => $tipo,
+                'es_borrador_anterior' => $cotizacion->es_borrador,
+                'es_borrador_nuevo' => $esBorrador,
+                'estado_anterior' => $cotizacion->estado,
+                'estado_nuevo' => $estado,
+                'numero_cotizacion' => $numeroCotizacion,
+            ]);
+
             // Actualizar datos básicos
             $datosActualizar = [
                 'cliente_id' => $clienteId,
                 'tipo_venta' => $request->input('tipo_venta'),
+                'es_borrador' => $esBorrador,
+                'estado' => $estado,
+                'numero_cotizacion' => $numeroCotizacion,
+                'fecha_envio' => !$esBorrador ? \Carbon\Carbon::now('America/Bogota') : null,
             ];
             
             // Solo actualizar especificaciones si se envían nuevas, si no mantener las existentes
@@ -727,17 +753,9 @@ final class CotizacionController extends Controller
             }
 
             // Procesar logo ANTES de procesar nuevas imágenes para que la eliminación funcione correctamente
+            // NOTA: NO actualizamos aquí, lo hacemos en procesarImagenesCotizacion() para evitar conflictos
             $logoCotizacion = $cotizacion->logoCotizacion;
             if ($logoCotizacion) {
-                // Actualizar datos del logo
-                $logoCotizacion->update([
-                    'descripcion' => $request->input('descripcion_logo', ''),
-                    'tecnicas' => json_encode($request->input('tecnicas', [])),
-                    'observaciones_tecnicas' => $request->input('observaciones_tecnicas', ''),
-                    'ubicaciones' => json_encode($request->input('ubicaciones', [])),
-                    'observaciones_generales' => json_encode($request->input('observaciones_generales', [])),
-                ]);
-                
                 // Obtener las fotos guardadas que se envían desde el frontend
                 // Pueden venir como array: logo_fotos_guardadas[]
                 $fotosLogoGuardadas = $request->input('logo_fotos_guardadas', []);
@@ -825,9 +843,14 @@ final class CotizacionController extends Controller
         try {
             $prendas = $request->input('prendas', []);
             $allFiles = $request->allFiles();
+            
+            // DETECTAR si es UPDATE o CREATE
+            $cotizacionExistente = \App\Models\Cotizacion::find($cotizacionId);
+            $esUpdate = !!$cotizacionExistente;
 
             Log::info('Procesando imágenes de cotización', [
                 'cotizacion_id' => $cotizacionId,
+                'es_update' => $esUpdate,
                 'prendas_count' => count($prendas),
                 'all_files_keys' => array_keys($allFiles),
             ]);
@@ -851,7 +874,8 @@ final class CotizacionController extends Controller
                 Log::info('Procesando prenda', ['prenda_id' => $prendaModel->id, 'index' => $index]);
 
                 // === FOTOS DE PRENDA EXISTENTES (preservar en edición o copia) ===
-                // Si la foto ya pertenece a esta prenda, no se duplica; solo se usan IDs para copiar entre cotizaciones.
+                // EN UPDATE: No procesar fotos existentes - ya están en la prenda
+                // EN CREATE: Permitir copiar fotos de otras prendas si es necesario
                 $ordenFotosPrenda = (($prendaModel->fotos()->max('orden')) ?? 0) + 1;
                 $fotosPrendaExistentes = $request->input("prendas.{$index}.fotos_existentes") ?? ($prenda['fotos_existentes'] ?? []);
                 if (is_string($fotosPrendaExistentes)) {
@@ -860,7 +884,10 @@ final class CotizacionController extends Controller
                 if (!is_array($fotosPrendaExistentes)) {
                     $fotosPrendaExistentes = [];
                 }
-                if (!empty($fotosPrendaExistentes)) {
+                
+                // ✅ EN UPDATE: IGNORAR fotos_existentes (ya están guardadas)
+                // ✅ EN CREATE: PROCESAR fotos_existentes (para copiar entre cotizaciones)
+                if (!empty($fotosPrendaExistentes) && !$esUpdate) {
                     foreach ($fotosPrendaExistentes as $fotoId) {
                         $fotoExistente = \App\Models\PrendaFotoCot::find($fotoId);
                         if ($fotoExistente) {
@@ -1117,24 +1144,26 @@ final class CotizacionController extends Controller
                                 $fotosTelaExistentes = [];
                             }
                             
-                            // Orden inicia después de las fotos que ya tenga esta prenda en ese índice
-                            $ordenFotosTela = (DB::table('prenda_tela_fotos_cot')
-                                ->where('prenda_cot_id', $prendaModel->id)
-                                ->where('tela_index', $telaIndex)
-                                ->max('orden') ?? 0) + 1;
-                            if (!empty($fotosTelaExistentes)) {
+                            // ✅ EN UPDATE: IGNORAR fotos_existentes (ya están guardadas)
+                            // ✅ EN CREATE: PROCESAR fotos_existentes (para copiar entre cotizaciones)
+                            if (empty($fotosTelaExistentes) || $esUpdate) {
+                                Log::info('⏭️ UPDATE o fotos vacías - IGNORANDO fotos_existentes de tela para evitar duplicados', [
+                                    'prenda_id' => $prendaModel->id,
+                                    'tela_index' => $telaIndex,
+                                    'es_update' => $esUpdate,
+                                    'fotos_existentes_count' => count($fotosTelaExistentes),
+                                ]);
+                            } else {
+                                // Orden inicia después de las fotos que ya tenga esta prenda en ese índice
+                                $ordenFotosTela = (DB::table('prenda_tela_fotos_cot')
+                                    ->where('prenda_cot_id', $prendaModel->id)
+                                    ->where('tela_index', $telaIndex)
+                                    ->max('orden') ?? 0) + 1;
+                                
                                 foreach ($fotosTelaExistentes as $fotoId) {
                                     $fotoExistente = \App\Models\PrendaTelaFotoCot::find($fotoId);
                                     if ($fotoExistente) {
-                                        // Si ya pertenece a esta prenda y mismo índice, no duplicar
-                                        if ($fotoExistente->prenda_cot_id == $prendaModel->id && $fotoExistente->tela_index == $telaIndex) {
-                                            Log::info('↔️ Foto de tela ya pertenece a la prenda, no se duplica', [
-                                                'foto_id' => $fotoId,
-                                                'prenda_id' => $prendaModel->id,
-                                                'tela_index' => $telaIndex,
-                                            ]);
-                                            continue;
-                                        }
+                                        // Crear copia (en CREATE para copiar entre cotizaciones)
                                         $prendaTelaCotId = $telaCotIds[$telaIndex] ?? null;
                                         \DB::table('prenda_tela_fotos_cot')->insert([
                                             'prenda_cot_id' => $prendaModel->id,
@@ -1150,9 +1179,10 @@ final class CotizacionController extends Controller
                                             'created_at' => now(),
                                             'updated_at' => now(),
                                         ]);
-                                        Log::info('✅ Foto de tela existente preservada', [
+                                        Log::info('✅ Foto de tela copiada de otra prenda', [
                                             'foto_id' => $fotoId,
-                                            'prenda_id' => $prendaModel->id,
+                                            'prenda_origen_id' => $fotoExistente->prenda_cot_id,
+                                            'prenda_destino_id' => $prendaModel->id,
                                             'tela_index' => $telaIndex,
                                             'orden' => $ordenFotosTela,
                                         ]);
@@ -1169,6 +1199,14 @@ final class CotizacionController extends Controller
                                     'cantidad_archivos' => count($telaData['fotos']),
                                     'telaCotIds_disponibles' => $telaCotIds,
                                 ]);
+                                
+                                // IMPORTANTE: Inicializar $ordenFotosTela si no existe
+                                if (!isset($ordenFotosTela)) {
+                                    $ordenFotosTela = (DB::table('prenda_tela_fotos_cot')
+                                        ->where('prenda_cot_id', $prendaModel->id)
+                                        ->where('tela_index', $telaIndex)
+                                        ->max('orden') ?? 0) + 1;
+                                }
                                 
                                 // Obtener prenda_tela_cot_id del mapeo
                                 $prendaTelaCotId = $telaCotIds[$telaIndex] ?? null;
@@ -1350,15 +1388,15 @@ final class CotizacionController extends Controller
             Log::info('Logo encontrado', ['count' => count($logoArchivos)]);
             
             // Obtener datos del PASO 3 (Logo)
-            $logoDescripcion = $request->input('descripcion_logo', '');
+            $logoDescripcion = trim($request->input('descripcion_logo', '')) ?: null;
             $logoTecnicas = $request->input('tecnicas', []);
             if (is_string($logoTecnicas)) {
                 $logoTecnicas = json_decode($logoTecnicas, true) ?? [];
             }
             $logoObservacionesTecnicas = $request->input('observaciones_tecnicas', '');
-            $logoUbicaciones = $request->input('ubicaciones', []);
-            if (is_string($logoUbicaciones)) {
-                $logoUbicaciones = json_decode($logoUbicaciones, true) ?? [];
+            $logoSecciones = $request->input('secciones', []);
+            if (is_string($logoSecciones)) {
+                $logoSecciones = json_decode($logoSecciones, true) ?? [];
             }
             $logoObservacionesGenerales = $request->input('observaciones_generales', []);
             if (is_string($logoObservacionesGenerales)) {
@@ -1366,18 +1404,55 @@ final class CotizacionController extends Controller
             }
             
             // Crear o actualizar logo_cotizaciones con TODOS los datos del PASO 3
-            // Siempre crear/actualizar aunque no haya datos, porque podría haber imágenes
-            $logoCotizacion = \App\Models\LogoCotizacion::updateOrCreate(
-                ['cotizacion_id' => $cotizacionId],
-                [
-                    'descripcion' => $logoDescripcion ?: null,
+            // IMPORTANTE: Usar updateOrCreate para EVITAR crear duplicados
+            // Siempre actualizar el registro existente si ya existe para esta cotización
+            
+            // PRIMERO: Verificar si ya existe un LogoCotizacion para esta cotización
+            $logoExistente = \App\Models\LogoCotizacion::where('cotizacion_id', $cotizacionId)->first();
+            
+            if ($logoExistente) {
+                // Si existe, SOLO actualizar (no crear nuevo)
+                // IMPORTANTE: Merge con datos existentes para NO SOBRESCRIBIR si viene vacío
+                $datosActualizar = [
+                    'descripcion' => $logoDescripcion !== null ? $logoDescripcion : $logoExistente->descripcion,
+                    'tecnicas' => is_array($logoTecnicas) && !empty($logoTecnicas) 
+                        ? json_encode($logoTecnicas) 
+                        : $logoExistente->tecnicas,
+                    'observaciones_tecnicas' => !empty($logoObservacionesTecnicas) ? $logoObservacionesTecnicas : $logoExistente->observaciones_tecnicas,
+                    'secciones' => is_array($logoSecciones) && !empty($logoSecciones)
+                        ? json_encode($logoSecciones)
+                        : $logoExistente->secciones,
+                    'observaciones_generales' => is_array($logoObservacionesGenerales) && !empty($logoObservacionesGenerales)
+                        ? json_encode($logoObservacionesGenerales)
+                        : $logoExistente->observaciones_generales,
+                    'tipo_venta' => $request->input('tipo_venta_paso3') ?? $request->input('tipo_venta') ?? $logoExistente->tipo_venta,
+                ];
+                
+                $logoExistente->update($datosActualizar);
+                $logoCotizacion = $logoExistente;
+                Log::info('✅ LogoCotizacion ACTUALIZADO (ya existía)', [
+                    'cotizacion_id' => $cotizacionId,
+                    'logo_id' => $logoCotizacion->id,
+                    'descripcion_guardada' => $logoDescripcion,
+                    'datos_actualizados' => $datosActualizar,
+                ]);
+            } else {
+                // Si NO existe, crear nuevo
+                $logoCotizacion = \App\Models\LogoCotizacion::create([
+                    'cotizacion_id' => $cotizacionId,
+                    'descripcion' => $logoDescripcion,
                     'tecnicas' => is_array($logoTecnicas) ? json_encode($logoTecnicas) : $logoTecnicas,
-                    'observaciones_tecnicas' => $logoObservacionesTecnicas ?: null,
-                    'secciones' => is_array($logoUbicaciones) ? json_encode($logoUbicaciones) : $logoUbicaciones,
+                    'observaciones_tecnicas' => !empty($logoObservacionesTecnicas) ? $logoObservacionesTecnicas : null,
+                    'secciones' => is_array($logoSecciones) ? json_encode($logoSecciones) : $logoSecciones,
                     'observaciones_generales' => is_array($logoObservacionesGenerales) ? json_encode($logoObservacionesGenerales) : $logoObservacionesGenerales,
                     'tipo_venta' => $request->input('tipo_venta_paso3') ?? $request->input('tipo_venta') ?? null,
-                ]
-            );
+                ]);
+                Log::info('✅ LogoCotizacion CREADO (nuevo)', [
+                    'cotizacion_id' => $cotizacionId,
+                    'logo_id' => $logoCotizacion->id,
+                    'descripcion_guardada' => $logoDescripcion,
+                ]);
+            }
             
             Log::info('Logo datos guardados', [
                 'cotizacion_id' => $cotizacionId,
@@ -1385,8 +1460,8 @@ final class CotizacionController extends Controller
                 'descripcion' => $logoDescripcion,
                 'tecnicas' => $logoTecnicas,
                 'tecnicas_count' => is_array($logoTecnicas) ? count($logoTecnicas) : 0,
-                'ubicaciones' => $logoUbicaciones,
-                'ubicaciones_count' => is_array($logoUbicaciones) ? count($logoUbicaciones) : 0,
+                'ubicaciones' => $logoSecciones,
+                'ubicaciones_count' => is_array($logoSecciones) ? count($logoSecciones) : 0,
                 'observaciones_generales' => $logoObservacionesGenerales,
                 'observaciones_generales_count' => is_array($logoObservacionesGenerales) ? count($logoObservacionesGenerales) : 0,
             ]);
@@ -1456,8 +1531,14 @@ final class CotizacionController extends Controller
                 
                 foreach ($fotoLogosExistentes as $fotoIdExistente) {
                     if ($fotoIdExistente && is_string($fotoIdExistente)) {
-                        // Buscar la foto existente
-                        $fotoExistente = \App\Models\LogoFotoCot::findOrFail($fotoIdExistente);
+                        // Buscar la foto existente - usar find() para no lanzar error si no existe
+                        $fotoExistente = \App\Models\LogoFotoCot::find($fotoIdExistente);
+                        
+                        // Si la foto no existe, simplemente continuar (puede haber sido eliminada)
+                        if (!$fotoExistente) {
+                            Log::warning('⚠️ Foto de logo no encontrada, ignorando', ['foto_id' => $fotoIdExistente]);
+                            continue;
+                        }
                         
                         // Limpiar rutas: remover /storage/ del principio si existe
                         $rutaOriginal = $fotoExistente->ruta_original;

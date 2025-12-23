@@ -15,15 +15,18 @@ function configurarDragAndDrop() {
     dropZone.addEventListener('click', () => fileInput.click());
     dropZone.addEventListener('dragover', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         dropZone.style.background = '#e3f2fd';
         dropZone.style.borderColor = '#2196F3';
     });
-    dropZone.addEventListener('dragleave', () => {
+    dropZone.addEventListener('dragleave', (e) => {
+        e.stopPropagation();
         dropZone.style.background = '#f0f7ff';
         dropZone.style.borderColor = '#3498db';
     });
     dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         dropZone.style.background = '#f0f7ff';
         dropZone.style.borderColor = '#3498db';
         agregarImagenes(e.dataTransfer.files);
