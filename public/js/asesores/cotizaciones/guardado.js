@@ -178,13 +178,13 @@ async function guardarCotizacion() {
         formData.append('descripcion_logo', datos.descripcion_logo || '');
         formData.append('tecnicas', JSON.stringify(datos.tecnicas || []));
         formData.append('observaciones_tecnicas', datos.observaciones_tecnicas || '');
-        formData.append('ubicaciones', JSON.stringify(datos.ubicaciones || []));
+        formData.append('secciones', JSON.stringify(datos.ubicaciones || []));
         formData.append('observaciones_generales', JSON.stringify(datos.observaciones_generales || []));
         
         console.log('📝 Datos de texto agregados:', {
             descripcion_logo: datos.descripcion_logo ? 'Sí' : 'No',
             tecnicas: datos.tecnicas?.length || 0,
-            ubicaciones: datos.ubicaciones?.length || 0,
+            secciones: datos.ubicaciones?.length || 0,
             observaciones_generales: datos.observaciones_generales?.length || 0
         });
         
@@ -400,11 +400,13 @@ async function guardarCotizacion() {
         // Buscar imágenes dentro del contenedor galeria_imagenes que tengan data-foto-guardada="true"
         const galeriaImagenes = document.getElementById('galeria_imagenes');
         if (galeriaImagenes) {
-            const fotosGuardadas = galeriaImagenes.querySelectorAll('[data-foto-guardada="true"] img');
+            const fotosGuardadas = galeriaImagenes.querySelectorAll('[data-foto-guardada="true"]');
             if (fotosGuardadas.length > 0) {
                 console.log('📸 Agregando fotos de logo guardadas:', fotosGuardadas.length);
-                fotosGuardadas.forEach((img, index) => {
-                    const ruta = img.getAttribute('data-ruta') || img.src;
+                fotosGuardadas.forEach((div, index) => {
+                    // Las rutas están en el atributo data-ruta del img dentro del div
+                    const img = div.querySelector('img');
+                    const ruta = img ? (img.getAttribute('data-ruta') || img.src) : null;
                     if (ruta && !ruta.includes('data:image')) {
                         formData.append(`logo_fotos_guardadas[]`, ruta);
                         console.log(`✅ Ruta de logo guardada agregada [${index}]:`, ruta);
@@ -477,6 +479,11 @@ async function guardarCotizacion() {
         if (data.success && (data.cotizacion_id !== undefined || (data.data && data.data.id !== undefined))) {
             const cotizacionId = data.cotizacion_id !== undefined ? data.cotizacion_id : (data.data && data.data.id);
             console.log('✅ Cotización creada con ID:', cotizacionId);
+            
+            // ✅ GUARDAR EL ID PARA USOS POSTERIORES
+            window.cotizacionIdActual = cotizacionId;
+            console.log('💾 Asignado window.cotizacionIdActual:', window.cotizacionIdActual);
+            
             console.log('✅ Imágenes procesadas y guardadas en el servidor');
             
             // ✅ LIMPIAR TODO DESPUÉS DEL GUARDADO EXITOSO
@@ -497,9 +504,10 @@ async function guardarCotizacion() {
                 timerProgressBar: true
             });
             
-            setTimeout(() => {
-                window.location.href = window.routes.cotizacionesIndex + '?tab=borradores';
-            }, 2000);
+            if (btnGuardar) btnGuardar.disabled = false;
+            if (btnEnviar) btnEnviar.disabled = false;
+            
+            return true;  // ✅ Retornar true para indicar éxito
         } else {
             // Construir mensaje de error detallado
             let mensajeError = data.message || 'Error desconocido';
@@ -527,6 +535,11 @@ async function guardarCotizacion() {
                 confirmButtonColor: '#1e40af',
                 width: '600px'
             });
+            
+            if (btnGuardar) btnGuardar.disabled = false;
+            if (btnEnviar) btnEnviar.disabled = false;
+            
+            return false;  // ❌ Retornar false para indicar error
         }
     } catch (error) {
         console.error('❌ Error en fetch:', error);
@@ -537,6 +550,9 @@ async function guardarCotizacion() {
             icon: 'error',
             confirmButtonColor: '#1e40af'
         });
+        if (btnGuardar) btnGuardar.disabled = false;
+        if (btnEnviar) btnEnviar.disabled = false;
+        return false;  // ❌ Retornar false para indicar error
     }
 }
 
@@ -595,6 +611,24 @@ async function subirImagenesAlServidor(cotizacionId, archivos, tipo) {
 // ============ ENVIAR COTIZACIÓN ============
 
 async function enviarCotizacion() {
+    console.log('🔵 enviarCotizacion() - Primero GUARDAR la cotización antes de enviar');
+    
+    // ✅ PRIMERO GUARDAR LA COTIZACIÓN
+    const guardadoExitoso = await guardarCotizacion();
+    
+    if (!guardadoExitoso) {
+        console.error('❌ No se pudo guardar la cotización, abortando envío');
+        Swal.fire({
+            title: 'Error',
+            text: 'No se pudieron guardar los cambios. Por favor intenta de nuevo.',
+            icon: 'error',
+            confirmButtonColor: '#1e40af'
+        });
+        return;
+    }
+    
+    console.log('✅ Cotización guardada exitosamente, procediendo con el envío');
+    
     const datos = recopilarDatos();
     
     if (!datos) {
@@ -732,12 +766,12 @@ async function enviarCotizacion() {
         cancelButtonText: 'Revisar primero'
     }).then((result) => {
         if (result.isConfirmed) {
-            procederEnviarCotizacion(datos);
+            procederEnviarCotizacion();
         }
     });
 }
 
-async function procederEnviarCotizacion(datos) {
+async function procederEnviarCotizacion() {
     const btnGuardar = document.querySelector('button[onclick="guardarCotizacion()"]');
     const btnEnviar = document.querySelector('button[onclick="enviarCotizacion()"]');
     
@@ -753,6 +787,20 @@ async function procederEnviarCotizacion(datos) {
     });
     
     console.log('🔵 procederEnviarCotizacion() llamado');
+    
+    // ✅ Recopilar datos nuevamente para asegurar que están actualizados
+    const datos = recopilarDatos();
+    if (!datos) {
+        Swal.fire({
+            title: 'Error',
+            text: 'No se pudieron recopilar los datos del formulario',
+            icon: 'error',
+            confirmButtonColor: '#1e40af'
+        });
+        if (btnGuardar) btnGuardar.disabled = false;
+        if (btnEnviar) btnEnviar.disabled = false;
+        return;
+    }
     
     // ✅ NO convertir a Base64 - enviar archivos directamente como File objects
     // Base64 es ineficiente (aumenta tamaño 33%) y mala práctica
@@ -789,6 +837,15 @@ async function procederEnviarCotizacion(datos) {
         formData.append('tipo', 'enviada');           // ✅ Identificar acción ENVIAR
         formData.append('accion', 'enviar');          // ← AGREGAR: Identificar acción ENVIAR
         formData.append('es_borrador', '0');          // ← AGREGAR: Marcar que NO es borrador
+        
+        // 🔑 CRÍTICO: Incluir el cotizacion_id si existe (para actualizar borrador existente)
+        if (window.cotizacionIdActual) {
+            formData.append('cotizacion_id', window.cotizacionIdActual);
+            console.log('✅ Cotización ID para actualización:', window.cotizacionIdActual);
+        } else {
+            console.warn('⚠️ No hay cotizacion_id - Se creará una NUEVA cotización');
+        }
+        
         formData.append('cliente', datos.cliente);
         formData.append('tipo_venta', tipoVentaValue);
         formData.append('tipo_venta_paso3', tipoVentaPaso3Value);  // Enviar PASO 3 independiente
@@ -877,10 +934,13 @@ async function procederEnviarCotizacion(datos) {
                         formData.append(`prendas[${index}][fotos][]`, foto);
                     });
                     
-                    // Enviar IDs de fotos existentes para que backend las copie
-                    if (fotosExistentes.length > 0) {
+                    // Enviar IDs de fotos existentes para que backend las copie - SOLO EN CREAR, NO EN UPDATE
+                    // En UPDATE, no enviar IDs porque ya existen en la prenda y crearían duplicados
+                    if (fotosExistentes.length > 0 && !window.cotizacionIdActual) {
                         formData.append(`prendas[${index}][fotos_existentes]`, JSON.stringify(fotosExistentes));
                         console.log(`✅ IDs de fotos existentes de prenda: [${fotosExistentes.join(',')}]`);
+                    } else if (fotosExistentes.length > 0 && window.cotizacionIdActual) {
+                        console.log(`⏭️ UPDATE detectado - NO enviando IDs de fotos de prenda existentes para evitar duplicados`);
                     }
                 }
                 
@@ -963,10 +1023,14 @@ async function procederEnviarCotizacion(datos) {
                                 console.log(`✅ Tela (nueva) agregada en ENVÍO [${index}][${telaIdx}]: ${foto.name}`);
                             });
                             
-                            // IDs de fotos existentes
-                            if (telaFotos.existentes.length > 0) {
+                            // IDs de fotos existentes - SOLO EN CREAR, NO EN UPDATE
+                            // Si es UPDATE (cotizacion_id existe), no enviar IDs de fotos existentes
+                            // porque ya existen en la prenda y crearían duplicados
+                            if (telaFotos.existentes.length > 0 && !window.cotizacionIdActual) {
                                 formData.append(`prendas[${index}][telas][${telaIdx}][fotos_existentes]`, JSON.stringify(telaFotos.existentes));
                                 console.log(`✅ IDs de fotos de tela existentes [${index}][${telaIdx}]: [${telaFotos.existentes.join(',')}]`);
+                            } else if (telaFotos.existentes.length > 0 && window.cotizacionIdActual) {
+                                console.log(`⏭️ UPDATE detectado - NO enviando IDs de fotos de tela existentes [${index}][${telaIdx}] para evitar duplicados`);
                             }
                         });
                     }
@@ -983,10 +1047,10 @@ async function procederEnviarCotizacion(datos) {
                     // Es un File object nuevo
                     formData.append(`logo[imagenes][]`, imagen);
                     console.log(`✅ Imagen de logo (File) agregada a FormData [${imagenIndex}]:`, imagen.name);
-                } else if (imagen.esGuardada && imagen.fotoId) {
-                    // Es una imagen guardada en BD - enviar el ID para conservarla
-                    formData.append(`logo_fotos_existentes[]`, imagen.fotoId);
-                    console.log(`✅ ID de foto de logo existente agregado [${imagenIndex}]:`, imagen.fotoId);
+                } else if (imagen.esGuardada && imagen.ruta) {
+                    // Es una imagen guardada en BD - enviar la ruta para conservarla
+                    formData.append(`logo_fotos_guardadas[]`, imagen.ruta);
+                    console.log(`✅ Ruta de foto de logo existente agregada [${imagenIndex}]:`, imagen.ruta);
                 }
             });
         }
@@ -995,15 +1059,16 @@ async function procederEnviarCotizacion(datos) {
         // Estas son las imágenes que ya están guardadas en BD y necesitan ser conservadas
         const galeriaImagenes = document.getElementById('galeria_imagenes');
         if (galeriaImagenes) {
-            const fotosExistentes = galeriaImagenes.querySelectorAll('img[data-foto-id]');
+            const fotosExistentes = galeriaImagenes.querySelectorAll('[data-foto-guardada="true"]');
             if (fotosExistentes.length > 0) {
                 console.log('📸 Encontradas imágenes existentes en galería:', fotosExistentes.length);
-                fotosExistentes.forEach((img, idx) => {
-                    const fotoId = img.getAttribute('data-foto-id');
-                    if (fotoId && fotoId.trim()) {
-                        // Enviar el ID para que el backend sepa cuál conservar
-                        formData.append(`logo_fotos_existentes[]`, fotoId);
-                        console.log(`✅ ID de foto existente agregado [${idx}]:`, fotoId);
+                fotosExistentes.forEach((div, idx) => {
+                    const img = div.querySelector('img');
+                    const ruta = img ? img.getAttribute('data-ruta') : null;
+                    if (ruta && !ruta.includes('data:image')) {
+                        // Enviar la ruta para que el backend sepa cuál conservar
+                        formData.append(`logo_fotos_guardadas[]`, ruta);
+                        console.log(`✅ Ruta de foto existente agregada [${idx}]:`, ruta);
                     }
                 });
             } else {

@@ -149,9 +149,14 @@ function openCotizacionModal(cotizacionId) {
                             </p>
                             <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem;">
                         `;
-                        prenda.fotos.forEach(foto => {
+                        prenda.fotos.forEach((foto, idx) => {
                             htmlPrendas += `
-                                <img src="${foto}" alt="Foto prenda" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" onclick="abrirImagenGrande('${foto}')">
+                                <img src="${foto}" 
+                                     data-gallery="prenda-fotos-${prenda.id}" 
+                                     data-index="${idx}"
+                                     alt="Foto prenda" 
+                                     style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" 
+                                     onclick="abrirImagenGrande('${foto}', 'prenda-fotos-${prenda.id}', ${idx})">
                             `;
                         });
                         htmlPrendas += `</div>`;
@@ -165,10 +170,15 @@ function openCotizacionModal(cotizacionId) {
                             </p>
                             <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem;">
                         `;
-                        prenda.tela_fotos.forEach(foto => {
+                        prenda.tela_fotos.forEach((foto, idx) => {
                             if (foto) {
                                 htmlPrendas += `
-                                    <img src="${foto}" alt="Foto tela" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" onclick="abrirImagenGrande('${foto}')">
+                                    <img src="${foto}" 
+                                         data-gallery="tela-fotos-${prenda.id}" 
+                                         data-index="${idx}"
+                                         alt="Foto tela" 
+                                         style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" 
+                                         onclick="abrirImagenGrande('${foto}', 'tela-fotos-${prenda.id}', ${idx})">
                                 `;
                             }
                         });
@@ -242,14 +252,28 @@ function openCotizacionModal(cotizacionId) {
             let htmlLogo = '';
             if (data.logo_cotizacion) {
                 const logo = data.logo_cotizacion;
+                // Normalizar arrays que pueden venir como string o null
+                const parseArray = (value) => {
+                    if (!value) return [];
+                    if (Array.isArray(value)) return value;
+                    try {
+                        const parsed = JSON.parse(value);
+                        return Array.isArray(parsed) ? parsed : [];
+                    } catch (e) {
+                        return [];
+                    }
+                };
+
+                const tecnicas = parseArray(logo.tecnicas);
+                const seccionesLogo = parseArray(logo.secciones || logo.ubicaciones);
                 
                 htmlLogo += '<div class="logo-container" style="display: flex; flex-direction: column; gap: 1.5rem;">';
                 
                 // Descripción del logo
                 if (logo.descripcion) {
                     htmlLogo += `
-                        <div style="background: #f5f5f5; border-left: 5px solid #ef4444; padding: 1rem 1.5rem; border-radius: 4px;">
-                            <h3 style="margin: 0 0 0.5rem 0; color: #ef4444; font-size: 1.1rem; font-weight: 700; text-transform: uppercase;">
+                        <div style="background: #f5f5f5; border-left: 5px solid #1e5ba8; padding: 1rem 1.5rem; border-radius: 4px;">
+                            <h3 style="margin: 0 0 0.5rem 0; color: #1e5ba8; font-size: 1.1rem; font-weight: 700; text-transform: uppercase;">
                                 Descripción
                             </h3>
                             <p style="margin: 0; color: #333; font-size: 0.9rem; line-height: 1.6;">
@@ -260,46 +284,84 @@ function openCotizacionModal(cotizacionId) {
                 }
                 
                 // Técnicas utilizadas
-                if (logo.tecnicas && Array.isArray(logo.tecnicas) && logo.tecnicas.length > 0) {
+                if (tecnicas.length > 0) {
+                    const renderTecnica = (tecnica) => {
+                        if (typeof tecnica === 'string') return tecnica;
+                        if (typeof tecnica === 'object' && tecnica !== null) {
+                            return tecnica.valor || tecnica.nombre || tecnica.tecnica || tecnica.tipo || Object.values(tecnica).join(' ');
+                        }
+                        return String(tecnica);
+                    };
+
                     htmlLogo += `
-                        <div style="background: #f5f5f5; border-left: 5px solid #ef4444; padding: 1rem 1.5rem; border-radius: 4px;">
-                            <h3 style="margin: 0 0 0.5rem 0; color: #ef4444; font-size: 0.95rem; font-weight: 700; text-transform: uppercase;">
+                        <div style="background: #f5f5f5; border-left: 5px solid #1e5ba8; padding: 1rem 1.5rem; border-radius: 4px;">
+                            <h3 style="margin: 0 0 0.5rem 0; color: #1e5ba8; font-size: 0.95rem; font-weight: 700; text-transform: uppercase;">
                                 Técnicas
                             </h3>
                             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                                ${logo.tecnicas.map(tecnica => `<span style="background: #ef4444; color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">${tecnica}</span>`).join('')}
+                                ${tecnicas.map(tecnica => `<span style="background: #1e5ba8; color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">${renderTecnica(tecnica)}</span>`).join('')}
                             </div>
                         </div>
                     `;
                 }
                 
                 // Ubicaciones/Secciones
-                if (logo.secciones && Array.isArray(logo.secciones) && logo.secciones.length > 0) {
+                if (seccionesLogo.length > 0) {
+                    const renderOpcion = (opcion) => {
+                        if (typeof opcion === 'string') return opcion;
+                        if (typeof opcion === 'object' && opcion !== null) {
+                            return opcion.nombre || opcion.valor || opcion.opcion || opcion.ubicacion || Object.values(opcion).join(' ');
+                        }
+                        return String(opcion);
+                    };
+                    const extraerTallas = (seccion) => {
+                        if (!seccion) return [];
+                        if (Array.isArray(seccion.tallas)) return seccion.tallas;
+                        if (typeof seccion.tallas === 'string' && seccion.tallas.trim() !== '') {
+                            // Intentar parsear JSON; si falla, usar split por comas
+                            try {
+                                const parsed = JSON.parse(seccion.tallas);
+                                if (Array.isArray(parsed)) return parsed;
+                            } catch (e) {
+                                return seccion.tallas.split(',').map(t => t.trim()).filter(Boolean);
+                            }
+                        }
+                        if (typeof seccion.tallas === 'object' && seccion.tallas !== null) return [seccion.tallas];
+                        if (seccion.talla) return [seccion.talla];
+                        if (seccion.tallas_texto) return [seccion.tallas_texto];
+                        return [];
+                    };
+
                     htmlLogo += `
-                        <div style="background: #f5f5f5; border-left: 5px solid #ef4444; padding: 1rem 1.5rem; border-radius: 4px;">
-                            <h3 style="margin: 0 0 1rem 0; color: #ef4444; font-size: 0.95rem; font-weight: 700; text-transform: uppercase;">
-                                Ubicaciones
+                        <div style="background: #f5f5f5; border-left: 5px solid #1e5ba8; padding: 1rem 1.5rem; border-radius: 4px;">
+                            <h3 style="margin: 0 0 1rem 0; color: #1e5ba8; font-size: 0.95rem; font-weight: 700; text-transform: uppercase;">
+                                Secciones Prenda
                             </h3>
                     `;
                     
-                    logo.secciones.forEach((seccion, idx) => {
+                    seccionesLogo.forEach((seccion, idx) => {
                         htmlLogo += `
                             <div style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #ddd;">
                                 <p style="margin: 0 0 0.5rem 0; color: #333; font-weight: 700; font-size: 0.9rem;">
-                                    📍 ${seccion.ubicacion || 'Sin ubicación'}
+                                    📍 ${seccion.ubicacion || seccion.seccion || 'Sin ubicación'}
                                 </p>
                         `;
                         
                         if (seccion.opciones && Array.isArray(seccion.opciones) && seccion.opciones.length > 0) {
                             htmlLogo += `
                                 <p style="margin: 0 0 0.25rem 0; color: #666; font-size: 0.85rem;">
-                                    <strong>Opciones:</strong> ${seccion.opciones.join(', ')}
+                                    <strong>UBICACIONES:</strong> ${seccion.opciones.map(renderOpcion).join(', ')}
                                 </p>
                             `;
                         }
                         
-                        if (seccion.tallas && Array.isArray(seccion.tallas) && seccion.tallas.length > 0) {
-                            const tallasStr = seccion.tallas.map(t => `${t.talla} (${t.cantidad})`).join(', ');
+                        const tallasArray = extraerTallas(seccion);
+                        if (tallasArray.length > 0) {
+                            const tallasStr = tallasArray.map(t => {
+                                if (typeof t === 'string') return t;
+                                if (typeof t === 'object' && t !== null) return t.talla || t.valor || t.nombre || '';
+                                return String(t);
+                            }).filter(Boolean).join(', ');
                             htmlLogo += `
                                 <p style="margin: 0 0 0.25rem 0; color: #666; font-size: 0.85rem;">
                                     <strong>Tallas:</strong> ${tallasStr}
@@ -323,19 +385,25 @@ function openCotizacionModal(cotizacionId) {
                 
                 // Fotos del logo
                 if (logo.fotos && Array.isArray(logo.fotos) && logo.fotos.length > 0) {
+                    const galleryIdLogo = `logo-fotos-${logo.id || 'cotizacion'}`;
                     htmlLogo += `
-                        <div style="background: #f5f5f5; border-left: 5px solid #ef4444; padding: 1rem 1.5rem; border-radius: 4px;">
-                            <h3 style="margin: 0 0 1rem 0; color: #ef4444; font-size: 0.95rem; font-weight: 700; text-transform: uppercase;">
+                        <div style="background: #f5f5f5; border-left: 5px solid #1e5ba8; padding: 1rem 1.5rem; border-radius: 4px;">
+                            <h3 style="margin: 0 0 1rem 0; color: #1e5ba8; font-size: 0.95rem; font-weight: 700; text-transform: uppercase;">
                                 Imágenes del Logo
                             </h3>
                             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 1rem;">
                     `;
                     
-                    logo.fotos.forEach(foto => {
+                    logo.fotos.forEach((foto, idx) => {
                         htmlLogo += `
                             <div style="position: relative;">
-                                <img src="${foto.url}" alt="Logo" style="width: 100%; height: 100px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" onclick="abrirImagenGrande('${foto.url}')">
-                                <span style="position: absolute; top: 2px; right: 2px; background: #ef4444; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">${foto.orden}</span>
+                                <img src="${foto.url}" 
+                                     data-gallery="${galleryIdLogo}"
+                                     data-index="${idx}"
+                                     alt="Logo" 
+                                     style="width: 100%; height: 100px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; cursor: pointer;" 
+                                     onclick="abrirImagenGrande('${foto.url}', '${galleryIdLogo}', ${idx})">
+                                <span style="position: absolute; top: 2px; right: 2px; background: #1e5ba8; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">${foto.orden}</span>
                             </div>
                         `;
                     });
@@ -716,7 +784,23 @@ function aprobarCotizacionEnLinea(cotizacionId, estadoActual = null) {
  * Abre una imagen en grande en un modal
  * @param {string} imagenUrl - URL de la imagen
  */
-function abrirImagenGrande(imagenUrl) {
+let galeriaActual = [];
+let indiceActualGaleria = 0;
+let galeriaIdActual = null;
+
+function abrirImagenGrande(imagenUrl, galleryId = null, index = 0) {
+    // Preparar galería si viene un grupo
+    if (galleryId) {
+        galeriaIdActual = galleryId;
+        const imgs = document.querySelectorAll(`img[data-gallery="${galleryId}"]`);
+        galeriaActual = Array.from(imgs).map(img => img.getAttribute('src'));
+        indiceActualGaleria = Number(index) || 0;
+    } else {
+        galeriaIdActual = null;
+        galeriaActual = [imagenUrl];
+        indiceActualGaleria = 0;
+    }
+
     // Crear modal dinámicamente si no existe
     let modalImagen = document.getElementById('modalImagenGrande');
     if (!modalImagen) {
@@ -736,18 +820,56 @@ function abrirImagenGrande(imagenUrl) {
             padding: 2rem;
         `;
         modalImagen.innerHTML = `
-            <div style="position: relative; width: 90vw; height: 90vh; max-width: 1200px; max-height: 800px;">
-                <button onclick="cerrarImagenGrande()" style="position: absolute; top: -40px; right: 0; background: white; border: none; font-size: 2rem; cursor: pointer; color: white; z-index: 10001; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <div style="position: relative; width: 90vw; height: 90vh; max-width: 1200px; max-height: 800px; display: flex; align-items: center; justify-content: center;">
+                <button id="cerrarImagenGrandeBtn" aria-label="Cerrar" style="position: absolute; top: -50px; right: 0; background: #fff; border: none; font-size: 1.4rem; cursor: pointer; color: #111; z-index: 10001; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(0,0,0,0.25);">
                     ✕
                 </button>
+                <button id="imagenAnteriorBtn" aria-label="Anterior" style="position: absolute; left: -60px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.9); border: none; width: 44px; height: 44px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 1.3rem; cursor: pointer; box-shadow: 0 8px 20px rgba(0,0,0,0.25); color: #111;">◀</button>
                 <img id="imagenGrandeContent" src="" alt="Imagen ampliada" style="width: 100%; height: 100%; object-fit: contain; border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                <button id="imagenSiguienteBtn" aria-label="Siguiente" style="position: absolute; right: -60px; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.9); border: none; width: 44px; height: 44px; border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 1.3rem; cursor: pointer; box-shadow: 0 8px 20px rgba(0,0,0,0.25); color: #111;">▶</button>
             </div>
         `;
         document.body.appendChild(modalImagen);
+
+        // Eventos de botones
+        modalImagen.querySelector('#cerrarImagenGrandeBtn').addEventListener('click', cerrarImagenGrande);
+        modalImagen.querySelector('#imagenAnteriorBtn').addEventListener('click', mostrarAnteriorImagen);
+        modalImagen.querySelector('#imagenSiguienteBtn').addEventListener('click', mostrarSiguienteImagen);
     }
 
-    document.getElementById('imagenGrandeContent').src = imagenUrl;
+    actualizarImagenGrande();
     modalImagen.style.display = 'flex';
+}
+
+function actualizarImagenGrande() {
+    const modalImagen = document.getElementById('modalImagenGrande');
+    if (!modalImagen) return;
+
+    const img = modalImagen.querySelector('#imagenGrandeContent');
+    img.src = galeriaActual[indiceActualGaleria] || '';
+
+    const btnPrev = modalImagen.querySelector('#imagenAnteriorBtn');
+    const btnNext = modalImagen.querySelector('#imagenSiguienteBtn');
+
+    if (galeriaActual.length > 1) {
+        btnPrev.style.display = 'flex';
+        btnNext.style.display = 'flex';
+    } else {
+        btnPrev.style.display = 'none';
+        btnNext.style.display = 'none';
+    }
+}
+
+function mostrarAnteriorImagen() {
+    if (!galeriaActual.length) return;
+    indiceActualGaleria = (indiceActualGaleria - 1 + galeriaActual.length) % galeriaActual.length;
+    actualizarImagenGrande();
+}
+
+function mostrarSiguienteImagen() {
+    if (!galeriaActual.length) return;
+    indiceActualGaleria = (indiceActualGaleria + 1) % galeriaActual.length;
+    actualizarImagenGrande();
 }
 
 /**
