@@ -99,6 +99,11 @@ window.cambiarTab = function(tabName, element = null) {
     }
 };
 
+// ============================================================
+// VARIABLES GLOBALES (fuera del DOMContentLoaded)
+// ============================================================
+let tallasDisponiblesCotizacion = []; // Tallas disponibles en la cotización
+
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('cotizacion_search_editable');
     const hiddenInput = document.getElementById('cotizacion_id_editable');
@@ -114,7 +119,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const numeroPedidoInput = document.getElementById('numero_pedido_editable');
     const formCrearPedido = document.getElementById('formCrearPedidoEditable');
 
-    // Variables globales
+    // Variables locales del DOMContentLoaded
     let prendasCargadas = [];
     let prendasEliminadas = new Set(); // Rastrear índices de prendas eliminadas
 
@@ -189,6 +194,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log('Datos de cotización obtenidos:', data);
                     prendasCargadas = data.prendas || [];
                     prendasEliminadas.clear(); // Limpiar eliminadas
+                    
+                    // Extraer todas las tallas disponibles de la cotización
+                    tallasDisponiblesCotizacion = [];
+                    if (prendasCargadas && prendasCargadas.length > 0) {
+                        prendasCargadas.forEach(prenda => {
+                            if (prenda.tallas && Array.isArray(prenda.tallas)) {
+                                prenda.tallas.forEach(talla => {
+                                    if (!tallasDisponiblesCotizacion.includes(talla)) {
+                                        tallasDisponiblesCotizacion.push(talla);
+                                    }
+                                });
+                            }
+                        });
+                    }
+                    console.log('📏 Tallas disponibles en la cotización:', tallasDisponiblesCotizacion);
                     
                     // Actualizar forma de pago con los datos completos del servidor
                     if (data.forma_pago) {
@@ -565,10 +585,9 @@ document.addEventListener('DOMContentLoaded', function() {
             let tallasHtml = '';
             if (tallas.length > 0) {
                 tallasHtml = '<div style="margin-top: 1.5rem; padding: 0; background: transparent; width: 100%;">';
-                tallasHtml += '<div style="padding: 0.75rem 1rem; background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; border-radius: 6px 6px 0 0; font-weight: 600; display: grid; grid-template-columns: 1.5fr 1fr 100px; gap: 1rem; align-items: center; width: 100%;">';
-                tallasHtml += '<div>Talla - Introduce cantidades</div>';
-                tallasHtml += '<div>Cantidad</div>';
-                tallasHtml += '<div style="text-align: center;">Acción</div>';
+                tallasHtml += '<div style="padding: 0.75rem 1rem; background: linear-gradient(135deg, #0066cc 0%, #0052a3 100%); color: white; border-radius: 6px 6px 0 0; font-weight: 600; display: flex; justify-content: space-between; align-items: center; width: 100%;">';
+                tallasHtml += '<div style="display: flex; gap: 1rem; flex: 1;"><div style="flex: 1.5;">Talla - Introduce cantidades</div><div style="flex: 1;">Cantidad</div><div style="width: 100px; text-align: center;">Acción</div></div>';
+                tallasHtml += '<button type="button" onclick="mostrarModalAgregarTalla(' + index + ')" style="background: #4ade80; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.4rem; white-space: nowrap; flex-shrink: 0;">+ Talla</button>';
                 tallasHtml += '</div>';
                 
                 tallas.forEach(talla => {
@@ -2979,24 +2998,29 @@ document.addEventListener('DOMContentLoaded', function() {
             cancelButtonText: 'Cancelar'
         }).then((result) => {
             if (result.isConfirmed) {
-            // Buscar el input de esa talla y eliminarlo
-            const input = document.querySelector(`input[name="cantidades[${prendaIndex}][${talla}]"]`);
-            if (input) {
-                const tallaItem = input.closest('.talla-item');
-                if (tallaItem) {
-                    tallaItem.remove();
-                    console.log(`Talla ${talla} removida de prenda ${prendaIndex}`);
-                    
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Talla eliminada',
-                        text: `La talla ${talla} ha sido removida`,
-                        timer: 1500,
-                        showConfirmButton: false
-                    });
+                // Buscar el input de esa talla y eliminarlo
+                const input = document.querySelector(`input[name="cantidades[${prendaIndex}][${talla}]"]`);
+                if (input) {
+                    // El contenedor es un div con display: grid que es el padre directo del input
+                    const tallaRow = input.closest('div[style*="display: grid"]');
+                    if (tallaRow) {
+                        tallaRow.remove();
+                        console.log(`✅ Talla ${talla} removida de prenda ${prendaIndex}`);
+                        
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Talla eliminada',
+                            text: `La talla ${talla} ha sido removida`,
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        console.error('No se encontró el contenedor de talla');
+                    }
+                } else {
+                    console.error('No se encontró el input de talla');
                 }
             }
-        }
         });
     };
 
@@ -3703,6 +3727,191 @@ window.eliminarFotoReflectivoPedido = function(fotoId) {
             }
         }
     });
+};
+
+// ============================================================
+// GESTIÓN DINÁMICA DE TALLAS EN PRENDAS
+// ============================================================
+
+/**
+ * Mostrar modal para agregar una talla a una prenda
+ * @param {number} prendaIndex - Índice de la prenda
+ */
+window.mostrarModalAgregarTalla = function(prendaIndex) {
+    console.log('🔘 Botón "+ Talla" clickeado para prenda:', prendaIndex);
+    console.log('📏 tallasDisponiblesCotizacion actual:', tallasDisponiblesCotizacion);
+    
+    // Obtener tallas actuales de la prenda
+    const prendaCard = document.querySelector(`.prenda-card-editable[data-prenda-index="${prendaIndex}"]`);
+    if (!prendaCard) {
+        console.error('❌ No se encontró la tarjeta de prenda con índice:', prendaIndex);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se encontró la prenda'
+        });
+        return;
+    }
+
+    console.log('✅ Tarjeta de prenda encontrada');
+
+    // Obtener tallas actuales
+    const tallasActuales = Array.from(prendaCard.querySelectorAll('input[data-talla]')).map(input => input.dataset.talla);
+    
+    console.log('📏 Tallas actuales de prenda ' + prendaIndex + ':', tallasActuales);
+    console.log('📏 Tallas disponibles en cotización:', tallasDisponiblesCotizacion);
+    
+    // Filtrar tallas disponibles que no estén en la prenda actual
+    const tallasDisponibles = tallasDisponiblesCotizacion.filter(talla => !tallasActuales.includes(talla));
+    
+    console.log('📏 Tallas disponibles para agregar:', tallasDisponibles);
+
+    if (!tallasDisponiblesCotizacion || tallasDisponiblesCotizacion.length === 0) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Sin tallas cargadas',
+            text: 'La cotización no tiene tallas definidas. Por favor, selecciona una cotización válida.'
+        });
+        return;
+    }
+
+    if (tallasDisponibles.length === 0) {
+        Swal.fire({
+            icon: 'info',
+            title: 'Sin tallas disponibles',
+            text: 'Ya tienes todas las tallas disponibles en esta prenda.'
+        });
+        return;
+    }
+
+    // Mostrar modal de selección
+    Swal.fire({
+        title: 'Agregar Talla',
+        html: `
+            <div style="text-align: left;">
+                <label style="display: block; font-weight: 600; margin-bottom: 0.75rem; color: #1f2937;">Selecciona una talla para agregar:</label>
+                <select id="selector_talla_agregar" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.95rem; font-family: inherit;">
+                    <option value="">-- SELECCIONA UNA TALLA --</option>
+                    ${tallasDisponibles.map(talla => `<option value="${talla}">${talla}</option>`).join('')}
+                </select>
+            </div>
+        `,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#4ade80',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Agregar',
+        cancelButtonText: 'Cancelar',
+        didOpen: () => {
+            console.log('✅ Modal abierto');
+            const selector = document.getElementById('selector_talla_agregar');
+            if (selector) {
+                selector.focus();
+            }
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const tallaSeleccionada = document.getElementById('selector_talla_agregar').value;
+            console.log('📏 Talla seleccionada:', tallaSeleccionada);
+            if (tallaSeleccionada) {
+                agregarTallaAlFormulario(prendaIndex, tallaSeleccionada);
+            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Selecciona una talla',
+                    text: 'Por favor selecciona una talla para continuar'
+                });
+            }
+        }
+    });
+};
+
+/**
+ * Agregar una talla al formulario de una prenda
+ * @param {number} prendaIndex - Índice de la prenda
+ * @param {string} talla - Talla a agregar
+ */
+window.agregarTallaAlFormulario = function(prendaIndex, talla) {
+    const prendaCard = document.querySelector(`.prenda-card-editable[data-prenda-index="${prendaIndex}"]`);
+    if (!prendaCard) {
+        console.error('No se encontró la tarjeta de prenda');
+        return;
+    }
+
+    // Verificar si la talla ya existe
+    const inputExistente = prendaCard.querySelector(`input[data-talla="${talla}"]`);
+    if (inputExistente) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Talla duplicada',
+            text: `La talla ${talla} ya está en esta prenda.`
+        });
+        return;
+    }
+
+    // Encontrar el contenedor de tallas buscando por todos los divs que tengan inputs de talla
+        let tallasContainer = null;
+        const allDivs = prendaCard.querySelectorAll('div[style*="margin-top: 1.5rem"]');
+        for (let div of allDivs) {
+            if (div.querySelector('input[data-talla]')) {
+                tallasContainer = div;
+                break;
+            }
+        }
+        
+        if (!tallasContainer) {
+            console.error('No se encontró el contenedor de tallas');
+            console.log('Divs encontrados:', allDivs.length);
+            return;
+        }
+
+        // Crear el HTML de la nueva talla
+        const nuevoTallaHtml = `<div style="padding: 1rem; background: white; border: 1px solid #e0e0e0; border-top: none; display: grid; grid-template-columns: 1.5fr 1fr 100px; gap: 1rem; align-items: center; transition: background 0.2s; width: 100%;">
+            <div style="display: flex; flex-direction: column;">
+                <label style="font-size: 0.75rem; color: #666; font-weight: 600; text-transform: uppercase; margin-bottom: 0.4rem;">Talla</label>
+                <div style="font-weight: 500; color: #1f2937;">${talla}</div>
+            </div>
+            <div style="display: flex; flex-direction: column;">
+                <label style="font-size: 0.75rem; color: #666; font-weight: 600; text-transform: uppercase; margin-bottom: 0.4rem;">Cantidad</label>
+                <input type="number" 
+                       name="cantidades[${prendaIndex}][${talla}]" 
+                       class="talla-cantidad"
+                       min="0" 
+                       value="0" 
+                       placeholder="0"
+                       data-talla="${talla}"
+                       data-prenda="${prendaIndex}"
+                       style="width: 100%; padding: 0.6rem; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 0.9rem; transition: border-color 0.2s;">
+            </div>
+            <div style="text-align: center;">
+                <button type="button" class="btn-quitar-talla" onclick="quitarTallaDelFormulario(${prendaIndex}, '${talla}')" style="background: #dc3545; color: white; border: none; padding: 0.5rem 0.75rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.3rem; white-space: nowrap;">
+                    ✕ Quitar
+                </button>
+            </div>
+        </div>`;
+
+        // Insertar el nuevo elemento antes del cierre del contenedor
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = nuevoTallaHtml;
+        const newElement = tempDiv.firstElementChild;
+        
+        // Insertar antes del cierre (buscar el último elemento que no sea un div de talla)
+        const ultimoTallaRow = tallasContainer.querySelector('div[style*="border-top: none"]:last-of-type');
+        if (ultimoTallaRow) {
+            ultimoTallaRow.insertAdjacentElement('afterend', newElement);
+        } else {
+            tallasContainer.appendChild(newElement);
+        }
+
+        console.log(`✅ Talla ${talla} agregada a prenda ${prendaIndex}`);
+        
+        Swal.fire({
+            icon: 'success',
+            title: 'Talla agregada',
+            text: `La talla ${talla} ha sido agregada a la prenda ${prendaIndex + 1}`,
+            timer: 1500,
+            showConfirmButton: false
+        });
 };
 
 // Función para abrir modal de imagen (si no existe)
