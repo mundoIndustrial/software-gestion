@@ -618,11 +618,17 @@ class PedidosProduccionController extends Controller
             DB::commit();
 
             // ✅ Si es combinada (PL), indicar al frontend que debe crear TAMBIÉN logo_pedido
+            // 🔍 LÓGICA: No crear logo_pedido si es tipo 'P' (PRENDA únicamente)
             if ($tipoCotizacionCodigo === 'PL') {
                 // Obtener logo_cotizacion_id para enviarlo al frontend
                 $logoCotizacionId = DB::table('logo_cotizaciones')
                     ->where('cotizacion_id', $cotizacionId)
                     ->value('id');
+                
+                \Log::info('📦 [crearDesdeCotizacion] Cotización COMBINADA detectada, permitiendo crear logo_pedido', [
+                    'cotizacion_id' => $cotizacionId,
+                    'logo_cotizacion_id' => $logoCotizacionId
+                ]);
                 
                 return response()->json([
                     'success' => true,
@@ -633,6 +639,11 @@ class PedidosProduccionController extends Controller
                     'logo_cotizacion_id' => $logoCotizacionId  // ✅ NUEVO: Enviar para que JavaScript lo use
                 ]);
             } else {
+                \Log::info('📦 [crearDesdeCotizacion] Cotización tipo PRENDA (P) o REFLECTIVO, NO se creará logo_pedido', [
+                    'cotizacion_id' => $cotizacionId,
+                    'tipo_cotizacion_codigo' => $tipoCotizacionCodigo
+                ]);
+                
                 return response()->json([
                     'success' => true,
                     'message' => 'Cotización aceptada y pedido creado',
@@ -769,7 +780,17 @@ class PedidosProduccionController extends Controller
             $asesora = null;
             $formaPago = null;
             
-            if ($cotizacionId) {
+            // 🔍 LÓGICA: Usar cliente del request si viene, sino obtener de cotización
+            $clienteDelRequest = $request->input('cliente');
+            
+            if ($clienteDelRequest) {
+                // Usar cliente enviado desde frontend
+                $cliente = $clienteDelRequest;
+                \Log::info('🎨 [guardarLogoPedido] Usando cliente del REQUEST (frontend)', [
+                    'cliente' => $cliente
+                ]);
+            } elseif ($cotizacionId) {
+                // Fallback: Obtener de la cotización
                 $cotizacion = DB::table('cotizaciones')
                     ->where('id', $cotizacionId)
                     ->select('id', 'numero', 'cliente_id')
@@ -780,6 +801,10 @@ class PedidosProduccionController extends Controller
                     // Obtener cliente
                     $clienteObj = DB::table('clientes')->where('id', $cotizacion->cliente_id)->first();
                     $cliente = $clienteObj?->nombre ?? 'Sin nombre';
+                    \Log::info('🎨 [guardarLogoPedido] Usando cliente de la COTIZACIÓN (fallback)', [
+                        'cliente' => $cliente,
+                        'cliente_id' => $cotizacion->cliente_id
+                    ]);
                 }
             }
             
@@ -787,11 +812,26 @@ class PedidosProduccionController extends Controller
             $formaPago = $request->input('forma_de_pago') ?? 'Por definir';
 
             // ✅ VERIFICAR: ¿Existe ya un logo_pedido con este ID?
-            $logoPedidoExistente = DB::table('logo_pedidos')->find($pedidoId);
+            // Si $pedidoId es un número, podría ser ID de logo_pedidos o ID de pedidos_produccion
+            // Buscar en logo_pedidos por ID primaria primero
+            $logoPedidoExistente = null;
+            
+            if (is_numeric($pedidoId)) {
+                // Intentar buscar por ID primaria en logo_pedidos
+                $logoPedidoExistente = DB::table('logo_pedidos')->find($pedidoId);
+                
+                // Si no encuentra, buscar por pedido_id (para cotizaciones combinadas)
+                if (!$logoPedidoExistente) {
+                    $logoPedidoExistente = DB::table('logo_pedidos')
+                        ->where('pedido_id', $pedidoId)
+                        ->first();
+                }
+            }
             
             \Log::info('🎨 [guardarLogoPedido] Buscando logo_pedido existente', [
                 'pedido_id_buscado' => $pedidoId,
-                'encontrado' => $logoPedidoExistente ? 'SÍ' : 'NO'
+                'encontrado' => $logoPedidoExistente ? 'SÍ' : 'NO',
+                'es_primaria' => $logoPedidoExistente && $logoPedidoExistente->id == $pedidoId ? 'SÍ' : 'POR RELACION'
             ]);
             
             if (!$logoPedidoExistente) {
@@ -840,7 +880,8 @@ class PedidosProduccionController extends Controller
                     'nuevo_logo_pedido_id' => $nuevoPedidoLogoId
                 ]);
                 
-                // USAR EL NUEVO ID DEVUELTO POR INSERT, NO EL ORIGINAL
+                // ✅ IMPORTANTE: Usar el nuevo ID devuelto por INSERT
+                // Este será el ID primaria de logo_pedidos
                 $pedidoId = $nuevoPedidoLogoId;
                 
                 // ❌ TEMPORALMENTE DESHABILITADO: Crear proceso inicial

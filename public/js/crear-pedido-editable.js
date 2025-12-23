@@ -577,7 +577,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Verificar si hay prendas y logo para mostrar los tabs correspondientes
         const tienePrendas = prendas && prendas.length > 0;
-        const tieneLogoPrendas = logoCotizacion && (logoCotizacion.descripcion || logoCotizacion.tecnicas || logoCotizacion.ubicaciones || logoCotizacion.fotos);
+        // 🔍 LÓGICA: Si tipo_cotizacion_id=3 (PRENDA), no mostrar tab de logo aunque exista
+        const tieneLogoPrendas = tipoCotizacion !== 'P' && logoCotizacion && (logoCotizacion.descripcion || logoCotizacion.tecnicas || logoCotizacion.ubicaciones || logoCotizacion.fotos);
         
         // Crear estructura de tabs solo si hay prendas O hay logo
         if (tienePrendas || tieneLogoPrendas) {
@@ -1109,7 +1110,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // ========== SECCIÓN DE LOGO COMPLETA (para cotizaciones combinadas) ==========
-        if (logoCotizacion) {
+        // 🔍 LÓGICA: No renderizar logo si es tipo 'P' (PRENDA únicamente)
+        if (logoCotizacion && tipoCotizacion !== 'P') {
             // Función helper para parsear datos JSON
             function parseArrayData(data) {
                 if (!data) return [];
@@ -3400,11 +3402,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     const prendasCard = document.querySelector(`.prenda-card-editable[data-prenda-index="${index}"]`);
                     if (!prendasCard) return;
                     
-                    const tallasInputs = prendasCard.querySelectorAll('.talla-input');
+                    // 🔍 LÓGICA: Usar .talla-cantidad (clase correcta, no .talla-input)
+                    const tallasInputs = prendasCard.querySelectorAll('.talla-cantidad');
                     const cantidadesPorTalla = {};
                     
                     tallasInputs.forEach(input => {
-                        const talla = input.closest('.talla-group')?.getAttribute('data-talla');
+                        const talla = input.getAttribute('data-talla');
                         const cantidad = parseInt(input.value) || 0;
                         if (talla && cantidad > 0) {
                             cantidadesPorTalla[talla] = cantidad;
@@ -3492,6 +3495,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     pedido_id: pedidoId,
                     logo_cotizacion_id: logoCotizacionIdAUsar,  // ← Usar valor del servidor
                     cotizacion_id: cotizacionId,  // ✅ NUEVO: Enviar cotizacion_id para que se guarde en BD
+                    cliente: clienteInput.value,  // 🔍 NUEVO: Enviar cliente
                     forma_de_pago: formaPagoInput.value,  // ✅ NUEVO: Enviar forma de pago
                     descripcion: descripcionLogoPedido,
                     cantidad: cantidadTotal, // ✅ NUEVO: Enviar cantidad total
