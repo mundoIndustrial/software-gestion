@@ -49,8 +49,14 @@ class CrearPedidoProduccionJob
                 'prendas_recibidas' => count($this->prendas),
             ]);
 
+            // ✅ CONVERTIR DTOS A ARRAYS ANTES DE ENRIQUECER
+            $prendasArray = array_map(
+                fn($prenda) => $prenda->toArray(),
+                $this->prendas
+            );
+            
             // ✅ ENRIQUECER PRENDAS DEL FRONTEND CON IDs FALTANTES
-            $prendasEnriquecidas = $enriquecerService->enriquecerPrendas($this->prendas);
+            $prendasEnriquecidas = $enriquecerService->enriquecerPrendas($prendasArray);
             
             \Log::info('🔍 [CrearPedidoProduccionJob] Prendas enriquecidas - DETALLE COMPLETO', [
                 'total_prendas' => count($prendasEnriquecidas),

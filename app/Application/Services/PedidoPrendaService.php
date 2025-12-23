@@ -112,7 +112,20 @@ class PedidoPrendaService
         ]);
 
         // Construir array de datos para el formatter legacy
-        $datosParaFormatter = $this->construirDatosParaFormatter($prendaData, $index);
+        $datosParaFormatter = [
+            'numero' => $index + 1,
+            'tipo' => $prendaData['nombre_producto'] ?? 'SIN NOMBRE',
+            'descripcion' => $prendaData['descripcion'] ?? '',
+            'tela' => $prendaData['tela'] ?? '',
+            'ref' => $prendaData['tela_referencia'] ?? '',
+            'color' => $prendaData['color'] ?? '',
+            'manga' => $prendaData['manga'] ?? '',
+            'tiene_bolsillos' => $prendaData['tiene_bolsillos'] ?? false,
+            'bolsillos_obs' => $prendaData['bolsillos_obs'] ?? '',
+            'tiene_reflectivo' => $prendaData['tiene_reflectivo'] ?? false,
+            'reflectivo_obs' => $prendaData['reflectivo_obs'] ?? '',
+            'tallas' => $prendaData['cantidades'] ?? [],
+        ];
         
         // Generar descripción en formato legacy
         $descripcionFormateada = DescripcionPrendaLegacyFormatter::generar($datosParaFormatter);
